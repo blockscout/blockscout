@@ -261,7 +261,8 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
           address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
           block_number: 19999,
           token_contract_address_hash: to_string(contract.contract_address_hash),
-          token_id: 11,
+          token_id: nil,
+          value: 100_500,
           token_type: "ERC-20"
         },
         %{
@@ -270,6 +271,31 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
           token_contract_address_hash: to_string(contract2.contract_address_hash),
           token_id: 11,
           token_type: "ERC-1155"
+        }
+      ]
+
+      assert TokenBalance.import_token_balances(token_balances_params) == :ok
+    end
+
+    test "import ERC-404 token balances and return :ok" do
+      contract = insert(:token)
+      insert(:block, number: 19999)
+
+      token_balances_params = [
+        %{
+          address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          block_number: 19999,
+          token_contract_address_hash: to_string(contract.contract_address_hash),
+          token_id: 11,
+          token_type: "ERC-404"
+        },
+        %{
+          address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          block_number: 19999,
+          token_contract_address_hash: to_string(contract.contract_address_hash),
+          token_id: nil,
+          value: 100_500,
+          token_type: "ERC-404"
         }
       ]
 

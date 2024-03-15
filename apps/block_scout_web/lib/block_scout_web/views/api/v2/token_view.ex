@@ -36,6 +36,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "type" => token.type,
       "holders" => prepare_holders_count(token.holder_count),
       "exchange_rate" => exchange_rate(token),
+      "volume_24h" => token.volume_24h,
       "total_supply" => token.total_supply,
       "icon_url" => token.icon_url,
       "circulating_market_cap" => token.circulating_market_cap

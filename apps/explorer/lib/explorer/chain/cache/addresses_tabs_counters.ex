@@ -20,9 +20,8 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
   end
 
   @spec set_counter(counter_type, String.t(), non_neg_integer()) :: :ok
-  def set_counter(counter_type, address_hash, counter, need_to_modify_state? \\ true) do
+  def set_counter(counter_type, address_hash, counter) do
     :ets.insert(@cache_name, {cache_key(address_hash, counter_type), {DateTime.utc_now(), counter}})
-    if need_to_modify_state?, do: ignore_txs(counter_type, address_hash)
 
     :ok
   end
@@ -41,10 +40,6 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
   def get_task(counter_type, address_hash) do
     address_hash |> task_cache_key(counter_type) |> fetch_from_cache(@cache_name, nil)
   end
-
-  @spec ignore_txs(atom, String.t()) :: :ignore | :ok
-  def ignore_txs(:txs, address_hash), do: GenServer.cast(__MODULE__, {:ignore_txs, address_hash})
-  def ignore_txs(_counter_type, _address_hash), do: :ignore
 
   def save_txs_counter_progress(address_hash, results) do
     GenServer.cast(__MODULE__, {:set_txs_state, address_hash, results})
@@ -65,11 +60,6 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
     ])
 
     {:ok, %{}}
-  end
-
-  @impl true
-  def handle_cast({:ignore_txs, address_hash}, state) do
-    {:noreply, Map.put(state, lowercased_string(address_hash), {:updated, DateTime.utc_now()})}
   end
 
   @impl true
@@ -95,16 +85,22 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
         |> Enum.count()
         |> min(Counters.counters_limit())
 
-      if counter == Counters.counters_limit() || Enum.count(address_state[:txs_types]) == 3 do
-        set_counter(:txs, address_hash, counter, false)
-        {:noreply, Map.put(state, address_hash, {:updated, DateTime.utc_now()})}
-      else
-        {:noreply, Map.put(state, address_hash, address_state)}
+      cond do
+        Enum.count(address_state[:txs_types]) == 3 ->
+          set_counter(:txs, address_hash, counter)
+          {:noreply, Map.put(state, address_hash, nil)}
+
+        counter == Counters.counters_limit() ->
+          set_counter(:txs, address_hash, counter)
+          {:noreply, Map.put(state, address_hash, :limit_value)}
+
+        true ->
+          {:noreply, Map.put(state, address_hash, address_state)}
       end
     end
   end
 
-  defp ignored?({:updated, datetime}), do: up_to_date?(datetime, ttl())
+  defp ignored?(:limit_value), do: true
   defp ignored?(_), do: false
 
   defp check_staleness(nil), do: nil

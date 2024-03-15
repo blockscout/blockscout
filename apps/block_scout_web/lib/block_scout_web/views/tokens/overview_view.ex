@@ -44,6 +44,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   def display_inventory?(%Token{type: "ERC-721"}), do: true
   def display_inventory?(%Token{type: "ERC-1155"}), do: true
+  def display_inventory?(%Token{type: "ERC-404"}), do: true
   def display_inventory?(_), do: false
 
   def smart_contract_with_read_only_functions?(

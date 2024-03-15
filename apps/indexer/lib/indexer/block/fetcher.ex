@@ -16,11 +16,14 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
+  alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
+  alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
+  alias Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens, as: PolygonZkevmBridgeL1Tokens
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
 
   alias Indexer.Fetcher.{
+    Beacon.Blob,
     BlockReward,
-    CoinBalance,
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
@@ -41,12 +44,15 @@ defmodule Indexer.Block.Fetcher do
     TransactionActions
   }
 
+  alias Indexer.Transform.Optimism.Withdrawals, as: OptimismWithdrawals
+
   alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
   alias Indexer.Transform.Arbitrum.Messaging, as: ArbitrumMessaging
   alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
 
   alias Indexer.Transform.Blocks, as: TransformBlocks
+  alias Indexer.Transform.PolygonZkevm.Bridge, as: PolygonZkevmBridge
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
@@ -113,7 +119,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   @decorate span(tracer: Tracer)
-  @spec fetch_and_import_range(t, Range.t()) ::
+  @spec fetch_and_import_range(t, Range.t(), map) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
              {step :: atom(), reason :: [Ecto.Changeset.t()] | term()}
@@ -124,7 +130,8 @@ defmodule Indexer.Block.Fetcher do
           callback_module: callback_module,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state,
-        _.._ = range
+        _.._ = range,
+        additional_options \\ %{}
       )
       when callback_module != nil do
     {fetch_time, fetched_blocks} =
@@ -146,6 +153,8 @@ defmodule Indexer.Block.Fetcher do
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
+         optimism_withdrawals =
+           if(callback_module == Indexer.Block.Realtime.Fetcher, do: OptimismWithdrawals.parse(logs), else: []),
          polygon_edge_withdrawals =
            if(callback_module == Indexer.Block.Realtime.Fetcher, do: Withdrawals.parse(logs), else: []),
          polygon_edge_deposit_executes =
@@ -156,6 +165,11 @@ defmodule Indexer.Block.Fetcher do
          shibarium_bridge_operations =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
              do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
+             else: []
+           ),
+         polygon_zkevm_bridge_operations =
+           if(callback_module == Indexer.Block.Realtime.Fetcher,
+             do: PolygonZkevmBridge.parse(blocks, logs),
              else: []
            ),
          arbitrum_xlevel_messages = ArbitrumMessaging.parse(transactions_with_receipts, logs),
@@ -171,7 +185,8 @@ defmodule Indexer.Block.Fetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
              transaction_actions: transaction_actions,
-             withdrawals: withdrawals_params
+             withdrawals: withdrawals_params,
+             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations
            }),
          coin_balances_params_set =
            %{
@@ -205,28 +220,19 @@ defmodule Indexer.Block.Fetcher do
            withdrawals: %{params: withdrawals_params},
            token_instances: %{params: token_instances}
          },
-         import_options =
-           (case Application.get_env(:explorer, :chain_type) do
-              "polygon_edge" ->
-                basic_import_options
-                |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
-                |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
-
-              "shibarium" ->
-                basic_import_options
-                |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
-
-              "arbitrum" ->
-                basic_import_options
-                |> Map.put_new(:arbitrum_messages, %{params: arbitrum_xlevel_messages})
-
-              _ ->
-                basic_import_options
-            end),
+         chain_type_import_options = %{
+           transactions_with_receipts: transactions_with_receipts,
+           optimism_withdrawals: optimism_withdrawals,
+           polygon_edge_withdrawals: polygon_edge_withdrawals,
+           polygon_edge_deposit_executes: polygon_edge_deposit_executes,
+           polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+           shibarium_bridge_operations: shibarium_bridge_operations,
+           arbitrum_messages: arbitrum_xlevel_messages
+         },
          {:ok, inserted} <-
            __MODULE__.import(
              state,
-             import_options
+             basic_import_options |> Map.merge(additional_options) |> import_options(chain_type_import_options)
            ),
          {:tx_actions, {:ok, inserted_tx_actions}} <-
            {:tx_actions,
@@ -246,6 +252,43 @@ defmodule Indexer.Block.Fetcher do
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
       {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
+    end
+  end
+
+  defp import_options(basic_import_options, %{
+         transactions_with_receipts: transactions_with_receipts,
+         optimism_withdrawals: optimism_withdrawals,
+         polygon_edge_withdrawals: polygon_edge_withdrawals,
+         polygon_edge_deposit_executes: polygon_edge_deposit_executes,
+         polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+         shibarium_bridge_operations: shibarium_bridge_operations
+       }) do
+    case Application.get_env(:explorer, :chain_type) do
+      "ethereum" ->
+        basic_import_options
+        |> Map.put_new(:beacon_blob_transactions, %{
+          params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
+        })
+
+      "optimism" ->
+        basic_import_options
+        |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
+
+      "polygon_edge" ->
+        basic_import_options
+        |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
+        |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
+
+      "polygon_zkevm" ->
+        basic_import_options
+        |> Map.put_new(:polygon_zkevm_bridge_operations, %{params: polygon_zkevm_bridge_operations})
+
+      "shibarium" ->
+        basic_import_options
+        |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
+
+      _ ->
+        basic_import_options
     end
   end
 
@@ -314,6 +357,19 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_token_instances(_), do: :ok
 
+  def async_import_blobs(%{blocks: blocks}) do
+    timestamps =
+      blocks
+      |> Enum.filter(fn block -> block |> Map.get(:blob_gas_used, 0) > 0 end)
+      |> Enum.map(&Map.get(&1, :timestamp))
+
+    if !Enum.empty?(timestamps) do
+      Blob.async_fetch(timestamps)
+    end
+  end
+
+  def async_import_blobs(_), do: :ok
+
   def async_import_block_rewards([]), do: :ok
 
   def async_import_block_rewards(errors) when is_list(errors) do
@@ -330,10 +386,16 @@ defmodule Indexer.Block.Fetcher do
       block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
       %{address_hash: address_hash, block_number: block_number}
     end)
-    |> CoinBalance.async_fetch_balances()
+    |> CoinBalanceCatchup.async_fetch_balances()
   end
 
   def async_import_coin_balances(_, _), do: :ok
+
+  def async_import_realtime_coin_balances(%{address_coin_balances: balances}) do
+    CoinBalanceRealtime.async_fetch_balances(balances)
+  end
+
+  def async_import_realtime_coin_balances(_), do: :ok
 
   def async_import_created_contract_codes(%{transactions: transactions}) do
     transactions
@@ -395,6 +457,18 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_replaced_transactions(_), do: :ok
+
+  @doc """
+  Fills a buffer of L1 token addresses to handle it asynchronously in
+  the Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens module. The addresses are
+  taken from the `operations` list.
+  """
+  @spec async_import_polygon_zkevm_bridge_l1_tokens(map()) :: :ok
+  def async_import_polygon_zkevm_bridge_l1_tokens(%{polygon_zkevm_bridge_operations: operations}) do
+    PolygonZkevmBridgeL1Tokens.async_fetch(operations)
+  end
+
+  def async_import_polygon_zkevm_bridge_l1_tokens(_), do: :ok
 
   defp block_reward_errors_to_block_numbers(block_reward_errors) when is_list(block_reward_errors) do
     Enum.map(block_reward_errors, &block_reward_error_to_block_number/1)

@@ -76,22 +76,34 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
     ShibariumCounter.withdrawals_count_save(Reader.withdrawals_count())
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp bind_existing_operation_in_db(op, calling_module) do
     {query, set} = make_query_for_bind(op, calling_module)
 
-    {updated_count, _} =
-      Repo.update_all(
-        from(b in Bridge,
-          join: s in subquery(query),
-          on:
-            b.operation_hash == s.operation_hash and b.l1_transaction_hash == s.l1_transaction_hash and
-              b.l2_transaction_hash == s.l2_transaction_hash
-        ),
-        set: set
-      )
+    updated_count =
+      try do
+        {updated_count, _} =
+          Repo.update_all(
+            from(b in Bridge,
+              join: s in subquery(query),
+              on:
+                b.operation_hash == s.operation_hash and b.l1_transaction_hash == s.l1_transaction_hash and
+                  b.l2_transaction_hash == s.l2_transaction_hash
+            ),
+            set: set
+          )
+
+        updated_count
+      rescue
+        error in Postgrex.Error ->
+          # if this is unique violation, we just ignore such an operation as it was inserted before
+          if error.postgres.code != :unique_violation do
+            reraise error, __STACKTRACE__
+          end
+      end
 
     # increment the cached count of complete rows
-    case updated_count > 0 && op.operation_type do
+    case !is_nil(updated_count) && updated_count > 0 && op.operation_type do
       :deposit -> ShibariumCounter.deposits_count_save(updated_count, true)
       :withdrawal -> ShibariumCounter.withdrawals_count_save(updated_count, true)
       false -> nil

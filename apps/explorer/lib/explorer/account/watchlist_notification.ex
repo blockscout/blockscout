@@ -12,17 +12,17 @@ defmodule Explorer.Account.WatchlistNotification do
   alias Explorer.Repo
   alias Explorer.Account.{Watchlist, WatchlistAddress}
 
-  schema "account_watchlist_notifications" do
-    field(:amount, :decimal)
-    field(:block_number, :integer)
-    field(:direction, :string)
-    field(:method, :string)
-    field(:tx_fee, :decimal)
-    field(:type, :string)
-    field(:viewed_at, :integer)
-    field(:name, Explorer.Encrypted.Binary)
+  typed_schema "account_watchlist_notifications" do
+    field(:amount, :decimal, null: false)
+    field(:block_number, :integer, null: false)
+    field(:direction, :string, null: false)
+    field(:method, :string, null: false)
+    field(:tx_fee, :decimal, null: false)
+    field(:type, :string, null: false)
+    field(:viewed_at, :integer, null: false)
+    field(:name, Explorer.Encrypted.Binary, null: false)
     field(:subject, Explorer.Encrypted.Binary)
-    field(:subject_hash, Cloak.Ecto.SHA256)
+    field(:subject_hash, Cloak.Ecto.SHA256) :: binary() | nil
 
     belongs_to(:watchlist_address, WatchlistAddress)
     belongs_to(:watchlist, Watchlist)
@@ -31,9 +31,9 @@ defmodule Explorer.Account.WatchlistNotification do
     field(:to_address_hash, Explorer.Encrypted.AddressHash)
     field(:transaction_hash, Explorer.Encrypted.TransactionHash)
 
-    field(:from_address_hash_hash, Cloak.Ecto.SHA256)
-    field(:to_address_hash_hash, Cloak.Ecto.SHA256)
-    field(:transaction_hash_hash, Cloak.Ecto.SHA256)
+    field(:from_address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
+    field(:to_address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
+    field(:transaction_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
 
     timestamps()
   end

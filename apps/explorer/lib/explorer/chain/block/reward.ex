@@ -43,26 +43,18 @@ defmodule Explorer.Chain.Block.Reward do
   * `:block_hash` - Hash of the validated block
   * `:reward` - Total block reward
   """
-  @type t :: %__MODULE__{
-          address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          address_hash: Hash.Address.t(),
-          address_type: AddressType.t(),
-          block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
-          block_hash: Hash.Full.t(),
-          reward: Wei.t()
-        }
-
   @primary_key false
-  schema "block_rewards" do
-    field(:address_type, AddressType)
-    field(:reward, Wei)
+  typed_schema "block_rewards" do
+    field(:address_type, AddressType, null: false)
+    field(:reward, Wei, null: false)
 
     belongs_to(
       :address,
       Address,
       foreign_key: :address_hash,
       references: :hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     belongs_to(
@@ -70,7 +62,8 @@ defmodule Explorer.Chain.Block.Reward do
       Block,
       foreign_key: :block_hash,
       references: :hash,
-      type: Hash.Full
+      type: Hash.Full,
+      null: false
     )
 
     timestamps()

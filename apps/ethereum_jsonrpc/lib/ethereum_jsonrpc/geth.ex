@@ -89,7 +89,8 @@ defmodule EthereumJSONRPC.Geth do
     end
   end
 
-  defp check_errors_exist(blocks_responses, id_to_params) do
+  @spec check_errors_exist(list(), %{non_neg_integer() => any()}) :: :ok | {:error, list()}
+  def check_errors_exist(blocks_responses, id_to_params) do
     blocks_responses
     |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.reduce([], fn
@@ -103,24 +104,29 @@ defmodule EthereumJSONRPC.Geth do
   end
 
   defp to_transactions_params(blocks_responses, id_to_params) do
-    Enum.reduce(blocks_responses, [], fn %{id: id, result: tx_result}, blocks_acc ->
-      extract_transactions_params(Map.fetch!(id_to_params, id), tx_result) ++ blocks_acc
+    blocks_responses
+    |> Enum.reduce({[], 0}, fn %{id: id, result: tx_result}, {blocks_acc, counter} ->
+      {transactions_params, _, new_counter} =
+        extract_transactions_params(Map.fetch!(id_to_params, id), tx_result, counter)
+
+      {transactions_params ++ blocks_acc, new_counter}
     end)
+    |> elem(0)
   end
 
-  defp extract_transactions_params(block_number, tx_result) do
-    tx_result
-    |> Enum.reduce({[], 0}, fn %{"txHash" => tx_hash, "result" => calls_result}, {tx_acc, counter} ->
+  defp extract_transactions_params(block_number, tx_result, counter) do
+    Enum.reduce(tx_result, {[], 0, counter}, fn %{"txHash" => tx_hash, "result" => calls_result},
+                                                {tx_acc, inner_counter, counter} ->
       {
         [
-          {%{block_number: block_number, hash_data: tx_hash, transaction_index: counter, id: counter},
+          {%{block_number: block_number, hash_data: tx_hash, transaction_index: inner_counter, id: counter},
            %{id: counter, result: calls_result}}
           | tx_acc
         ],
+        inner_counter + 1,
         counter + 1
       }
     end)
-    |> elem(0)
   end
 
   @doc """
@@ -400,7 +406,8 @@ defmodule EthereumJSONRPC.Geth do
     |> Enum.reduce(acc, &parse_call_tracer_calls(&1, &2, trace_address))
   end
 
-  defp reduce_internal_transactions_params(internal_transactions_params) when is_list(internal_transactions_params) do
+  @spec reduce_internal_transactions_params(list()) :: {:ok, list()} | {:error, list()}
+  def reduce_internal_transactions_params(internal_transactions_params) when is_list(internal_transactions_params) do
     internal_transactions_params
     |> Enum.reduce({:ok, []}, &internal_transactions_params_reducer/2)
     |> finalize_internal_transactions_params()

@@ -200,7 +200,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
            {:contract_address, to_address_hash_optional(params["contractaddress"])},
          true <- !is_nil(address_hash) or !is_nil(contract_address_hash),
          {:ok, token_transfers, max_block_number} <-
-           list_nft_token_transfers(address_hash, contract_address_hash, options) do
+           list_nft_transfers(address_hash, contract_address_hash, options) do
       render(conn, :tokennfttx, %{token_transfers: token_transfers, max_block_number: max_block_number})
     else
       false ->
@@ -281,8 +281,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     %{}
     |> put_order_by_direction(params)
     |> Helper.put_pagination_options(params)
-    |> put_block(params, "start_block")
-    |> put_block(params, "end_block")
+    |> put_block(params, "startblock")
+    |> put_block(params, "endblock")
     |> put_filter_by(params)
     |> put_timestamp(params, "start_timestamp")
     |> put_timestamp(params, "end_timestamp")
@@ -531,10 +531,10 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
-  defp list_nft_token_transfers(nil, contract_address_hash, options) do
+  defp list_nft_transfers(nil, contract_address_hash, options) do
     with {:ok, max_block_number} <- Chain.max_consensus_block_number(),
          token_transfers when token_transfers != [] <-
-           Etherscan.list_nft_token_transfers_by_token(contract_address_hash, options) do
+           Etherscan.list_nft_transfers_by_token(contract_address_hash, options) do
       {:ok, token_transfers, max_block_number}
     else
       _ ->
@@ -542,11 +542,11 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
-  defp list_nft_token_transfers(address_hash, contract_address_hash, options) do
+  defp list_nft_transfers(address_hash, contract_address_hash, options) do
     with {:address, :ok} <- {:address, Address.check_address_exists(address_hash, @api_true)},
          {:ok, max_block_number} <- Chain.max_consensus_block_number(),
          token_transfers when token_transfers != [] <-
-           Etherscan.list_nft_token_transfers(address_hash, contract_address_hash, options) do
+           Etherscan.list_nft_transfers(address_hash, contract_address_hash, options) do
       {:ok, token_transfers, max_block_number}
     else
       _ ->

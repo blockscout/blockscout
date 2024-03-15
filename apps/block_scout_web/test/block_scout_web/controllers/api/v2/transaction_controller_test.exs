@@ -245,6 +245,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: tx.block_number,
         token_contract_address: token.contract_address,
         token_ids: Enum.map(0..50, fn x -> x end),
+        token_type: "ERC-1155",
         amounts: Enum.map(0..50, fn x -> x end)
       )
 
@@ -271,6 +272,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: [1],
+          token_type: "ERC-1155",
           amounts: [2],
           amount: nil
         )
@@ -581,7 +583,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             token_contract_address: erc_1155_token.contract_address,
-            token_ids: [x]
+            token_ids: [x],
+            token_type: "ERC-1155"
           )
         end
         |> Enum.reverse()
@@ -595,7 +598,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             token_contract_address: erc_721_token.contract_address,
-            token_ids: [x]
+            token_ids: [x],
+            token_type: "ERC-721"
           )
         end
         |> Enum.reverse()
@@ -608,7 +612,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
             transaction: tx,
             block: tx.block,
             block_number: tx.block_number,
-            token_contract_address: erc_20_token.contract_address
+            token_contract_address: erc_20_token.contract_address,
+            token_type: "ERC-20"
           )
         end
         |> Enum.reverse()
@@ -723,6 +728,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
             token_ids: Enum.map(0..50, fn _x -> id end),
+            token_type: "ERC-1155",
             amounts: Enum.map(0..50, fn x -> x end)
           )
         end
@@ -758,7 +764,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
-            token_ids: [i]
+            token_ids: [i],
+            token_type: "ERC-721"
           )
         end
 
@@ -788,6 +795,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..50, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..50, fn x -> x end)
         )
 
@@ -823,6 +831,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..24, fn x -> x end)
         )
 
@@ -838,6 +847,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..49, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(25..49, fn x -> x end)
         )
 
@@ -853,6 +863,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: [50],
+          token_type: "ERC-1155",
           amounts: [50]
         )
 
@@ -879,6 +890,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..24, fn x -> x end)
         )
 
@@ -894,6 +906,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..50, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(25..50, fn x -> x end)
         )
 
@@ -961,142 +974,132 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  describe "stability fees" do
-    setup %{conn: conn} do
-      old_env = Application.get_env(:explorer, :chain_type)
+  if Application.compile_env(:explorer, :chain_type) == "stability" do
+    describe "stability fees" do
+      test "check stability fees", %{conn: conn} do
+        tx = insert(:transaction) |> with_block()
 
-      Application.put_env(:explorer, :chain_type, "stability")
+        _log =
+          insert(:log,
+            transaction: tx,
+            index: 1,
+            block: tx.block,
+            block_number: tx.block_number,
+            first_topic: topic(@first_topic_hex_string_1),
+            data:
+              "0x000000000000000000000000dc2b93f3291030f3f7a6d9363ac37757f7ad5c4300000000000000000000000000000000000000000000000000002824369a100000000000000000000000000046b555cb3962bf9533c437cbd04a2f702dfdb999000000000000000000000000000000000000000000000000000014121b4d0800000000000000000000000000faf7a981360c2fab3a5ab7b3d6d8d0cf97a91eb9000000000000000000000000000000000000000000000000000014121b4d0800"
+          )
 
-      on_exit(fn ->
-        Application.put_env(:explorer, :chain_type, old_env)
-      end)
+        insert(:token, contract_address: build(:address, hash: "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"))
+        request = get(conn, "/api/v2/transactions")
 
-      %{conn: conn}
-    end
-
-    test "check stability fees", %{conn: conn} do
-      tx = insert(:transaction) |> with_block()
-
-      _log =
-        insert(:log,
-          transaction: tx,
-          index: 1,
-          block: tx.block,
-          block_number: tx.block_number,
-          first_topic: topic(@first_topic_hex_string_1),
-          data:
-            "0x000000000000000000000000dc2b93f3291030f3f7a6d9363ac37757f7ad5c4300000000000000000000000000000000000000000000000000002824369a100000000000000000000000000046b555cb3962bf9533c437cbd04a2f702dfdb999000000000000000000000000000000000000000000000000000014121b4d0800000000000000000000000000faf7a981360c2fab3a5ab7b3d6d8d0cf97a91eb9000000000000000000000000000000000000000000000000000014121b4d0800"
-        )
-
-      insert(:token, contract_address: build(:address, hash: "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"))
-      request = get(conn, "/api/v2/transactions")
-
-      assert %{
-               "items" => [
-                 %{
-                   "stability_fee" => %{
-                     "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
-                     "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
-                     "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
-                     "total_fee" => "44136000000000",
-                     "dapp_fee" => "22068000000000",
-                     "validator_fee" => "22068000000000"
+        assert %{
+                 "items" => [
+                   %{
+                     "stability_fee" => %{
+                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
+                       "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
+                       "total_fee" => "44136000000000",
+                       "dapp_fee" => "22068000000000",
+                       "validator_fee" => "22068000000000"
+                     }
                    }
+                 ]
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
+
+        assert %{
+                 "stability_fee" => %{
+                   "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                   "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
+                   "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
+                   "total_fee" => "44136000000000",
+                   "dapp_fee" => "22068000000000",
+                   "validator_fee" => "22068000000000"
                  }
-               ]
-             } = json_response(request, 200)
+               } = json_response(request, 200)
 
-      request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
+        request = get(conn, "/api/v2/addresses/#{to_string(tx.from_address_hash)}/transactions")
 
-      assert %{
-               "stability_fee" => %{
-                 "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
-                 "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
-                 "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
-                 "total_fee" => "44136000000000",
-                 "dapp_fee" => "22068000000000",
-                 "validator_fee" => "22068000000000"
-               }
-             } = json_response(request, 200)
-
-      request = get(conn, "/api/v2/addresses/#{to_string(tx.from_address_hash)}/transactions")
-
-      assert %{
-               "items" => [
-                 %{
-                   "stability_fee" => %{
-                     "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
-                     "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
-                     "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
-                     "total_fee" => "44136000000000",
-                     "dapp_fee" => "22068000000000",
-                     "validator_fee" => "22068000000000"
+        assert %{
+                 "items" => [
+                   %{
+                     "stability_fee" => %{
+                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
+                       "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
+                       "total_fee" => "44136000000000",
+                       "dapp_fee" => "22068000000000",
+                       "validator_fee" => "22068000000000"
+                     }
                    }
-                 }
-               ]
-             } = json_response(request, 200)
-    end
+                 ]
+               } = json_response(request, 200)
+      end
 
-    test "check stability if token absent in DB", %{conn: conn} do
-      tx = insert(:transaction) |> with_block()
+      test "check stability if token absent in DB", %{conn: conn} do
+        tx = insert(:transaction) |> with_block()
 
-      _log =
-        insert(:log,
-          transaction: tx,
-          index: 1,
-          block: tx.block,
-          block_number: tx.block_number,
-          first_topic: topic(@first_topic_hex_string_1),
-          data:
-            "0x000000000000000000000000dc2b93f3291030f3f7a6d9363ac37757f7ad5c4300000000000000000000000000000000000000000000000000002824369a100000000000000000000000000046b555cb3962bf9533c437cbd04a2f702dfdb999000000000000000000000000000000000000000000000000000014121b4d0800000000000000000000000000faf7a981360c2fab3a5ab7b3d6d8d0cf97a91eb9000000000000000000000000000000000000000000000000000014121b4d0800"
-        )
+        _log =
+          insert(:log,
+            transaction: tx,
+            index: 1,
+            block: tx.block,
+            block_number: tx.block_number,
+            first_topic: topic(@first_topic_hex_string_1),
+            data:
+              "0x000000000000000000000000dc2b93f3291030f3f7a6d9363ac37757f7ad5c4300000000000000000000000000000000000000000000000000002824369a100000000000000000000000000046b555cb3962bf9533c437cbd04a2f702dfdb999000000000000000000000000000000000000000000000000000014121b4d0800000000000000000000000000faf7a981360c2fab3a5ab7b3d6d8d0cf97a91eb9000000000000000000000000000000000000000000000000000014121b4d0800"
+          )
 
-      request = get(conn, "/api/v2/transactions")
+        request = get(conn, "/api/v2/transactions")
 
-      assert %{
-               "items" => [
-                 %{
-                   "stability_fee" => %{
-                     "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
-                     "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
-                     "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
-                     "total_fee" => "44136000000000",
-                     "dapp_fee" => "22068000000000",
-                     "validator_fee" => "22068000000000"
+        assert %{
+                 "items" => [
+                   %{
+                     "stability_fee" => %{
+                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
+                       "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
+                       "total_fee" => "44136000000000",
+                       "dapp_fee" => "22068000000000",
+                       "validator_fee" => "22068000000000"
+                     }
                    }
+                 ]
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
+
+        assert %{
+                 "stability_fee" => %{
+                   "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                   "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
+                   "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
+                   "total_fee" => "44136000000000",
+                   "dapp_fee" => "22068000000000",
+                   "validator_fee" => "22068000000000"
                  }
-               ]
-             } = json_response(request, 200)
+               } = json_response(request, 200)
 
-      request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
+        request = get(conn, "/api/v2/addresses/#{to_string(tx.from_address_hash)}/transactions")
 
-      assert %{
-               "stability_fee" => %{
-                 "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
-                 "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
-                 "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
-                 "total_fee" => "44136000000000",
-                 "dapp_fee" => "22068000000000",
-                 "validator_fee" => "22068000000000"
-               }
-             } = json_response(request, 200)
-
-      request = get(conn, "/api/v2/addresses/#{to_string(tx.from_address_hash)}/transactions")
-
-      assert %{
-               "items" => [
-                 %{
-                   "stability_fee" => %{
-                     "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
-                     "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
-                     "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
-                     "total_fee" => "44136000000000",
-                     "dapp_fee" => "22068000000000",
-                     "validator_fee" => "22068000000000"
+        assert %{
+                 "items" => [
+                   %{
+                     "stability_fee" => %{
+                       "token" => %{"address" => "0xDc2B93f3291030F3F7a6D9363ac37757f7AD5C43"},
+                       "validator_address" => %{"hash" => "0x46B555CB3962bF9533c437cBD04A2f702dfdB999"},
+                       "dapp_address" => %{"hash" => "0xFAf7a981360c2FAb3a5Ab7b3D6d8D0Cf97a91Eb9"},
+                       "total_fee" => "44136000000000",
+                       "dapp_fee" => "22068000000000",
+                       "validator_fee" => "22068000000000"
+                     }
                    }
-                 }
-               ]
-             } = json_response(request, 200)
+                 ]
+               } = json_response(request, 200)
+      end
     end
   end
 

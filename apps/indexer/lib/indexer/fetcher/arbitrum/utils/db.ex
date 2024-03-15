@@ -29,6 +29,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       `arbitrum_lifecycle_l1_transactions` table.
   """
   @spec get_indices_for_l1_transactions(map()) :: any()
+  # TODO: consider a way to remove duplicate with ZkSync.Utils.Db
+  # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
   def get_indices_for_l1_transactions(new_l1_txs)
       when is_map(new_l1_txs) do
     # Get indices for l1 transactions previously handled

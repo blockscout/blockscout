@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+  alias BlockScoutWeb.API.V2.BlobView
 
   import BlockScoutWeb.Chain,
     only: [
@@ -28,20 +29,35 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.Chain
+  alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, Transaction}
-  alias Explorer.Chain.Zkevm.Reader
+  alias Explorer.Chain.PolygonZkevm.Reader
+  alias Explorer.Chain.ZkSync.Reader
+  alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.FirstTraceOnDemand
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  case Application.compile_env(:explorer, :chain_type) do
+    "ethereum" ->
+      @chain_type_transaction_necessity_by_association %{
+        :beacon_blob_transaction => :optional
+      }
+
+    _ ->
+      @chain_type_transaction_necessity_by_association %{}
+  end
+
+  # TODO might be redundant to preload blob fields in some of the endpoints
   @transaction_necessity_by_association %{
-    :block => :optional,
-    [created_contract_address: :names] => :optional,
-    [created_contract_address: :token] => :optional,
-    [from_address: :names] => :optional,
-    [to_address: :names] => :optional,
-    [to_address: :smart_contract] => :optional
-  }
+                                          :block => :optional,
+                                          [created_contract_address: :names] => :optional,
+                                          [created_contract_address: :token] => :optional,
+                                          [from_address: :names] => :optional,
+                                          [to_address: :names] => :optional,
+                                          [to_address: :smart_contract] => :optional
+                                        }
+                                        |> Map.merge(@chain_type_transaction_necessity_by_association)
 
   @token_transfers_necessity_by_association %{
     [from_address: :smart_contract] => :optional,
@@ -86,6 +102,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           |> Map.put(:zkevm_batch, :optional)
           |> Map.put(:zkevm_sequence_transaction, :optional)
           |> Map.put(:zkevm_verify_transaction, :optional)
+
+        "zksync" ->
+          necessity_by_association_with_actions
+          |> Map.put(:zksync_batch, :optional)
+          |> Map.put(:zksync_commit_transaction, :optional)
+          |> Map.put(:zksync_prove_transaction, :optional)
+          |> Map.put(:zksync_execute_transaction, :optional)
 
         "suave" ->
           necessity_by_association_with_actions
@@ -141,8 +164,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     Function to handle GET requests to `/api/v2/transactions/zkevm-batch/:batch_number` endpoint.
     It renders the list of L2 transactions bound to the specified batch.
   """
-  @spec zkevm_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def zkevm_batch(conn, %{"batch_number" => batch_number} = _params) do
+  @spec polygon_zkevm_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def polygon_zkevm_batch(conn, %{"batch_number" => batch_number} = _params) do
     transactions =
       batch_number
       |> Reader.batch_transactions(api?: true)
@@ -152,6 +175,23 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{transactions: transactions |> maybe_preload_ens(), items: true})
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/transactions/zksync-batch/:batch_number` endpoint.
+    It renders the list of L2 transactions bound to the specified batch.
+  """
+  @spec zksync_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def zksync_batch(conn, %{"batch_number" => batch_number} = _params) do
+    transactions =
+      batch_number
+      |> Reader.batch_transactions(api?: true)
+      |> Enum.map(fn tx -> tx.hash end)
+      |> Chain.hashes_to_transactions(api?: true, necessity_by_association: @transaction_necessity_by_association)
+
+    conn
+    |> put_status(200)
+    |> render(:transactions, %{transactions: transactions, items: true})
   end
 
   def execution_node(conn, %{"execution_node_hash_param" => execution_node_hash_string} = params) do
@@ -388,6 +428,42 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> put_status(code)
       |> json(response)
     end
+  end
+
+  @doc """
+  Function to handle GET requests to `/api/v2/transactions/:transaction_hash_param/blobs` endpoint.
+  """
+  @spec blobs(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
+  def blobs(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
+    with {:ok, _transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+      full_options = @api_true
+
+      blobs = BeaconReader.transaction_to_blobs(transaction_hash, full_options)
+
+      conn
+      |> put_status(200)
+      |> put_view(BlobView)
+      |> render(:blobs, %{blobs: blobs})
+    end
+  end
+
+  def stats(conn, _params) do
+    transactions_count = Transactions24hStats.fetch_count(@api_true)
+    pending_transactions_count = FreshPendingTransactionsCounter.fetch(@api_true)
+    transaction_fees_sum = Transactions24hStats.fetch_fee_sum(@api_true)
+    transaction_fees_avg = Transactions24hStats.fetch_fee_average(@api_true)
+
+    conn
+    |> put_status(200)
+    |> render(
+      :stats,
+      %{
+        transactions_count_24h: transactions_count,
+        pending_transactions_count: pending_transactions_count,
+        transaction_fees_sum_24h: transaction_fees_sum,
+        transaction_fees_avg_24h: transaction_fees_avg
+      }
+    )
   end
 
   @doc """

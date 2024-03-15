@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   @moduledoc """
-  Fetches ERC-721 & ERC-1155 token instance metadata.
+  Fetches ERC-721/ERC-1155/ERC-404 token instance metadata.
   """
 
   require Logger
@@ -36,18 +36,19 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   @doc """
     Fetch/parse metadata using smart-contract's response
   """
-  @spec fetch_json(any, binary() | nil) :: {:error, binary} | {:error_code, any} | {:ok, %{metadata: any}}
-  def fetch_json(uri, hex_token_id \\ nil)
+  @spec fetch_json(any, binary() | nil, binary() | nil, boolean) ::
+          {:error, binary} | {:error_code, any} | {:ok, %{metadata: any}}
+  def fetch_json(uri, token_id \\ nil, hex_token_id \\ nil, from_base_uri? \\ false)
 
-  def fetch_json(uri, _hex_token_id) when uri in [{:ok, [""]}, {:ok, [""]}] do
+  def fetch_json(uri, _token_id, _hex_token_id, _from_base_uri?) when uri in [{:ok, [""]}, {:ok, [""]}] do
     {:error, @no_uri_error}
   end
 
-  def fetch_json(uri, hex_token_id) do
-    fetch_json_from_uri(uri, hex_token_id)
+  def fetch_json(uri, token_id, hex_token_id, from_base_uri?) do
+    fetch_json_from_uri(uri, token_id, hex_token_id, from_base_uri?)
   end
 
-  defp fetch_json_from_uri({:error, error}, _hex_token_id) do
+  defp fetch_json_from_uri({:error, error}, _token_id, _hex_token_id, _from_base_uri?) do
     error = to_string(error)
 
     if error =~ "execution reverted" or error =~ @vm_execution_error do
@@ -61,9 +62,9 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   end
 
   # CIDv0 IPFS links # https://docs.ipfs.tech/concepts/content-addressing/#version-0-v0
-  defp fetch_json_from_uri({:ok, ["Qm" <> _ = result]}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["Qm" <> _ = result]}, token_id, hex_token_id, from_base_uri?) do
     if String.length(result) == 46 do
-      fetch_json_from_uri({:ok, [ipfs_link() <> result]}, hex_token_id)
+      fetch_json_from_uri({:ok, [ipfs_link() <> result]}, token_id, hex_token_id, from_base_uri?)
     else
       Logger.warn(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
 
@@ -71,23 +72,23 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     end
   end
 
-  defp fetch_json_from_uri({:ok, ["'" <> token_uri]}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["'" <> token_uri]}, token_id, hex_token_id, from_base_uri?) do
     token_uri = token_uri |> String.split("'") |> List.first()
-    fetch_metadata_inner(token_uri, hex_token_id)
+    fetch_metadata_inner(token_uri, token_id, hex_token_id, from_base_uri?)
   end
 
-  defp fetch_json_from_uri({:ok, ["http://" <> _ = token_uri]}, hex_token_id) do
-    fetch_metadata_inner(token_uri, hex_token_id)
+  defp fetch_json_from_uri({:ok, ["http://" <> _ = token_uri]}, token_id, hex_token_id, from_base_uri?) do
+    fetch_metadata_inner(token_uri, token_id, hex_token_id, from_base_uri?)
   end
 
-  defp fetch_json_from_uri({:ok, ["https://" <> _ = token_uri]}, hex_token_id) do
-    fetch_metadata_inner(token_uri, hex_token_id)
+  defp fetch_json_from_uri({:ok, ["https://" <> _ = token_uri]}, token_id, hex_token_id, from_base_uri?) do
+    fetch_metadata_inner(token_uri, token_id, hex_token_id, from_base_uri?)
   end
 
-  defp fetch_json_from_uri({:ok, ["data:application/json," <> json]}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["data:application/json," <> json]}, token_id, hex_token_id, from_base_uri?) do
     decoded_json = URI.decode(json)
 
-    fetch_json_from_uri({:ok, [decoded_json]}, hex_token_id)
+    fetch_json_from_uri({:ok, [decoded_json]}, token_id, hex_token_id, from_base_uri?)
   rescue
     e ->
       Logger.warn(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
@@ -97,10 +98,15 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
       {:error, "invalid data:application/json"}
   end
 
-  defp fetch_json_from_uri({:ok, ["data:application/json;base64," <> base64_encoded_json]}, hex_token_id) do
+  defp fetch_json_from_uri(
+         {:ok, ["data:application/json;base64," <> base64_encoded_json]},
+         token_id,
+         hex_token_id,
+         from_base_uri?
+       ) do
     case Base.decode64(base64_encoded_json) do
       {:ok, base64_decoded} ->
-        fetch_json_from_uri({:ok, [base64_decoded]}, hex_token_id)
+        fetch_json_from_uri({:ok, [base64_decoded]}, token_id, hex_token_id, from_base_uri?)
 
       _ ->
         {:error, "invalid data:application/json;base64"}
@@ -118,19 +124,19 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
       {:error, "invalid data:application/json;base64"}
   end
 
-  defp fetch_json_from_uri({:ok, ["#{@ipfs_protocol}ipfs/" <> right]}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["#{@ipfs_protocol}ipfs/" <> right]}, _token_id, hex_token_id, _from_base_uri?) do
     fetch_from_ipfs(right, hex_token_id)
   end
 
-  defp fetch_json_from_uri({:ok, ["ipfs/" <> right]}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, ["ipfs/" <> right]}, _token_id, hex_token_id, _from_base_uri?) do
     fetch_from_ipfs(right, hex_token_id)
   end
 
-  defp fetch_json_from_uri({:ok, [@ipfs_protocol <> right]}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, [@ipfs_protocol <> right]}, _token_id, hex_token_id, _from_base_uri?) do
     fetch_from_ipfs(right, hex_token_id)
   end
 
-  defp fetch_json_from_uri({:ok, [json]}, hex_token_id) do
+  defp fetch_json_from_uri({:ok, [json]}, _token_id, hex_token_id, _from_base_uri?) do
     json = ExplorerHelper.decode_json(json)
 
     check_type(json, hex_token_id)
@@ -143,7 +149,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
       {:error, "invalid json"}
   end
 
-  defp fetch_json_from_uri(uri, _hex_token_id) do
+  defp fetch_json_from_uri(uri, _token_id, _hex_token_id, _from_base_uri?) do
     Logger.warn(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
 
     {:error, "unknown metadata uri format"}
@@ -151,11 +157,13 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
   defp fetch_from_ipfs(ipfs_uid, hex_token_id) do
     ipfs_url = ipfs_link() <> ipfs_uid
-    fetch_metadata_inner(ipfs_url, hex_token_id)
+    fetch_metadata_inner(ipfs_url, nil, hex_token_id)
   end
 
-  defp fetch_metadata_inner(uri, hex_token_id) do
-    prepared_uri = substitute_token_id_to_token_uri(uri, hex_token_id)
+  defp fetch_metadata_inner(uri, token_id, hex_token_id, from_base_uri? \\ false)
+
+  defp fetch_metadata_inner(uri, token_id, hex_token_id, from_base_uri?) do
+    prepared_uri = substitute_token_id_to_token_uri(uri, token_id, hex_token_id, from_base_uri?)
     fetch_metadata_from_uri(prepared_uri, hex_token_id)
   rescue
     e ->
@@ -189,7 +197,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
         check_content_type(content_type, uri, hex_token_id, body)
 
       {:ok, %Response{body: body, status_code: code}} ->
-        Logger.warn(
+        Logger.debug(
           ["Request to token uri: #{inspect(uri)} failed with code #{code}. Body:", inspect(body)],
           fetcher: :token_instances
         )
@@ -270,9 +278,19 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     {:error, "wrong metadata type"}
   end
 
-  defp substitute_token_id_to_token_uri(token_uri, empty_token_id) when empty_token_id in [nil, ""], do: token_uri
+  defp substitute_token_id_to_token_uri(base_uri, token_id, _empty_token_id, true) do
+    if String.ends_with?(base_uri, "/") do
+      base_uri <> to_string(token_id)
+    else
+      base_uri <> "/" <> to_string(token_id)
+    end
+  end
 
-  defp substitute_token_id_to_token_uri(token_uri, hex_token_id) do
+  defp substitute_token_id_to_token_uri(token_uri, _token_id, empty_token_id, _from_base_uri?)
+       when empty_token_id in [nil, ""],
+       do: token_uri
+
+  defp substitute_token_id_to_token_uri(token_uri, _token_id, hex_token_id, _from_base_uri?) do
     String.replace(token_uri, @erc1155_token_id_placeholder, hex_token_id)
   end
 

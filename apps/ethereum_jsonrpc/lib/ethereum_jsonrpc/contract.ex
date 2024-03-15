@@ -133,9 +133,13 @@ defmodule EthereumJSONRPC.Contract do
 
   defp convert_int_string_to_array_inner(arg) do
     arg
-    |> Enum.map(fn el ->
-      {int, _} = Integer.parse(el)
-      int
+    |> Enum.map(fn
+      el when is_integer(el) ->
+        el
+
+      el ->
+        {int, _} = Integer.parse(el)
+        int
     end)
   end
 

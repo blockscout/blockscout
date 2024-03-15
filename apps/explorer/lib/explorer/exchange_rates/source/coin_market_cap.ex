@@ -72,6 +72,12 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   end
 
   @impl Source
+  def source_url(:secondary_coin) do
+    coin_id = config(:secondary_coin_id)
+    if coin_id, do: "#{api_quotes_latest_url()}?id=#{coin_id}&CMC_PRO_API_KEY=#{api_key()}", else: nil
+  end
+
+  @impl Source
   def source_url(input) do
     case Chain.Hash.Address.cast(input) do
       {:ok, _} ->

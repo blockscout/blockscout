@@ -41,8 +41,7 @@ defmodule BlockScoutWeb.API.RPC.BlockView do
       "uncleInclusionReward" =>
         static_reward
         |> Decimal.mult(Enum.count(uncles))
-        |> Decimal.mult(Decimal.from_float(Block.uncle_reward_coef()))
-        |> Decimal.normalize()
+        |> Decimal.div(Block.uncle_reward_coef())
         |> Decimal.to_string(:normal)
     }
 
