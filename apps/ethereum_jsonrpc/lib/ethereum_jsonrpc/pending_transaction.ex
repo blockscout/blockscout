@@ -61,17 +61,7 @@ defmodule EthereumJSONRPC.PendingTransaction do
           {:ok, [Transaction.params()]} | {:error, reason :: term}
   def fetch_pending_transactions_besu(json_rpc_named_arguments) do
     with {:ok, transactions} <-
-          # `txpool_besuPendingTransactions` required parameter `numResults` for number of maximum pending transaction to return.
-          # 
-          # TODO: Remove fix value when hyperledger besu client change `numResults` from required to optional parameter.
-          # Current fix value set to `512` bonsai storage default value is 512.
-          # to handle pending transaction in Ethereum mainnet require more than 100000.
-          # reference:
-          # https://etherscan.io/chart/pendingtx
-          # https://besu.hyperledger.org/public-networks/reference/cli/options#bonsai-historical-block-limit
-          #
-          # https://besu.hyperledger.org/public-networks/reference/api#txpool_besupendingtransactions
-           %{id: 1, method: "txpool_besuPendingTransactions", params: [512]}
+           %{id: 1, method: "txpool_besuPendingTransactions", params: []}
            |> request()
            |> json_rpc(json_rpc_named_arguments) do
       transactions_params =
