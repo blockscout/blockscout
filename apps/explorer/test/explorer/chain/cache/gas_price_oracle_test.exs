@@ -1,54 +1,12 @@
 defmodule Explorer.Chain.Cache.GasPriceOracleTest do
   use Explorer.DataCase
 
-  import Mox
-
   alias Explorer.Chain.Cache.GasPriceOracle
+  alias Explorer.Chain.Wei
   alias Explorer.Counters.AverageBlockTime
-
-  @block %{
-    "difficulty" => "0x0",
-    "gasLimit" => "0x0",
-    "gasUsed" => "0x0",
-    "hash" => "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c",
-    "extraData" => "0x0",
-    "logsBloom" => "0x0",
-    "miner" => "0x0",
-    "number" => "0x1",
-    "parentHash" => "0x0",
-    "receiptsRoot" => "0x0",
-    "size" => "0x0",
-    "sha3Uncles" => "0x0",
-    "stateRoot" => "0x0",
-    "timestamp" => "0x0",
-    "baseFeePerGas" => "0x1DCD6500",
-    "totalDifficulty" => "0x0",
-    "transactions" => [
-      %{
-        "blockHash" => "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c",
-        "blockNumber" => "0x1",
-        "from" => "0x0",
-        "gas" => "0x0",
-        "gasPrice" => "0x0",
-        "hash" => "0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e",
-        "input" => "0x",
-        "nonce" => "0x0",
-        "r" => "0x0",
-        "s" => "0x0",
-        "to" => "0x0",
-        "transactionIndex" => "0x0",
-        "v" => "0x0",
-        "value" => "0x0"
-      }
-    ],
-    "transactionsRoot" => "0x0",
-    "uncles" => []
-  }
 
   describe "get_average_gas_price/4" do
     test "returns nil percentile values if no blocks in the DB" do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)
-
       assert {{:ok,
                %{
                  slow: nil,
@@ -58,8 +16,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
     end
 
     test "returns nil percentile values if blocks are empty in the DB" do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)
-
       insert(:block)
       insert(:block)
       insert(:block)
@@ -72,9 +28,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
                }}, []} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
     end
 
-    test "returns nil percentile values for blocks with failed txs in the DB" do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)
-
+    test "returns gas prices for blocks with failed txs in the DB" do
       block = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
 
       :transaction
@@ -90,17 +44,17 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
       )
 
-      assert {{:ok,
-               %{
-                 slow: nil,
-                 average: nil,
-                 fast: nil
-               }}, []} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
+      assert {{
+                :ok,
+                %{
+                  average: %{price: 0.01},
+                  fast: %{price: 0.01},
+                  slow: %{price: 0.01}
+                }
+              }, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
     end
 
     test "returns nil percentile values for transactions with 0 gas price aka 'whitelisted transactions' in the DB" do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)
-
       block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
       block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
 
@@ -137,8 +91,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
     end
 
     test "returns the same percentile values if gas price is the same over transactions" do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)
-
       block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
       block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
 
@@ -175,8 +127,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
     end
 
     test "returns correct min gas price from the block" do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)
-
       block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
       block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
 
@@ -225,8 +175,6 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
     end
 
     test "returns correct average percentile" do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)
-
       block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
       block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
       block3 = insert(:block, number: 102, hash: "0x659b2a1cc4dd1a5729900cf0c81c471d1c7891b2517bf9466f7fba56ead2fca0")
@@ -274,10 +222,16 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
     end
 
     test "returns correct gas price for EIP-1559 transactions" do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)
-
       block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
-      block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
+
+      block2 =
+        insert(:block,
+          number: 101,
+          hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729",
+          gas_limit: Decimal.new(10_000_000),
+          gas_used: Decimal.new(5_000_000),
+          base_fee_per_gas: Wei.from(Decimal.new(500_000_000), :wei)
+        )
 
       :transaction
       |> insert(
@@ -324,14 +278,12 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
       assert {{:ok,
                %{
                  # including base fee
-                 slow: %{price: 1.5},
-                 average: %{price: 2.5}
+                 slow: %{price: 1.25},
+                 average: %{price: 2.25}
                }}, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
     end
 
     test "return gas prices with time if available" do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)
-
       block1 =
         insert(:block,
           number: 100,
@@ -343,7 +295,10 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         insert(:block,
           number: 101,
           hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729",
-          timestamp: ~U[2023-12-12 12:13:00.000000Z]
+          timestamp: ~U[2023-12-12 12:13:00.000000Z],
+          gas_limit: Decimal.new(10_000_000),
+          gas_used: Decimal.new(5_000_000),
+          base_fee_per_gas: Wei.from(Decimal.new(500_000_000), :wei)
         )
 
       :transaction
@@ -397,18 +352,30 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
       assert {{
                 :ok,
                 %{
-                  average: %{price: 2.5, time: 15000.0},
-                  fast: %{price: 2.5, time: 15000.0},
-                  slow: %{price: 1.5, time: 17500.0}
+                  average: %{price: 2.25, time: 15000.0},
+                  fast: %{price: 2.25, time: 15000.0},
+                  slow: %{price: 1.25, time: 17500.0}
                 }
               }, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
     end
 
     test "return gas prices with average block time if earliest_processing_start is not available" do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options -> {:ok, [%{id: id, result: @block}]} end)
-      old_env = Application.get_env(:explorer, AverageBlockTime)
+      average_block_time_old_env = Application.get_env(:explorer, AverageBlockTime)
+      gas_price_oracle_old_env = Application.get_env(:explorer, GasPriceOracle)
+
+      Application.put_env(:explorer, GasPriceOracle,
+        safelow_time_coefficient: 2.5,
+        average_time_coefficient: 1.5,
+        fast_time_coefficient: 1
+      )
+
       Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
       start_supervised!(AverageBlockTime)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, AverageBlockTime, average_block_time_old_env)
+        Application.put_env(:explorer, GasPriceOracle, gas_price_oracle_old_env)
+      end)
 
       block_number = 99_999_999
       first_timestamp = ~U[2023-12-12 12:12:30.000000Z]
@@ -432,7 +399,10 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
         insert(:block,
           number: block_number + 103,
           consensus: true,
-          timestamp: Timex.shift(first_timestamp, seconds: -7)
+          timestamp: Timex.shift(first_timestamp, seconds: -7),
+          gas_limit: Decimal.new(10_000_000),
+          gas_used: Decimal.new(5_000_000),
+          base_fee_per_gas: Wei.from(Decimal.new(500_000_000), :wei)
         )
 
       AverageBlockTime.refresh()
@@ -484,13 +454,11 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
       assert {{
                 :ok,
                 %{
-                  average: %{price: 2.5, time: 1000.0},
-                  fast: %{price: 2.5, time: 1000.0},
-                  slow: %{price: 1.5, time: 1000.0}
+                  average: %{price: 2.25, time: 1500.0},
+                  fast: %{price: 2.25, time: 1000.0},
+                  slow: %{price: 1.25, time: 2500.0}
                 }
               }, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
-
-      Application.put_env(:explorer, AverageBlockTime, old_env)
     end
   end
 end

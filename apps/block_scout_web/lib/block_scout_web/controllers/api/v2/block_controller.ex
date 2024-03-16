@@ -10,35 +10,78 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       parse_block_hash_or_number_param: 1
     ]
 
-  import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1, select_block_type: 1]
+  import BlockScoutWeb.PagingHelper,
+    only: [delete_parameters_from_next_page_params: 1, select_block_type: 1, type_filter_options: 1]
+
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
 
   alias BlockScoutWeb.API.V2.{TransactionView, WithdrawalView}
   alias Explorer.Chain
 
+  case Application.compile_env(:explorer, :chain_type) do
+    "ethereum" ->
+      @chain_type_transaction_necessity_by_association %{
+        :beacon_blob_transaction => :optional
+      }
+      @chain_type_block_necessity_by_association %{
+        [transactions: :beacon_blob_transaction] => :optional
+      }
+
+    "zksync" ->
+      @chain_type_transaction_necessity_by_association %{}
+      @chain_type_block_necessity_by_association %{
+        :zksync_batch => :optional,
+        :zksync_commit_transaction => :optional,
+        :zksync_prove_transaction => :optional,
+        :zksync_execute_transaction => :optional
+      }
+
+    _ ->
+      @chain_type_transaction_necessity_by_association %{}
+      @chain_type_block_necessity_by_association %{}
+  end
+
   @transaction_necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      :block => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional
-    }
+    necessity_by_association:
+      %{
+        [created_contract_address: :names] => :optional,
+        [from_address: :names] => :optional,
+        [to_address: :names] => :optional,
+        :block => :optional,
+        [created_contract_address: :smart_contract] => :optional,
+        [from_address: :smart_contract] => :optional,
+        [to_address: :smart_contract] => :optional
+      }
+      |> Map.merge(@chain_type_transaction_necessity_by_association)
   ]
 
   @api_true [api?: true]
 
   @block_params [
-    necessity_by_association: %{
-      [miner: :names] => :optional,
-      :uncles => :optional,
-      :nephews => :optional,
-      :rewards => :optional,
-      :transactions => :optional,
-      :withdrawals => :optional
-    },
+    necessity_by_association:
+      %{
+        [miner: :names] => :optional,
+        :uncles => :optional,
+        :nephews => :optional,
+        :rewards => :optional,
+        :transactions => :optional,
+        :withdrawals => :optional
+      }
+      |> Map.merge(@chain_type_block_necessity_by_association),
+    api?: true
+  ]
+
+  @block_params [
+    necessity_by_association:
+      %{
+        [miner: :names] => :optional,
+        :uncles => :optional,
+        :nephews => :optional,
+        :rewards => :optional,
+        :transactions => :optional,
+        :withdrawals => :optional
+      }
+      |> Map.merge(@chain_type_block_necessity_by_association),
     api?: true
   ]
 
@@ -91,6 +134,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       full_options =
         @transaction_necessity_by_association
         |> Keyword.merge(put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true))
+        |> Keyword.merge(type_filter_options(params))
         |> Keyword.merge(@api_true)
 
       transactions_plus_one = Chain.block_to_transactions(block.hash, full_options, false)

@@ -66,6 +66,13 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     end
   end
 
+  @spec get_address(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
+  def get_address(address) do
+    with :ok <- Microservice.check_enabled(__MODULE__) do
+      http_get_request(get_address_url(address), nil)
+    end
+  end
+
   @doc """
     Lookup for ENS domain name via GET {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
@@ -136,6 +143,10 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
 
   defp address_lookup_url do
     "#{addresses_url()}:lookup"
+  end
+
+  defp get_address_url(address) do
+    "#{addresses_url()}/#{address}"
   end
 
   defp domain_lookup_url do
@@ -214,7 +225,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   @doc """
-    Preload ENS info to search result, using address_lookup/1
+    Preload ENS info to search result, using get_address/1
   """
   @spec preload_ens_info_to_search_results(list) :: list
   def preload_ens_info_to_search_results(list) do
@@ -223,7 +234,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
         search_result
 
       %{type: "address"} = search_result ->
-        ens_info = search_result[:address_hash] |> address_lookup() |> parse_lookup_response()
+        ens_info = search_result[:address_hash] |> get_address() |> parse_get_address_response()
         Map.put(search_result, :ens_info, ens_info)
 
       search_result ->
@@ -259,17 +270,32 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
 
   defp parse_lookup_response(_), do: nil
 
-  defp item_to_address_hash_strings(%Transaction{
-         to_address_hash: nil,
-         created_contract_address_hash: created_contract_address_hash,
-         from_address_hash: from_address_hash
-       }) do
-    [to_string(created_contract_address_hash), to_string(from_address_hash)]
+  defp parse_get_address_response(
+         {:ok,
+          %{
+            "domain" => %{
+              "name" => name,
+              "expiry_date" => expiry_date,
+              "resolved_address" => %{"hash" => address_hash_string}
+            },
+            "resolved_domains_count" => resolved_domains_count
+          }}
+       ) do
+    {:ok, hash} = Chain.string_to_address_hash(address_hash_string)
+
+    %{
+      name: name,
+      expiry_date: expiry_date,
+      names_count: resolved_domains_count,
+      address_hash: Address.checksum(hash)
+    }
   end
+
+  defp parse_get_address_response(_), do: nil
 
   defp item_to_address_hash_strings(%Transaction{
          to_address_hash: to_address_hash,
-         created_contract_address_hash: nil,
+         created_contract_address_hash: created_contract_address_hash,
          from_address_hash: from_address_hash,
          token_transfers: token_transfers
        }) do
@@ -282,7 +308,9 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
           []
       end
 
-    [to_string(to_address_hash), to_string(from_address_hash)] ++ token_transfers_addresses
+    ([to_address_hash, created_contract_address_hash, from_address_hash]
+     |> Enum.reject(&is_nil/1)
+     |> Enum.map(&to_string/1)) ++ token_transfers_addresses
   end
 
   defp item_to_address_hash_strings(%TokenTransfer{

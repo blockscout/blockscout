@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.API.V2.Helper
-
+  alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias Explorer.Chain
   alias Explorer.MicroserviceInterfaces.AccountAbstraction
 
@@ -18,6 +18,36 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     operation_hash_string
     |> AccountAbstraction.get_user_ops_by_hash()
     |> process_response(conn)
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/proxy/account-abstraction/operations/:user_operation_hash_param/summary` endpoint.
+  """
+  @spec summary(Plug.Conn.t(), map()) ::
+          {:error | :format | :tx_interpreter_enabled | non_neg_integer(), any()} | Plug.Conn.t()
+  def summary(conn, %{"operation_hash_param" => operation_hash_string, "just_request_body" => "true"}) do
+    with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_transaction_hash(operation_hash_string)},
+         {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
+      conn
+      |> json(TransactionInterpretationService.get_user_op_request_body(user_op))
+    end
+  end
+
+  def summary(conn, %{"operation_hash_param" => operation_hash_string}) do
+    with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_transaction_hash(operation_hash_string)},
+         {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
+         {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
+      {response, code} =
+        case TransactionInterpretationService.interpret_user_operation(user_op) do
+          {:ok, response} -> {response, 200}
+          {:error, %Jason.DecodeError{}} -> {%{error: "Error while tx interpreter response decoding"}, 500}
+          {{:error, error}, code} -> {%{error: error}, code}
+        end
+
+      conn
+      |> put_status(code)
+      |> json(response)
+    end
   end
 
   @doc """
@@ -121,43 +151,66 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   end
 
   defp extended_info(response) do
-    case response do
-      %{"items" => items} ->
-        extended_items =
-          Enum.map(items, fn response_item ->
-            add_address_extended_info(response_item)
-          end)
+    address_hashes =
+      response
+      |> collect_address_hashes()
+      |> Chain.hashes_to_addresses(
+        necessity_by_association: %{
+          :names => :optional,
+          :smart_contract => :optional
+        },
+        api?: true
+      )
+      |> Enum.into(%{}, &{&1.hash, Helper.address_with_info(&1, nil)})
 
-        response
-        |> Map.put("items", extended_items)
-
-      _ ->
-        add_address_extended_info(response)
-    end
+    response |> replace_address_hashes(address_hashes)
   end
 
-  defp add_address_extended_info(response) do
-    @address_fields
-    |> Enum.reduce(response, fn address_output_field, output_response ->
-      if Map.has_key?(output_response, address_output_field) do
-        output_response
-        |> Map.replace(
-          address_output_field,
-          address_info_from_hash_string(Map.get(output_response, address_output_field))
-        )
-      else
-        output_response
+  defp collect_address_hashes(response) do
+    address_hash_strings =
+      case response do
+        %{"items" => items} ->
+          @address_fields |> Enum.flat_map(fn field -> Enum.map(items, & &1[field]) end)
+
+        item ->
+          @address_fields |> Enum.map(&item[&1])
+      end
+
+    address_hash_strings
+    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.uniq()
+    |> Enum.map(fn hash_string ->
+      case Chain.string_to_address_hash(hash_string) do
+        {:ok, hash} -> hash
+        _ -> nil
       end
     end)
+    |> Enum.filter(&(!is_nil(&1)))
   end
 
-  defp address_info_from_hash_string(address_hash_string) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, [], false) do
-      Helper.address_with_info(address, address_hash_string)
-    else
-      _ -> address_hash_string
+  defp replace_address_hashes(response, addresses) do
+    case response do
+      %{"items" => items} ->
+        extended_items = items |> Enum.map(&add_address_extended_info(&1, addresses))
+
+        response |> Map.put("items", extended_items)
+
+      item ->
+        add_address_extended_info(item, addresses)
     end
+  end
+
+  defp add_address_extended_info(response, addresses) do
+    @address_fields
+    |> Enum.reduce(response, fn address_output_field, output_response ->
+      with true <- Map.has_key?(output_response, address_output_field),
+           {:ok, address_hash} <- output_response |> Map.get(address_output_field) |> Chain.string_to_address_hash(),
+           true <- Map.has_key?(addresses, address_hash) do
+        output_response |> Map.replace(address_output_field, Map.get(addresses, address_hash))
+      else
+        _ -> output_response
+      end
+    end)
   end
 
   defp process_response(response, conn) do
@@ -165,12 +218,21 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
       {:error, :disabled} ->
         conn
         |> put_status(501)
-        |> json(extended_info(%{message: "Service is disabled"}))
+        |> json(%{message: "Service is disabled"})
 
       {status_code, response} ->
+        final_json = response |> extended_info() |> try_to_decode_call_data()
+
         conn
         |> put_status(status_code)
-        |> json(extended_info(response))
+        |> json(final_json)
     end
   end
+
+  defp try_to_decode_call_data(%{"call_data" => _call_data} = user_op) do
+    {_mock_tx, _decoded_input, decoded_input_json} = TransactionInterpretationService.decode_user_op_calldata(user_op)
+    Map.put(user_op, "decoded_call_data", decoded_input_json)
+  end
+
+  defp try_to_decode_call_data(response), do: response
 end

@@ -23,37 +23,25 @@ defmodule Explorer.Chain.Address.TokenBalance do
    *  `token_contract_address_hash` - The contract address hash foreign key.
    *  `block_number` - The block's number that the transfer took place.
    *  `value` - The value that's represents the balance.
-   *  `token_id` - The token_id of the transferred token (applicable for ERC-1155 and ERC-721 tokens)
+   *  `token_id` - The token_id of the transferred token (applicable for ERC-1155, ERC-721 and ERC-404 tokens)
    *  `token_type` - The type of the token
   """
-  @type t :: %__MODULE__{
-          address: %Ecto.Association.NotLoaded{} | Address.t(),
-          address_hash: Hash.Address.t(),
-          token: %Ecto.Association.NotLoaded{} | Token.t(),
-          token_contract_address_hash: Hash.Address,
-          block_number: Block.block_number(),
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t(),
-          value: Decimal.t() | nil,
-          token_id: non_neg_integer() | nil,
-          token_type: String.t()
-        }
-
-  schema "address_token_balances" do
+  typed_schema "address_token_balances" do
     field(:value, :decimal)
-    field(:block_number, :integer)
+    field(:block_number, :integer) :: Block.block_number()
     field(:value_fetched_at, :utc_datetime_usec)
     field(:token_id, :decimal)
-    field(:token_type, :string)
+    field(:token_type, :string, null: false)
 
-    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
+    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address, null: false)
 
     belongs_to(
       :token,
       Token,
       foreign_key: :token_contract_address_hash,
       references: :contract_address_hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     timestamps()
@@ -88,7 +76,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
         tb in TokenBalance,
         where:
           ((tb.address_hash != ^@burn_address_hash and tb.token_type == "ERC-721") or tb.token_type == "ERC-20" or
-             tb.token_type == "ERC-1155") and
+             tb.token_type == "ERC-1155" or tb.token_type == "ERC-404") and
             (is_nil(tb.value_fetched_at) or is_nil(tb.value))
       )
     else
@@ -98,7 +86,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
         on: tb.token_contract_address_hash == t.contract_address_hash,
         where:
           ((tb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or
-             t.type == "ERC-1155") and
+             t.type == "ERC-1155" or t.type == "ERC-404") and
             (is_nil(tb.value_fetched_at) or is_nil(tb.value))
       )
     end

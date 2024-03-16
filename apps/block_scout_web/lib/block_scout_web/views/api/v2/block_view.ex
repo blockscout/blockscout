@@ -53,8 +53,8 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "uncles_hashes" => prepare_uncles(block.uncle_relations),
       # "state_root" => "TODO",
       "rewards" => prepare_rewards(block.rewards, block, single_block?),
-      "gas_target_percentage" => gas_target(block),
-      "gas_used_percentage" => gas_used_percentage(block),
+      "gas_target_percentage" => Block.gas_target(block),
+      "gas_used_percentage" => Block.gas_used_percentage(block),
       "burnt_fees_percentage" => burnt_fees_percentage(burnt_fees, transaction_fees),
       "type" => block |> BlockView.block_type() |> String.downcase(),
       "tx_fees" => transaction_fees,
@@ -84,29 +84,11 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     %{"hash" => uncle_relation.uncle_hash}
   end
 
-  def gas_target(block) do
-    if Decimal.compare(block.gas_limit, 0) == :gt do
-      elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
-      ratio = Decimal.div(block.gas_used, Decimal.div(block.gas_limit, elasticity_multiplier))
-      ratio |> Decimal.sub(1) |> Decimal.mult(100) |> Decimal.to_float()
-    else
-      Decimal.new(0)
-    end
-  end
-
-  def gas_used_percentage(block) do
-    if Decimal.compare(block.gas_limit, 0) == :gt do
-      block.gas_used |> Decimal.div(block.gas_limit) |> Decimal.mult(100) |> Decimal.to_float()
-    else
-      Decimal.new(0)
-    end
-  end
-
   def burnt_fees_percentage(_, %Decimal{coef: 0}), do: nil
 
   def burnt_fees_percentage(burnt_fees, transaction_fees)
       when not is_nil(transaction_fees) and not is_nil(burnt_fees) do
-    burnt_fees.value |> Decimal.div(transaction_fees) |> Decimal.mult(100) |> Decimal.to_float()
+    burnt_fees |> Decimal.div(transaction_fees) |> Decimal.mult(100) |> Decimal.to_float()
   end
 
   def burnt_fees_percentage(_, _), do: nil
@@ -117,18 +99,36 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   def count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
   def count_withdrawals(_), do: nil
 
-  defp chain_type_fields(result, block, single_block?) do
-    case single_block? && Application.get_env(:explorer, :chain_type) do
-      "rsk" ->
-        result
-        |> Map.put("minimum_gas_price", block.minimum_gas_price)
-        |> Map.put("bitcoin_merged_mining_header", block.bitcoin_merged_mining_header)
-        |> Map.put("bitcoin_merged_mining_coinbase_transaction", block.bitcoin_merged_mining_coinbase_transaction)
-        |> Map.put("bitcoin_merged_mining_merkle_proof", block.bitcoin_merged_mining_merkle_proof)
-        |> Map.put("hash_for_merged_mining", block.hash_for_merged_mining)
+  case Application.compile_env(:explorer, :chain_type) do
+    "rsk" ->
+      defp chain_type_fields(result, block, single_block?) do
+        if single_block? do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+          BlockScoutWeb.API.V2.RootstockView.extend_block_json_response(result, block)
+        else
+          result
+        end
+      end
 
-      _ ->
+    "zksync" ->
+      defp chain_type_fields(result, block, single_block?) do
+        if single_block? do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+          BlockScoutWeb.API.V2.ZkSyncView.extend_block_json_response(result, block)
+        else
+          result
+        end
+      end
+
+    "ethereum" ->
+      defp chain_type_fields(result, block, single_block?) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.EthereumView.extend_block_json_response(result, block, single_block?)
+      end
+
+    _ ->
+      defp chain_type_fields(result, _block, _single_block?) do
         result
-    end
+      end
   end
 end

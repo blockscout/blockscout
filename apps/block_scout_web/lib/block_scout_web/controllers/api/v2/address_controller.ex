@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       delete_parameters_from_next_page_params: 1,
       token_transfers_types_options: 1,
       address_transactions_sorting: 1,
-      nft_token_types_options: 1
+      nft_types_options: 1
     ]
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
@@ -48,7 +48,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       :to_address => :optional,
       :from_address => :optional,
       :block => :optional,
-      :transaction => :optional
+      :transaction => :optional,
+      :token => :optional
     },
     api?: true
   ]
@@ -448,7 +449,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           address_hash,
           params
           |> paging_options()
-          |> Keyword.merge(nft_token_types_options(params))
+          |> Keyword.merge(nft_types_options(params))
           |> Keyword.merge(@api_true)
           |> Keyword.merge(@nft_necessity_by_association)
         )
@@ -476,7 +477,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           address_hash,
           params
           |> paging_options()
-          |> Keyword.merge(nft_token_types_options(params))
+          |> Keyword.merge(nft_types_options(params))
           |> Keyword.merge(@api_true)
           |> Keyword.merge(@nft_necessity_by_association)
         )

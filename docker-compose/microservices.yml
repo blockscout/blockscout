@@ -27,6 +27,9 @@ services:
       service: stats-db-init
 
   stats-db:
+    depends_on:
+      stats-db-init:
+        condition: service_completed_successfully
     extends:
       file: ./services/stats.yml
       service: stats-db
@@ -34,6 +37,7 @@ services:
   stats:
     depends_on:
       - stats-db
+      - backend
     extends:
       file: ./services/stats.yml
       service: stats

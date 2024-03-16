@@ -102,6 +102,35 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       assert %{"6d4ce63c" => {:error, "no function clause matches"}} = response
     end
+
+    test "with function ABI that is missing the outputs field" do
+      smart_contract =
+        build(:smart_contract,
+          abi: [
+            %{
+              "type" => "function",
+              "stateMutability" => "view",
+              "name" => "assumeLastTokenIdMatches",
+              "inputs" => [
+                %{
+                  "type" => "uint256",
+                  "name" => "lastTokenId",
+                  "internalType" => "uint256"
+                }
+              ]
+            }
+          ]
+        )
+
+      contract_address_hash = Hash.to_string(smart_contract.address_hash)
+      abi = smart_contract.abi
+
+      blockchain_get_function_mock()
+
+      response = Reader.query_contract(contract_address_hash, abi, %{"e72878b4" => [123]}, false)
+
+      assert response == %{"e72878b4" => {:ok, []}}
+    end
   end
 
   describe "query_verified_contract/3" do

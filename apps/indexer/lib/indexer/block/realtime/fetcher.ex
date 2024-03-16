@@ -9,10 +9,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
   require Indexer.Tracer
   require Logger
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   import Indexer.Block.Fetcher,
     only: [
+      async_import_realtime_coin_balances: 1,
+      async_import_blobs: 1,
       async_import_block_rewards: 1,
       async_import_created_contract_codes: 1,
       async_import_internal_transactions: 1,
@@ -21,23 +23,24 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_token_balances: 1,
       async_import_token_instances: 1,
       async_import_uncles: 1,
+      async_import_polygon_zkevm_bridge_l1_tokens: 1,
       fetch_and_import_range: 2
     ]
 
   alias Ecto.Changeset
-  alias EthereumJSONRPC.{FetchedBalances, Subscription}
+  alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
-  alias Indexer.Fetcher.{CoinBalance, CoinBalanceDailyUpdater}
+  alias Indexer.Fetcher.Optimism.TxnBatch, as: OptimismTxnBatch
+  alias Indexer.Fetcher.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
+  alias Indexer.Fetcher.PolygonZkevm.BridgeL2, as: PolygonZkevmBridgeL2
   alias Indexer.Fetcher.Shibarium.L2, as: ShibariumBridgeL2
   alias Indexer.Prometheus
-  alias Indexer.Transform.Addresses
   alias Timex.Duration
 
   @behaviour Block.Fetcher
@@ -127,14 +130,18 @@ defmodule Indexer.Block.Realtime.Fetcher do
     new_previous_number =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
         {:ok, number} when is_nil(previous_number) or number != previous_number ->
-          if abnormal_gap?(number, previous_number) do
-            new_number = max(number, previous_number)
-            start_fetch_and_import(new_number, block_fetcher, previous_number)
-            new_number
-          else
-            start_fetch_and_import(number, block_fetcher, previous_number)
-            number
-          end
+          number =
+            if abnormal_gap?(number, previous_number) do
+              new_number = max(number, previous_number)
+              start_fetch_and_import(new_number, block_fetcher, previous_number)
+              new_number
+            else
+              start_fetch_and_import(number, block_fetcher, previous_number)
+              number
+            end
+
+          fetch_validators_async()
+          number
 
         _ ->
           previous_number
@@ -153,6 +160,16 @@ defmodule Indexer.Block.Realtime.Fetcher do
   # don't handle other messages (e.g. :ssl_closed)
   def handle_info(_, state) do
     {:noreply, state}
+  end
+
+  if Application.compile_env(:explorer, :chain_type) == "stability" do
+    defp fetch_validators_async do
+      GenServer.cast(Indexer.Fetcher.Stability.Validator, :update_validators_list)
+    end
+  else
+    defp fetch_validators_async do
+      :ignore
+    end
   end
 
   defp subscribe_to_new_heads(%__MODULE__{subscription: nil} = state, subscribe_named_arguments)
@@ -192,42 +209,20 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @import_options ~w(address_hash_to_fetched_balance_block_number)a
 
   @impl Block.Fetcher
-  def import(
-        block_fetcher,
-        %{
-          address_coin_balances: %{params: address_coin_balances_params},
-          addresses: %{params: addresses_params},
-          block_rewards: block_rewards
-        } = options
-      ) do
-    with {:balances,
-          {:ok,
-           %{
-             addresses_params: balances_addresses_params,
-             balances_params: balances_params,
-             balances_daily_params: balances_daily_params
-           }}} <-
-           {:balances,
-            balances(block_fetcher, %{
-              addresses_params: addresses_params,
-              balances_params: address_coin_balances_params
-            })},
-         {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors),
-         chain_import_options =
-           options
-           |> Map.drop(@import_options)
-           |> put_in([:addresses, :params], balances_addresses_params)
-           |> put_in([:blocks, :params, Access.all(), :consensus], true)
-           |> put_in([:block_rewards], chain_import_block_rewards)
-           |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params),
-         CoinBalanceDailyUpdater.add_daily_balances_params(balances_daily_params),
-         {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
+  def import(_block_fetcher, %{block_rewards: block_rewards} = options) do
+    {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors)
+
+    chain_import_options =
+      options
+      |> Map.drop(@import_options)
+      |> put_in([:blocks, :params, Access.all(), :consensus], true)
+      |> put_in([:block_rewards], chain_import_block_rewards)
+
+    with {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(
         imported,
         %{block_rewards: %{errors: block_reward_errors}}
       )
-
-      Accounts.drop(imported[:addresses])
 
       ok
     end
@@ -285,11 +280,17 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Indexer.Logger.metadata(
       fn ->
         if reorg? do
+          # we need to remove all rows from `op_transaction_batches` and `op_withdrawals` tables previously written starting from reorg block number
+          remove_optimism_assets_by_number(block_number_to_fetch)
+
           # we need to remove all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables previously written starting from reorg block number
           remove_polygon_edge_assets_by_number(block_number_to_fetch)
 
           # we need to remove all rows from `shibarium_bridge` table previously written starting from reorg block number
           remove_shibarium_assets_by_number(block_number_to_fetch)
+
+          # we need to remove all rows from `polygon_zkevm_bridge` table previously written starting from reorg block number
+          remove_polygon_zkevm_assets_by_number(block_number_to_fetch)
 
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
@@ -303,10 +304,23 @@ defmodule Indexer.Block.Realtime.Fetcher do
     )
   end
 
+  defp remove_optimism_assets_by_number(block_number_to_fetch) do
+    if Application.get_env(:explorer, :chain_type) == "optimism" do
+      OptimismTxnBatch.handle_l2_reorg(block_number_to_fetch)
+      OptimismWithdrawal.remove(block_number_to_fetch)
+    end
+  end
+
   defp remove_polygon_edge_assets_by_number(block_number_to_fetch) do
     if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
       Withdrawal.remove(block_number_to_fetch)
       DepositExecute.remove(block_number_to_fetch)
+    end
+  end
+
+  defp remove_polygon_zkevm_assets_by_number(block_number_to_fetch) do
+    if Application.get_env(:explorer, :chain_type) == "polygon_zkevm" do
+      PolygonZkevmBridgeL2.reorg_handle(block_number_to_fetch)
     end
   end
 
@@ -431,6 +445,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
          imported,
          %{block_rewards: %{errors: block_reward_errors}}
        ) do
+    async_import_realtime_coin_balances(imported)
     async_import_block_rewards(block_reward_errors)
     async_import_created_contract_codes(imported)
     async_import_internal_transactions(imported)
@@ -439,59 +454,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_token_instances(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
-  end
-
-  defp balances(
-         %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
-         %{addresses_params: addresses_params} = options
-       ) do
-    case options
-         |> fetch_balances_params_list()
-         |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, CoinBalance.batch_size()) do
-      {:ok, %FetchedBalances{params_list: params_list, errors: []}} ->
-        merged_addresses_params =
-          %{address_coin_balances: params_list}
-          |> Addresses.extract_addresses()
-          |> Kernel.++(addresses_params)
-          |> Addresses.merge_addresses()
-
-        value_fetched_at = DateTime.utc_now()
-
-        importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
-
-        block_timestamp_map = CoinBalance.block_timestamp_map(params_list, json_rpc_named_arguments)
-
-        importable_balances_daily_params =
-          Enum.map(params_list, fn param ->
-            day = Map.get(block_timestamp_map, "#{param.block_number}")
-            (day && Map.put(param, :day, day)) || param
-          end)
-
-        {:ok,
-         %{
-           addresses_params: merged_addresses_params,
-           balances_params: importable_balances_params,
-           balances_daily_params: importable_balances_daily_params
-         }}
-
-      {:error, _} = error ->
-        error
-
-      {:ok, %FetchedBalances{errors: errors}} ->
-        {:error, errors}
-    end
-  end
-
-  defp fetch_balances_params_list(%{balances_params: balances_params}) do
-    balances_params
-    |> balances_params_to_fetch_balances_params_set()
-    # stable order for easier moxing
-    |> Enum.sort_by(fn %{hash_data: hash_data, block_quantity: block_quantity} -> {hash_data, block_quantity} end)
-  end
-
-  defp balances_params_to_fetch_balances_params_set(balances_params) do
-    Enum.into(balances_params, MapSet.new(), fn %{address_hash: address_hash, block_number: block_number} ->
-      %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
-    end)
+    async_import_blobs(imported)
+    async_import_polygon_zkevm_bridge_l1_tokens(imported)
   end
 end

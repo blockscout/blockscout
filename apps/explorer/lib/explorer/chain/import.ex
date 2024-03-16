@@ -123,7 +123,7 @@ defmodule Explorer.Chain.Import do
       milliseconds.
   #{@runner_options_doc}
   """
-  @spec all(all_options()) :: all_result()
+  # @spec all(all_options()) :: all_result()
   def all(options) when is_map(options) do
     with {:ok, runner_options_pairs} <- validate_options(options),
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),

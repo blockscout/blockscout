@@ -294,8 +294,8 @@ defmodule Explorer.EtherscanTest do
       end
 
       options = %{
-        start_block: second_block.number,
-        end_block: third_block.number
+        startblock: second_block.number,
+        endblock: third_block.number
       }
 
       found_transactions = Etherscan.list_transactions(address.hash, options)
@@ -309,7 +309,7 @@ defmodule Explorer.EtherscanTest do
       end
     end
 
-    test "with start_block but no end_block option" do
+    test "with startblock but no endblock option" do
       blocks = [_, _, third_block, fourth_block] = insert_list(4, :block)
       address = insert(:address)
 
@@ -320,7 +320,7 @@ defmodule Explorer.EtherscanTest do
       end
 
       options = %{
-        start_block: third_block.number
+        startblock: third_block.number
       }
 
       found_transactions = Etherscan.list_transactions(address.hash, options)
@@ -334,7 +334,7 @@ defmodule Explorer.EtherscanTest do
       end
     end
 
-    test "with end_block but no start_block option" do
+    test "with endblock but no startblock option" do
       blocks = [first_block, second_block, _, _] = insert_list(4, :block)
       address = insert(:address)
 
@@ -345,7 +345,7 @@ defmodule Explorer.EtherscanTest do
       end
 
       options = %{
-        end_block: second_block.number
+        endblock: second_block.number
       }
 
       found_transactions = Etherscan.list_transactions(address.hash, options)
@@ -973,8 +973,8 @@ defmodule Explorer.EtherscanTest do
       end
 
       options = %{
-        start_block: second_block.number,
-        end_block: third_block.number
+        startblock: second_block.number,
+        endblock: third_block.number
       }
 
       found_internal_transactions = Etherscan.list_internal_transactions(address.hash, options)
@@ -1365,8 +1365,8 @@ defmodule Explorer.EtherscanTest do
       end
 
       options = %{
-        start_block: second_block.number,
-        end_block: third_block.number
+        startblock: second_block.number,
+        endblock: third_block.number
       }
 
       found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
@@ -1380,7 +1380,7 @@ defmodule Explorer.EtherscanTest do
       end
     end
 
-    test "with start_block but no end_block option" do
+    test "with startblock but no endblock option" do
       blocks = [_, _, third_block, fourth_block] = insert_list(4, :block)
       address = insert(:address)
 
@@ -1398,7 +1398,7 @@ defmodule Explorer.EtherscanTest do
         )
       end
 
-      options = %{start_block: third_block.number}
+      options = %{startblock: third_block.number}
 
       found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
 
@@ -1411,7 +1411,7 @@ defmodule Explorer.EtherscanTest do
       end
     end
 
-    test "with end_block but no start_block option" do
+    test "with endblock but no startblock option" do
       blocks = [first_block, second_block, _, _] = insert_list(4, :block)
       address = insert(:address)
 
@@ -1429,7 +1429,7 @@ defmodule Explorer.EtherscanTest do
         )
       end
 
-      options = %{end_block: second_block.number}
+      options = %{endblock: second_block.number}
 
       found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
 

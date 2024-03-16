@@ -22,7 +22,10 @@ defmodule Indexer.Transform.AddressTokenBalances do
                                acc
                                when is_integer(block_number) and is_binary(from_address_hash) and
                                       is_binary(to_address_hash) and is_binary(token_contract_address_hash) ->
-      Enum.reduce(token_ids || [nil], acc, fn id, sub_acc ->
+      sanitized_token_ids =
+        if is_nil(token_ids) || (is_list(token_ids) && Enum.empty?(token_ids)), do: [nil], else: token_ids
+
+      Enum.reduce(sanitized_token_ids, acc, fn id, sub_acc ->
         sub_acc
         |> add_token_balance_address(from_address_hash, token_contract_address_hash, id, token_type, block_number)
         |> add_token_balance_address(to_address_hash, token_contract_address_hash, id, token_type, block_number)

@@ -44,8 +44,6 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp default_init do
-    MissingBlockRange.sanitize_missing_block_ranges()
-
     {min_number, max_number} = get_initial_min_max()
 
     clear_to_bounds(min_number, max_number)
@@ -147,14 +145,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       {:noreply, %{state | min_fetched_block_number: new_min_number}}
     else
       Process.send_after(self(), :update_past, @past_check_interval * 100)
-      {:noreply, %{state | min_fetched_block_number: reset_min_fetched_block_number(state.max_fetched_block_number)}}
-    end
-  end
-
-  defp reset_min_fetched_block_number(max_fetched_block_number) do
-    case MissingBlockRange.fetch_min_max() do
-      %{min: nil} -> max_fetched_block_number
-      %{min: min} -> min
+      {:noreply, %{state | min_fetched_block_number: state.max_fetched_block_number}}
     end
   end
 

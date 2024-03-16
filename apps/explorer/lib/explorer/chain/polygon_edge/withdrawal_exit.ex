@@ -13,19 +13,12 @@ defmodule Explorer.Chain.PolygonEdge.WithdrawalExit do
   * `l1_block_number` - block number of the L1 transaction
   * `success` - a status of onL2StateReceive internal call (namely internal withdrawal transaction)
   """
-  @type t :: %__MODULE__{
-          msg_id: non_neg_integer(),
-          l1_transaction_hash: Hash.t(),
-          l1_block_number: Block.block_number(),
-          success: boolean()
-        }
-
   @primary_key false
-  schema "polygon_edge_withdrawal_exits" do
-    field(:msg_id, :integer, primary_key: true)
-    field(:l1_transaction_hash, Hash.Full)
-    field(:l1_block_number, :integer)
-    field(:success, :boolean)
+  typed_schema "polygon_edge_withdrawal_exits" do
+    field(:msg_id, :integer, primary_key: true, null: false)
+    field(:l1_transaction_hash, Hash.Full, null: false)
+    field(:l1_block_number, :integer) :: Block.block_number()
+    field(:success, :boolean, null: false)
 
     timestamps()
   end

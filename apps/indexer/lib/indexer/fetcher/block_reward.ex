@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.BlockReward do
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.BlockReward.Supervisor, as: BlockRewardSupervisor
-  alias Indexer.Fetcher.CoinBalance
+  alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Transform.{AddressCoinBalances, Addresses}
 
   @behaviour BufferedTask
@@ -133,7 +133,7 @@ defmodule Indexer.Fetcher.BlockReward do
           {:ok, %{address_coin_balances: address_coin_balances, addresses: addresses}} ->
             Accounts.drop(addresses)
 
-            CoinBalance.async_fetch_balances(address_coin_balances)
+            CoinBalanceCatchup.async_fetch_balances(address_coin_balances)
 
             retry_errors(errors)
 
@@ -325,7 +325,7 @@ defmodule Indexer.Fetcher.BlockReward do
 
   defp fetched_beneficiary_error_to_iodata(%{code: code, message: message, data: %{block_quantity: block_quantity}})
        when is_integer(code) and is_binary(message) and is_binary(block_quantity) do
-    ["@", quantity_to_integer(block_quantity), ": (", to_string(code), ") ", message, ?\n]
+    ["@", block_quantity |> quantity_to_integer() |> to_string(), ": (", to_string(code), ") ", message, ?\n]
   end
 
   defp defaults do

@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Tokens.Instance.MetadataController do
          false <- Chain.erc_20_token?(token),
          {token_id, ""} <- Integer.parse(token_id_str),
          {:ok, token_instance} <-
-           Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, hash) do
+           Chain.nft_instance_from_token_id_and_token_address(token_id, hash) do
       if token_instance.metadata do
         Helper.render(conn, token_instance, hash, token_id, token)
       else
