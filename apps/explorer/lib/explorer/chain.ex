@@ -2867,19 +2867,6 @@ defmodule Explorer.Chain do
       ) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    gas_hex =
-      if gas do
-        gas_hex_without_prefix =
-          gas
-          |> Decimal.to_integer()
-          |> Integer.to_string(16)
-          |> String.downcase()
-
-        "0x" <> gas_hex_without_prefix
-      else
-        "0x0"
-      end
-
     req =
       EthereumJSONRPCTransaction.eth_call_request(
         0,
@@ -2887,7 +2874,7 @@ defmodule Explorer.Chain do
         data,
         to_address_hash,
         from_address_hash,
-        gas_hex,
+        Wei.hex_format(gas),
         Wei.hex_format(gas_price),
         Wei.hex_format(value)
       )
