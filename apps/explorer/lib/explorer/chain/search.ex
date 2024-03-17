@@ -29,6 +29,9 @@ defmodule Explorer.Chain.Search do
     UserOperation
   }
 
+  @max_safe_integer round(:math.pow(2, 63)) - 1
+  @min_safe_integer -round(:math.pow(2, 63))
+
   @doc """
     Search function used in web interface. Returns paginated search results
   """
@@ -467,6 +470,20 @@ defmodule Explorer.Chain.Search do
     )
   end
 
+  defp safe_parse_integer(string) do
+    case Integer.parse(string) do
+      {num, ""} ->
+        if @min_safe_integer < num and num <= @max_safe_integer do
+          {:ok, num}
+        else
+          {:error, "Integer is too large"}
+        end
+
+      _ ->
+        {:error, "Invalid integer"}
+    end
+  end
+
   defp search_block_query(term) do
     block_search_fields =
       search_fields()
@@ -484,8 +501,8 @@ defmodule Explorer.Chain.Search do
         )
 
       _ ->
-        case Integer.parse(term) do
-          {block_number, ""} ->
+        case safe_parse_integer(term) do
+          {:ok, block_number} ->
             from(block in Block,
               where: block.number == ^block_number,
               select: ^block_search_fields
