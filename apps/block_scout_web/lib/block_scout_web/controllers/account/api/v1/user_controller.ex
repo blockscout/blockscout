@@ -146,12 +146,15 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
           "ERC-721" => %{
             "incoming" => watch_erc_721_input,
             "outcoming" => watch_erc_721_output
-          }
-          # ,
+          },
           # "ERC-1155" => %{
           #   "incoming" => watch_erc_1155_input,
           #   "outcoming" => watch_erc_1155_output
-          # }
+          # },
+          "ERC-404" => %{
+            "incoming" => watch_erc_404_input,
+            "outcoming" => watch_erc_404_output
+          }
         },
         "notification_methods" => %{
           "email" => notify_email
@@ -167,6 +170,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       watch_erc_721_output: watch_erc_721_output,
       watch_erc_1155_input: watch_erc_721_input,
       watch_erc_1155_output: watch_erc_721_output,
+      watch_erc_404_input: watch_erc_404_input,
+      watch_erc_404_output: watch_erc_404_output,
       notify_email: notify_email,
       address_hash: address_hash
     }
@@ -202,12 +207,15 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
           "ERC-721" => %{
             "incoming" => watch_erc_721_input,
             "outcoming" => watch_erc_721_output
-          }
-          # ,
+          },
           # "ERC-1155" => %{
           #   "incoming" => watch_erc_1155_input,
           #   "outcoming" => watch_erc_1155_output
-          # }
+          # },
+          "ERC-404" => %{
+            "incoming" => watch_erc_404_input,
+            "outcoming" => watch_erc_404_output
+          }
         },
         "notification_methods" => %{
           "email" => notify_email
@@ -224,6 +232,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       watch_erc_721_output: watch_erc_721_output,
       watch_erc_1155_input: watch_erc_721_input,
       watch_erc_1155_output: watch_erc_721_output,
+      watch_erc_404_input: watch_erc_404_input,
+      watch_erc_404_output: watch_erc_404_output,
       notify_email: notify_email,
       address_hash: address_hash
     }

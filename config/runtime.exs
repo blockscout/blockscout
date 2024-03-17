@@ -193,10 +193,10 @@ config :explorer,
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
   allowed_solidity_evm_versions:
     System.get_env("CONTRACT_VERIFICATION_ALLOWED_SOLIDITY_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,shanghai,default",
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,shanghai,cancun,default",
   allowed_vyper_evm_versions:
     System.get_env("CONTRACT_VERIFICATION_ALLOWED_VYPER_EVM_VERSIONS") ||
-      "byzantium,constantinople,petersburg,istanbul,berlin,paris,shanghai,default",
+      "byzantium,constantinople,petersburg,istanbul,berlin,paris,shanghai,cancun,default",
   include_uncles_in_average_block_time: ConfigHelper.parse_bool_env_var("UNCLES_IN_AVERAGE_BLOCK_TIME"),
   healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTHY_BLOCKS_PERIOD", "5m"),
   realtime_events_sender:
@@ -253,7 +253,10 @@ config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   num_of_blocks: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_NUM_OF_BLOCKS", 200),
   safelow_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_SAFELOW_PERCENTILE", 35),
   average_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_AVERAGE_PERCENTILE", 60),
-  fast_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_FAST_PERCENTILE", 90)
+  fast_percentile: ConfigHelper.parse_integer_env_var("GAS_PRICE_ORACLE_FAST_PERCENTILE", 90),
+  safelow_time_coefficient: ConfigHelper.parse_float_env_var("GAS_PRICE_ORACLE_SAFELOW_TIME_COEFFICIENT", 5),
+  average_time_coefficient: ConfigHelper.parse_float_env_var("GAS_PRICE_ORACLE_AVERAGE_TIME_COEFFICIENT", 3),
+  fast_time_coefficient: ConfigHelper.parse_float_env_var("GAS_PRICE_ORACLE_FAST_TIME_COEFFICIENT", 1)
 
 config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
   enabled: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "rsk",
@@ -288,6 +291,21 @@ config :explorer, Explorer.Counters.AddressTokenUsdSum,
 config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
 
+config :explorer, Explorer.Counters.LastOutputRootSizeCounter,
+  enabled: ConfigHelper.chain_type() == "optimism",
+  enable_consolidation: ConfigHelper.chain_type() == "optimism",
+  cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_LAST_OUTPUT_ROOT_SIZE_COUNTER_PERIOD", "5m")
+
+config :explorer, Explorer.Counters.Transactions24hStats,
+  enabled: true,
+  cache_period: ConfigHelper.parse_time_env_var("CACHE_TRANSACTIONS_24H_STATS_PERIOD", "1h"),
+  enable_consolidation: true
+
+config :explorer, Explorer.Counters.FreshPendingTransactionsCounter,
+  enabled: true,
+  cache_period: ConfigHelper.parse_time_env_var("CACHE_FRESH_PENDING_TRANSACTIONS_COUNTER_PERIOD", "5m"),
+  enable_consolidation: true
+
 config :explorer, Explorer.ExchangeRates,
   store: :ets,
   enabled: !disable_exchange_rates?,
@@ -296,19 +314,30 @@ config :explorer, Explorer.ExchangeRates,
 config :explorer, Explorer.ExchangeRates.Source,
   source: ConfigHelper.exchange_rates_source(),
   price_source: ConfigHelper.exchange_rates_price_source(),
+  secondary_coin_price_source: ConfigHelper.exchange_rates_secondary_coin_price_source(),
   market_cap_source: ConfigHelper.exchange_rates_market_cap_source(),
   tvl_source: ConfigHelper.exchange_rates_tvl_source()
 
+cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
+
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
   api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
-  coin_id: System.get_env("EXCHANGE_RATES_COINMARKETCAP_COIN_ID")
+  coin_id: System.get_env("EXCHANGE_RATES_COINMARKETCAP_COIN_ID"),
+  secondary_coin_id: cmc_secondary_coin_id
+
+cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_ID")
 
 config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
   platform: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
   api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
-  coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID")
+  coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
+  secondary_coin_id: cg_secondary_coin_id
 
 config :explorer, Explorer.ExchangeRates.Source.DefiLlama, coin_id: System.get_env("EXCHANGE_RATES_DEFILLAMA_COIN_ID")
+
+cc_secondary_coin_symbol = System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL")
+
+config :explorer, Explorer.Market.History.Source.Price.CryptoCompare, secondary_coin_symbol: cc_secondary_coin_symbol
 
 config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
   enabled: !ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_EXCHANGE_RATE", "true"),
@@ -318,7 +347,8 @@ config :explorer, Explorer.ExchangeRates.TokenExchangeRates,
 
 config :explorer, Explorer.Market.History.Cataloger,
   enabled: !disable_indexer? && !disable_exchange_rates?,
-  history_fetch_interval: ConfigHelper.parse_time_env_var("MARKET_HISTORY_FETCH_INTERVAL", "1h")
+  history_fetch_interval: ConfigHelper.parse_time_env_var("MARKET_HISTORY_FETCH_INTERVAL", "1h"),
+  secondary_coin_enabled: cmc_secondary_coin_id || cg_secondary_coin_id || cc_secondary_coin_symbol
 
 config :explorer, Explorer.Chain.Transaction, suave_bid_contracts: System.get_env("SUAVE_BID_CONTRACTS", "")
 
@@ -560,9 +590,7 @@ config :indexer, Indexer.Fetcher.TransactionAction,
     )
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
-  disabled?:
-    System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu" ||
-      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER")
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER")
 
 config :indexer, Indexer.Fetcher.Token, concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_CONCURRENCY", 10)
 
@@ -684,7 +712,6 @@ config :indexer, Indexer.Fetcher.CoinBalance.Realtime,
   batch_size: coin_balances_batch_size,
   concurrency: coin_balances_concurrency
 
-config :indexer, Indexer.Fetcher.Optimism.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
 config :indexer, Indexer.Fetcher.Optimism.TxnBatch.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
 config :indexer, Indexer.Fetcher.Optimism.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
@@ -715,6 +742,7 @@ config :indexer, Indexer.Fetcher.Optimism.TxnBatch,
   batch_inbox: System.get_env("INDEXER_OPTIMISM_L1_BATCH_INBOX"),
   batch_submitter: System.get_env("INDEXER_OPTIMISM_L1_BATCH_SUBMITTER"),
   blocks_chunk_size: System.get_env("INDEXER_OPTIMISM_L1_BATCH_BLOCKS_CHUNK_SIZE", "4"),
+  blobs_api_url: System.get_env("INDEXER_OPTIMISM_L1_BATCH_BLOCKSCOUT_BLOBS_API_URL"),
   genesis_block_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_BATCH_GENESIS_BLOCK_NUMBER")
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
@@ -752,6 +780,21 @@ config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal,
 config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit,
   start_block_l1: System.get_env("INDEXER_POLYGON_EDGE_L1_WITHDRAWALS_START_BLOCK"),
   exit_helper: System.get_env("INDEXER_POLYGON_EDGE_L1_EXIT_HELPER_CONTRACT")
+
+config :indexer, Indexer.Fetcher.ZkSync.TransactionBatch,
+  chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_ZKSYNC_BATCHES_CHUNK_SIZE", 50),
+  batches_max_range: ConfigHelper.parse_integer_env_var("INDEXER_ZKSYNC_NEW_BATCHES_MAX_RANGE", 50),
+  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ZKSYNC_NEW_BATCHES_RECHECK_INTERVAL", 60)
+
+config :indexer, Indexer.Fetcher.ZkSync.TransactionBatch.Supervisor,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_ZKSYNC_BATCHES_ENABLED")
+
+config :indexer, Indexer.Fetcher.ZkSync.BatchesStatusTracker,
+  zksync_l1_rpc: System.get_env("INDEXER_ZKSYNC_L1_RPC"),
+  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ZKSYNC_BATCHES_STATUS_RECHECK_INTERVAL", 60)
+
+config :indexer, Indexer.Fetcher.ZkSync.BatchesStatusTracker.Supervisor,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_ZKSYNC_BATCHES_ENABLED")
 
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
   disabled?:

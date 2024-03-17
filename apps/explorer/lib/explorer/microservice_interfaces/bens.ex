@@ -294,16 +294,8 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp parse_get_address_response(_), do: nil
 
   defp item_to_address_hash_strings(%Transaction{
-         to_address_hash: nil,
-         created_contract_address_hash: created_contract_address_hash,
-         from_address_hash: from_address_hash
-       }) do
-    [to_string(created_contract_address_hash), to_string(from_address_hash)]
-  end
-
-  defp item_to_address_hash_strings(%Transaction{
          to_address_hash: to_address_hash,
-         created_contract_address_hash: nil,
+         created_contract_address_hash: created_contract_address_hash,
          from_address_hash: from_address_hash,
          token_transfers: token_transfers
        }) do
@@ -316,7 +308,9 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
           []
       end
 
-    [to_string(to_address_hash), to_string(from_address_hash)] ++ token_transfers_addresses
+    ([to_address_hash, created_contract_address_hash, from_address_hash]
+     |> Enum.reject(&is_nil/1)
+     |> Enum.map(&to_string/1)) ++ token_transfers_addresses
   end
 
   defp item_to_address_hash_strings(%TokenTransfer{

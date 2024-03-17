@@ -1126,13 +1126,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                      "tuple[bytes32,uint256,bytes32,uint256,address,address,uint256,bool,tuple[address,bytes32[],bytes][]]",
                    "value" => [
                      "0xfe6a43fa23a0269092cbf97cb908e1d5a49a18fd6942baf2467fb5b221e39ab2",
-                     1000,
+                     "1000",
                      "0xfe6a43fa23a0269092cbf97cb908e1d5a49a18fd6942baf2467fb5b221e39ab2",
-                     10,
+                     "10",
                      "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
                      "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
-                     123_123,
-                     true,
+                     "123123",
+                     "true",
                      [
                        [
                          "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
@@ -1171,6 +1171,64 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       refute %{"type" => "fallback"} in response
       refute %{"type" => "receive"} in response
+    end
+
+    test "ensure read-methods are not duplicated", %{conn: conn} do
+      abi = [
+        %{
+          "inputs" => [],
+          "name" => "test",
+          "outputs" => [
+            %{"internalType" => "uint256", "name" => "", "type" => "uint256"}
+          ],
+          "stateMutability" => "pure",
+          "type" => "function"
+        }
+      ]
+
+      id =
+        abi
+        |> ABI.parse_specification()
+        |> Enum.at(0)
+        |> Map.fetch!(:method_id)
+
+      target_contract = insert(:smart_contract, abi: abi)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: _params}], _opts ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x00000000000000000000000000000000000000000000009d37020ac9049a8040"
+             }
+           ]}
+        end
+      )
+
+      request = get(conn, "/api/v2/smart-contracts/#{target_contract.address_hash}/methods-read")
+
+      assert response = json_response(request, 200)
+
+      assert response == [
+               %{
+                 "type" => "function",
+                 "stateMutability" => "pure",
+                 "outputs" => [
+                   %{
+                     "type" => "uint256",
+                     "value" => "2900102562052921000000"
+                   }
+                 ],
+                 "name" => "test",
+                 "names" => ["uint256"],
+                 "inputs" => [],
+                 "method_id" => Base.encode16(id, case: :lower)
+               }
+             ]
     end
 
     test "get array of addresses within read-methods", %{conn: conn} do
@@ -1477,7 +1535,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert %{
                "is_error" => false,
-               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => true}]}
+               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => "true"}]}
              } == response
     end
 
@@ -1578,13 +1636,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                        "tuple[bytes32,uint256,bytes32,uint256,address,address,uint256,bool,tuple[address,bytes32[],bytes][]]",
                      "value" => [
                        "0xfe6a43fa23a0269092cbf97cb908e1d5a49a18fd6942baf2467fb5b221e39ab2",
-                       1000,
+                       "1000",
                        "0xfe6a43fa23a0269092cbf97cb908e1d5a49a18fd6942baf2467fb5b221e39ab2",
-                       10,
+                       "10",
                        "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
                        "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
-                       123_123,
-                       true,
+                       "123123",
+                       "true",
                        [
                          [
                            "0xbb36c792b9b45aaf8b848a1392b0d6559202729e",
@@ -2087,7 +2145,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert %{
                "is_error" => false,
-               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => true}]}
+               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => "true"}]}
              } == response
     end
 
@@ -2167,7 +2225,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                "result" => %{
                  "names" => ["amounts"],
                  "output" => [
-                   %{"type" => "uint256[]", "value" => [1_000_000_000_000_000_000_000, 15_520_773_838_563_941]}
+                   %{"type" => "uint256[]", "value" => ["1000000000000000000000", "15520773838563941"]}
                  ]
                }
              } == response
@@ -2365,7 +2423,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert %{
                "is_error" => false,
-               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => true}]}
+               "result" => %{"names" => ["bool"], "output" => [%{"type" => "bool", "value" => "true"}]}
              } == response
     end
 

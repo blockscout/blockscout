@@ -77,7 +77,9 @@ defmodule Explorer.TokenExchangeRatesTest do
         "GET",
         "/simple/token_price/ethereum",
         fn conn ->
-          assert conn.query_string == "vs_currencies=usd&include_market_cap=true&contract_addresses=#{joined_addresses}"
+          assert conn.query_string ==
+                   "vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&contract_addresses=#{joined_addresses}"
+
           Conn.resp(conn, 200, Jason.encode!(token_exchange_rates))
         end
       )
@@ -159,7 +161,9 @@ defmodule Explorer.TokenExchangeRatesTest do
         "GET",
         "/simple/token_price/ethereum",
         fn conn ->
-          assert conn.query_string == "vs_currencies=usd&include_market_cap=true&contract_addresses=#{joined_addresses}"
+          assert conn.query_string ==
+                   "vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&contract_addresses=#{joined_addresses}"
+
           Conn.resp(conn, 200, "{}")
         end
       )
@@ -239,7 +243,9 @@ defmodule Explorer.TokenExchangeRatesTest do
         "GET",
         "/simple/token_price/ethereum",
         fn conn ->
-          assert conn.query_string == "vs_currencies=usd&include_market_cap=true&contract_addresses=#{joined_addresses}"
+          assert conn.query_string ==
+                   "vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&contract_addresses=#{joined_addresses}"
+
           Conn.resp(conn, 429, "Too many requests")
         end
       )

@@ -202,9 +202,14 @@ defmodule BlockScoutWeb.ApiRouter do
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
+      get("/stats", V2.TransactionController, :stats)
 
       if Application.compile_env(:explorer, :chain_type) == "polygon_zkevm" do
         get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
+      end
+
+      if Application.compile_env(:explorer, :chain_type) == "zksync" do
+        get("/zksync-batch/:batch_number", V2.TransactionController, :zksync_batch)
       end
 
       if Application.compile_env(:explorer, :chain_type) == "suave" do
@@ -281,6 +286,11 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/zkevm/batches/confirmed", V2.PolygonZkevmController, :batches_confirmed)
         get("/zkevm/batches/latest-number", V2.PolygonZkevmController, :batch_latest_number)
       end
+
+      if Application.compile_env(:explorer, :chain_type) == "zksync" do
+        get("/zksync/batches/confirmed", V2.ZkSyncController, :batches_confirmed)
+        get("/zksync/batches/latest-number", V2.ZkSyncController, :batch_latest_number)
+      end
     end
 
     scope "/stats" do
@@ -289,6 +299,7 @@ defmodule BlockScoutWeb.ApiRouter do
       scope "/charts" do
         get("/transactions", V2.StatsController, :transactions_chart)
         get("/market", V2.StatsController, :market_chart)
+        get("/secondary-coin-market", V2.StatsController, :secondary_coin_market_chart)
       end
     end
 
@@ -351,6 +362,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
       scope "/account-abstraction" do
         get("/operations/:operation_hash_param", V2.Proxy.AccountAbstractionController, :operation)
+        get("/operations/:operation_hash_param/summary", V2.Proxy.AccountAbstractionController, :summary)
         get("/bundlers/:address_hash_param", V2.Proxy.AccountAbstractionController, :bundler)
         get("/bundlers", V2.Proxy.AccountAbstractionController, :bundlers)
         get("/factories/:address_hash_param", V2.Proxy.AccountAbstractionController, :factory)
@@ -376,6 +388,14 @@ defmodule BlockScoutWeb.ApiRouter do
           get("/", V2.ValidatorController, :stability_validators_list)
           get("/counters", V2.ValidatorController, :stability_validators_counters)
         end
+      end
+    end
+
+    scope "/zksync" do
+      if Application.compile_env(:explorer, :chain_type) == "zksync" do
+        get("/batches", V2.ZkSyncController, :batches)
+        get("/batches/count", V2.ZkSyncController, :batches_count)
+        get("/batches/:batch_number", V2.ZkSyncController, :batch)
       end
     end
   end

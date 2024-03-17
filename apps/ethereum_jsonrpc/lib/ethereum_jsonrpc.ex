@@ -462,10 +462,10 @@ defmodule EthereumJSONRPC do
   end
 
   defp maybe_replace_url(url, _replace_url, EthereumJSONRPC.HTTP), do: url
-  defp maybe_replace_url(url, replace_url, _), do: EndpointAvailabilityObserver.maybe_replace_url(url, replace_url)
+  defp maybe_replace_url(url, replace_url, _), do: EndpointAvailabilityObserver.maybe_replace_url(url, replace_url, :ws)
 
   defp maybe_inc_error_count(_url, _arguments, EthereumJSONRPC.HTTP), do: :ok
-  defp maybe_inc_error_count(url, arguments, _), do: EndpointAvailabilityObserver.inc_error_count(url, arguments)
+  defp maybe_inc_error_count(url, arguments, _), do: EndpointAvailabilityObserver.inc_error_count(url, arguments, :ws)
 
   @doc """
   Converts `t:quantity/0` to `t:non_neg_integer/0`.

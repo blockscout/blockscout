@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),
          {:not_found, true} <- {:not_found, AddressView.check_custom_abi_for_having_read_functions(custom_abi)} do
       read_only_functions_from_abi =
-        Reader.read_only_functions_from_abi_with_sender(custom_abi.abi, address_hash, params["from"])
+        Reader.read_only_functions_from_abi_with_sender(custom_abi.abi, address_hash, params["from"], @api_true)
 
       read_functions_required_wallet_from_abi = Reader.read_functions_required_wallet_from_abi(custom_abi.abi)
 
@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   def methods_read(conn, %{"address_hash" => address_hash_string} = params) do
     with {:ok, address_hash, smart_contract} <- validate_smart_contract(params, address_hash_string) do
-      read_only_functions_from_abi = Reader.read_only_functions(smart_contract, address_hash, params["from"])
+      read_only_functions_from_abi = Reader.read_only_functions(smart_contract, address_hash, params["from"], @api_true)
 
       read_functions_required_wallet_from_abi = Reader.read_functions_required_wallet(smart_contract)
 
@@ -166,7 +166,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
             address_hash,
             %{method_id: params["method_id"], args: prepare_args(args)},
             params["from"],
-            custom_abi.abi
+            custom_abi.abi,
+            @api_true
           )
         else
           Reader.query_function_with_names(

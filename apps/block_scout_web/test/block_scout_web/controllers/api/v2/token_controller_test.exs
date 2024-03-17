@@ -532,6 +532,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         tokens_ordered_by_holders_asc
       )
 
+      :timer.sleep(200)
+
       # by circulating_market_cap
       tokens_ordered_by_circulating_market_cap =
         Enum.sort(tokens, &(&1.circulating_market_cap <= &2.circulating_market_cap))
@@ -634,9 +636,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token, type: "ERC-1155")
         end
 
+      erc_404_tokens =
+        for _i <- 0..50 do
+          insert(:token, type: "ERC-404")
+        end
+
       check_tokens_pagination(erc_20_tokens, conn, %{"type" => "ERC-20"})
       check_tokens_pagination(erc_721_tokens |> Enum.reverse(), conn, %{"type" => "ERC-721"})
       check_tokens_pagination(erc_1155_tokens |> Enum.reverse(), conn, %{"type" => "ERC-1155"})
+      check_tokens_pagination(erc_404_tokens |> Enum.reverse(), conn, %{"type" => "ERC-404"})
     end
 
     test "tokens are filtered by multiple type", %{conn: conn} do
@@ -655,6 +663,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token, type: "ERC-1155")
         end
 
+      erc_404_tokens =
+        for _i <- 0..24 do
+          insert(:token, type: "ERC-404")
+        end
+
       check_tokens_pagination(
         erc_721_tokens |> Kernel.++(erc_1155_tokens) |> Enum.reverse(),
         conn,
@@ -668,6 +681,14 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         conn,
         %{
           "type" => "[erc-20,ERC-1155]"
+        }
+      )
+
+      check_tokens_pagination(
+        erc_404_tokens |> Enum.reverse() |> Kernel.++(erc_20_tokens),
+        conn,
+        %{
+          "type" => "[erc-20,ERC-404]"
         }
       )
     end
@@ -1001,7 +1022,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       instance = insert(:token_instance, token_id: 0, token_contract_address_hash: token.contract_address_hash)
 
-      transfer =
+      _transfer =
         insert(:token_transfer,
           token_contract_address: token.contract_address,
           transaction: transaction,
@@ -1101,6 +1122,68 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
             transaction: transaction,
             token_ids: [id],
             token_type: "ERC-1155"
+          )
+        end
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/#{id}/transfers")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens/#{token.contract_address_hash}/instances/#{id}/transfers",
+          response["next_page_params"]
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+      check_paginated_response(response, response_2nd_page, transfers_0 ++ transfers_1)
+    end
+
+    test "check that pagination works for 404 tokens", %{conn: conn} do
+      token = insert(:token, type: "ERC-404")
+
+      for _ <- 0..50 do
+        insert(:token_instance, token_id: 0)
+      end
+
+      id = :rand.uniform(1_000_000)
+
+      transaction =
+        :transaction
+        |> insert(input: "0xabcd010203040506")
+        |> with_block()
+
+      insert(:token_instance, token_id: id, token_contract_address_hash: token.contract_address_hash)
+
+      insert_list(100, :token_transfer,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        token_ids: [id + 1],
+        token_type: "ERC-404",
+        amounts: [1]
+      )
+
+      transfers_0 =
+        insert_list(26, :token_transfer,
+          token_contract_address: token.contract_address,
+          transaction: transaction,
+          token_ids: [id, id + 1],
+          token_type: "ERC-404",
+          amounts: [1, 2]
+        )
+
+      transfers_1 =
+        for _ <- 26..50 do
+          transaction =
+            :transaction
+            |> insert(input: "0xabcd010203040506")
+            |> with_block()
+
+          insert(:token_transfer,
+            token_contract_address: token.contract_address,
+            transaction: transaction,
+            token_ids: [id],
+            token_type: "ERC-404"
           )
         end
 

@@ -9,11 +9,13 @@ defmodule Explorer.Market.History.Source.Price do
   @type record :: %{
           closing_price: Decimal.t(),
           date: Date.t(),
-          opening_price: Decimal.t()
+          opening_price: Decimal.t(),
+          secondary_coin: boolean()
         }
 
   @doc """
   Fetch history for a specified amount of days in the past.
   """
-  @callback fetch_price_history(previous_days :: non_neg_integer()) :: {:ok, [record()]} | :error
+  @callback fetch_price_history(previous_days :: non_neg_integer(), secondary_coin :: boolean()) ::
+              {:ok, [record()]} | :error
 end

@@ -51,6 +51,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   def format_data(%{} = market_data_for_tokens) do
     currency = currency()
     market_cap = currency <> "_market_cap"
+    volume_24h = currency <> "_24h_vol"
 
     market_data_for_tokens
     |> Enum.reduce(%{}, fn
@@ -60,7 +61,8 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
             acc
             |> Map.put(address_hash, %{
               fiat_value: Map.get(market_data, currency),
-              circulating_market_cap: Map.get(market_data, market_cap)
+              circulating_market_cap: Map.get(market_data, market_cap),
+              volume_24h: Map.get(market_data, volume_24h)
             })
 
           _ ->
@@ -92,14 +94,22 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @impl Source
   def format_data(_), do: []
 
-  @spec history_url(non_neg_integer()) :: String.t()
-  def history_url(previous_days) do
+  @spec history_url(non_neg_integer(), boolean()) :: String.t()
+  def history_url(previous_days, secondary_coin? \\ false) do
     query_params = %{
       "days" => previous_days,
       "vs_currency" => "usd"
     }
 
-    "#{source_url()}/market_chart?#{URI.encode_query(query_params)}"
+    source_url = if secondary_coin?, do: secondary_source_url(), else: source_url()
+
+    "#{source_url}/market_chart?#{URI.encode_query(query_params)}"
+  end
+
+  def secondary_source_url do
+    id = config(:secondary_coin_id)
+
+    if id, do: "#{base_url()}/coins/#{id}", else: nil
   end
 
   @impl Source
@@ -131,7 +141,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   def source_url(token_addresses) when is_list(token_addresses) do
     joined_addresses = token_addresses |> Enum.map_join(",", &to_string/1)
 
-    "#{base_url()}/simple/token_price/#{platform()}?vs_currencies=#{currency()}&include_market_cap=true&contract_addresses=#{joined_addresses}"
+    "#{base_url()}/simple/token_price/#{platform()}?vs_currencies=#{currency()}&include_market_cap=true&include_24hr_vol=true&contract_addresses=#{joined_addresses}"
   end
 
   @impl Source

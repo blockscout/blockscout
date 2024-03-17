@@ -32,6 +32,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.PolygonZkevm.Reader
+  alias Explorer.Chain.ZkSync.Reader
+  alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.FirstTraceOnDemand
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -101,6 +103,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           |> Map.put(:zkevm_sequence_transaction, :optional)
           |> Map.put(:zkevm_verify_transaction, :optional)
 
+        "zksync" ->
+          necessity_by_association_with_actions
+          |> Map.put(:zksync_batch, :optional)
+          |> Map.put(:zksync_commit_transaction, :optional)
+          |> Map.put(:zksync_prove_transaction, :optional)
+          |> Map.put(:zksync_execute_transaction, :optional)
+
         "suave" ->
           necessity_by_association_with_actions
           |> Map.put(:logs, :optional)
@@ -166,6 +175,23 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{transactions: transactions |> maybe_preload_ens(), items: true})
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/transactions/zksync-batch/:batch_number` endpoint.
+    It renders the list of L2 transactions bound to the specified batch.
+  """
+  @spec zksync_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def zksync_batch(conn, %{"batch_number" => batch_number} = _params) do
+    transactions =
+      batch_number
+      |> Reader.batch_transactions(api?: true)
+      |> Enum.map(fn tx -> tx.hash end)
+      |> Chain.hashes_to_transactions(api?: true, necessity_by_association: @transaction_necessity_by_association)
+
+    conn
+    |> put_status(200)
+    |> render(:transactions, %{transactions: transactions, items: true})
   end
 
   def execution_node(conn, %{"execution_node_hash_param" => execution_node_hash_string} = params) do
@@ -419,6 +445,25 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> put_view(BlobView)
       |> render(:blobs, %{blobs: blobs})
     end
+  end
+
+  def stats(conn, _params) do
+    transactions_count = Transactions24hStats.fetch_count(@api_true)
+    pending_transactions_count = FreshPendingTransactionsCounter.fetch(@api_true)
+    transaction_fees_sum = Transactions24hStats.fetch_fee_sum(@api_true)
+    transaction_fees_avg = Transactions24hStats.fetch_fee_average(@api_true)
+
+    conn
+    |> put_status(200)
+    |> render(
+      :stats,
+      %{
+        transactions_count_24h: transactions_count,
+        pending_transactions_count: pending_transactions_count,
+        transaction_fees_sum_24h: transaction_fees_sum,
+        transaction_fees_avg_24h: transaction_fees_avg
+      }
+    )
   end
 
   @doc """

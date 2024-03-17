@@ -148,8 +148,8 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "ERC721_or_ERC1155_token_instance_from_token_id_and_token_address/2" do
-    test "return ERC721 token instance" do
+  describe "nft_instance_from_token_id_and_token_address/2" do
+    test "return NFT instance" do
       token = insert(:token)
 
       token_id = 10
@@ -160,7 +160,7 @@ defmodule Explorer.ChainTest do
       )
 
       assert {:ok, result} =
-               Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(
+               Chain.nft_instance_from_token_id_and_token_address(
                  token_id,
                  token.contract_address_hash
                )
@@ -896,7 +896,7 @@ defmodule Explorer.ChainTest do
       address = insert(:address)
       insert(:decompiled_smart_contract, address_hash: address.hash)
 
-      {:ok, found_address} = Chain.hash_to_address(address.hash)
+      {:ok, found_address} = Chain.hash_to_address(address.hash, [], true)
 
       assert found_address.has_decompiled_code?
     end
@@ -1384,7 +1384,7 @@ defmodule Explorer.ChainTest do
       }
     }
 
-    test "with valid data", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    test "with valid data", %{json_rpc_named_arguments: _json_rpc_named_arguments} do
       {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)

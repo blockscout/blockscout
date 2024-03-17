@@ -71,10 +71,17 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
   end
 
   defp fetch_and_update(block_number, address_hash, stale_current_token_balances) do
-    %{erc_1155: erc_1155_ctbs, other: other_ctbs, tokens: tokens} =
+    %{
+      erc_1155: erc_1155_ctbs,
+      other: other_ctbs,
+      tokens: tokens,
+      balances_map: balances_map
+    } =
       stale_current_token_balances
-      |> Enum.reduce(%{erc_1155: [], other: [], tokens: %{}}, fn %{token_id: token_id} = stale_current_token_balance,
-                                                                 acc ->
+      |> Enum.reduce(%{erc_1155: [], other: [], tokens: %{}, balances_map: %{}}, fn %{
+                                                                                      token_id: token_id
+                                                                                    } = stale_current_token_balance,
+                                                                                    acc ->
         prepared_ctb = %{
           token_contract_address_hash:
             "0x" <> Base.encode16(stale_current_token_balance.token.contract_address_hash.bytes),
@@ -98,35 +105,40 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
             Map.put(acc, :other, [prepared_ctb | acc[:other]])
           end
 
-        Map.put(result, :tokens, updated_tokens)
+        updated_balances_map =
+          Map.put(
+            acc[:balances_map],
+            ctb_to_key(stale_current_token_balance),
+            stale_current_token_balance.value
+          )
+
+        result
+        |> Map.put(:tokens, updated_tokens)
+        |> Map.put(:balances_map, updated_balances_map)
       end)
 
-    erc_1155_ctbs_reversed = Enum.reverse(erc_1155_ctbs)
-    other_ctbs_reversed = Enum.reverse(other_ctbs)
-
     updated_erc_1155_ctbs =
-      if Enum.count(erc_1155_ctbs_reversed) > 0 do
-        erc_1155_ctbs_reversed
+      if Enum.count(erc_1155_ctbs) > 0 do
+        erc_1155_ctbs
         |> BalanceReader.get_balances_of_erc_1155()
-        |> Enum.zip(erc_1155_ctbs_reversed)
+        |> Enum.zip(erc_1155_ctbs)
         |> Enum.map(&prepare_updated_balance(&1, block_number))
       else
         []
       end
 
     updated_other_ctbs =
-      if Enum.count(other_ctbs_reversed) > 0 do
-        other_ctbs_reversed
+      if Enum.count(other_ctbs) > 0 do
+        other_ctbs
         |> BalanceReader.get_balances_of()
-        |> Enum.zip(other_ctbs_reversed)
+        |> Enum.zip(other_ctbs)
         |> Enum.map(&prepare_updated_balance(&1, block_number))
       else
         []
       end
 
     filtered_current_token_balances_update_params =
-      (updated_erc_1155_ctbs ++ updated_other_ctbs)
-      |> Enum.filter(&(!is_nil(&1)))
+      (updated_erc_1155_ctbs ++ updated_other_ctbs) |> Enum.filter(&(!is_nil(&1)))
 
     if Enum.count(filtered_current_token_balances_update_params) > 0 do
       {:ok,
@@ -140,18 +152,35 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
           broadcast: false
         })
 
+      filtered_imported_ctbs = filter_imported_ctbs(imported_ctbs, balances_map)
+
       Publisher.broadcast(
         %{
           address_current_token_balances: %{
             address_hash: to_string(address_hash),
             address_current_token_balances:
-              imported_ctbs
+              filtered_imported_ctbs
               |> Enum.map(fn ctb -> %CurrentTokenBalance{ctb | token: tokens[ctb.token_contract_address_hash.bytes]} end)
           }
         },
         :on_demand
       )
     end
+  end
+
+  defp filter_imported_ctbs(imported_ctbs, balances_map) do
+    Enum.filter(imported_ctbs, fn ctb ->
+      if balance = balances_map[ctb_to_key(ctb)] do
+        Decimal.compare(balance, ctb.value) != :eq
+      else
+        Logger.error("Imported unknown balance")
+        true
+      end
+    end)
+  end
+
+  defp ctb_to_key(ctb) do
+    {ctb.token_contract_address_hash.bytes, ctb.token_type, ctb.token_id && Decimal.to_integer(ctb.token_id)}
   end
 
   defp prepare_updated_balance({{:ok, updated_balance}, stale_current_token_balance}, block_number) do
@@ -180,8 +209,18 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
     balance_response =
       case token_type do
-        "ERC-1155" -> BalanceReader.get_balances_of_erc_1155([request])
-        _ -> BalanceReader.get_balances_of([request])
+        "ERC-404" ->
+          if token_id do
+            BalanceReader.get_balances_of_erc_1155([request])
+          else
+            BalanceReader.get_balances_of([request])
+          end
+
+        "ERC-1155" ->
+          BalanceReader.get_balances_of_erc_1155([request])
+
+        _ ->
+          BalanceReader.get_balances_of([request])
       end
 
     balance = balance_response[:ok]

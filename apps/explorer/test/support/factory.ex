@@ -48,6 +48,8 @@ defmodule Explorer.Factory do
     Withdrawal
   }
 
+  alias Explorer.Chain.Optimism.OutputRoot
+
   alias Explorer.SmartContract.Helper
   alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Market.MarketHistory
@@ -104,6 +106,10 @@ defmodule Explorer.Factory do
         "ERC-721" => %{
           "incoming" => random_bool(),
           "outcoming" => random_bool()
+        },
+        "ERC-404" => %{
+          "incoming" => random_bool(),
+          "outcoming" => random_bool()
         }
       },
       "notification_methods" => %{
@@ -128,6 +134,8 @@ defmodule Explorer.Factory do
       watch_erc_721_output: random_bool(),
       watch_erc_1155_input: random_bool(),
       watch_erc_1155_output: random_bool(),
+      watch_erc_404_input: random_bool(),
+      watch_erc_404_output: random_bool(),
       notify_email: random_bool()
     }
   end
@@ -203,6 +211,8 @@ defmodule Explorer.Factory do
       watch_erc_721_output: random_bool(),
       watch_erc_1155_input: random_bool(),
       watch_erc_1155_output: random_bool(),
+      watch_erc_404_input: random_bool(),
+      watch_erc_404_output: random_bool(),
       notify_email: random_bool()
     }
   end
@@ -949,7 +959,14 @@ defmodule Explorer.Factory do
   end
 
   def address_current_token_balance_with_token_id_factory do
-    {token_type, token_id} = Enum.random([{"ERC-20", nil}, {"ERC-721", nil}, {"ERC-1155", Enum.random(1..100_000)}])
+    {token_type, token_id} =
+      Enum.random([
+        {"ERC-20", nil},
+        {"ERC-721", nil},
+        {"ERC-1155", Enum.random(1..100_000)},
+        {"ERC-404", nil},
+        {"ERC-404", Enum.random(1..100_000)}
+      ])
 
     %CurrentTokenBalance{
       address: build(:address),
@@ -1114,6 +1131,34 @@ defmodule Explorer.Factory do
       blob_gas_used: Decimal.new(131_072),
       blob_versioned_hashes: []
     }
+  end
+
+  def op_output_root_factory do
+    %OutputRoot{
+      l2_output_index: op_output_root_l2_output_index(),
+      l2_block_number: insert(:block) |> Map.get(:number),
+      l1_transaction_hash: transaction_hash(),
+      l1_timestamp: DateTime.utc_now(),
+      l1_block_number: op_output_root_l1_block_number(),
+      output_root: op_output_root_hash()
+    }
+  end
+
+  defp op_output_root_l2_output_index do
+    sequence("op_output_root_l2_output_index", & &1)
+  end
+
+  defp op_output_root_l1_block_number do
+    sequence("op_output_root_l1_block_number", & &1)
+  end
+
+  defp op_output_root_hash do
+    {:ok, hash} =
+      "op_output_root_hash"
+      |> sequence(& &1)
+      |> Hash.Full.cast()
+
+    hash
   end
 
   def random_bool, do: Enum.random([true, false])
