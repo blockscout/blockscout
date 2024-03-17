@@ -54,10 +54,10 @@
             <dd class="col-sm-8 col-md-8 col-lg-9 contract-address">
               <%= link(
                   @token.contract_address_hash,
-                  to: AccessHelper.get_path(@conn, :address_path, :show, 
+                  to: AccessHelper.get_path(@conn, :address_path, :show,
                   Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address"
-                  ) 
+                  )
               %>
             </dd>
           </dl>
@@ -99,7 +99,7 @@
                   <span data-selector="token-price" data-usd-value="<%= @token.fiat_value %>"></span>
                 </dd>
               </dl>
-            <% end %>  
+            <% end %>
           <% end %>
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
@@ -134,7 +134,7 @@
                 <%= @token.decimals %>
               </dd>
             </dl>
-          <% end %>  
+          <% end %>
           <dl class="row">
             <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",

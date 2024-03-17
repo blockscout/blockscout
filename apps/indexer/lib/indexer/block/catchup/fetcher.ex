@@ -9,6 +9,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   import Indexer.Block.Fetcher,
     only: [
+      async_import_blobs: 1,
       async_import_block_rewards: 1,
       async_import_coin_balances: 2,
       async_import_created_contract_codes: 1,
@@ -23,7 +24,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias Explorer.Utility.MissingRangesManipulator
+  alias Explorer.Chain.NullRoundHeight
+  alias Explorer.Utility.{MassiveBlock, MissingRangesManipulator}
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.{Sequence, TaskSupervisor}
   alias Indexer.Memory.Shrinkable
@@ -163,6 +165,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
     async_import_token_instances(imported)
+    async_import_blobs(imported)
   end
 
   defp stream_fetch_and_import(state, sequence)
@@ -198,7 +201,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     case result do
       {:ok, %{inserted: inserted, errors: errors}} ->
-        errors = cap_seq(sequence, errors)
+        valid_errors = handle_null_rounds(errors)
+        errors = cap_seq(sequence, valid_errors)
         retry(sequence, errors)
         clear_missing_ranges(range, errors)
 
@@ -215,6 +219,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       {:error, {:import = step, reason}} = error ->
         Prometheus.Instrumenter.import_errors()
         Logger.error(fn -> [inspect(reason), ". Retrying."] end, step: step)
+        if reason == :timeout, do: add_range_to_massive_blocks(range)
 
         push_back(sequence, range)
 
@@ -246,8 +251,37 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   rescue
     exception ->
+      if timeout_exception?(exception), do: add_range_to_massive_blocks(range)
       Logger.error(fn -> [Exception.format(:error, exception, __STACKTRACE__), ?\n, ?\n, "Retrying."] end)
       {:error, exception}
+  end
+
+  defp handle_null_rounds(errors) do
+    {null_rounds, other_errors} =
+      Enum.split_with(errors, fn
+        %{message: "requested epoch was a null round"} -> true
+        _ -> false
+      end)
+
+    null_rounds
+    |> Enum.map(&block_error_to_number/1)
+    |> NullRoundHeight.insert_heights()
+
+    other_errors
+  end
+
+  defp timeout_exception?(%{message: message}) when is_binary(message) do
+    String.match?(message, ~r/due to a timeout/)
+  end
+
+  defp timeout_exception?(_exception), do: false
+
+  defp add_range_to_massive_blocks(range) do
+    clear_missing_ranges(range)
+
+    range
+    |> Enum.to_list()
+    |> MassiveBlock.insert_block_numbers()
   end
 
   defp cap_seq(seq, errors) do
@@ -283,7 +317,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     |> Enum.map(&push_back(sequence, &1))
   end
 
-  defp clear_missing_ranges(initial_range, errors) do
+  defp clear_missing_ranges(initial_range, errors \\ []) do
     success_numbers = Enum.to_list(initial_range) -- Enum.map(errors, &block_error_to_number/1)
 
     success_numbers

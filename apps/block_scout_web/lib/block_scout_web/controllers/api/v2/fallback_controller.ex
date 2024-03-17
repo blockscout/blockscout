@@ -3,7 +3,9 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   require Logger
 
+  alias BlockScoutWeb.Account.Api.V1.UserView
   alias BlockScoutWeb.API.V2.ApiView
+  alias Ecto.Changeset
 
   @verification_failed "API v2 smart-contract verification failed"
   @invalid_parameters "Invalid parameter(s)"
@@ -23,6 +25,14 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @unauthorized "Unauthorized"
   @not_configured_api_key "API key not configured on the server"
   @wrong_api_key "Wrong API key"
+  @address_not_found "Address not found"
+  @address_is_not_smart_contract "Address is not smart-contract"
+  @vyper_smart_contract_is_not_supported "Vyper smart-contracts are not supported by SolidityScan"
+  @unverified_smart_contract "Smart-contract is unverified"
+  @empty_response "Empty response"
+  @tx_interpreter_service_disabled "Transaction Interpretation Service is disabled"
+  @disabled "API endpoint is disabled"
+  @service_disabled "Service is disabled"
 
   def call(conn, {:format, _params}) do
     Logger.error(fn ->
@@ -119,6 +129,13 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> call({:not_found, nil})
   end
 
+  def call(conn, {:error, %Changeset{} = changeset}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UserView)
+    |> render(:changeset_errors, changeset: changeset)
+  end
+
   def call(conn, {:restricted_access, true}) do
     Logger.error(fn ->
       ["#{@verification_failed}: #{@restricted_access}"]
@@ -130,7 +147,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @restricted_access})
   end
 
-  def call(conn, {:already_verified, true}) do
+  def call(conn, {:already_verified, _}) do
     Logger.error(fn ->
       ["#{@verification_failed}: #{@already_verified}"]
     end)
@@ -231,5 +248,67 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> put_status(:unauthorized)
     |> put_view(ApiView)
     |> render(:message, %{message: @wrong_api_key})
+  end
+
+  def call(conn, {:address, {:error, :not_found}}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @address_not_found})
+  end
+
+  def call(conn, {:is_smart_contract, result}) when is_nil(result) or result == false do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @address_is_not_smart_contract})
+  end
+
+  def call(conn, {:is_vyper_contract, result}) when result == true do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @vyper_smart_contract_is_not_supported})
+  end
+
+  def call(conn, {:is_verified_smart_contract, result}) when result == false do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @unverified_smart_contract})
+  end
+
+  def call(conn, {:is_empty_response, true}) do
+    conn
+    |> put_status(500)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @empty_response})
+  end
+
+  def call(conn, {:tx_interpreter_enabled, false}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @tx_interpreter_service_disabled})
+  end
+
+  def call(conn, {:disabled, _}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @disabled})
+  end
+
+  def call(conn, {:error, :disabled}) do
+    conn
+    |> put_status(501)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @service_disabled})
+  end
+
+  def call(conn, {code, response}) when is_integer(code) do
+    conn
+    |> put_status(code)
+    |> json(response)
   end
 end

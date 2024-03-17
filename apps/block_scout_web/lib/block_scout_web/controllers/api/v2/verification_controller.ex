@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
+  alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.SmartContract.Vyper.PublisherWorker, as: VyperPublisherWorker
@@ -40,7 +41,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
       vyper_compiler_versions: vyper_compiler_versions,
       verification_options: verification_options,
       vyper_evm_versions: CodeCompiler.evm_versions(:vyper),
-      is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?()
+      is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?(),
+      license_types: Enum.into(SmartContract.license_types_enum(), %{})
     })
   end
 
@@ -69,6 +71,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("name", Map.get(params, "contract_name", ""))
         |> Map.put("external_libraries", Map.get(params, "libraries", %{}))
         |> Map.put("is_yul", Map.get(params, "is_yul_contract", false))
+        |> Map.put("license_type", Map.get(params, "license_type"))
 
       log_sc_verification_started(address_hash_string)
       Que.add(SolidityPublisherWorker, {"flattened_api_v2", verification_params})
@@ -94,6 +97,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("autodetect_constructor_args", Map.get(params, "autodetect_constructor_args", true))
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", ""))
         |> Map.put("name", Map.get(params, "contract_name", ""))
+        |> Map.put("license_type", Map.get(params, "license_type"))
 
       log_sc_verification_started(address_hash_string)
       Que.add(SolidityPublisherWorker, {"json_api_v2", verification_params, json_input})
@@ -151,6 +155,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
             )).()
         |> Map.put("evm_version", Map.get(params, "evm_version", "default"))
         |> Map.put("external_libraries", json)
+        |> Map.put("license_type", Map.get(params, "license_type"))
 
       files_array =
         files
@@ -181,6 +186,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", "") || "")
         |> Map.put("name", Map.get(params, "contract_name", "Vyper_contract"))
         |> Map.put("evm_version", Map.get(params, "evm_version"))
+        |> Map.put("license_type", Map.get(params, "license_type"))
 
       log_sc_verification_started(address_hash_string)
       Que.add(VyperPublisherWorker, {"vyper_flattened", verification_params})
@@ -208,6 +214,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         }
         |> Map.put("evm_version", Map.get(params, "evm_version"))
         |> Map.put("interfaces", interfaces)
+        |> Map.put("license_type", Map.get(params, "license_type"))
 
       files_array =
         files
@@ -234,7 +241,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
       verification_params = %{
         "address_hash" => String.downcase(address_hash_string),
         "compiler_version" => compiler_version,
-        "input" => json_input
+        "input" => json_input,
+        "license_type" => Map.get(params, "license_type")
       }
 
       log_sc_verification_started(address_hash_string)
@@ -282,7 +290,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:already_verified, false} <-
-           {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)} do
+           {:already_verified, SmartContract.verified_with_full_match?(address_hash, @api_true)} do
       :validated
     end
   end

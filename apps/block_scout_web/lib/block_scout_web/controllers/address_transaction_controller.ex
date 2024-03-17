@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias BlockScoutWeb.{AccessHelper, Controller, TransactionView}
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
 
   alias Explorer.Chain.CSVExport.{
     AddressInternalTransactionCsvExporter,
@@ -20,7 +21,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
     AddressTransactionCsvExporter
   }
 
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{DenormalizationHelper, Transaction, Wei}
 
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -32,7 +33,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
       [created_contract_address: :names] => :optional,
       [from_address: :names] => :optional,
       [to_address: :names] => :optional,
-      :block => :optional,
       [created_contract_address: :smart_contract] => :optional,
       [from_address: :smart_contract] => :optional,
       [to_address: :smart_contract] => :optional
@@ -50,10 +50,11 @@ defmodule BlockScoutWeb.AddressTransactionController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       options =
         @transaction_necessity_by_association
+        |> DenormalizationHelper.extend_block_necessity(:optional)
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
+      results_plus_one = Transaction.address_to_transactions_with_rewards(address_hash, options)
       {results, next_page} = split_list_by_page(results_plus_one)
 
       next_page_url =
@@ -190,7 +191,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
        )
        when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:address_exists, true} <- {:address_exists, Chain.address_exists?(address_hash)},
+         {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)},
          {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
       filter_type = Map.get(params, "filter_type")
       filter_value = Map.get(params, "filter_value")
@@ -229,7 +230,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
        )
        when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:address_exists, true} <- {:address_exists, Chain.address_exists?(address_hash)},
+         {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)},
          true <- Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] do
       filter_type = Map.get(params, "filter_type")
       filter_value = Map.get(params, "filter_value")

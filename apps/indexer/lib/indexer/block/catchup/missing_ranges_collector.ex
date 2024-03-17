@@ -5,11 +5,10 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   use GenServer
 
-  alias Explorer.{Chain, Repo}
+  alias EthereumJSONRPC.Utility.RangesHelper
+  alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Utility.{MissingBlockRange, MissingRangesManipulator}
-  alias Indexer.Block.Catchup.Helper
 
   @default_missing_ranges_batch_size 100_000
   @future_check_interval Application.compile_env(:indexer, __MODULE__)[:future_check_interval]
@@ -45,8 +44,6 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp default_init do
-    MissingBlockRange.sanitize_missing_block_ranges()
-
     {min_number, max_number} = get_initial_min_max()
 
     clear_to_bounds(min_number, max_number)
@@ -148,14 +145,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       {:noreply, %{state | min_fetched_block_number: new_min_number}}
     else
       Process.send_after(self(), :update_past, @past_check_interval * 100)
-      {:noreply, %{state | min_fetched_block_number: reset_min_fetched_block_number(state.max_fetched_block_number)}}
-    end
-  end
-
-  defp reset_min_fetched_block_number(max_fetched_block_number) do
-    case MissingBlockRange.fetch_min_max() do
-      %{min: nil} -> max_fetched_block_number
-      %{min: min} -> min
+      {:noreply, %{state | min_fetched_block_number: state.max_fetched_block_number}}
     end
   end
 
@@ -233,7 +223,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       |> Enum.map(fn string_range ->
         case String.split(string_range, "..") do
           [from_string, "latest"] ->
-            ExplorerHelper.parse_integer(from_string)
+            Helper.parse_integer(from_string)
 
           [from_string, to_string] ->
             get_from_to(from_string, to_string)
@@ -242,7 +232,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
             nil
         end
       end)
-      |> Helper.sanitize_ranges()
+      |> RangesHelper.sanitize_ranges()
 
     case List.last(ranges) do
       _from.._to ->

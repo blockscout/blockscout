@@ -1,27 +1,30 @@
 version: '3.9'
 
 services:
-  redis_db:
+  redis-db:
     extends:
-      file: ./services/docker-compose-redis.yml
-      service: redis_db
+      file: ./services/redis.yml
+      service: redis-db
 
   db-init:
     extends:
-      file: ./services/docker-compose-db.yml
+      file: ./services/db.yml
       service: db-init
 
   db:
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
     extends:
-      file: ./services/docker-compose-db.yml
+      file: ./services/db.yml
       service: db
 
   backend:
     depends_on:
       - db
-      - redis_db
+      - redis-db
     extends:
-      file: ./services/docker-compose-backend.yml
+      file: ./services/backend.yml
       service: backend
     build:
       context: ..
@@ -34,7 +37,7 @@ services:
         CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
         ADMIN_PANEL_ENABLED: ""
-        RELEASE_VERSION: 5.3.1
+        RELEASE_VERSION: 6.3.0
     links:
       - db:database
     environment:
@@ -45,38 +48,40 @@ services:
 
   visualizer:
     extends:
-      file: ./services/docker-compose-visualizer.yml
+      file: ./services/visualizer.yml
       service: visualizer
 
   sig-provider:
     extends:
-      file: ./services/docker-compose-sig-provider.yml
+      file: ./services/sig-provider.yml
       service: sig-provider
 
   frontend:
     depends_on:
       - backend
     extends:
-      file: ./services/docker-compose-frontend.yml
+      file: ./services/frontend.yml
       service: frontend
 
   stats-db-init:
     extends:
-      file: ./services/docker-compose-stats.yml
+      file: ./services/stats.yml
       service: stats-db-init
 
   stats-db:
     depends_on:
-      - backend
+      stats-db-init:
+        condition: service_completed_successfully
     extends:
-      file: ./services/docker-compose-stats.yml
+      file: ./services/stats.yml
       service: stats-db
 
   stats:
     depends_on:
       - stats-db
+      - backend
     extends:
-      file: ./services/docker-compose-stats.yml
+      file: ./services/stats.yml
       service: stats
 
   proxy:
@@ -85,5 +90,5 @@ services:
       - frontend
       - stats
     extends:
-      file: ./services/docker-compose-nginx.yml
+      file: ./services/nginx.yml
       service: proxy

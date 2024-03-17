@@ -20,9 +20,8 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
   end
 
   @spec set_counter(counter_type, String.t(), non_neg_integer()) :: :ok
-  def set_counter(counter_type, address_hash, counter, need_to_modify_state? \\ true) do
+  def set_counter(counter_type, address_hash, counter) do
     :ets.insert(@cache_name, {cache_key(address_hash, counter_type), {DateTime.utc_now(), counter}})
-    if need_to_modify_state?, do: ignore_txs(counter_type, address_hash)
 
     :ok
   end
@@ -41,10 +40,6 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
   def get_task(counter_type, address_hash) do
     address_hash |> task_cache_key(counter_type) |> fetch_from_cache(@cache_name, nil)
   end
-
-  @spec ignore_txs(atom, String.t()) :: :ignore | :ok
-  def ignore_txs(:txs, address_hash), do: GenServer.cast(__MODULE__, {:ignore_txs, address_hash})
-  def ignore_txs(_counter_type, _address_hash), do: :ignore
 
   def save_txs_counter_progress(address_hash, results) do
     GenServer.cast(__MODULE__, {:set_txs_state, address_hash, results})
@@ -68,15 +63,10 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
   end
 
   @impl true
-  def handle_cast({:ignore_txs, address_hash}, state) do
-    {:noreply, Map.put(state, lowercased_string(address_hash), {:updated, DateTime.utc_now()})}
-  end
-
-  @impl true
   def handle_cast({:set_txs_state, address_hash, %{txs_types: txs_types} = results}, state) do
     address_hash = lowercased_string(address_hash)
 
-    if is_ignored?(state[address_hash]) do
+    if ignored?(state[address_hash]) do
       {:noreply, state}
     else
       address_state =
@@ -95,24 +85,30 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
         |> Enum.count()
         |> min(Counters.counters_limit())
 
-      if counter == Counters.counters_limit() || Enum.count(address_state[:txs_types]) == 3 do
-        set_counter(:txs, address_hash, counter, false)
-        {:noreply, Map.put(state, address_hash, {:updated, DateTime.utc_now()})}
-      else
-        {:noreply, Map.put(state, address_hash, address_state)}
+      cond do
+        Enum.count(address_state[:txs_types]) == 3 ->
+          set_counter(:txs, address_hash, counter)
+          {:noreply, Map.put(state, address_hash, nil)}
+
+        counter == Counters.counters_limit() ->
+          set_counter(:txs, address_hash, counter)
+          {:noreply, Map.put(state, address_hash, :limit_value)}
+
+        true ->
+          {:noreply, Map.put(state, address_hash, address_state)}
       end
     end
   end
 
-  defp is_ignored?({:updated, datetime}), do: is_up_to_date?(datetime, ttl())
-  defp is_ignored?(_), do: false
+  defp ignored?(:limit_value), do: true
+  defp ignored?(_), do: false
 
   defp check_staleness(nil), do: nil
   defp check_staleness({datetime, counter}) when counter > 50, do: {datetime, counter, :limit_value}
 
   defp check_staleness({datetime, counter}) do
     status =
-      if is_up_to_date?(datetime, ttl()) do
+      if up_to_date?(datetime, ttl()) do
         :up_to_date
       else
         :stale
@@ -121,7 +117,7 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
     {datetime, counter, status}
   end
 
-  defp is_up_to_date?(datetime, ttl) do
+  defp up_to_date?(datetime, ttl) do
     datetime
     |> DateTime.add(ttl, :millisecond)
     |> DateTime.compare(DateTime.utc_now()) != :lt

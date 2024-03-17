@@ -34,6 +34,8 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   end
 
   defp fetch_sources(address, only_full?) do
+    Publisher.broadcast(%{eth_bytecode_db_lookup_started: [address.hash]}, :on_demand)
+
     creation_tx_input = contract_creation_input(address.hash)
 
     with {:ok, %{"sourceType" => type, "matchType" => match_type} = source} <-
@@ -45,6 +47,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
       Publisher.broadcast(%{smart_contract_was_verified: [address.hash]}, :on_demand)
     else
       _ ->
+        Publisher.broadcast(%{smart_contract_was_not_verified: [address.hash]}, :on_demand)
         false
     end
   end
@@ -127,15 +130,15 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   end
 
   def process_contract_source("SOLIDITY", source, address_hash) do
-    SolidityPublisher.process_rust_verifier_response(source, address_hash, true, true, true)
+    SolidityPublisher.process_rust_verifier_response(source, address_hash, %{}, true, true, true)
   end
 
   def process_contract_source("VYPER", source, address_hash) do
-    VyperPublisher.process_rust_verifier_response(source, address_hash, true, true, true)
+    VyperPublisher.process_rust_verifier_response(source, address_hash, %{}, true, true, true)
   end
 
   def process_contract_source("YUL", source, address_hash) do
-    SolidityPublisher.process_rust_verifier_response(source, address_hash, true, true, true)
+    SolidityPublisher.process_rust_verifier_response(source, address_hash, %{}, true, true, true)
   end
 
   def process_contract_source(_, _source, _address_hash), do: false

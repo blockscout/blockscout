@@ -5,18 +5,13 @@ defmodule Explorer.Chain.ContractMethod do
 
   require Logger
 
+  import Ecto.Query, only: [from: 2]
   use Explorer.Schema
 
   alias Explorer.Chain.{Hash, MethodIdentifier, SmartContract}
   alias Explorer.Repo
 
-  @type t :: %__MODULE__{
-          identifier: MethodIdentifier.t(),
-          abi: map(),
-          type: String.t()
-        }
-
-  schema "contract_methods" do
+  typed_schema "contract_methods" do
     field(:identifier, MethodIdentifier)
     field(:abi, :map)
     field(:type, :string)
@@ -69,13 +64,30 @@ defmodule Explorer.Chain.ContractMethod do
     end
   end
 
+  @doc """
+  Finds limited number of contract methods by selector id
+  """
+  @spec find_contract_method_query(binary(), integer()) :: Ecto.Query.t()
+  def find_contract_method_query(method_id, limit) do
+    from(
+      contract_method in __MODULE__,
+      where: contract_method.identifier == ^method_id,
+      limit: ^limit
+    )
+  end
+
   defp abi_element_to_contract_method(element) do
     case ABI.parse_specification([element], include_events?: true) do
       [selector] ->
         now = DateTime.utc_now()
 
+        # For events, the method_id (signature) is 32 bytes, whereas for methods
+        # and errors it is 4 bytes. To avoid complications with different sizes,
+        # we always take only the first 4 bytes of the hash.
+        <<first_four_bytes::binary-size(4), _::binary>> = selector.method_id
+
         %{
-          identifier: selector.method_id,
+          identifier: first_four_bytes,
           abi: element,
           type: Atom.to_string(selector.type),
           inserted_at: now,

@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   alias BlockScoutWeb.{AccessHelper, AddressLogsView, Controller}
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -18,7 +19,7 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         :ok <- Chain.check_address_exists(address_hash),
+         :ok <- Address.check_address_exists(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       logs_plus_one = Chain.address_to_logs(address_hash, false, paging_options(params))
       {results, next_page} = split_list_by_page(logs_plus_one)
@@ -78,7 +79,7 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   def search_logs(conn, %{"topic" => topic, "address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         :ok <- Chain.check_address_exists(address_hash) do
+         :ok <- Address.check_address_exists(address_hash) do
       topic = String.trim(topic)
 
       formatted_topic = if String.starts_with?(topic, "0x"), do: topic, else: "0x" <> topic

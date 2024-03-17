@@ -5,13 +5,12 @@ defmodule Explorer.Chain.Block.Reward do
 
   use Explorer.Schema
 
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-
   alias Explorer.Application.Constants
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Block.Reward.AddressType
   alias Explorer.Chain.{Address, Block, Hash, Validator, Wei}
   alias Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand
+  alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Reader
 
   @required_attrs ~w(address_hash address_type block_hash reward)a
@@ -44,26 +43,18 @@ defmodule Explorer.Chain.Block.Reward do
   * `:block_hash` - Hash of the validated block
   * `:reward` - Total block reward
   """
-  @type t :: %__MODULE__{
-          address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          address_hash: Hash.Address.t(),
-          address_type: AddressType.t(),
-          block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
-          block_hash: Hash.Full.t(),
-          reward: Wei.t()
-        }
-
   @primary_key false
-  schema "block_rewards" do
-    field(:address_type, AddressType)
-    field(:reward, Wei)
+  typed_schema "block_rewards" do
+    field(:address_type, AddressType, null: false)
+    field(:reward, Wei, null: false)
 
     belongs_to(
       :address,
       Address,
       foreign_key: :address_hash,
       references: :hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     belongs_to(
@@ -71,7 +62,8 @@ defmodule Explorer.Chain.Block.Reward do
       Block,
       foreign_key: :block_hash,
       references: :hash,
-      type: Hash.Full
+      type: Hash.Full,
+      null: false
     )
 
     timestamps()
@@ -144,7 +136,7 @@ defmodule Explorer.Chain.Block.Reward do
     end
   end
 
-  defp is_validator(mining_key) do
+  defp validator?(mining_key) do
     validators_contract_address =
       Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:validators_contract_address]
 
@@ -192,7 +184,7 @@ defmodule Explorer.Chain.Block.Reward do
   end
 
   def get_validator_payout_key_by_mining(mining_key) do
-    is_validator = is_validator(mining_key)
+    is_validator = validator?(mining_key)
 
     if is_validator do
       keys_manager_contract_address =
@@ -218,7 +210,7 @@ defmodule Explorer.Chain.Block.Reward do
       payout_key_hash =
         call_contract(keys_manager_contract_address, @get_payout_by_mining_abi, get_payout_by_mining_params)
 
-      if payout_key_hash == burn_address_hash_string() do
+      if payout_key_hash == SmartContract.burn_address_hash_string() do
         mining_key
       else
         choose_key(payout_key_hash, mining_key)
@@ -248,7 +240,7 @@ defmodule Explorer.Chain.Block.Reward do
 
     case Reader.query_contract(address, abi, params, false) do
       %{^method_id => {:ok, [result]}} -> result
-      _ -> burn_address_hash_string()
+      _ -> SmartContract.burn_address_hash_string()
     end
   end
 
@@ -278,5 +270,15 @@ defmodule Explorer.Chain.Block.Reward do
     else
       query
     end
+  end
+
+  @doc """
+  Checks if an address has rewards
+  """
+  @spec address_has_rewards?(Hash.Address.t()) :: boolean()
+  def address_has_rewards?(address_hash) do
+    query = from(r in __MODULE__, where: r.address_hash == ^address_hash)
+
+    Repo.exists?(query)
   end
 end

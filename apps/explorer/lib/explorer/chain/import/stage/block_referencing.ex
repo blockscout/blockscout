@@ -1,8 +1,7 @@
 defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   @moduledoc """
   Imports any tables that reference `t:Explorer.Chain.Block.t/0` and that were
-  imported by `Explorer.Chain.Import.Stage.Addresses` and
-  `Explorer.Chain.Import.Stage.AddressReferencing`.
+  imported by `Explorer.Chain.Import.Stage.AddressesBlocksCoinBalances`.
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
@@ -14,34 +13,81 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Logs,
     Runner.Tokens,
     Runner.TokenTransfers,
+    Runner.TokenInstances,
     Runner.Address.TokenBalances,
     Runner.TransactionActions,
     Runner.Withdrawals
   ]
 
+  @optimism_runners [
+    Runner.Optimism.FrameSequences,
+    Runner.Optimism.TxnBatches,
+    Runner.Optimism.OutputRoots,
+    Runner.Optimism.Deposits,
+    Runner.Optimism.Withdrawals,
+    Runner.Optimism.WithdrawalEvents
+  ]
+
+  @polygon_edge_runners [
+    Runner.PolygonEdge.Deposits,
+    Runner.PolygonEdge.DepositExecutes,
+    Runner.PolygonEdge.Withdrawals,
+    Runner.PolygonEdge.WithdrawalExits
+  ]
+
+  @polygon_zkevm_runners [
+    Runner.PolygonZkevm.LifecycleTransactions,
+    Runner.PolygonZkevm.TransactionBatches,
+    Runner.PolygonZkevm.BatchTransactions,
+    Runner.PolygonZkevm.BridgeL1Tokens,
+    Runner.PolygonZkevm.BridgeOperations
+  ]
+
+  @zksync_runners [
+    Runner.ZkSync.LifecycleTransactions,
+    Runner.ZkSync.TransactionBatches,
+    Runner.ZkSync.BatchTransactions,
+    Runner.ZkSync.BatchBlocks
+  ]
+
+  @shibarium_runners [
+    Runner.Shibarium.BridgeOperations
+  ]
+
+  @ethereum_runners [
+    Runner.Beacon.BlobTransactions
+  ]
+
   @impl Stage
   def runners do
-    case System.get_env("CHAIN_TYPE") do
+    case Application.get_env(:explorer, :chain_type) do
+      "optimism" ->
+        @default_runners ++ @optimism_runners
+
       "polygon_edge" ->
-        @default_runners ++
-          [
-            Runner.PolygonEdge.Deposits,
-            Runner.PolygonEdge.DepositExecutes,
-            Runner.PolygonEdge.Withdrawals,
-            Runner.PolygonEdge.WithdrawalExits
-          ]
+        @default_runners ++ @polygon_edge_runners
 
       "polygon_zkevm" ->
-        @default_runners ++
-          [
-            Runner.Zkevm.LifecycleTransactions,
-            Runner.Zkevm.TransactionBatches,
-            Runner.Zkevm.BatchTransactions
-          ]
+        @default_runners ++ @polygon_zkevm_runners
+
+      "shibarium" ->
+        @default_runners ++ @shibarium_runners
+
+      "ethereum" ->
+        @default_runners ++ @ethereum_runners
+
+      "zksync" ->
+        @default_runners ++ @zksync_runners
 
       _ ->
         @default_runners
     end
+  end
+
+  @impl Stage
+  def all_runners do
+    @default_runners ++
+      @optimism_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners ++ @zksync_runners
   end
 
   @impl Stage

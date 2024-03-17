@@ -11,6 +11,7 @@ import Config
 
 # General application configuration
 config :explorer,
+  chain_type: ConfigHelper.chain_type(),
   ecto_repos: ConfigHelper.repos(),
   token_functions_reader_max_retries: 3,
   # for not fully indexed blockchains
@@ -75,6 +76,11 @@ config :explorer, Explorer.Chain.Cache.WithdrawalsSum,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
+config :explorer, Explorer.Chain.Cache.StabilityValidatorsCounters,
+  enabled: true,
+  enable_consolidation: true,
+  update_interval_in_milliseconds: update_interval_in_milliseconds_default
+
 config :explorer, Explorer.Chain.Cache.TransactionActionTokensData, enabled: true
 
 config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: true
@@ -100,7 +106,7 @@ config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.BlockBurnedFeeCounter,
+config :explorer, Explorer.Counters.BlockBurntFeeCounter,
   enabled: true,
   enable_consolidation: true
 
@@ -108,9 +114,14 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: true
-
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: true
+
+config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: true
+config :explorer, Explorer.Migrator.AddressCurrentTokenBalanceTokenType, enabled: true
+config :explorer, Explorer.Migrator.AddressTokenBalanceTokenType, enabled: true
+config :explorer, Explorer.Migrator.SanitizeMissingBlockRanges, enabled: true
+config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, enabled: true
+config :explorer, Explorer.Migrator.TokenTransferTokenType, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 
@@ -134,6 +145,8 @@ config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org"
 
 config :explorer, :http_adapter, HTTPoison
+
+config :explorer, Explorer.Chain.BridgedToken, enabled: ConfigHelper.parse_bool_env_var("BRIDGED_TOKENS_ENABLED")
 
 config :logger, :explorer,
   # keep synced with `config/config.exs`

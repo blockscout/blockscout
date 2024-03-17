@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Hash, TokenTransfer, Wei}
+  alias Explorer.Chain.{Hash, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Transaction.StateChange
 
   defstruct [:coin_or_token_transfers, :address, :token_id, :balance_before, :balance_after, :balance_diff, :miner?]
@@ -120,7 +120,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
   end
 
   defp do_update_balance(old_val, type, transfer, _) do
-    token_ids = if transfer.token.type == "ERC-1155", do: transfer.token_ids || [transfer.token_id], else: [nil]
+    token_ids = if transfer.token.type == "ERC-1155", do: transfer.token_ids, else: [nil]
     transfer_amounts = transfer.amounts || [transfer.amount || 1]
 
     sub_or_add =
@@ -140,7 +140,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
   end
 
   def from_loss(tx) do
-    {_, fee} = Chain.fee(tx, :wei)
+    {_, fee} = Transaction.fee(tx, :wei)
 
     if error?(tx) do
       %Wei{value: fee}

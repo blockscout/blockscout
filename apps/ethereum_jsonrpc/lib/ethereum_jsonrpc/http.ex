@@ -23,7 +23,7 @@ defmodule EthereumJSONRPC.HTTP do
   def json_rpc(%{method: method} = request, options) when is_map(request) do
     json = encode_json(request)
     http = Keyword.fetch!(options, :http)
-    url = url(options, method)
+    {url_type, url} = url(options, method)
     http_options = Keyword.fetch!(options, :http_options)
 
     with {:ok, %{body: body, status_code: code}} <- http.json_rpc(url, json, headers(), http_options),
@@ -33,7 +33,7 @@ defmodule EthereumJSONRPC.HTTP do
     else
       error ->
         named_arguments = [transport: __MODULE__, transport_options: Keyword.delete(options, :method_to_url)]
-        EndpointAvailabilityObserver.inc_error_count(url, named_arguments)
+        EndpointAvailabilityObserver.inc_error_count(url, named_arguments, url_type)
         error
     end
   end
@@ -65,7 +65,7 @@ defmodule EthereumJSONRPC.HTTP do
   defp chunked_json_rpc([[%{method: method} | _] = batch | tail] = chunks, options, decoded_response_bodies)
        when is_list(tail) and is_list(decoded_response_bodies) do
     http = Keyword.fetch!(options, :http)
-    url = url(options, method)
+    {url_type, url} = url(options, method)
     http_options = Keyword.fetch!(options, :http_options)
 
     json = encode_json(batch)
@@ -85,7 +85,7 @@ defmodule EthereumJSONRPC.HTTP do
 
       {:error, _} = error ->
         named_arguments = [transport: __MODULE__, transport_options: Keyword.delete(options, :method_to_url)]
-        EndpointAvailabilityObserver.inc_error_count(url, named_arguments)
+        EndpointAvailabilityObserver.inc_error_count(url, named_arguments, url_type)
         error
     end
   end
@@ -94,9 +94,20 @@ defmodule EthereumJSONRPC.HTTP do
     case length(batch) do
       # it can't be made any smaller
       1 ->
+        old_truncate = Application.get_env(:logger, :truncate)
+        Logger.configure(truncate: :infinity)
+
         Logger.error(fn ->
-          "413 Request Entity Too Large returned from single request batch.  Cannot shrink batch further."
+          [
+            "413 Request Entity Too Large returned from single request batch. Cannot shrink batch further. ",
+            "The actual batched request was ",
+            "#{inspect(batch)}. ",
+            "The actual response of the method was ",
+            "#{inspect(response)}."
+          ]
         end)
+
+        Logger.configure(truncate: old_truncate)
 
         {:error, response}
 
@@ -192,12 +203,21 @@ defmodule EthereumJSONRPC.HTTP do
     with {:ok, method_to_url} <- Keyword.fetch(options, :method_to_url),
          {:ok, method_atom} <- to_existing_atom(method),
          {:ok, url} <- Keyword.fetch(method_to_url, method_atom) do
-      EndpointAvailabilityObserver.maybe_replace_url(url, options[:fallback_trace_url])
+      {url_type, fallback_url} =
+        case method_atom do
+          :eth_call -> {:eth_call, options[:fallback_eth_call_url]}
+          _ -> {:trace, options[:fallback_trace_url]}
+        end
+
+      {url_type, EndpointAvailabilityObserver.maybe_replace_url(url, fallback_url, url_type)}
     else
       _ ->
-        options
-        |> Keyword.fetch!(:url)
-        |> EndpointAvailabilityObserver.maybe_replace_url(options[:fallback_url])
+        url =
+          options
+          |> Keyword.fetch!(:url)
+          |> EndpointAvailabilityObserver.maybe_replace_url(options[:fallback_url], :http)
+
+        {:http, url}
     end
   end
 

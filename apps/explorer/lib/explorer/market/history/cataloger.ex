@@ -4,10 +4,9 @@ defmodule Explorer.Market.History.Cataloger do
 
   Market grabs the last 365 day's worth of market history for the configured
   coin in the explorer. Once that data is fetched, current day's values are
-  checked every 60 minutes. Additionally, failed requests to the history
-  source will follow exponential backoff `100ms * 2^(n+1)` where `n` is the
-  number of failed requests.
-
+  checked every `MARKET_HISTORY_FETCH_INTERVAL` or every 60 minutes by default.
+  Additionally, failed requests to the history source will follow exponential
+  backoff `100ms * 2^(n+1)` where `n` is the number of failed requests.
   """
 
   use GenServer
@@ -41,9 +40,29 @@ defmodule Explorer.Market.History.Cataloger do
 
   @impl GenServer
   # Record fetch successful.
-  def handle_info({_ref, {:price_history, {_, _, {:ok, records}}}}, state) do
-    Process.send(self(), {:fetch_market_cap_history, 365}, [])
+  def handle_info({_ref, {:price_history, {day_count, _, false, {:ok, records}}}}, state) do
+    if config_or_default(:secondary_coin_enabled, false) do
+      Process.send(self(), {:fetch_price_history_for_secondary_coin, day_count}, [])
+    else
+      Process.send(self(), {:fetch_market_cap_history, day_count}, [])
+    end
+
     state = state |> Map.put_new(:price_records, records)
+
+    {:noreply, state}
+  end
+
+  # Secondary coin.
+  def handle_info({_ref, {:price_history, {day_count, _, true, {:ok, records}}}}, state) do
+    Process.send(self(), {:fetch_market_cap_history, day_count}, [])
+    state = state |> Map.put_new(:secondary_coin_price_records, records)
+
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_info({:fetch_price_history_for_secondary_coin, day_count}, state) do
+    fetch_price_history(day_count, true)
 
     {:noreply, state}
   end
@@ -99,10 +118,10 @@ defmodule Explorer.Market.History.Cataloger do
 
   # Failed to get records. Try again.
   @impl GenServer
-  def handle_info({_ref, {:price_history, {day_count, failed_attempts, :error}}}, state) do
+  def handle_info({_ref, {:price_history, {day_count, failed_attempts, secondary_coin?, :error}}}, state) do
     Logger.warn(fn -> "Failed to fetch price history. Trying again." end)
 
-    fetch_price_history(day_count, failed_attempts + 1)
+    fetch_price_history(day_count, secondary_coin?, failed_attempts + 1)
 
     {:noreply, state}
   end
@@ -120,7 +139,7 @@ defmodule Explorer.Market.History.Cataloger do
   # Failed to get records. Try again.
   @impl GenServer
   def handle_info({_ref, {:tvl_history, {day_count, failed_attempts, :error}}}, state) do
-    Logger.warn(fn -> "Failed to fetch market cap history. Trying again." end)
+    Logger.warn(fn -> "Failed to fetch tvl history. Trying again." end)
 
     fetch_tvl_history(day_count, failed_attempts + 1)
 
@@ -151,19 +170,31 @@ defmodule Explorer.Market.History.Cataloger do
     Application.get_env(:explorer, __MODULE__)[key] || default
   end
 
-  defp market_cap_history(records, state) do
+  defp market_cap_history(records, _state) do
     Market.bulk_insert_history(records)
 
     # Schedule next check for history
     fetch_after = config_or_default(:history_fetch_interval, :timer.minutes(60))
     Process.send_after(self(), {:fetch_price_history, 1}, fetch_after)
 
-    {:noreply, state}
+    {:noreply, %{}}
   end
 
-  @spec source_price() :: module()
-  defp source_price do
-    config_or_default(:price_source, Explorer.ExchangeRates.Source, Explorer.Market.History.Source.Price.CryptoCompare)
+  @spec source_price(boolean()) :: module()
+  defp source_price(secondary_coin?) do
+    if secondary_coin? do
+      config_or_default(
+        :secondary_coin_price_source,
+        Explorer.ExchangeRates.Source,
+        Explorer.Market.History.Source.Price.CryptoCompare
+      )
+    else
+      config_or_default(
+        :price_source,
+        Explorer.ExchangeRates.Source,
+        Explorer.Market.History.Source.Price.CryptoCompare
+      )
+    end
   end
 
   @spec source_market_cap() :: module()
@@ -184,15 +215,17 @@ defmodule Explorer.Market.History.Cataloger do
     )
   end
 
-  @spec fetch_price_history(non_neg_integer(), non_neg_integer()) :: Task.t()
-  defp fetch_price_history(day_count, failed_attempts \\ 0) do
+  @spec fetch_price_history(non_neg_integer(), boolean(), non_neg_integer()) :: Task.t()
+  defp fetch_price_history(day_count, secondary_coin? \\ false, failed_attempts \\ 0) do
     Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
       Process.sleep(HistoryProcess.delay(failed_attempts))
 
       if failed_attempts < @price_failed_attempts do
-        {:price_history, {day_count, failed_attempts, source_price().fetch_price_history(day_count)}}
+        {:price_history,
+         {day_count, failed_attempts, secondary_coin?,
+          source_price(secondary_coin?).fetch_price_history(day_count, secondary_coin?)}}
       else
-        {:price_history, {day_count, failed_attempts, {:ok, []}}}
+        {:price_history, {day_count, failed_attempts, secondary_coin?, {:ok, []}}}
       end
     end)
   end
@@ -225,13 +258,14 @@ defmodule Explorer.Market.History.Cataloger do
 
   defp compile_records(state) do
     price_records = state.price_records
+    secondary_coin_price_records = state |> Map.get(:secondary_coin_price_records, [])
     market_cap_records = state.market_cap_records
     tvl_records = state.tvl_records
 
-    all_records = price_records ++ market_cap_records ++ tvl_records
+    all_records = price_records ++ market_cap_records ++ tvl_records ++ secondary_coin_price_records
 
     all_records
-    |> Enum.group_by(fn %{date: date} -> date end)
+    |> Enum.group_by(fn %{date: date} = value -> {date, Map.get(value, :secondary_coin, false)} end)
     |> Map.values()
     |> Enum.map(fn a ->
       Enum.reduce(a, %{}, fn x, acc -> Map.merge(x, acc) end)

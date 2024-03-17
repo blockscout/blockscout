@@ -1,0 +1,23 @@
+name: 'Setup repo and calc short SHA commit'
+description: 'Setup repo: checkout/login/extract metadata, Set up Docker Buildx and calculate short SHA commit'
+inputs:
+  docker-username:
+    description: 'Docker username'
+    required: true
+  docker-password:
+    description: 'Docker password'
+    required: true
+runs:
+  using: "composite"
+
+  steps:
+    - uses: actions/checkout@v4
+    - name: Setup repo
+      uses: ./.github/actions/setup-repo
+      with:
+        docker-username: ${{ inputs.docker-username }}
+        docker-password: ${{ inputs.docker-password }}
+
+    - name: Add SHORT_SHA env property with commit short sha
+      shell: bash
+      run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV

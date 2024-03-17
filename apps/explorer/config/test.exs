@@ -12,7 +12,8 @@ config :explorer, Explorer.Repo,
   ownership_timeout: :timer.minutes(7),
   timeout: :timer.seconds(60),
   queue_target: 1000,
-  migration_lock: nil
+  migration_lock: nil,
+  log: false
 
 # Configure API database
 config :explorer, Explorer.Repo.Replica1,
@@ -23,9 +24,12 @@ config :explorer, Explorer.Repo.Replica1,
   ownership_timeout: :timer.minutes(1),
   timeout: :timer.seconds(60),
   queue_target: 1000,
-  enable_caching_implementation_data_of_proxy: true,
-  avg_block_time_as_ttl_cached_implementation_data_of_proxy: false,
-  fallback_ttl_cached_implementation_data_of_proxy: :timer.seconds(20),
+  log: false
+
+config :explorer, :proxy,
+  caching_implementation_data_enabled: true,
+  implementation_data_ttl_via_avg_block_time: false,
+  fallback_cached_implementation_data_ttl: :timer.seconds(20),
   implementation_data_fetching_timeout: :timer.seconds(20)
 
 # Configure API database
@@ -36,9 +40,22 @@ config :explorer, Explorer.Repo.Account,
   # Default of `5_000` was too low for `BlockFetcher` test
   ownership_timeout: :timer.minutes(1),
   timeout: :timer.seconds(60),
-  queue_target: 1000
+  queue_target: 1000,
+  log: false
 
-for repo <- [Explorer.Repo.PolygonEdge, Explorer.Repo.PolygonZkevm, Explorer.Repo.RSK, Explorer.Repo.Suave] do
+for repo <- [
+      Explorer.Repo.Beacon,
+      Explorer.Repo.Optimism,
+      Explorer.Repo.PolygonEdge,
+      Explorer.Repo.PolygonZkevm,
+      Explorer.Repo.ZkSync,
+      Explorer.Repo.RSK,
+      Explorer.Repo.Shibarium,
+      Explorer.Repo.Suave,
+      Explorer.Repo.BridgedTokens,
+      Explorer.Repo.Filecoin,
+      Explorer.Repo.Stability
+    ] do
   config :explorer, repo,
     database: "explorer_test",
     hostname: "localhost",
@@ -46,8 +63,19 @@ for repo <- [Explorer.Repo.PolygonEdge, Explorer.Repo.PolygonZkevm, Explorer.Rep
     # Default of `5_000` was too low for `BlockFetcher` test
     ownership_timeout: :timer.minutes(1),
     timeout: :timer.seconds(60),
-    queue_target: 1000
+    queue_target: 1000,
+    log: false,
+    pool_size: 1
 end
+
+config :explorer, Explorer.Repo.PolygonZkevm,
+  database: "explorer_test",
+  hostname: "localhost",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  # Default of `5_000` was too low for `BlockFetcher` test
+  ownership_timeout: :timer.minutes(1),
+  timeout: :timer.seconds(60),
+  queue_target: 1000
 
 config :logger, :explorer,
   level: :warn,

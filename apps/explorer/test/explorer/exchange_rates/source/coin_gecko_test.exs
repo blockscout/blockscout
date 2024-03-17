@@ -71,7 +71,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
     end
 
     test "composes cg url to list of contract address hashes" do
-      assert "https://api.coingecko.com/api/v3/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&contract_addresses=0xdAC17F958D2ee523a2206206994597C13D831ec7" ==
+      assert "https://api.coingecko.com/api/v3/simple/token_price/ethereum?vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&contract_addresses=0xdAC17F958D2ee523a2206206994597C13D831ec7" ==
                CoinGecko.source_url(["0xdAC17F958D2ee523a2206206994597C13D831ec7"])
     end
 
@@ -120,7 +120,8 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
           name: "POA Network",
           symbol: "POA",
           usd_value: Decimal.new("0.01345698"),
-          volume_24h_usd: Decimal.new("119946")
+          volume_24h_usd: Decimal.new("119946"),
+          image_url: "https://assets.coingecko.com/coins/images/3157/thumb/poa-network.png?1548331565"
         }
       ]
 

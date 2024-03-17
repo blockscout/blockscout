@@ -8,22 +8,15 @@ defmodule Explorer.Admin.Administrator do
   import Ecto.Changeset
 
   alias Explorer.Accounts.User
-  alias Explorer.Admin.Administrator
-  alias Explorer.Admin.Administrator.Role
 
   @typedoc """
   * `:role` - Administrator's role determining permission level
   * `:user` - The `t:User.t/0` that is an admin
   * `:user_id` - User foreign key
   """
-  @type t :: %Administrator{
-          role: Role.t(),
-          user: User.t() | %Ecto.Association.NotLoaded{}
-        }
-
-  schema "administrators" do
-    field(:role, :string)
-    belongs_to(:user, User)
+  typed_schema "administrators" do
+    field(:role, :string, null: false)
+    belongs_to(:user, User, null: false)
 
     timestamps()
   end

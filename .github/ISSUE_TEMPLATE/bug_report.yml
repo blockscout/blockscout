@@ -24,8 +24,8 @@ body:
       description: How the application has been deployed.
       options:
           - Docker-compose
+          - Helm charts (k8s)
           - Manual from the source code
-          - Helm charts
           - Docker
     validations:
       required: true
@@ -65,7 +65,7 @@ body:
     attributes:
       label: Backend version
       description: The release version of the backend or branch/commit.
-      placeholder: v5.3.1
+      placeholder: v6.1.0
     validations:
       required: true
 

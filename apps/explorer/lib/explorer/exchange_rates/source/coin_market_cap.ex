@@ -44,7 +44,8 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
         name: token_properties["name"],
         symbol: String.upcase(token_properties["symbol"]),
         usd_value: current_price,
-        volume_24h_usd: to_decimal(total_volume_data_usd)
+        volume_24h_usd: to_decimal(total_volume_data_usd),
+        image_url: nil
       }
     ]
   end
@@ -68,6 +69,12 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
       true ->
         nil
     end
+  end
+
+  @impl Source
+  def source_url(:secondary_coin) do
+    coin_id = config(:secondary_coin_id)
+    if coin_id, do: "#{api_quotes_latest_url()}?id=#{coin_id}&CMC_PRO_API_KEY=#{api_key()}", else: nil
   end
 
   @impl Source

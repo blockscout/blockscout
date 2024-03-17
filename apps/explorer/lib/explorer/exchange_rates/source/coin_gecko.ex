@@ -3,7 +3,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   Adapter for fetching exchange rates from https://coingecko.com
   """
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Helper}
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -13,9 +13,11 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @impl Source
   def format_data(%{"market_data" => _} = json_data) do
     market_data = json_data["market_data"]
+    image_data = json_data["image"]
 
     last_updated = get_last_updated(market_data)
     current_price = get_current_price(market_data)
+    image_url = get_coin_image(image_data)
 
     id = json_data["id"]
 
@@ -39,7 +41,8 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
         name: json_data["name"],
         symbol: String.upcase(json_data["symbol"]),
         usd_value: current_price,
-        volume_24h_usd: to_decimal(total_volume_data_usd)
+        volume_24h_usd: to_decimal(total_volume_data_usd),
+        image_url: image_url
       }
     ]
   end
@@ -48,6 +51,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   def format_data(%{} = market_data_for_tokens) do
     currency = currency()
     market_cap = currency <> "_market_cap"
+    volume_24h = currency <> "_24h_vol"
 
     market_data_for_tokens
     |> Enum.reduce(%{}, fn
@@ -57,7 +61,8 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
             acc
             |> Map.put(address_hash, %{
               fiat_value: Map.get(market_data, currency),
-              circulating_market_cap: Map.get(market_data, market_cap)
+              circulating_market_cap: Map.get(market_data, market_cap),
+              volume_24h: Map.get(market_data, volume_24h)
             })
 
           _ ->
@@ -89,14 +94,22 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @impl Source
   def format_data(_), do: []
 
-  @spec history_url(non_neg_integer()) :: String.t()
-  def history_url(previous_days) do
+  @spec history_url(non_neg_integer(), boolean()) :: String.t()
+  def history_url(previous_days, secondary_coin? \\ false) do
     query_params = %{
       "days" => previous_days,
       "vs_currency" => "usd"
     }
 
-    "#{source_url()}/market_chart?#{URI.encode_query(query_params)}"
+    source_url = if secondary_coin?, do: secondary_source_url(), else: source_url()
+
+    "#{source_url}/market_chart?#{URI.encode_query(query_params)}"
+  end
+
+  def secondary_source_url do
+    id = config(:secondary_coin_id)
+
+    if id, do: "#{base_url()}/coins/#{id}", else: nil
   end
 
   @impl Source
@@ -128,7 +141,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   def source_url(token_addresses) when is_list(token_addresses) do
     joined_addresses = token_addresses |> Enum.map_join(",", &to_string/1)
 
-    "#{base_url()}/simple/token_price/#{platform()}?vs_currencies=#{currency()}&include_market_cap=true&contract_addresses=#{joined_addresses}"
+    "#{base_url()}/simple/token_price/#{platform()}?vs_currencies=#{currency()}&include_market_cap=true&include_24hr_vol=true&contract_addresses=#{joined_addresses}"
   end
 
   @impl Source
@@ -238,6 +251,20 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       to_decimal(market_data["current_price"]["usd"])
     else
       1
+    end
+  end
+
+  defp get_coin_image(image_data) do
+    image_url_raw =
+      if image_data do
+        image_data["thumb"] || image_data["small"]
+      else
+        nil
+      end
+
+    case Helper.validate_url(image_url_raw) do
+      {:ok, url} -> url
+      _ -> nil
     end
   end
 

@@ -16,31 +16,62 @@ defmodule BlockScoutWeb.Tokens.Helper do
   When the token's type is ERC-721, the function will return a string with the token_id that
   represents the ERC-721 token since this kind of token doesn't have amount and decimals.
   """
-  def token_transfer_amount(%{token: token, amount: amount, amounts: amounts, token_ids: token_ids}) do
-    do_token_transfer_amount(token, amount, amounts, token_ids)
+  def token_transfer_amount(%{
+        token: token,
+        token_type: token_type,
+        amount: amount,
+        amounts: amounts,
+        token_ids: token_ids
+      }) do
+    do_token_transfer_amount(token, token_type, amount, amounts, token_ids)
   end
 
-  def token_transfer_amount(%{token: token, amount: amount, token_ids: token_ids}) do
-    do_token_transfer_amount(token, amount, nil, token_ids)
+  def token_transfer_amount(%{token: token, token_type: token_type, amount: amount, token_ids: token_ids}) do
+    do_token_transfer_amount(token, token_type, amount, nil, token_ids)
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20"}, nil, nil, _token_ids) do
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount(%Token{type: type}, nil, nil, nil, _token_ids) when type in ["ERC-20", "ERC-404"] do
     {:ok, "--"}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: nil}, amount, _amounts, _token_ids) do
+  defp do_token_transfer_amount(_token, type, nil, nil, _token_ids) when type in ["ERC-20", "ERC-404"] do
+    {:ok, "--"}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount(%Token{type: type, decimals: nil}, nil, amount, _amounts, _token_ids)
+       when type in ["ERC-20", "ERC-404"] do
     {:ok, CurrencyHelper.format_according_to_decimals(amount, Decimal.new(0))}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: decimals}, amount, _amounts, _token_ids) do
+  defp do_token_transfer_amount(%Token{decimals: nil}, type, amount, _amounts, _token_ids)
+       when type in ["ERC-20", "ERC-404"] do
+    {:ok, CurrencyHelper.format_according_to_decimals(amount, Decimal.new(0))}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount(%Token{type: type, decimals: decimals}, nil, amount, _amounts, _token_ids)
+       when type in ["ERC-20", "ERC-404"] do
     {:ok, CurrencyHelper.format_according_to_decimals(amount, decimals)}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-721"}, _amount, _amounts, _token_ids) do
+  defp do_token_transfer_amount(%Token{decimals: decimals}, type, amount, _amounts, _token_ids)
+       when type in ["ERC-20", "ERC-404"] do
+    {:ok, CurrencyHelper.format_according_to_decimals(amount, decimals)}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount(%Token{type: "ERC-721"}, nil, _amount, _amounts, _token_ids) do
     {:ok, :erc721_instance}
   end
 
-  defp do_token_transfer_amount(%Token{type: "ERC-1155", decimals: decimals}, amount, amounts, token_ids) do
+  defp do_token_transfer_amount(_token, "ERC-721", _amount, _amounts, _token_ids) do
+    {:ok, :erc721_instance}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount(%Token{type: "ERC-1155", decimals: decimals}, nil, amount, amounts, token_ids) do
     if amount do
       {:ok, :erc1155_instance, CurrencyHelper.format_according_to_decimals(amount, decimals)}
     else
@@ -48,42 +79,78 @@ defmodule BlockScoutWeb.Tokens.Helper do
     end
   end
 
-  defp do_token_transfer_amount(_token, _amount, _amounts, _token_ids) do
+  defp do_token_transfer_amount(%Token{decimals: decimals}, "ERC-1155", amount, amounts, token_ids) do
+    if amount do
+      {:ok, :erc1155_instance, CurrencyHelper.format_according_to_decimals(amount, decimals)}
+    else
+      {:ok, :erc1155_instance, amounts, token_ids, decimals}
+    end
+  end
+
+  defp do_token_transfer_amount(_token, _token_type, _amount, _amounts, _token_ids) do
     nil
   end
 
   def token_transfer_amount_for_api(%{
         token: token,
+        token_type: token_type,
         amount: amount,
         amounts: amounts,
         token_ids: token_ids
       }) do
-    do_token_transfer_amount_for_api(token, amount, amounts, token_ids)
+    do_token_transfer_amount_for_api(token, token_type, amount, amounts, token_ids)
   end
 
-  def token_transfer_amount_for_api(%{token: token, amount: amount, token_ids: token_ids}) do
-    do_token_transfer_amount_for_api(token, amount, nil, token_ids)
+  def token_transfer_amount_for_api(%{token: token, token_type: token_type, amount: amount, token_ids: token_ids}) do
+    do_token_transfer_amount_for_api(token, token_type, amount, nil, token_ids)
   end
 
-  defp do_token_transfer_amount_for_api(%Token{type: "ERC-20"}, nil, nil, _token_ids) do
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount_for_api(%Token{type: type}, nil, nil, nil, _token_ids)
+       when type in ["ERC-20", "ERC-404"] do
     {:ok, nil}
   end
 
+  defp do_token_transfer_amount_for_api(_token, type, nil, nil, _token_ids) when type in ["ERC-20", "ERC-404"] do
+    {:ok, nil}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
   defp do_token_transfer_amount_for_api(
-         %Token{type: "ERC-20", decimals: decimals},
+         %Token{type: type, decimals: decimals},
+         nil,
          amount,
          _amounts,
          _token_ids
-       ) do
+       )
+       when type in ["ERC-20", "ERC-404"] do
     {:ok, amount, decimals}
   end
 
-  defp do_token_transfer_amount_for_api(%Token{type: "ERC-721"}, _amount, _amounts, _token_ids) do
+  defp do_token_transfer_amount_for_api(
+         %Token{decimals: decimals},
+         type,
+         amount,
+         _amounts,
+         _token_ids
+       )
+       when type in ["ERC-20", "ERC-404"] do
+    {:ok, amount, decimals}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
+  defp do_token_transfer_amount_for_api(%Token{type: "ERC-721"}, nil, _amount, _amounts, _token_ids) do
     {:ok, :erc721_instance}
   end
 
+  defp do_token_transfer_amount_for_api(_token, "ERC-721", _amount, _amounts, _token_ids) do
+    {:ok, :erc721_instance}
+  end
+
+  # TODO: remove this clause along with token transfer denormalization
   defp do_token_transfer_amount_for_api(
          %Token{type: "ERC-1155", decimals: decimals},
+         nil,
          amount,
          amounts,
          token_ids
@@ -95,7 +162,21 @@ defmodule BlockScoutWeb.Tokens.Helper do
     end
   end
 
-  defp do_token_transfer_amount_for_api(_token, _amount, _amounts, _token_ids) do
+  defp do_token_transfer_amount_for_api(
+         %Token{decimals: decimals},
+         "ERC-1155",
+         amount,
+         amounts,
+         token_ids
+       ) do
+    if amount do
+      {:ok, :erc1155_instance, amount, decimals}
+    else
+      {:ok, :erc1155_instance, amounts, token_ids, decimals}
+    end
+  end
+
+  defp do_token_transfer_amount_for_api(_token, _token_type, _amount, _amounts, _token_ids) do
     nil
   end
 

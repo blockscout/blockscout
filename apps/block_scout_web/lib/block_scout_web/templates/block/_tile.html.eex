@@ -1,4 +1,4 @@
-<% burned_fee = if !is_nil(@block.base_fee_per_gas), do: Wei.mult(@block.base_fee_per_gas, BlockBurnedFeeCounter.fetch(@block.hash)), else: nil %>
+<% burnt_fees = if !is_nil(@block.base_fee_per_gas), do: Wei.mult(@block.base_fee_per_gas, BlockBurntFeeCounter.fetch(@block.hash)), else: nil %>
 <% priority_fee = if !is_nil(@block.base_fee_per_gas), do: BlockPriorityFeeCounter.fetch(@block.hash), else: nil %>
 <div class="tile tile-type-<%= String.downcase(@block_type) %> fade-up" data-selector="block-tile" data-block-number="<%= to_string(@block.number) %>" data-block-hash="<%= @block.hash %>">
   <div class="row">
@@ -33,7 +33,7 @@
           <span class="mr-2"> <%= Cldr.Unit.new!(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
         <% end %>
         <!-- age -->
-        <span data-from-now="<%= @block.timestamp %>"></span>
+        <span data-test="data-from-now" data-from-now="<%= @block.timestamp %>"></span>
       </div>
       <%= if !Application.get_env(:block_scout_web, :hide_block_miner) do %>
         <div class="text-nowrap text-truncate mt-3 mt-md-0">
@@ -61,7 +61,7 @@
         <!-- Priority Fee -->
         <span> <%= format_wei_value(%Wei{value: priority_fee}, :ether) %> <%= gettext "Priority Fees" %> </span>
         <!-- Burnt Fees -->
-        <span> <%= format_wei_value(burned_fee, :ether) %> <%= gettext "Burnt Fees" %> </span>
+        <span> <%= format_wei_value(burnt_fees, :ether) %> <%= gettext "Burnt Fees" %> </span>
       <% end %>
       <!-- Gas Limit -->
       <span> <%= formatted_gas(@block.gas_limit) %> <%= gettext "Gas Limit" %> </span>

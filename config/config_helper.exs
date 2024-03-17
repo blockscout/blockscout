@@ -7,12 +7,25 @@ defmodule ConfigHelper do
   def repos do
     base_repos = [Explorer.Repo, Explorer.Repo.Account]
 
-    case System.get_env("CHAIN_TYPE") do
-      "polygon_edge" -> base_repos ++ [Explorer.Repo.PolygonEdge]
-      "polygon_zkevm" -> base_repos ++ [Explorer.Repo.PolygonZkevm]
-      "rsk" -> base_repos ++ [Explorer.Repo.RSK]
-      "suave" -> base_repos ++ [Explorer.Repo.Suave]
-      _ -> base_repos
+    repos =
+      case System.get_env("CHAIN_TYPE") do
+        "ethereum" -> base_repos ++ [Explorer.Repo.Beacon]
+        "optimism" -> base_repos ++ [Explorer.Repo.Optimism]
+        "polygon_edge" -> base_repos ++ [Explorer.Repo.PolygonEdge]
+        "polygon_zkevm" -> base_repos ++ [Explorer.Repo.PolygonZkevm]
+        "rsk" -> base_repos ++ [Explorer.Repo.RSK]
+        "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
+        "suave" -> base_repos ++ [Explorer.Repo.Suave]
+        "filecoin" -> base_repos ++ [Explorer.Repo.Filecoin]
+        "stability" -> base_repos ++ [Explorer.Repo.Stability]
+        "zksync" -> base_repos ++ [Explorer.Repo.ZkSync]
+        _ -> base_repos
+      end
+
+    if System.get_env("BRIDGED_TOKENS_ENABLED") do
+      repos ++ [Explorer.Repo.BridgedTokens]
+    else
+      repos
     end
   end
 
@@ -45,6 +58,17 @@ defmodule ConfigHelper do
     |> Integer.parse()
     |> case do
       {integer, _} -> integer
+      _ -> 0
+    end
+  end
+
+  @spec parse_float_env_var(String.t(), float()) :: float()
+  def parse_float_env_var(env_var, default_value) do
+    env_var
+    |> safe_get_env(to_string(default_value))
+    |> Float.parse()
+    |> case do
+      {float, _} -> float
       _ -> 0
     end
   end
@@ -146,6 +170,20 @@ defmodule ConfigHelper do
     end
   end
 
+  @spec exchange_rates_secondary_coin_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare
+  def exchange_rates_secondary_coin_price_source do
+    cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
+    cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_ID")
+    cc_secondary_coin_symbol = System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL")
+
+    cond do
+      cg_secondary_coin_id && cg_secondary_coin_id !== "" -> Price.CoinGecko
+      cmc_secondary_coin_id && cmc_secondary_coin_id !== "" -> Price.CoinMarketCap
+      cc_secondary_coin_symbol && cc_secondary_coin_symbol !== "" -> Price.CryptoCompare
+      true -> Price.CryptoCompare
+    end
+  end
+
   def block_transformer do
     block_transformers = %{
       "clique" => Blocks.Clique,
@@ -178,5 +216,13 @@ defmodule ConfigHelper do
     |> Jason.decode!()
   rescue
     err -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(err)}"
+  end
+
+  @spec chain_type() :: String.t()
+  def chain_type, do: System.get_env("CHAIN_TYPE") || "default"
+
+  @spec eth_call_url(String.t() | nil) :: String.t() | nil
+  def eth_call_url(default \\ nil) do
+    System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URL") || System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || default
   end
 end

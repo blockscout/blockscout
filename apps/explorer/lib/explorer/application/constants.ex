@@ -5,13 +5,15 @@ defmodule Explorer.Application.Constants do
 
   use Explorer.Schema
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Hash
 
   @keys_manager_contract_address_key "keys_manager_contract_address"
+  @last_processed_erc_721_token "token_instance_sanitizer_last_processed_erc_721_token"
 
   @primary_key false
-  schema "constants" do
-    field(:key, :string, primary_key: true)
-    field(:value, :string)
+  typed_schema "constants" do
+    field(:key, :string, primary_key: true, null: false)
+    field(:value, :string, null: false)
 
     timestamps()
   end
@@ -42,5 +44,39 @@ defmodule Explorer.Application.Constants do
 
   def get_keys_manager_contract_address(options \\ []) do
     get_constant_by_key(@keys_manager_contract_address_key, options)
+  end
+
+  @doc """
+    For usage in Indexer.Fetcher.TokenInstance.SanitizeERC721
+  """
+  @spec insert_last_processed_token_address_hash(Hash.Address.t()) :: Ecto.Schema.t()
+  def insert_last_processed_token_address_hash(address_hash) do
+    existing_value = Repo.get(__MODULE__, @last_processed_erc_721_token)
+
+    if existing_value do
+      existing_value
+      |> changeset(%{value: to_string(address_hash)})
+      |> Repo.update!()
+    else
+      %{key: @last_processed_erc_721_token, value: to_string(address_hash)}
+      |> changeset()
+      |> Repo.insert!()
+    end
+  end
+
+  @doc """
+    For usage in Indexer.Fetcher.TokenInstance.SanitizeERC721
+  """
+  @spec get_last_processed_token_address_hash(keyword()) :: nil | Explorer.Chain.Hash.t()
+  def get_last_processed_token_address_hash(options \\ []) do
+    result = get_constant_by_key(@last_processed_erc_721_token, options)
+
+    case Chain.string_to_address_hash(result) do
+      {:ok, address_hash} ->
+        address_hash
+
+      _ ->
+        nil
+    end
   end
 end

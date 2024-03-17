@@ -35,18 +35,10 @@ defmodule Explorer.DataCase do
 
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo)
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.Account)
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.PolygonEdge)
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.PolygonZkevm)
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.RSK)
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.Suave)
 
     unless tags[:async] do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, {:shared, self()})
-      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonEdge, {:shared, self()})
-      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonZkevm, {:shared, self()})
-      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.RSK, {:shared, self()})
-      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Suave, {:shared, self()})
     end
 
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())

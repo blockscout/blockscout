@@ -1,11 +1,15 @@
 defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
+  require Logger
+
   import Explorer.Helper, only: [decode_data: 2]
 
   alias ABI.FunctionSelector
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
+  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.SmartContract.Proxy.EIP1167
 
   def render("scripts.html", %{conn: conn}) do
     render_scripts(conn, "address_contract/code_highlighting.js")
@@ -130,6 +134,12 @@ defmodule BlockScoutWeb.AddressContractView do
     chain_id = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:chain_id]
     repo_url = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:repo_url]
     match = if partial_match, do: "/partial_match/", else: "/full_match/"
-    repo_url <> match <> chain_id <> "/" <> checksummed_hash <> "/"
+
+    if chain_id do
+      repo_url <> match <> chain_id <> "/" <> checksummed_hash <> "/"
+    else
+      Logger.warning("chain_id is nil. Please set CHAIN_ID env variable.")
+      nil
+    end
   end
 end

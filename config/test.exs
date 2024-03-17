@@ -4,6 +4,8 @@ import Config
 
 config :logger, :console, level: :warn
 
+config :logger_json, :backend, level: :none
+
 config :logger, :ecto,
   level: :warn,
   path: Path.absname("logs/test/ecto.log")

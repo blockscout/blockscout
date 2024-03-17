@@ -7,9 +7,18 @@ defmodule Explorer.Chain.LogTest do
   alias Explorer.Chain.{Log, SmartContract}
   alias Explorer.Repo
 
+  @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
+  end
+
   setup :set_mox_from_context
 
   doctest Log
+
+  setup :verify_on_exit!
 
   describe "changeset/2" do
     test "accepts valid attributes" do
@@ -34,18 +43,21 @@ defmodule Explorer.Chain.LogTest do
         params_for(
           :log,
           address_hash: build(:address).hash,
-          first_topic: "ham",
+          first_topic: @first_topic_hex_string_1,
           transaction_hash: build(:transaction).hash,
           block_hash: build(:block).hash
         )
 
-      assert %Changeset{changes: %{first_topic: "ham"}, valid?: true} = Log.changeset(%Log{}, params)
+      result = Log.changeset(%Log{}, params)
+
+      assert result.valid? == true
+      assert result.changes.first_topic == topic(@first_topic_hex_string_1)
     end
 
     test "assigns optional attributes" do
-      params = Map.put(params_for(:log), :first_topic, "ham")
+      params = Map.put(params_for(:log), :first_topic, topic(@first_topic_hex_string_1))
       changeset = Log.changeset(%Log{}, params)
-      assert changeset.changes.first_topic === "ham"
+      assert changeset.changes.first_topic === topic(@first_topic_hex_string_1)
     end
   end
 
@@ -97,14 +109,14 @@ defmodule Explorer.Chain.LogTest do
         insert(:log,
           address: to_address,
           transaction: transaction,
-          first_topic: topic1,
-          second_topic: topic2,
-          third_topic: topic3,
+          first_topic: topic(topic1),
+          second_topic: topic(topic2),
+          third_topic: topic(topic3),
           fourth_topic: nil,
           data: data
         )
 
-      get_eip1967_implementation()
+      request_zero_implementations()
 
       assert {{:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",
                [
@@ -151,9 +163,9 @@ defmodule Explorer.Chain.LogTest do
       log =
         insert(:log,
           transaction: transaction,
-          first_topic: topic1,
-          second_topic: topic2,
-          third_topic: topic3,
+          first_topic: topic(topic1),
+          second_topic: topic(topic2),
+          third_topic: topic(topic3),
           fourth_topic: nil,
           data: data
         )
@@ -173,7 +185,7 @@ defmodule Explorer.Chain.LogTest do
     end
   end
 
-  def get_eip1967_implementation do
+  def request_zero_implementations do
     EthereumJSONRPC.Mox
     |> expect(:json_rpc, fn %{
                               id: 0,
@@ -205,6 +217,18 @@ defmodule Explorer.Chain.LogTest do
                               params: [
                                 _,
                                 "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
+                                "latest"
+                              ]
+                            },
+                            _options ->
+      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
+    end)
+    |> expect(:json_rpc, fn %{
+                              id: 0,
+                              method: "eth_getStorageAt",
+                              params: [
+                                _,
+                                "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
                                 "latest"
                               ]
                             },

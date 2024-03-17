@@ -48,25 +48,36 @@ defmodule BlockScoutWeb.API.V2.Helper do
     })
   end
 
-  defp address_with_info(%Address{} = address, _address_hash) do
+  @doc """
+  Gets address with the additional info for api v2
+  """
+  @spec address_with_info(any(), any()) :: nil | %{optional(<<_::32, _::_*8>>) => any()}
+  def address_with_info(%Address{} = address, _address_hash) do
     %{
       "hash" => Address.checksum(address),
-      "is_contract" => is_smart_contract(address),
+      "is_contract" => Address.smart_contract?(address),
       "name" => address_name(address),
       "implementation_name" => implementation_name(address),
-      "is_verified" => is_verified(address)
+      "is_verified" => verified?(address),
+      "ens_domain_name" => address.ens_domain_name
     }
   end
 
-  defp address_with_info(%NotLoaded{}, address_hash) do
+  def address_with_info(%{ens_domain_name: name}, address_hash) do
+    nil
+    |> address_with_info(address_hash)
+    |> Map.put("ens_domain_name", name)
+  end
+
+  def address_with_info(%NotLoaded{}, address_hash) do
     address_with_info(nil, address_hash)
   end
 
-  defp address_with_info(nil, nil) do
+  def address_with_info(nil, nil) do
     nil
   end
 
-  defp address_with_info(_, address_hash) do
+  def address_with_info(_, address_hash) do
     %{
       "hash" => Address.checksum(address_hash),
       "is_contract" => false,
@@ -94,15 +105,10 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   def implementation_name(_), do: nil
 
-  def is_smart_contract(%Address{contract_code: nil}), do: false
-  def is_smart_contract(%Address{contract_code: _}), do: true
-  def is_smart_contract(%NotLoaded{}), do: nil
-  def is_smart_contract(_), do: false
-
-  def is_verified(%Address{smart_contract: nil}), do: false
-  def is_verified(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
-  def is_verified(%Address{smart_contract: %NotLoaded{}}), do: nil
-  def is_verified(%Address{smart_contract: _}), do: true
+  def verified?(%Address{smart_contract: nil}), do: false
+  def verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+  def verified?(%Address{smart_contract: %NotLoaded{}}), do: nil
+  def verified?(%Address{smart_contract: _}), do: true
 
   def market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value, market_cap_usd: market_cap_usd})
       when is_nil(available_supply) or is_nil(usd_value) do

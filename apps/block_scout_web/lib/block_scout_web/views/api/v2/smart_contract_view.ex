@@ -10,7 +10,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
+  alias Explorer.Chain.SmartContract.Proxy.EIP1167
   alias Explorer.Visualize.Sol2uml
 
   require Logger
@@ -39,6 +40,18 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
       end)
     end)
+  end
+
+  def render("audit_reports.json", %{reports: reports}) do
+    %{"items" => Enum.map(reports, &prepare_audit_report/1), "next_page_params" => nil}
+  end
+
+  defp prepare_audit_report(report) do
+    %{
+      "audit_company_name" => report.audit_company_name,
+      "audit_report_url" => report.audit_report_url,
+      "audit_publish_date" => report.audit_publish_date
+    }
   end
 
   def prepare_function_response(outputs, names, contract_address_hash) do
@@ -134,15 +147,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   # credo:disable-for-next-line
   def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address) do
-    minimal_proxy_template = Chain.get_minimal_proxy_template(address.hash, @api_true)
-    twin = Chain.get_address_verified_twin_contract(address.hash, @api_true)
-    metadata_for_verification = minimal_proxy_template || twin.verified_contract
+    minimal_proxy_template = EIP1167.get_implementation_address(address.hash, @api_true)
+    bytecode_twin = SmartContract.get_address_verified_twin_contract(address.hash, @api_true)
+    metadata_for_verification = minimal_proxy_template || bytecode_twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
-    additional_sources_from_twin = twin.additional_sources
-    fully_verified = Chain.smart_contract_fully_verified?(address.hash, @api_true)
+    fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
 
     additional_sources =
-      if smart_contract_verified, do: address.smart_contract_additional_sources, else: additional_sources_from_twin
+      additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin)
 
     visualize_sol2uml_enabled = Sol2uml.enabled?()
     target_contract = if smart_contract_verified, do: address.smart_contract, else: metadata_for_verification
@@ -182,13 +194,34 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         if(smart_contract_verified,
           do: format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
         ),
-      "language" => smart_contract_language(smart_contract)
+      "language" => smart_contract_language(smart_contract),
+      "license_type" => smart_contract.license_type
     }
     |> Map.merge(bytecode_info(address))
   end
 
   def prepare_smart_contract(address) do
     bytecode_info(address)
+  end
+
+  @doc """
+  Returns additional sources of the smart-contract or from bytecode twin or from implementation, if it fits minimal proxy pattern (EIP-1167)
+  """
+  @spec additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil, %{
+          :verified_contract => any(),
+          :additional_sources => SmartContractAdditionalSource.t() | nil
+        }) :: [SmartContractAdditionalSource.t()]
+  def additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin) do
+    cond do
+      !is_nil(minimal_proxy_template) ->
+        minimal_proxy_template.smart_contract_additional_sources
+
+      smart_contract_verified ->
+        smart_contract.smart_contract_additional_sources
+
+      true ->
+        bytecode_twin.additional_sources
+    end
   end
 
   defp bytecode_info(address) do
@@ -272,7 +305,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "market_cap" => token && token.circulating_market_cap,
       "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
       "coin_balance" =>
-        if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value)
+        if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value),
+      "license_type" => smart_contract.license_type
     }
   end
 
@@ -321,6 +355,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   def render_json(value, _type) do
-    value
+    to_string(value)
   end
 end
