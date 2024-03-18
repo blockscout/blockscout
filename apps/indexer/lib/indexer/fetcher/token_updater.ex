@@ -79,7 +79,7 @@ defmodule Indexer.Fetcher.TokenUpdater do
 
   @doc false
   def update_metadata(metadata_list) when is_list(metadata_list) do
-    options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
+    options = [necessity_by_association: %{}]
 
     Enum.each(metadata_list, fn %{contract_address_hash: contract_address_hash} = metadata ->
       {:ok, hash} = Hash.Address.cast(contract_address_hash)

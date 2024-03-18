@@ -3480,7 +3480,7 @@ defmodule Explorer.Chain do
     query =
       from(
         token in Token,
-        where: token.cataloged == false,
+        where: token.cataloged == false or is_nil(token.cataloged),
         select: token.contract_address_hash
       )
 
@@ -3745,11 +3745,24 @@ defmodule Explorer.Chain do
   As part of updating token, an additional record is inserted for
   naming the address for reference if a name is provided for a token.
   """
-  @spec update_token(Token.t(), map()) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
-  def update_token(%Token{contract_address_hash: address_hash} = token, params \\ %{}) do
+  @spec update_token(Token.t(), map(), boolean()) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
+  def update_token(%Token{contract_address_hash: address_hash} = token, params \\ %{}, info_from_admin_panel? \\ false) do
+    params =
+      if Map.has_key?(params, :total_supply) do
+        Map.put(params, :total_supply_updated_at_block, BlockNumber.get_max())
+      else
+        params
+      end
+
     filtered_params = for({key, value} <- params, value !== "" && !is_nil(value), do: {key, value}) |> Enum.into(%{})
 
-    token_changeset = Token.changeset(token, Map.put(filtered_params, :updated_at, DateTime.utc_now()))
+    token_changeset =
+      token
+      |> Token.changeset(Map.put(filtered_params, :updated_at, DateTime.utc_now()))
+      |> (&if(token.is_verified_via_admin_panel && !info_from_admin_panel?,
+            do: &1 |> Changeset.delete_change(:symbol) |> Changeset.delete_change(:name),
+            else: &1
+          )).()
 
     address_name_changeset =
       Address.Name.changeset(%Address.Name{}, Map.put(filtered_params, :address_hash, address_hash))

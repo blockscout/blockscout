@@ -45,7 +45,6 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
     token =
       Token
       |> Repo.get_by(contract_address_hash: address)
-      |> Repo.preload([:contract_address])
 
     if is_nil(token.total_supply_updated_at_block) or
          BlockNumber.get_max() - token.total_supply_updated_at_block > @ttl_in_blocks do
@@ -55,8 +54,7 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
         token_address_hash
         |> MetadataRetriever.get_total_supply_of()
 
-      {:ok, token} =
-        Chain.update_token(token, Map.put(token_params, :total_supply_updated_at_block, BlockNumber.get_max()))
+      {:ok, token} = Chain.update_token(token, token_params)
 
       Publisher.broadcast(%{token_total_supply: [token]}, :on_demand)
       :ok
