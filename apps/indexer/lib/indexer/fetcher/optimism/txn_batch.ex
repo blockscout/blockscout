@@ -615,7 +615,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
 
     seq = %{
       id: frame_sequence_id,
-      l1_transaction_hashes: Enum.reverse(l1_transaction_hashes),
+      l1_transaction_hashes: Enum.uniq(Enum.reverse(l1_transaction_hashes)),
       l1_timestamp: channel.l1_timestamp
     }
 
