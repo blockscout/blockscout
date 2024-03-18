@@ -363,7 +363,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp valid_internal_transactions(transactions, internal_transactions_params, invalid_block_numbers) do
-    if Enum.count(transactions) > 0 do
+    if !Enum.empty?(transactions) do
       blocks_map = Map.new(transactions, &{&1.block_number, &1.block_hash})
 
       valid_internal_txs =
@@ -708,7 +708,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers, %{updated_at: updated_at}) do
-    if Enum.count(invalid_block_numbers) > 0 do
+    if !Enum.empty?(invalid_block_numbers) do
       update_block_query =
         from(
           block in Block,

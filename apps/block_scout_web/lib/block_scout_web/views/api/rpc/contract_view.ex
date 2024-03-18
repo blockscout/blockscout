@@ -124,7 +124,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   defp set_external_libraries(contract_output, contract) do
     external_libraries = Map.get(contract, :external_libraries, [])
 
-    if Enum.count(external_libraries) > 0 do
+    if !Enum.empty?(external_libraries) do
       external_libraries_without_id =
         Enum.map(external_libraries, fn %{name: name, address_hash: address_hash} ->
           %{"name" => name, "address_hash" => address_hash}

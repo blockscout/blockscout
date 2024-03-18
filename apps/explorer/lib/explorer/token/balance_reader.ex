@@ -75,7 +75,7 @@ defmodule Explorer.Token.BalanceReader do
         |> Enum.map(&format_balance_request/1)
       end
 
-    if Enum.count(formatted_balances_requests) > 0 do
+    if !Enum.empty?(formatted_balances_requests) do
       formatted_balances_requests
       |> Reader.query_contracts(abi)
       |> Enum.map(&format_balance_result/1)

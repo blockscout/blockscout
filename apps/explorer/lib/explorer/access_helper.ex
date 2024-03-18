@@ -7,7 +7,7 @@ defmodule Explorer.AccessHelper do
     restricted_list_var = Application.get_env(:explorer, :restricted_list)
     restricted_list = (restricted_list_var && String.split(restricted_list_var, ",")) || []
 
-    if Enum.count(restricted_list) > 0 do
+    if !Enum.empty?(restricted_list) do
       formatted_restricted_list =
         restricted_list
         |> Enum.map(fn addr ->
