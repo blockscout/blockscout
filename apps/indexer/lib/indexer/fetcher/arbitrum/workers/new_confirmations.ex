@@ -55,7 +55,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   defp parse_logs_for_new_confirmations(logs) do
     {rollup_block_to_l1_txs, lifecycle_txs, blocks_requests} =
       logs
-      |> Enum.reduce({%{}, %{}}, fn event, {lifecycle_txs, blocks_requests} ->
+      |> Enum.reduce({%{}, %{}, %{}}, fn event, {block_to_txs, lifecycle_txs, blocks_requests} ->
         rollup_block_hash = send_root_updated_event_parse(event)
 
         l1_tx_hash_raw = event["transactionHash"]
@@ -64,7 +64,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
         updated_block_to_txs =
           Map.put(
-            lifecycle_txs,
+            block_to_txs,
             rollup_block_hash,
             %{l1_tx_hash: l1_tx_hash, l1_block_num: l1_blk_num}
           )
