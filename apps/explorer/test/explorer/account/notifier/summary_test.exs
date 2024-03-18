@@ -356,9 +356,6 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
       amount = Decimal.div(transfer.amount, decimals)
 
-      IO.inspect("Gimme")
-      IO.inspect(Summary.process(transfer))
-
       assert Summary.process(transfer) == [
                %Summary{
                  amount: amount,
