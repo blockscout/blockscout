@@ -178,7 +178,6 @@ defmodule Explorer.Token.MetadataRetriever do
       token_to_update =
         Token
         |> Repo.get_by(contract_address_hash: contract_address_hash)
-        |> Repo.preload([:contract_address])
 
       set_skip_metadata(token_to_update)
     end

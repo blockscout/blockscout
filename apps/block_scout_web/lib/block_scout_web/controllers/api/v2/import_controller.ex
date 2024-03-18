@@ -2,8 +2,8 @@ defmodule BlockScoutWeb.API.V2.ImportController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.API.V2.ApiView
-  alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Data, SmartContract, Token}
+  alias Explorer.Chain
+  alias Explorer.Chain.{Data, SmartContract}
   alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
   alias Explorer.SmartContract.EthBytecodeDBInterface
 
@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
         |> put_token_string_field(token_symbol, :symbol)
         |> put_token_string_field(token_name, :name)
 
-      case token |> Token.changeset(changeset) |> Repo.update() do
+      case Chain.update_token(token, changeset, true) do
         {:ok, _} ->
           conn
           |> put_view(ApiView)
