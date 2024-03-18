@@ -42,10 +42,9 @@ defmodule EthereumJSONRPC.Geth do
   end
 
   defp correct_timeouts(json_rpc_named_arguments) do
-    debug_trace_transaction_timeout =
-      Application.get_env(:ethereum_jsonrpc, __MODULE__)[:debug_trace_transaction_timeout]
+    debug_trace_timeout = Application.get_env(:ethereum_jsonrpc, __MODULE__)[:debug_trace_timeout]
 
-    case CommonHelper.parse_duration(debug_trace_transaction_timeout) do
+    case CommonHelper.parse_duration(debug_trace_timeout) do
       {:error, :invalid_format} ->
         json_rpc_named_arguments
 
@@ -152,21 +151,25 @@ defmodule EthereumJSONRPC.Geth do
   @tracer File.read!(@tracer_path)
 
   defp debug_trace_transaction_request(%{id: id, hash_data: hash_data}) do
-    debug_trace_transaction_timeout =
-      Application.get_env(:ethereum_jsonrpc, __MODULE__)[:debug_trace_transaction_timeout]
+    debug_trace_timeout = Application.get_env(:ethereum_jsonrpc, __MODULE__)[:debug_trace_timeout]
 
     request(%{
       id: id,
       method: "debug_traceTransaction",
-      params: [hash_data, %{timeout: debug_trace_transaction_timeout} |> Map.merge(tracer_params())]
+      params: [hash_data, %{timeout: debug_trace_timeout} |> Map.merge(tracer_params())]
     })
   end
 
   defp debug_trace_block_by_number_request({id, block_number}) do
+    debug_trace_timeout = Application.get_env(:ethereum_jsonrpc, __MODULE__)[:debug_trace_timeout]
+
     request(%{
       id: id,
       method: "debug_traceBlockByNumber",
-      params: [integer_to_quantity(block_number), tracer_params()]
+      params: [
+        integer_to_quantity(block_number),
+        %{timeout: debug_trace_timeout} |> Map.merge(tracer_params())
+      ]
     })
   end
 
