@@ -18,7 +18,7 @@ defmodule Explorer.GraphQL do
     Transaction
   }
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
 
   @doc """
   Returns a query to fetch transactions with a matching `to_address_hash`,
@@ -67,7 +67,7 @@ defmodule Explorer.GraphQL do
 
     query
     |> InternalTransaction.where_nonpending_block()
-    |> Chain.where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
   end
 
   @doc """

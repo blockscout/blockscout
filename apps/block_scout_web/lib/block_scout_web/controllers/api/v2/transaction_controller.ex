@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.Chain
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
-  alias Explorer.Chain.{Hash, Transaction}
+  alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
@@ -241,7 +241,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> put_status(200)
         |> render(:raw_trace, %{internal_transactions: []})
       else
-        internal_transactions = Chain.all_transaction_to_internal_transactions(transaction_hash, @api_true)
+        internal_transactions =
+          InternalTransaction.all_transaction_to_internal_transactions(transaction_hash, @api_true)
 
         first_trace_exists =
           Enum.find_index(internal_transactions, fn trace ->
@@ -305,7 +306,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(@api_true)
 
-      internal_transactions_plus_one = Chain.transaction_to_internal_transactions(transaction_hash, full_options)
+      internal_transactions_plus_one =
+        InternalTransaction.transaction_to_internal_transactions(transaction_hash, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
