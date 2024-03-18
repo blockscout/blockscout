@@ -30,7 +30,6 @@ defmodule Explorer.Chain.Search do
   }
 
   @max_safe_integer round(:math.pow(2, 63)) - 1
-  @min_safe_integer -round(:math.pow(2, 63))
 
   @doc """
     Search function used in web interface. Returns paginated search results
@@ -470,13 +469,13 @@ defmodule Explorer.Chain.Search do
     )
   end
 
-  defp safe_parse_integer(string) do
+  defp safe_parse_block_number(string) do
     case Integer.parse(string) do
       {num, ""} ->
-        if @min_safe_integer < num and num <= @max_safe_integer do
+        if 0 <= num and num <= @max_safe_integer do
           {:ok, num}
         else
-          {:error, "Integer is too large"}
+          {:error, "Integer out of range"}
         end
 
       _ ->
@@ -501,7 +500,7 @@ defmodule Explorer.Chain.Search do
         )
 
       _ ->
-        case safe_parse_integer(term) do
+        case safe_parse_block_number(term) do
           {:ok, block_number} ->
             from(block in Block,
               where: block.number == ^block_number,
