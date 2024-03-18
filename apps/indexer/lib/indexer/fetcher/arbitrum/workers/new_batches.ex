@@ -46,26 +46,46 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   end
 
   defp add_sequencer_l2_batch_from_origin_calldata_parse(calldata) do
-    "0x8f111f3c" <> encoded_params = calldata
+    case calldata do
+      "0x8f111f3c" <> encoded_params ->
+        # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
+        [sequence_number, _data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            %FunctionSelector{
+              function: "addSequencerL2BatchFromOrigin",
+              types: [
+                {:uint, 256},
+                :bytes,
+                {:uint, 256},
+                :address,
+                {:uint, 256},
+                {:uint, 256}
+              ]
+            }
+          )
 
-    # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
-    [sequence_number, _data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
-      TypeDecoder.decode(
-        Base.decode16!(encoded_params, case: :lower),
-        %FunctionSelector{
-          function: "addSequencerL2BatchFromOrigin",
-          types: [
-            {:uint, 256},
-            :bytes,
-            {:uint, 256},
-            :address,
-            {:uint, 256},
-            {:uint, 256}
-          ]
-        }
-      )
+        {sequence_number, prev_message_count, new_message_count}
 
-    {sequence_number, prev_message_count, new_message_count}
+      "0x3e5aa082" <> encoded_params ->
+        # addSequencerL2BatchFromBlobs(uint256 sequenceNumber, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
+        [sequence_number, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            %FunctionSelector{
+              function: "addSequencerL2BatchFromBlobs",
+              types: [
+                {:uint, 256},
+                {:uint, 256},
+                :address,
+                {:uint, 256},
+                {:uint, 256}
+              ]
+            }
+          )
+
+        {sequence_number, prev_message_count, new_message_count}
+    end
   end
 
   defp parse_logs_for_new_batches(logs) do
