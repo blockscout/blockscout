@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Account.Api.V1.EmailController do
+defmodule BlockScoutWeb.Account.Api.V2.EmailController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.Models.UserFromAuth
@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.Account.Api.V1.EmailController do
 
   @invalid_session_key Application.compile_env(:block_scout_web, :invalid_session_key)
 
-  action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
+  action_fallback(BlockScoutWeb.Account.Api.V2.FallbackController)
 
   plug(:fetch_cookies, signed: [@invalid_session_key])
 
