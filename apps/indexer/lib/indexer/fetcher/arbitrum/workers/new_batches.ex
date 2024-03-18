@@ -88,7 +88,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     end
   end
 
-  defp parse_logs_for_new_batches(logs) do
+  defp parse_logs_to_get_batch_numbers(logs) do
+    logs
+    |> Enum.map(fn event ->
+      {batch_num, _, _} = sequencer_batch_delivered_event_parse(event)
+      batch_num
+    end)
+  end
+
+  defp parse_logs_for_new_batches(logs, existing_batches) do
     {batches, txs_requests, blocks_requests} =
       logs
       |> Enum.reduce({%{}, [], %{}}, fn event, {batches, txs_requests, blocks_requests} ->
@@ -98,33 +106,37 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         tx_hash = Rpc.strhash_to_byteshash(tx_hash_raw)
         blk_num = quantity_to_integer(event["blockNumber"])
 
-        updated_batches =
-          Map.put(
-            batches,
-            batch_num,
-            %{
-              number: batch_num,
-              before_acc: before_acc,
-              after_acc: after_acc,
-              tx_hash: tx_hash
-            }
-          )
+        if batch_num in existing_batches do
+          {batches, txs_requests, blocks_requests}
+        else
+          updated_batches =
+            Map.put(
+              batches,
+              batch_num,
+              %{
+                number: batch_num,
+                before_acc: before_acc,
+                after_acc: after_acc,
+                tx_hash: tx_hash
+              }
+            )
 
-        updated_txs_requests = [
-          Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash_raw})
-          | txs_requests
-        ]
+          updated_txs_requests = [
+            Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash_raw})
+            | txs_requests
+          ]
 
-        updated_blocks_requests =
-          Map.put(
-            blocks_requests,
-            blk_num,
-            BlockByNumber.request(%{id: 0, number: blk_num}, false, true)
-          )
+          updated_blocks_requests =
+            Map.put(
+              blocks_requests,
+              blk_num,
+              BlockByNumber.request(%{id: 0, number: blk_num}, false, true)
+            )
 
-        Logger.info("New batch #{batch_num} found in #{tx_hash_raw}")
+          Logger.info("New batch #{batch_num} found in #{tx_hash_raw}")
 
-        {updated_batches, updated_txs_requests, updated_blocks_requests}
+          {updated_batches, updated_txs_requests, updated_blocks_requests}
+        end
       end)
 
     {batches, txs_requests, Map.values(blocks_requests)}
@@ -367,10 +379,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     end)
   end
 
-  defp handle_batches_from_logs([], _, _, _) do
-    {[], [], [], [], []}
-  end
-
   defp handle_batches_from_logs(
          logs,
          msg_to_block_shift,
@@ -380,7 +388,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
          } = l1_rpc_config,
          rollup_rpc_config
        ) do
-    {batches, txs_requests, blocks_requests} = parse_logs_for_new_batches(logs)
+    existing_batches =
+      logs
+      |> parse_logs_to_get_batch_numbers()
+      |> Db.batches_exist()
+
+    {batches, txs_requests, blocks_requests} = parse_logs_for_new_batches(logs, existing_batches)
 
     blocks_to_ts = Rpc.execute_blocks_requests_and_get_ts(blocks_requests, json_rpc_named_arguments, chunk_size)
 
@@ -431,36 +444,92 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         sequencer_inbox_address,
         start_block,
         end_block,
+        new_batches_limit,
         messages_to_blocks_shift,
         l1_rpc_config,
         rollup_rpc_config
       ) do
-    logs =
-      get_logs_new_batches(
+    do_discover(
+      sequencer_inbox_address,
+      start_block,
+      end_block,
+      new_batches_limit,
+      messages_to_blocks_shift,
+      l1_rpc_config,
+      rollup_rpc_config
+    )
+  end
+
+  @doc """
+  TBD
+  """
+  def discover_historical(
+        sequencer_inbox_address,
         start_block,
         end_block,
+        new_batches_limit,
+        messages_to_blocks_shift,
+        l1_rpc_config,
+        rollup_rpc_config
+      ) do
+    do_discover(
+      sequencer_inbox_address,
+      end_block,
+      start_block,
+      new_batches_limit,
+      messages_to_blocks_shift,
+      l1_rpc_config,
+      rollup_rpc_config
+    )
+  end
+
+  @doc """
+  TBD
+  """
+  defp do_discover(
+         sequencer_inbox_address,
+         start_block,
+         end_block,
+         new_batches_limit,
+         messages_to_blocks_shift,
+         l1_rpc_config,
+         rollup_rpc_config
+       ) do
+    raw_logs =
+      get_logs_new_batches(
+        min(start_block, end_block),
+        max(start_block, end_block),
         sequencer_inbox_address,
         l1_rpc_config.json_rpc_named_arguments
       )
 
-    {batches, lifecycle_txs, rollup_blocks, rollup_txs, committed_txs} =
-      handle_batches_from_logs(
-        logs,
-        messages_to_blocks_shift,
-        l1_rpc_config,
-        rollup_rpc_config
-      )
+    logs =
+      if end_block >= start_block do
+        raw_logs
+      else
+        Enum.reverse(raw_logs)
+      end
 
-    # TODO: make sure that commit_ids from rollup_blocks will not override blocks in DB
+    logs
+    |> Enum.chunk_every(new_batches_limit)
+    |> Enum.each(fn chunked_logs ->
+      {batches, lifecycle_txs, rollup_blocks, rollup_txs, committed_txs} =
+        handle_batches_from_logs(
+          chunked_logs,
+          messages_to_blocks_shift,
+          l1_rpc_config,
+          rollup_rpc_config
+        )
 
-    {:ok, _} =
-      Chain.import(%{
-        arbitrum_lifecycle_transactions: %{params: lifecycle_txs},
-        arbitrum_l1_batches: %{params: batches},
-        arbitrum_batch_blocks: %{params: rollup_blocks},
-        arbitrum_batch_transactions: %{params: rollup_txs},
-        arbitrum_messages: %{params: committed_txs},
-        timeout: :infinity
-      })
+      {:ok, _} =
+        Chain.import(%{
+          arbitrum_lifecycle_transactions: %{params: lifecycle_txs},
+          arbitrum_l1_batches: %{params: batches},
+          arbitrum_batch_blocks: %{params: rollup_blocks},
+          arbitrum_batch_transactions: %{params: rollup_txs},
+          arbitrum_messages: %{params: committed_txs},
+          timeout: :infinity
+        })
+    end)
   end
 end

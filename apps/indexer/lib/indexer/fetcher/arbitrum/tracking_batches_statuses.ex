@@ -49,6 +49,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     track_l1_tx_finalization = config_tracker[:track_l1_tx_finalization]
     finalized_confirmations = config_tracker[:finalized_confirmations]
     confirmation_batches_depth = config_tracker[:confirmation_batches_depth]
+    new_batches_limit = config_tracker[:new_batches_limit]
 
     Process.send(self(), :init_worker, [])
 
@@ -70,8 +71,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
          l1_rollup_address: l1_rollup_address,
          l1_start_block: l1_start_block,
          l1_rollup_init_block: l1_rollup_init_block,
+         new_batches_limit: new_batches_limit,
          messages_to_blocks_shift: messages_to_blocks_shift,
-         confirmation_batches_depth: confirmation_batches_depth
+         confirmation_batches_depth: confirmation_batches_depth,
        },
        data: %{}
      }}
@@ -303,7 +305,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
             l1_rpc: l1_rpc_config,
             rollup_rpc: rollup_rpc_config,
             l1_sequencer_inbox_address: sequencer_inbox_address,
-            messages_to_blocks_shift: messages_to_blocks_shift
+            messages_to_blocks_shift: messages_to_blocks_shift,
+            new_batches_limit: new_batches_limit
           },
           data: %{new_batches_start_block: start_block}
         } = _state
@@ -326,6 +329,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         sequencer_inbox_address,
         start_block,
         end_block,
+        new_batches_limit,
         messages_to_blocks_shift,
         l1_rpc_config,
         rollup_rpc_config
@@ -344,7 +348,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
             rollup_rpc: rollup_rpc_config,
             l1_sequencer_inbox_address: sequencer_inbox_address,
             messages_to_blocks_shift: messages_to_blocks_shift,
-            l1_rollup_init_block: l1_rollup_init_block
+            l1_rollup_init_block: l1_rollup_init_block,
+            new_batches_limit: new_batches_limit
           },
           data: %{historical_batches_end_block: end_block}
         } = _state
@@ -354,10 +359,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
       Logger.info("Block range for historical batches discovery: #{start_block}..#{end_block}")
 
-      NewBatches.discover(
+      NewBatches.discover_historical(
         sequencer_inbox_address,
         start_block,
         end_block,
+        new_batches_limit,
         messages_to_blocks_shift,
         l1_rpc_config,
         rollup_rpc_config

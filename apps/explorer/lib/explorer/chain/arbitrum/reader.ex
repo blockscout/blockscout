@@ -192,6 +192,18 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     end
   end
 
+  def batches_exist(batches_numbers) do
+    query =
+      from(
+        batch in L1Batch,
+        select: batch.number,
+        where: batch.number in ^batches_numbers
+      )
+
+    query
+    |> Repo.all(timeout: :infinity)
+  end
+
   def get_batch_by_rollup_block_num(number) do
     query =
       from(batch in L1Batch,

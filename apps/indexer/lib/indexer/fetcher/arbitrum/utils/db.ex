@@ -287,6 +287,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     |> Enum.map(&message_to_map/1)
   end
 
+  def batches_exist(batches_numbers) do
+    Reader.batches_exist(batches_numbers)
+  end
+
   def l1_executions(message_ids) do
     Reader.l1_executions(message_ids)
   end
