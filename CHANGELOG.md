@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#9652](https://github.com/blockscout/blockscout/pull/9652) - Remove duplicated tx hashes while indexing OP batches
+
 ### Chore
 
 <details>
