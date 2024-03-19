@@ -257,7 +257,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   defp get_coin_image(image_data) do
     image_url_raw =
       if image_data do
-        image_data["thumb"] || image_data["small"]
+        image_data["small"] || image_data["thumb"]
       else
         nil
       end
