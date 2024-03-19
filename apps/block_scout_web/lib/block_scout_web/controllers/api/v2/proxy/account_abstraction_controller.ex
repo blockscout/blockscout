@@ -230,8 +230,10 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   end
 
   defp try_to_decode_call_data(%{"call_data" => _call_data} = user_op) do
-    {_mock_tx, _decoded_input, decoded_input_json} = TransactionInterpretationService.decode_user_op_calldata(user_op)
-    Map.put(user_op, "decoded_call_data", decoded_input_json)
+    {_mock_tx, _decoded_input, decoded_input_json, address_hash} =
+      TransactionInterpretationService.decode_user_op_calldata(user_op)
+
+    Map.merge(user_op, %{"decoded_call_data" => decoded_input_json, "executed_address" => address_hash})
   end
 
   defp try_to_decode_call_data(response), do: response

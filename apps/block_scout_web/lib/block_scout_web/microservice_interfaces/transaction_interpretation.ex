@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
+  alias Explorer.Chain.Hash.Address, as: AddressHash
   alias Explorer.Chain.{Data, Log, TokenTransfer, Transaction}
   alias HTTPoison.Response
 
@@ -280,7 +281,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       )
 
   defp prepare_request_body_from_user_op(user_op) do
-    {mock_tx, decoded_input, decoded_input_json} = decode_user_op_calldata(user_op)
+    {mock_tx, decoded_input, decoded_input_json, address_hash} = decode_user_op_calldata(user_op)
 
     {prepared_logs, prepared_token_transfers} = user_op_to_logs_and_token_transfers(user_op, decoded_input)
 
@@ -288,9 +289,14 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     from_address = Chain.hash_to_address(from_address_hash, [])
 
+    {:ok, to_address_hash} =
+      if address_hash, do: {:ok, address_hash}, else: Chain.string_to_address_hash(user_op["entry_point"])
+
+    to_address = Chain.hash_to_address(to_address_hash, [])
+
     %{
       data: %{
-        to: nil,
+        to: Helper.address_with_info(nil, to_address, to_address_hash, true),
         from: Helper.address_with_info(nil, from_address, from_address_hash, true),
         hash: user_op["hash"],
         type: 0,
@@ -310,7 +316,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @doc """
   Decodes user_op["call_data"] and return {mock_tx, decoded_input, decoded_input_json}
   """
-  @spec decode_user_op_calldata(map()) :: {Transaction.t(), tuple(), map()}
+  @spec decode_user_op_calldata(map()) :: {Transaction.t(), tuple(), map(), AddressHash.t() | nil}
   def decode_user_op_calldata(user_op) do
     {:ok, input} = Data.cast(user_op["call_data"])
 
@@ -326,7 +332,58 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(mock_tx, skip_sig_provider?, @api_true)
 
-    decoded_input_json = decoded_input |> TransactionView.format_decoded_input() |> TransactionView.decoded_input()
-    {mock_tx, decoded_input, decoded_input_json}
+    prepared_decoded_input = decoded_input |> TransactionView.format_decoded_input()
+
+    case try_to_decode_decoded_call_data(prepared_decoded_input, op_hash) do
+      nil ->
+        decoded_input_json = prepared_decoded_input |> TransactionView.decoded_input()
+
+        {mock_tx, decoded_input, decoded_input_json, nil}
+
+      {address_hash, decoded_input, mock_tx} ->
+        decoded_input_json = decoded_input |> TransactionView.format_decoded_input() |> TransactionView.decoded_input()
+
+        {mock_tx, decoded_input, decoded_input_json, address_hash}
+    end
+  end
+
+  defp try_to_decode_decoded_call_data(
+         {:ok, "b61d27f6", "execute(" <> _,
+          [{_, "address", address_hash_bytes}, {_, "uint256", _amount}, {_, "bytes", call_data_bytes}]},
+         op_hash
+       ) do
+    decode_decoded_call_data(address_hash_bytes, call_data_bytes, op_hash)
+  end
+
+  defp try_to_decode_decoded_call_data(
+         {:ok, "51945447", "execute(" <> _,
+          [{_, "address", address_hash_bytes}, {_, "uint256", _amount}, {_, "bytes", call_data_bytes}, {_, "uint8", _}]},
+         op_hash
+       ) do
+    decode_decoded_call_data(address_hash_bytes, call_data_bytes, op_hash)
+  end
+
+  defp try_to_decode_decoded_call_data(_, _), do: nil
+
+  defp decode_decoded_call_data(address_hash_bytes, call_data_bytes, op_hash) do
+    mock_tx = %Transaction{
+      to_address: %NotLoaded{},
+      input: %Data{bytes: call_data_bytes},
+      hash: op_hash
+    }
+
+    skip_sig_provider? = false
+
+    {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(mock_tx, skip_sig_provider?, @api_true)
+
+    case TransactionView.format_decoded_input(decoded_input) do
+      nil ->
+        nil
+
+      _ ->
+        {:ok, address_hash} = AddressHash.cast(address_hash_bytes)
+
+        {address_hash, decoded_input, mock_tx}
+    end
   end
 end
