@@ -1,8 +1,9 @@
 defmodule Explorer.Chain.InternalTransactionTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.{Data, InternalTransaction, Wei}
+  alias Explorer.Chain.{Address, Block, Data, InternalTransaction, Transaction, Wei}
   alias Explorer.Factory
+  alias Explorer.PagingOptions
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
