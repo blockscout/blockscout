@@ -303,10 +303,9 @@ config :explorer, Explorer.ExchangeRates.Source,
   tvl_source: ConfigHelper.exchange_rates_tvl_source()
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
-base_url: System.get_env("EXCHANGE_RATES_COINMARKETCAP_BASE_URL"),
+  base_url: System.get_env("EXCHANGE_RATES_COINMARKETCAP_BASE_URL"),
   api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
   coin_id: System.get_env("EXCHANGE_RATES_COINMARKETCAP_COIN_ID")
-
 
 config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
   platform: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
