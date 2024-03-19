@@ -1386,12 +1386,26 @@ defmodule Explorer.Chain do
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest `{block_number, index}`) and. Results will be the internal
+      transactions older than the `block_number` and `index` that are passed.
   """
-  @spec hashes_to_transactions([Hash.Full.t()], [necessity_by_association_option | api?]) :: [Transaction.t()] | []
+  @spec hashes_to_transactions([Hash.Full.t()], [paging_options | necessity_by_association_option | api?]) ::
+          [Transaction.t()] | []
   def hashes_to_transactions(hashes, options \\ []) when is_list(hashes) and is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    Transaction.fetch_transactions()
+    # Don't use @default_paging_options to preserve backward compatibility
+    paging_options = Keyword.get(options, :paging_options, false)
+
+    transactions =
+      if paging_options do
+        Transaction.fetch_transactions(paging_options)
+      else
+        Transaction.fetch_transactions()
+      end
+
+    transactions
     |> where([transaction], transaction.hash in ^hashes)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
