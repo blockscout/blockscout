@@ -241,7 +241,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
 
     {:ok, inserted_changes_list} =
-      if not Enum.Empty?(ordered_changes_list) do
+      if not Enum.empty?(ordered_changes_list) do
         Import.insert_changes_list(
           repo,
           ordered_changes_list,

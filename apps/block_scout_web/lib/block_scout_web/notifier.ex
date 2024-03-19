@@ -433,7 +433,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_transactions_websocket_v2_inner(transactions, default_channel, event) do
-    if not Enum.Empty?(transactions) do
+    if not Enum.empty?(transactions) do
       Endpoint.broadcast(default_channel, event, %{
         transactions: transactions
       })

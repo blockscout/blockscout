@@ -283,7 +283,7 @@ defmodule BlockScoutWeb.AddressView do
 
   def has_decompiled_code?(address) do
     address.has_decompiled_code? ||
-      (Ecto.assoc_loaded?(address.decompiled_smart_contracts) && not Enum.Empty?(address.decompiled_smart_contracts))
+      (Ecto.assoc_loaded?(address.decompiled_smart_contracts) && not Enum.empty?(address.decompiled_smart_contracts))
   end
 
   def token_title(%Token{name: nil, contract_address_hash: contract_address_hash}) do

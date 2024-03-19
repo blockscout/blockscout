@@ -1,5 +1,5 @@
 <h2 class="card-title"><%= gettext "Raw Trace" %>
-  <%= if not Enum.Empty?(@internal_transactions) do %>
+  <%= if not Enum.empty?(@internal_transactions) do %>
     <% raw_trace_text = for {line, _} <- raw_traces_with_lines(@internal_transactions), do: line %>
     <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
       id: "tx-raw-trace-input",
@@ -10,7 +10,7 @@
       style: "float: right;" %>
   <% end %>
 </h2>
-<%= if not Enum.Empty?(@internal_transactions) do %>
+<%= if not Enum.empty?(@internal_transactions) do %>
   <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="json "><%= for {line, number} <- raw_traces_with_lines(@internal_transactions) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
 <% else %>
   <div class="tile tile-muted text-center">

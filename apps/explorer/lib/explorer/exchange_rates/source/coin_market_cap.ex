@@ -112,9 +112,9 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   @spec get_token_properties(map()) :: map()
   def get_token_properties(market_data) do
     with token_values_list <- market_data |> Map.values(),
-         true <- not Enum.Empty?(token_values_list),
+         true <- not Enum.empty?(token_values_list),
          token_values <- token_values_list |> Enum.at(0),
-         true <- not Enum.Empty?(token_values) do
+         true <- not Enum.empty?(token_values) do
       if is_list(token_values) do
         token_values |> Enum.at(0)
       else

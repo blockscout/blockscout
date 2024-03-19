@@ -105,7 +105,7 @@ defmodule Explorer.Tags.AddressToTag do
         end)
         |> Enum.filter(&(!is_nil(&1)))
 
-      if not Enum.Empty?(addresses_to_delete) do
+      if not Enum.empty?(addresses_to_delete) do
         delete_query_base =
           from(
             att in AddressToTag,

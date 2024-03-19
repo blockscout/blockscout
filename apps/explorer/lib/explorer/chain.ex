@@ -4050,7 +4050,7 @@ defmodule Explorer.Chain do
 
     today = Date.to_string(NaiveDateTime.utc_now())
 
-    if not Enum.Empty?(result) && !Enum.any?(result, fn map -> map[:date] == today end) do
+    if not Enum.empty?(result) && !Enum.any?(result, fn map -> map[:date] == today end) do
       List.flatten([result | [%{date: today, value: List.last(result)[:value]}]])
     else
       result
@@ -4159,7 +4159,7 @@ defmodule Explorer.Chain do
     zero_wei = %Wei{value: Decimal.new(0)}
     result = find_token_transfer_type(transaction, input, value)
 
-    if is_nil(result) && not Enum.Empty?(transaction.token_transfers) && value == zero_wei,
+    if is_nil(result) && not Enum.empty?(transaction.token_transfers) && value == zero_wei,
       do: :token_transfer,
       else: result
   rescue

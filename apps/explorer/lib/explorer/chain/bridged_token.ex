@@ -319,7 +319,7 @@ defmodule Explorer.Chain.BridgedToken do
         created_by_amb_mediator_query
         |> Repo.all()
 
-      if not Enum.Empty?(created_by_amb_mediator) do
+      if not Enum.empty?(created_by_amb_mediator) do
         extract_omni_bridged_token_metadata(
           token_address_hash,
           omni_bridge_mediator,

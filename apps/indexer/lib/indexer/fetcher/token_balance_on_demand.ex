@@ -55,7 +55,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
       |> delete_invalid_balances()
       |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
 
-    if not Enum.Empty?(stale_current_token_balances) do
+    if not Enum.empty?(stale_current_token_balances) do
       fetch_and_update(latest_block_number, address_hash, stale_current_token_balances)
     else
       :current
@@ -118,7 +118,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
       end)
 
     updated_erc_1155_ctbs =
-      if not Enum.Empty?(erc_1155_ctbs) do
+      if not Enum.empty?(erc_1155_ctbs) do
         erc_1155_ctbs
         |> BalanceReader.get_balances_of_erc_1155()
         |> Enum.zip(erc_1155_ctbs)
@@ -128,7 +128,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
       end
 
     updated_other_ctbs =
-      if not Enum.Empty?(other_ctbs) do
+      if not Enum.empty?(other_ctbs) do
         other_ctbs
         |> BalanceReader.get_balances_of()
         |> Enum.zip(other_ctbs)
@@ -140,7 +140,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
     filtered_current_token_balances_update_params =
       (updated_erc_1155_ctbs ++ updated_other_ctbs) |> Enum.filter(&(!is_nil(&1)))
 
-    if not Enum.Empty?(filtered_current_token_balances_update_params) do
+    if not Enum.empty?(filtered_current_token_balances_update_params) do
       {:ok,
        %{
          address_current_token_balances: imported_ctbs
