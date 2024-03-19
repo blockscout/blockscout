@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Search do
   import Explorer.Chain, only: [select_repo: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [ens_domain_name_lookup: 1]
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
   alias Explorer.Chain.{
@@ -28,8 +29,6 @@ defmodule Explorer.Chain.Search do
     Transaction,
     UserOperation
   }
-
-  @max_safe_integer round(:math.pow(2, 63)) - 1
 
   @doc """
     Search function used in web interface. Returns paginated search results
@@ -469,20 +468,6 @@ defmodule Explorer.Chain.Search do
     )
   end
 
-  defp safe_parse_block_number(string) do
-    case Integer.parse(string) do
-      {num, ""} ->
-        if 0 <= num and num <= @max_safe_integer do
-          {:ok, num}
-        else
-          {:error, "Integer out of range"}
-        end
-
-      _ ->
-        {:error, "Invalid integer"}
-    end
-  end
-
   defp search_block_query(term) do
     block_search_fields =
       search_fields()
@@ -500,7 +485,7 @@ defmodule Explorer.Chain.Search do
         )
 
       _ ->
-        case safe_parse_block_number(term) do
+        case ExplorerHelper.safe_parse_block_number(term) do
           {:ok, block_number} ->
             from(block in Block,
               where: block.number == ^block_number,
