@@ -4,6 +4,8 @@
 
 ### Features
 
+-[#9680](https://github.com/blockscout/blockscout/pull/9680) - Improvements in zksync batch related transactions requests
+
 ### Fixes
 
 ### Chore
