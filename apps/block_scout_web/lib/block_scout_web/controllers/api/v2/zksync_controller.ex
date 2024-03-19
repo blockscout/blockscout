@@ -15,13 +15,6 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
   @batch_necessity_by_association %{
     :commit_transaction => :optional,
     :prove_transaction => :optional,
-    :execute_transaction => :optional,
-    :l2_transactions => :optional
-  }
-
-  @batches_necessity_by_association %{
-    :commit_transaction => :optional,
-    :prove_transaction => :optional,
     :execute_transaction => :optional
   }
 
@@ -53,7 +46,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
     {batches, next_page} =
       params
       |> paging_options()
-      |> Keyword.put(:necessity_by_association, @batches_necessity_by_association)
+      |> Keyword.put(:necessity_by_association, @batch_necessity_by_association)
       |> Keyword.put(:api?, true)
       |> Reader.batches()
       |> split_list_by_page()
@@ -91,7 +84,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
   def batches_confirmed(conn, _params) do
     batches =
       []
-      |> Keyword.put(:necessity_by_association, @batches_necessity_by_association)
+      |> Keyword.put(:necessity_by_association, @batch_necessity_by_association)
       |> Keyword.put(:api?, true)
       |> Keyword.put(:confirmed?, true)
       |> Reader.batches()
