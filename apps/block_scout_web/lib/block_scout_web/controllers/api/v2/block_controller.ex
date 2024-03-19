@@ -103,7 +103,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number` endpoint.
   """
-  @spec block(Plug.Conn.t()(), map()) ::
+  @spec block(Plug.Conn.t(), map()) ::
           {:error, :not_found | {:invalid, :hash | :number}}
           | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
           | Plug.Conn.t()
@@ -154,7 +154,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/transactions` endpoint.
   """
-  @spec transactions(Plug.Conn.t()(), map()) ::
+  @spec transactions(Plug.Conn.t(), map()) ::
           {:error, :not_found | {:invalid, :hash | :number}}
           | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
           | Plug.Conn.t()
@@ -221,7 +221,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/withdrawals` endpoint.
   """
-  @spec withdrawals(Plug.Conn.t()(), map()) ::
+  @spec withdrawals(Plug.Conn.t(), map()) ::
           {:error, :not_found | {:invalid, :hash | :number}}
           | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
           | Plug.Conn.t()
@@ -244,9 +244,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   end
 
   defp block_param_to_block(block_hash_or_number, options \\ @api_true) do
-    with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number),
-         {:ok, block} <- fetch_block(type, value, options) do
-      {:ok, block}
+    with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number) do
+      fetch_block(type, value, options)
     end
   end
 end
