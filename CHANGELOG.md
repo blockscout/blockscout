@@ -70,6 +70,7 @@
 
 ### Chore
 
+- [#9666](https://github.com/blockscout/blockscout/pull/9666) - Improved performance by replacing `Enum.count(list) == 0` with `Enum.empty?(list)` for better readability and efficiency.
 - [#9622](https://github.com/blockscout/blockscout/pull/9622) - Add alternative `hex.pm` mirrors
 - [#9571](https://github.com/blockscout/blockscout/pull/9571) - Support Optimism Ecotone upgrade by Indexer.Fetcher.Optimism.TxnBatch module
 - [#9562](https://github.com/blockscout/blockscout/pull/9562) - Add cancun evm version

@@ -161,19 +161,19 @@
             <%= subnetwork_title() %>
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-            <%= if !Enum.empty?(main_nets) do %>
+            <%= if not Enum.Empty?(main_nets) do %>
               <a class="dropdown-item header division">Mainnets</a>
               <%= for %{url: url, title: title} <- main_nets do %>
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>
               <% end %>
             <% end %>
-            <%= if !Enum.empty?(test_nets) do %>
+            <%= if not Enum.Empty?(test_nets) do %>
               <a class="dropdown-item header division">Testnets</a>
               <%= for %{url: url, title: title} <- test_nets do %>
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>
               <% end %>
             <% end %>
-            <%= if !Enum.empty?(other_nets) do %>
+            <%= if not Enum.Empty?(other_nets) do %>
               <a class="dropdown-item header division">Other Networks</a>
               <%= for %{url: url, title: title} <- other_nets do %>
                 <a class="dropdown-item" href="<%= url %>"><%= title %></a>

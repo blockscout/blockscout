@@ -242,7 +242,7 @@ defmodule Explorer.Chain.Search do
             blocks_result,
             ens_result
           ]
-          |> Enum.filter(fn list -> !Enum.empty?(list) end)
+          |> Enum.filter(fn list -> not Enum.Empty?(list) end)
           |> Enum.sort_by(fn list -> Enum.count(list) end, :asc)
 
         to_take =
