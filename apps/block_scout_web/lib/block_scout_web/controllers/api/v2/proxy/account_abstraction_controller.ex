@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   alias Explorer.Chain
   alias Explorer.MicroserviceInterfaces.AccountAbstraction
 
-  @address_fields ["bundler", "entry_point", "sender", "address", "factory", "paymaster"]
+  @address_fields ["bundler", "entry_point", "sender", "address", "factory", "paymaster", "executed_address"]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -221,7 +221,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
         |> json(%{message: "Service is disabled"})
 
       {status_code, response} ->
-        final_json = response |> extended_info() |> try_to_decode_call_data()
+        final_json = response |> try_to_decode_call_data() |> extended_info()
 
         conn
         |> put_status(status_code)
@@ -233,7 +233,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     {_mock_tx, _decoded_input, decoded_input_json, address_hash} =
       TransactionInterpretationService.decode_user_op_calldata(user_op)
 
-    Map.merge(user_op, %{"decoded_call_data" => decoded_input_json, "executed_address" => address_hash})
+    Map.merge(user_op, %{"decoded_call_data" => decoded_input_json, "executed_address" => to_string(address_hash)})
   end
 
   defp try_to_decode_call_data(response), do: response
