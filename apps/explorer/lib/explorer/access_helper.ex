@@ -26,7 +26,6 @@ defmodule Explorer.AccessHelper do
       correct_key = key && key == Application.get_env(:explorer, :restricted_list_key)
 
       if address_restricted && !correct_key, do: {:restricted_access, true}, else: {:ok, false}
-
     end
   end
 end

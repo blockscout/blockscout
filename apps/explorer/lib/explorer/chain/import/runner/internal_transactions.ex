@@ -759,7 +759,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         postgrex_error in Postgrex.Error ->
           {:error, %{exception: postgrex_error, invalid_block_numbers: invalid_block_numbers}}
       end
-
     end
   end
 
