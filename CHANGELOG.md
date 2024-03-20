@@ -16,6 +16,10 @@ All notable changes to this project will be documented in this file.
 
 - Something fixed
 
+### Chore
+
+- Bump floki from 0.36.0 to 0.36.1 (#9683)
+
 ## [6.3.0-beta] - 2024-03-18
 
 ### 🚀 Features
