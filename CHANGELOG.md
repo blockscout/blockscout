@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 ### ⚙️ Miscellaneous Tasks
 
 - Something fixed
+- Bump floki from 0.36.0 to 0.36.1 (#9684)
 
 ### Chore
 
