@@ -261,7 +261,8 @@ defmodule Indexer.Block.Fetcher do
          polygon_edge_withdrawals: polygon_edge_withdrawals,
          polygon_edge_deposit_executes: polygon_edge_deposit_executes,
          polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
-         shibarium_bridge_operations: shibarium_bridge_operations
+         shibarium_bridge_operations: shibarium_bridge_operations,
+         arbitrum_messages: arbitrum_xlevel_messages
        }) do
     case Application.get_env(:explorer, :chain_type) do
       "ethereum" ->
@@ -286,6 +287,10 @@ defmodule Indexer.Block.Fetcher do
       "shibarium" ->
         basic_import_options
         |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
+
+      "arbitrum" ->
+        basic_import_options
+        |> Map.put_new(:arbitrum_messages, %{params: arbitrum_xlevel_messages})
 
       _ ->
         basic_import_options
