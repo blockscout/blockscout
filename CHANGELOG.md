@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 
 - Super mega important fix
 
+### ⚙️ Miscellaneous Tasks
+
+- Something fixed
+
 ## [6.3.0-beta] - 2024-03-18
 
 ### 🚀 Features
