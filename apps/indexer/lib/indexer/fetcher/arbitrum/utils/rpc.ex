@@ -179,6 +179,15 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     end
   end
 
+  def get_l1_start_block(configured_number, json_rpc_named_arguments) do
+    if configured_number == 0 do
+      {block_number, _} = IndexerHelper.get_safe_block(json_rpc_named_arguments)
+      block_number
+    else
+      configured_number
+    end
+  end
+
   defp json_txid_to_hash(hash) do
     case hash do
       "0x" <> tx_hash -> tx_hash
