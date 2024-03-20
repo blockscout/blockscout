@@ -39,7 +39,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     l1_rpc_block_range = config_common[:l1_rpc_block_range]
     l1_rollup_address = config_common[:l1_rollup_address]
     l1_rollup_init_block = config_common[:l1_rollup_init_block]
-    l1_start_block = max(config_common[:l1_start_block], l1_rollup_init_block)
+    l1_start_block = config_common[:l1_start_block]
     l1_rpc_chunk_size = config_common[:l1_rpc_chunk_size]
     rollup_chunk_size = config_common[:rollup_chunk_size]
 
@@ -73,7 +73,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
          l1_rollup_init_block: l1_rollup_init_block,
          new_batches_limit: new_batches_limit,
          messages_to_blocks_shift: messages_to_blocks_shift,
-         confirmation_batches_depth: confirmation_batches_depth,
+         confirmation_batches_depth: confirmation_batches_depth
        },
        data: %{}
      }}
@@ -92,8 +92,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         %{
           config: %{
             l1_rpc: %{json_rpc_named_arguments: json_l1_rpc_named_arguments},
-            l1_rollup_address: l1_rollup_address,
-            l1_start_block: l1_start_block
+            l1_rollup_address: l1_rollup_address
           }
         } = state
       ) do
@@ -103,6 +102,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         :inbox_outbox,
         json_l1_rpc_named_arguments
       )
+
+    l1_start_block = Rpc.get_l1_start_block(state.config.l1_start_block, json_l1_rpc_named_arguments)
 
     # TODO: it is necessary to develop a way to discover missed batches to cover the case
     #       when the batch #1, #2 and #4 are in DB, but #3 is not
@@ -126,6 +127,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       |> Map.put(
         :config,
         Map.merge(state.config, %{
+          l1_start_block: l1_start_block,
           l1_outbox_address: outbox_address,
           l1_sequencer_inbox_address: sequencer_inbox_address
         })

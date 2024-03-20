@@ -90,7 +90,19 @@ defmodule Indexer.Helper do
     end
   end
 
-  defp get_safe_block(json_rpc_named_arguments) do
+  @doc """
+    Retrieves the safe block if the endpoint supports such an interface; otherwise, it requests the latest block.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    `{block_num, latest}`: A tuple where
+    - `block_num` is the safe or latest block number.
+    - `latest` is a boolean, where `true` indicates that `block_num` is the latest block number fetched using the tag `latest`.
+  """
+  @spec get_safe_block(EthereumJSONRPC.json_rpc_named_arguments()) :: {non_neg_integer(), boolean()}
+  def get_safe_block(json_rpc_named_arguments) do
     case get_block_number_by_tag("safe", json_rpc_named_arguments) do
       {:ok, safe_block} ->
         {safe_block, false}

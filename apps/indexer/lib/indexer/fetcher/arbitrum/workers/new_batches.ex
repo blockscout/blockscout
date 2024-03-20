@@ -483,9 +483,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     )
   end
 
-  @doc """
-  TBD
-  """
   defp do_discover(
          sequencer_inbox_address,
          start_block,

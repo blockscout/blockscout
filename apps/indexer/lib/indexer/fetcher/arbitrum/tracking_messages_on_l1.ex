@@ -39,7 +39,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     l1_rpc_block_range = config_common[:l1_rpc_block_range]
     l1_rollup_address = config_common[:l1_rollup_address]
     l1_rollup_init_block = config_common[:l1_rollup_init_block]
-    l1_start_block = max(config_common[:l1_start_block], l1_rollup_init_block)
+    l1_start_block = config_common[:l1_start_block]
     l1_rpc_chunk_size = config_common[:l1_rpc_chunk_size]
 
     config_tracker = Application.get_all_env(:indexer)[__MODULE__]
@@ -75,14 +75,21 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     %{bridge: bridge_address} =
       Rpc.get_contracts_for_rollup(state.config.l1_rollup_address, :bridge, state.config.json_l1_rpc_named_arguments)
 
-    new_msg_to_l2_start_block = Db.l1_block_to_discover_latest_message_to_l2(state.config.l1_start_block)
-    historical_msg_to_l2_end_block = Db.l1_block_to_discover_earliest_message_to_l2(state.config.l1_start_block - 1)
+    l1_start_block = Rpc.get_l1_start_block(state.config.l1_start_block, state.config.json_l1_rpc_named_arguments)
+    new_msg_to_l2_start_block = Db.l1_block_to_discover_latest_message_to_l2(l1_start_block)
+    historical_msg_to_l2_end_block = Db.l1_block_to_discover_earliest_message_to_l2(l1_start_block - 1)
 
     Process.send(self(), :check_new_msgs_to_rollup, [])
 
     new_state =
       state
-      |> Map.put(:config, Map.put(state.config, :l1_bridge_address, bridge_address))
+      |> Map.put(
+        :config,
+        Map.merge(state.config, %{
+          l1_start_block: l1_start_block,
+          l1_bridge_address: bridge_address
+        })
+      )
       |> Map.put(
         :data,
         Map.merge(state.data, %{
