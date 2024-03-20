@@ -54,7 +54,8 @@ for repo <- [
       Explorer.Repo.Suave,
       Explorer.Repo.BridgedTokens,
       Explorer.Repo.Filecoin,
-      Explorer.Repo.Stability
+      Explorer.Repo.Stability,
+      Explorer.Repo.Mud
     ] do
   config :explorer, repo,
     database: "explorer_test",
