@@ -1,7 +1,6 @@
 name: Zksync publish Docker image
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - production-zksync
