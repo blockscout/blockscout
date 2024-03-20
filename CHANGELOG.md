@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 
 - Super-mega-important-feature
 
+### 🐛 Bug Fixes
+
+- Super mega important fix
+
 ## [6.3.0-beta] - 2024-03-18
 
 ### 🚀 Features
