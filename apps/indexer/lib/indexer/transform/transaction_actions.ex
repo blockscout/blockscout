@@ -125,6 +125,7 @@ defmodule Indexer.Transform.TransactionActions do
   """
   def parse(logs, protocols_to_rewrite \\ nil) do
     if Application.get_env(:indexer, Indexer.Fetcher.TransactionAction.Supervisor)[:enabled] do
+      Logger.info("TransactionAction parse #{inspect(logs)}")
       actions = []
 
       chain_id = NetVersion.get_version()
@@ -566,6 +567,8 @@ defmodule Indexer.Transform.TransactionActions do
     address1 = Enum.at(token_address, 1)
     decimals1 = token_data[address1].decimals
     symbol1 = clarify_token_symbol(token_data[address1].symbol, chain_id)
+
+    Logger.info("TransactionAction fractional #{inspect(amount0)}, #{inspect(decimals0)}")
 
     amount0 = fractional(Decimal.new(amount0), Decimal.new(decimals0))
     amount1 = fractional(Decimal.new(amount1), Decimal.new(decimals1))
