@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Block, BlockNumberHelper, Transaction, Wei}
   alias Explorer.Chain.Cache.StateChanges
-  alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
+  alias Indexer.Fetcher.OnDemand.{CoinBalance, TokenBalance}
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
         val
 
       _ ->
-        CoinBalanceOnDemand.trigger_historic_fetch(address_hash, block_number)
+        CoinBalance.trigger_historic_fetch(address_hash, block_number)
         %Wei{value: Decimal.new(0)}
     end
   end
@@ -132,7 +132,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
         val
 
       _ ->
-        TokenBalanceOnDemand.trigger_historic_fetch(
+        TokenBalance.trigger_historic_fetch(
           address_hash,
           token.contract_address_hash,
           token.type,

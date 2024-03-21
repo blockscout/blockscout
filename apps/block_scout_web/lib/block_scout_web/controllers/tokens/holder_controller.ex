@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
   alias BlockScoutWeb.Tokens.HolderView
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Indexer.Fetcher.TokenTotalSupplyOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
   alias Phoenix.View
 
   import BlockScoutWeb.Chain,

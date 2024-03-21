@@ -1885,24 +1885,24 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
   end
 
-  describe "checks TokenBalanceOnDemand" do
+  describe "checks Indexer.Fetcher.OnDemand.TokenBalance" do
     setup do
       Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
       Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
-      old_env = Application.get_env(:indexer, Indexer.Fetcher.TokenBalanceOnDemand)
+      old_env = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance)
 
       Application.put_env(
         :indexer,
-        Indexer.Fetcher.TokenBalanceOnDemand,
+        Indexer.Fetcher.OnDemand.TokenBalance,
         Keyword.put(old_env, :fallback_threshold_in_blocks, 0)
       )
 
       on_exit(fn ->
-        Application.put_env(:indexer, Indexer.Fetcher.TokenBalanceOnDemand, old_env)
+        Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance, old_env)
       end)
     end
 
-    test "Indexer.Fetcher.TokenBalanceOnDemand broadcasts only updated balances", %{conn: conn} do
+    test "Indexer.Fetcher.OnDemand.TokenBalance broadcasts only updated balances", %{conn: conn} do
       address = insert(:address)
 
       ctbs_erc_20 =

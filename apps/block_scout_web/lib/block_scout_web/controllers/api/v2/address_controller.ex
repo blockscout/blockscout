@@ -28,7 +28,12 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.Chain.{Address, Hash, Transaction}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
-  alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
+
+  alias Indexer.Fetcher.OnDemand.{
+    CoinBalance,
+    ContractCode,
+    TokenBalance
+  }
 
   @transaction_necessity_by_association [
     necessity_by_association: %{
@@ -79,10 +84,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def address(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, _address_hash, address} <- validate_address(address_hash_string, params, @address_options),
+    with {:ok, address_hash, address} <- validate_address(address_hash_string, params, @address_options),
          fully_preloaded_address <-
            Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true) do
-      CoinBalanceOnDemand.trigger_fetch(fully_preloaded_address)
+      CoinBalance.trigger_fetch(fully_preloaded_address)
+
+      if is_nil(address.contract_code) do
+        ContractCode.trigger_fetch(address_hash)
+      end
 
       conn
       |> put_status(200)
@@ -114,7 +123,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Chain.fetch_last_token_balances(@api_true)
 
       Task.start_link(fn ->
-        TokenBalanceOnDemand.trigger_fetch(address_hash)
+        TokenBalance.trigger_fetch(address_hash)
       end)
 
       conn
@@ -366,7 +375,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         )
 
       Task.start_link(fn ->
-        TokenBalanceOnDemand.trigger_fetch(address_hash)
+        TokenBalance.trigger_fetch(address_hash)
       end)
 
       {tokens, next_page} = split_list_by_page(results_plus_one)

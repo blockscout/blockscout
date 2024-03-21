@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.TokenBalanceOnDemand do
+defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   @moduledoc """
   Ensures that we have a reasonably up to date address tokens balance.
 
@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
   ## Interface
 
-  @spec trigger_fetch(Hash.t()) :: :ok
+  @spec trigger_fetch(Hash.Address.t()) :: :ok
   def trigger_fetch(address_hash) do
     latest_block_number = latest_block_number()
 

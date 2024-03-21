@@ -5,7 +5,13 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.Fetcher.{CoinBalanceOnDemand, FirstTraceOnDemand, TokenTotalSupplyOnDemand}
+  alias Indexer.Fetcher.OnDemand.{
+    CoinBalance,
+    ContractCode,
+    FirstTrace,
+    TokenTotalSupply
+  }
+
   alias Indexer.Memory
   alias Indexer.Prometheus.PendingBlockOperationsCollector
   alias Prometheus.Registry
@@ -32,9 +38,10 @@ defmodule Indexer.Application do
     base_children = [
       :hackney_pool.child_spec(:token_instance_fetcher, max_connections: pool_size),
       {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
-      {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {TokenTotalSupplyOnDemand.Supervisor, []},
-      {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]}
+      {CoinBalance.Supervisor, [json_rpc_named_arguments]},
+      {ContractCode.Supervisor, [json_rpc_named_arguments]},
+      {TokenTotalSupply.Supervisor, []},
+      {FirstTrace.Supervisor, [json_rpc_named_arguments]}
     ]
 
     children =
