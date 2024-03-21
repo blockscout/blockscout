@@ -698,7 +698,7 @@ defmodule Indexer.Transform.TransactionActions do
     {responses_get_pool, error_messages} =
       read_contracts_with_retries(requests_get_pool, @uniswap_v3_factory_abi, max_retries)
 
-    if !Enum.empty?(error_messages) or Enum.count(requests_get_pool) != Enum.count(responses_get_pool) do
+    if not Enum.empty?(error_messages) or Enum.count(requests_get_pool) != Enum.count(responses_get_pool) do
       Logger.error(
         "TransactionActions: Cannot read Uniswap V3 Factory contract getPool public getter. Error messages: #{Enum.join(error_messages, ", ")}. Requests: #{inspect(requests_get_pool)}"
       )
@@ -728,7 +728,7 @@ defmodule Indexer.Transform.TransactionActions do
 
     {responses, error_messages} = read_contracts_with_retries(requests, @uniswap_v3_pool_abi, max_retries)
 
-    if !Enum.empty?(error_messages) do
+    if not Enum.empty?(error_messages) do
       incorrect_pools = uniswap_get_incorrect_pools(requests, responses)
 
       Logger.warning(
@@ -953,7 +953,7 @@ defmodule Indexer.Transform.TransactionActions do
     max_retries = Application.get_env(:explorer, :token_functions_reader_max_retries)
     {responses, error_messages} = read_contracts_with_retries(requests, @erc20_abi, max_retries)
 
-    if !Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
+    if not Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
       Logger.warning(
         "TransactionActions: Cannot read symbol and decimals of an ERC-20 token contract. Error messages: #{Enum.join(error_messages, ", ")}. Addresses: #{Enum.join(token_addresses, ", ")}"
       )

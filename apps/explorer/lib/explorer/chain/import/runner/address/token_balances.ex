@@ -90,7 +90,9 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash, &1.block_number})
 
     {:ok, inserted_changes_list} =
-      if Enum.count(ordered_changes_list) > 0 do
+      if Enum.empty?(ordered_changes_list) do
+        {:ok, []}
+      else
         Import.insert_changes_list(
           repo,
           ordered_changes_list,
@@ -102,8 +104,6 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           timeout: timeout,
           timestamps: timestamps
         )
-      else
-        {:ok, []}
       end
 
     {:ok, inserted_changes_list}

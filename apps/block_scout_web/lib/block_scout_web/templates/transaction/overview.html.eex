@@ -217,7 +217,7 @@
           <% end %>
           <!-- Transaction Action -->
           <% %{transaction_actions: transaction_actions} = transaction_actions(@transaction) %>
-          <%= if not Enum.empty?(transaction_actions) do %>
+          <%= unless Enum.empty?(transaction_actions) do %>
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -295,7 +295,7 @@
             <% {_type, %{token_transfers: token_transfers} = transaction_with_transfers} when is_list(token_transfers) and token_transfers != [] -> %>
               <!-- Tokens Transferred -->
               <% %{transfers: transfers, mintings: mintings, burnings: burnings, creations: creations} = aggregate_token_transfers(transaction_with_transfers.token_transfers) %>
-              <%= if Enum.count(transfers) > 0 do %>
+              <%= unless Enum.empty?(transfers) do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
                     <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -311,7 +311,7 @@
                 </dl>
               <% end %>
               <!-- Tokens Minted -->
-              <%= if Enum.count(mintings) > 0 do %>
+              <%= unless Enum.empty?(mintings) do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
                     <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -328,7 +328,7 @@
                 </dl>
               <% end %>
               <!-- Tokens Burnt -->
-              <%= if Enum.count(burnings) > 0 do %>
+              <%= unless Enum.empty?(burnings) do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
                     <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -344,7 +344,7 @@
                 </dl>
               <% end %>
 
-              <%= if Enum.count(creations) > 0 do %>
+              <%= unless Enum.empty?(creations) do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
                     <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",

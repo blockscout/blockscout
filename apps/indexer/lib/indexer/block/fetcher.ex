@@ -362,7 +362,7 @@ defmodule Indexer.Block.Fetcher do
       |> Enum.filter(fn block -> block |> Map.get(:blob_gas_used, 0) > 0 end)
       |> Enum.map(&Map.get(&1, :timestamp))
 
-    if !Enum.empty?(timestamps) do
+    if not Enum.empty?(timestamps) do
       Blob.async_fetch(timestamps)
     end
   end
