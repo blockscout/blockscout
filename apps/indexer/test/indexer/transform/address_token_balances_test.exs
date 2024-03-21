@@ -26,7 +26,8 @@ defmodule Indexer.Transform.AddressTokenBalancesTest do
         to_address_hash: to_address_hash,
         token_contract_address_hash: token_contract_address_hash,
         token_ids: nil,
-        token_type: "ERC-20"
+        token_type: "ERC-20",
+        token: %{type: "ERC-20"}
       }
 
       params_set = AddressTokenBalances.params_set(%{token_transfers_params: [token_transfer_params]})
@@ -49,6 +50,7 @@ defmodule Indexer.Transform.AddressTokenBalancesTest do
         to_address_hash: to_address_hash,
         token_contract_address_hash: token_contract_address_hash,
         token_type: "ERC-721",
+        token: %{type: "ERC-721"},
         token_ids: nil
       }
 
@@ -78,6 +80,7 @@ defmodule Indexer.Transform.AddressTokenBalancesTest do
         to_address_hash: to_address_hash,
         token_contract_address_hash: token_contract_address_hash,
         token_type: "ERC-721",
+        token: %{type: "ERC-1155"},
         token_ids: [1]
       }
 
@@ -90,7 +93,7 @@ defmodule Indexer.Transform.AddressTokenBalancesTest do
                    block_number: 1,
                    token_contract_address_hash: "0xe18035bf8712672935fdb4e5e431b1a0183d2dfc",
                    token_id: 1,
-                   token_type: "ERC-721"
+                   token_type: "ERC-1155"
                  }
                ])
     end

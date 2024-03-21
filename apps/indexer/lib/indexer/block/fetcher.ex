@@ -197,7 +197,9 @@ defmodule Indexer.Block.Fetcher do
            |> AddressCoinBalances.params_set(),
          beneficiaries_with_gas_payment =
            beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
-         address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         token_transfers_with_token = token_transfers_merge_token(token_transfers, tokens),
+         address_token_balances =
+           AddressTokenBalances.params_set(%{token_transfers_params: token_transfers_with_token}),
          transaction_actions =
            Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
          token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers}),
@@ -673,5 +675,16 @@ defmodule Indexer.Block.Fetcher do
        ) do
     {{String.downcase(hash), fetched_coin_balance_block_number},
      Map.delete(address_params, :fetched_coin_balance_block_number)}
+  end
+
+  defp token_transfers_merge_token(token_transfers, tokens) do
+    Enum.map(token_transfers, fn token_transfer ->
+      token =
+        Enum.find(tokens, fn token ->
+          token.contract_address_hash == token_transfer.token_contract_address_hash
+        end)
+
+      Map.put(token_transfer, :token, token)
+    end)
   end
 end
