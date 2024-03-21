@@ -5,7 +5,7 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [from: 2, limit: 2, where: 3, subquery: 1, order_by: 3, union: 2]
+  import Ecto.Query, only: [dynamic: 1, from: 2, limit: 2, where: 3, subquery: 1, order_by: 3, union: 2]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, DenormalizationHelper, InternalTransaction, Log, Transaction}
@@ -145,7 +145,9 @@ defmodule Explorer.Etherscan.Logs do
         |> union(^query_from_address_hash_wrapped)
         |> union(^query_created_contract_address_hash_wrapped)
 
-      all_transaction_logs_query =
+      dynamic = dynamic(^Transaction.where_transactions_to_from(address_hash))
+
+      all_transaction_logs_query_base =
         from(transaction in Transaction,
           join: log in ^logs_query,
           on: log.transaction_hash == transaction.hash,
@@ -164,6 +166,11 @@ defmodule Explorer.Etherscan.Logs do
           },
           union: ^internal_transaction_log_query
         )
+
+      all_transaction_logs_query =
+        all_transaction_logs_query_base
+        |> or_where([transaction], transaction.created_contract_address_hash == ^address_hash)
+        |> or_where([transaction], ^dynamic)
 
       query_with_blocks =
         from(log_transaction_data in subquery(all_transaction_logs_query),

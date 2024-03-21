@@ -6,6 +6,8 @@
 
 ### Fixes
 
+- [#9467](https://github.com/blockscout/blockscout/pull/9467) - Eliminate from_address_hash == #{address_hash} clause for transactions query in case of smart-contracts
+
 ### Chore
 
 <details>
