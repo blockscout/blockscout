@@ -258,7 +258,7 @@ defmodule Explorer.Chain.Token do
     Updates token_holder_count for a given contract_address_hash.
     It used by Explorer.Counters.TokenHoldersCounter module.
   """
-  @spec update_token_holder_count(Hash.Address.t(), integer()) :: :ok
+  @spec update_token_holder_count(Hash.Address.t(), integer()) :: {non_neg_integer(), nil}
   def update_token_holder_count(contract_address_hash, holder_count) when not is_nil(holder_count) do
     now = DateTime.utc_now()
 
