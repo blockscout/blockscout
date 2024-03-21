@@ -353,7 +353,7 @@ defmodule Explorer.Chain.Token.Instance do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
     CurrentTokenBalance
-    |> where([ctb], ctb.address_hash == ^address_hash and ctb.value > 0 and ctb.token_type == "ERC-404")
+    |> where([ctb], ctb.address_hash == ^address_hash and not is_nil(ctb.token_id) and ctb.token_type == "ERC-404")
     |> group_by([ctb], ctb.token_contract_address_hash)
     |> order_by([ctb], asc: ctb.token_contract_address_hash)
     |> select([ctb], %{
