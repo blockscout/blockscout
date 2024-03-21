@@ -8,7 +8,7 @@
 [changelog]
 # changelog header
 header = """
-# ChangeLog\n
+# Changelog\n
 """
 body = """
 {% if version %}\
