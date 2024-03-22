@@ -46,9 +46,16 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          echo "matrix=$matrixStringifiedObject" >> $GITHUB_OUTPUT
-        env:
-          matrixStringifiedObject: '{"chain-type": ["ethereum", "polygon_zkevm", "rsk", "stability", "filecoin", "optimism"]}'
+          echo "matrix=$(node -e '
+            const chainTypes = ["ethereum", "polygon_zkevm", "rsk", "stability", "filecoin", "optimism"];
+            const labels = ${{ github.event_name == 'pull_request' && toJson(github.event.pull_request.labels.*.name) || '[]' }};
+            const ciLabels = labels.filter(label => label.startsWith("ci:"));
+            const ciChainTypes = chainTypes.filter(chainType =>
+              ciLabels.length === 0 || ciLabels.includes("ci:all") || ciLabels.includes("ci:" + chainType)
+            );
+            const matrix = { "chain-type": ciChainTypes };
+            console.log(JSON.stringify(matrix));
+          ')" >> $GITHUB_OUTPUT
 
   build-and-cache:
     name: Build and Cache deps
