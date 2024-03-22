@@ -87,7 +87,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "has_token_transfers" => false,
         "watchlist_address_id" => nil,
         "has_beacon_chain_withdrawals" => false,
-        "ens_domain_name" => nil
+        "ens_domain_name" => nil,
+        "metadata" => nil
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
