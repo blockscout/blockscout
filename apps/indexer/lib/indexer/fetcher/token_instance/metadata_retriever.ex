@@ -85,6 +85,19 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     fetch_metadata_inner(token_uri, token_id, hex_token_id, from_base_uri?)
   end
 
+  defp fetch_json_from_uri({:ok, ["data:application/json;utf8," <> json]}, token_id, hex_token_id, from_base_uri?) do
+    decoded_json = URI.decode(json)
+
+    fetch_json_from_uri({:ok, [decoded_json]}, token_id, hex_token_id, from_base_uri?)
+  rescue
+    e ->
+      Logger.warn(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
+        fetcher: :token_instances
+      )
+
+      {:error, "invalid data:application/json;utf8,"}
+  end
+
   defp fetch_json_from_uri({:ok, ["data:application/json," <> json]}, token_id, hex_token_id, from_base_uri?) do
     decoded_json = URI.decode(json)
 
