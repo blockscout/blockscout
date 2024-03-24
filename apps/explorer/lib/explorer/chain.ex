@@ -5036,13 +5036,7 @@ defmodule Explorer.Chain do
     token_transfers
     |> Enum.reduce([], fn tt, acc ->
       case tt.token_ids do
-        [] ->
-          [tt | acc]
-
-        [_token_id] ->
-          [tt | acc]
-
-        token_ids when is_list(token_ids) ->
+        token_ids when is_list(token_ids) and length(token_ids) > 1 ->
           transfers = flat_1155_batch_token_transfer(tt, tt.amounts, token_ids, token_id)
 
           transfers ++ acc
