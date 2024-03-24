@@ -114,6 +114,27 @@ defmodule Explorer.Chain.Transaction.Schema do
                             2
                           )
 
+                        "celo" ->
+                          elem(
+                            quote do
+                              field(:eth_compatible, :boolean)
+                              field(:gateway_fee, Wei)
+
+                              belongs_to(:gas_fee_recipient, Address,
+                                foreign_key: :gas_fee_recipient_hash,
+                                references: :hash,
+                                type: Hash.Address
+                              )
+
+                              belongs_to(:gas_currency, Address,
+                                foreign_key: :gas_currency_hash,
+                                references: :hash,
+                                type: Hash.Address
+                              )
+                            end,
+                            2
+                          )
+
                         _ ->
                           []
                       end)
@@ -239,6 +260,7 @@ defmodule Explorer.Chain.Transaction do
 
   @optimism_optional_attrs ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
   @suave_optional_attrs ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
+  @celo_optional_attrs ~w(eth_compatible gateway_fee gas_fee_recipient_hash gas_currency_hash)a
 
   @required_attrs ~w(from_address_hash gas hash input nonce value)a
 
@@ -580,6 +602,7 @@ defmodule Explorer.Chain.Transaction do
     case Application.get_env(:explorer, :chain_type) do
       "suave" -> @suave_optional_attrs
       "optimism" -> @optimism_optional_attrs
+      "celo" -> @celo_optional_attrs
       _ -> @empty_attrs
     end
   end
