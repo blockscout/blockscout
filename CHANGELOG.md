@@ -4,8 +4,6 @@
 
 ### Features
 
-- [#9675](https://github.com/blockscout/blockscout/pull/9675) - Add trying to decode internal calldata for user ops
-
 ### Fixes
 
 ### Chore
