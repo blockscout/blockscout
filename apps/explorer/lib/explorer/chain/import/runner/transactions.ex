@@ -324,7 +324,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
               # Celo custom fields
               gas_currency_hash: fragment("EXCLUDED.gas_currency_hash"),
               gas_fee_recipient_hash: fragment("EXCLUDED.gas_fee_recipient_hash"),
-              gateway_fee: fragment("EXCLUDED.gateway_fee"),
+              gateway_fee: fragment("EXCLUDED.gateway_fee")
             ]
           ],
           where:
