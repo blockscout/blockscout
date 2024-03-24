@@ -48,6 +48,16 @@ defmodule EthereumJSONRPC.Transaction do
                            ]
                          )
 
+    "celo" ->
+      @chain_type_fields quote(
+                           do: [
+                             gas_currency_hash: EthereumJSONRPC.address(),
+                             gateway_fee: non_neg_integer(),
+                             gas_fee_recipient_hash: EthereumJSONRPC.address(),
+                             eth_compatible: boolean()
+                           ]
+                         )
+
     _ ->
       @chain_type_fields quote(do: [])
   end
@@ -95,6 +105,12 @@ defmodule EthereumJSONRPC.Transaction do
     "suave" -> """
        * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).
        * `"requestRecord"` - map of wrapped transaction data (used by Suave).
+      """
+    "celo" -> """
+          * `"feeCurrency"` - `t:EthereumJSONRPC.address/0` of the currency used to pay for gas.
+          * `"gatewayFee"` - `t:EthereumJSONRPC.quantity/0` of the gateway fee.
+          * `"gatewayFeeRecipient"` - `t:EthereumJSONRPC.address/0` of the gateway fee recipient.
+          * `"ethCompatible"` - `t:boolean/0` of whether the transaction is Ethereum compatible.
       """
     _ -> ""
   end}
@@ -509,6 +525,14 @@ defmodule EthereumJSONRPC.Transaction do
           })
         end
 
+      "celo" ->
+        put_if_present(elixir, params, [
+          {"feeCurrency", :gas_currency_hash},
+          {"gatewayFee", :gateway_fee},
+          {"gatewayFeeRecipient", :gas_fee_recipient_hash},
+          {"ethCompatible", :eth_compatible}
+        ])
+
       _ ->
         params
     end
@@ -664,6 +688,16 @@ defmodule EthereumJSONRPC.Transaction do
   # ZkSync fields
   defp entry_to_elixir({key, _}) when key in ~w(l1BatchNumber l1BatchTxIndex) do
     {:ignore, :ignore}
+  end
+
+  # Celo-specific fields
+  if Application.compile_env(:explorer, :chain_type) == "celo" do
+    defp entry_to_elixir({key, value})
+         when key in ~w(feeCurrency gatewayFeeRecipient ethCompatible),
+         do: {key, value}
+
+    defp entry_to_elixir({"gatewayFee" = key, quantity_or_nil}),
+      do: {key, quantity_or_nil && quantity_to_integer(quantity_or_nil)}
   end
 
   defp entry_to_elixir(_) do

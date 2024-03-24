@@ -125,6 +125,7 @@ defmodule EthereumJSONRPC.Variant do
       "stability" -> "geth"
       "zksync" -> "geth"
       "arbitrum" -> "geth"
+      "celo" -> "geth"
       "rsk" -> "rsk"
       "filecoin" -> "filecoin"
       _ -> "nethermind"
