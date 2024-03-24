@@ -4,8 +4,6 @@
 
 ### Features
 
-- [#9668](https://github.com/blockscout/blockscout/pull/9668) - Add `/api/v2/blocks/{hash_or_number}/internal-transactions` endpoint
-
 ### Fixes
 
 ### Chore
