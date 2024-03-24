@@ -51,7 +51,7 @@ jobs:
 
             // Add/remove CI matrix chain types here
             const defaultChainTypes = ["default"];
-            const chainTypes = ["ethereum", "polygon_zkevm", "rsk", "stability", "filecoin", "optimism", "arbitrum"];
+            const chainTypes = ["ethereum", "polygon_zkevm", "rsk", "stability", "filecoin", "optimism", "arbitrum", "celo"];
             const extraChainTypes = ["suave", "polygon_edge"];
 
             // Chain type matrix we use in master branch
