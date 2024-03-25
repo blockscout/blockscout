@@ -29,11 +29,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
 
-  alias Indexer.Fetcher.OnDemand.{
-    CoinBalance,
-    ContractCode,
-    TokenBalance
-  }
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
   @transaction_necessity_by_association [
     necessity_by_association: %{
@@ -87,10 +85,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:ok, address_hash, address} <- validate_address(address_hash_string, params, @address_options),
          fully_preloaded_address <-
            Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true) do
-      CoinBalance.trigger_fetch(fully_preloaded_address)
+      CoinBalanceOnDemand.trigger_fetch(fully_preloaded_address)
 
       if is_nil(address.contract_code) do
-        ContractCode.trigger_fetch(address_hash)
+        ContractCodeOnDemand.trigger_fetch(address_hash)
       end
 
       conn
@@ -123,7 +121,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Chain.fetch_last_token_balances(@api_true)
 
       Task.start_link(fn ->
-        TokenBalance.trigger_fetch(address_hash)
+        TokenBalanceOnDemand.trigger_fetch(address_hash)
       end)
 
       conn
@@ -375,7 +373,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         )
 
       Task.start_link(fn ->
-        TokenBalance.trigger_fetch(address_hash)
+        TokenBalanceOnDemand.trigger_fetch(address_hash)
       end)
 
       {tokens, next_page} = split_list_by_page(results_plus_one)

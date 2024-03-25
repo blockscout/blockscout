@@ -17,8 +17,8 @@ defmodule BlockScoutWeb.AddressController do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Wei}
-  alias Indexer.Fetcher.OnDemand.{CoinBalance, ContractCode}
-  ContractCode
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Phoenix.View
 
   def index(conn, %{"type" => "JSON"} = params) do
@@ -98,14 +98,14 @@ defmodule BlockScoutWeb.AddressController do
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       if is_nil(address.contract_code) do
-        ContractCode.trigger_fetch(address_hash)
+        ContractCodeOnDemand.trigger_fetch(address_hash)
       end
 
       render(
         conn,
         "_show_address_transactions.html",
         address: address,
-        coin_balance_status: CoinBalance.trigger_fetch(address),
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
