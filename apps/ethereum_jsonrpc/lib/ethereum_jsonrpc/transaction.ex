@@ -51,10 +51,9 @@ defmodule EthereumJSONRPC.Transaction do
     "celo" ->
       @chain_type_fields quote(
                            do: [
-                             gas_currency_hash: EthereumJSONRPC.address(),
-                             gateway_fee: non_neg_integer(),
-                             gas_fee_recipient_hash: EthereumJSONRPC.address(),
-                             eth_compatible: boolean()
+                             gas_token_contract_address_hash: EthereumJSONRPC.address(),
+                             gas_fee_recipient_address_hash: EthereumJSONRPC.address(),
+                             gateway_fee: non_neg_integer()
                            ]
                          )
 
@@ -110,7 +109,6 @@ defmodule EthereumJSONRPC.Transaction do
           * `"feeCurrency"` - `t:EthereumJSONRPC.address/0` of the currency used to pay for gas.
           * `"gatewayFee"` - `t:EthereumJSONRPC.quantity/0` of the gateway fee.
           * `"gatewayFeeRecipient"` - `t:EthereumJSONRPC.address/0` of the gateway fee recipient.
-          * `"ethCompatible"` - `t:boolean/0` of whether the transaction is Ethereum compatible.
       """
     _ -> ""
   end}
@@ -527,10 +525,9 @@ defmodule EthereumJSONRPC.Transaction do
 
       "celo" ->
         put_if_present(elixir, params, [
-          {"feeCurrency", :gas_currency_hash},
+          {"feeCurrency", :gas_token_contract_address_hash},
           {"gatewayFee", :gateway_fee},
-          {"gatewayFeeRecipient", :gas_fee_recipient_hash},
-          {"ethCompatible", :eth_compatible}
+          {"gatewayFeeRecipient", :gas_fee_recipient_address_hash}
         ])
 
       _ ->
@@ -693,7 +690,7 @@ defmodule EthereumJSONRPC.Transaction do
   # Celo-specific fields
   if Application.compile_env(:explorer, :chain_type) == "celo" do
     defp entry_to_elixir({key, value})
-         when key in ~w(feeCurrency gatewayFeeRecipient ethCompatible),
+         when key in ~w(feeCurrency gatewayFeeRecipient),
          do: {key, value}
 
     defp entry_to_elixir({"gatewayFee" = key, quantity_or_nil}),

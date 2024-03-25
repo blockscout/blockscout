@@ -117,17 +117,16 @@ defmodule Explorer.Chain.Transaction.Schema do
                         "celo" ->
                           elem(
                             quote do
-                              field(:eth_compatible, :boolean)
                               field(:gateway_fee, Wei)
 
                               belongs_to(:gas_fee_recipient, Address,
-                                foreign_key: :gas_fee_recipient_hash,
+                                foreign_key: :gas_fee_recipient_address_hash,
                                 references: :hash,
                                 type: Hash.Address
                               )
 
                               belongs_to(:gas_currency, Address,
-                                foreign_key: :gas_currency_hash,
+                                foreign_key: :gas_token_contract_address_hash,
                                 references: :hash,
                                 type: Hash.Address
                               )
@@ -260,7 +259,7 @@ defmodule Explorer.Chain.Transaction do
 
   @optimism_optional_attrs ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
   @suave_optional_attrs ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
-  @celo_optional_attrs ~w(eth_compatible gateway_fee gas_fee_recipient_hash gas_currency_hash)a
+  @celo_optional_attrs ~w(gateway_fee gas_fee_recipient_address_hash gas_token_contract_address_hash)a
 
   @required_attrs ~w(from_address_hash gas hash input nonce value)a
 
