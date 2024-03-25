@@ -51,7 +51,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
         {:ok, [%{id: id, result: contract_code}]}
       end)
 
-      assert ContractCodeOnDemand.trigger_fetch(address.hash) == :ok
+      assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
       :timer.sleep(100)
 
@@ -61,6 +61,24 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       assert is_nil(Repo.get(AddressContractCodeFetchAttempt, address_hash))
 
       assert_receive({:chain_event, :fetched_bytecode, :on_demand, [^address_hash, ^contract_code]})
+    end
+
+    test "don't run the update on the address with non-empty nonce" do
+      address = insert(:address, nonce: 2)
+      address_hash = address.hash
+      string_address_hash = to_string(address.hash)
+
+      assert ContractCodeOnDemand.trigger_fetch(address) == :ok
+
+      :timer.sleep(100)
+
+      address = assert(Repo.get(Address, address_hash))
+      assert is_nil(address.contract_code)
+
+      attempts = Repo.get(AddressContractCodeFetchAttempt, address_hash)
+      assert is_nil(attempts)
+
+      refute_receive({:chain_event, :fetched_bytecode, :on_demand, [^address_hash, "0x"]})
     end
 
     test "updates address_contract_code_fetch_attempts table" do
@@ -81,7 +99,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
         {:ok, [%{id: id, result: "0x"}]}
       end)
 
-      assert ContractCodeOnDemand.trigger_fetch(address.hash) == :ok
+      assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
       :timer.sleep(100)
 
@@ -115,7 +133,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
         {:ok, [%{id: id, result: "0x"}]}
       end)
 
-      assert ContractCodeOnDemand.trigger_fetch(address.hash) == :ok
+      assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
       :timer.sleep(100)
 
@@ -132,7 +150,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       # try 2nd time before update threshold reached: nothing should be updated
       :timer.sleep(100)
 
-      assert ContractCodeOnDemand.trigger_fetch(address.hash) == :ok
+      assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
       :timer.sleep(50)
 
@@ -159,7 +177,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
         {:ok, [%{id: id, result: contract_code}]}
       end)
 
-      assert ContractCodeOnDemand.trigger_fetch(address.hash) == :ok
+      assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
       :timer.sleep(50)
 

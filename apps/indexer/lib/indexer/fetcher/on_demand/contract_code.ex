@@ -10,29 +10,33 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
 
   import EthereumJSONRPC, only: [fetch_codes: 2]
 
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.Address
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.Helper
   alias Explorer.Utility.AddressContractCodeFetchAttempt
 
   @max_delay :timer.hours(168)
 
-  @spec trigger_fetch(Hash.Address.t()) :: :ok
-  def trigger_fetch(address_hash) do
-    GenServer.cast(__MODULE__, {:fetch, address_hash})
+  @spec trigger_fetch(Address.t()) :: :ok
+  def trigger_fetch(address) do
+    GenServer.cast(__MODULE__, {:fetch, address})
   end
 
-  defp fetch_contract_code(address_hash, state) do
-    with {:retries_number, {retries_number, updated_at}} <-
-           {:retries_number, AddressContractCodeFetchAttempt.get_retries_number(address_hash)},
+  defp fetch_contract_code(address, state) do
+    with {:empty_nonce, true} <- {:empty_nonce, is_nil(address.nonce)},
+         {:retries_number, {retries_number, updated_at}} <-
+           {:retries_number, AddressContractCodeFetchAttempt.get_retries_number(address.hash)},
          updated_at_ms = DateTime.to_unix(updated_at, :millisecond),
          {:retry, true} <-
            {:retry,
             Helper.current_time() - updated_at_ms > min(:math.pow(update_threshold(), retries_number), @max_delay)} do
-      fetch_and_broadcast_bytecode(address_hash, state)
+      fetch_and_broadcast_bytecode(address.hash, state)
     else
+      {:empty_nonce, false} ->
+        :ok
+
       {:retries_number, nil} ->
-        fetch_and_broadcast_bytecode(address_hash, state)
+        fetch_and_broadcast_bytecode(address.hash, state)
         :ok
 
       {:retry, false} ->
@@ -73,8 +77,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   end
 
   @impl true
-  def handle_cast({:fetch, address_hash}, state) do
-    fetch_contract_code(address_hash, state)
+  def handle_cast({:fetch, address}, state) do
+    fetch_contract_code(address, state)
 
     {:noreply, state}
   end

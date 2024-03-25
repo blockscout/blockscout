@@ -82,13 +82,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def address(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, address_hash, address} <- validate_address(address_hash_string, params, @address_options),
+    with {:ok, _address_hash, address} <- validate_address(address_hash_string, params, @address_options),
          fully_preloaded_address <-
            Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true) do
       CoinBalanceOnDemand.trigger_fetch(fully_preloaded_address)
 
       if is_nil(address.contract_code) do
-        ContractCodeOnDemand.trigger_fetch(address_hash)
+        ContractCodeOnDemand.trigger_fetch(address)
       end
 
       conn

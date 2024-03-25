@@ -98,7 +98,7 @@ defmodule BlockScoutWeb.AddressController do
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       if is_nil(address.contract_code) do
-        ContractCodeOnDemand.trigger_fetch(address_hash)
+        ContractCodeOnDemand.trigger_fetch(address)
       end
 
       render(
