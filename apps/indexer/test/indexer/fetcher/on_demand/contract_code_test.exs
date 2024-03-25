@@ -66,7 +66,6 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
     test "don't run the update on the address with non-empty nonce" do
       address = insert(:address, nonce: 2)
       address_hash = address.hash
-      string_address_hash = to_string(address.hash)
 
       assert ContractCodeOnDemand.trigger_fetch(address) == :ok
 
@@ -162,7 +161,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       refute_receive({:chain_event, :fetched_bytecode, :on_demand, [^address_hash, ^contract_code]})
 
       # trying 3d time after update threshold reached: update is expected.
-      :timer.sleep(500)
+      :timer.sleep(1000)
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [

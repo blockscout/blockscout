@@ -29,7 +29,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
          updated_at_ms = DateTime.to_unix(updated_at, :millisecond),
          {:retry, true} <-
            {:retry,
-            Helper.current_time() - updated_at_ms > min(:math.pow(update_threshold(), retries_number), @max_delay)} do
+            Helper.current_time() - updated_at_ms >
+              threshold(retries_number)} do
       fetch_and_broadcast_bytecode(address.hash, state)
     else
       {:empty_nonce, false} ->
@@ -83,7 +84,13 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
     {:noreply, state}
   end
 
-  defp update_threshold do
+  defp update_threshold_ms do
     Application.get_env(:indexer, __MODULE__)[:threshold]
+  end
+
+  defp threshold(retries_number) do
+    delay_in_ms = trunc(update_threshold_ms() * :math.pow(2, retries_number))
+
+    min(delay_in_ms, @max_delay)
   end
 end
