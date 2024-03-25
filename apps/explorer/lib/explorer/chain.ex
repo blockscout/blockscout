@@ -1387,8 +1387,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest `{block_number, index}`) and. Results will be the internal
-      transactions older than the `block_number` and `index` that are passed.
+      `:key` (a tuple of the lowest/oldest `{block_number, index}`) and. Results will be the transactions
+      older than the `block_number` and `index` that are passed.
   """
   @spec hashes_to_transactions([Hash.Full.t()], [paging_options | necessity_by_association_option | api?]) ::
           [Transaction.t()] | []
