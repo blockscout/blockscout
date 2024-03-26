@@ -102,6 +102,7 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Block.{EmissionReward, Reward}
   alias Explorer.Repo
+  alias Explorer.Utility.MissingRangesManipulator
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
                   |> (&(case Application.compile_env(:explorer, :chain_type) do
@@ -150,6 +151,7 @@ defmodule Explorer.Chain.Block do
    * `size` - The size of the block in bytes.
    * `timestamp` - When the block was collated
    * `total_difficulty` - the total `difficulty` of the chain until this block.
+   * `refetch_needed` - `true` if block has missing data and has to be refetched.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `base_fee_per_gas` - Minimum fee required per unit of gas. Fee adjusts based on network congestion.
   #{case Application.compile_env(:explorer, :chain_type) do
@@ -420,4 +422,25 @@ defmodule Explorer.Chain.Block do
       |> Decimal.div(base_fee_max_change_denominator)
       |> Decimal.add(base_fee_per_gas_decimal)
   end
+
+  @spec set_refetch_needed(integer | [integer]) :: :ok
+  def set_refetch_needed(block_numbers) when is_list(block_numbers) do
+    query =
+      from(block in Block,
+        where: block.number in ^block_numbers,
+        # Enforce Block ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: block.hash],
+        lock: "FOR NO KEY UPDATE"
+      )
+
+    {_count, updated_numbers} =
+      Repo.update_all(
+        from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
+        set: [refetch_needed: true]
+      )
+
+    MissingRangesManipulator.add_ranges_by_block_numbers(updated_numbers)
+  end
+
+  def set_refetch_needed(block_number), do: set_refetch_needed([block_number])
 end

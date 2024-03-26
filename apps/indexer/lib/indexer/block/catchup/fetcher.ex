@@ -57,9 +57,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
           shrunk: false
         }
 
-      latest_missing_ranges ->
-        missing_ranges = filter_consensus_blocks(latest_missing_ranges)
-
+      missing_ranges ->
         first.._ = List.first(missing_ranges)
         _..last = List.last(missing_ranges)
 
@@ -87,21 +85,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
           shrunk: shrunk
         }
     end
-  end
-
-  defp filter_consensus_blocks(ranges) do
-    filtered_ranges =
-      ranges
-      |> Enum.map(&Chain.missing_block_number_ranges(&1))
-      |> List.flatten()
-
-    consensus_blocks = ranges_to_numbers(ranges) -- ranges_to_numbers(filtered_ranges)
-
-    consensus_blocks
-    |> numbers_to_ranges()
-    |> MissingRangesManipulator.clear_batch()
-
-    filtered_ranges
   end
 
   @doc """

@@ -11,8 +11,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
 
   require Logger
 
-  alias Explorer.Chain.Import.Runner.Blocks
-  alias Explorer.Chain.{Log, TokenTransfer}
+  alias Explorer.Chain.{Block, Log, TokenTransfer}
   alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
 
@@ -95,6 +94,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
       join: b in assoc(tt, :block),
       where: t.type == ^"ERC-721" and is_nil(tt.token_ids),
       where: b.consensus == true,
+      where: b.refetch_needed == false,
       select: tt.block_number,
       distinct: tt.block_number
     )
@@ -109,7 +109,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
   end
 
   defp handle_batch(block_numbers, :refetch) do
-    Blocks.invalidate_consensus_blocks(block_numbers)
+    Block.set_refetch_needed(block_numbers)
   end
 
   defp schedule_batch_migration do

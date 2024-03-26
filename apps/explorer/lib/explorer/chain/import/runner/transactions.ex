@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{Block, Hash, Import, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Block, Hash, Import, Transaction}
   alias Explorer.Chain.Import.Runner.TokenTransfers
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Utility.MissingRangesManipulator
@@ -390,11 +390,6 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       |> Enum.map(fn %{block_hash: block_hash} -> block_hash end)
       |> Enum.uniq()
 
-    transaction_hashes =
-      blocks_with_recollated_transactions
-      |> repo.all()
-      |> Enum.map(fn %{hash: hash} -> hash end)
-
     if Enum.empty?(block_hashes) do
       {:ok, []}
     else
@@ -434,7 +429,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
         {_, result} =
           repo.update_all(
             from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
-            [set: [consensus: false, updated_at: updated_at]],
+            [set: [refetch_needed: true, updated_at: updated_at]],
             timeout: timeout
           )
 
@@ -451,43 +446,6 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       rescue
         postgrex_error in Postgrex.Error ->
           {:error, %{exception: postgrex_error, block_hashes: block_hashes}}
-      end
-    end
-
-    if Enum.empty?(transaction_hashes) do
-      {:ok, []}
-    else
-      query =
-        from(
-          transaction in Transaction,
-          where: transaction.hash in ^transaction_hashes,
-          # Enforce Block ShareLocks order (see docs: sharelocks.md)
-          order_by: [asc: transaction.hash],
-          lock: "FOR UPDATE"
-        )
-
-      try do
-        {_, result} =
-          repo.update_all(
-            from(transaction in Transaction, join: s in subquery(query), on: transaction.hash == s.hash),
-            [set: [block_consensus: false, updated_at: updated_at]],
-            timeout: timeout
-          )
-
-        {_, _result} =
-          repo.update_all(
-            from(token_transfer in TokenTransfer,
-              join: s in subquery(query),
-              on: token_transfer.transaction_hash == s.hash
-            ),
-            [set: [block_consensus: false, updated_at: updated_at]],
-            timeout: timeout
-          )
-
-        {:ok, result}
-      rescue
-        postgrex_error in Postgrex.Error ->
-          {:error, %{exception: postgrex_error, transaction_hashes: transaction_hashes}}
       end
     end
   end

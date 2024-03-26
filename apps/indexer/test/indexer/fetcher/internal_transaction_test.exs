@@ -309,7 +309,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       assert %{block_hash: ^block_hash} = Repo.get(PendingBlockOperation, block_hash)
     end
 
-    test "remove block consensus on foreign_key_violation", %{
+    test "set block refetch_needed=true on foreign_key_violation", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       block = insert(:block)
@@ -465,7 +465,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
           assert {:retry, [^block_number]} = InternalTransaction.run([block_number], json_rpc_named_arguments)
         end)
 
-      assert %{consensus: false} = Repo.reload(block)
+      assert %{consensus: true, refetch_needed: true} = Repo.reload(block)
       assert logs =~ "foreign_key_violation on internal transactions import, foreign transactions hashes:"
     end
   end

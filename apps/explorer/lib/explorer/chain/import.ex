@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import do
   alias Ecto.Changeset
   alias Explorer.Account.Notify
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Chain.Import
+  alias Explorer.Chain.{Block, Import}
   alias Explorer.Repo
 
   require Logger
@@ -327,12 +327,12 @@ defmodule Explorer.Chain.Import do
         {:ok, result}
 
       error ->
-        remove_consensus_from_partially_imported_blocks(options)
+        set_refetch_needed_for_partially_imported_blocks(options)
         error
     end
   rescue
     exception ->
-      remove_consensus_from_partially_imported_blocks(options)
+      set_refetch_needed_for_partially_imported_blocks(options)
       reraise exception, __STACKTRACE__
   end
 
@@ -361,14 +361,14 @@ defmodule Explorer.Chain.Import do
     Repo.logged_transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
   end
 
-  defp remove_consensus_from_partially_imported_blocks(%{blocks: %{params: blocks_params}}) do
+  defp set_refetch_needed_for_partially_imported_blocks(%{blocks: %{params: blocks_params}}) do
     block_numbers = Enum.map(blocks_params, & &1.number)
-    Import.Runner.Blocks.invalidate_consensus_blocks(block_numbers)
+    Block.set_refetch_needed(block_numbers)
 
-    Logger.warning("Consensus removed from partially imported block because of error: #{inspect(block_numbers)}")
+    Logger.warning("Set refetch_needed for partially imported block because of error: #{inspect(block_numbers)}")
   end
 
-  defp remove_consensus_from_partially_imported_blocks(_options), do: :ok
+  defp set_refetch_needed_for_partially_imported_blocks(_options), do: :ok
 
   @spec timestamps() :: timestamps
   def timestamps do

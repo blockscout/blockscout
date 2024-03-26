@@ -16,7 +16,6 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Chain.Import.Runner.Blocks
 
   @interval :timer.seconds(10)
 
@@ -100,7 +99,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
             fetcher: :empty_blocks_to_refetch
           )
 
-          Blocks.invalidate_consensus_blocks([block_number])
+          Block.set_refetch_needed(block_number)
         else
           Logger.debug(
             "Block with number #{block_number} and hash #{to_string(block_hash)} is empty. We should set is_empty=true for it.",
