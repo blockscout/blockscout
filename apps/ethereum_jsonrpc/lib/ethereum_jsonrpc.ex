@@ -172,10 +172,10 @@ defmodule EthereumJSONRPC do
   """
   @spec execute_contract_functions([Contract.call()], [map()], json_rpc_named_arguments) :: [Contract.call_result()]
   def execute_contract_functions(functions, abi, json_rpc_named_arguments, leave_error_as_map \\ false) do
-    if Enum.count(functions) > 0 do
-      Contract.execute_contract_functions(functions, abi, json_rpc_named_arguments, leave_error_as_map)
-    else
+    if Enum.empty?(functions) do
       []
+    else
+      Contract.execute_contract_functions(functions, abi, json_rpc_named_arguments, leave_error_as_map)
     end
   end
 

@@ -165,6 +165,7 @@ defmodule Explorer.Chain.ImportTest do
             to_address_hash: "0x515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
             token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             token_type: "ERC-20",
+            token: %{type: "ERC-20"},
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
           }
         ],

@@ -21,7 +21,6 @@
 
 ## Checklist for your Pull Request (PR)
 
-  - [ ] I added an entry to `CHANGELOG.md` with this PR
   - [ ] If I added new functionality, I added tests covering it.
   - [ ] If I fixed a bug, I added a regression test to prevent the bug from silently reappearing again.
   - [ ] I checked whether I should update the docs and did so by submitting a PR to https://github.com/blockscout/docs

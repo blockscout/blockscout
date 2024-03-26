@@ -1,31 +1,38 @@
-name: Zksync publish Docker image
+name: Release for ZkSync
 
 on:
-  push:
-    branches:
-      - production-zksync
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  OTP_VERSION: ${{ vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
+
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
-      DOCKER_CHAIN_NAME: zksync
     steps:
       - uses: actions/checkout@v4
       - name: Setup repo
-        uses: ./.github/actions/setup-repo-and-short-sha
+        uses: ./.github/actions/setup-repo
         with:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      - name: Build and push Docker image
+
+      - name: Build and push Docker image for ZkSync
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
+          tags: blockscout/blockscout-zksync:latest, blockscout/blockscout-zksync:${{ env.RELEASE_VERSION }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
           build-args: |
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
@@ -34,6 +41,6 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=zksync

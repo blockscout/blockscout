@@ -352,7 +352,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
     {responses, error_messages} = read_contracts_with_retries(requests, @erc20_abi, json_rpc_named_arguments, 3)
 
-    if !Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
+    if not Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
       Logger.warning(
         "Cannot read symbol and decimals of an ERC-20 token contract. Error messages: #{Enum.join(error_messages, ", ")}. Addresses: #{Enum.join(token_addresses, ", ")}"
       )

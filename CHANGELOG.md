@@ -57,6 +57,7 @@
 - [#9514](https://github.com/blockscout/blockscout/pull/9514) - Fix missing `0x` prefix for `blockNumber`, `logIndex`, `transactionIndex` and remove `transactionLogIndex` in `eth_getLogs` response.
 - [#9510](https://github.com/blockscout/blockscout/pull/9510) - Fix WS false 0 token balances
 - [#9512](https://github.com/blockscout/blockscout/pull/9512) - Docker-compose 2.24.6 compatibility
+- [#9407](https://github.com/blockscout/blockscout/pull/9407) - ERC-404 basic support
 - [#9262](https://github.com/blockscout/blockscout/pull/9262) - Fix withdrawal status
 - [#9123](https://github.com/blockscout/blockscout/pull/9123) - Fixes in Optimism due to changed log topics type
 - [#8831](https://github.com/blockscout/blockscout/pull/8831) - Return all OP Withdrawals bound to L2 transaction
@@ -152,7 +153,6 @@
 
 - [#9441](https://github.com/blockscout/blockscout/pull/9441) - Update BENS integration: change endpoint for resolving address in search
 - [#9437](https://github.com/blockscout/blockscout/pull/9437) - Add Enum.uniq before sanitizing token transfers
-- [#9407](https://github.com/blockscout/blockscout/pull/9407) - ERC-404 basic support
 - [#9403](https://github.com/blockscout/blockscout/pull/9403) - Null round handling
 - [#9401](https://github.com/blockscout/blockscout/pull/9401) - Eliminate incorrect token transfers with empty token_ids
 - [#9396](https://github.com/blockscout/blockscout/pull/9396) - More-Minimal Proxy support
