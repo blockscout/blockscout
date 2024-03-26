@@ -22,18 +22,33 @@ defmodule Explorer.SmartContract.EthBytecodeDBInterface do
     Function to search smart contracts in eth-bytecode-db, similar to `search_contract/2` but
       this function uses only `/api/v2/bytecodes/sources:search` method
   """
-  @spec search_contract_in_eth_bytecode_internal_db(map(), keyword()) :: {:error, any} | {:ok, any}
-  def search_contract_in_eth_bytecode_internal_db(%{"bytecode" => _, "bytecodeType" => _} = body, options) do
+  @spec search_contract_in_eth_bytecode_internal_db(map(), binary(), keyword()) :: {:error, any} | {:ok, any}
+  def search_contract_in_eth_bytecode_internal_db(
+        %{"bytecode" => _, "bytecodeType" => _} = body,
+        address_hash_string,
+        options
+      ) do
+    chain_id = Application.get_env(:block_scout_web, :chain_id)
+
     {url, body} =
       cond do
         Keyword.get(options, :only_verifier_alliance?, false) ->
-          {bytecode_search_alliance_sources_url(), body}
+          {bytecode_search_alliance_sources_url(),
+           %{
+             "chain" => to_string(chain_id),
+             "address" => address_hash_string
+           }}
 
         Keyword.get(options, :only_eth_bytecode_db?, false) ->
           {bytecode_search_sources_url(), body}
 
         true ->
-          {bytecode_search_all_sources_url(), Map.put(body, "onlyLocal", true)}
+          {bytecode_search_all_sources_url(),
+           Map.merge(body, %{
+             "chain" => to_string(chain_id),
+             "address" => address_hash_string,
+             "onlyLocal" => true
+           })}
       end
 
     http_post_request(url, body, false, options)
@@ -62,7 +77,7 @@ defmodule Explorer.SmartContract.EthBytecodeDBInterface do
   end
 
   def process_verifier_response(%{"allianceSources" => [src | _]}, _) do
-    {:ok, Map.put(src, "alliance?", true)}
+    {:ok, Map.put(src, "verifier_alliance?", true)}
   end
 
   def process_verifier_response(%{"sourcifySources" => [src | _]}, _) do

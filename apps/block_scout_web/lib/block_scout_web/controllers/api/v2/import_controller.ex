@@ -80,6 +80,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
              %{}
              |> prepare_bytecode_for_microservice(creation_tx_input, Data.to_string(address.contract_code))
              |> EthBytecodeDBInterface.search_contract_in_eth_bytecode_internal_db(
+               address_hash_string,
                params_to_contract_search_options(params)
              ),
            {:ok, _} <- LookUpSmartContractSourcesOnDemand.process_contract_source(type, source, address.hash) do
