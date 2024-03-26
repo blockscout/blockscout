@@ -10,12 +10,14 @@ defmodule Indexer.Helper do
       fetch_block_number_by_tag: 2,
       json_rpc: 2,
       quantity_to_integer: 1,
+      integer_to_quantity: 1,
       request: 1
     ]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Hash
+  alias Explorer.SmartContract.Reader, as: ContractReader
 
   @finite_retries_number 3
   @infinite_retries_number 100_000_000
@@ -88,7 +90,19 @@ defmodule Indexer.Helper do
     end
   end
 
-  defp get_safe_block(json_rpc_named_arguments) do
+  @doc """
+    Retrieves the safe block if the endpoint supports such an interface; otherwise, it requests the latest block.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    `{block_num, latest}`: A tuple where
+    - `block_num` is the safe or latest block number.
+    - `latest` is a boolean, where `true` indicates that `block_num` is the latest block number fetched using the tag `latest`.
+  """
+  @spec get_safe_block(EthereumJSONRPC.json_rpc_named_arguments()) :: {non_neg_integer(), boolean()}
+  def get_safe_block(json_rpc_named_arguments) do
     case get_block_number_by_tag("safe", json_rpc_named_arguments) do
       {:ok, safe_block} ->
         {safe_block, false}
@@ -155,6 +169,51 @@ defmodule Indexer.Helper do
   end
 
   @doc """
+  TBD
+  """
+  def get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, id \\ 0, retries \\ 3) do
+    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
+    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
+
+    req =
+      request(%{
+        id: id,
+        method: "eth_getLogs",
+        params: [
+          %{
+            :fromBlock => processed_from_block,
+            :toBlock => processed_to_block,
+            :address => address,
+            :topics => topics
+          }
+        ]
+      })
+
+    error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
+
+    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+  end
+
+  @doc """
+  Forms JSON RPC named arguments for the given RPC URL.
+  """
+  @spec build_json_rpc_named_arguments(binary()) :: EthereumJSONRPC.json_rpc_named_arguments()
+  def build_json_rpc_named_arguments(rpc_url) do
+    [
+      transport: EthereumJSONRPC.HTTP,
+      transport_options: [
+        http: EthereumJSONRPC.HTTP.HTTPoison,
+        url: rpc_url,
+        http_options: [
+          recv_timeout: :timer.minutes(10),
+          timeout: :timer.minutes(10),
+          hackney: [pool: :ethereum_jsonrpc]
+        ]
+      ]
+    ]
+  end
+
+  @doc """
   Prints a log of progress when handling something splitted to block chunks.
   """
   @spec log_blocks_chunk_handling(
@@ -200,6 +259,80 @@ defmodule Indexer.Helper do
       Logger.info("#{type} handling #{layer} block ##{chunk_start}.#{found}#{target_range}")
     else
       Logger.info("#{type} handling #{layer} block range #{chunk_start}..#{chunk_end}.#{found}#{target_range}")
+    end
+  end
+
+  @doc """
+  TBD
+  """
+  def read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left) when retries_left > 0 do
+    responses = ContractReader.query_contracts(requests, abi, json_rpc_named_arguments: json_rpc_named_arguments)
+
+    error_messages =
+      Enum.reduce(responses, [], fn {status, error_message}, acc ->
+        acc ++
+          if status == :error do
+            [error_message]
+          else
+            []
+          end
+      end)
+
+    if Enum.empty?(error_messages) do
+      {responses, []}
+    else
+      retries_left = retries_left - 1
+
+      if retries_left == 0 do
+        {responses, Enum.uniq(error_messages)}
+      else
+        Logger.error("#{List.first(error_messages)}. Retrying...")
+        :timer.sleep(3000)
+        read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left)
+      end
+    end
+  end
+
+  @doc """
+  TBD
+  """
+  def repeated_batch_call(func, args, error_message, retries_left) do
+    # credo:disable-for-previous-line Credo.Check.Refactor.CyclomaticComplexity
+    case apply(func, args) do
+      {:ok, responses_list} = batch_responses ->
+        standardized_error =
+          Enum.reduce_while(responses_list, %{}, fn one_response, acc ->
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+            case one_response do
+              %{error: error_msg_with_code} -> {:halt, error_msg_with_code}
+              _ -> {:cont, acc}
+            end
+          end)
+
+        case standardized_error do
+          %{code: _, message: error_msg} -> {:error, error_msg, batch_responses}
+          _ -> {:ok, batch_responses, []}
+        end
+
+      {:error, message} = err ->
+        {:error, message, err}
+    end
+    |> case do
+      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
+      {:ok, responses, _} ->
+        responses
+
+      {:error, message, responses_or_error} ->
+        retries_left = retries_left - 1
+
+        if retries_left <= 0 do
+          Logger.error(error_message.(message))
+          responses_or_error
+        else
+          Logger.error("#{error_message.(message)} Retrying...")
+          :timer.sleep(3000)
+          repeated_batch_call(func, args, error_message, retries_left)
+        end
     end
   end
 

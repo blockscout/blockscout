@@ -165,9 +165,9 @@ defmodule EthereumJSONRPC.HTTP do
 
   # restrict response to only those fields supported by the JSON-RPC 2.0 standard, which means that level of keys is
   # validated, so we can indicate that with switch to atom keys.
-  def standardize_response(%{"jsonrpc" => "2.0" = jsonrpc, "id" => id} = unstandardized) do
+  def standardize_response(%{"jsonrpc" => "2.0" = jsonrpc} = unstandardized) do
     # Nethermind return string ids
-    id = quantity_to_integer(id)
+    id = quantity_to_integer(unstandardized["id"])
 
     standardized = %{jsonrpc: jsonrpc, id: id}
 

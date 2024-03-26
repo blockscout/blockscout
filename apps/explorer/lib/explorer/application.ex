@@ -154,6 +154,7 @@ defmodule Explorer.Application do
         Explorer.Repo.RSK,
         Explorer.Repo.Shibarium,
         Explorer.Repo.Suave,
+        Explorer.Repo.Arbitrum,
         Explorer.Repo.BridgedTokens,
         Explorer.Repo.Filecoin,
         Explorer.Repo.Stability

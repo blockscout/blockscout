@@ -116,6 +116,32 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> Enum.map(&save_range/1)
   end
 
+  @doc """
+    Finds the first range in the table where the set, consisting of numbers from `lower_number` to `higher_number`, intersects.
+
+    ## Parameters
+    - `lower_number`: The lower bound of the range to check.
+    - `higher_number`: The upper bound of the range to check.
+
+    ## Returns
+    - Returns `nil` if no intersecting ranges are found, or the record of the first intersecting range otherwise.
+  """
+  @spec intersects_with_range(non_neg_integer(), non_neg_integer()) :: nil | map()
+  def intersects_with_range(lower_number, higher_number) when lower_number <= higher_number do
+    query =
+      from(
+        r in __MODULE__,
+        where:
+          (^lower_number <= r.to_number and ^higher_number >= r.to_number) or
+            (^lower_number <= r.from_number and ^higher_number >= r.from_number) or
+            (^lower_number >= r.to_number and ^higher_number <= r.from_number),
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+  end
+
   defp insert_range(params) do
     params
     |> changeset()
