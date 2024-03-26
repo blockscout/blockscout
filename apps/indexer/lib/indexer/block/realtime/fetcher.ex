@@ -76,6 +76,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @impl GenServer
   def init(%{block_fetcher: %Block.Fetcher{} = block_fetcher, subscribe_named_arguments: subscribe_named_arguments}) do
     Logger.metadata(fetcher: :block_realtime)
+    Process.flag(:trap_exit, true)
 
     {:ok, %__MODULE__{block_fetcher: %Block.Fetcher{block_fetcher | broadcast: :realtime, callback_module: __MODULE__}},
      {:continue, {:init, subscribe_named_arguments}}}
@@ -160,6 +161,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
   # don't handle other messages (e.g. :ssl_closed)
   def handle_info(_, state) do
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def terminate(_reason, %__MODULE__{timer: timer}) do
+    Process.cancel_timer(timer)
   end
 
   if Application.compile_env(:explorer, :chain_type) == "stability" do
