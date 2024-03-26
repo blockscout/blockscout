@@ -89,7 +89,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
               Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash})
             )
 
-          Logger.info("L1 to L2 message #{tx_hash} found with the type #{type}")
+          Logger.debug("L1 to L2 message #{tx_hash} found with the type #{type}")
 
           {updated_messages, updated_txs_requests}
         else
@@ -126,6 +126,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       )
 
     messages = get_messages_from_logs(logs, json_rpc_named_argument, chunk_size)
+
+    unless messages == [] do
+      Logger.info("Origins of #{length(messages)} L1-to-L2 messages will be imported")
+    end
 
     {:ok, _} =
       Chain.import(%{

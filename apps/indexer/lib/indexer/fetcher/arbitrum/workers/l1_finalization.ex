@@ -7,7 +7,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
   alias Explorer.Chain
-  alias Explorer.Chain.Arbitrum.Reader
 
   require Logger
 
@@ -19,7 +18,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
         Rpc.get_resend_attempts()
       )
 
-    lifecycle_txs = Reader.lifecycle_unfinalized_transactions(safe_block)
+    lifecycle_txs = Db.lifecycle_unfinalized_transactions(safe_block)
 
     if length(lifecycle_txs) > 0 do
       Logger.info("Discovered #{length(lifecycle_txs)} lifecycle transaction to be finalized")
@@ -27,9 +26,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
       updated_lifecycle_txs =
         lifecycle_txs
         |> Enum.map(fn tx ->
-          tx
-          |> Db.transform_lifecycle_transaction_to_map()
-          |> Map.put(:status, :finalized)
+          Map.put(tx, :status, :finalized)
         end)
 
       {:ok, _} =

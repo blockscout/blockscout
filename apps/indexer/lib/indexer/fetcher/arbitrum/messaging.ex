@@ -13,8 +13,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   require Logger
 
-  # 32-byte signature of the event L2ToL1Tx(address caller, address indexed destination, uint256 indexed hash, uint256 indexed position, uint256 arbBlockNum, uint256 ethBlockNum, uint256 timestamp, uint256 callvalue, bytes data)
-  @l2_to_l1_event "0x3e7aafa77dbf186b7fd488006beff893744caa3c4f6f299e8a709fa2087374fc"
   @l2_to_l1_event_unindexed_params [
     :address,
     {:uint, 256},
@@ -27,68 +25,92 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   @doc """
   TBD
   """
-  def filter_l1_to_l2_messages(transactions) do
-    transactions
-    |> Enum.filter(fn tx ->
-      tx[:request_id] != nil
-    end)
-    |> Enum.map(fn tx ->
-      Logger.info("L1 to L2 message #{tx.hash} found with the type #{tx.type}")
+  def filter_l1_to_l2_messages(transactions, report \\ true) do
+    messages =
+      transactions
+      |> Enum.filter(fn tx ->
+        tx[:request_id] != nil
+      end)
+      |> handle_filtered_l1_to_l2_messages()
 
-      %{direction: :to_l2, message_id: tx.request_id, completion_tx_hash: tx.hash, status: :relayed}
-      |> complete_to_params()
-    end)
+    if report && not (messages == []) do
+      Logger.info("#{length(messages)} completions of L1-to-L2 messages will be imported")
+    end
+
+    messages
   end
 
   @doc """
   TBD
   """
   def filter_l2_to_l1_messages(logs) do
+    arbsys_contract = Application.get_env(:indexer, __MODULE__)[:arbsys_contract]
+
     filtered_logs =
       logs
       |> Enum.filter(fn event ->
-        event.first_topic == @l2_to_l1_event
+        event.address_hash == arbsys_contract and event.first_topic == Db.l2_to_l1_event()
       end)
 
-    if Enum.empty?(filtered_logs) do
-      []
-    else
-      # Get values before the loop parsing the events to reduce number of DB requests
-      highest_committed_block = Db.highest_committed_block(-1)
-      highest_confirmed_block = Db.highest_confirmed_block(-1)
+    handle_filtered_l2_to_l1_messages(filtered_logs)
+  end
 
-      messages_map =
-        filtered_logs
-        |> Enum.reduce(%{}, fn event, messages_acc ->
-          Logger.info("L2 to L1 message #{event.transaction_hash} found")
+  def handle_filtered_l1_to_l2_messages([]) do
+    []
+  end
 
-          {message_id, caller, blocknum, timestamp} = l2_to_l1_event_parse(event)
+  def handle_filtered_l1_to_l2_messages(filtered_txs) do
+    filtered_txs
+    |> Enum.map(fn tx ->
+      Logger.debug("L1 to L2 message #{tx.hash} found with the type #{tx.type}")
 
-          message =
-            %{
-              direction: :from_l2,
-              message_id: message_id,
-              originator_address: caller,
-              originating_tx_hash: event.transaction_hash,
-              origination_timestamp: timestamp,
-              originating_tx_blocknum: blocknum,
-              status: status_l2_to_l1_message(blocknum, highest_committed_block, highest_confirmed_block)
-            }
-            |> complete_to_params()
+      %{direction: :to_l2, message_id: tx.request_id, completion_tx_hash: tx.hash, status: :relayed}
+      |> complete_to_params()
+    end)
+  end
 
-          Map.put(
-            messages_acc,
-            message_id,
-            message
-          )
-        end)
+  def handle_filtered_l2_to_l1_messages([]) do
+    []
+  end
 
-      # This is required only for the case when l2-to-l1 messages
-      # are found by block catchup fetcher
-      messages_map
-      |> find_and_update_executed_messages()
-      |> Map.values()
-    end
+  def handle_filtered_l2_to_l1_messages(filtered_logs) do
+    # Get values before the loop parsing the events to reduce number of DB requests
+    highest_committed_block = Db.highest_committed_block(-1)
+    highest_confirmed_block = Db.highest_confirmed_block(-1)
+
+    messages_map =
+      filtered_logs
+      |> Enum.reduce(%{}, fn event, messages_acc ->
+        Logger.debug("L2 to L1 message #{event.transaction_hash} found")
+
+        {message_id, caller, blocknum, timestamp} = l2_to_l1_event_parse(event)
+
+        message =
+          %{
+            direction: :from_l2,
+            message_id: message_id,
+            originator_address: caller,
+            originating_tx_hash: event.transaction_hash,
+            origination_timestamp: timestamp,
+            originating_tx_blocknum: blocknum,
+            status: status_l2_to_l1_message(blocknum, highest_committed_block, highest_confirmed_block)
+          }
+          |> complete_to_params()
+
+        Map.put(
+          messages_acc,
+          message_id,
+          message
+        )
+      end)
+
+    Logger.info("Origins of #{length(Map.values(messages_map))} L2-to-L1 messages will be imported")
+
+    # This is required only for the case when l2-to-l1 messages
+    # are found by block catchup fetcher
+    messages_map
+    |> find_and_update_executed_messages()
+    |> Map.values()
   end
 
   defp complete_to_params(incomplete) do

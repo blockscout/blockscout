@@ -32,7 +32,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
 
   @impl GenServer
   def init(args) do
-    Logger.metadata(fetcher: :arbitrum_bridge_l1_tracker)
+    Logger.metadata(fetcher: :arbitrum_bridge_l1)
 
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
     l1_rpc = config_common[:l1_rpc]

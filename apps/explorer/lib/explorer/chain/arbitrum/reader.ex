@@ -10,6 +10,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   alias Explorer.{Chain, Repo}
 
   alias Explorer.Chain.Block, as: FullBlock
+  alias Explorer.Chain.{Log, Transaction}
+
+  # 32-byte signature of the event L2ToL1Tx(address caller, address indexed destination, uint256 indexed hash, uint256 indexed position, uint256 arbBlockNum, uint256 ethBlockNum, uint256 timestamp, uint256 callvalue, bytes data)
+  @l2_to_l1_event "0x3e7aafa77dbf186b7fd488006beff893744caa3c4f6f299e8a709fa2087374fc"
 
   @doc """
   TBD
@@ -36,6 +40,45 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         select: msg.originating_tx_blocknum,
         where: msg.direction == :to_l2 and not is_nil(msg.originating_tx_blocknum),
         order_by: [asc: msg.message_id],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+  end
+
+  @doc """
+  TBD
+  """
+  def rollup_block_of_earliest_discovered_message_from_l2 do
+    query =
+      from(msg in Message,
+        select: msg.originating_tx_blocknum,
+        where: msg.direction == :from_l2 and not is_nil(msg.originating_tx_blocknum),
+        order_by: [asc: msg.originating_tx_blocknum],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+  end
+
+  @doc """
+  TBD
+  """
+  def rollup_block_of_earliest_discovered_message_to_l2 do
+    completion_tx_subquery =
+      from(msg in Message,
+        select: msg.completion_tx_hash,
+        where: msg.direction == :to_l2 and not is_nil(msg.completion_tx_hash),
+        order_by: [asc: msg.message_id],
+        limit: 1
+      )
+
+    query =
+      from(tx in Transaction,
+        select: tx.block_number,
+        where: tx.hash == subquery(completion_tx_subquery),
         limit: 1
       )
 
@@ -377,4 +420,19 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     main_query
     |> Repo.one()
   end
+
+  def l2_to_l1_logs(sender, start_block, end_block) do
+    query =
+      from(log in Log,
+        where:
+          log.block_number >= ^start_block and
+            log.block_number <= ^end_block and
+            log.address_hash == ^sender and
+            log.first_topic == ^@l2_to_l1_event
+      )
+
+    Repo.all(query, timeout: :infinity)
+  end
+
+  def l2_to_l1_event, do: @l2_to_l1_event
 end

@@ -11,6 +11,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Arbitrum.Reader
   alias Explorer.Chain.Block, as: FullBlock
+  alias Explorer.Chain.{Data, Hash}
+
+  alias Explorer.Utility.MissingBlockRange
 
   require Logger
 
@@ -139,6 +142,37 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @doc """
   TBD
   """
+  def rollup_block_to_discover_missed_messages_from_l2(value_if_nil \\ nil) do
+    case Reader.rollup_block_of_earliest_discovered_message_from_l2() do
+      nil ->
+        Logger.warning("No messages from L2 found in DB")
+        value_if_nil
+
+      value ->
+        value - 1
+    end
+  end
+
+  @doc """
+  TBD
+  """
+  def rollup_block_to_discover_missed_messages_to_l2(value_if_nil \\ nil) do
+    case Reader.rollup_block_of_earliest_discovered_message_to_l2() do
+      nil ->
+        # In theory it could be a situation when when the earliest message points
+        # to a completion transaction which is not indexed yet. In this case, this
+        # warning will occur.
+        Logger.warning("No completed messages to L2 found in DB")
+        value_if_nil
+
+      value ->
+        value - 1
+    end
+  end
+
+  @doc """
+  TBD
+  """
   def l1_block_of_latest_confirmed_block(value_if_nil) do
     case Reader.l1_block_of_latest_confirmed_block() do
       nil ->
@@ -200,14 +234,15 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @doc """
   TBD
   """
-  def transform_lifecycle_transaction_to_map(tx) do
-    %{
-      id: tx.id,
-      hash: tx.hash.bytes,
-      block: tx.block,
-      timestamp: tx.timestamp,
-      status: tx.status
-    }
+  def lifecycle_unfinalized_transactions(finalized_block) do
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
+    Reader.lifecycle_unfinalized_transactions(finalized_block)
+    |> Enum.map(&lifecycle_transaction_to_map/1)
+  end
+
+  defp lifecycle_transaction_to_map(tx) do
+    [:id, :hash, :block, :timestamp, :status]
+    |> db_record_to_map(tx)
   end
 
   @doc """
@@ -256,16 +291,23 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       :completion_tx_hash,
       :status
     ]
-    |> Enum.reduce(%{}, fn key, message_as_map ->
-      raw_value = Map.get(message, key)
+    |> db_record_to_map(message)
+  end
 
+  defp db_record_to_map(required_keys, record, encode \\ false) do
+    required_keys
+    |> Enum.reduce(%{}, fn key, record_as_map ->
+      raw_value = Map.get(record, key)
+
+      # credo:disable-for-lines:5 Credo.Check.Refactor.Nesting
       value =
         case raw_value do
-          %Explorer.Chain.Hash{} -> raw_value.bytes
+          %Hash{} -> if(encode, do: Hash.to_string(raw_value), else: raw_value.bytes)
+          %Data{} -> if(encode, do: Data.to_string(raw_value), else: raw_value.bytes)
           _ -> raw_value
         end
 
-      Map.put(message_as_map, key, value)
+      Map.put(record_as_map, key, value)
     end)
   end
 
@@ -307,5 +349,39 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       {older_confirmation_l1_block, newer_confirmation_l1_block} ->
         {older_confirmation_l1_block + 1, newer_confirmation_l1_block - 1}
     end
+  end
+
+  def l2_to_l1_logs(start_block, end_block) do
+    arbsys_contract = Application.get_env(:indexer, Indexer.Fetcher.Arbitrum.Messaging)[:arbsys_contract]
+
+    arbsys_contract
+    |> Reader.l2_to_l1_logs(start_block, end_block)
+    |> Enum.map(&logs_to_map/1)
+  end
+
+  defp logs_to_map(log) do
+    [
+      :data,
+      :index,
+      :first_topic,
+      :second_topic,
+      :third_topic,
+      :fourth_topic,
+      :address_hash,
+      :transaction_hash,
+      :block_hash,
+      :block_number
+    ]
+    |> db_record_to_map(log, true)
+  end
+
+  def indexed_blocks?(start_block, end_block) do
+    is_nil(MissingBlockRange.intersects_with_range(start_block, end_block))
+  end
+
+  def l2_to_l1_event, do: Reader.l2_to_l1_event()
+
+  def closest_block_after_timestamp(timestamp) do
+    Chain.timestamp_to_block_number(timestamp, :after, false)
   end
 end

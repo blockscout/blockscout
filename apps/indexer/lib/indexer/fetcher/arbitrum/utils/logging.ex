@@ -5,6 +5,20 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Logging do
   require Logger
 
   @doc """
+    A helper function to log a message with debug severity. Uses `Logger.debug` facility.
+
+    ## Parameters
+    - `msg`: a message to log
+
+    ## Returns
+    `:ok`
+  """
+  @spec log_debug(any()) :: :ok
+  def log_debug(msg) do
+    Logger.debug(msg)
+  end
+
+  @doc """
     A helper function to log a message with warning severity. Uses `Logger.warning` facility.
 
     ## Parameters
@@ -94,9 +108,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Logging do
       end
 
     if chunk_length == 1 do
-      log_info("#{prefix} for #{elem(data_items_names, 0)} ##{Enum.at(chunk, 0)}.")
+      log_debug("#{prefix} for #{elem(data_items_names, 0)} ##{Enum.at(chunk, 0)}.")
     else
-      log_info("#{prefix} for #{elem(data_items_names, 1)} #{Enum.join(shorten_numbers_list(chunk), ", ")}.#{progress}")
+      log_debug(
+        "#{prefix} for #{elem(data_items_names, 1)} #{Enum.join(shorten_numbers_list(chunk), ", ")}.#{progress}"
+      )
     end
   end
 
