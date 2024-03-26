@@ -9,11 +9,6 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
   """
   @spec render(binary(), map()) :: map() | non_neg_integer()
   def render("zksync_batch.json", %{batch: batch}) do
-    l2_transactions =
-      if Map.has_key?(batch, :l2_transactions) do
-        Enum.map(batch.l2_transactions, fn tx -> tx.hash end)
-      end
-
     %{
       "number" => batch.number,
       "timestamp" => batch.timestamp,
@@ -23,8 +18,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       "l1_gas_price" => batch.l1_gas_price,
       "l2_fair_gas_price" => batch.l2_fair_gas_price,
       "start_block" => batch.start_block,
-      "end_block" => batch.end_block,
-      "transactions" => l2_transactions
+      "end_block" => batch.end_block
     }
     |> add_l1_txs_info_and_status(batch)
   end
