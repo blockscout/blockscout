@@ -132,7 +132,7 @@ defmodule Explorer.Etherscan do
       end
 
     query
-    |> Chain.where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_nonpending_block()
     |> Repo.replica().all()
@@ -260,7 +260,7 @@ defmodule Explorer.Etherscan do
         end
 
       query
-      |> Chain.where_transaction_has_multiple_internal_transactions()
+      |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
       |> InternalTransaction.where_address_fields_match(address_hash, direction)
       |> InternalTransaction.where_is_different_from_parent_transaction()
       |> where_start_block_match(options)

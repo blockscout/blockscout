@@ -147,10 +147,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def render("internal_transactions.json", %{
         internal_transactions: internal_transactions,
         next_page_params: next_page_params,
-        conn: conn
+        block: block
       }) do
     %{
-      "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1, conn)),
+      "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1, block)),
+      "next_page_params" => next_page_params
+    }
+  end
+
+  def render("internal_transactions.json", %{
+        internal_transactions: internal_transactions,
+        next_page_params: next_page_params
+      }) do
+    %{
+      "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1)),
       "next_page_params" => next_page_params
     }
   end
@@ -288,7 +298,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  def prepare_internal_transaction(internal_transaction, _conn) do
+  def prepare_internal_transaction(internal_transaction, block \\ nil) do
     %{
       "error" => internal_transaction.error,
       "success" => is_nil(internal_transaction.error),
@@ -307,9 +317,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         ),
       "value" => internal_transaction.value,
       "block" => internal_transaction.block_number,
-      "timestamp" => internal_transaction.block.timestamp,
+      "timestamp" => (block && block.timestamp) || internal_transaction.block.timestamp,
       "index" => internal_transaction.index,
-      "gas_limit" => internal_transaction.gas
+      "gas_limit" => internal_transaction.gas,
+      "block_index" => internal_transaction.block_index
     }
   end
 
