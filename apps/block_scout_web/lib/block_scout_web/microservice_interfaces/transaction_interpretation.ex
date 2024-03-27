@@ -289,8 +289,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     from_address = Chain.hash_to_address(from_address_hash, [])
 
-    {:ok, to_address_hash} =
-      if address_hash, do: {:ok, address_hash}, else: Chain.string_to_address_hash(user_op["entry_point"])
+    to_address_hash = address_hash || from_address_hash
 
     to_address = Chain.hash_to_address(to_address_hash, [])
 
