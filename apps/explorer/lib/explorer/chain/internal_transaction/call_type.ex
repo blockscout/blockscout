@@ -13,7 +13,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
      when fuzzing these if the memory layout differs between the current contract and the delegated contract.
    * `:staticcall`
   """
-  @type t :: :call | :callcode | :delegatecall | :staticcall
+  @type t :: :call | :callcode | :delegatecall | :staticcall | :invalid
 
   @doc """
   Casts `term` to `t:t/0`
@@ -48,11 +48,12 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   """
   @impl Ecto.Type
   @spec cast(term()) :: {:ok, t()} | :error
-  def cast(t) when t in ~w(call callcode delegatecall staticcall)a, do: {:ok, t}
+  def cast(t) when t in ~w(call callcode delegatecall staticcall invalid)a, do: {:ok, t}
   def cast("call"), do: {:ok, :call}
   def cast("callcode"), do: {:ok, :callcode}
   def cast("delegatecall"), do: {:ok, :delegatecall}
   def cast("staticcall"), do: {:ok, :staticcall}
+  def cast("invalid"), do: {:ok, :invalid}
   def cast(_), do: :error
 
   @doc """
@@ -79,6 +80,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   def dump(:callcode), do: {:ok, "callcode"}
   def dump(:delegatecall), do: {:ok, "delegatecall"}
   def dump(:staticcall), do: {:ok, "staticcall"}
+  def dump(:invalid), do: {:ok, "invalid"}
   def dump(_), do: :error
 
   @doc """
@@ -105,6 +107,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   def load("callcode"), do: {:ok, :callcode}
   def load("delegatecall"), do: {:ok, :delegatecall}
   def load("staticcall"), do: {:ok, :staticcall}
+  def load("invalid"), do: {:ok, :invalid}
   def load(_), do: :error
 
   @doc """
