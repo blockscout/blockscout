@@ -70,7 +70,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   has_emission_funds: false,
   show_maintenance_alert: ConfigHelper.parse_bool_env_var("SHOW_MAINTENANCE_ALERT"),
   enable_testnet_label: ConfigHelper.parse_bool_env_var("SHOW_TESTNET_LABEL"),
-  testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "Testnet")
+  testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "TESTNET")
 
 config :block_scout_web, :footer,
   logo: System.get_env("FOOTER_LOGO"),
@@ -189,8 +189,8 @@ checksum_function = System.get_env("CHECKSUM_FUNCTION")
 exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 
 config :explorer,
-  coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
-  coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
+  coin: System.get_env("COIN") || exchange_rates_coin || "ONI",
+  coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ONI",
   allowed_solidity_evm_versions:
     System.get_env("CONTRACT_VERIFICATION_ALLOWED_SOLIDITY_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,shanghai,cancun,default",
@@ -272,7 +272,7 @@ config :explorer, Explorer.Counters.TokenTransfersCounter,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
 
 config :explorer, Explorer.Counters.AverageBlockTime,
-  enabled: true,
+  enabled: false,
   period: :timer.minutes(10),
   cache_period: ConfigHelper.parse_time_env_var("CACHE_AVERAGE_BLOCK_PERIOD", "30m")
 

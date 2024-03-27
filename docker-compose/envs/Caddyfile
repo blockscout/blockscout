@@ -9,7 +9,7 @@
     }
 }
 
-explorer.onino.io {
+testnet.explorer.onino.io {
     import common
     encode zstd gzip
     tls info@onino.io
@@ -31,19 +31,19 @@ explorer.onino.io {
     }
 }
 
-stats.explorer.onino.io {
+stats.testnet.explorer.onino.io {
     import common
     encode zstd gzip
     header Access-Control-Allow-Credentials "true"
     header Access-Control-Allow-Methods "PUT, GET, POST, OPTIONS, DELETE, PATCH"
-    header Access-Control-Allow-Origin "https://explorer.onino.io"
+    header Access-Control-Allow-Origin "https://testnet.explorer.onino.io"
     tls info@onino.io
     reverse_proxy http://stats:8050 {
         header_up Host {upstream_hostport}
     }
 }
 
-visualizer.explorer.onino.io {
+visualizer.testnet.explorer.onino.io {
     import common
     encode zstd gzip
     header Access-Control-Allow-Methods "PUT, GET, POST, OPTIONS, DELETE, PATCH"

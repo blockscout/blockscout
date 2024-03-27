@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   frontend:
-    image: ghcr.io/blockscout/frontend:${FRONTEND_DOCKER_TAG:-latest}
+    image: ghcr.io/onino-io/blockscout-frontend:latest
     pull_policy: always
     platform: linux/amd64
     restart: always
