@@ -170,7 +170,8 @@ defmodule EthereumJSONRPC.Receipt do
       status: status,
       transaction_hash: transaction_hash,
       transaction_index: transaction_index
-    } |> maybe_append_gas_price(elixir)
+    }
+    |> maybe_append_gas_price(elixir)
   end
 
   defp maybe_append_gas_price(params, %{"effectiveGasPrice" => effective_gas_price}) do
