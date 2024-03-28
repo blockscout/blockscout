@@ -45,8 +45,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @token_transfer_necessity_by_association [
     necessity_by_association: %{
-      :to_address => :optional,
-      :from_address => :optional,
+      [to_address: :smart_contract] => :optional,
+      [from_address: :smart_contract] => :optional,
+      [to_address: :names] => :optional,
+      [from_address: :names] => :optional,
       :block => :optional,
       :transaction => :optional,
       :token => :optional
@@ -160,8 +162,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       options =
         [
           necessity_by_association: %{
-            :to_address => :optional,
-            :from_address => :optional,
+            [to_address: :smart_contract] => :optional,
+            [from_address: :smart_contract] => :optional,
+            [to_address: :names] => :optional,
+            [from_address: :names] => :optional,
             :block => :optional,
             :token => :optional,
             :transaction => :optional
