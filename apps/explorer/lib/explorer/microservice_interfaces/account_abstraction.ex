@@ -147,6 +147,9 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
         Logger.configure(truncate: old_truncate)
         {:ok, response_json} = Jason.decode(body)
         {status_code, response_json}
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {500, %{error: reason}}
     end
   end
 
