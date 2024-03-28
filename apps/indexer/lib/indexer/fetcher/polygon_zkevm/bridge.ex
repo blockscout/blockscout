@@ -276,9 +276,11 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
     mainnet_bit = Bitwise.band(Bitwise.bsr(global_index, 64), 1)
 
-    rollup_index = Bitwise.band(Bitwise.bsr(global_index, 32), 0xFFFFFFFF)
+    bitmask_4bytes = 0xFFFFFFFF
 
-    index = Bitwise.band(global_index, 0xFFFFFFFF)
+    rollup_index = Bitwise.band(Bitwise.bsr(global_index, 32), bitmask_4bytes)
+
+    index = Bitwise.band(global_index, bitmask_4bytes)
 
     {mainnet_bit, rollup_index, index, origin_network, amount}
   end

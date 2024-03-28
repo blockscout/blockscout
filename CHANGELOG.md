@@ -74,7 +74,6 @@
 
 ### Chore
 
-- [#9637](https://github.com/blockscout/blockscout/pull/9637) - Support the 2nd version of L2<->L1 Polygon zkEVM Bridge
 - [#9622](https://github.com/blockscout/blockscout/pull/9622) - Add alternative `hex.pm` mirrors
 - [#9571](https://github.com/blockscout/blockscout/pull/9571) - Support Optimism Ecotone upgrade by Indexer.Fetcher.Optimism.TxnBatch module
 - [#9562](https://github.com/blockscout/blockscout/pull/9562) - Add cancun evm version
