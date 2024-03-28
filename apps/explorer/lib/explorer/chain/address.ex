@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Address do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, PagingOptions, Repo}
 
   alias Explorer.Chain.{
     Address,
@@ -57,6 +57,8 @@ defmodule Explorer.Chain.Address do
              :contracts_creation_transaction,
              :names
            ]}
+
+  @timeout :timer.minutes(1)
 
   @typedoc """
    * `fetched_coin_balance` - The last fetched balance from Nethermind
@@ -422,5 +424,19 @@ defmodule Explorer.Chain.Address do
       )
 
     Chain.select_repo(options).exists?(query)
+  end
+
+  @doc """
+  Sets contract_code for the given Explorer.Chain.Address
+  """
+  @spec set_contract_code(Hash.Address.t(), binary()) :: {non_neg_integer(), nil}
+  def set_contract_code(address_hash, contract_code) when not is_nil(address_hash) and is_binary(contract_code) do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(address in __MODULE__, where: address.hash == ^address_hash),
+      [set: [contract_code: contract_code, updated_at: now]],
+      timeout: @timeout
+    )
   end
 end

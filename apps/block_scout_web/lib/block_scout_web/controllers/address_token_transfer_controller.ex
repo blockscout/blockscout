@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
   alias BlockScoutWeb.{AccessHelper, Controller, TransactionView}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, DenormalizationHelper}
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
   import BlockScoutWeb.Chain,

@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
+defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
   # MUST be `async: false` so that {:shared, pid} is set for connection to allow CoinBalanceFetcher's self-send to have
   # connection allowed immediately.
   use EthereumJSONRPC.Case, async: false
@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Wei
   alias Explorer.Counters.AverageBlockTime
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   @moduletag :capture_log
 

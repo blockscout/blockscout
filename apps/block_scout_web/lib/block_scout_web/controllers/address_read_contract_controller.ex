@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.SmartContract.Reader
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     address_options = [

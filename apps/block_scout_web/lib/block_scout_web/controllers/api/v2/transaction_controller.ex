@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.PolygonZkevm.Reader
   alias Explorer.Chain.ZkSync.Reader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
-  alias Indexer.Fetcher.FirstTraceOnDemand
+  alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 

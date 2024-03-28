@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
-  alias Indexer.Fetcher.TokenTotalSupplyOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
 
   import BlockScoutWeb.Chain,
     only: [

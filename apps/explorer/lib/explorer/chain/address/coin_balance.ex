@@ -148,4 +148,19 @@ defmodule Explorer.Chain.Address.CoinBalance do
     |> validate_required(@required_fields)
     |> unique_constraint(:block_number, name: :address_coin_balances_address_hash_block_number_index)
   end
+
+  @doc """
+  Query to fetch latest coin balance for the given address
+  """
+  @spec latest_coin_balance_query(Hash.Address.t(), non_neg_integer() | {:error, :empty_database}) :: Ecto.Query.t()
+  def latest_coin_balance_query(address_hash, stale_balance_window) do
+    from(
+      cb in __MODULE__,
+      where: cb.address_hash == ^address_hash,
+      where: cb.block_number >= ^stale_balance_window,
+      where: is_nil(cb.value_fetched_at),
+      order_by: [desc: :block_number],
+      limit: 1
+    )
+  end
 end

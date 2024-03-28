@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias Explorer.Chain
   alias Explorer.Chain.{Events.Subscriber, Transaction, Wei}
   alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Explorer.Repo
 
   setup :set_mox_global

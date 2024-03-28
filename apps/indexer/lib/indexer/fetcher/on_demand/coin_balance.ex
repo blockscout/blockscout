@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.CoinBalanceOnDemand do
+defmodule Indexer.Fetcher.OnDemand.CoinBalance do
   @moduledoc """
   Ensures that we have a reasonably up to date coin balance for a given address.
 
@@ -10,7 +10,6 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   use GenServer
   use Indexer.Fetcher, restart: :permanent
 
-  import Ecto.Query, only: [from: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias EthereumJSONRPC.FetchedBalances
@@ -118,23 +117,9 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   end
 
   defp do_trigger_fetch(address, latest_block_number, stale_balance_window) do
-    latest_by_day =
-      from(
-        cbd in CoinBalanceDaily,
-        where: cbd.address_hash == ^address.hash,
-        order_by: [desc: :day],
-        limit: 1
-      )
+    latest_by_day = CoinBalanceDaily.latest_by_day_query(address.hash)
 
-    latest =
-      from(
-        cb in CoinBalance,
-        where: cb.address_hash == ^address.hash,
-        where: cb.block_number >= ^stale_balance_window,
-        where: is_nil(cb.value_fetched_at),
-        order_by: [desc: :block_number],
-        limit: 1
-      )
+    latest = CoinBalance.latest_coin_balance_query(address.hash, stale_balance_window)
 
     do_trigger_balance_fetch_query(address, latest_block_number, stale_balance_window, latest, latest_by_day)
   end
@@ -241,6 +226,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     BlockNumber.get_max()
   end
 
+  @spec stale_balance_window(non_neg_integer()) :: non_neg_integer() | {:error, :empty_database}
   defp stale_balance_window(block_number) do
     case AverageBlockTime.average_block_time() do
       {:error, :disabled} ->
