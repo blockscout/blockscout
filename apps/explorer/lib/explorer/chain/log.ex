@@ -233,7 +233,7 @@ defmodule Explorer.Chain.Log do
              log.data.bytes
            ),
          selector <- %{selector | method_id: first_four_bytes} do
-      {:ok, selector, mapping}
+      {:ok, alter_inputs_names(selector), alter_mapping_names(mapping)}
     end
   rescue
     e ->
@@ -259,6 +259,26 @@ defmodule Explorer.Chain.Log do
       |> Enum.intersperse(", ")
 
     IO.iodata_to_binary([name, "(", text, ")"])
+  end
+
+  defp alter_inputs_names(%FunctionSelector{input_names: names} = selector) do
+    names =
+      names
+      |> Enum.with_index()
+      |> Enum.map(fn {name, index} ->
+        if name == "" or is_nil(name), do: "arg#{index}", else: name
+      end)
+
+    %FunctionSelector{selector | input_names: names}
+  end
+
+  defp alter_mapping_names(mapping) do
+    mapping
+    |> Enum.with_index()
+    |> Enum.map(fn {{name, type, indexed?, value}, index} ->
+      name = if name == "" or is_nil(name), do: "arg#{index}", else: name
+      {name, type, indexed?, value}
+    end)
   end
 
   defp decode_event_via_sig_provider(
