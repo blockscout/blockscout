@@ -407,7 +407,9 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
 
       variables = %{
         "hash" => to_string(address.hash),
-        "first" => 67
+        # Add +5 because of the increase in complexity limit. For more info, see
+        # https://github.com/blockscout/blockscout/pull/9630
+        "first" => 67 + 5
       }
 
       conn = post(conn, "/api/v1/graphql", query: query, variables: variables)

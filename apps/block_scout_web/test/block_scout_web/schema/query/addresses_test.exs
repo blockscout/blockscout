@@ -157,10 +157,10 @@ defmodule BlockScoutWeb.Schema.Query.AddressesTest do
     end
 
     test "correlates complexity to size of 'hashes' argument", %{conn: conn} do
-      # max of 50 addresses with four fields of complexity 1 can be fetched
-      # per query:
-      # 50 * 4 = 200, which is equal to a max complexity of 200
-      hashes = 51 |> build_list(:address) |> Enum.map(&to_string(&1.hash))
+      # max of 53 addresses with four fields of complexity 1 can be fetched per
+      # query: 53 * 4 = 212, which is the upper bound before reaching the max
+      # complexity limit of 215
+      hashes = 54 |> build_list(:address) |> Enum.map(&to_string(&1.hash))
 
       query = """
       query ($hashes: [AddressHash!]!) {
