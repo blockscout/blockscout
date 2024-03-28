@@ -419,7 +419,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> validate_required(@call_required_fields)
     |> validate_call_error_or_result()
     |> check_constraint(:call_type, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
-    |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
+    |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_input)
     |> foreign_key_constraint(:transaction_hash)
     |> unique_constraint(:index)
   end
