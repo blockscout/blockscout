@@ -133,6 +133,10 @@ defmodule Explorer.Chain.Wei do
     "0x" <> hex
   end
 
+  def hex_format(nil) do
+    "0x0"
+  end
+
   @doc """
   Sums two Wei values.
 

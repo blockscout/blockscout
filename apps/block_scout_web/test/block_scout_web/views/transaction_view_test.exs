@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.TransactionViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
+  import Mox
+
   alias Explorer.Chain.Wei
   alias Explorer.Repo
   alias BlockScoutWeb.{BlockView, TransactionView}
@@ -284,6 +286,33 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
       assert Enum.count(result.transfers) == 3
       assert List.first(result.transfers).amount == nil
+    end
+  end
+
+  describe "transaction_revert_reason/2" do
+    test "handles transactions with gas_price set to nil" do
+      transaction = insert(:transaction, gas_price: nil, error: "execution reverted")
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{
+                                id: 0,
+                                method: "eth_call",
+                                params: [
+                                  %{gasPrice: "0x0"},
+                                  "latest"
+                                ]
+                              },
+                              _options ->
+        {:error,
+         %{
+           data:
+             "0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002b556e69737761705632526f757465723a20494e53554646494349454e545f4f55545055545f414d4f554e54000000000000000000000000000000000000000000"
+         }}
+      end)
+
+      revert_reason = TransactionView.transaction_revert_reason(transaction, nil)
+
+      assert revert_reason == {:error, :not_a_contract_call}
     end
   end
 end
