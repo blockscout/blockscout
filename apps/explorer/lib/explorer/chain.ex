@@ -5044,23 +5044,19 @@ defmodule Explorer.Chain do
 
   @spec flat_1155_batch_token_transfers([TokenTransfer.t()], Decimal.t() | nil) :: [TokenTransfer.t()]
   def flat_1155_batch_token_transfers(token_transfers, token_id \\ nil) when is_list(token_transfers) do
-    Enum.reduce(token_transfers, [], fn tt, acc ->
+    token_transfers
+    |> Enum.reduce([], fn tt, acc ->
       case tt.token_ids do
-        [] ->
-          Enum.reverse([tt | Enum.reverse(acc)])
-
-        [_token_id] ->
-          Enum.reverse([tt | Enum.reverse(acc)])
-
-        token_ids when is_list(token_ids) ->
+        token_ids when is_list(token_ids) and length(token_ids) > 1 ->
           transfers = flat_1155_batch_token_transfer(tt, tt.amounts, token_ids, token_id)
 
-          acc ++ transfers
+          transfers ++ acc
 
         _ ->
-          Enum.reverse([tt | Enum.reverse(acc)])
+          [tt | acc]
       end
     end)
+    |> Enum.reverse()
   end
 
   defp flat_1155_batch_token_transfer(tt, amounts, token_ids, token_id_to_filter) do
@@ -5080,7 +5076,7 @@ defmodule Explorer.Chain do
     token_transfers
     |> Enum.group_by(fn tt -> {List.first(tt.token_ids), tt.from_address_hash, tt.to_address_hash} end)
     |> Enum.map(fn {_k, v} -> Enum.reduce(v, nil, &group_batch_reducer/2) end)
-    |> Enum.sort_by(fn tt -> tt.index_in_batch end, :desc)
+    |> Enum.sort_by(fn tt -> tt.index_in_batch end, :asc)
   end
 
   defp group_batch_reducer(transfer, nil) do

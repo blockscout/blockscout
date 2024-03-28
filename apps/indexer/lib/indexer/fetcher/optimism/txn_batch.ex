@@ -544,6 +544,11 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
        ) do
     frame = input_to_frame(input)
 
+    if frame == :invalid_frame do
+      Logger.warning("The frame in transaction #{tx.hash} is invalid.")
+      raise "Invalid frame"
+    end
+
     channel = Map.get(incomplete_channels_acc, frame.channel_id, %{frames: %{}})
 
     channel_frames =
@@ -580,6 +585,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     else
       {:ok, Map.put(incomplete_channels_acc, frame.channel_id, channel_updated), batches_acc, sequences_acc}
     end
+  rescue
+    _ -> {:ok, incomplete_channels_acc, batches_acc, sequences_acc}
   end
 
   defp handle_channel(
@@ -744,8 +751,21 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     frame_data_length_size = 4
     is_last_size = 1
 
-    # the first byte must be zero (so called Derivation Version)
-    [0] = :binary.bin_to_list(binary_part(input_binary, 0, derivation_version_length))
+    # the first byte must be zero
+    [derivation_version] = :binary.bin_to_list(binary_part(input_binary, 0, derivation_version_length))
+
+    cond do
+      derivation_version == 0x00 ->
+        nil
+
+      derivation_version == 0xCE ->
+        Logger.warning("The module does not support Celestia DA yet. The frame will be ignored.")
+        raise "Unsupported derivation version"
+
+      true ->
+        Logger.warning("Derivation version #{derivation_version} is not supported. The frame will be ignored.")
+        raise "Unsupported derivation version"
+    end
 
     # channel id has 16 bytes
     channel_id = binary_part(input_binary, derivation_version_length, channel_id_length)
@@ -781,6 +801,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
       # for example, the case for Base Goerli batch L1 transaction: https://goerli.etherscan.io/tx/0xa43fa9da683a6157a114e3175a625b5aed85d8c573aae226768c58a924a17be0
       input_to_frame("0x" <> Base.encode16(binary_part(input_binary, 1, input_length_current - 1)))
     end
+  rescue
+    _ -> :invalid_frame
   end
 
   defp next_frame_sequence_id(last_known_sequence) when is_nil(last_known_sequence) do
