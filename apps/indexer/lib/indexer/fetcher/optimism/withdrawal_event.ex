@@ -156,10 +156,40 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end
   end
 
+  defp get_transaction_input_by_hash(blocks, tx_hashes) do
+    Enum.reduce(blocks, %{}, fn block, acc ->
+      block
+      |> Map.get("transactions", [])
+      |> Enum.filter(fn tx ->
+        Enum.member?(tx_hashes, tx["hash"])
+      end)
+      |> Enum.map(fn tx ->
+        {tx["hash"], tx["input"]}
+      end)
+      |> Enum.into(%{})
+      |> Map.merge(acc)
+    end)
+  end
+
   defp prepare_events(events, json_rpc_named_arguments) do
-    timestamps =
+    blocks =
       events
       |> get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
+
+    tx_hashes =
+      events
+      |> Enum.reduce([], fn event, acc ->
+        if Enum.at(event["topics"], 0) == @withdrawal_proven_event do
+          [event["transactionHash"] | acc]
+        else
+          acc
+        end
+      end)
+
+    input_by_hash = get_transaction_input_by_hash(blocks, tx_hashes)
+
+    timestamps =
+      blocks
       |> Enum.reduce(%{}, fn block, acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
@@ -167,11 +197,19 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
       end)
 
     Enum.map(events, fn event ->
-      l1_event_type =
+      tx_hash = event["transactionHash"]
+
+      {l1_event_type, game_index} =
         if Enum.at(event["topics"], 0) == @withdrawal_proven_event do
-          "WithdrawalProven"
+          {game_index, ""} =
+            input_by_hash
+            |> Map.get(tx_hash)
+            |> String.slice(74..137)
+            |> Integer.parse(16)
+
+          {"WithdrawalProven", game_index}
         else
-          "WithdrawalFinalized"
+          {"WithdrawalFinalized", nil}
         end
 
       l1_block_number = quantity_to_integer(event["blockNumber"])
@@ -180,8 +218,9 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         withdrawal_hash: Enum.at(event["topics"], 1),
         l1_event_type: l1_event_type,
         l1_timestamp: Map.get(timestamps, l1_block_number),
-        l1_transaction_hash: event["transactionHash"],
-        l1_block_number: l1_block_number
+        l1_transaction_hash: tx_hash,
+        l1_block_number: l1_block_number,
+        game_index: game_index
       }
     end)
   end
@@ -208,7 +247,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
       |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
       |> Stream.with_index()
       |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-      |> Blocks.requests(&ByNumber.request(&1, false, false))
+      |> Blocks.requests(&ByNumber.request(&1, true, false))
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 

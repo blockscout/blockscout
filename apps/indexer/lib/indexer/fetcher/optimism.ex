@@ -24,7 +24,7 @@ defmodule Indexer.Fetcher.Optimism do
 
   @fetcher_name :optimism
   @block_check_interval_range_size 100
-  @eth_get_logs_range_size 1000
+  @eth_get_logs_range_size 250
   @finite_retries_number 3
 
   def child_spec(start_link_arguments) do
