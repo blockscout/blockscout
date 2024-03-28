@@ -464,6 +464,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
       {retcode, {start_block, interim_start_block}}
     else
+      # TODO: Check the case when all blocks are confirmed
       {:end_block_defined, true} -> {:ok, {l1_start_block, nil}}
       {:genesis_not_reached, false} -> {:ok, {l1_rollup_init_block, nil}}
     end

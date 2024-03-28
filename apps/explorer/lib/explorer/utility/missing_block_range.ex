@@ -4,7 +4,7 @@ defmodule Explorer.Utility.MissingBlockRange do
   """
   use Explorer.Schema
 
-  alias Explorer.Chain.BlockNumberHelper
+  alias Explorer.Chain.{Block, BlockNumberHelper}
   alias Explorer.Repo
 
   @default_returning_batch_size 10
@@ -124,10 +124,12 @@ defmodule Explorer.Utility.MissingBlockRange do
     - `higher_number`: The upper bound of the range to check.
 
     ## Returns
-    - Returns `nil` if no intersecting ranges are found, or the record of the first intersecting range otherwise.
+    - Returns `nil` if no intersecting ranges are found, or an `Explorer.Utility.MissingBlockRange` instance of the first intersecting range otherwise.
   """
-  @spec intersects_with_range(non_neg_integer(), non_neg_integer()) :: nil | map()
-  def intersects_with_range(lower_number, higher_number) when lower_number <= higher_number do
+  @spec intersects_with_range(Block.block_number(), Block.block_number()) :: nil | Explorer.Utility.MissingBlockRange
+  def intersects_with_range(lower_number, higher_number)
+      when is_integer(lower_number) and lower_number >= 0 and
+             is_integer(higher_number) and lower_number <= higher_number do
     query =
       from(
         r in __MODULE__,
