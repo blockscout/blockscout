@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
+defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Account.{
@@ -19,11 +19,11 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
     {:ok, user: user, conn: Plug.Test.init_test_session(conn, current_user: user)}
   end
 
-  describe "Test account/api/v1/user" do
+  describe "Test account/api/account/v2/user" do
     test "get user info", %{conn: conn, user: user} do
       result_conn =
         conn
-        |> get("/api/account/v1/user/info")
+        |> get("/api/account/v2/user/info")
         |> doc(description: "Get info about user")
 
       assert json_response(result_conn, 200) == %{
@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
     test "post private address tag", %{conn: conn} do
       tag_address_response =
         conn
-        |> post("/api/account/v1/user/tags/address", %{
+        |> post("/api/account/v2/user/tags/address", %{
           "address_hash" => "0x3e9ac8f16c92bc4f093357933b5befbf1e16987b",
           "name" => "MyName"
         })
@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         |> json_response(200)
 
       conn
-      |> get("/api/account/v1/tags/address/0x3e9ac8f16c92bc4f093357933b5befbf1e16987b")
+      |> get("/api/account/v2/tags/address/0x3e9ac8f16c92bc4f093357933b5befbf1e16987b")
       |> doc(description: "Get tags for address")
       |> json_response(200)
 
@@ -69,11 +69,11 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       end
 
       assert conn
-             |> post("/api/account/v1/user/tags/address", build(:tag_address))
+             |> post("/api/account/v2/user/tags/address", build(:tag_address))
              |> json_response(200)
 
       assert conn
-             |> post("/api/account/v1/user/tags/address", build(:tag_address))
+             |> post("/api/account/v2/user/tags/address", build(:tag_address))
              |> json_response(422)
 
       Application.put_env(:explorer, Explorer.Account, old_env)
@@ -103,13 +103,14 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       tag_address_response =
         conn
-        |> post("/api/account/v1/user/tags/address", address_tag)
+        |> post("/api/account/v2/user/tags/address", address_tag)
         |> json_response(200)
 
       _response =
         conn
-        |> get("/api/account/v1/user/tags/address")
-        |> json_response(200) == [tag_address_response]
+        |> get("/api/account/v2/user/tags/address")
+        |> json_response(200)
+        |> Map.get("items") == [tag_address_response]
 
       assert tag_address_response["address_hash"] == address_tag["address_hash"]
       assert tag_address_response["name"] == address_tag["name"]
@@ -119,7 +120,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       new_tag_address_response =
         conn
-        |> put("/api/account/v1/user/tags/address/#{tag_address_response["id"]}", new_address_tag)
+        |> put("/api/account/v2/user/tags/address/#{tag_address_response["id"]}", new_address_tag)
         |> doc(description: "Edit private address tag")
         |> json_response(200)
 
@@ -137,7 +138,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         Enum.map(zipped, fn {addr, name} ->
           id =
             (conn
-             |> post("/api/account/v1/user/tags/address", %{
+             |> post("/api/account/v2/user/tags/address", %{
                "address_hash" => addr,
                "name" => name
              })
@@ -165,7 +166,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert Enum.all?(created, fn {addr, map_tag, _} ->
                response =
                  conn
-                 |> get("/api/account/v1/tags/address/#{addr}")
+                 |> get("/api/account/v2/tags/address/#{addr}")
                  |> json_response(200)
 
                response["personal_tags"] == [map_tag]
@@ -173,9 +174,10 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       response =
         conn
-        |> get("/api/account/v1/user/tags/address")
+        |> get("/api/account/v2/user/tags/address")
         |> doc(description: "Get private addresses tags")
         |> json_response(200)
+        |> Map.get("items")
 
       assert Enum.all?(created, fn {_, _, map} -> map in response end)
     end
@@ -189,7 +191,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         Enum.map(zipped, fn {addr, name} ->
           id =
             (conn
-             |> post("/api/account/v1/user/tags/address", %{
+             |> post("/api/account/v2/user/tags/address", %{
                "address_hash" => addr,
                "name" => name
              })
@@ -217,7 +219,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert Enum.all?(created, fn {addr, map_tag, _} ->
                response =
                  conn
-                 |> get("/api/account/v1/tags/address/#{addr}")
+                 |> get("/api/account/v2/tags/address/#{addr}")
                  |> json_response(200)
 
                response["personal_tags"] == [map_tag]
@@ -225,32 +227,34 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       response =
         conn
-        |> get("/api/account/v1/user/tags/address")
+        |> get("/api/account/v2/user/tags/address")
         |> json_response(200)
+        |> Map.get("items")
 
       assert Enum.all?(created, fn {_, _, map} -> map in response end)
 
       {_, _, %{"id" => id}} = Enum.at(created, 0)
 
       assert conn
-             |> delete("/api/account/v1/user/tags/address/#{id}")
+             |> delete("/api/account/v2/user/tags/address/#{id}")
              |> doc("Delete private address tag")
              |> json_response(200) == %{"message" => "OK"}
 
       assert Enum.all?(Enum.drop(created, 1), fn {_, _, %{"id" => id}} ->
                conn
-               |> delete("/api/account/v1/user/tags/address/#{id}")
+               |> delete("/api/account/v2/user/tags/address/#{id}")
                |> json_response(200) == %{"message" => "OK"}
              end)
 
       assert conn
-             |> get("/api/account/v1/user/tags/address")
-             |> json_response(200) == []
+             |> get("/api/account/v2/user/tags/address")
+             |> json_response(200)
+             |> Map.get("items") == []
 
       assert Enum.all?(created, fn {addr, _, _} ->
                response =
                  conn
-                 |> get("/api/account/v1/tags/address/#{addr}")
+                 |> get("/api/account/v2/tags/address/#{addr}")
                  |> json_response(200)
 
                response["personal_tags"] == []
@@ -262,7 +266,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       tx_hash = to_string(insert(:transaction).hash)
 
       assert conn
-             |> post("/api/account/v1/user/tags/transaction", %{
+             |> post("/api/account/v2/user/tags/transaction", %{
                "transaction_hash" => tx_hash_non_existing,
                "name" => "MyName"
              })
@@ -271,7 +275,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       tag_transaction_response =
         conn
-        |> post("/api/account/v1/user/tags/transaction", %{
+        |> post("/api/account/v2/user/tags/transaction", %{
           "transaction_hash" => tx_hash,
           "name" => "MyName"
         })
@@ -279,7 +283,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         |> json_response(200)
 
       conn
-      |> get("/api/account/v1/tags/transaction/#{tx_hash}")
+      |> get("/api/account/v2/tags/transaction/#{tx_hash}")
       |> doc(description: "Get tags for transaction")
       |> json_response(200)
 
@@ -303,11 +307,11 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       end
 
       assert conn
-             |> post("/api/account/v1/user/tags/transaction", build(:tag_transaction))
+             |> post("/api/account/v2/user/tags/transaction", build(:tag_transaction))
              |> json_response(200)
 
       assert conn
-             |> post("/api/account/v1/user/tags/transaction", build(:tag_transaction))
+             |> post("/api/account/v2/user/tags/transaction", build(:tag_transaction))
              |> json_response(422)
 
       Application.put_env(:explorer, Explorer.Account, old_env)
@@ -337,12 +341,12 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       tag_response =
         conn
-        |> post("/api/account/v1/user/tags/transaction", tx_tag)
+        |> post("/api/account/v2/user/tags/transaction", tx_tag)
         |> json_response(200)
 
       _response =
         conn
-        |> get("/api/account/v1/user/tags/transaction")
+        |> get("/api/account/v2/user/tags/transaction")
         |> json_response(200) == [tag_response]
 
       assert tag_response["address_hash"] == tx_tag["address_hash"]
@@ -353,7 +357,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       new_tag_response =
         conn
-        |> put("/api/account/v1/user/tags/transaction/#{tag_response["id"]}", new_tx_tag)
+        |> put("/api/account/v2/user/tags/transaction/#{tag_response["id"]}", new_tx_tag)
         |> doc(description: "Edit private transaction tag")
         |> json_response(200)
 
@@ -371,7 +375,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         Enum.map(zipped, fn {tx_hash, name} ->
           id =
             (conn
-             |> post("/api/account/v1/user/tags/transaction", %{
+             |> post("/api/account/v2/user/tags/transaction", %{
                "transaction_hash" => tx_hash,
                "name" => name
              })
@@ -383,7 +387,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert Enum.all?(created, fn {tx_hash, map_tag, _} ->
                response =
                  conn
-                 |> get("/api/account/v1/tags/transaction/#{tx_hash}")
+                 |> get("/api/account/v2/tags/transaction/#{tx_hash}")
                  |> json_response(200)
 
                response["personal_tx_tag"] == map_tag
@@ -391,9 +395,10 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       response =
         conn
-        |> get("/api/account/v1/user/tags/transaction")
+        |> get("/api/account/v2/user/tags/transaction")
         |> doc(description: "Get private transactions tags")
         |> json_response(200)
+        |> Map.get("items")
 
       assert Enum.all?(created, fn {_, _, map} -> map in response end)
     end
@@ -407,7 +412,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         Enum.map(zipped, fn {tx_hash, name} ->
           id =
             (conn
-             |> post("/api/account/v1/user/tags/transaction", %{
+             |> post("/api/account/v2/user/tags/transaction", %{
                "transaction_hash" => tx_hash,
                "name" => name
              })
@@ -419,7 +424,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert Enum.all?(created, fn {tx_hash, map_tag, _} ->
                response =
                  conn
-                 |> get("/api/account/v1/tags/transaction/#{tx_hash}")
+                 |> get("/api/account/v2/tags/transaction/#{tx_hash}")
                  |> json_response(200)
 
                response["personal_tx_tag"] == map_tag
@@ -427,33 +432,36 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       response =
         conn
-        |> get("/api/account/v1/user/tags/transaction")
+        |> get("/api/account/v2/user/tags/transaction")
         |> json_response(200)
+        |> Map.get("items")
 
       assert Enum.all?(created, fn {_, _, map} -> map in response end)
 
       {_, _, %{"id" => id}} = Enum.at(created, 0)
 
       assert conn
-             |> delete("/api/account/v1/user/tags/transaction/#{id}")
+             |> delete("/api/account/v2/user/tags/transaction/#{id}")
              |> doc("Delete private transaction tag")
              |> json_response(200) == %{"message" => "OK"}
 
       assert Enum.all?(Enum.drop(created, 1), fn {_, _, %{"id" => id}} ->
                conn
-               |> delete("/api/account/v1/user/tags/transaction/#{id}")
+               |> delete("/api/account/v2/user/tags/transaction/#{id}")
                |> json_response(200) == %{"message" => "OK"}
              end)
 
       assert conn
-             |> get("/api/account/v1/user/tags/transaction")
-             |> json_response(200) == []
+             |> get("/api/account/v2/user/tags/transaction")
+             |> json_response(200)
+             |> Map.get("items") == []
 
       assert Enum.all?(created, fn {addr, _, _} ->
                response =
                  conn
-                 |> get("/api/account/v1/tags/transaction/#{addr}")
+                 |> get("/api/account/v2/tags/transaction/#{addr}")
                  |> json_response(200)
+                 |> Map.get("items")
 
                response["personal_tx_tag"] == nil
              end)
@@ -465,7 +473,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_watchlist_address_response =
         conn
         |> post(
-          "/api/account/v1/user/watchlist",
+          "/api/account/v2/user/watchlist",
           watchlist_address_map
         )
         |> doc(description: "Add address to watch list")
@@ -476,7 +484,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert post_watchlist_address_response["notification_methods"] == watchlist_address_map["notification_methods"]
       assert post_watchlist_address_response["address_hash"] == watchlist_address_map["address_hash"]
 
-      get_watchlist_address_response = conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(0)
+      get_watchlist_address_response =
+        conn |> get("/api/account/v2/user/watchlist") |> json_response(200) |> Map.get("items") |> Enum.at(0)
 
       assert get_watchlist_address_response["notification_settings"] == watchlist_address_map["notification_settings"]
       assert get_watchlist_address_response["name"] == watchlist_address_map["name"]
@@ -489,20 +498,21 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_watchlist_address_response_1 =
         conn
         |> post(
-          "/api/account/v1/user/watchlist",
+          "/api/account/v2/user/watchlist",
           watchlist_address_map_1
         )
         |> json_response(200)
 
       get_watchlist_address_response_1_0 =
         conn
-        |> get("/api/account/v1/user/watchlist")
+        |> get("/api/account/v2/user/watchlist")
         |> doc(description: "Get addresses from watchlists")
         |> json_response(200)
+        |> Map.get("items")
         |> Enum.at(1)
 
       get_watchlist_address_response_1_1 =
-        conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(0)
+        conn |> get("/api/account/v2/user/watchlist") |> json_response(200) |> Map.get("items") |> Enum.at(0)
 
       assert get_watchlist_address_response_1_0 == get_watchlist_address_response
 
@@ -533,11 +543,11 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       end
 
       assert conn
-             |> post("/api/account/v1/user/watchlist", build(:watchlist_address))
+             |> post("/api/account/v2/user/watchlist", build(:watchlist_address))
              |> json_response(200)
 
       assert conn
-             |> post("/api/account/v1/user/watchlist", build(:watchlist_address))
+             |> post("/api/account/v2/user/watchlist", build(:watchlist_address))
              |> json_response(422)
 
       Application.put_env(:explorer, Explorer.Account, old_env)
@@ -568,7 +578,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_watchlist_address_response =
         conn
         |> post(
-          "/api/account/v1/user/watchlist",
+          "/api/account/v2/user/watchlist",
           watchlist_address_map
         )
         |> json_response(200)
@@ -578,7 +588,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert post_watchlist_address_response["notification_methods"] == watchlist_address_map["notification_methods"]
       assert post_watchlist_address_response["address_hash"] == watchlist_address_map["address_hash"]
 
-      get_watchlist_address_response = conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(0)
+      get_watchlist_address_response =
+        conn |> get("/api/account/v2/user/watchlist") |> json_response(200) |> Map.get("items") |> Enum.at(0)
 
       assert get_watchlist_address_response["notification_settings"] == watchlist_address_map["notification_settings"]
       assert get_watchlist_address_response["name"] == watchlist_address_map["name"]
@@ -591,16 +602,16 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_watchlist_address_response_1 =
         conn
         |> post(
-          "/api/account/v1/user/watchlist",
+          "/api/account/v2/user/watchlist",
           watchlist_address_map_1
         )
         |> json_response(200)
 
-      get_watchlist_address_response_1_0 =
-        conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(1)
+      get_watchlist_address_response_1 = conn |> get("/api/account/v2/user/watchlist") |> json_response(200)
 
-      get_watchlist_address_response_1_1 =
-        conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(0)
+      get_watchlist_address_response_1_0 = get_watchlist_address_response_1 |> Map.get("items") |> Enum.at(1)
+
+      get_watchlist_address_response_1_1 = get_watchlist_address_response_1 |> Map.get("items") |> Enum.at(0)
 
       assert get_watchlist_address_response_1_0 == get_watchlist_address_response
 
@@ -616,15 +627,15 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert get_watchlist_address_response_1_1["id"] == post_watchlist_address_response_1["id"]
 
       assert conn
-             |> delete("/api/account/v1/user/watchlist/#{get_watchlist_address_response_1_1["id"]}")
+             |> delete("/api/account/v2/user/watchlist/#{get_watchlist_address_response_1_1["id"]}")
              |> doc(description: "Delete address from watchlist by id")
              |> json_response(200) == %{"message" => "OK"}
 
       assert conn
-             |> delete("/api/account/v1/user/watchlist/#{get_watchlist_address_response_1_0["id"]}")
+             |> delete("/api/account/v2/user/watchlist/#{get_watchlist_address_response_1_0["id"]}")
              |> json_response(200) == %{"message" => "OK"}
 
-      assert conn |> get("/api/account/v1/user/watchlist") |> json_response(200) == []
+      assert conn |> get("/api/account/v2/user/watchlist") |> json_response(200) |> Map.get("items") == []
     end
 
     test "put watchlist address", %{conn: conn} do
@@ -633,7 +644,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_watchlist_address_response =
         conn
         |> post(
-          "/api/account/v1/user/watchlist",
+          "/api/account/v2/user/watchlist",
           watchlist_address_map
         )
         |> json_response(200)
@@ -643,7 +654,8 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert post_watchlist_address_response["notification_methods"] == watchlist_address_map["notification_methods"]
       assert post_watchlist_address_response["address_hash"] == watchlist_address_map["address_hash"]
 
-      get_watchlist_address_response = conn |> get("/api/account/v1/user/watchlist") |> json_response(200) |> Enum.at(0)
+      get_watchlist_address_response =
+        conn |> get("/api/account/v2/user/watchlist") |> json_response(200) |> Map.get("items") |> Enum.at(0)
 
       assert get_watchlist_address_response["notification_settings"] == watchlist_address_map["notification_settings"]
       assert get_watchlist_address_response["name"] == watchlist_address_map["name"]
@@ -656,7 +668,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       put_watchlist_address_response =
         conn
         |> put(
-          "/api/account/v1/user/watchlist/#{post_watchlist_address_response["id"]}",
+          "/api/account/v2/user/watchlist/#{post_watchlist_address_response["id"]}",
           new_watchlist_address_map
         )
         |> doc(description: "Edit watchlist address")
@@ -677,7 +689,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_watchlist_address_response =
         conn
         |> post(
-          "/api/account/v1/user/watchlist",
+          "/api/account/v2/user/watchlist",
           watchlist_address_map
         )
         |> json_response(200)
@@ -689,7 +701,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       assert conn
              |> post(
-               "/api/account/v1/user/watchlist",
+               "/api/account/v2/user/watchlist",
                watchlist_address_map
              )
              |> doc(description: "Example of error on creating watchlist address")
@@ -700,14 +712,14 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_watchlist_address_response_1 =
         conn
         |> post(
-          "/api/account/v1/user/watchlist",
+          "/api/account/v2/user/watchlist",
           new_watchlist_address_map
         )
         |> json_response(200)
 
       assert conn
              |> put(
-               "/api/account/v1/user/watchlist/#{post_watchlist_address_response_1["id"]}",
+               "/api/account/v2/user/watchlist/#{post_watchlist_address_response_1["id"]}",
                watchlist_address_map
              )
              |> doc(description: "Example of error on editing watchlist address")
@@ -719,19 +731,21 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       conn
       |> post(
-        "/api/account/v1/user/watchlist",
+        "/api/account/v2/user/watchlist",
         watchlist_address_map
       )
       |> json_response(200)
+      |> Map.get("items")
 
       watchlist_address_map_1 = build(:watchlist_address)
 
       conn
       |> post(
-        "/api/account/v1/user/watchlist",
+        "/api/account/v2/user/watchlist",
         watchlist_address_map_1
       )
       |> json_response(200)
+      |> Map.get("items")
 
       values =
         for _i <- 0..149 do
@@ -763,7 +777,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         |> Enum.sort(fn x1, x2 -> Decimal.compare(x1, x2) in [:gt, :eq] end)
         |> Enum.take(150)
 
-      [wa2, wa1] = conn |> get("/api/account/v1/user/watchlist") |> json_response(200)
+      [wa2, wa1] = conn |> get("/api/account/v2/user/watchlist") |> json_response(200) |> Map.get("items")
 
       assert wa1["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(13) ==
                values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(13)
@@ -783,10 +797,11 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       conn
       |> post(
-        "/api/account/v1/user/watchlist",
+        "/api/account/v2/user/watchlist",
         watchlist_address_map
       )
       |> json_response(200)
+      |> Map.get("items")
 
       values =
         for _i <- 0..148 do
@@ -810,7 +825,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         token_contract_address_hash: token.contract_address_hash
       )
 
-      [wa1] = conn |> get("/api/account/v1/user/watchlist") |> json_response(200)
+      [wa1] = conn |> get("/api/account/v2/user/watchlist") |> json_response(200) |> Map.get("items")
 
       assert wa1["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(13) ==
                values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(13)
@@ -823,7 +838,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_api_key_response =
         conn
         |> post(
-          "/api/account/v1/user/api_keys",
+          "/api/account/v2/user/api_keys",
           %{"name" => "test"}
         )
         |> doc(description: "Add api key")
@@ -837,7 +852,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       Enum.each(0..2, fn _x ->
         conn
         |> post(
-          "/api/account/v1/user/api_keys",
+          "/api/account/v2/user/api_keys",
           %{"name" => "test"}
         )
         |> json_response(200)
@@ -845,14 +860,14 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       assert conn
              |> post(
-               "/api/account/v1/user/api_keys",
+               "/api/account/v2/user/api_keys",
                %{"name" => "test"}
              )
              |> doc(description: "Example of error on creating api key")
              |> json_response(422) == %{"errors" => %{"name" => ["Max 3 keys per account"]}}
 
       assert conn
-             |> get("/api/account/v1/user/api_keys")
+             |> get("/api/account/v2/user/api_keys")
              |> doc(description: "Get api keys list")
              |> json_response(200)
              |> Enum.count() == 3
@@ -862,7 +877,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_api_key_response =
         conn
         |> post(
-          "/api/account/v1/user/api_keys",
+          "/api/account/v2/user/api_keys",
           %{"name" => "test"}
         )
         |> json_response(200)
@@ -873,7 +888,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       put_api_key_response =
         conn
         |> put(
-          "/api/account/v1/user/api_keys/#{post_api_key_response["api_key"]}",
+          "/api/account/v2/user/api_keys/#{post_api_key_response["api_key"]}",
           %{"name" => "test_1"}
         )
         |> doc(description: "Edit api key")
@@ -883,7 +898,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert put_api_key_response["name"] == "test_1"
 
       assert conn
-             |> get("/api/account/v1/user/api_keys")
+             |> get("/api/account/v2/user/api_keys")
              |> json_response(200) == [put_api_key_response]
     end
 
@@ -891,7 +906,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_api_key_response =
         conn
         |> post(
-          "/api/account/v1/user/api_keys",
+          "/api/account/v2/user/api_keys",
           %{"name" => "test"}
         )
         |> json_response(200)
@@ -900,17 +915,17 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert post_api_key_response["api_key"]
 
       assert conn
-             |> get("/api/account/v1/user/api_keys")
+             |> get("/api/account/v2/user/api_keys")
              |> json_response(200)
              |> Enum.count() == 1
 
       assert conn
-             |> delete("/api/account/v1/user/api_keys/#{post_api_key_response["api_key"]}")
+             |> delete("/api/account/v2/user/api_keys/#{post_api_key_response["api_key"]}")
              |> doc(description: "Delete api key")
              |> json_response(200) == %{"message" => "OK"}
 
       assert conn
-             |> get("/api/account/v1/user/api_keys")
+             |> get("/api/account/v2/user/api_keys")
              |> json_response(200) == []
     end
 
@@ -920,7 +935,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_custom_abi_response =
         conn
         |> post(
-          "/api/account/v1/user/custom_abis",
+          "/api/account/v2/user/custom_abis",
           custom_abi
         )
         |> doc(description: "Add custom abi")
@@ -936,7 +951,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       Enum.each(0..14, fn _x ->
         conn
         |> post(
-          "/api/account/v1/user/custom_abis",
+          "/api/account/v2/user/custom_abis",
           build(:custom_abi)
         )
         |> json_response(200)
@@ -944,14 +959,14 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
 
       assert conn
              |> post(
-               "/api/account/v1/user/custom_abis",
+               "/api/account/v2/user/custom_abis",
                build(:custom_abi)
              )
              |> doc(description: "Example of error on creating custom abi")
              |> json_response(422) == %{"errors" => %{"name" => ["Max 15 ABIs per account"]}}
 
       assert conn
-             |> get("/api/account/v1/user/custom_abis")
+             |> get("/api/account/v2/user/custom_abis")
              |> doc(description: "Get custom abis list")
              |> json_response(200)
              |> Enum.count() == 15
@@ -963,7 +978,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_custom_abi_response =
         conn
         |> post(
-          "/api/account/v1/user/custom_abis",
+          "/api/account/v2/user/custom_abis",
           custom_abi
         )
         |> json_response(200)
@@ -978,7 +993,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       put_custom_abi_response =
         conn
         |> put(
-          "/api/account/v1/user/custom_abis/#{post_custom_abi_response["id"]}",
+          "/api/account/v2/user/custom_abis/#{post_custom_abi_response["id"]}",
           custom_abi_1
         )
         |> doc(description: "Edit custom abi")
@@ -990,7 +1005,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert put_custom_abi_response["abi"] == custom_abi_1["abi"]
 
       assert conn
-             |> get("/api/account/v1/user/custom_abis")
+             |> get("/api/account/v2/user/custom_abis")
              |> json_response(200) == [put_custom_abi_response]
     end
 
@@ -1000,7 +1015,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_custom_abi_response =
         conn
         |> post(
-          "/api/account/v1/user/custom_abis",
+          "/api/account/v2/user/custom_abis",
           custom_abi
         )
         |> json_response(200)
@@ -1009,17 +1024,17 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert post_custom_abi_response["id"]
 
       assert conn
-             |> get("/api/account/v1/user/custom_abis")
+             |> get("/api/account/v2/user/custom_abis")
              |> json_response(200)
              |> Enum.count() == 1
 
       assert conn
-             |> delete("/api/account/v1/user/custom_abis/#{post_custom_abi_response["id"]}")
+             |> delete("/api/account/v2/user/custom_abis/#{post_custom_abi_response["id"]}")
              |> doc(description: "Delete custom abi")
              |> json_response(200) == %{"message" => "OK"}
 
       assert conn
-             |> get("/api/account/v1/user/custom_abis")
+             |> get("/api/account/v2/user/custom_abis")
              |> json_response(200) == []
     end
   end
@@ -1031,7 +1046,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_public_tags_request_response =
         conn
         |> post(
-          "/api/account/v1/user/public_tags",
+          "/api/account/v2/user/public_tags",
           public_tags_request
         )
         |> doc(description: "Submit request to add a public tag")
@@ -1054,7 +1069,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_public_tags_request_response =
         conn
         |> post(
-          "/api/account/v1/user/public_tags",
+          "/api/account/v2/user/public_tags",
           public_tags_request
         )
         |> json_response(200)
@@ -1070,7 +1085,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert post_public_tags_request_response["id"]
 
       assert conn
-             |> get("/api/account/v1/user/public_tags")
+             |> get("/api/account/v2/user/public_tags")
              |> json_response(200)
              |> Enum.map(&convert_date/1) ==
                [post_public_tags_request_response]
@@ -1086,7 +1101,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
           response =
             conn
             |> post(
-              "/api/account/v1/user/public_tags",
+              "/api/account/v2/user/public_tags",
               request
             )
             |> json_response(200)
@@ -1106,7 +1121,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
         |> Enum.reverse()
 
       assert conn
-             |> get("/api/account/v1/user/public_tags")
+             |> get("/api/account/v2/user/public_tags")
              |> doc(description: "Get list of requests to add a public tag")
              |> json_response(200)
              |> Enum.map(&convert_date/1) == final_list
@@ -1114,18 +1129,18 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       %{"id" => id} = Enum.at(final_list, 0)
 
       assert conn
-             |> delete("/api/account/v1/user/public_tags/#{id}", %{"remove_reason" => "reason"})
+             |> delete("/api/account/v2/user/public_tags/#{id}", %{"remove_reason" => "reason"})
              |> doc(description: "Delete public tags request")
              |> json_response(200) == %{"message" => "OK"}
 
       Enum.each(Enum.drop(final_list, 1), fn request ->
         assert conn
-               |> delete("/api/account/v1/user/public_tags/#{request["id"]}", %{"remove_reason" => "reason"})
+               |> delete("/api/account/v2/user/public_tags/#{request["id"]}", %{"remove_reason" => "reason"})
                |> json_response(200) == %{"message" => "OK"}
       end)
 
       assert conn
-             |> get("/api/account/v1/user/public_tags")
+             |> get("/api/account/v2/user/public_tags")
              |> json_response(200) == []
     end
 
@@ -1135,7 +1150,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       post_public_tags_request_response =
         conn
         |> post(
-          "/api/account/v1/user/public_tags",
+          "/api/account/v2/user/public_tags",
           public_tags_request
         )
         |> json_response(200)
@@ -1151,7 +1166,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert post_public_tags_request_response["id"]
 
       assert conn
-             |> get("/api/account/v1/user/public_tags")
+             |> get("/api/account/v2/user/public_tags")
              |> json_response(200)
              |> Enum.map(&convert_date/1) ==
                [post_public_tags_request_response]
@@ -1162,7 +1177,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       put_public_tags_request_response =
         conn
         |> put(
-          "/api/account/v1/user/public_tags/#{post_public_tags_request_response["id"]}",
+          "/api/account/v2/user/public_tags/#{post_public_tags_request_response["id"]}",
           new_public_tags_request
         )
         |> doc(description: "Edit request to add a public tag")
@@ -1179,7 +1194,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserControllerTest do
       assert put_public_tags_request_response["id"] == post_public_tags_request_response["id"]
 
       assert conn
-             |> get("/api/account/v1/user/public_tags")
+             |> get("/api/account/v2/user/public_tags")
              |> json_response(200)
              |> Enum.map(&convert_date/1) ==
                [put_public_tags_request_response]

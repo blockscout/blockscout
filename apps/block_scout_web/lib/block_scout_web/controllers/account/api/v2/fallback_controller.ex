@@ -1,7 +1,7 @@
-defmodule BlockScoutWeb.Account.Api.V1.FallbackController do
+defmodule BlockScoutWeb.Account.Api.V2.FallbackController do
   use Phoenix.Controller
 
-  alias BlockScoutWeb.Account.Api.V1.UserView
+  alias BlockScoutWeb.Account.Api.V2.UserView
   alias Ecto.Changeset
 
   def call(conn, {:identity, _}) do

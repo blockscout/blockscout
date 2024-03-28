@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Account.Api.V1.UserController do
+defmodule BlockScoutWeb.Account.Api.V2.UserController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -12,8 +12,6 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
 
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
 
-  import Ecto.Query, only: [from: 2]
-
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Explorer.Account.CustomABI
@@ -21,7 +19,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   alias Explorer.{Chain, Market, PagingOptions, Repo}
   alias Plug.CSRFProtection
 
-  action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
+  action_fallback(BlockScoutWeb.Account.Api.V2.FallbackController)
 
   @ok_message "OK"
   @token_balances_amount 150
@@ -32,44 +30,6 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       conn
       |> put_status(200)
       |> render(:user_info, %{identity: identity})
-    end
-  end
-
-  def watchlist_old(conn, _params) do
-    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
-         {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
-         {:watchlist, %{watchlists: [watchlist | _]}} <-
-           {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
-         watchlist_with_addresses <- preload_watchlist_addresses(watchlist) do
-      watchlist_addresses =
-        Enum.map(watchlist_with_addresses.watchlist_addresses, fn wa ->
-          balances =
-            Chain.fetch_paginated_last_token_balances(wa.address_hash,
-              paging_options: %PagingOptions{page_size: @token_balances_amount + 1}
-            )
-
-          count = Enum.count(balances)
-          overflow? = count > @token_balances_amount
-
-          fiat_sum =
-            balances
-            |> Enum.take(@token_balances_amount)
-            |> Enum.reduce(Decimal.new(0), fn tb, acc -> Decimal.add(acc, tb.fiat_value || 0) end)
-
-          %WatchlistAddress{
-            wa
-            | tokens_fiat_value: fiat_sum,
-              tokens_count: min(count, @token_balances_amount),
-              tokens_overflow: overflow?
-          }
-        end)
-
-      conn
-      |> put_status(200)
-      |> render(:watchlist_addresses, %{
-        exchange_rate: Market.get_coin_exchange_rate(),
-        watchlist_addresses: watchlist_addresses
-      })
     end
   end
 
@@ -253,16 +213,6 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     end
   end
 
-  def tags_address_old(conn, _params) do
-    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
-         {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
-         address_tags <- TagAddress.get_tags_address_by_identity_id(identity.id) do
-      conn
-      |> put_status(200)
-      |> render(:address_tags, %{address_tags: address_tags})
-    end
-  end
-
   def tags_address(conn, params) do
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
          {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)} do
@@ -319,16 +269,6 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       conn
       |> put_status(200)
       |> render(:address_tag, %{address_tag: address_tag})
-    end
-  end
-
-  def tags_transaction_old(conn, _params) do
-    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
-         {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
-         transaction_tags <- TagTransaction.get_tags_transaction_by_identity_id(identity.id) do
-      conn
-      |> put_status(200)
-      |> render(:transaction_tags, %{transaction_tags: transaction_tags})
     end
   end
 
@@ -582,10 +522,5 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
 
   defp reject_nil_map_values(map) when is_map(map) do
     Map.reject(map, fn {_k, v} -> is_nil(v) end)
-  end
-
-  defp preload_watchlist_addresses(watchlist) do
-    watchlist
-    |> Repo.account_repo().preload(watchlist_addresses: from(wa in WatchlistAddress, order_by: [desc: wa.id]))
   end
 end

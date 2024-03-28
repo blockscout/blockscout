@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Account.Api.V1.TagsView do
+defmodule BlockScoutWeb.Account.Api.V2.TagsView do
   def render("address_tags.json", %{tags_map: tags_map}) do
     tags_map
   end
