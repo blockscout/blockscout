@@ -221,7 +221,8 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   defp prepare_token_id(%Decimal{} = token_id), do: Decimal.to_integer(token_id)
   defp prepare_token_id(token_id), do: token_id
 
-  defp prepare_request("ERC-721", contract_address_hash_string, token_id, from_base_uri?) do
+  defp prepare_request(erc_721_404, contract_address_hash_string, token_id, from_base_uri?)
+       when erc_721_404 in ["ERC-404", "ERC-721"] do
     request = %{
       contract_address: contract_address_hash_string,
       block_number: nil
