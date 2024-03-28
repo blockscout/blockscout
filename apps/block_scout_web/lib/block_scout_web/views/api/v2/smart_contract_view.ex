@@ -22,8 +22,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     %{"items" => Enum.map(smart_contracts, &prepare_smart_contract_for_list/1), "next_page_params" => next_page_params}
   end
 
-  def render("smart_contract.json", %{address: address}) do
-    prepare_smart_contract(address)
+  def render("smart_contract.json", %{address: address, conn: conn}) do
+    prepare_smart_contract(address, conn)
   end
 
   def render("read_functions.json", %{functions: functions}) do
@@ -146,12 +146,18 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_output(output), do: output
 
   # credo:disable-for-next-line
-  def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address) do
+  def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address, conn) do
     minimal_proxy_template = EIP1167.get_implementation_address(address.hash, @api_true)
     bytecode_twin = SmartContract.get_address_verified_twin_contract(address.hash, @api_true)
     metadata_for_verification = minimal_proxy_template || bytecode_twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
     fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
+    write_methods? = AddressView.smart_contract_with_write_functions?(address)
+
+    is_proxy = AddressView.smart_contract_is_proxy?(address, @api_true)
+
+    read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
+    write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
 
     additional_sources =
       additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin)
@@ -169,6 +175,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_verified_via_sourcify" => address.smart_contract.verified_via_sourcify && smart_contract_verified,
       "is_verified_via_eth_bytecode_db" => address.smart_contract.verified_via_eth_bytecode_db,
       "is_vyper_contract" => target_contract.is_vyper_contract,
+      "has_custom_methods_read" => read_custom_abi?,
+      "has_custom_methods_write" => write_custom_abi?,
+      "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address),
+      "has_methods_write" => write_methods?,
+      "has_methods_read_proxy" => is_proxy,
+      "has_methods_write_proxy" => is_proxy && write_methods?,
       "minimal_proxy_address_hash" =>
         minimal_proxy_template && Address.checksum(metadata_for_verification.address_hash),
       "sourcify_repo_url" =>
@@ -200,7 +212,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     |> Map.merge(bytecode_info(address))
   end
 
-  def prepare_smart_contract(address) do
+  def prepare_smart_contract(address, _) do
     bytecode_info(address)
   end
 
