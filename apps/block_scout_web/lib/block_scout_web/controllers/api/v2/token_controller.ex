@@ -26,6 +26,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -96,7 +97,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:token_transfers, %{
-        token_transfers: token_transfers |> maybe_preload_ens(),
+        token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -116,7 +117,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> render(:token_balances, %{
-        token_balances: token_balances |> maybe_preload_ens(),
+        token_balances: token_balances |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params,
         token: token
       })
@@ -239,7 +240,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:token_transfers, %{
-        token_transfers: token_transfers |> maybe_preload_ens(),
+        token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -269,7 +270,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> render(:token_balances, %{
-        token_balances: token_holders |> maybe_preload_ens(),
+        token_balances: token_holders |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params,
         token: token
       })

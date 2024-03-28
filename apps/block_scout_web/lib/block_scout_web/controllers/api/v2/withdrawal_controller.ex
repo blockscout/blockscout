@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
 
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias Explorer.Chain
 
@@ -21,7 +22,10 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
 
     conn
     |> put_status(200)
-    |> render(:withdrawals, %{withdrawals: withdrawals |> maybe_preload_ens(), next_page_params: next_page_params})
+    |> render(:withdrawals, %{
+      withdrawals: withdrawals |> maybe_preload_ens() |> maybe_preload_metadata(),
+      next_page_params: next_page_params
+    })
   end
 
   def withdrawals_counters(conn, _params) do

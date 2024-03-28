@@ -177,7 +177,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
       end
 
     address_hash_strings
-    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
     |> Enum.map(fn hash_string ->
       case Chain.string_to_address_hash(hash_string) do
@@ -185,7 +185,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
         _ -> nil
       end
     end)
-    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.reject(&is_nil/1)
   end
 
   defp replace_address_hashes(response, addresses) do

@@ -59,18 +59,20 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "name" => address_name(address),
       "implementation_name" => implementation_name(address),
       "is_verified" => verified?(address),
-      "ens_domain_name" => address.ens_domain_name
+      "ens_domain_name" => address.ens_domain_name,
+      "metadata" => address.metadata
     }
-  end
-
-  def address_with_info(%{ens_domain_name: name}, address_hash) do
-    nil
-    |> address_with_info(address_hash)
-    |> Map.put("ens_domain_name", name)
   end
 
   def address_with_info(%NotLoaded{}, address_hash) do
     address_with_info(nil, address_hash)
+  end
+
+  def address_with_info(address_info, address_hash) when is_map(address_info) do
+    nil
+    |> address_with_info(address_hash)
+    |> Map.put("ens_domain_name", address_info[:ens_domain_name])
+    |> Map.put("metadata", address_info[:metadata])
   end
 
   def address_with_info(nil, nil) do
@@ -83,7 +85,9 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "is_contract" => false,
       "name" => nil,
       "implementation_name" => nil,
-      "is_verified" => nil
+      "is_verified" => nil,
+      "ens_domain_name" => nil,
+      "metadata" => nil
     }
   end
 
