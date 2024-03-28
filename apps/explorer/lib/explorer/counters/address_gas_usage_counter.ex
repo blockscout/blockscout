@@ -22,7 +22,7 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
 
   @impl true
   def init(_args) do
-    create_cache_table()
+    Helper.create_cache_table(@cache_name)
 
     {:ok, %{consolidate?: enable_consolidation?()}, {:continue, :ok}}
   end
@@ -67,18 +67,14 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
 
   defp update_cache(address) do
     address_hash_string = to_string(address.hash)
-    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
+    Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
     new_data = Counters.address_to_gas_usage_count(address)
-    put_into_cache("hash_#{address_hash_string}", new_data)
+    Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}", new_data)
     put_into_db(address, new_data)
   end
 
   defp fetch_from_cache(key) do
-    Helper.fetch_from_cache(key, @cache_name)
-  end
-
-  defp put_into_cache(key, value) do
-    :ets.insert(@cache_name, {key, value})
+    Helper.fetch_from_ets_cache(key, @cache_name)
   end
 
   defp put_into_db(_address, value) when is_nil(value), do: :ignore
@@ -87,10 +83,6 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
     address
     |> Changeset.change(%{gas_used: Decimal.to_integer(value)})
     |> Repo.update()
-  end
-
-  defp create_cache_table do
-    Helper.create_cache_table(@cache_name)
   end
 
   defp enable_consolidation?, do: @enable_consolidation

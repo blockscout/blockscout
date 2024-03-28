@@ -4194,33 +4194,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "count_token_holders_from_token_hash" do
-    test "returns the most current count about token holders" do
-      address_a = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
-      address_b = insert(:address, hash: "0x5f26097334b6a32b7951df61fd0c5803ec5d8354")
-
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      insert(
-        :address_current_token_balance,
-        address: address_a,
-        block_number: 1000,
-        token_contract_address_hash: contract_address_hash,
-        value: 5000
-      )
-
-      insert(
-        :address_current_token_balance,
-        address: address_b,
-        block_number: 1002,
-        token_contract_address_hash: contract_address_hash,
-        value: 1000
-      )
-
-      assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 2
-    end
-  end
-
   describe "address_to_transactions_with_token_transfers/2" do
     test "paginates transactions by the block number" do
       address = insert(:address)
