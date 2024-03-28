@@ -276,6 +276,7 @@ defmodule Explorer.Chain.SmartContract do
   * `autodetect_constructor_args` - field was added for storing user's choice
   * `is_yul` - field was added for storing user's choice
   * `verified_via_eth_bytecode_db` - whether contract automatically verified via eth-bytecode-db or not.
+  * `verified_via_verifier_alliance` - whether contract automatically verified via Verifier Alliance or not.
   """
   typed_schema "smart_contracts" do
     field(:name, :string, null: false)
@@ -303,6 +304,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:metadata_from_verified_twin, :boolean, virtual: true)
     field(:verified_via_eth_bytecode_db, :boolean)
     field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
+    field(:verified_via_verifier_alliance, :boolean)
 
     has_many(
       :decompiled_smart_contracts,
@@ -355,7 +357,8 @@ defmodule Explorer.Chain.SmartContract do
       :implementation_address_hash,
       :implementation_fetched_at,
       :verified_via_eth_bytecode_db,
-      :license_type
+      :license_type,
+      :verified_via_verifier_alliance
     ])
     |> validate_required([
       :name,
@@ -397,7 +400,8 @@ defmodule Explorer.Chain.SmartContract do
         :implementation_name,
         :autodetect_constructor_args,
         :verified_via_eth_bytecode_db,
-        :license_type
+        :license_type,
+        :verified_via_verifier_alliance
       ])
       |> (&if(verification_with_files?,
             do: &1,

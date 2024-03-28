@@ -168,6 +168,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_fully_verified" => fully_verified,
       "is_verified_via_sourcify" => address.smart_contract.verified_via_sourcify && smart_contract_verified,
       "is_verified_via_eth_bytecode_db" => address.smart_contract.verified_via_eth_bytecode_db,
+      "is_verified_via_verifier_alliance" => address.smart_contract.verified_via_verifier_alliance,
       "is_vyper_contract" => target_contract.is_vyper_contract,
       "minimal_proxy_address_hash" =>
         minimal_proxy_template && Address.checksum(metadata_for_verification.address_hash),
