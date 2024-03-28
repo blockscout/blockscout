@@ -34,7 +34,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       )
 
     if length(logs) > 0 do
-      Logger.info("Found #{length(logs)} OutBoxTransactionExecuted logs")
+      Logger.debug("Found #{length(logs)} OutBoxTransactionExecuted logs")
     end
 
     logs
@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
             BlockByNumber.request(%{id: 0, number: l1_blk_num}, false, true)
           )
 
-        Logger.info("Execution for L2 message ##{msg_id} found in #{l1_tx_hash_raw}")
+        Logger.debug("Execution for L2 message ##{msg_id} found in #{l1_tx_hash_raw}")
 
         {updated_executions, updated_lifecycle_txs, updated_blocks_requests}
       end)
@@ -161,16 +161,20 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
     {lifecycle_txs, executions} = get_executions_from_logs(logs, l1_rpc_config)
 
-    {:ok, _} =
-      Chain.import(%{
-        arbitrum_lifecycle_transactions: %{params: lifecycle_txs},
-        arbitrum_l1_executions: %{params: executions},
-        timeout: :infinity
-      })
+    unless executions == [] do
+      Logger.info("Executions for #{length(executions)} L2 messages will be imported")
+
+      {:ok, _} =
+        Chain.import(%{
+          arbitrum_lifecycle_transactions: %{params: lifecycle_txs},
+          arbitrum_l1_executions: %{params: executions},
+          timeout: :infinity
+        })
+    end
 
     messages = get_relayed_messages(end_block)
 
-    unless Enum.empty?(messages) do
+    unless messages == [] do
       Logger.info("Marking #{length(messages)} l2-to-l1 messages as completed")
 
       {:ok, _} =

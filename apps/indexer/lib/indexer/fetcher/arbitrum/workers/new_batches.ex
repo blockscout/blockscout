@@ -33,7 +33,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       )
 
     if length(logs) > 0 do
-      Logger.info("Found #{length(logs)} SequencerBatchDelivered logs")
+      Logger.debug("Found #{length(logs)} SequencerBatchDelivered logs")
     end
 
     logs

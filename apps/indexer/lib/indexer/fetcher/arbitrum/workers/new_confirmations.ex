@@ -40,7 +40,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       end
 
     if length(logs) > 0 do
-      Logger.info("Found #{length(logs)} SendRootUpdated logs")
+      Logger.debug("Found #{length(logs)} SendRootUpdated logs")
     end
 
     {logs, new_cache}

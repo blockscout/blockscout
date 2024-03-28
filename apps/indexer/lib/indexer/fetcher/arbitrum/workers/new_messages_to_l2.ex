@@ -40,7 +40,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       )
 
     if length(logs) > 0 do
-      Logger.info("Found #{length(logs)} MessageDelivered logs")
+      Logger.debug("Found #{length(logs)} MessageDelivered logs")
     end
 
     logs
