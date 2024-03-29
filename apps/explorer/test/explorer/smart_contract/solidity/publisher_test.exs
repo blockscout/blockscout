@@ -11,6 +11,15 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
   alias Explorer.{Factory, Repo}
   alias Explorer.SmartContract.Solidity.Publisher
 
+  setup do
+    configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+    Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
+    end)
+  end
+
   describe "publish/2" do
     test "with valid data creates a smart_contract" do
       contract_code_info = Factory.contract_code_info_modern_compiler()

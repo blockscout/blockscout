@@ -638,7 +638,8 @@
         "zetachain",
         "zksync",
         "filecoin",
-        "Filecoin"
+        "Filecoin",
+        "permissionless"
     ],
     "enableFiletypes": [
         "dotenv",

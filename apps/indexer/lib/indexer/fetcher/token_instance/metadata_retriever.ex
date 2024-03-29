@@ -85,17 +85,17 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     fetch_metadata_inner(token_uri, token_id, hex_token_id, from_base_uri?)
   end
 
-  defp fetch_json_from_uri({:ok, ["data:application/json," <> json]}, token_id, hex_token_id, from_base_uri?) do
-    decoded_json = URI.decode(json)
+  defp fetch_json_from_uri(
+         {:ok, [type = "data:application/json;utf8," <> json]},
+         token_id,
+         hex_token_id,
+         from_base_uri?
+       ) do
+    fetch_json_from_json_string(json, token_id, hex_token_id, from_base_uri?, type)
+  end
 
-    fetch_json_from_uri({:ok, [decoded_json]}, token_id, hex_token_id, from_base_uri?)
-  rescue
-    e ->
-      Logger.warn(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
-        fetcher: :token_instances
-      )
-
-      {:error, "invalid data:application/json"}
+  defp fetch_json_from_uri({:ok, [type = "data:application/json," <> json]}, token_id, hex_token_id, from_base_uri?) do
+    fetch_json_from_json_string(json, token_id, hex_token_id, from_base_uri?, type)
   end
 
   defp fetch_json_from_uri(
@@ -153,6 +153,19 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     Logger.warn(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
 
     {:error, "unknown metadata uri format"}
+  end
+
+  defp fetch_json_from_json_string(json, token_id, hex_token_id, from_base_uri?, type) do
+    decoded_json = URI.decode(json)
+
+    fetch_json_from_uri({:ok, [decoded_json]}, token_id, hex_token_id, from_base_uri?)
+  rescue
+    e ->
+      Logger.warn(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
+        fetcher: :token_instances
+      )
+
+      {:error, "invalid #{type}"}
   end
 
   defp fetch_from_ipfs(ipfs_uid, hex_token_id) do

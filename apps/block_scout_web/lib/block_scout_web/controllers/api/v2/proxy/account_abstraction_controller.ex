@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   alias Explorer.Chain
   alias Explorer.MicroserviceInterfaces.AccountAbstraction
 
-  @address_fields ["bundler", "entry_point", "sender", "address", "factory", "paymaster"]
+  @address_fields ["bundler", "entry_point", "sender", "address", "factory", "paymaster", "executed_address"]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -221,7 +221,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
         |> json(%{message: "Service is disabled"})
 
       {status_code, response} ->
-        final_json = response |> extended_info() |> try_to_decode_call_data()
+        final_json = response |> try_to_decode_call_data() |> extended_info()
 
         conn
         |> put_status(status_code)
@@ -230,8 +230,25 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   end
 
   defp try_to_decode_call_data(%{"call_data" => _call_data} = user_op) do
-    {_mock_tx, _decoded_input, decoded_input_json} = TransactionInterpretationService.decode_user_op_calldata(user_op)
-    Map.put(user_op, "decoded_call_data", decoded_input_json)
+    {_mock_tx, _decoded_input, decoded_input_json, address_hash, decoded_data} =
+      TransactionInterpretationService.decode_user_op_calldata(user_op)
+
+    decoded_call_data_map =
+      if Keyword.has_key?(decoded_data, :handle_ops_decoded_call_data) do
+        %{
+          "decoded_handle_ops_call_data" => Keyword.get(decoded_data, :handle_ops_decoded_call_data),
+          "decoded_execute_call_data" => decoded_input_json,
+          "executed_address" => to_string(address_hash)
+        }
+      else
+        %{
+          "decoded_handle_ops_call_data" => decoded_input_json,
+          "decoded_execute_call_data" => nil,
+          "executed_address" => nil
+        }
+      end
+
+    Map.merge(user_op, decoded_call_data_map)
   end
 
   defp try_to_decode_call_data(response), do: response

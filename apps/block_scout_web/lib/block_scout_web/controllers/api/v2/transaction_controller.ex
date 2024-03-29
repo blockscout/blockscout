@@ -31,8 +31,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, Transaction}
-  alias Explorer.Chain.PolygonZkevm.Reader
-  alias Explorer.Chain.ZkSync.Reader
+  alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
+  alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.FirstTraceOnDemand
 
@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def polygon_zkevm_batch(conn, %{"batch_number" => batch_number} = _params) do
     transactions =
       batch_number
-      |> Reader.batch_transactions(api?: true)
+      |> PolygonZkevmReader.batch_transactions(api?: true)
       |> Enum.map(fn tx -> tx.hash end)
       |> Chain.hashes_to_transactions(api?: true, necessity_by_association: @transaction_necessity_by_association)
 
@@ -183,16 +183,30 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     It renders the list of L2 transactions bound to the specified batch.
   """
   @spec zksync_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def zksync_batch(conn, %{"batch_number" => batch_number} = _params) do
-    transactions =
+  def zksync_batch(conn, %{"batch_number" => batch_number} = params) do
+    full_options =
+      [
+        necessity_by_association: @transaction_necessity_by_association
+      ]
+      |> Keyword.merge(paging_options(params))
+      |> Keyword.merge(@api_true)
+
+    # Although a naive way is to implement pagination on the level of `batch_transactions` call,
+    # it will require to re-implement all pagination logic existing in Explorer.Chain.Transaction
+    # In order to simplify the code, all transaction are requested from the batch and then
+    # only subset of them is returned from `hashes_to_transactions`.
+    raw_transactions_list =
       batch_number
-      |> Reader.batch_transactions(api?: true)
+      |> ZkSyncReader.batch_transactions(api?: true)
       |> Enum.map(fn tx -> tx.hash end)
-      |> Chain.hashes_to_transactions(api?: true, necessity_by_association: @transaction_necessity_by_association)
+      |> Chain.hashes_to_transactions(full_options)
+
+    {transactions, next_page} = split_list_by_page(raw_transactions_list)
+    next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
 
     conn
     |> put_status(200)
-    |> render(:transactions, %{transactions: transactions, items: true})
+    |> render(:transactions, %{transactions: transactions |> maybe_preload_ens(), next_page_params: next_page_params})
   end
 
   def execution_node(conn, %{"execution_node_hash_param" => execution_node_hash_string} = params) do
