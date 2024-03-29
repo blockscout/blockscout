@@ -48,11 +48,12 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   end
 
   defp fetch_and_broadcast_bytecode(address_hash, state) do
-    with {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} <-
-           fetch_codes(
-             [%{block_quantity: "latest", address: to_string(address_hash)}],
-             state.json_rpc_named_arguments
-           ),
+    with {:fetched_code, {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}}} <-
+           {:fetched_code,
+            fetch_codes(
+              [%{block_quantity: "latest", address: to_string(address_hash)}],
+              state.json_rpc_named_arguments
+            )},
          contract_code_object = List.first(fetched_codes),
          false <- is_nil(contract_code_object),
          true <- contract_code_object.code !== "0x" do
@@ -65,6 +66,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
           Logger.error(fn -> "Error while setting address #{inspect(to_string(address_hash))} deployed bytecode" end)
       end
     else
+      {:fetched_code, {:error, _}} ->
+        :ok
+
       _ ->
         AddressContractCodeFetchAttempt.insert_retries_number(address_hash)
     end
