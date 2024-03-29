@@ -274,13 +274,11 @@ defmodule Explorer.Chain.Log do
 
   defp alter_mapping_names(mapping) do
     mapping
-    |> dbg()
     |> Enum.with_index()
     |> Enum.map(fn {{name, type, indexed?, value}, index} ->
       name = if name == "", do: "arg#{index}", else: name
       {name, type, indexed?, value}
     end)
-    |> dbg()
   end
 
   defp decode_event_via_sig_provider(
