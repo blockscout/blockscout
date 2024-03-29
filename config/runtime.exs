@@ -422,7 +422,7 @@ config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
   chain_name: System.get_env("NOVES_FI_CHAIN_NAME"),
   api_key: System.get_env("NOVES_FI_API_TOKEN")
 
-enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED")
+enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED", "true")
 # or "eth_bytecode_db"
 type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
 
