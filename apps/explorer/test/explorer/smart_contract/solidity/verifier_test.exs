@@ -62,7 +62,6 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
   """
 
   setup do
-    # Use TestSource mock and ets table for this test set
     configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
     Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
 

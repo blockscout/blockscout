@@ -12,7 +12,6 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
   alias Explorer.SmartContract.Solidity.Publisher
 
   setup do
-    # Use TestSource mock and ets table for this test set
     configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
     Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
 
