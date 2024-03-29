@@ -65,9 +65,9 @@ defmodule Explorer.Counters.TokenHoldersCounter do
 
   defp update_cache(address_hash) do
     address_hash_string = to_string(address_hash)
-    Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}_#{@ets_last_update_key}", Helper.current_time())
     new_data = CurrentTokenBalance.count_token_holders_from_token_hash(address_hash)
     Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}", new_data)
+    Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}_#{@ets_last_update_key}", Helper.current_time())
     put_into_db_cache(address_hash, new_data)
   end
 
