@@ -86,7 +86,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   end
 
   defp fetch_json_from_uri(
-         {:ok, ["data:application/json;utf8," = type <> json]},
+         {:ok, [type = "data:application/json;utf8," <> json]},
          token_id,
          hex_token_id,
          from_base_uri?
@@ -94,7 +94,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     fetch_json_from_json_string(json, token_id, hex_token_id, from_base_uri?, type)
   end
 
-  defp fetch_json_from_uri({:ok, ["data:application/json," = type <> json]}, token_id, hex_token_id, from_base_uri?) do
+  defp fetch_json_from_uri({:ok, [type = "data:application/json," <> json]}, token_id, hex_token_id, from_base_uri?) do
     fetch_json_from_json_string(json, token_id, hex_token_id, from_base_uri?, type)
   end
 
