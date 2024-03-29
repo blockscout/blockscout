@@ -281,7 +281,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       )
 
   defp prepare_request_body_from_user_op(user_op) do
-    {mock_tx, decoded_input, decoded_input_json, address_hash} = decode_user_op_calldata(user_op)
+    {mock_tx, decoded_input, decoded_input_json, address_hash, _} = decode_user_op_calldata(user_op)
 
     {prepared_logs, prepared_token_transfers} = user_op_to_logs_and_token_transfers(user_op, decoded_input)
 
@@ -332,20 +332,21 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(mock_tx, skip_sig_provider?, @api_true)
 
     prepared_decoded_input = decoded_input |> TransactionView.format_decoded_input()
+    decoded_handle_ops_input_json = prepared_decoded_input |> TransactionView.decoded_input()
 
     case try_to_decode_decoded_call_data(prepared_decoded_input, op_hash) do
       nil ->
-        decoded_input_json = prepared_decoded_input |> TransactionView.decoded_input()
-
-        {mock_tx, decoded_input, decoded_input_json, nil}
+        {mock_tx, decoded_input, decoded_handle_ops_input_json, nil, []}
 
       {address_hash, decoded_input, mock_tx} ->
         decoded_input_json = decoded_input |> TransactionView.format_decoded_input() |> TransactionView.decoded_input()
 
-        {mock_tx, decoded_input, decoded_input_json, address_hash}
+        {mock_tx, decoded_input, decoded_input_json, address_hash,
+         [handle_ops_decoded_call_data: decoded_handle_ops_input_json]}
     end
   end
 
+  # "b61d27f6" == bytes4(keccak256("execute(address,uint256,bytes)"))
   defp try_to_decode_decoded_call_data(
          {:ok, "b61d27f6", "execute(" <> _,
           [{_, "address", address_hash_bytes}, {_, "uint256", _amount}, {_, "bytes", call_data_bytes}]},
@@ -354,6 +355,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     decode_decoded_call_data(address_hash_bytes, call_data_bytes, op_hash)
   end
 
+  # "51945447" == bytes4(keccak256("execute(address,uint256,bytes,uint8)"))
   defp try_to_decode_decoded_call_data(
          {:ok, "51945447", "execute(" <> _,
           [{_, "address", address_hash_bytes}, {_, "uint256", _amount}, {_, "bytes", call_data_bytes}, {_, "uint8", _}]},
