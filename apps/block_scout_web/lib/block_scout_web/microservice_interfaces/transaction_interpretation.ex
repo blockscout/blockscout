@@ -315,7 +315,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @doc """
   Decodes user_op["call_data"] and return {mock_tx, decoded_input, decoded_input_json}
   """
-  @spec decode_user_op_calldata(map()) :: {Transaction.t(), tuple(), map(), AddressHash.t() | nil}
+  @spec decode_user_op_calldata(map()) :: {Transaction.t(), tuple(), map(), AddressHash.t() | nil, keyword()}
   def decode_user_op_calldata(user_op) do
     {:ok, input} = Data.cast(user_op["call_data"])
 
