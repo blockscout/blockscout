@@ -31,8 +31,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, Transaction}
-  alias Explorer.Chain.PolygonZkevm.Reader
-  alias Explorer.Chain.ZkSync.Reader
+  alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
+  alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.FirstTraceOnDemand
 
@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def polygon_zkevm_batch(conn, %{"batch_number" => batch_number} = _params) do
     transactions =
       batch_number
-      |> Reader.batch_transactions(api?: true)
+      |> PolygonZkevmReader.batch_transactions(api?: true)
       |> Enum.map(fn tx -> tx.hash end)
       |> Chain.hashes_to_transactions(api?: true, necessity_by_association: @transaction_necessity_by_association)
 
@@ -186,7 +186,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def zksync_batch(conn, %{"batch_number" => batch_number} = _params) do
     transactions =
       batch_number
-      |> Reader.batch_transactions(api?: true)
+      |> ZkSyncReader.batch_transactions(api?: true)
       |> Enum.map(fn tx -> tx.hash end)
       |> Chain.hashes_to_transactions(api?: true, necessity_by_association: @transaction_necessity_by_association)
 
