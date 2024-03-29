@@ -696,7 +696,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
             log.first_topic == ^@l2_to_l1_event
       )
 
-    Repo.all(query, timeout: :infinity)
+    query
+    |> Repo.all(timeout: :infinity)
     |> Enum.map(&logs_to_map/1)
   end
 

@@ -15,7 +15,7 @@ defmodule Indexer.Helper do
     ]
 
   alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
+  alias EthereumJSONRPC.{Blocks, Transport}
   alias Explorer.Chain.Hash
   alias Explorer.SmartContract.Reader, as: ContractReader
 
@@ -263,9 +263,39 @@ defmodule Indexer.Helper do
   end
 
   @doc """
-  TBD
+    Retrieves decoded results of `eth_call` requests to contracts, with retry logic for handling errors.
+
+    The function attempts the specified number of retries, with a progressive delay between
+    each retry, for each `eth_call` request. If, after all retries, some requests remain
+    unsuccessful, it returns a list of unique error messages encountered.
+
+    ## Parameters
+    - `requests`: A list of `EthereumJSONRPC.Contract.call()` instances describing the parameters
+                  for `eth_call`, including the contract address and method selector.
+    - `abi`: A list of maps providing the ABI that describes the input parameters and output
+             format for the contract functions.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+    - `retries_left`: The number of retries allowed for any `eth_call` that returns an error.
+
+    ## Returns
+    - `{responses, errors}` where:
+      - `responses`: A list of tuples `{status, result}`, where `result` is the decoded response
+                     from the corresponding `eth_call` if `status` is `:ok`, or the error message
+                     if `status` is `:error`.
+      - `errors`: A list of error messages, if any element in `responses` contains `:error`.
   """
-  def read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left) when retries_left > 0 do
+  @spec read_contracts_with_retries(
+          [EthereumJSONRPC.Contract.call()],
+          [map()],
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          integer()
+        ) :: {[{:ok | :error, any()}], list()}
+  def read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left)
+      when is_list(requests) and is_list(abi) and is_integer(retries_left) do
+    do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, 0)
+  end
+
+  defp do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, retries_done) do
     responses = ContractReader.query_contracts(requests, abi, json_rpc_named_arguments: json_rpc_named_arguments)
 
     error_messages =
@@ -278,27 +308,60 @@ defmodule Indexer.Helper do
           end
       end)
 
-    if Enum.empty?(error_messages) do
+    if error_messages == [] do
       {responses, []}
     else
       retries_left = retries_left - 1
 
-      if retries_left == 0 do
+      if retries_left <= 0 do
         {responses, Enum.uniq(error_messages)}
       else
         Logger.error("#{List.first(error_messages)}. Retrying...")
-        :timer.sleep(3000)
-        read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left)
+        pause_before_retry(retries_done)
+        do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, retries_done + 1)
       end
     end
   end
 
   @doc """
-  TBD
+    Executes a batch of RPC calls with retry logic for handling errors.
+
+    This function performs a batch of RPC calls, retrying a specified number of times
+    with a progressive delay between each attempt. If, after all retries, some calls
+    remain unsuccessful, it returns the batch responses, which include the results of
+    successful calls or error descriptions.
+
+    ## Parameters
+    - `requests`: A list of `Transport.request()` instances describing the RPC calls.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+    - `error_message_generator`: A function that generates a string containing the error
+                                 message returned by the RPC call.
+    - `retries_left`: The number of retries allowed for any RPC call that returns an error.
+
+    ## Returns
+    - `{:ok, responses}`: When all calls are successful, `responses` is a list of standard
+                          JSON responses, each including `id` and `result` fields.
+    - `{:error, responses}`: When some calls fail, `responses` is a list containing either
+                             standard JSON responses for successful calls (including `id`
+                             and `result` fields) or errors, which may be in an unassured
+                             format.
   """
-  def repeated_batch_call(func, args, error_message, retries_left) do
-    # credo:disable-for-previous-line Credo.Check.Refactor.CyclomaticComplexity
-    case apply(func, args) do
+  @spec repeated_batch_rpc_call([Transport.request()], EthereumJSONRPC.json_rpc_named_arguments(), fun(), integer()) ::
+          {:error, any()} | {:ok, any()}
+  def repeated_batch_rpc_call(requests, json_rpc_named_arguments, error_message_generator, retries_left)
+      when is_list(requests) and is_function(error_message_generator) and is_integer(retries_left) do
+    do_repeated_batch_rpc_call(requests, json_rpc_named_arguments, error_message_generator, retries_left, 0)
+  end
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp do_repeated_batch_rpc_call(
+         requests,
+         json_rpc_named_arguments,
+         error_message_generator,
+         retries_left,
+         retries_done
+       ) do
+    case json_rpc(requests, json_rpc_named_arguments) do
       {:ok, responses_list} = batch_responses ->
         standardized_error =
           Enum.reduce_while(responses_list, %{}, fn one_response, acc ->
@@ -326,12 +389,19 @@ defmodule Indexer.Helper do
         retries_left = retries_left - 1
 
         if retries_left <= 0 do
-          Logger.error(error_message.(message))
+          Logger.error(error_message_generator.(message))
           responses_or_error
         else
-          Logger.error("#{error_message.(message)} Retrying...")
-          :timer.sleep(3000)
-          repeated_batch_call(func, args, error_message, retries_left)
+          Logger.error("#{error_message_generator.(message)} Retrying...")
+          pause_before_retry(retries_done)
+
+          do_repeated_batch_rpc_call(
+            requests,
+            json_rpc_named_arguments,
+            error_message_generator,
+            retries_left,
+            retries_done + 1
+          )
         end
     end
   end
@@ -356,10 +426,7 @@ defmodule Indexer.Helper do
           err
         else
           Logger.error("#{error_message.(message)} Retrying...")
-
-          # wait up to 20 minutes
-          :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
-
+          pause_before_retry(retries_done)
           repeated_call(func, args, error_message, retries_left, retries_done + 1)
         end
     end
@@ -439,5 +506,10 @@ defmodule Indexer.Helper do
     else
       Hash.to_string(topic)
     end
+  end
+
+  defp pause_before_retry(retries_done) do
+    # wait up to 20 minutes
+    :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
   end
 end
