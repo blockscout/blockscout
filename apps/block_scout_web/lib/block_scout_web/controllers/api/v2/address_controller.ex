@@ -87,9 +87,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
            Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true) do
       CoinBalanceOnDemand.trigger_fetch(fully_preloaded_address)
 
-      if is_nil(address.contract_code) do
-        ContractCodeOnDemand.trigger_fetch(address)
-      end
+      ContractCodeOnDemand.trigger_fetch(address)
 
       conn
       |> put_status(200)

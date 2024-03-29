@@ -19,7 +19,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
 
   @spec trigger_fetch(Address.t()) :: :ok
   def trigger_fetch(address) do
-    GenServer.cast(__MODULE__, {:fetch, address})
+    if is_nil(address.contract_code) do
+      GenServer.cast(__MODULE__, {:fetch, address})
+    end
   end
 
   defp fetch_contract_code(address, state) do
