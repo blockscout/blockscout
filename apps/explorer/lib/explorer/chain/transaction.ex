@@ -1008,7 +1008,7 @@ defmodule Explorer.Chain.Transaction do
       names
       |> Enum.with_index()
       |> Enum.map(fn {name, index} ->
-        if name == "" or is_nil(name), do: "arg#{index}", else: name
+        if name == "", do: "arg#{index}", else: name
       end)
 
     {%FunctionSelector{selector | input_names: names}, mapping}
