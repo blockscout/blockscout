@@ -61,6 +61,15 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
   }
   """
 
+  setup do
+    configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+    Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
+    end)
+  end
+
   describe "evaluate_authenticity/2" do
     setup do
       {:ok, contract_code_info: Factory.contract_code_info()}
