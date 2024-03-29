@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schema.Query.NodeTest do
+defmodule BlockScoutWeb.GraphQL.Schema.Query.NodeTest do
   use BlockScoutWeb.ConnCase
 
   describe "node field" do

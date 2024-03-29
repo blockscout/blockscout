@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schema.Subscription.TokenTransfersTest do
+defmodule BlockScoutWeb.GraphQL.Schema.Subscription.TokenTransfersTest do
   use BlockScoutWeb.SubscriptionCase
   import Mox
 

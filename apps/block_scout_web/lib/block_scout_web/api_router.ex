@@ -409,13 +409,14 @@ defmodule BlockScoutWeb.ApiRouter do
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
 
-    @max_complexity 200
-
-    forward("/graphql", Absinthe.Plug,
-      schema: BlockScoutWeb.Schema,
-      analyze_complexity: true,
-      max_complexity: @max_complexity
-    )
+    if Application.compile_env(:block_scout_web, Api.GraphQL)[:enabled] do
+      forward("/graphql", Absinthe.Plug,
+        schema: BlockScoutWeb.GraphQL.Schema,
+        analyze_complexity: true,
+        max_complexity: Application.compile_env(:block_scout_web, Api.GraphQL)[:max_complexity],
+        token_limit: Application.compile_env(:block_scout_web, Api.GraphQL)[:token_limit]
+      )
+    end
 
     get("/transactions-csv", AddressTransactionController, :transactions_csv)
 

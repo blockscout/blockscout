@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schema.Query.TokenTransfersTest do
+defmodule BlockScoutWeb.GraphQL.Schema.Query.TokenTransfersTest do
   use BlockScoutWeb.ConnCase
 
   describe "token_transfers field" do

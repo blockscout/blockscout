@@ -106,6 +106,17 @@ config :block_scout_web, :api_rate_limit,
   api_v2_token_ttl_seconds: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL_IN_SECONDS", 18000),
   eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5)
 
+config :block_scout_web, Api.GraphQL,
+  default_transaction:
+    System.get_env(
+      "API_GRAPHQL_DEFAULT_TRANSACTION",
+      "0x69e3923eef50eada197c3336d546936d0c994211492c9f947a24c02827568f9f"
+    ),
+  enabled: ConfigHelper.parse_bool_env_var("API_GRAPHQL_ENABLED", "true"),
+  token_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_TOKEN_LIMIT", 1000),
+  # Needs to be 200 to support the schema introspection for graphiql
+  max_complexity: ConfigHelper.parse_integer_env_var("API_GRAPHQL_MAX_COMPLEXITY", 200)
+
 # Configures History
 price_chart_config =
   if ConfigHelper.parse_bool_env_var("SHOW_PRICE_CHART") do
