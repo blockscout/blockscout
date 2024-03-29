@@ -44,7 +44,9 @@ defmodule Explorer.Counters.TokenHoldersCounter do
 
   def fetch(address_hash) do
     if cache_expired?(address_hash) do
-      update_cache(address_hash)
+      Task.start_link(fn ->
+        update_cache(address_hash)
+      end)
     end
 
     fetch_count_from_cache(address_hash)
