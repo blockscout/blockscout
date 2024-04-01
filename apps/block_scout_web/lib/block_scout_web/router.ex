@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
-  alias BlockScoutWeb.Plug.GraphQL
+  alias BlockScoutWeb.Plug.{GraphQL, RateLimit}
   alias BlockScoutWeb.{ApiRouter, WebRouter}
 
   if Application.compile_env(:block_scout_web, :admin_panel_enabled) do
@@ -22,16 +22,26 @@ defmodule BlockScoutWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  pipeline :api_v1_graphql do
+    plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(:accepts, ["json"])
+    plug(RateLimit, graphql?: true)
+  end
+
   forward("/api", ApiRouter)
 
-  if Application.compile_env(:block_scout_web, Api.GraphQL)[:enabled] &&
-       Application.compile_env(:block_scout_web, ApiRouter)[:reading_enabled] do
-    forward("/graphiql", Absinthe.Plug.GraphiQL,
-      schema: BlockScoutWeb.GraphQL.Schema,
-      interface: :advanced,
-      default_query: GraphQL.default_query(),
-      socket: BlockScoutWeb.UserSocket
-    )
+  scope "/graphiql" do
+    pipe_through(:api_v1_graphql)
+
+    if Application.compile_env(:block_scout_web, Api.GraphQL)[:enabled] &&
+         Application.compile_env(:block_scout_web, ApiRouter)[:reading_enabled] do
+      forward("/", Absinthe.Plug.GraphiQL,
+        schema: BlockScoutWeb.GraphQL.Schema,
+        interface: :advanced,
+        default_query: GraphQL.default_query(),
+        socket: BlockScoutWeb.UserSocket
+      )
+    end
   end
 
   scope "/", BlockScoutWeb do
