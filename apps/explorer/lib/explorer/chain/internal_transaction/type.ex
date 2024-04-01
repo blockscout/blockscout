@@ -8,6 +8,7 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   @typedoc """
    * `:call`
    * `:create`
+   * `:create2`
    * `:reward`
    * `:selfdestruct`
    * `:stop`

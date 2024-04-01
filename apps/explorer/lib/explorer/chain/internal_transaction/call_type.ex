@@ -21,7 +21,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
    * `:staticcall`
    #{if Application.compile_env(:explorer, :chain_type) == "arbitrum" do
     """
-      * `:arbitrum`
+      * `:invalid`
     """
   else
     ""
