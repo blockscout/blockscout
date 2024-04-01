@@ -107,9 +107,9 @@ config :block_scout_web, :api_rate_limit,
   eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5)
 
 config :block_scout_web, Api.GraphQL,
-  default_transaction:
+  default_transaction_hash:
     System.get_env(
-      "API_GRAPHQL_DEFAULT_TRANSACTION",
+      "API_GRAPHQL_DEFAULT_TRANSACTION_HASH",
       "0x69e3923eef50eada197c3336d546936d0c994211492c9f947a24c02827568f9f"
     ),
   enabled: ConfigHelper.parse_bool_env_var("API_GRAPHQL_ENABLED", "true"),
