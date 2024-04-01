@@ -1,11 +1,14 @@
 defmodule Indexer.Fetcher.Arbitrum.Messaging do
   @moduledoc """
-  TBD
+  Provides functionality for filtering and handling messaging between Layer 1 (L1) and Layer 2 (L2) in the Arbitrum protocol.
+
+  This module is responsible for identifying and processing messages that are transmitted
+  between L1 and L2. It includes functions to filter incoming logs and transactions to
+  find those that represent messages moving between the layers, and to handle the data of
+  these messages appropriately.
   """
-  import EthereumJSONRPC,
-    only: [
-      quantity_to_integer: 1
-    ]
+
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   import Explorer.Helper, only: [decode_data: 2]
 
@@ -22,10 +25,60 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     :bytes
   ]
 
+  @type arbitrum_message :: %{
+          direction: :to_l2 | :from_l2,
+          message_id: non_neg_integer(),
+          originator_address: binary(),
+          originating_tx_hash: binary(),
+          origination_timestamp: DateTime.t(),
+          originating_tx_blocknum: non_neg_integer(),
+          completion_tx_hash: binary(),
+          status: :initiated | :sent | :confirmed | :relayed
+        }
+
+  @typep min_transaction :: %{
+           :hash => binary(),
+           :type => non_neg_integer(),
+           optional(:request_id) => non_neg_integer(),
+           optional(any()) => any()
+         }
+
+  @typep min_log :: %{
+           :data => binary(),
+           :index => non_neg_integer(),
+           :first_topic => binary(),
+           :second_topic => binary(),
+           :third_topic => binary(),
+           :fourth_topic => binary(),
+           :address_hash => binary(),
+           :transaction_hash => binary(),
+           :block_hash => binary(),
+           :block_number => non_neg_integer(),
+           optional(any()) => any()
+         }
+
   @doc """
-  TBD
+    Filters a list of transactions to identify L1-to-L2 messages and composes a map for each with the related message information.
+
+    This function filters through a list of transactions, selecting those with a
+    non-nil `request_id`, indicating they are L1-to-L2 message completions. These
+    filtered transactions are then processed to construct a detailed message
+    structure for each.
+
+    ## Parameters
+    - `transactions`: A list of transaction entries.
+    - `report`: An optional boolean flag (default `true`) that, when `true`, logs
+      the number of processed L1-to-L2 messages if any are found.
+
+    ## Returns
+    - A list of L1-to-L2 messages with detailed information and current status. Every map
+      in the list compatible with the database import operation. All messages in this context
+      are considered `:relayed` as they represent completed actions from L1 to L2.
   """
-  def filter_l1_to_l2_messages(transactions, report \\ true) do
+  @spec filter_l1_to_l2_messages(maybe_improper_list(min_transaction, [])) :: [arbitrum_message]
+  @spec filter_l1_to_l2_messages(maybe_improper_list(min_transaction, []), boolean()) :: [arbitrum_message]
+  def filter_l1_to_l2_messages(transactions, report \\ true)
+      when is_list(transactions) and is_boolean(report) do
     messages =
       transactions
       |> Enum.filter(fn tx ->
@@ -41,9 +94,21 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   end
 
   @doc """
-  TBD
+    Filters logs for L2-to-L1 messages and composes a map for each with the related message information.
+
+    This function filters a list of logs to identify those representing L2-to-L1 messages.
+    It checks each log against the ArbSys contract address and the `L2ToL1Tx` event
+    signature to determine if it corresponds to an L2-to-L1 message.
+
+    ## Parameters
+    - `logs`: A list of log entries.
+
+    ## Returns
+    - A list of L2-to-L1 messages with detailed information and current status. Each map
+    in the list is compatible with the database import operation.
   """
-  def filter_l2_to_l1_messages(logs) do
+  @spec filter_l2_to_l1_messages(maybe_improper_list(min_log, [])) :: [arbitrum_message]
+  def filter_l2_to_l1_messages(logs) when is_list(logs) do
     arbsys_contract = Application.get_env(:indexer, __MODULE__)[:arbsys_contract]
 
     filtered_logs =
@@ -55,11 +120,23 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     handle_filtered_l2_to_l1_messages(filtered_logs)
   end
 
+  @doc """
+    Processes a list of filtered transactions representing L1-to-L2 messages, constructing a detailed message structure for each.
+
+    ## Parameters
+    - `filtered_txs`: A list of transaction entries, each representing an L1-to-L2 message transaction.
+
+    ## Returns
+    - A list of L1-to-L2 messages with detailed information and current status. Every map
+      in the list compatible with the database import operation. All messages in this context
+      are considered `:relayed` as they represent completed actions from L1 to L2.
+  """
+  @spec handle_filtered_l1_to_l2_messages(maybe_improper_list(min_transaction, [])) :: [arbitrum_message]
   def handle_filtered_l1_to_l2_messages([]) do
     []
   end
 
-  def handle_filtered_l1_to_l2_messages(filtered_txs) do
+  def handle_filtered_l1_to_l2_messages(filtered_txs) when is_list(filtered_txs) do
     filtered_txs
     |> Enum.map(fn tx ->
       Logger.debug("L1 to L2 message #{tx.hash} found with the type #{tx.type}")
@@ -69,11 +146,27 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     end)
   end
 
+  @doc """
+    Processes a list of filtered logs representing L2-to-L1 messages, enriching and categorizing them based on their current state.
+
+    This function takes filtered log events, typically representing L2-to-L1 messages, and
+    processes each to construct a comprehensive message structure. Additionally, the function
+    determines the status of each message by comparing its block number against the highest
+    committed and confirmed block numbers retrieved earlier.
+
+    ## Parameters
+    - `filtered_logs`: A list of log entries, where each log represents an L2-to-L1 message event.
+
+    ## Returns
+    - A list of L2-to-L1 messages with detailed information and current status. Compatible with the
+      database import operation.
+  """
+  @spec handle_filtered_l2_to_l1_messages(maybe_improper_list(min_log, [])) :: [arbitrum_message]
   def handle_filtered_l2_to_l1_messages([]) do
     []
   end
 
-  def handle_filtered_l2_to_l1_messages(filtered_logs) do
+  def handle_filtered_l2_to_l1_messages(filtered_logs) when is_list(filtered_logs) do
     # Get values before the loop parsing the events to reduce number of DB requests
     highest_committed_block = Db.highest_committed_block(-1)
     highest_confirmed_block = Db.highest_confirmed_block(-1)
@@ -113,6 +206,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     |> Map.values()
   end
 
+  # Converts an incomplete message structure into a complete parameters map for database updates.
   defp complete_to_params(incomplete) do
     [
       :direction,
@@ -129,6 +223,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     end)
   end
 
+  # Parses an L2-to-L1 event, extracting relevant information from the event's data.
   defp l2_to_l1_event_parse(event) do
     [
       caller,
@@ -144,6 +239,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     {position, caller, arb_block_num, Timex.from_unix(timestamp)}
   end
 
+  # Determines the status of an L2-to-L1 message based on its block number and the highest
+  # committed and confirmed block numbers.
   defp status_l2_to_l1_message(msg_block, highest_committed_block, highest_confirmed_block) do
     cond do
       highest_confirmed_block >= msg_block -> :confirmed
@@ -152,6 +249,16 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     end
   end
 
+  # Finds and updates the status of L2-to-L1 messages that have been executed on L1.
+  # This function iterates over the given messages, identifies those with corresponding L1 executions,
+  # and updates their `completion_tx_hash` and `status` accordingly.
+  #
+  # ## Parameters
+  # - `messages`: A map where each key is a message ID, and each value is the message's details.
+  #
+  # ## Returns
+  # - The updated map of messages with the `completion_tx_hash` and `status` fields updated
+  #   for messages that have been executed.
   defp find_and_update_executed_messages(messages) do
     messages
     |> Map.keys()
