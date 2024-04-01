@@ -348,6 +348,10 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/batches/count", V2.ArbitrumController, :batches_count)
         get("/batches/:batch_number", V2.ArbitrumController, :batch)
       end
+
+    scope "/advanced-filters" do
+      get("/", V2.AdvancedFilterController, :list)
+      get("/methods", V2.AdvancedFilterController, :list_methods)
     end
   end
 
