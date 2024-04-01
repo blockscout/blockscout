@@ -97,13 +97,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   """
   @impl Ecto.Type
   @spec dump(term()) :: {:ok, String.t()} | :error
-  def dump(call_type) when call_type in [:call, :callcode, :delegatecall, :staticcall],
-    do: {:ok, Atom.to_string(call_type)}
-
-  if Application.compile_env(:explorer, :chain_type) == "arbitrum" do
-    def dump(:invalid), do: {:ok, "invalid"}
-  end
-
+  def dump(call_type) when call_type in @call_types, do: {:ok, Atom.to_string(call_type)}
   def dump(_), do: :error
 
   @doc """
