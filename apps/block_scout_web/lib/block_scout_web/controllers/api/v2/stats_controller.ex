@@ -27,6 +27,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       end
 
     exchange_rate = Market.get_coin_exchange_rate()
+    secondary_coin_exchange_rate = Market.get_secondary_coin_exchange_rate()
 
     transaction_stats = Helper.get_transaction_stats()
 
@@ -66,6 +67,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "coin_image" => exchange_rate.image_url,
         "coin_price" => exchange_rate.usd_value,
         "coin_price_change_percentage" => coin_price_change,
+        "secondary_coin_price" => secondary_coin_exchange_rate.usd_value,
         "total_gas_used" => GasUsage.total() |> to_string(),
         "transactions_today" => Enum.at(transaction_stats, 0).number_of_transactions |> to_string(),
         "gas_used_today" => Enum.at(transaction_stats, 0).gas_used,
