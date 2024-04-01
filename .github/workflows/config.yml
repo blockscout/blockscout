@@ -47,12 +47,18 @@ jobs:
       - id: set-matrix
         run: |
           echo "matrix=$(node -e '
+
+            // Add/remove CI matrix chain types here
             const chainTypes = ["ethereum", "polygon_zkevm", "rsk", "stability", "filecoin", "optimism"];
+            const extraChainTypes = ["suave", "polygon_edge"];
+
             const labels = ${{ github.event_name == 'pull_request' && toJson(github.event.pull_request.labels.*.name) || '[]' }};
             const ciLabels = labels.filter(label => label.startsWith("ci:"));
             const ciChainTypes = chainTypes.filter(chainType =>
               ciLabels.length === 0 || ciLabels.includes("ci:all") || ciLabels.includes("ci:" + chainType)
-            );
+            ).concat(extraChainTypes.filter(chainType =>
+              ciLabels.includes("ci:" + chainType)
+            ));
             const matrix = { "chain-type": ciChainTypes };
             console.log(JSON.stringify(matrix));
           ')" >> $GITHUB_OUTPUT
