@@ -13,7 +13,7 @@ defmodule Explorer.Chain.InternalTransaction.Type do
    * `:stop`
    #{if Application.compile_env(:explorer, :chain_type) == "arbitrum" do
     """
-      * `:arbitrum`
+      * `:invalid`
     """
   else
     ""
