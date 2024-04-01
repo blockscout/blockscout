@@ -132,7 +132,9 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
       ) do
     # find and fill all events between start_block and "safe" block
     # the "safe" block can be "latest" (when safe_block_is_latest == true)
-    fill_block_range(start_block, safe_block, message_passer, json_rpc_named_arguments)
+    if start_block <= safe_block do
+      fill_block_range(start_block, safe_block, message_passer, json_rpc_named_arguments)
+    end
 
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
