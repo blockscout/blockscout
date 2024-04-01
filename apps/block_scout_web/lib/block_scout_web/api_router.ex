@@ -346,6 +346,11 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/batches/:batch_number", V2.ZkSyncController, :batch)
       end
     end
+
+    scope "/advanced-filters" do
+      get("/", V2.AdvancedFilterController, :list)
+      get("/methods", V2.AdvancedFilterController, :list_methods)
+    end
   end
 
   scope "/v1/graphql" do
