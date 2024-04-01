@@ -148,7 +148,7 @@ defmodule EthereumJSONRPC.Geth do
     end)
   end
 
-  def debug_trace_block_by_number_requests(id_to_params) do
+  defp debug_trace_block_by_number_requests(id_to_params) do
     Enum.map(id_to_params, &debug_trace_block_by_number_request/1)
   end
 
@@ -197,12 +197,12 @@ defmodule EthereumJSONRPC.Geth do
     end
   end
 
-  def debug_trace_transaction_responses_to_internal_transactions_params(
-        [%{result: %{"structLogs" => _}} | _] = responses,
-        id_to_params,
-        json_rpc_named_arguments
-      )
-      when is_map(id_to_params) do
+  defp debug_trace_transaction_responses_to_internal_transactions_params(
+         [%{result: %{"structLogs" => _}} | _] = responses,
+         id_to_params,
+         json_rpc_named_arguments
+       )
+       when is_map(id_to_params) do
     if tracer_type() not in ["opcode", "polygon_edge"] do
       Logger.warning(
         "structLogs found in debug_traceTransaction response, you should probably change your INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE env value"
@@ -245,12 +245,12 @@ defmodule EthereumJSONRPC.Geth do
     end
   end
 
-  def debug_trace_transaction_responses_to_internal_transactions_params(
-        responses,
-        id_to_params,
-        _json_rpc_named_arguments
-      )
-      when is_list(responses) and is_map(id_to_params) do
+  defp debug_trace_transaction_responses_to_internal_transactions_params(
+         responses,
+         id_to_params,
+         _json_rpc_named_arguments
+       )
+       when is_list(responses) and is_map(id_to_params) do
     responses
     |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&debug_trace_transaction_response_to_internal_transactions_params(&1, id_to_params))
