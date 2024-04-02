@@ -88,14 +88,15 @@ config :block_scout_web, :contract,
   max_length_to_show_string_without_trimming: System.get_env("CONTRACT_MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
   disable_interaction: ConfigHelper.parse_bool_env_var("CONTRACT_DISABLE_INTERACTION")
 
-default_api_rate_limit = 50
+default_global_api_rate_limit = 50
+default_api_rate_limit_by_key = 10
 
 config :block_scout_web, :api_rate_limit,
   disabled: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_DISABLED"),
-  global_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT", default_api_rate_limit),
-  limit_by_key: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_KEY", default_api_rate_limit),
+  global_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT", default_global_api_rate_limit),
+  limit_by_key: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_KEY", default_api_rate_limit_by_key),
   limit_by_whitelisted_ip:
-    ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP", default_api_rate_limit),
+    ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP", default_global_api_rate_limit),
   time_interval_limit: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s"),
   limit_by_ip: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_IP", 3000),
   time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_IP_TIME_INTERVAL", "5m"),
