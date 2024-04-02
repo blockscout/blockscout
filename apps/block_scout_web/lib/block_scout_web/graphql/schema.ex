@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schema do
+defmodule BlockScoutWeb.GraphQL.Schema do
   @moduledoc false
 
   use Absinthe.Schema
@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.Schema do
   alias Absinthe.Middleware.Dataloader, as: AbsintheMiddlewareDataloader
   alias Absinthe.Plugin, as: AbsinthePlugin
 
-  alias BlockScoutWeb.Resolvers.{
+  alias BlockScoutWeb.GraphQL.Resolvers.{
     Address,
     Block,
     InternalTransaction,
@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.Schema do
   alias Explorer.Chain.TokenTransfer, as: ExplorerChainTokenTransfer
   alias Explorer.Chain.Transaction, as: ExplorerChainTransaction
 
-  import_types(BlockScoutWeb.Schema.Types)
+  import_types(BlockScoutWeb.GraphQL.Schema.Types)
 
   node interface do
     resolve_type(fn
@@ -41,19 +41,19 @@ defmodule BlockScoutWeb.Schema do
   query do
     node field do
       resolve(fn
-        %{type: :internal_transaction, id: id}, _ ->
+        %{type: :internal_transaction, id: id}, resolution ->
           %{"transaction_hash" => transaction_hash_string, "index" => index} = Jason.decode!(id)
           {:ok, transaction_hash} = Chain.string_to_transaction_hash(transaction_hash_string)
-          InternalTransaction.get_by(%{transaction_hash: transaction_hash, index: index})
+          InternalTransaction.get_by(%{transaction_hash: transaction_hash, index: index}, resolution)
 
-        %{type: :token_transfer, id: id}, _ ->
+        %{type: :token_transfer, id: id}, resolution ->
           %{"transaction_hash" => transaction_hash_string, "log_index" => log_index} = Jason.decode!(id)
           {:ok, transaction_hash} = Chain.string_to_transaction_hash(transaction_hash_string)
-          TokenTransfer.get_by(%{transaction_hash: transaction_hash, log_index: log_index})
+          TokenTransfer.get_by(%{transaction_hash: transaction_hash, log_index: log_index}, resolution)
 
-        %{type: :transaction, id: transaction_hash_string}, _ ->
+        %{type: :transaction, id: transaction_hash_string}, resolution ->
           {:ok, hash} = Chain.string_to_transaction_hash(transaction_hash_string)
-          Transaction.get_by(%{}, %{hash: hash}, %{})
+          Transaction.get_by(%{}, %{hash: hash}, resolution)
 
         _, _ ->
           {:error, "Unknown node"}
@@ -113,9 +113,16 @@ defmodule BlockScoutWeb.Schema do
   end
 
   def context(context) do
-    loader = Dataloader.add_source(Dataloader.new(), :db, Chain.data())
+    if Application.get_env(:block_scout_web, Api.GraphQL)[:enabled] do
+      loader = Dataloader.add_source(Dataloader.new(), :db, Chain.data())
 
-    Map.put(context, :loader, loader)
+      context
+      |> Map.put(:loader, loader)
+      |> Map.put(:api_enabled, true)
+    else
+      context
+      |> Map.put(:api_enabled, false)
+    end
   end
 
   def plugins do

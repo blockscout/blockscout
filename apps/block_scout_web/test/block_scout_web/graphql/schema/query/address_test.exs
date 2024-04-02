@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schema.Query.AddressTest do
+defmodule BlockScoutWeb.GraphQL.Schema.Query.AddressTest do
   use BlockScoutWeb.ConnCase
 
   describe "address field" do

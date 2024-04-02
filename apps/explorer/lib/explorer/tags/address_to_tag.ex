@@ -11,7 +11,7 @@ defmodule Explorer.Tags.AddressToTag do
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
-  # Notation.import_types(BlockScoutWeb.Schema.Types)
+  # Notation.import_types(BlockScoutWeb.GraphQL.Schema.Types)
 
   @typedoc """
   * `:tag_id` - id of Tag

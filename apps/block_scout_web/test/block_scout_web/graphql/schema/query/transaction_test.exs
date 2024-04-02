@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schema.Query.TransactionTest do
+defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
   use BlockScoutWeb.ConnCase
 
   describe "transaction field" do

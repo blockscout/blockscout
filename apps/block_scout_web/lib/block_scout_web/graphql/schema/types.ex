@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schema.Types do
+defmodule BlockScoutWeb.GraphQL.Schema.Types do
   @moduledoc false
 
   use Absinthe.Schema.Notation
@@ -6,13 +6,13 @@ defmodule BlockScoutWeb.Schema.Types do
 
   import Absinthe.Resolution.Helpers
 
-  alias BlockScoutWeb.Resolvers.{
+  alias BlockScoutWeb.GraphQL.Resolvers.{
     InternalTransaction,
     Transaction
   }
 
   import_types(Absinthe.Type.Custom)
-  import_types(BlockScoutWeb.Schema.Scalars)
+  import_types(BlockScoutWeb.GraphQL.Schema.Scalars)
 
   connection(node_type: :transaction)
   connection(node_type: :internal_transaction)

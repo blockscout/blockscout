@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schema.Scalars do
+defmodule BlockScoutWeb.GraphQL.Schema.Scalars do
   @moduledoc false
 
   use Absinthe.Schema.Notation
@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.Schema.Scalars do
   alias Explorer.Chain.{Data, Hash, Wei}
   alias Explorer.Chain.Hash.{Address, Full, Nonce}
 
-  import_types(BlockScoutWeb.Schema.Scalars.JSON)
+  import_types(BlockScoutWeb.GraphQL.Schema.Scalars.JSON)
 
   @desc """
   The address (40 (hex) characters / 160 bits / 20 bytes) is derived from the public key (128 (hex) characters /
