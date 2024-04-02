@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Account.Api.V1.AuthenticateController do
+defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.Account.Api.V1.AuthenticateController do
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account.Identity
 
-  action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
+  action_fallback(BlockScoutWeb.Account.Api.V2.FallbackController)
 
   def authenticate_get(conn, params) do
     authenticate(conn, params)

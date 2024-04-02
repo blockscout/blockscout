@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Account.Api.V1.AccountView do
+defmodule BlockScoutWeb.Account.Api.V2.AccountView do
   def render("message.json", %{message: message}) do
     %{
       "message" => message
