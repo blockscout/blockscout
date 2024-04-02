@@ -14,6 +14,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
 
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Hash, Token}
+  alias Explorer.Repo
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -132,7 +133,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
 
   @doc """
   Builds an `Ecto.Query` to fetch all token holders, to count it
-  Used in `Explorer.Chain.count_token_holders_from_token_hash/1`
+  Used in `Explorer.Chain.Address.CurrentTokenBalance.count_token_holders_from_token_hash/1`
   """
   def token_holders_query_for_count(token_contract_address_hash) do
     from(
@@ -289,5 +290,15 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       where: tb.address_hash != ^@burn_address_hash,
       where: tb.value > 0
     )
+  end
+
+  @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
+  def count_token_holders_from_token_hash(contract_address_hash) do
+    query =
+      from(ctb in __MODULE__.token_holders_query_for_count(contract_address_hash),
+        select: fragment("COUNT(DISTINCT(?))", ctb.address_hash)
+      )
+
+    Repo.one!(query, timeout: :infinity)
   end
 end
