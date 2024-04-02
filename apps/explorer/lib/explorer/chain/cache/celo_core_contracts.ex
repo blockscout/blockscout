@@ -10,8 +10,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   #     from: 2
   #   ]
 
-  alias Explorer.SmartContract.Reader
   alias Explorer.Celo.AbiHandler
+  alias Explorer.SmartContract.Reader
 
   use Explorer.Chain.MapCache,
     name: :celo_core_contracts,
@@ -23,17 +23,41 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
 
   @registry_proxy_contract_address "0x000000000000000000000000000000000000ce10"
   @nil_address "0x0000000000000000000000000000000000000000"
+  @celo_network System.get_env("CELO_NETWORK") || "mainnet"
 
   @contract_atoms [
-    :gold_token
+    :celo_token
   ]
+
+  defp cache_default(:mainnet) do
+    %{celo_token: "0x471ece3750da237f93b8e339c536989b8978a438"}
+  end
+
+  defp cache_default(:baklava) do
+    %{celo_token: "0xddc9be57f553fe75752d61606b94cbd7e0264ef8"}
+  end
+
+  defp cache_default(:alfajores) do
+    %{celo_token: "0xf194afdf50b03e69bd7d057c1aa9e10c9954e4c9"}
+  end
+
+  defp cache_default(_), do: nil
 
   defp handle_fallback(:contract_addresses) do
     # This will get the task PID if one exists and launch a new task if not
     # See next `handle_fallback` definition
+
     get_async_task()
 
-    {:return, %{}}
+    addresses =
+      case @celo_network do
+        "mainnet" -> cache_default(:mainnet)
+        "baklava" -> cache_default(:baklava)
+        "alfajores" -> cache_default(:alfajores)
+        _ -> nil
+      end
+
+    {:return, addresses}
   end
 
   defp handle_fallback(:async_task) do
@@ -46,8 +70,13 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
             fetch_core_contract_addresses()
             |> Enum.split_with(fn {_, %{address: address}} -> address in [nil, @nil_address] end)
 
-          Enum.each(failed_contracts, fn {name, _} ->
-            Logger.error("Could not fetch address for contract with name #{name}")
+          failed_contracts
+          |> Enum.each(fn
+            {atom, %{address: @nil_address}} ->
+              Logger.warning("Celo Registry returned address #{@nil_address} for contract #{atom}")
+
+            {atom, %{address: nil}} ->
+              Logger.error("Could not fetch address for contract #{atom}l")
           end)
 
           contracts
@@ -71,7 +100,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     {:update, task}
   end
 
-  def fetch_core_contract_addresses() do
+  def fetch_core_contract_addresses do
     @contract_atoms
     |> Enum.map(fn atom ->
       name = to_contract_name(atom)
@@ -106,7 +135,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
 
   defp to_contract_name(contract) do
     case contract do
-      :gold_token -> "GoldToken"
+      :celo_token -> "GoldToken"
       _ -> nil
     end
   end

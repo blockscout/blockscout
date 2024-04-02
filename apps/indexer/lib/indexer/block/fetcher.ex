@@ -53,6 +53,8 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.Blocks, as: TransformBlocks
   alias Indexer.Transform.PolygonZkevm.Bridge, as: PolygonZkevmBridge
 
+  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
+
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
   @type t :: %__MODULE__{}
@@ -150,6 +152,13 @@ defmodule Indexer.Block.Fetcher do
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
+         %{token_transfers: celo_native_token_transfers, tokens: celo_tokens} =
+           CeloTransactionTokenTransfers.parse(
+             transactions_params_without_receipts,
+             logs
+           ),
+         token_transfers = token_transfers ++ celo_native_token_transfers,
+         tokens = Enum.uniq(tokens ++ celo_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          optimism_withdrawals =
