@@ -54,9 +54,9 @@ defmodule BlockScoutWeb.AccessHelper do
   end
 
   def check_rate_limit(conn, graphql?: true) do
-    rate_limit_config = Application.get_env(:block_scout_web, :graphql_rate_limit)
+    rate_limit_config = Application.get_env(:block_scout_web, Api.GraphQL)
 
-    if rate_limit_config[:disabled] do
+    if rate_limit_config[:rate_limit_disabled?] do
       :ok
     else
       check_graphql_rate_limit_inner(conn, rate_limit_config)

@@ -107,16 +107,7 @@ config :block_scout_web, :api_rate_limit,
   api_v2_token_ttl_seconds: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL_IN_SECONDS", 18000),
   eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5)
 
-default_graphql_rate_limit = 5
-
-config :block_scout_web, :graphql_rate_limit,
-  disabled: ConfigHelper.parse_bool_env_var("API_GRAPHQL_RATE_LIMIT_DISABLED"),
-  global_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT", default_graphql_rate_limit),
-  limit_by_key: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_KEY", default_graphql_rate_limit),
-  time_interval_limit: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_TIME_INTERVAL", "1s"),
-  limit_by_ip: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP", 500),
-  time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP_TIME_INTERVAL", "5m"),
-  static_api_key: System.get_env("API_GRAPHQL_RATE_LIMIT_STATIC_API_KEY")
+default_graphql_rate_limit = 10
 
 config :block_scout_web, Api.GraphQL,
   default_transaction_hash:
@@ -127,7 +118,14 @@ config :block_scout_web, Api.GraphQL,
   enabled: ConfigHelper.parse_bool_env_var("API_GRAPHQL_ENABLED", "true"),
   token_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_TOKEN_LIMIT", 1000),
   # Needs to be 215 to support the schema introspection for graphiql
-  max_complexity: ConfigHelper.parse_integer_env_var("API_GRAPHQL_MAX_COMPLEXITY", 215)
+  max_complexity: ConfigHelper.parse_integer_env_var("API_GRAPHQL_MAX_COMPLEXITY", 215),
+  rate_limit_disabled?: ConfigHelper.parse_bool_env_var("API_GRAPHQL_RATE_LIMIT_DISABLED"),
+  global_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT", default_graphql_rate_limit),
+  limit_by_key: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_KEY", default_graphql_rate_limit),
+  time_interval_limit: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_TIME_INTERVAL", "1s"),
+  limit_by_ip: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP", 500),
+  time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP_TIME_INTERVAL", "5m"),
+  static_api_key: System.get_env("API_GRAPHQL_RATE_LIMIT_STATIC_API_KEY")
 
 # Configures History
 price_chart_config =
