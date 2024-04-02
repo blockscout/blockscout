@@ -13,8 +13,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, Hash, Token}
-  alias Explorer.Repo
+  alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -83,12 +82,20 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
 
   """
   def token_holders_ordered_by_value(token_contract_address_hash, options \\ []) do
+    token_contract_address_hash
+    |> token_holders_ordered_by_value_query_without_address_preload(options)
+    |> preload(:address)
+  end
+
+  @doc """
+  Do the same as token_holders_ordered_by_value/2, but `|> preload(:address)` removed
+  """
+  def token_holders_ordered_by_value_query_without_address_preload(token_contract_address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
     token_contract_address_hash
     |> token_holders_query
-    |> preload(:address)
     |> order_by([tb], desc: :value, desc: :address_hash)
     |> Chain.page_token_balances(paging_options)
     |> limit(^paging_options.page_size)
@@ -300,5 +307,27 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       )
 
     Repo.one!(query, timeout: :infinity)
+  end
+
+  @doc """
+  Converts CurrentTokenBalances to CSV format. Used in `BlockScoutWeb.API.V2.CSVExportController.export_token_holders/2`
+  """
+  @spec to_csv_format([t()], Token.t()) :: (any(), any() -> {:halted, any()} | {:suspended, any(), (any() -> any())})
+  def to_csv_format(holders, token) do
+    row_names = [
+      "HolderAddress",
+      "Balance"
+    ]
+
+    holders_list =
+      holders
+      |> Stream.map(fn ctb ->
+        [
+          Address.checksum(ctb.address_hash),
+          CurrencyHelper.divide_decimals(ctb.value, token.decimals)
+        ]
+      end)
+
+    Stream.concat([row_names], holders_list)
   end
 end

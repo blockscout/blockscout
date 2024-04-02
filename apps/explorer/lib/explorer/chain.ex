@@ -4094,6 +4094,16 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
+  @spec fetch_token_holders_from_token_hash_for_csv(Hash.Address.t(), [paging_options | api?]) :: [TokenBalance.t()]
+  def fetch_token_holders_from_token_hash_for_csv(contract_address_hash, options \\ []) do
+    query =
+      contract_address_hash
+      |> CurrentTokenBalance.token_holders_ordered_by_value_query_without_address_preload(options)
+
+    query
+    |> select_repo(options).all()
+  end
+
   def fetch_token_holders_from_token_hash_and_token_id(contract_address_hash, token_id, options \\ []) do
     contract_address_hash
     |> CurrentTokenBalance.token_holders_1155_by_token_id(token_id, options)
