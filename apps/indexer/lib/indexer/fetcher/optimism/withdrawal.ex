@@ -297,10 +297,19 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
   end
 
   defp fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments) do
-    fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, true)
-    fill_msg_nonce_gaps(start_block, message_passer, json_rpc_named_arguments, false)
-    {last_l2_block_number, _} = get_last_l2_item()
-    fill_block_range(max(start_block, last_l2_block_number), end_block, message_passer, json_rpc_named_arguments, false)
+    if start_block <= end_block do
+      fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, true)
+      fill_msg_nonce_gaps(start_block, message_passer, json_rpc_named_arguments, false)
+      {last_l2_block_number, _} = get_last_l2_item()
+
+      fill_block_range(
+        max(start_block, last_l2_block_number),
+        end_block,
+        message_passer,
+        json_rpc_named_arguments,
+        false
+      )
+    end
   end
 
   defp fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments, scan_db \\ true) do
