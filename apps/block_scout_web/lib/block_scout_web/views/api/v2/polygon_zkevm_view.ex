@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain.PolygonZkevm.Reader
   alias Explorer.Chain.Transaction
 
   @doc """
@@ -87,8 +88,8 @@ defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
 
           decimals =
             cond do
-              not is_nil(Map.get(l1_token, :decimals)) -> Map.get(l1_token, :decimals)
-              not is_nil(Map.get(l2_token, :decimals)) -> Map.get(l2_token, :decimals)
+              not is_nil(Map.get(l1_token, :decimals)) -> Reader.sanitize_decimals(Map.get(l1_token, :decimals))
+              not is_nil(Map.get(l2_token, :decimals)) -> Reader.sanitize_decimals(Map.get(l2_token, :decimals))
               true -> env[:native_decimals]
             end
 

@@ -120,6 +120,9 @@ defmodule Indexer.Transform.TransactionActions do
   # 32-byte signature of the event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick);
   @uniswap_v3_swap_event "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67"
 
+  # max number of token decimals
+  @decimals_max 0xFF
+
   @doc """
   Returns a list of transaction actions given a list of logs.
   """
@@ -807,7 +810,7 @@ defmodule Indexer.Transform.TransactionActions do
       |> get_token_data_from_rpc()
 
     if Enum.any?(token_data, fn {_, token} ->
-         is_nil(token.symbol) or token.symbol == "" or is_nil(token.decimals)
+         Map.get(token, :symbol, "") == "" or Map.get(token, :decimals) > @decimals_max
        end) do
       false
     else
@@ -862,7 +865,7 @@ defmodule Indexer.Transform.TransactionActions do
 
         new_data = %{symbol: symbol, decimals: decimals}
 
-        TransactionActionTokensData.put_to_cache(contract_address_hash, new_data)
+        put_to_cache(contract_address_hash, new_data)
 
         Map.put(token_data_acc, contract_address_hash, new_data)
       end)
@@ -884,6 +887,12 @@ defmodule Indexer.Transform.TransactionActions do
       token_data_acc[contract_address_hash].decimals
     else
       decimals
+    end
+  end
+
+  defp put_to_cache(contract_address_hash, new_data) do
+    if Map.get(new_data, :decimals, 0) <= @decimals_max do
+      TransactionActionTokensData.put_to_cache(contract_address_hash, new_data)
     end
   end
 
@@ -911,7 +920,7 @@ defmodule Indexer.Transform.TransactionActions do
 
         new_data = get_new_data(data, request, response)
 
-        TransactionActionTokensData.put_to_cache(request.contract_address, new_data)
+        put_to_cache(request.contract_address, new_data)
 
         Map.put(token_data_acc, request.contract_address, new_data)
       else
