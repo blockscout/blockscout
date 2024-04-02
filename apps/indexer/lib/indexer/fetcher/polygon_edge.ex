@@ -339,7 +339,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
     end)
   end
 
-  @spec fill_block_range(integer(), integer(), {module(), module()}, binary(), list()) :: integer()
+  @spec fill_block_range(integer(), integer(), {module(), module()}, binary(), list()) :: any()
   def fill_block_range(start_block, end_block, {module, table}, contract_address, json_rpc_named_arguments) do
     if start_block <= end_block do
       fill_block_range(start_block, end_block, module, contract_address, json_rpc_named_arguments, true)
