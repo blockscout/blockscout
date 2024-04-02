@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias Explorer.Chain.{DenormalizationHelper, Transaction, Wei}
 
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
   alias Plug.Conn

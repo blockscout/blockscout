@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
   alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
   alias Explorer.Repo
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
   @first_topic_hex_string_2 "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"

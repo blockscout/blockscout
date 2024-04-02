@@ -28,7 +28,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.Chain.{Address, Hash, Transaction}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
-  alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
+
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
   @transaction_necessity_by_association [
     necessity_by_association: %{
@@ -85,6 +88,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
          fully_preloaded_address <-
            Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true) do
       CoinBalanceOnDemand.trigger_fetch(fully_preloaded_address)
+
+      ContractCodeOnDemand.trigger_fetch(address)
 
       conn
       |> put_status(200)
