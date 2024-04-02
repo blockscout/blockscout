@@ -31,7 +31,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-ethereum:latest, blockscout/blockscout-ethereum:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          tags: blockscout/blockscout-ethereum:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           platforms: |
             linux/amd64
           build-args: |
@@ -54,7 +54,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=blockscout/blockscout-shibarium:buildcache
           cache-to: type=registry,ref=blockscout/blockscout-shibarium:buildcache,mode=max
-          tags: blockscout/blockscout-shibarium:latest, blockscout/blockscout-shibarium:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          tags: blockscout/blockscout-shibarium:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           platforms: |
             linux/amd64
           build-args: |
@@ -77,7 +77,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
-          tags: blockscout/blockscout:master, blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          tags: blockscout/blockscout:master, blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           platforms: |
             linux/amd64
             linux/arm64/v8
