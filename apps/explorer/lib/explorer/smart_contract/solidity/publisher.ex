@@ -176,8 +176,9 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("secondary_sources", secondary_sources)
       |> Map.put("compiler_settings", if(is_standard_json?, do: compiler_settings))
       |> Map.put("partially_verified", match_type == "PARTIAL")
-      |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
       |> Map.put("verified_via_sourcify", source["sourcify?"])
+      |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
+      |> Map.put("verified_via_verifier_alliance", source["verifier_alliance?"])
       |> Map.put("license_type", initial_params["license_type"])
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
@@ -236,12 +237,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     constructor_arguments = params["constructor_arguments"]
     compiler_settings = params["compiler_settings"]
 
-    clean_constructor_arguments =
-      if constructor_arguments != nil && constructor_arguments != "" do
-        constructor_arguments
-      else
-        nil
-      end
+    clean_constructor_arguments = clear_constructor_arguments(constructor_arguments)
 
     clean_compiler_settings =
       if compiler_settings in ["", nil, %{}] do
@@ -268,14 +264,23 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       secondary_sources: params["secondary_sources"],
       abi: abi,
       verified_via_sourcify: params["verified_via_sourcify"] || false,
+      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
+      verified_via_verifier_alliance: params["verified_via_verifier_alliance"] || false,
       partially_verified: params["partially_verified"] || false,
       is_vyper_contract: false,
       autodetect_constructor_args: params["autodetect_constructor_args"],
       is_yul: params["is_yul"] || false,
       compiler_settings: clean_compiler_settings,
-      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
       license_type: prepare_license_type(params["license_type"]) || :none
     }
+  end
+
+  defp clear_constructor_arguments(constructor_arguments) do
+    if constructor_arguments != nil && constructor_arguments != "" do
+      constructor_arguments
+    else
+      nil
+    end
   end
 
   defp prepare_external_libraries(nil), do: []
