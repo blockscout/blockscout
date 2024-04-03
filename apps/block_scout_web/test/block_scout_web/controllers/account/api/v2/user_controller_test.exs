@@ -158,7 +158,8 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
                "private_tags" => [],
                "public_tags" => [],
                "watchlist_names" => [],
-               "ens_domain_name" => nil
+               "ens_domain_name" => nil,
+               "metadata" => nil
              }
            }}
         end)
@@ -211,7 +212,8 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
                "private_tags" => [],
                "public_tags" => [],
                "watchlist_names" => [],
-               "ens_domain_name" => nil
+               "ens_domain_name" => nil,
+               "metadata" => nil
              }
            }}
         end)
