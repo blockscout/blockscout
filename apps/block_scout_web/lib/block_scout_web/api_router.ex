@@ -174,6 +174,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/", V2.BlockController, :blocks)
       get("/:block_hash_or_number", V2.BlockController, :block)
       get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
+      get("/:block_hash_or_number/internal-transactions", V2.BlockController, :internal_transactions)
       get("/:block_hash_or_number/withdrawals", V2.BlockController, :withdrawals)
     end
 

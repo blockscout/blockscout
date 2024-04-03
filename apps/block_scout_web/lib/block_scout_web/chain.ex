@@ -480,6 +480,22 @@ defmodule BlockScoutWeb.Chain do
     ]
   end
 
+  # Clause for InternalTransaction by block:
+  #   returned by `BlockScoutWeb.API.V2.BlockController.internal_transactions/2` (`/api/v2/blocks/:block_hash_or_number/internal-transactions`)
+  def paging_options(%{"block_index" => index_string}) when is_binary(index_string) do
+    case Integer.parse(index_string) do
+      {index, ""} ->
+        [paging_options: %{@default_paging_options | key: %{block_index: index}}]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"block_index" => index}) when is_integer(index) do
+    [paging_options: %{@default_paging_options | key: %{block_index: index}}]
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def put_key_value_to_paging_options([paging_options: paging_options], key, value) do
