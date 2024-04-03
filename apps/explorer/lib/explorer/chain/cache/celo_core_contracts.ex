@@ -29,19 +29,14 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     :celo_token
   ]
 
-  defp cache_default(:mainnet) do
-    %{celo_token: "0x471ece3750da237f93b8e339c536989b8978a438"}
+  defp default_addresses do
+    case @celo_network do
+      "mainnet" -> %{celo_token: "0x471ece3750da237f93b8e339c536989b8978a438"}
+      "baklava" -> %{celo_token: "0xddc9be57f553fe75752d61606b94cbd7e0264ef8"}
+      "alfajores" -> %{celo_token: "0xf194afdf50b03e69bd7d057c1aa9e10c9954e4c9"}
+      _ -> nil
+    end
   end
-
-  defp cache_default(:baklava) do
-    %{celo_token: "0xddc9be57f553fe75752d61606b94cbd7e0264ef8"}
-  end
-
-  defp cache_default(:alfajores) do
-    %{celo_token: "0xf194afdf50b03e69bd7d057c1aa9e10c9954e4c9"}
-  end
-
-  defp cache_default(_), do: nil
 
   defp handle_fallback(:contract_addresses) do
     # This will get the task PID if one exists and launch a new task if not
@@ -49,15 +44,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
 
     get_async_task()
 
-    addresses =
-      case @celo_network do
-        "mainnet" -> cache_default(:mainnet)
-        "baklava" -> cache_default(:baklava)
-        "alfajores" -> cache_default(:alfajores)
-        _ -> nil
-      end
-
-    {:return, addresses}
+    {:return, default_addresses()}
   end
 
   defp handle_fallback(:async_task) do
