@@ -845,7 +845,7 @@ defmodule Explorer.Chain do
       json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
       variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-      if variant == EthereumJSONRPC.Ganache || variant == EthereumJSONRPC.Arbitrum do
+      if variant == EthereumJSONRPC.Ganache do
         true
       else
         check_left_blocks_to_index_internal_transactions(options)

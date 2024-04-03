@@ -504,4 +504,108 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
     assert %{block_number: ^block_number, block_hash: ^block_hash} = Repo.one(PendingBlockOperation)
   end
+
+  if Application.compile_env(:explorer, :chain_type) == "arbitrum" do
+    test "fetches internal transactions from Arbitrum", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      json_rpc_named_arguments =
+        json_rpc_named_arguments
+        |> Enum.reject(fn {key, _value} -> key == :variant || key == :transport_options end)
+        |> Enum.concat([{:variant, EthereumJSONRPC.Geth}])
+        |> Enum.concat([{:transport_options, [http_options: []]}])
+
+      block = insert(:block, number: 1)
+      _transaction = :transaction |> insert() |> with_block(block)
+      block_number = block.number
+      block_hash = block.hash
+      insert(:pending_block_operation, block_hash: block_hash, block_number: block_number)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             result: %{
+               "afterEVMTransfers" => [],
+               "beforeEVMTransfers" => [],
+               "calls" => [
+                 %{
+                   "from" => "0x0000000000000000000000000000000000000000",
+                   "gas" => "0x0",
+                   "gasUsed" => "0x0",
+                   "input" => "0x",
+                   "to" => "0x888f05d02ea7b42f32f103c089c1750170830642",
+                   "type" => "INVALID",
+                   "value" => "0xbf676993d52eb8bfe"
+                 },
+                 %{
+                   "from" => "0x888f05d02ea7b42f32f103c089c1750170830642",
+                   "gas" => "0x0",
+                   "gasUsed" => "0x0",
+                   "input" => "0x",
+                   "to" => "0x6cbb552855ce5eb70af49b76a8048be8e3799a05",
+                   "type" => "INVALID",
+                   "value" => "0x0"
+                 },
+                 %{
+                   "from" => "0x888f05d02ea7b42f32f103c089c1750170830642",
+                   "gas" => "0x0",
+                   "gasUsed" => "0x0",
+                   "input" => "0x",
+                   "to" => "0xfdaf8f210d52a3f8ee416ad06ff4a0868bb649d4",
+                   "type" => "INVALID",
+                   "value" => "0x64425bdf7e3fc6462"
+                 },
+                 %{
+                   "from" => "0x888f05d02ea7b42f32f103c089c1750170830642",
+                   "gas" => "0x0",
+                   "gasUsed" => "0x0",
+                   "input" => "0x",
+                   "to" => "0xbeb639f6ac1e9ca8a4badb4e0f888fd150c042cb",
+                   "type" => "INVALID",
+                   "value" => "0x5b250db3e722b43fc"
+                 },
+                 %{
+                   "from" => "0x888f05d02ea7b42f32f103c089c1750170830642",
+                   "gas" => "0x0",
+                   "gasUsed" => "0x0",
+                   "input" => "0x",
+                   "to" => "0xfdaf8f210d52a3f8ee416ad06ff4a0868bb649d4",
+                   "type" => "INVALID",
+                   "value" => "0x6fcc3e3a0"
+                 }
+               ],
+               "from" => "0x888f05d02ea7b42f32f103c089c1750170830642",
+               "gas" => "0x0",
+               "gasUsed" => "0x0",
+               "input" =>
+                 "0xc9f95d32000000000000000000000000000000000000000000000000000000000000000d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000bf676993d52eb8bfe000000000000000000000000000000000000000000000005b250db3e722b43fc00000000000000000000000000000000000000000000000000000000000f439e00000000000000000000000000000000000000000000000000000000000075300000000000000000000000000000000000000000000000064425bdf7e3fc6462000000000000000000000000fdaf8f210d52a3f8ee416ad06ff4a0868bb649d4000000000000000000000000fdaf8f210d52a3f8ee416ad06ff4a0868bb649d4000000000000000000000000fdaf8f210d52a3f8ee416ad06ff4a0868bb649d400000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000000",
+               "to" => "0x000000000000000000000000000000000000006e",
+               "type" => "CALL",
+               "value" => "0x0"
+             }
+           }
+         ]}
+      end)
+
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
+
+      assert :ok == InternalTransaction.run([block_number], json_rpc_named_arguments)
+
+      assert nil == Repo.get(PendingBlockOperation, block_hash)
+
+      int_txs = Repo.all(from(i in Chain.InternalTransaction, where: i.block_hash == ^block_hash))
+
+      assert Enum.count(int_txs) > 0
+
+      last_int_tx = List.last(int_txs)
+
+      assert last_int_tx.type == :call
+      assert last_int_tx.call_type == :invalid
+    end
+  end
 end
