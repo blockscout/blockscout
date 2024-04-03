@@ -333,6 +333,7 @@ config :explorer, Explorer.ExchangeRates.Source,
 cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
+  base_url: System.get_env("EXCHANGE_RATES_COINMARKETCAP_BASE_URL"),
   api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
   coin_id: System.get_env("EXCHANGE_RATES_COINMARKETCAP_COIN_ID"),
   secondary_coin_id: cmc_secondary_coin_id
@@ -341,6 +342,8 @@ cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_I
 
 config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
   platform: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
+  base_url: System.get_env("EXCHANGE_RATES_COINGECKO_BASE_URL"),
+  base_pro_url: System.get_env("EXCHANGE_RATES_COINGECKO_BASE_PRO_URL"),
   api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
   coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
   secondary_coin_id: cg_secondary_coin_id
