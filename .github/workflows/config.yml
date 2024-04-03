@@ -59,13 +59,14 @@ jobs:
 
             const labels = ${{ github.event_name == 'pull_request' && toJson(github.event.pull_request.labels.*.name) || '[]' }};
             const ciLabels = labels.filter(label => label.startsWith("ci:"));
-
-            // Chain type matrix we use in PRs to master branch
-            const ciChainTypes = [].concat(
-              defaultChainTypes.filter(chainType => ciLabels.length === 0 || ciLabels.includes("ci:" + chainType)),
+            const labeledChainTypes = [].concat(
+              defaultChainTypes.filter(chainType => ciLabels.includes("ci:" + chainType)),
               chainTypes.filter(chainType => ciLabels.includes("ci:all") || ciLabels.includes("ci:" + chainType)),
               extraChainTypes.filter(chainType => ciLabels.includes("ci:" + chainType))
             );
+
+            // Chain type matrix we use in PRs to master branch
+            const ciChainTypes = labeledChainTypes.length > 0 ? labeledChainTypes : defaultChainTypes;
 
             const matrix = { "chain-type": ${{ github.event_name == 'pull_request' && 'ciChainTypes' || 'allChainTypes' }} };
             console.log(JSON.stringify(matrix));
