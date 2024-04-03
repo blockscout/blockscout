@@ -8,8 +8,8 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   alias BlockScoutWeb.{AccessHelper, TransactionController}
   alias EthereumJSONRPC
   alias Explorer.{Chain, Market}
-  alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
   alias Explorer.Chain.InternalTransaction
+  alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
 
   def index(conn, %{"transaction_id" => hash_string} = params) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
