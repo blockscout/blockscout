@@ -23,14 +23,13 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
 
   @registry_proxy_contract_address "0x000000000000000000000000000000000000ce10"
   @nil_address "0x0000000000000000000000000000000000000000"
-  @celo_network System.get_env("CELO_NETWORK") || "mainnet"
 
   @contract_atoms [
     :celo_token
   ]
 
   defp default_addresses do
-    case @celo_network do
+    case Application.get_env(:explorer, __MODULE__)[:celo_network] do
       "mainnet" -> %{celo_token: "0x471ece3750da237f93b8e339c536989b8978a438"}
       "baklava" -> %{celo_token: "0xddc9be57f553fe75752d61606b94cbd7e0264ef8"}
       "alfajores" -> %{celo_token: "0xf194afdf50b03e69bd7d057c1aa9e10c9954e4c9"}
