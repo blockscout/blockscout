@@ -138,6 +138,7 @@ defmodule EthereumJSONRPC.Receipt do
 
   """
   @spec elixir_to_params(elixir) :: %{
+          optional(:gas_price) => non_neg_integer(),
           cumulative_gas_used: non_neg_integer,
           gas_used: non_neg_integer,
           created_contract_address_hash: String.t() | nil,
@@ -170,7 +171,14 @@ defmodule EthereumJSONRPC.Receipt do
       transaction_hash: transaction_hash,
       transaction_index: transaction_index
     }
+    |> maybe_append_gas_price(elixir)
   end
+
+  defp maybe_append_gas_price(params, %{"effectiveGasPrice" => effective_gas_price}) do
+    Map.put(params, :gas_price, effective_gas_price)
+  end
+
+  defp maybe_append_gas_price(params, _), do: params
 
   defp chain_type_fields(params, elixir) do
     case Application.get_env(:explorer, :chain_type) do
