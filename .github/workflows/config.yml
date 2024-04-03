@@ -26,6 +26,7 @@ on:
       - 'docker/*'
       - 'docker-compose/*'
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     branches:
       - master
       - production-optimism
