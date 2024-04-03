@@ -47,6 +47,12 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(RateLimit)
   end
 
+  pipeline :api_v1_graphql do
+    plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(:accepts, ["json"])
+    plug(RateLimit, graphql?: true)
+  end
+
   alias BlockScoutWeb.Account.Api.V2.{AuthenticateController, EmailController, TagsController, UserController}
   alias BlockScoutWeb.API.V2
 
@@ -336,6 +342,19 @@ defmodule BlockScoutWeb.ApiRouter do
     end
   end
 
+  scope "/v1/graphql" do
+    pipe_through(:api_v1_graphql)
+
+    if Application.compile_env(:block_scout_web, Api.GraphQL)[:enabled] do
+      forward("/", Absinthe.Plug,
+        schema: BlockScoutWeb.GraphQL.Schema,
+        analyze_complexity: true,
+        max_complexity: Application.compile_env(:block_scout_web, Api.GraphQL)[:max_complexity],
+        token_limit: Application.compile_env(:block_scout_web, Api.GraphQL)[:token_limit]
+      )
+    end
+  end
+
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC, V1}
@@ -344,15 +363,6 @@ defmodule BlockScoutWeb.ApiRouter do
 
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
-
-    if Application.compile_env(:block_scout_web, Api.GraphQL)[:enabled] do
-      forward("/graphql", Absinthe.Plug,
-        schema: BlockScoutWeb.GraphQL.Schema,
-        analyze_complexity: true,
-        max_complexity: Application.compile_env(:block_scout_web, Api.GraphQL)[:max_complexity],
-        token_limit: Application.compile_env(:block_scout_web, Api.GraphQL)[:token_limit]
-      )
-    end
 
     get("/transactions-csv", AddressTransactionController, :transactions_csv)
 
