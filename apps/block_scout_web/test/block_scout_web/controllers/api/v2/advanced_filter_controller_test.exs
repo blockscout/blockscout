@@ -112,12 +112,12 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       end
 
       for tx_type_filter_string <-
-            ~w(coin_transfer coin_transfer,ERC-404 ERC-721,ERC-1155 ERC-20,coin_transfer,ERC-1155) do
+            ~w(COIN_TRANSFER COIN_TRANSFER,ERC-404 ERC-721,ERC-1155 ERC-20,COIN_TRANSFER,ERC-1155) do
         tx_type_filter = tx_type_filter_string |> String.split(",")
         request = get(conn, "/api/v2/advanced-filters", %{"tx_types" => tx_type_filter_string})
         assert response = json_response(request, 200)
 
-        assert Enum.all?(response["items"], fn item -> item["type"] in tx_type_filter end)
+        assert Enum.all?(response["items"], fn item -> String.upcase(item["type"]) in tx_type_filter end)
 
         if response["next_page_params"] do
           request_2nd_page =
@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
           assert response_2nd_page = json_response(request_2nd_page, 200)
 
-          assert Enum.all?(response_2nd_page["items"], fn item -> item["type"] in tx_type_filter end)
+          assert Enum.all?(response_2nd_page["items"], fn item -> String.upcase(item["type"]) in tx_type_filter end)
 
           check_paginated_response(
             AdvancedFilter.list(tx_types: tx_type_filter),
