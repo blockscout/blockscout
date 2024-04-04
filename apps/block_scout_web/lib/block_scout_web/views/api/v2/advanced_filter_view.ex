@@ -38,14 +38,14 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
           nil,
           advanced_filter.from_address,
           advanced_filter.from_address.hash,
-          true
+          false
         ),
       to:
         Helper.address_with_info(
           nil,
           advanced_filter.to_address,
           advanced_filter.to_address.hash,
-          true
+          false
         ),
       value: advanced_filter.value,
       total:
@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
         ),
       token:
         if(advanced_filter.type != "coin_transfer",
-          do: TokenView.render("token.json", %{token: advanced_filter.token}),
+          do: TokenView.render("token.json", %{token: advanced_filter.token_transfer.token}),
           else: nil
         ),
       timestamp: advanced_filter.timestamp,

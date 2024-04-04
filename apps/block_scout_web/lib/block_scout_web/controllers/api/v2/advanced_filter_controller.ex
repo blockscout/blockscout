@@ -66,10 +66,11 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     ]
   end
 
-  @allowed_tx_types ~w(coin_transfer ERC-20 ERC-404 ERC-721 ERC-1155)
+  @allowed_tx_types ~w(COIN_TRANSFER ERC-20 ERC-404 ERC-721 ERC-1155)
 
   defp prepare_tx_types(tx_types) when not is_nil(tx_types) do
     tx_types
+    |> String.upcase()
     |> String.split(",")
     |> Enum.filter(&(&1 in @allowed_tx_types))
   end
