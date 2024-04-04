@@ -61,6 +61,10 @@ defmodule Explorer.Chain.Optimism.OutputRoot do
 
   defp page_output_roots(query, %PagingOptions{key: nil}), do: query
 
+  defp page_output_roots(query, %PagingOptions{key: {0}}) do
+    query
+  end
+
   defp page_output_roots(query, %PagingOptions{key: {index}}) do
     from(r in query, where: r.l2_output_index < ^index)
   end

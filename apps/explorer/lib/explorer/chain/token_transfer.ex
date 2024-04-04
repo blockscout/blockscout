@@ -228,6 +228,18 @@ defmodule Explorer.Chain.TokenTransfer do
     )
   end
 
+  def page_token_transfer(query, %PagingOptions{key: {0, 0}}) do
+    query
+  end
+
+  def page_token_transfer(query, %PagingOptions{key: {block_number, 0}}) do
+    where(
+      query,
+      [tt],
+      tt.block_number < ^block_number
+    )
+  end
+
   def page_token_transfer(query, %PagingOptions{key: {block_number, log_index}}) do
     where(
       query,
@@ -301,6 +313,10 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   defp page_transaction_hashes_from_token_transfers(query, %PagingOptions{key: nil}), do: query
+
+  defp page_transaction_hashes_from_token_transfers(query, %PagingOptions{key: {0, _index}}) do
+    query
+  end
 
   defp page_transaction_hashes_from_token_transfers(query, %PagingOptions{key: {block_number, _index}}) do
     where(

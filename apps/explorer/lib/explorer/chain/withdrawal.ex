@@ -47,6 +47,10 @@ defmodule Explorer.Chain.Withdrawal do
   @spec page_withdrawals(Ecto.Query.t(), PagingOptions.t()) :: Ecto.Query.t()
   def page_withdrawals(query, %PagingOptions{key: nil}), do: query
 
+  def page_withdrawals(query, %PagingOptions{key: {0}}) do
+    query
+  end
+
   def page_withdrawals(query, %PagingOptions{key: {index}}) do
     where(query, [withdrawal], withdrawal.index < ^index)
   end

@@ -327,6 +327,10 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
 
   defp page_deposits_or_withdrawals(query, %PagingOptions{key: nil}), do: query
 
+  defp page_deposits_or_withdrawals(query, %PagingOptions{key: {0}}) do
+    query
+  end
+
   defp page_deposits_or_withdrawals(query, %PagingOptions{key: {index}}) do
     from(b in query, where: b.index < ^index)
   end

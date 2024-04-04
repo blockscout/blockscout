@@ -3221,6 +3221,10 @@ defmodule Explorer.Chain do
 
   defp page_coin_balances(query, %PagingOptions{key: nil}), do: query
 
+  defp page_coin_balances(query, %PagingOptions{key: {0}}) do
+    query
+  end
+
   defp page_coin_balances(query, %PagingOptions{key: {block_number}}) do
     where(query, [coin_balance], coin_balance.block_number < ^block_number)
   end
@@ -3235,6 +3239,15 @@ defmodule Explorer.Chain do
     hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, desc)
   end
 
+  def page_internal_transaction(query, %PagingOptions{key: {index}}, %{index_int_tx_desc_order: desc})
+      when index == 0 do
+    if desc do
+      query
+    else
+      where(query, [internal_transaction], internal_transaction.index > ^index)
+    end
+  end
+
   def page_internal_transaction(query, %PagingOptions{key: {index}}, %{index_int_tx_desc_order: desc}) do
     if desc do
       where(query, [internal_transaction], internal_transaction.index < ^index)
@@ -3242,6 +3255,23 @@ defmodule Explorer.Chain do
       where(query, [internal_transaction], internal_transaction.index > ^index)
     end
   end
+
+  defp hardcoded_where_for_page_int_tx(query, 0, 0, index, false),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number == 0 and internal_transaction.index > ^index
+      )
+
+  defp hardcoded_where_for_page_int_tx(query, block_number, 0, index, false),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and internal_transaction.index > ^index)
+      )
 
   defp hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, false),
     do:
@@ -3253,6 +3283,44 @@ defmodule Explorer.Chain do
              internal_transaction.transaction_index < ^transaction_index) or
           (internal_transaction.block_number == ^block_number and
              internal_transaction.transaction_index == ^transaction_index and internal_transaction.index > ^index)
+      )
+
+  defp hardcoded_where_for_page_int_tx(query, 0, 0, 0, true),
+    do: query
+
+  defp hardcoded_where_for_page_int_tx(query, 0, 0, index, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number == 0 and internal_transaction.index < ^index
+      )
+
+  defp hardcoded_where_for_page_int_tx(query, block_number, 0, 0, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number
+      )
+
+  defp hardcoded_where_for_page_int_tx(query, block_number, 0, index, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and internal_transaction.index < ^index)
+      )
+
+  defp hardcoded_where_for_page_int_tx(query, block_number, transaction_index, 0, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index < ^transaction_index)
       )
 
   defp hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, true),
@@ -3271,6 +3339,26 @@ defmodule Explorer.Chain do
 
   defp page_logs(query, %PagingOptions{key: {index}}) do
     where(query, [log], log.index > ^index)
+  end
+
+  defp page_logs(query, %PagingOptions{key: {0, 0}}) do
+    query
+  end
+
+  defp page_logs(query, %PagingOptions{key: {0, log_index}}) do
+    where(
+      query,
+      [log],
+      log.block_number == 0 and log.index < ^log_index
+    )
+  end
+
+  defp page_logs(query, %PagingOptions{key: {block_number, 0}}) do
+    where(
+      query,
+      [log],
+      log.block_number < ^block_number
+    )
   end
 
   defp page_logs(query, %PagingOptions{key: {block_number, log_index}}) do
@@ -3295,6 +3383,10 @@ defmodule Explorer.Chain do
 
   defp page_block_transactions(query, %PagingOptions{key: {_block_number, index}, is_index_in_asc_order: true}) do
     where(query, [transaction], transaction.index > ^index)
+  end
+
+  defp page_block_transactions(query, %PagingOptions{key: {_block_number, 0}}) do
+    query
   end
 
   defp page_block_transactions(query, %PagingOptions{key: {_block_number, index}}) do

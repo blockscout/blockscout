@@ -1531,12 +1531,32 @@ defmodule Explorer.Chain.Transaction do
   def page_transaction(query, %PagingOptions{is_pending_tx: true} = options),
     do: page_pending_transaction(query, options)
 
+  def page_transaction(query, %PagingOptions{key: {0, index}, is_index_in_asc_order: true}) do
+    where(
+      query,
+      [transaction],
+      transaction.block_number == 0 and transaction.index > ^index
+    )
+  end
+
   def page_transaction(query, %PagingOptions{key: {block_number, index}, is_index_in_asc_order: true}) do
     where(
       query,
       [transaction],
       transaction.block_number < ^block_number or
         (transaction.block_number == ^block_number and transaction.index > ^index)
+    )
+  end
+
+  def page_transaction(query, %PagingOptions{key: {0, 0}}) do
+    query
+  end
+
+  def page_transaction(query, %PagingOptions{key: {block_number, 0}}) do
+    where(
+      query,
+      [transaction],
+      transaction.block_number < ^block_number
     )
   end
 
@@ -1547,6 +1567,10 @@ defmodule Explorer.Chain.Transaction do
       transaction.block_number < ^block_number or
         (transaction.block_number == ^block_number and transaction.index < ^index)
     )
+  end
+
+  def page_transaction(query, %PagingOptions{key: {0}}) do
+    query
   end
 
   def page_transaction(query, %PagingOptions{key: {index}}) do
