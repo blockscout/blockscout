@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   @moduledoc """
-  Handles the discovery and processing of historical messages between Layer 1 (L1) and Layer 2 (L2) within the Arbitrum network.
+  Handles the discovery and processing of historical messages between Layer 1 (L1) and Layer 2 (L2) within an Arbitrum rollup.
 
   L1-to-L2 messages are discovered by requesting rollup transactions through RPC.
   This is necessary because some Arbitrum-specific fields are not included in the

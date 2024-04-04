@@ -68,7 +68,10 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   def filter_bridge_events(events, bridge_contract) do
     Enum.filter(events, fn event ->
       IndexerHelper.address_hash_to_string(event.address_hash, true) == bridge_contract and
-        Enum.member?([@bridge_event, @claim_event_v1, @claim_event_v2], IndexerHelper.log_topic_to_string(event.first_topic))
+        Enum.member?(
+          [@bridge_event, @claim_event_v1, @claim_event_v2],
+          IndexerHelper.log_topic_to_string(event.first_topic)
+        )
     end)
   end
 

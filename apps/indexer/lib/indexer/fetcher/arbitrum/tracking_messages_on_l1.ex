@@ -1,6 +1,31 @@
 defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
   @moduledoc """
-  TBD
+    Manages the tracking and processing of new and historical cross-chain messages initiated on L1 for an Arbitrum rollup.
+
+    This module is responsible for continuously monitoring and importing new messages
+    initiated from Layer 1 (L1) to Arbitrum's Layer 2 (L2), as well as discovering
+    and processing historical messages that were sent previously but have not yet
+    been processed.
+
+    The fetcher's operation is divided into 3 phases, each initiated by sending
+    specific messages:
+    - `:init_worker`: Initializes the worker with the required configuration for message
+      tracking.
+    - `:check_new_msgs_to_rollup`: Processes new L1-to-L2 messages appearing on L1 as
+      the blockchain progresses.
+    - `:check_historical_msgs_to_rollup`: Retrieves historical L1-to-L2 messages that
+      were missed if the message synchronization process did not start from the
+      Arbitrum rollup's inception.
+
+    While the `:init_worker` message is sent only once during the fetcher startup,
+    the subsequent sending of `:check_new_msgs_to_rollup` and
+    `:check_historical_msgs_to_rollup` forms the operation cycle of the fetcher.
+
+    Discovery of L1-to-L2 messages is executed by requesting logs on L1 that correspond
+    to the `MessageDelivered` event emitted by the Arbitrum bridge contract.
+    Cross-chain messages are composed of information from the logs' data as well as from
+    the corresponding transaction details. To get the transaction details, RPC calls
+    `eth_getTransactionByHash` are made in chunks.
   """
 
   use GenServer
@@ -69,9 +94,31 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     {:noreply, state}
   end
 
-  # TBD
+  # Initializes the worker for discovering new and historical L1-to-L2 messages.
+  #
+  # This function prepares the initial parameters for the message discovery process.
+  # It fetches the Arbitrum bridge address and determines the starting block for
+  # new message discovery. If the starting block is not configured (set to a default
+  # value), the latest block number from L1 is used as the start. It also calculates
+  # the end block for historical message discovery.
+  #
+  # After setting these parameters, it immediately transitions to discovering new
+  # messages by sending the `:check_new_msgs_to_rollup` message.
+  #
+  # ## Parameters
+  # - `:init_worker`: The message triggering the initialization.
+  # - `state`: The current state of the process, containing configuration for data
+  #            initialization and further message discovery.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` is updated with the bridge address,
+  #   determined start block for new messages, and calculated end block for
+  #   historical messages.
   @impl GenServer
-  def handle_info(:init_worker, state) do
+  def handle_info(
+        :init_worker,
+        %{config: %{l1_rollup_address: _, json_l1_rpc_named_arguments: _, l1_start_block: _}, data: _} = state
+      ) do
     %{bridge: bridge_address} =
       Rpc.get_contracts_for_rollup(state.config.l1_rollup_address, :bridge, state.config.json_l1_rpc_named_arguments)
 
@@ -101,11 +148,28 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     {:noreply, new_state}
   end
 
-  # TBD
+  # Initiates the process to discover and handle new L1-to-L2 messages initiated from L1.
+  #
+  # This function discovers new messages from L1 to L2 by retrieving logs for the
+  # calculated L1 block range. Discovered events are used to compose messages, which
+  # are then stored in the database.
+  #
+  # After processing, the function immediately transitions to discovering historical
+  # messages by sending the `:check_historical_msgs_to_rollup` message.
+  #
+  # ## Parameters
+  # - `:check_new_msgs_to_rollup`: The message that triggers the handler.
+  # - `state`: The current state of the fetcher, containing configuration and data
+  #            needed for message discovery.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where the starting block for the next new L1-to-L2
+  #   message discovery iteration is updated based on the results of the current
+  #   iteration.
   @impl GenServer
-  def handle_info(:check_new_msgs_to_rollup, state) do
+  def handle_info(:check_new_msgs_to_rollup, %{data: _} = state) do
     {handle_duration, {:ok, end_block}} =
-      :timer.tc(&discover_new_messages_to_l2/1, [
+      :timer.tc(&NewMessagesToL2.discover_new_messages_to_l2/1, [
         state
       ])
 
@@ -120,11 +184,27 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Initiates the process to discover and handle historical L1-to-L2 messages initiated from L1.
+  #
+  # This function discovers historical messages by retrieving logs for a calculated L1 block range.
+  # The discovered events are then used to compose messages to be stored in the database.
+  #
+  # After processing, as it is the final handler in the loop, it schedules the
+  # `:check_new_msgs_to_rollup` message to initiate the next iteration. The scheduling of this
+  # message is delayed, taking into account the time spent on the previous handler's execution.
+  #
+  # ## Parameters
+  # - `:check_historical_msgs_to_rollup`: The message that triggers the handler.
+  # - `state`: The current state of the fetcher, containing configuration and data needed for
+  #            message discovery.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where the end block for the next L1-to-L2 message discovery
+  #   iteration is updated based on the results of the current iteration.
   @impl GenServer
-  def handle_info(:check_historical_msgs_to_rollup, state) do
+  def handle_info(:check_historical_msgs_to_rollup, %{config: %{recheck_interval: _}, data: _} = state) do
     {handle_duration, {:ok, start_block}} =
-      :timer.tc(&discover_historical_messages_to_l2/1, [
+      :timer.tc(&NewMessagesToL2.discover_historical_messages_to_l2/1, [
         state
       ])
 
@@ -141,75 +221,5 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
       })
 
     {:noreply, %{state | data: new_data}}
-  end
-
-  defp discover_new_messages_to_l2(
-         %{
-           config: %{
-             json_l1_rpc_named_arguments: json_rpc_named_arguments,
-             l1_rpc_chunk_size: chunk_size,
-             l1_rpc_block_range: rpc_block_range,
-             l1_bridge_address: bridge_address
-           },
-           data: %{new_msg_to_l2_start_block: start_block}
-         } = _state
-       ) do
-    # Requesting the "latest" block instead of "safe" allows to get messages originated to L2
-    # much earlier than they will be seen by the Arbitrum Sequencer.
-    {:ok, latest_block} =
-      IndexerHelper.get_block_number_by_tag(
-        "latest",
-        json_rpc_named_arguments,
-        Rpc.get_resend_attempts()
-      )
-
-    end_block = min(start_block + rpc_block_range - 1, latest_block)
-
-    if start_block <= end_block do
-      Logger.info("Block range for discovery new messages from L1: #{start_block}..#{end_block}")
-
-      NewMessagesToL2.discover(
-        bridge_address,
-        start_block,
-        end_block,
-        json_rpc_named_arguments,
-        chunk_size
-      )
-
-      {:ok, end_block}
-    else
-      {:ok, start_block - 1}
-    end
-  end
-
-  defp discover_historical_messages_to_l2(
-         %{
-           config: %{
-             json_l1_rpc_named_arguments: json_rpc_named_arguments,
-             l1_rpc_chunk_size: chunk_size,
-             l1_rpc_block_range: rpc_block_range,
-             l1_bridge_address: bridge_address,
-             l1_rollup_init_block: l1_rollup_init_block
-           },
-           data: %{historical_msg_to_l2_end_block: end_block}
-         } = _state
-       ) do
-    if end_block >= l1_rollup_init_block do
-      start_block = max(l1_rollup_init_block, end_block - rpc_block_range + 1)
-
-      Logger.info("Block range for discovery historical messages from L1: #{start_block}..#{end_block}")
-
-      NewMessagesToL2.discover(
-        bridge_address,
-        start_block,
-        end_block,
-        json_rpc_named_arguments,
-        chunk_size
-      )
-
-      {:ok, start_block}
-    else
-      {:ok, l1_rollup_init_block}
-    end
   end
 end

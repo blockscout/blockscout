@@ -301,7 +301,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   # - `state`: The current state of the fetcher containing both the fetcher configuration and data needed to determine the next steps.
   #
   # ## Returns
-  # - `{:noreply, state}`
+  # - `{:noreply, state}` where `state` contains the reset `duration` of the iteration.
   @impl GenServer
   def handle_info(
         :plan_next_iteration,
@@ -321,6 +321,8 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
 
     Process.send_after(self(), :historical_msg_from_l2, next_timeout)
 
-    {:noreply, state}
+    new_data = Map.put(state.data, :duration, 0)
+
+    {:noreply, %{state | data: new_data}}
   end
 end
