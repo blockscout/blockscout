@@ -7,8 +7,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
-
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
 
   alias Indexer.Helper, as: IndexerHelper
@@ -322,7 +320,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
          chunk_size: chunk_size
        }) do
     txs_requests
-    |> ArbitrumHelper.list_to_chunks(chunk_size)
+    |> Enum.chunk_every(chunk_size)
     |> Enum.reduce({%{}, batches}, fn chunk, {l1_txs, updated_batches} ->
       chunk
       # each eth_getTransactionByHash will take time since it returns entire batch

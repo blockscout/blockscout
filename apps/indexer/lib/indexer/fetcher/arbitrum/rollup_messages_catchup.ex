@@ -1,6 +1,51 @@
 defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   @moduledoc """
-  TBD
+    Manages the catch-up process for historical rollup messages between Layer 1 (L1) and Layer 2 (L2) within the Arbitrum network.
+
+    This module aims to discover historical messages that were not captured by the block
+    fetcher or the catch-up block fetcher. This situation arises during the upgrade of an
+    existing instance of BlockScout (BS) that already has indexed blocks but lacks
+    a crosschain messages discovery mechanism. Therefore, it becomes necessary to traverse
+    the already indexed blocks to extract crosschain messages contained within them.
+
+    The fetcher's operation cycle consists of five phases, initiated by sending specific
+    messages:
+    - `:wait_for_new_block`: Waits for the block fetcher to index new blocks before
+      proceeding with message discovery.
+    - `:init_worker`: Sets up the initial parameters for the message discovery process,
+      identifying the ending blocks for the search.
+    - `:historical_msg_from_l2` and `:historical_msg_to_l2`: Manage the discovery and
+      processing of messages sent from L2 to L1 and from L1 to L2, respectively.
+    - `:plan_next_iteration`: Schedules the next iteration of the catch-up process.
+
+    Workflow diagram of the fetcher state changes:
+
+         wait_for_new_block
+                 |
+                 V
+            init_worker
+                 |
+                 V
+    |-> historical_msg_from_l2 -> historical_msg_to_l2 -> plan_next_iteration ->|
+    |---------------------------------------------------------------------------|
+
+    `historical_msg_from_l2` discovers L2-to-L1 messages by analyzing logs from already
+    indexed rollup transactions. Logs representing the `L2ToL1Tx` event are utilized
+    to construct messages. The current rollup state, including information about
+    committed batches and confirmed blocks, is used to assign the appropriate status
+    to the messages before importing them into the database.
+
+    `historical_msg_to_l2` discovers L1-to-L2 messages by requesting rollup
+    transactions through RPC. Transactions containing a `requestId` in their body are
+    utilized to construct messages. These messages are marked as `:relayed`, indicating
+    that they have been successfully received on L2 and are considered completed, and
+    are then imported into the database. This approach is adopted because it parallels
+    the action of re-indexing existing transactions to include Arbitrum-specific fields,
+    which are absent in the currently indexed transactions. However, permanently adding
+    these fields to the database model for the sake of historical message catch-up is
+    impractical. Therefore, to avoid the extensive process of re-indexing and to
+    minimize changes to the database schema, fetching the required data directly from
+    an external node via RPC is preferred for historical message discovery.
   """
 
   use GenServer
@@ -67,9 +112,28 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
     {:noreply, state}
   end
 
-  # TBD
+  # Waits for the next new block to be picked up by the block fetcher before initiating
+  # the worker for message discovery.
+  #
+  # This function checks if a new block has been indexed by the block fetcher since
+  # the start of the historical messages fetcher. It queries the database to find
+  # the closest block timestamped after this period. If a new block is found, it
+  # initiates the worker process for message discovery by sending the `:init_worker`
+  # message. If no new block is available, it reschedules itself to check again after
+  # a specified delay.
+  #
+  # The number of the new block indexed by the block fetcher will be used by the worker
+  # initializer to establish the end of the range where new messages should be discovered.
+  #
+  # ## Parameters
+  # - `:wait_for_new_block`: The message that triggers the waiting process.
+  # - `state`: The current state of the fetcher.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where the new indexed block number is stored, or retain
+  #   the current state while awaiting new blocks.
   @impl GenServer
-  def handle_info(:wait_for_new_block, state) do
+  def handle_info(:wait_for_new_block, %{data: %{time_of_start: _}} = state) do
     {time_of_start, interim_data} =
       if is_nil(Map.get(state.data, :time_of_start)) do
         now = DateTime.utc_now()
@@ -97,9 +161,25 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Sets the initial parameters for discovering historical messages. This function
+  # calculates the end blocks for both L1-to-L2 and L2-to-L1 message discovery
+  # processes based on th earliest messages already indexed. If no messages are
+  # available, the block number before the latest indexed block will be used.
+  # These end blocks are used to initiate the discovery process in subsequent iterations.
+  #
+  # After identifying the initial values, the function immediately transitions to
+  # the L2-to-L1 message discovery process by sending the `:historical_msg_from_l2`
+  # message.
+  #
+  # ## Parameters
+  # - `:init_worker`: The message that triggers the handler.
+  # - `state`: The current state of the fetcher.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where the end blocks for both L1-to-L2 and L2-to-L1
+  #   message discovery are established.
   @impl GenServer
-  def handle_info(:init_worker, state) do
+  def handle_info(:init_worker, %{data: _} = state) do
     historical_msg_from_l2_end_block = Db.rollup_block_to_discover_missed_messages_from_l2(state.data.new_block - 1)
     historical_msg_to_l2_end_block = Db.rollup_block_to_discover_missed_messages_to_l2(state.data.new_block - 1)
 
@@ -115,9 +195,35 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Processes the next iteration of historical L2-to-L1 message discovery.
+  #
+  # This function uses the results from the previous iteration to set the end block
+  # for the current message discovery iteration. It identifies the start block and
+  # requests rollup logs within the specified range to explore `L2ToL1Tx` events.
+  # Discovered events are used to compose messages to be stored in the database.
+  # Before being stored in the database, each message is assigned the appropriate
+  # status based on the current state of the rollup.
+  #
+  # After importing the messages, the function immediately switches to the process
+  # of L1-to-L2 message discovery for the next range of blocks by sending
+  # the `:historical_msg_to_l2` message.
+  #
+  # ## Parameters
+  # - `:historical_msg_from_l2`: The message triggering the handler.
+  # - `state`: The current state of the fetcher containing necessary data like
+  #            the end block identified after the previous iteration of historical
+  #            message discovery from L2.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where the end block for the next L2-to-L1 message
+  #   discovery iteration is updated based on the results of the current iteration.
   @impl GenServer
-  def handle_info(:historical_msg_from_l2, state) do
+  def handle_info(
+        :historical_msg_from_l2,
+        %{
+          data: %{duration: _, historical_msg_from_l2_end_block: _}
+        } = state
+      ) do
     end_block = state.data.historical_msg_from_l2_end_block
 
     {handle_duration, {:ok, start_block}} =
@@ -134,9 +240,36 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Processes the next iteration of historical L1-to-L2 message discovery.
+  #
+  # This function uses the results from the previous iteration to set the end block for
+  # the current message discovery iteration. It identifies the start block and requests
+  # rollup blocks within the specified range through RPC to explore transactions
+  # containing a `requestId` in their body. This RPC request is necessary because the
+  # `requestId` field is not present in the transaction model of already indexed
+  # transactions in the database. The discovered transactions are then used to construct
+  # messages, which are subsequently stored in the database. These imported messages are
+  # marked as `:relayed`, signifying that they represent completed actions from L1 to L2.
+  #
+  # After importing the messages, the function immediately switches to the process
+  # of choosing a delay prior to the next iteration of historical messages discovery
+  # by sending the `:plan_next_iteration` message.
+  #
+  # ## Parameters
+  # - `:historical_msg_to_l2`: The message triggering the handler.
+  # - `state`: The current state of the fetcher containing necessary data, like the end
+  #            block identified after the previous iteration of historical message discovery.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where the end block for the next L1-to-L2 message discovery
+  #   iteration is updated based on the results of the current iteration.
   @impl GenServer
-  def handle_info(:historical_msg_to_l2, state) do
+  def handle_info(
+        :historical_msg_to_l2,
+        %{
+          data: %{duration: _, historical_msg_to_l2_end_block: _}
+        } = state
+      ) do
     end_block = state.data.historical_msg_to_l2_end_block
 
     {handle_duration, {:ok, start_block}} =
@@ -153,9 +286,30 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Schedules the next iteration of historical messages discovery based on the current state and configuration.
+  #
+  # If the processing of historical messages from L1 to L2 and from L2 to L1 is complete
+  # (indicated by their end blocks being less than or equal to 0), it sets a timeout
+  # based on the `recheck_interval` configuration, adjusting for the time already spent.
+  # Otherwise, it sets a short delay to reduce CPU usage before checking again.
+  #
+  # The chosen delay is used to schedule the next iteration of historical messages discovery
+  # by sending `:historical_msg_from_l2`.
+  #
+  # ## Parameters
+  # - `:plan_next_iteration`: The message triggering the handler.
+  # - `state`: The current state of the fetcher containing both the fetcher configuration and data needed to determine the next steps.
+  #
+  # ## Returns
+  # - `{:noreply, state}`
   @impl GenServer
-  def handle_info(:plan_next_iteration, state) do
+  def handle_info(
+        :plan_next_iteration,
+        %{
+          config: %{recheck_interval: _},
+          data: %{duration: _, historical_msg_from_l2_end_block: _, historical_msg_to_l2_end_block: _}
+        } = state
+      ) do
     next_timeout =
       if state.data.historical_msg_from_l2_end_block <= 0 and state.data.historical_msg_to_l2_end_block <= 0 do
         max(:timer.seconds(state.config.recheck_interval) - div(state.data.duration, 1000), 0)

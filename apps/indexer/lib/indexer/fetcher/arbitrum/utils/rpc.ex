@@ -1,12 +1,10 @@
 defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   @moduledoc """
-    TBD
+    Common functions to simplify RPC routines for Indexer.Fetcher.Arbitrum fetchers
   """
 
   import EthereumJSONRPC,
     only: [json_rpc: 2, quantity_to_integer: 1, timestamp_to_datetime: 1]
-
-  import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [list_to_chunks: 2]
 
   alias EthereumJSONRPC.Transport
   alias Indexer.Helper, as: IndexerHelper
@@ -116,6 +114,20 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     )
   end
 
+  # Calls getter functions on a rollup contract and collects their return values.
+  #
+  # This function is designed to interact with a rollup contract and invoke specified getter methods.
+  # It creates a list of requests for each method ID, executes these requests with retries as needed,
+  # and then maps the results to the corresponding method IDs.
+  #
+  # ## Parameters
+  # - `rollup_address`: The address of the rollup contract to interact with.
+  # - `method_ids`: A list of method identifiers representing the getter functions to be called.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - A map where each key is a method identifier converted to an atom, and each value is the
+  #   response from calling the respective method on the contract.
   defp call_simple_getters_in_rollup_contract(rollup_address, method_ids, json_rpc_named_arguments) do
     method_ids
     |> Enum.map(fn method_id ->
@@ -224,11 +236,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           [Transport.request()],
           EthereumJSONRPC.json_rpc_named_arguments(),
           non_neg_integer()
-        ) :: [%{EthereumJSONRPC.block_number() => DateTime.t()}]
+        ) :: %{EthereumJSONRPC.block_number() => DateTime.t()}
   def execute_blocks_requests_and_get_ts(blocks_requests, json_rpc_named_arguments, chunk_size)
       when is_list(blocks_requests) and is_integer(chunk_size) do
     blocks_requests
-    |> list_to_chunks(chunk_size)
+    |> Enum.chunk_every(chunk_size)
     |> Enum.reduce(%{}, fn chunk, result ->
       chunk
       |> make_chunked_request(json_rpc_named_arguments, "eth_getBlockByNumber")
@@ -257,7 +269,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   def execute_transactions_requests_and_get_from(txs_requests, json_rpc_named_arguments, chunk_size)
       when is_list(txs_requests) and is_integer(chunk_size) do
     txs_requests
-    |> list_to_chunks(chunk_size)
+    |> Enum.chunk_every(chunk_size)
     |> Enum.reduce(%{}, fn chunk, result ->
       chunk
       |> make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")

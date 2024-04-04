@@ -58,22 +58,23 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
          }
 
   @doc """
-    Filters a list of transactions to identify L1-to-L2 messages and composes a map for each with the related message information.
+    Filters a list of rollup transactions to identify L1-to-L2 messages and composes a map for each with the related message information.
 
-    This function filters through a list of transactions, selecting those with a
-    non-nil `request_id`, indicating they are L1-to-L2 message completions. These
-    filtered transactions are then processed to construct a detailed message
+    This function filters through a list of rollup transactions, selecting those
+    with a non-nil `request_id`, indicating they are L1-to-L2 message completions.
+    These filtered transactions are then processed to construct a detailed message
     structure for each.
 
     ## Parameters
-    - `transactions`: A list of transaction entries.
+    - `transactions`: A list of rollup transaction entries.
     - `report`: An optional boolean flag (default `true`) that, when `true`, logs
       the number of processed L1-to-L2 messages if any are found.
 
     ## Returns
-    - A list of L1-to-L2 messages with detailed information and current status. Every map
-      in the list compatible with the database import operation. All messages in this context
-      are considered `:relayed` as they represent completed actions from L1 to L2.
+    - A list of L1-to-L2 messages with detailed information and current status. Every
+      map in the list compatible with the database import operation. All messages in
+      this context are considered `:relayed` as they represent completed actions from
+      L1 to L2.
   """
   @spec filter_l1_to_l2_messages(maybe_improper_list(min_transaction, [])) :: [arbitrum_message]
   @spec filter_l1_to_l2_messages(maybe_improper_list(min_transaction, []), boolean()) :: [arbitrum_message]
@@ -121,10 +122,11 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   end
 
   @doc """
-    Processes a list of filtered transactions representing L1-to-L2 messages, constructing a detailed message structure for each.
+    Processes a list of filtered rollup transactions representing L1-to-L2 messages, constructing a detailed message structure for each.
 
     ## Parameters
-    - `filtered_txs`: A list of transaction entries, each representing an L1-to-L2 message transaction.
+    - `filtered_txs`: A list of rollup transaction entries, each representing an L1-to-L2
+      message transaction.
 
     ## Returns
     - A list of L1-to-L2 messages with detailed information and current status. Every map

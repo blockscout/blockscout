@@ -1,9 +1,30 @@
 defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   @moduledoc """
-    TBD
+  Provides utility functions to support the handling of Arbitrum-specific data fetching and processing in the indexer.
   """
 
-  def increase_duration(data, cur_duration) do
+  @doc """
+    Increases a base duration by an amount specified in a map, if present.
+
+    This function takes a map that may contain a duration key and a current duration value.
+    If the map contains a duration, it is added to the current duration; otherwise, the
+    current duration is returned unchanged.
+
+    ## Parameters
+    - `data`: A map that may contain a `:duration` key with its value representing
+      the amount of time to add.
+    - `cur_duration`: The current duration value, to which the duration from the map
+      will be added if present.
+
+    ## Returns
+    - The increased duration.
+  """
+  @spec increase_duration(
+          %{optional(:duration) => non_neg_integer(), optional(any()) => any()},
+          non_neg_integer()
+        ) :: non_neg_integer()
+  def increase_duration(data, cur_duration)
+      when is_map(data) and is_integer(cur_duration) and cur_duration >= 0 do
     if Map.has_key?(data, :duration) do
       data.duration + cur_duration
     else
@@ -11,28 +32,39 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
     end
   end
 
-  def list_to_chunks(l, chunk_size) do
-    {chunks, cur_chunk, cur_chunk_size} =
-      l
-      |> Enum.chunk_every(chunk_size)
-      |> Enum.reduce({[], [], 0}, fn chunk, {chunks, cur_chunk, cur_chunk_size} ->
-        new_cur_chunk = [chunk | cur_chunk]
+  @doc """
+    Enriches lifecycle transaction entries with timestamps and status based on provided block information and finalization tracking.
 
-        if cur_chunk_size + 1 == chunk_size do
-          {[new_cur_chunk | chunks], [], 0}
-        else
-          {chunks, new_cur_chunk, cur_chunk_size + 1}
-        end
-      end)
+    This function takes a map of lifecycle transactions and extends each entry with
+    a timestamp (extracted from a corresponding map of block numbers to timestamps)
+    and a status. The status is determined based on whether finalization tracking is enabled.
 
-    if cur_chunk_size != 0 do
-      [cur_chunk | chunks]
-    else
-      chunks
-    end
-  end
+    ## Parameters
+    - `lifecycle_txs`: A map where each key is a transaction identifier, and the value is
+      a map containing at least the block number (`:block`).
+    - `blocks_to_ts`: A map linking block numbers to their corresponding timestamps.
+    - `track_finalization?`: A boolean flag indicating whether to mark transactions
+      as unfinalized or finalized.
 
-  def extend_lifecycle_txs_with_ts_and_status(lifecycle_txs, blocks_to_ts, track_finalization?) do
+    ## Returns
+    - An updated map of the same structure as `lifecycle_txs` but with each transaction extended to include:
+      - `timestamp`: The timestamp of the block in which the transaction is included.
+      - `status`: Either `:unfinalized` if `track_finalization?` is `true`, or `:finalized` otherwise.
+  """
+  @spec extend_lifecycle_txs_with_ts_and_status(
+          %{binary() => %{:block => non_neg_integer(), optional(any()) => any()}},
+          %{non_neg_integer() => DateTime.t()},
+          boolean()
+        ) :: %{
+          binary() => %{
+            :block => non_neg_integer(),
+            :timestamp => DateTime.t(),
+            :status => :unfinalized | :finalized,
+            optional(any()) => any()
+          }
+        }
+  def extend_lifecycle_txs_with_ts_and_status(lifecycle_txs, blocks_to_ts, track_finalization?)
+      when is_map(lifecycle_txs) and is_map(blocks_to_ts) and is_boolean(track_finalization?) do
     lifecycle_txs
     |> Map.keys()
     |> Enum.reduce(%{}, fn tx_key, updated_txs ->
