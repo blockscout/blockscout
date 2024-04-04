@@ -72,7 +72,7 @@ config :logger, :api_v2,
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :api_v2]
 
-config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
+config :prometheus, BlockScoutWeb.Prometheus.PhoenixInstrumenter,
   # override default for Phoenix 1.4 compatibility
   # * `:transport_name` to `:transport`
   # * remove `:vsn`
