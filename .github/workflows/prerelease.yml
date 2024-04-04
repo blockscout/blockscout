@@ -42,7 +42,7 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=ethereum
 
@@ -68,6 +68,27 @@ jobs:
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=shibarium
+
+      - name: Build and push Docker image for ZkSync
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-zksync:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          platforms: |
+            linux/amd64
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            API_V1_READ_METHODS_DISABLED=false
+            DISABLE_WEBAPP=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=zksync
 
       - name: Build & Push Docker image
         uses: docker/build-push-action@v5
