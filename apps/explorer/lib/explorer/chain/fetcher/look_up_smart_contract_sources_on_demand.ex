@@ -47,8 +47,18 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
       Publisher.broadcast(%{smart_contract_was_verified: [address.hash]}, :on_demand)
     else
       _ ->
-        Publisher.broadcast(%{smart_contract_was_not_verified: [address.hash]}, :on_demand)
-        false
+        with {:ok, %{"sourceType" => type, "matchType" => match_type} = source} <-
+               %{}
+               |> prepare_bytecode_for_microservice(nil, Data.to_string(address.contract_code))
+               |> EthBytecodeDBInterface.search_contract(address.hash),
+             :ok <- check_match_type(match_type, only_full?),
+             {:ok, _} <- process_contract_source(type, source, address.hash) do
+          Publisher.broadcast(%{smart_contract_was_verified: [address.hash]}, :on_demand)
+        else
+          _ ->
+            Publisher.broadcast(%{smart_contract_was_not_verified: [address.hash]}, :on_demand)
+            false
+        end
     end
   end
 
