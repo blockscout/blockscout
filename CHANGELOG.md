@@ -29,6 +29,7 @@
 
 ### 🐛 Bug Fixes
 
+- Apply quantity_to_integer/1 to effectiveGasPrice ([#9812](https://github.com/blockscout/blockscout/issues/9812))
 - Replace tx gas_price with effectiveGasPrice from receipt ([#9733](https://github.com/blockscout/blockscout/issues/9733))
 - Fetching GraphQL schema by GraphiQL IDE ([#9630](https://github.com/blockscout/blockscout/issues/9630))
 - Add block range check into OP Withdrawals fetcher ([#9770](https://github.com/blockscout/blockscout/issues/9770))
