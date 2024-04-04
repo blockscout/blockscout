@@ -8,11 +8,11 @@
 
 ### Chore
 
-
 ## 6.4.0
 
 ### 🚀 Features
 
+- Secondary coin price in `api/v2/stats` ([#9777](https://github.com/blockscout/blockscout/issues/9777))
 - Add /api/v2/blocks/{hash_or_number}/internal-transactions endpoint ([#9668](https://github.com/blockscout/blockscout/issues/9668))
 - Integrate Metadata microservice ([#9706](https://github.com/blockscout/blockscout/issues/9706))
 - Support verifier alliance and eth-bytecode-db v1.7.0 changes ([#9724](https://github.com/blockscout/blockscout/issues/9724))
