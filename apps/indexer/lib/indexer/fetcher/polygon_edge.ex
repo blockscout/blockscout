@@ -339,29 +339,31 @@ defmodule Indexer.Fetcher.PolygonEdge do
     end)
   end
 
-  @spec fill_block_range(integer(), integer(), {module(), module()}, binary(), list()) :: integer()
+  @spec fill_block_range(integer(), integer(), {module(), module()}, binary(), list()) :: any()
   def fill_block_range(start_block, end_block, {module, table}, contract_address, json_rpc_named_arguments) do
-    fill_block_range(start_block, end_block, module, contract_address, json_rpc_named_arguments, true)
+    if start_block <= end_block do
+      fill_block_range(start_block, end_block, module, contract_address, json_rpc_named_arguments, true)
 
-    fill_msg_id_gaps(
-      start_block,
-      table,
-      module,
-      contract_address,
-      json_rpc_named_arguments,
-      false
-    )
+      fill_msg_id_gaps(
+        start_block,
+        table,
+        module,
+        contract_address,
+        json_rpc_named_arguments,
+        false
+      )
 
-    {last_l2_block_number, _} = get_last_l2_item(table)
+      {last_l2_block_number, _} = get_last_l2_item(table)
 
-    fill_block_range(
-      max(start_block, last_l2_block_number),
-      end_block,
-      module,
-      contract_address,
-      json_rpc_named_arguments,
-      false
-    )
+      fill_block_range(
+        max(start_block, last_l2_block_number),
+        end_block,
+        module,
+        contract_address,
+        json_rpc_named_arguments,
+        false
+      )
+    end
   end
 
   @spec fill_msg_id_gaps(integer(), module(), module(), binary(), list(), boolean()) :: no_return()

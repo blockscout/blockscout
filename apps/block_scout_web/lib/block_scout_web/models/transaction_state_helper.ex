@@ -10,7 +10,8 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Block, BlockNumberHelper, Transaction, Wei}
   alias Explorer.Chain.Cache.StateChanges
-  alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash

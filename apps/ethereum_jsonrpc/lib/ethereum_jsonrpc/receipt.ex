@@ -138,6 +138,7 @@ defmodule EthereumJSONRPC.Receipt do
 
   """
   @spec elixir_to_params(elixir) :: %{
+          optional(:gas_price) => non_neg_integer(),
           cumulative_gas_used: non_neg_integer,
           gas_used: non_neg_integer,
           created_contract_address_hash: String.t() | nil,
@@ -170,7 +171,18 @@ defmodule EthereumJSONRPC.Receipt do
       transaction_hash: transaction_hash,
       transaction_index: transaction_index
     }
+    |> maybe_append_gas_price(elixir)
   end
+
+  defp maybe_append_gas_price(params, %{"effectiveGasPrice" => effective_gas_price}) do
+    if is_nil(effective_gas_price) do
+      params
+    else
+      Map.put(params, :gas_price, effective_gas_price)
+    end
+  end
+
+  defp maybe_append_gas_price(params, _), do: params
 
   defp chain_type_fields(params, elixir) do
     case Application.get_env(:explorer, :chain_type) do
@@ -308,11 +320,11 @@ defmodule EthereumJSONRPC.Receipt do
   # hash format
   # gas is passed in from the `t:EthereumJSONRPC.Transaction.params/0` to allow pre-Byzantium status to be derived
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash revertReason type effectiveGasPrice l1FeeScalar),
+       when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash revertReason type l1FeeScalar),
        do: {:ok, entry}
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex blobGasUsed blobGasPrice l1Fee l1GasPrice l1GasUsed) do
+       when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex blobGasUsed blobGasPrice l1Fee l1GasPrice l1GasUsed effectiveGasPrice) do
     result =
       if is_nil(quantity) do
         nil

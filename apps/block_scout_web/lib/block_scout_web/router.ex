@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
-  alias BlockScoutWeb.Plug.GraphQL
+  alias BlockScoutWeb.Plug.{GraphQL, RateLimit}
   alias BlockScoutWeb.{ApiRouter, WebRouter}
 
   if Application.compile_env(:block_scout_web, :admin_panel_enabled) do
@@ -22,25 +22,25 @@ defmodule BlockScoutWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  pipeline :api_v1_graphql do
+    plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(:accepts, ["json"])
+    plug(RateLimit, graphql?: true)
+  end
+
   forward("/api", ApiRouter)
 
-  if Application.compile_env(:block_scout_web, ApiRouter)[:reading_enabled] do
-    # Needs to be 200 to support the schema introspection for graphiql
-    @max_complexity 200
+  scope "/graphiql" do
+    pipe_through(:api_v1_graphql)
 
-    forward("/graphiql", Absinthe.Plug.GraphiQL,
-      schema: BlockScoutWeb.Schema,
-      interface: :advanced,
-      default_query: GraphQL.default_query(),
-      socket: BlockScoutWeb.UserSocket,
-      analyze_complexity: true,
-      max_complexity: @max_complexity
-    )
-  else
-    scope "/", BlockScoutWeb do
-      pipe_through(:browser)
-      get("/api-docs", PageNotFoundController, :index)
-      get("/eth-rpc-api-docs", PageNotFoundController, :index)
+    if Application.compile_env(:block_scout_web, Api.GraphQL)[:enabled] &&
+         Application.compile_env(:block_scout_web, ApiRouter)[:reading_enabled] do
+      forward("/", Absinthe.Plug.GraphiQL,
+        schema: BlockScoutWeb.GraphQL.Schema,
+        interface: :advanced,
+        default_query: GraphQL.default_query(),
+        socket: BlockScoutWeb.UserSocket
+      )
     end
   end
 
@@ -49,8 +49,14 @@ defmodule BlockScoutWeb.Router do
 
     get("/robots.txt", RobotsController, :robots)
     get("/sitemap.xml", RobotsController, :sitemap)
-    get("/api-docs", APIDocsController, :index)
-    get("/eth-rpc-api-docs", APIDocsController, :eth_rpc)
+
+    if Application.compile_env(:block_scout_web, ApiRouter)[:reading_enabled] do
+      get("/api-docs", APIDocsController, :index)
+      get("/eth-rpc-api-docs", APIDocsController, :eth_rpc)
+    else
+      get("/api-docs", PageNotFoundController, :index)
+      get("/eth-rpc-api-docs", PageNotFoundController, :index)
+    end
   end
 
   scope "/verify_smart_contract" do

@@ -25,4 +25,5 @@
   - [ ] If I fixed a bug, I added a regression test to prevent the bug from silently reappearing again.
   - [ ] I checked whether I should update the docs and did so by submitting a PR to https://github.com/blockscout/docs
   - [ ] If I added/changed/removed ENV var, I submitted a PR to https://github.com/blockscout/docs to update the list of env vars at https://github.com/blockscout/docs/blob/master/for-developers/information-and-settings/env-variables.md and I updated the version to `master` in the Version column. Changes will be reflected in this table: https://docs.blockscout.com/for-developers/information-and-settings/env-variables. 
-  - [ ] If I add new indices into DB, I checked, that they are not redundant with PGHero or other tools
+  - [ ] If I added new DB indices, I checked, that they are not redundant with PGHero or other tools.
+  - [ ] If I added/removed chain type, I modified the Github CI matrix and PR labels accordingly.

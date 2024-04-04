@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   alias Explorer.Chain
   alias Explorer.MicroserviceInterfaces.AccountAbstraction
 
-  @address_fields ["bundler", "entry_point", "sender", "address", "factory", "paymaster", "executed_address"]
+  @address_fields ["bundler", "entry_point", "sender", "address", "factory", "paymaster", "execute_target"]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -177,7 +177,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
       end
 
     address_hash_strings
-    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
     |> Enum.map(fn hash_string ->
       case Chain.string_to_address_hash(hash_string) do
@@ -185,7 +185,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
         _ -> nil
       end
     end)
-    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.reject(&is_nil/1)
   end
 
   defp replace_address_hashes(response, addresses) do
@@ -230,25 +230,17 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   end
 
   defp try_to_decode_call_data(%{"call_data" => _call_data} = user_op) do
-    {_mock_tx, _decoded_input, decoded_input_json, address_hash, decoded_data} =
-      TransactionInterpretationService.decode_user_op_calldata(user_op)
+    user_op_hash = user_op["hash"]
 
-    decoded_call_data_map =
-      if Keyword.has_key?(decoded_data, :handle_ops_decoded_call_data) do
-        %{
-          "decoded_handle_ops_call_data" => Keyword.get(decoded_data, :handle_ops_decoded_call_data),
-          "decoded_execute_call_data" => decoded_input_json,
-          "executed_address" => to_string(address_hash)
-        }
-      else
-        %{
-          "decoded_handle_ops_call_data" => decoded_input_json,
-          "decoded_execute_call_data" => nil,
-          "executed_address" => nil
-        }
-      end
+    {_mock_tx, _decoded_call_data, decoded_call_data_json} =
+      TransactionInterpretationService.decode_user_op_calldata(user_op_hash, user_op["call_data"])
 
-    Map.merge(user_op, decoded_call_data_map)
+    {_mock_tx, _decoded_execute_call_data, decoded_execute_call_data_json} =
+      TransactionInterpretationService.decode_user_op_calldata(user_op_hash, user_op["execute_call_data"])
+
+    user_op
+    |> Map.put("decoded_call_data", decoded_call_data_json)
+    |> Map.put("decoded_execute_call_data", decoded_execute_call_data_json)
   end
 
   defp try_to_decode_call_data(response), do: response

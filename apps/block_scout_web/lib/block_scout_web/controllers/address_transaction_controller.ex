@@ -11,8 +11,10 @@ defmodule BlockScoutWeb.AddressTransactionController do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias BlockScoutWeb.{AccessHelper, Controller, TransactionView}
+  alias BlockScoutWeb.API.V2.CSVExportController
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
+  alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
 
   alias Explorer.Chain.CSVExport.{
     AddressInternalTransactionCsvExporter,
@@ -23,7 +25,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias Explorer.Chain.{DenormalizationHelper, Transaction, Wei}
 
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
   alias Plug.Conn
@@ -166,19 +168,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
     end
   end
 
-  defp captcha_helper do
-    :block_scout_web
-    |> Application.get_env(:captcha_helper)
-  end
-
-  defp put_resp_params(conn) do
-    conn
-    |> put_resp_content_type("application/csv")
-    |> put_resp_header("content-disposition", "attachment;")
-    |> put_resp_cookie("csv-downloaded", "true", max_age: 86_400, http_only: false)
-    |> send_chunked(200)
-  end
-
   defp items_csv(
          conn,
          %{
@@ -192,13 +181,13 @@ defmodule BlockScoutWeb.AddressTransactionController do
        when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)},
-         {:recaptcha, true} <- {:recaptcha, captcha_helper().recaptcha_passed?(recaptcha_response)} do
+         {:recaptcha, true} <- {:recaptcha, CSVHelper.captcha_helper().recaptcha_passed?(recaptcha_response)} do
       filter_type = Map.get(params, "filter_type")
       filter_value = Map.get(params, "filter_value")
 
       address_hash
       |> csv_export_module.export(from_period, to_period, filter_type, filter_value)
-      |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
+      |> Enum.reduce_while(CSVExportController.put_resp_params(conn), fn chunk, conn ->
         case Conn.chunk(conn, chunk) do
           {:ok, conn} ->
             {:cont, conn}
@@ -237,7 +226,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
       address_hash
       |> csv_export_module.export(from_period, to_period, filter_type, filter_value)
-      |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
+      |> Enum.reduce_while(CSVExportController.put_resp_params(conn), fn chunk, conn ->
         case Conn.chunk(conn, chunk) do
           {:ok, conn} ->
             {:cont, conn}

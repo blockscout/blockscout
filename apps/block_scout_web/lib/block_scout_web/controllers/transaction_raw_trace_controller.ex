@@ -8,7 +8,8 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   alias BlockScoutWeb.{AccessHelper, TransactionController}
   alias EthereumJSONRPC
   alias Explorer.{Chain, Market}
-  alias Indexer.Fetcher.FirstTraceOnDemand
+  alias Explorer.Chain.InternalTransaction
+  alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
 
   def index(conn, %{"transaction_id" => hash_string} = params) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
@@ -29,7 +30,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
       if is_nil(transaction.block_number) do
         render_raw_trace(conn, [], transaction, hash)
       else
-        internal_transactions = Chain.all_transaction_to_internal_transactions(hash)
+        internal_transactions = InternalTransaction.all_transaction_to_internal_transactions(hash)
 
         first_trace_exists =
           Enum.find_index(internal_transactions, fn trace ->

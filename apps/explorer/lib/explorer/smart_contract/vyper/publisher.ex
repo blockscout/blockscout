@@ -83,7 +83,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
           "sourceFiles" => sources,
           "compilerSettings" => compiler_settings_string,
           "matchType" => match_type
-        },
+        } = source,
         address_hash,
         initial_params,
         save_file_path?,
@@ -111,6 +111,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       |> Map.put("evm_version", compiler_settings["evmVersion"])
       |> Map.put("partially_verified", match_type == "PARTIAL")
       |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
+      |> Map.put("verified_via_verifier_alliance", source["verifier_alliance?"])
       |> Map.put(
         "optimization",
         if(is_nil(compiler_settings["optimize"]), do: true, else: compiler_settings["optimize"])
@@ -180,10 +181,11 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       secondary_sources: params["secondary_sources"],
       abi: abi,
       verified_via_sourcify: false,
+      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
+      verified_via_verifier_alliance: params["verified_via_verifier_alliance"] || false,
       partially_verified: params["partially_verified"] || false,
       is_vyper_contract: true,
       file_path: params["file_path"],
-      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
       compiler_settings: clean_compiler_settings,
       license_type: prepare_license_type(params["license_type"]) || :none
     }

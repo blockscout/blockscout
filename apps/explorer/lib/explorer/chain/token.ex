@@ -81,7 +81,11 @@ defmodule Explorer.Chain.Token do
   alias Ecto.Changeset
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{BridgedToken, Hash, Search, Token}
+  alias Explorer.Repo
   alias Explorer.SmartContract.Helper
+
+  # milliseconds
+  @timeout 60_000
 
   @default_sorting [
     desc_nulls_last: :circulating_market_cap,
@@ -248,5 +252,23 @@ defmodule Explorer.Chain.Token do
       |> select([token], token.contract_address_hash)
 
     (last_address_hash && where(query, [token], token.contract_address_hash > ^last_address_hash)) || query
+  end
+
+  @doc """
+    Updates token_holder_count for a given contract_address_hash.
+    It used by Explorer.Counters.TokenHoldersCounter module.
+  """
+  @spec update_token_holder_count(Hash.Address.t(), integer()) :: {non_neg_integer(), nil}
+  def update_token_holder_count(contract_address_hash, holder_count) when not is_nil(holder_count) do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(t in __MODULE__,
+        where: t.contract_address_hash == ^contract_address_hash,
+        update: [set: [holder_count: ^holder_count, updated_at: ^now]]
+      ),
+      [],
+      timeout: @timeout
+    )
   end
 end

@@ -86,7 +86,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         )
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/counters")
+      assert response = json_response(request, 200)
 
+      Process.sleep(500)
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/counters")
       assert response = json_response(request, 200)
 
       assert response["transfers_count"] == "3"

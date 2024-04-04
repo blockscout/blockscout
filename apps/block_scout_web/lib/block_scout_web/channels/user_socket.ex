@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.UserSocket do
   use Phoenix.Socket
-  use Absinthe.Phoenix.Socket, schema: BlockScoutWeb.Schema
+  use Absinthe.Phoenix.Socket, schema: BlockScoutWeb.GraphQL.Schema
 
   channel("addresses:*", BlockScoutWeb.AddressChannel)
   channel("blocks:*", BlockScoutWeb.BlockChannel)

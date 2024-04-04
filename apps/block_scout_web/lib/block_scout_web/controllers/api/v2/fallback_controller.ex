@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   require Logger
 
-  alias BlockScoutWeb.Account.Api.V1.UserView
+  alias BlockScoutWeb.Account.Api.V2.UserView
   alias BlockScoutWeb.API.V2.ApiView
   alias Ecto.Changeset
 
