@@ -244,21 +244,65 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       end)
 
     error_message = &"Cannot call gameAtIndex() public getter of DisputeGameFactory. Error: #{inspect(&1)}"
-    case IndexerHelper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, retries) do
-      {:ok, results} ->
-        Enum.map(results, fn result ->
-          [game_type, created_at, address] = Helper.decode_data(result.result, [{:uint,32}, {:uint,64}, :address])
+    
+    with {:ok, responses} <- IndexerHelper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, retries),
+         games = decode_games(responses),
+         extra_data_by_index = read_extra_data("0x609d3334", "extraData()", games, json_rpc_named_arguments),
+         false <- is_nil(extra_data_by_index),
+         resolved_at_by_index = read_extra_data("0x19effeb4", "resolvedAt()", games, json_rpc_named_arguments),
+         false <- is_nil(resolved_at_by_index),
+         status_by_index = read_extra_data("0x200d2ed2", "status()", games, json_rpc_named_arguments),
+         false <- is_nil(status_by_index) do
+      Enum.map(games, fn game ->
+        resolved_at =
+          case quantity_to_integer(resolved_at_by_index[game.index]) do
+            0 -> nil
+            value -> Timex.from_unix(value)
+          end
 
-          %{
-            index: result.id,
-            game_type: game_type,
-            address: address,
-            created_at: Timex.from_unix(created_at)
-          }
+        game
+        |> Map.put(:extra_data, extra_data_by_index[game.index])
+        |> Map.put(:resolved_at, resolved_at)
+        |> Map.put(:status, quantity_to_integer(status_by_index[game.index]))
+      end)
+    else
+      _ -> []
+    end
+  end
+
+  defp decode_games(responses) do
+    responses
+    |> Enum.map(fn response ->
+      [game_type, created_at, address] = Helper.decode_data(response.result, [{:uint,32}, {:uint,64}, :address])
+
+      %{
+        index: response.id,
+        game_type: game_type,
+        address: address,
+        created_at: Timex.from_unix(created_at)
+      }
+    end)
+  end
+
+  defp read_extra_data(method_id, method_name, games, json_rpc_named_arguments, retries \\ 10) do
+    requests =
+      games
+      |> Enum.map(fn game ->
+        address = "0x" <> Base.encode16(game.address, case: :lower)
+        Contract.eth_call_request(method_id, address, game.index, nil, nil)
+      end)
+
+    error_message = &"Cannot call #{method_name} public getter of FaultDisputeGame. Error: #{inspect(&1)}"
+    case IndexerHelper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, retries) do
+      {:ok, responses} ->
+        Enum.reduce(responses, %{}, fn response, acc ->
+          game_index = response.id
+          data = response.result
+          Map.put(acc, game_index, data)
         end)
-      
+
       _ ->
-        []
+        nil
     end
   end
 
