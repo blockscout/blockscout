@@ -100,7 +100,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       transaction_types == ["COIN_TRANSFER"] ->
         [transactions_query(paging_options, options), internal_transactions_query(paging_options, options)]
 
-      (is_list(transaction_types) and "COIN_TRANSFER" not in transaction_types) or
+      (is_list(transaction_types) and length(transaction_types) > 0 and "COIN_TRANSFER" not in transaction_types) or
           (is_list(tokens_to_include) and length(tokens_to_include) > 0) ->
         [token_transfers_query(paging_options, options)]
 
@@ -418,6 +418,14 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp filter_by_timestamp(query, %DateTime{} = from, %DateTime{} = to) do
     query |> where(as(:transaction).block_timestamp >= ^from and as(:transaction).block_timestamp <= ^to)
+  end
+
+  defp filter_by_timestamp(query, %DateTime{} = from, _to) do
+    query |> where(as(:transaction).block_timestamp >= ^from)
+  end
+
+  defp filter_by_timestamp(query, _from, %DateTime{} = to) do
+    query |> where(as(:transaction).block_timestamp <= ^to)
   end
 
   defp filter_by_timestamp(query, _, _), do: query

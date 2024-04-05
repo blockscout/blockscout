@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp parse_date(string_date) do
     case string_date && DateTime.from_iso8601(string_date) do
-      {:ok, date, utc_offset} -> Timex.shift(date, seconds: utc_offset)
+      {:ok, date, _utc_offset} -> date
       _ -> nil
     end
   end
