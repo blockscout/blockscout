@@ -153,10 +153,7 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{token_transfers: celo_native_token_transfers, tokens: celo_tokens} =
-           CeloTransactionTokenTransfers.parse(
-             transactions_params_without_receipts,
-             logs
-           ),
+           CeloTransactionTokenTransfers.parse_transactions(transactions_params_without_receipts),
          token_transfers = token_transfers ++ celo_native_token_transfers,
          tokens = Enum.uniq(tokens ++ celo_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
