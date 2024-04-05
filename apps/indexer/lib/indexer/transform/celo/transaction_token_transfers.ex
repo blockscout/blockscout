@@ -36,7 +36,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
         transactions
         |> Enum.filter(fn tx -> tx.value > 0 end)
         |> Enum.map(fn tx ->
-          to_address_hash = tx.to_address_hash || tx.created_contract_address_hash
+          to_address_hash = Map.get(tx, :to_address_hash, nil) || Map.get(tx, :created_contract_address_hash, nil)
           log_index = -1 * (tx.index + 1) * @transaction_buffer_size
 
           %{
@@ -66,7 +66,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
     def parse_internal_transactions(transactions) do
       token_transfers =
         transactions
-        |> Enum.filter(fn {tx, _} ->
+        |> Enum.filter(fn tx ->
           tx.value > 0 &&
             tx.index > 0 &&
             not Map.has_key?(tx, :error) &&

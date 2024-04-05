@@ -10,15 +10,22 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   require Logger
 
-  import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
+  import Indexer.Block.Fetcher,
+    only: [
+      async_import_coin_balances: 2,
+      async_import_token_balances: 1
+    ]
 
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Accounts, Blocks}
+  alias Explorer.Chain.Cache.CeloCoreContracts
+  alias Explorer.Chain.Import.Runner.Blocks, as: BlocksRunner
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
   alias Indexer.Transform.Addresses
+  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
 
   @behaviour BufferedTask
 
@@ -81,8 +88,23 @@ defmodule Indexer.Fetcher.InternalTransaction do
     final
   end
 
-  defp params(%{block_number: block_number, hash: hash, index: index}) when is_integer(block_number) do
-    %{block_number: block_number, hash_data: to_string(hash), transaction_index: index}
+  # defp params(%{block_number: block_number, hash: hash, index: index}) when is_integer(block_number) do
+  #   %{block_number: block_number, hash_data: to_string(hash), transaction_index: index}
+  # end
+
+  defp params(%{
+         block_number: block_number,
+         hash: hash,
+         index: index,
+         block_hash: block_hash
+       })
+       when is_integer(block_number) do
+    %{
+      block_number: block_number,
+      hash_data: to_string(hash),
+      transaction_index: index,
+      block_hash: block_hash
+    }
   end
 
   @impl BufferedTask
@@ -219,17 +241,26 @@ defmodule Indexer.Fetcher.InternalTransaction do
           [] ->
             {:ok, []}
 
-          transactions ->
+          [%{block_hash: block_hash} | _] = transactions ->
             try do
-              EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
+              {block_hash, EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)}
             catch
               :exit, error ->
                 {:error, error, __STACKTRACE__}
             end
         end
         |> case do
-          {:ok, internal_transactions} -> {:ok, internal_transactions ++ acc_list}
-          error_or_ignore -> error_or_ignore
+          {block_hash, {:ok, internal_transactions}} ->
+            {
+              :ok,
+              Enum.map(
+                internal_transactions,
+                fn tx -> Map.put(tx, :block_hash, block_hash) end
+              ) ++ acc_list
+            }
+
+          error_or_ignore ->
+            error_or_ignore
         end
 
       _, error_or_ignore ->
@@ -253,8 +284,46 @@ defmodule Indexer.Fetcher.InternalTransaction do
       {:retry, block_numbers}
   end
 
+  if Application.compile_env(:explorer, :chain_type) == "celo" do
+    defp decode("0x" <> str) do
+      %{bytes: Base.decode16!(str, case: :mixed)}
+    end
+
+    defp add_celo_token_balances(addresses, celo_token) do
+      initial = MapSet.new()
+
+      Enum.reduce(addresses, initial, fn
+        %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
+          MapSet.put(acc, %{
+            address_hash: decode(hash),
+            token_contract_address_hash: decode(celo_token),
+            block_number: bn,
+            token_type: "ERC-20",
+            token_id: nil
+          })
+
+        _, acc ->
+          acc
+      end)
+      |> MapSet.to_list()
+    end
+
+    defp async_import_celo_token_balances(addresses) do
+      celo_token = CeloCoreContracts.get_contract_addresses().celo_token
+
+      async_import_token_balances(%{
+        address_token_balances: add_celo_token_balances(addresses, celo_token)
+      })
+    end
+  else
+    defp async_import_celo_token_balances(_addresses), do: :ok
+  end
+
   defp import_internal_transaction(internal_transactions_params, unique_numbers) do
     internal_transactions_params_marked = mark_failed_transactions(internal_transactions_params)
+
+    %{token_transfers: celo_native_token_transfers, tokens: _} =
+      CeloTransactionTokenTransfers.parse_internal_transactions(internal_transactions_params_marked)
 
     addresses_params =
       Addresses.extract_addresses(%{
@@ -276,6 +345,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     imports =
       Chain.import(%{
+        token_transfers: %{params: celo_native_token_transfers},
         addresses: %{params: addresses_params},
         internal_transactions: %{params: internal_transactions_and_empty_block_numbers, with: :blockless_changeset},
         timeout: :infinity
@@ -289,6 +359,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
         async_import_coin_balances(imported, %{
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number
         })
+
+        async_import_celo_token_balances(addresses_params)
 
       {:error, step, reason, _changes_so_far} ->
         Logger.error(
