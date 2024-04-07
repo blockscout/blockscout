@@ -314,4 +314,21 @@ defmodule Explorer.Chain.Log do
     |> limit(1)
     |> Chain.select_repo(options).one()
   end
+
+  @doc """
+  Fetches logs by user operation.
+  """
+  @spec user_op_to_logs(map(), Keyword.t()) :: [t()]
+  def user_op_to_logs(user_op, options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    limit = Keyword.get(options, :limit, 50)
+
+    __MODULE__
+    |> where([log], log.block_hash == ^user_op["block_hash"] and log.transaction_hash == ^user_op["transaction_hash"])
+    |> where([log], log.index >= ^user_op["user_logs_start_index"])
+    |> order_by([log], asc: log.index)
+    |> limit(^min(user_op["user_logs_count"], limit))
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
+  end
 end

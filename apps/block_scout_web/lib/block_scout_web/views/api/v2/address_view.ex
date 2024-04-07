@@ -230,7 +230,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         ) :: map()
   def fetch_and_render_token_instance(token_id, token, address_hash, token_balance) do
     token_instance =
-      case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(
+      case Chain.nft_instance_from_token_id_and_token_address(
              token_id,
              token.contract_address_hash,
              @api_true

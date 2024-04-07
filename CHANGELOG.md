@@ -4,7 +4,89 @@
 
 ### Features
 
-- [#9490](https://github.com/blockscout/blockscout/pull/9490) - Add blob transaction counter and filter in block view
+### Fixes
+
+### Chore
+
+## 6.4.0
+
+### 🚀 Features
+
+- Secondary coin price in `api/v2/stats` ([#9777](https://github.com/blockscout/blockscout/issues/9777))
+- Add /api/v2/blocks/{hash_or_number}/internal-transactions endpoint ([#9668](https://github.com/blockscout/blockscout/issues/9668))
+- Integrate Metadata microservice ([#9706](https://github.com/blockscout/blockscout/issues/9706))
+- Support verifier alliance and eth-bytecode-db v1.7.0 changes ([#9724](https://github.com/blockscout/blockscout/issues/9724))
+- Add rate limits to graphQL API ([#9771](https://github.com/blockscout/blockscout/issues/9771))
+- Support for internal user operation calldata decoded by microservice ([#9776](https://github.com/blockscout/blockscout/issues/9776))
+- Internal txs fetching for Arbitrum ([#9737](https://github.com/blockscout/blockscout/issues/9737))
+- Allow for custom base_url for fetching prices ([#9679](https://github.com/blockscout/blockscout/issues/9679))
+- Contract code on-demand fetcher ([#9708](https://github.com/blockscout/blockscout/issues/9708))
+- Add /api/v2/tokens/:address_hash_param/holders/csv endpoint ([#9722](https://github.com/blockscout/blockscout/issues/9722))
+- Support the 2nd version of L2<->L1 Polygon zkEVM Bridge ([#9637](https://github.com/blockscout/blockscout/issues/9637))
+- GraphQL management env vars ([#9751](https://github.com/blockscout/blockscout/issues/9751))
+- Improvements in zksync batch related transactions requests ([#9680](https://github.com/blockscout/blockscout/issues/9680))
+- Add trying to decode internal calldata for user ops ([#9675](https://github.com/blockscout/blockscout/issues/9675))
+
+### 🐛 Bug Fixes
+
+- Apply quantity_to_integer/1 to effectiveGasPrice ([#9812](https://github.com/blockscout/blockscout/issues/9812))
+- Replace tx gas_price with effectiveGasPrice from receipt ([#9733](https://github.com/blockscout/blockscout/issues/9733))
+- Fetching GraphQL schema by GraphiQL IDE ([#9630](https://github.com/blockscout/blockscout/issues/9630))
+- Add block range check into OP Withdrawals fetcher ([#9770](https://github.com/blockscout/blockscout/issues/9770))
+- Update token's holder_count in the db from ETS module ([#9623](https://github.com/blockscout/blockscout/issues/9623))
+- Fix UTF-8 json handling in NFT metadata fetching ([#9707](https://github.com/blockscout/blockscout/issues/9707))
+- Separate ZkSync and ZkEvm readers in API controller ([#9749](https://github.com/blockscout/blockscout/issues/9749))
+- Add missing preloads ([#9520](https://github.com/blockscout/blockscout/issues/9520))
+- Change CoinGecko token image attribute priority ([#9671](https://github.com/blockscout/blockscout/issues/9671))
+- Fix Geth block tracing errors handling ([#9672](https://github.com/blockscout/blockscout/issues/9672))
+- Erc-404 token transfers null value ([#9698](https://github.com/blockscout/blockscout/issues/9698))
+- Erc-404 type stored in token balances tables ([#9700](https://github.com/blockscout/blockscout/issues/9700))
+
+### 🚜 Refactor
+
+- `Enum.count` to `Enum.empty?` ([#9666](https://github.com/blockscout/blockscout/issues/9666))
+
+### ⚡ Performance
+
+- Add EIP4844 blob transactions index ([#9661](https://github.com/blockscout/blockscout/issues/9661))
+
+### ⚙️ Miscellaneous Tasks
+
+- Rework chain type matrix in CI runs ([#9704](https://github.com/blockscout/blockscout/issues/9704))
+- Exclude latest tag update from alpha releases ([#9800](https://github.com/blockscout/blockscout/issues/9800))
+- Reduce default API v1 limit by key 50 -> 10 ([#9799](https://github.com/blockscout/blockscout/issues/9799))
+- Bump autoprefixer in /apps/block_scout_web/assets ([#9786](https://github.com/blockscout/blockscout/issues/9786))
+- Remove /api/account/v1 path ([#9660](https://github.com/blockscout/blockscout/issues/9660))
+- Bump sass from 1.71.1 to 1.72.0 in /apps/block_scout_web/assets ([#9780](https://github.com/blockscout/blockscout/issues/9780))
+- Bump @babel/core in /apps/block_scout_web/assets ([#9782](https://github.com/blockscout/blockscout/issues/9782))
+- Bump webpack in /apps/block_scout_web/assets ([#9787](https://github.com/blockscout/blockscout/issues/9787))
+- Bump postcss in /apps/block_scout_web/assets ([#9785](https://github.com/blockscout/blockscout/issues/9785))
+- Bump @amplitude/analytics-browser in /apps/block_scout_web/assets ([#9788](https://github.com/blockscout/blockscout/issues/9788))
+- Bump solc from 0.8.24 to 0.8.25 in /apps/explorer ([#9789](https://github.com/blockscout/blockscout/issues/9789))
+- Bump sweetalert2 in /apps/block_scout_web/assets ([#9783](https://github.com/blockscout/blockscout/issues/9783))
+- Bump @babel/preset-env in /apps/block_scout_web/assets ([#9784](https://github.com/blockscout/blockscout/issues/9784))
+- Bump core-js in /apps/block_scout_web/assets ([#9781](https://github.com/blockscout/blockscout/issues/9781))
+- Enable Rust sc-verifier microservice by default ([#9752](https://github.com/blockscout/blockscout/issues/9752))
+- Temporarily ignore OP batches written to Celestia ([#9734](https://github.com/blockscout/blockscout/issues/9734))
+- Bump cldr_utils from 2.24.2 to 2.25.0 ([#9723](https://github.com/blockscout/blockscout/issues/9723))
+- Bump express in /apps/block_scout_web/assets ([#9725](https://github.com/blockscout/blockscout/issues/9725))
+- Bump bureaucrat from 0.2.9 to 0.2.10 ([#9669](https://github.com/blockscout/blockscout/issues/9669))
+- Fix typos ([#9693](https://github.com/blockscout/blockscout/issues/9693))
+- Bump follow-redirects from 1.15.4 to 1.15.6 in /apps/explorer ([#9648](https://github.com/blockscout/blockscout/issues/9648))
+- Bump floki from 0.36.0 to 0.36.1 ([#9670](https://github.com/blockscout/blockscout/issues/9670))
+- Use git-cliff changelog generator ([#9687](https://github.com/blockscout/blockscout/issues/9687))
+
+## 6.3.0
+
+### Features
+
+- [#9631](https://github.com/blockscout/blockscout/pull/9631) - Initial support of zksync chain type
+- [#9532](https://github.com/blockscout/blockscout/pull/9532) - Add last output root size counter
+- [#9511](https://github.com/blockscout/blockscout/pull/9511) - Separate errors by type in EndpointAvailabilityObserver
+- [#9490](https://github.com/blockscout/blockscout/pull/9490), [#9644](https://github.com/blockscout/blockscout/pull/9644) - Add blob transaction counter and filter in block view
+- [#9486](https://github.com/blockscout/blockscout/pull/9486) - Massive blocks fetcher
+- [#9483](https://github.com/blockscout/blockscout/pull/9483) - Add secondary coin and transaction stats
+- [#9473](https://github.com/blockscout/blockscout/pull/9473) - Add user_op interpretation
 - [#9461](https://github.com/blockscout/blockscout/pull/9461) - Fetch blocks without internal transactions backwards
 - [#9460](https://github.com/blockscout/blockscout/pull/9460) - Optimism chain type
 - [#9409](https://github.com/blockscout/blockscout/pull/9409) - ETH JSON RPC extension
@@ -15,17 +97,30 @@
 
 ### Fixes
 
+- [#9654](https://github.com/blockscout/blockscout/pull/9654) - Send timeout param in debug_traceBlockByNumber request
+- [#9653](https://github.com/blockscout/blockscout/pull/9653) - Tokens import improvements
+- [#9652](https://github.com/blockscout/blockscout/pull/9652) - Remove duplicated tx hashes while indexing OP batches
+- [#9646](https://github.com/blockscout/blockscout/pull/9646) - Hotfix for Optimism Ecotone batch blobs indexing
+- [#9640](https://github.com/blockscout/blockscout/pull/9640) - Fix no function clause matching in `BENS.item_to_address_hash_strings/1`
+- [#9638](https://github.com/blockscout/blockscout/pull/9638) - Do not broadcast coin balance changes with empty value/delta
+- [#9635](https://github.com/blockscout/blockscout/pull/9635) - Reset missing ranges collector to max number after the cycle is done
+- [#9629](https://github.com/blockscout/blockscout/pull/9629) - Don't insert pbo for not inserted blocks
+- [#9620](https://github.com/blockscout/blockscout/pull/9620) - Fix infinite retries for orphaned blobs
 - [#9601](https://github.com/blockscout/blockscout/pull/9601) - Fix token instance transform for some unconventional tokens
 - [#9597](https://github.com/blockscout/blockscout/pull/9597) - Update token transfers block_consensus by block_number
 - [#9596](https://github.com/blockscout/blockscout/pull/9596) - Fix logging
 - [#9585](https://github.com/blockscout/blockscout/pull/9585) - Fix Geth block internal transactions fetching
+- [#9576](https://github.com/blockscout/blockscout/pull/9576) - Rewrite query for token transfers on address to eliminate "or"
 - [#9572](https://github.com/blockscout/blockscout/pull/9572) - Fix Shibarium L1 fetcher
 - [#9563](https://github.com/blockscout/blockscout/pull/9563) - Fix timestamp handler for unfinalized zkEVM batches
 - [#9560](https://github.com/blockscout/blockscout/pull/9560) - Fix fetch pending transaction for hyperledger besu client
 - [#9555](https://github.com/blockscout/blockscout/pull/9555) - Fix EIP-1967 beacon proxy pattern detection
-- [#9518](https://github.com/blockscout/blockscout/pull/9518) - Fix MultipleResultsError in `smart_contract_creation_tx_bytecode/1`
+- [#9529](https://github.com/blockscout/blockscout/pull/9529) - Fix `MAX_SAFE_INTEGER` frontend bug
+- [#9518](https://github.com/blockscout/blockscout/pull/9518), [#9628](https://github.com/blockscout/blockscout/pull/9628) - Fix MultipleResultsError in `smart_contract_creation_tx_bytecode/1`
 - [#9514](https://github.com/blockscout/blockscout/pull/9514) - Fix missing `0x` prefix for `blockNumber`, `logIndex`, `transactionIndex` and remove `transactionLogIndex` in `eth_getLogs` response.
+- [#9510](https://github.com/blockscout/blockscout/pull/9510) - Fix WS false 0 token balances
 - [#9512](https://github.com/blockscout/blockscout/pull/9512) - Docker-compose 2.24.6 compatibility
+- [#9407](https://github.com/blockscout/blockscout/pull/9407) - ERC-404 basic support
 - [#9262](https://github.com/blockscout/blockscout/pull/9262) - Fix withdrawal status
 - [#9123](https://github.com/blockscout/blockscout/pull/9123) - Fixes in Optimism due to changed log topics type
 - [#8831](https://github.com/blockscout/blockscout/pull/8831) - Return all OP Withdrawals bound to L2 transaction
@@ -42,10 +137,35 @@
 
 ### Chore
 
+- [#9622](https://github.com/blockscout/blockscout/pull/9622) - Add alternative `hex.pm` mirrors
 - [#9571](https://github.com/blockscout/blockscout/pull/9571) - Support Optimism Ecotone upgrade by Indexer.Fetcher.Optimism.TxnBatch module
 - [#9562](https://github.com/blockscout/blockscout/pull/9562) - Add cancun evm version
+- [#9506](https://github.com/blockscout/blockscout/pull/9506) - API v1 bridgedtokenlist endpoint
 - [#9260](https://github.com/blockscout/blockscout/pull/9260) - Optimism Delta upgrade support by Indexer.Fetcher.OptimismTxnBatch module
 - [#8740](https://github.com/blockscout/blockscout/pull/8740) - Add delay to Indexer.Fetcher.OptimismTxnBatch module initialization
+
+<details>
+  <summary>Dependencies version bumps</summary>
+
+- [#9544](https://github.com/blockscout/blockscout/pull/9544) - Bump @babel/core from 7.23.9 to 7.24.0 in /apps/block_scout_web/assets
+- [#9537](https://github.com/blockscout/blockscout/pull/9537) - Bump logger_json from 5.1.3 to 5.1.4
+- [#9550](https://github.com/blockscout/blockscout/pull/9550) - Bump xss from 1.0.14 to 1.0.15 in /apps/block_scout_web/assets
+- [#9539](https://github.com/blockscout/blockscout/pull/9539) - Bump floki from 0.35.4 to 0.36.0
+- [#9551](https://github.com/blockscout/blockscout/pull/9551) - Bump @amplitude/analytics-browser from 2.5.1 to 2.5.2 in /apps/block_scout_web/assets
+- [#9547](https://github.com/blockscout/blockscout/pull/9547) - Bump @babel/preset-env from 7.23.9 to 7.24.0 in /apps/block_scout_web/assets
+- [#9549](https://github.com/blockscout/blockscout/pull/9549) - Bump postcss-loader from 8.1.0 to 8.1.1 in /apps/block_scout_web/assets
+- [#9542](https://github.com/blockscout/blockscout/pull/9542) - Bump phoenix_ecto from 4.4.3 to 4.5.0
+- [#9546](https://github.com/blockscout/blockscout/pull/9546) - https://github.com/blockscout/blockscout/pull/9546
+- [#9545](https://github.com/blockscout/blockscout/pull/9545) - Bump chart.js from 4.4.1 to 4.4.2 in /apps/block_scout_web/assets
+- [#9540](https://github.com/blockscout/blockscout/pull/9540) - Bump postgrex from 0.17.4 to 0.17.5
+- [#9543](https://github.com/blockscout/blockscout/pull/9543) - Bump ueberauth from 0.10.7 to 0.10.8
+- [#9538](https://github.com/blockscout/blockscout/pull/9538) - Bump credo from 1.7.4 to 1.7.5
+- [#9607](https://github.com/blockscout/blockscout/pull/9607) - Bump redix from 1.3.0 to 1.4.1
+- [#9606](https://github.com/blockscout/blockscout/pull/9606) - Bump ecto from 3.11.1 to 3.11.2
+- [#9605](https://github.com/blockscout/blockscout/pull/9605) - Bump ex_doc from 0.31.1 to 0.31.2
+- [#9604](https://github.com/blockscout/blockscout/pull/9604) - Bump phoenix_ecto from 4.5.0 to 4.5.1
+
+</details>
 
 ## 6.2.2
 
@@ -163,6 +283,7 @@
 - [#9424](https://github.com/blockscout/blockscout/pull/9424) - Bump webpack from 5.90.1 to 5.90.3 in /apps/block_scout_web/assets
 - [#9425](https://github.com/blockscout/blockscout/pull/9425) - Bump sass-loader from 14.1.0 to 14.1.1 in /apps/block_scout_web/assets
 - [#9421](https://github.com/blockscout/blockscout/pull/9421) - Bump sass from 1.70.0 to 1.71.0 in /apps/block_scout_web/assets
+
 </details>
 
 ## 6.1.0
@@ -856,6 +977,7 @@
 - [#7958](https://github.com/blockscout/blockscout/pull/7958) - Bump ex_doc from 0.30.2 to 0.30.3
 - [#7965](https://github.com/blockscout/blockscout/pull/7965) - Bump webpack from 5.88.1 to 5.88.2 in /apps/block_scout_web/assets
 - [#7972](https://github.com/blockscout/blockscout/pull/7972) - Bump word-wrap from 1.2.3 to 1.2.4 in /apps/block_scout_web/assets
+
 </details>
 
 ## 5.2.0-beta
@@ -2623,8 +2745,8 @@
 
 - [#3249](https://github.com/blockscout/blockscout/pull/3249) - Fix incorrect ABI decoding of address in tuple output
 - [#3237](https://github.com/blockscout/blockscout/pull/3237) - Refine contract method signature detection for read/write feature
-- [#3235](https://github.com/blockscout/blockscout/pull/3235) - Fix coin supply api edpoint
-- [#3233](https://github.com/blockscout/blockscout/pull/3233) - Fix for the contract verifiaction for solc 0.5 family with experimental features enabled
+- [#3235](https://github.com/blockscout/blockscout/pull/3235) - Fix coin supply api endpoint
+- [#3233](https://github.com/blockscout/blockscout/pull/3233) - Fix for the contract verification for solc 0.5 family with experimental features enabled
 - [#3231](https://github.com/blockscout/blockscout/pull/3231) - Improve search: unlimited number of searching results
 - [#3231](https://github.com/blockscout/blockscout/pull/3231) - Improve search: allow search with space
 - [#3231](https://github.com/blockscout/blockscout/pull/3231) - Improve search: order by token holders in descending order and token/contract name is ascending order
@@ -2635,7 +2757,7 @@
 
 - [#3326](https://github.com/blockscout/blockscout/pull/3326) - Chart smooth lines
 - [#3250](https://github.com/blockscout/blockscout/pull/3250) - Eliminate occurrences of obsolete env variable ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT
-- [#3240](https://github.com/blockscout/blockscout/pull/3240), [#3251](https://github.com/blockscout/blockscout/pull/3251) - various CSS imroving
+- [#3240](https://github.com/blockscout/blockscout/pull/3240), [#3251](https://github.com/blockscout/blockscout/pull/3251) - various CSS improving
 - [f3a720](https://github.com/blockscout/blockscout/commit/2dd909c10a79b0bf4b7541a486be114152f3a720) - Make wobserver optional
 
 ## 3.3.1-beta
@@ -3000,11 +3122,11 @@ fixed menu hovers in dark mode desktop view
 - [#2596](https://github.com/blockscout/blockscout/pull/2596) - support AuRa's empty step reward type
 - [#2588](https://github.com/blockscout/blockscout/pull/2588) - add verification submission comment
 - [#2505](https://github.com/blockscout/blockscout/pull/2505) - support POA Network emission rewards
-- [#2581](https://github.com/blockscout/blockscout/pull/2581) - Add generic Map-like Cache behaviour and implementation
+- [#2581](https://github.com/blockscout/blockscout/pull/2581) - Add generic Map-like Cache behavior and implementation
 - [#2561](https://github.com/blockscout/blockscout/pull/2561) - Add token's type to the response of tokenlist method
 - [#2555](https://github.com/blockscout/blockscout/pull/2555) - find and show decoding candidates for logs
 - [#2499](https://github.com/blockscout/blockscout/pull/2499) - import emission reward ranges
-- [#2497](https://github.com/blockscout/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
+- [#2497](https://github.com/blockscout/blockscout/pull/2497) - Add generic Ordered Cache behavior and implementation
 
 ### Fixes
 
@@ -3036,7 +3158,7 @@ fixed menu hovers in dark mode desktop view
 - [#2617](https://github.com/blockscout/blockscout/pull/2617) - skip cache update if there are no blocks inserted
 - [#2611](https://github.com/blockscout/blockscout/pull/2611) - fix js dependency vulnerabilities
 - [#2594](https://github.com/blockscout/blockscout/pull/2594) - do not start genesis data fetching periodically
-- [#2590](https://github.com/blockscout/blockscout/pull/2590) - restore backward compatablity with old releases
+- [#2590](https://github.com/blockscout/blockscout/pull/2590) - restore backward compatibility with old releases
 - [#2577](https://github.com/blockscout/blockscout/pull/2577) - Need recompile column in the env vars table
 - [#2574](https://github.com/blockscout/blockscout/pull/2574) - limit request body in json rpc error
 - [#2566](https://github.com/blockscout/blockscout/pull/2566) - upgrade absinthe phoenix
@@ -3060,7 +3182,7 @@ fixed menu hovers in dark mode desktop view
 - [#2559](https://github.com/blockscout/blockscout/pull/2559) - fix rsk total supply for empty exchange rate
 - [#2553](https://github.com/blockscout/blockscout/pull/2553) - Dark theme import to the end of sass
 - [#2550](https://github.com/blockscout/blockscout/pull/2550) - correctly encode decimal values for frontend
-- [#2549](https://github.com/blockscout/blockscout/pull/2549) - Fix wrong colour of tooltip
+- [#2549](https://github.com/blockscout/blockscout/pull/2549) - Fix wrong color of tooltip
 - [#2548](https://github.com/blockscout/blockscout/pull/2548) - CSS preload support in Firefox
 - [#2547](https://github.com/blockscout/blockscout/pull/2547) - do not show eth value if it's zero on the transaction overview page
 - [#2543](https://github.com/blockscout/blockscout/pull/2543) - do not hide search input during logs search
@@ -3249,7 +3371,7 @@ fixed menu hovers in dark mode desktop view
 
 ### Chore
 
-- [#2127](https://github.com/blockscout/blockscout/pull/2127) - use previouse chromedriver version
+- [#2127](https://github.com/blockscout/blockscout/pull/2127) - use previous chromedriver version
 - [#2118](https://github.com/blockscout/blockscout/pull/2118) - show only the last decompiled contract
 - [#2255](https://github.com/blockscout/blockscout/pull/2255) - upgrade elixir version to 1.9.0
 - [#2256](https://github.com/blockscout/blockscout/pull/2256) - use the latest version of chromedriver
@@ -3484,7 +3606,7 @@ Reverting of synchronous block counter, implemented in #1848
 
 ### Fixes
 
-- [#1630](https://github.com/blockscout/blockscout/pull/1630) - (Fix) colour for release link in the footer
+- [#1630](https://github.com/blockscout/blockscout/pull/1630) - (Fix) color for release link in the footer
 - [#1621](https://github.com/blockscout/blockscout/pull/1621) - Modify query to fetch failed contract creations
 - [#1614](https://github.com/blockscout/blockscout/pull/1614) - Do not fetch burn address token balance
 - [#1639](https://github.com/blockscout/blockscout/pull/1614) - Optimize token holder count updates when importing address current balances

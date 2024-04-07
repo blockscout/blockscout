@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
          false <- Chain.erc_20_token?(token),
          {token_id, ""} <- Integer.parse(token_id_str) do
-      case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, hash) do
+      case Chain.nft_instance_from_token_id_and_token_address(token_id, hash) do
         {:ok, token_instance} -> Helper.render(conn, token_instance, hash, token_id, token)
         {:error, :not_found} -> Helper.render(conn, nil, hash, token_id, token)
       end

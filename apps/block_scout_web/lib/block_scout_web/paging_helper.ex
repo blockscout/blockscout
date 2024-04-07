@@ -32,8 +32,8 @@ defmodule BlockScoutWeb.PagingHelper do
       ]
   end
 
-  @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155"]
-  @allowed_nft_token_type_labels ["ERC-721", "ERC-1155"]
+  @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+  @allowed_nft_type_labels ["ERC-721", "ERC-1155", "ERC-404"]
   @allowed_chain_id [1, 56, 99]
   @allowed_stability_validators_states ["active", "probation", "inactive"]
 
@@ -80,14 +80,14 @@ defmodule BlockScoutWeb.PagingHelper do
   @doc """
     Parse 'type' query parameter from request option map
   """
-  @spec nft_token_types_options(map()) :: [{:token_type, list}]
-  def nft_token_types_options(%{"type" => filters}) do
+  @spec nft_types_options(map()) :: [{:token_type, list}]
+  def nft_types_options(%{"type" => filters}) do
     [
-      token_type: filters_to_list(filters, @allowed_nft_token_type_labels)
+      token_type: filters_to_list(filters, @allowed_nft_type_labels)
     ]
   end
 
-  def nft_token_types_options(_), do: [token_type: []]
+  def nft_types_options(_), do: [token_type: []]
 
   defp filters_to_list(filters, allowed, variant \\ :upcase)
   defp filters_to_list(filters, allowed, :downcase), do: filters |> String.downcase() |> parse_filter(allowed)

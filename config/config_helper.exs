@@ -18,6 +18,7 @@ defmodule ConfigHelper do
         "suave" -> base_repos ++ [Explorer.Repo.Suave]
         "filecoin" -> base_repos ++ [Explorer.Repo.Filecoin]
         "stability" -> base_repos ++ [Explorer.Repo.Stability]
+        "zksync" -> base_repos ++ [Explorer.Repo.ZkSync]
         _ -> base_repos
       end
 
@@ -57,6 +58,17 @@ defmodule ConfigHelper do
     |> Integer.parse()
     |> case do
       {integer, _} -> integer
+      _ -> 0
+    end
+  end
+
+  @spec parse_float_env_var(String.t(), float()) :: float()
+  def parse_float_env_var(env_var, default_value) do
+    env_var
+    |> safe_get_env(to_string(default_value))
+    |> Float.parse()
+    |> case do
+      {float, _} -> float
       _ -> 0
     end
   end
@@ -155,6 +167,20 @@ defmodule ConfigHelper do
       "coin_market_cap" -> Price.CoinMarketCap
       "crypto_compare" -> Price.CryptoCompare
       _ -> Price.CryptoCompare
+    end
+  end
+
+  @spec exchange_rates_secondary_coin_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare
+  def exchange_rates_secondary_coin_price_source do
+    cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
+    cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_ID")
+    cc_secondary_coin_symbol = System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL")
+
+    cond do
+      cg_secondary_coin_id && cg_secondary_coin_id !== "" -> Price.CoinGecko
+      cmc_secondary_coin_id && cmc_secondary_coin_id !== "" -> Price.CoinMarketCap
+      cc_secondary_coin_symbol && cc_secondary_coin_symbol !== "" -> Price.CryptoCompare
+      true -> Price.CryptoCompare
     end
   end
 

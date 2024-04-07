@@ -409,8 +409,9 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     end
   end
 
-  defp blobs_to_input(transaction_hash, blob_versioned_hashes, block_timestamp, blobs_api_url) do
-    Enum.reduce(blob_versioned_hashes, <<>>, fn blob_hash, acc ->
+  defp blobs_to_inputs(transaction_hash, blob_versioned_hashes, block_timestamp, blobs_api_url) do
+    blob_versioned_hashes
+    |> Enum.reduce([], fn blob_hash, acc ->
       with {:ok, response} <- http_get_request(blobs_api_url <> "/" <> blob_hash),
            blob_data = Map.get(response, "blob_data"),
            false <- is_nil(blob_data) do
@@ -425,8 +426,11 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
           Logger.warning("Cannot decode the blob #{blob_hash} taken from the Blockscout Blobs API.")
           acc
         else
-          Logger.info("The input for transaction #{transaction_hash} is taken from the Blockscout Blobs API.")
-          acc <> decoded
+          Logger.info(
+            "The input for transaction #{transaction_hash} is taken from the Blockscout Blobs API. Blob hash: #{blob_hash}"
+          )
+
+          [decoded | acc]
         end
       else
         _ ->
@@ -470,8 +474,11 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
             if is_nil(decoded_blob_data) do
               raise "Invalid blob"
             else
-              Logger.info("The input for transaction #{transaction_hash} is taken from the Beacon Node.")
-              acc <> decoded_blob_data
+              Logger.info(
+                "The input for transaction #{transaction_hash} is taken from the Beacon Node. Blob hash: #{blob_hash}"
+              )
+
+              [decoded_blob_data | acc]
             end
           rescue
             reason ->
@@ -483,6 +490,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
           end
       end
     end)
+    |> Enum.reverse()
   end
 
   defp get_txn_batches_inner(
@@ -496,30 +504,31 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     transactions_filtered
     |> Enum.reduce({:ok, incomplete_channels, [], []}, fn tx,
                                                           {_, incomplete_channels_acc, batches_acc, sequences_acc} ->
-      input =
+      inputs =
         if tx.type == 3 do
-          # this is EIP-4844 transaction, so we get the input from the blobs
+          # this is EIP-4844 transaction, so we get the inputs from the blobs
           block_timestamp = get_block_timestamp_by_number(tx.block_number, blocks_params)
-          blobs_to_input(tx.hash, tx.blob_versioned_hashes, block_timestamp, blobs_api_url)
+          blobs_to_inputs(tx.hash, tx.blob_versioned_hashes, block_timestamp, blobs_api_url)
         else
-          tx.input
+          [tx.input]
         end
 
-      if tx.type == 3 and input == <<>> do
-        # skip this transaction as we cannot find or read its blobs
-        {:ok, incomplete_channels_acc, batches_acc, sequences_acc}
-      else
+      Enum.reduce(inputs, {:ok, incomplete_channels_acc, batches_acc, sequences_acc}, fn input,
+                                                                                         {_,
+                                                                                          new_incomplete_channels_acc,
+                                                                                          new_batches_acc,
+                                                                                          new_sequences_acc} ->
         handle_input(
           input,
           tx,
           blocks_params,
-          incomplete_channels_acc,
-          batches_acc,
-          sequences_acc,
+          new_incomplete_channels_acc,
+          new_batches_acc,
+          new_sequences_acc,
           genesis_block_l2,
           json_rpc_named_arguments_l2
         )
-      end
+      end)
     end)
   end
 
@@ -534,6 +543,11 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
          json_rpc_named_arguments_l2
        ) do
     frame = input_to_frame(input)
+
+    if frame == :invalid_frame do
+      Logger.warning("The frame in transaction #{tx.hash} is invalid.")
+      raise "Invalid frame"
+    end
 
     channel = Map.get(incomplete_channels_acc, frame.channel_id, %{frames: %{}})
 
@@ -571,6 +585,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     else
       {:ok, Map.put(incomplete_channels_acc, frame.channel_id, channel_updated), batches_acc, sequences_acc}
     end
+  rescue
+    _ -> {:ok, incomplete_channels_acc, batches_acc, sequences_acc}
   end
 
   defp handle_channel(
@@ -606,7 +622,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
 
     seq = %{
       id: frame_sequence_id,
-      l1_transaction_hashes: Enum.reverse(l1_transaction_hashes),
+      l1_transaction_hashes: Enum.uniq(Enum.reverse(l1_transaction_hashes)),
       l1_timestamp: channel.l1_timestamp
     }
 
@@ -735,8 +751,21 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     frame_data_length_size = 4
     is_last_size = 1
 
-    # the first byte must be zero (so called Derivation Version)
-    [0] = :binary.bin_to_list(binary_part(input_binary, 0, derivation_version_length))
+    # the first byte must be zero
+    [derivation_version] = :binary.bin_to_list(binary_part(input_binary, 0, derivation_version_length))
+
+    cond do
+      derivation_version == 0x00 ->
+        nil
+
+      derivation_version == 0xCE ->
+        Logger.warning("The module does not support Celestia DA yet. The frame will be ignored.")
+        raise "Unsupported derivation version"
+
+      true ->
+        Logger.warning("Derivation version #{derivation_version} is not supported. The frame will be ignored.")
+        raise "Unsupported derivation version"
+    end
 
     # channel id has 16 bytes
     channel_id = binary_part(input_binary, derivation_version_length, channel_id_length)
@@ -772,6 +801,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
       # for example, the case for Base Goerli batch L1 transaction: https://goerli.etherscan.io/tx/0xa43fa9da683a6157a114e3175a625b5aed85d8c573aae226768c58a924a17be0
       input_to_frame("0x" <> Base.encode16(binary_part(input_binary, 1, input_length_current - 1)))
     end
+  rescue
+    _ -> :invalid_frame
   end
 
   defp next_frame_sequence_id(last_known_sequence) when is_nil(last_known_sequence) do

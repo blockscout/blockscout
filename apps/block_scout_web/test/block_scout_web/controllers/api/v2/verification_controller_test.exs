@@ -7,6 +7,15 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
 
   @moduletag timeout: :infinity
 
+  setup do
+    configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+    Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
+    end)
+  end
+
   describe "/api/v2/smart-contracts/verification/config" do
     test "get cfg", %{conn: conn} do
       request = get(conn, "/api/v2/smart-contracts/verification/config")

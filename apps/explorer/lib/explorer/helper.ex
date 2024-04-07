@@ -136,10 +136,12 @@ defmodule Explorer.Helper do
   @doc """
     Validate url
   """
-  @spec valid_url?(String.t()) :: boolean
-  def valid_url?(string) do
+  @spec valid_url?(String.t()) :: boolean()
+  def valid_url?(string) when is_binary(string) do
     uri = URI.parse(string)
 
-    uri.scheme != nil && uri.host =~ "."
+    !is_nil(uri.scheme) && !is_nil(uri.host)
   end
+
+  def valid_url?(_), do: false
 end

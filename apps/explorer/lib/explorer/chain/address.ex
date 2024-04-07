@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Address do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, PagingOptions, Repo}
 
   alias Explorer.Chain.{
     Address,
@@ -58,6 +58,8 @@ defmodule Explorer.Chain.Address do
              :names
            ]}
 
+  @timeout :timer.minutes(1)
+
   @typedoc """
    * `fetched_coin_balance` - The last fetched balance from Nethermind
    * `fetched_coin_balance_block_number` - the `t:Explorer.Chain.Block.t/0` `t:Explorer.Chain.Block.block_number/0` for
@@ -89,6 +91,7 @@ defmodule Explorer.Chain.Address do
     field(:token_transfers_count, :integer)
     field(:gas_used, :integer)
     field(:ens_domain_name, :string, virtual: true)
+    field(:metadata, :any, virtual: true)
 
     has_one(:smart_contract, SmartContract, references: :hash)
     has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)
@@ -422,5 +425,19 @@ defmodule Explorer.Chain.Address do
       )
 
     Chain.select_repo(options).exists?(query)
+  end
+
+  @doc """
+  Sets contract_code for the given Explorer.Chain.Address
+  """
+  @spec set_contract_code(Hash.Address.t(), binary()) :: {non_neg_integer(), nil}
+  def set_contract_code(address_hash, contract_code) when not is_nil(address_hash) and is_binary(contract_code) do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(address in __MODULE__, where: address.hash == ^address_hash),
+      [set: [contract_code: contract_code, updated_at: now]],
+      timeout: @timeout
+    )
   end
 end

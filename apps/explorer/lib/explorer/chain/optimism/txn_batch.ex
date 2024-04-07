@@ -102,13 +102,13 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
         end
       end)
 
-    Enum.each(Range.new(output_len, byte_size(output) - 1), fn i ->
+    Enum.each(Range.new(output_len, byte_size(output) - 1, 1), fn i ->
       <<0>> = binary_part(output, i, 1)
     end)
 
     output = binary_part(output, 0, output_len)
 
-    Enum.each(Range.new(ipos, @blob_size - 1), fn i ->
+    Enum.each(Range.new(ipos, @blob_size - 1, 1), fn i ->
       <<0>> = binary_part(b, i, 1)
     end)
 
@@ -118,10 +118,10 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   end
 
   defp decode_eip4844_field_element(b, opos, ipos, output) do
-    <<_::binary-size(ipos), ipos_byte::size(8), insert::binary-size(32), _::binary>> = b
+    <<_::binary-size(ipos), ipos_byte::size(8), insert::binary-size(31), _::binary>> = b
 
     if Bitwise.band(ipos_byte, 0b11000000) == 0 do
-      <<output_before_opos::binary-size(opos), _::binary-size(32), rest::binary>> = output
+      <<output_before_opos::binary-size(opos), _::binary-size(31), rest::binary>> = output
 
       {ipos_byte, opos + 32, ipos + 32, output_before_opos <> insert <> rest}
     end

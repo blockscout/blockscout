@@ -307,6 +307,18 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
     select_repo(options).aggregate(query, :count, timeout: :infinity)
   end
 
+  @doc """
+    Filters token decimals value (cannot be greater than 0xFF).
+  """
+  @spec sanitize_decimals(non_neg_integer()) :: non_neg_integer()
+  def sanitize_decimals(decimals) do
+    if decimals > 0xFF do
+      0
+    else
+      decimals
+    end
+  end
+
   defp page_batches(query, %PagingOptions{key: nil}), do: query
 
   defp page_batches(query, %PagingOptions{key: {number}}) do

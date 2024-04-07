@@ -50,7 +50,7 @@ defmodule Indexer.Fetcher.Beacon.Client do
 
     {errors, retries} = errors_with_retries |> Enum.unzip()
 
-    if !Enum.empty?(errors) do
+    if not Enum.empty?(errors) do
       Logger.error(fn ->
         [
           "Errors while fetching blob sidecars (failed for #{Enum.count(errors)}/#{Enum.count(slots)}) from beacon rpc: ",

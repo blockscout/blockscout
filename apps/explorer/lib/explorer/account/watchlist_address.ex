@@ -30,6 +30,8 @@ defmodule Explorer.Account.WatchlistAddress do
     field(:watch_erc_721_output, :boolean, default: true, null: false)
     field(:watch_erc_1155_input, :boolean, default: true, null: false)
     field(:watch_erc_1155_output, :boolean, default: true, null: false)
+    field(:watch_erc_404_input, :boolean, default: true, null: false)
+    field(:watch_erc_404_output, :boolean, default: true, null: false)
     field(:notify_email, :boolean, default: true, null: false)
     field(:notify_epns, :boolean)
     field(:notify_feed, :boolean)
@@ -43,7 +45,7 @@ defmodule Explorer.Account.WatchlistAddress do
     timestamps()
   end
 
-  @attrs ~w(name address_hash watch_coin_input watch_coin_output watch_erc_20_input watch_erc_20_output watch_erc_721_input watch_erc_721_output watch_erc_1155_input watch_erc_1155_output notify_email notify_epns notify_feed notify_inapp watchlist_id)a
+  @attrs ~w(name address_hash watch_coin_input watch_coin_output watch_erc_20_input watch_erc_20_output watch_erc_721_input watch_erc_721_output watch_erc_1155_input watch_erc_1155_output watch_erc_404_input watch_erc_404_output notify_email notify_epns notify_feed notify_inapp watchlist_id)a
 
   def changeset do
     %__MODULE__{}

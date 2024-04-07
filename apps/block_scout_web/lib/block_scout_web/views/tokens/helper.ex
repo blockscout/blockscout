@@ -67,19 +67,21 @@ defmodule BlockScoutWeb.Tokens.Helper do
   end
 
   # TODO: remove this clause along with token transfer denormalization
-  defp do_token_transfer_amount(%Token{type: "ERC-1155", decimals: decimals}, nil, amount, amounts, token_ids) do
+  defp do_token_transfer_amount(%Token{type: type, decimals: decimals}, nil, amount, amounts, token_ids)
+       when type in ["ERC-1155", "ERC-404"] do
     if amount do
-      {:ok, :erc1155_instance, CurrencyHelper.format_according_to_decimals(amount, decimals)}
+      {:ok, :erc1155_erc404_instance, CurrencyHelper.format_according_to_decimals(amount, decimals)}
     else
-      {:ok, :erc1155_instance, amounts, token_ids, decimals}
+      {:ok, :erc1155_erc404_instance, amounts, token_ids, decimals}
     end
   end
 
-  defp do_token_transfer_amount(%Token{decimals: decimals}, "ERC-1155", amount, amounts, token_ids) do
+  defp do_token_transfer_amount(%Token{decimals: decimals}, type, amount, amounts, token_ids)
+       when type in ["ERC-1155", "ERC-404"] do
     if amount do
-      {:ok, :erc1155_instance, CurrencyHelper.format_according_to_decimals(amount, decimals)}
+      {:ok, :erc1155_erc404_instance, CurrencyHelper.format_according_to_decimals(amount, decimals)}
     else
-      {:ok, :erc1155_instance, amounts, token_ids, decimals}
+      {:ok, :erc1155_erc404_instance, amounts, token_ids, decimals}
     end
   end
 
@@ -142,30 +144,32 @@ defmodule BlockScoutWeb.Tokens.Helper do
 
   # TODO: remove this clause along with token transfer denormalization
   defp do_token_transfer_amount_for_api(
-         %Token{type: "ERC-1155", decimals: decimals},
+         %Token{type: type, decimals: decimals},
          nil,
          amount,
          amounts,
          token_ids
-       ) do
+       )
+       when type in ["ERC-1155", "ERC-404"] do
     if amount do
-      {:ok, :erc1155_instance, amount, decimals}
+      {:ok, :erc1155_erc404_instance, amount, decimals}
     else
-      {:ok, :erc1155_instance, amounts, token_ids, decimals}
+      {:ok, :erc1155_erc404_instance, amounts, token_ids, decimals}
     end
   end
 
   defp do_token_transfer_amount_for_api(
          %Token{decimals: decimals},
-         "ERC-1155",
+         type,
          amount,
          amounts,
          token_ids
-       ) do
+       )
+       when type in ["ERC-1155", "ERC-404"] do
     if amount do
-      {:ok, :erc1155_instance, amount, decimals}
+      {:ok, :erc1155_erc404_instance, amount, decimals}
     else
-      {:ok, :erc1155_instance, amounts, token_ids, decimals}
+      {:ok, :erc1155_erc404_instance, amounts, token_ids, decimals}
     end
   end
 

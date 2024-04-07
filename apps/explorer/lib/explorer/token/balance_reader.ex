@@ -27,7 +27,7 @@ defmodule Explorer.Token.BalanceReader do
     }
   ]
 
-  @erc1155_balance_function_abi [
+  @nft_balance_function_abi [
     %{
       "constant" => true,
       "inputs" => [%{"name" => "_owner", "type" => "address"}, %{"name" => "_id", "type" => "uint256"}],
@@ -67,7 +67,7 @@ defmodule Explorer.Token.BalanceReader do
         ) :: [{:ok, non_neg_integer()} | {:error, String.t()}]
   def get_balances_of_with_abi(token_balance_requests, abi) do
     formatted_balances_requests =
-      if abi == @erc1155_balance_function_abi do
+      if abi == @nft_balance_function_abi do
         token_balance_requests
         |> Enum.map(&format_erc_1155_balance_request/1)
       else
@@ -75,12 +75,12 @@ defmodule Explorer.Token.BalanceReader do
         |> Enum.map(&format_balance_request/1)
       end
 
-    if Enum.count(formatted_balances_requests) > 0 do
+    if Enum.empty?(formatted_balances_requests) do
+      []
+    else
       formatted_balances_requests
       |> Reader.query_contracts(abi)
       |> Enum.map(&format_balance_result/1)
-    else
-      []
     end
   end
 
@@ -93,7 +93,7 @@ defmodule Explorer.Token.BalanceReader do
           }
         ]) :: [{:ok, non_neg_integer()} | {:error, String.t()}]
   def get_balances_of_erc_1155(token_balance_requests) do
-    get_balances_of_with_abi(token_balance_requests, @erc1155_balance_function_abi)
+    get_balances_of_with_abi(token_balance_requests, @nft_balance_function_abi)
   end
 
   defp format_balance_request(%{

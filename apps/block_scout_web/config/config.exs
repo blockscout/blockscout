@@ -20,7 +20,7 @@ config :block_scout_web,
   api_v2_temp_token_key: "api_v2_temp_token"
 
 config :block_scout_web,
-  admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
+  admin_panel_enabled: ConfigHelper.parse_bool_env_var("ADMIN_PANEL_ENABLED")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
@@ -85,14 +85,20 @@ config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 
 config :block_scout_web, BlockScoutWeb.ApiRouter,
-  writing_enabled: System.get_env("API_V1_WRITE_METHODS_DISABLED") != "true",
-  reading_enabled: System.get_env("API_V1_READ_METHODS_DISABLED") != "true"
+  writing_enabled: !ConfigHelper.parse_bool_env_var("API_V1_WRITE_METHODS_DISABLED"),
+  reading_enabled: !ConfigHelper.parse_bool_env_var("API_V1_READ_METHODS_DISABLED")
 
-config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
+config :block_scout_web, BlockScoutWeb.WebRouter, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP")
 
 config :block_scout_web, BlockScoutWeb.CSPHeader,
   mixpanel_url: System.get_env("MIXPANEL_URL", "https://api-js.mixpanel.com"),
   amplitude_url: System.get_env("AMPLITUDE_URL", "https://api2.amplitude.com/2/httpapi")
+
+config :block_scout_web, Api.GraphQL,
+  enabled: ConfigHelper.parse_bool_env_var("API_GRAPHQL_ENABLED", "true"),
+  token_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_TOKEN_LIMIT", 1000),
+  # Needs to be 215 to support the schema introspection for graphiql
+  max_complexity: ConfigHelper.parse_integer_env_var("API_GRAPHQL_MAX_COMPLEXITY", 215)
 
 # Configures Ueberauth local settings
 config :ueberauth, Ueberauth,

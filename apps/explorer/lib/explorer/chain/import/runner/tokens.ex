@@ -119,7 +119,10 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     ordered_changes_list =
       changes_list
       # brand new tokens start with no holders
-      |> Stream.map(&Map.put_new(&1, :holder_count, 0))
+      # set cataloged: nil, if not set before, to get proper COALESCE result
+      # if don't set it, cataloged will default to false (as in DB schema)
+      # and COALESCE in on_conflict will return false
+      |> Stream.map(fn token -> token |> Map.put_new(:holder_count, 0) |> Map.put_new(:cataloged, nil) end)
       # Enforce Token ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.contract_address_hash)
 

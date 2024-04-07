@@ -25,7 +25,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.NullRoundHeight
-  alias Explorer.Utility.MissingRangesManipulator
+  alias Explorer.Utility.{MassiveBlock, MissingRangesManipulator}
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.{Sequence, TaskSupervisor}
   alias Indexer.Memory.Shrinkable
@@ -219,6 +219,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       {:error, {:import = step, reason}} = error ->
         Prometheus.Instrumenter.import_errors()
         Logger.error(fn -> [inspect(reason), ". Retrying."] end, step: step)
+        if reason == :timeout, do: add_range_to_massive_blocks(range)
 
         push_back(sequence, range)
 
@@ -250,6 +251,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   rescue
     exception ->
+      if timeout_exception?(exception), do: add_range_to_massive_blocks(range)
       Logger.error(fn -> [Exception.format(:error, exception, __STACKTRACE__), ?\n, ?\n, "Retrying."] end)
       {:error, exception}
   end
@@ -266,6 +268,20 @@ defmodule Indexer.Block.Catchup.Fetcher do
     |> NullRoundHeight.insert_heights()
 
     other_errors
+  end
+
+  defp timeout_exception?(%{message: message}) when is_binary(message) do
+    String.match?(message, ~r/due to a timeout/)
+  end
+
+  defp timeout_exception?(_exception), do: false
+
+  defp add_range_to_massive_blocks(range) do
+    clear_missing_ranges(range)
+
+    range
+    |> Enum.to_list()
+    |> MassiveBlock.insert_block_numbers()
   end
 
   defp cap_seq(seq, errors) do
@@ -301,7 +317,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     |> Enum.map(&push_back(sequence, &1))
   end
 
-  defp clear_missing_ranges(initial_range, errors) do
+  defp clear_missing_ranges(initial_range, errors \\ []) do
     success_numbers = Enum.to_list(initial_range) -- Enum.map(errors, &block_error_to_number/1)
 
     success_numbers

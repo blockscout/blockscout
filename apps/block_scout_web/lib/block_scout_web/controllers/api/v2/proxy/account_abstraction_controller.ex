@@ -2,11 +2,11 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.API.V2.Helper
-
+  alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias Explorer.Chain
   alias Explorer.MicroserviceInterfaces.AccountAbstraction
 
-  @address_fields ["bundler", "entry_point", "sender", "address", "factory", "paymaster"]
+  @address_fields ["bundler", "entry_point", "sender", "address", "factory", "paymaster", "execute_target"]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -18,6 +18,36 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     operation_hash_string
     |> AccountAbstraction.get_user_ops_by_hash()
     |> process_response(conn)
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/proxy/account-abstraction/operations/:user_operation_hash_param/summary` endpoint.
+  """
+  @spec summary(Plug.Conn.t(), map()) ::
+          {:error | :format | :tx_interpreter_enabled | non_neg_integer(), any()} | Plug.Conn.t()
+  def summary(conn, %{"operation_hash_param" => operation_hash_string, "just_request_body" => "true"}) do
+    with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_transaction_hash(operation_hash_string)},
+         {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
+      conn
+      |> json(TransactionInterpretationService.get_user_op_request_body(user_op))
+    end
+  end
+
+  def summary(conn, %{"operation_hash_param" => operation_hash_string}) do
+    with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_transaction_hash(operation_hash_string)},
+         {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
+         {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
+      {response, code} =
+        case TransactionInterpretationService.interpret_user_operation(user_op) do
+          {:ok, response} -> {response, 200}
+          {:error, %Jason.DecodeError{}} -> {%{error: "Error while tx interpreter response decoding"}, 500}
+          {{:error, error}, code} -> {%{error: error}, code}
+        end
+
+      conn
+      |> put_status(code)
+      |> json(response)
+    end
   end
 
   @doc """
@@ -147,7 +177,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
       end
 
     address_hash_strings
-    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
     |> Enum.map(fn hash_string ->
       case Chain.string_to_address_hash(hash_string) do
@@ -155,7 +185,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
         _ -> nil
       end
     end)
-    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.reject(&is_nil/1)
   end
 
   defp replace_address_hashes(response, addresses) do
@@ -188,12 +218,30 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
       {:error, :disabled} ->
         conn
         |> put_status(501)
-        |> json(extended_info(%{message: "Service is disabled"}))
+        |> json(%{message: "Service is disabled"})
 
       {status_code, response} ->
+        final_json = response |> try_to_decode_call_data() |> extended_info()
+
         conn
         |> put_status(status_code)
-        |> json(extended_info(response))
+        |> json(final_json)
     end
   end
+
+  defp try_to_decode_call_data(%{"call_data" => _call_data} = user_op) do
+    user_op_hash = user_op["hash"]
+
+    {_mock_tx, _decoded_call_data, decoded_call_data_json} =
+      TransactionInterpretationService.decode_user_op_calldata(user_op_hash, user_op["call_data"])
+
+    {_mock_tx, _decoded_execute_call_data, decoded_execute_call_data_json} =
+      TransactionInterpretationService.decode_user_op_calldata(user_op_hash, user_op["execute_call_data"])
+
+    user_op
+    |> Map.put("decoded_call_data", decoded_call_data_json)
+    |> Map.put("decoded_execute_call_data", decoded_execute_call_data_json)
+  end
+
+  defp try_to_decode_call_data(response), do: response
 end

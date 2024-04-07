@@ -68,6 +68,23 @@ defmodule Indexer.Transform.TokenInstances do
 
   defp transfer_to_instances(
          %{
+           token_type: "ERC-404" = token_type,
+           token_ids: [_ | _] = token_ids,
+           token_contract_address_hash: token_contract_address_hash
+         },
+         acc
+       ) do
+    Enum.reduce(token_ids, acc, fn id, sub_acc ->
+      Map.put(sub_acc, {token_contract_address_hash, id}, %{
+        token_contract_address_hash: token_contract_address_hash,
+        token_id: id,
+        token_type: token_type
+      })
+    end)
+  end
+
+  defp transfer_to_instances(
+         %{
            token_type: _token_type,
            token_ids: [_ | _] = token_ids,
            token_contract_address_hash: token_contract_address_hash

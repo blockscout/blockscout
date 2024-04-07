@@ -20,6 +20,9 @@ config :explorer, Explorer.Repo.PolygonEdge, timeout: :timer.seconds(80)
 # Configure Polygon zkEVM database
 config :explorer, Explorer.Repo.PolygonZkevm, timeout: :timer.seconds(80)
 
+# Configure ZkSync database
+config :explorer, Explorer.Repo.ZkSync, timeout: :timer.seconds(80)
+
 config :explorer, Explorer.Repo.RSK, timeout: :timer.seconds(80)
 
 config :explorer, Explorer.Repo.Shibarium, timeout: :timer.seconds(80)
