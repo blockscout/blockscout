@@ -1,6 +1,6 @@
 defmodule Explorer.Utility.AddressContractCodeFetchAttempt do
   @moduledoc """
-  Module is responsible for keeping the the number of retries for
+  Module is responsible for keeping the number of retries for
   Indexer.Fetcher.OnDemand.ContractCode.
   """
 
