@@ -137,7 +137,6 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers),
         configure(Explorer.Migrator.TokenTransferTokenType),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, "stability"),
-        configure_chain_type_dependent_process(Explorer.Celo.AbiHandler, "celo"),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.CeloCoreContracts, "celo")
       ]
       |> List.flatten()

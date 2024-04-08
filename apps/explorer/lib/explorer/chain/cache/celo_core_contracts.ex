@@ -10,7 +10,6 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   #     from: 2
   #   ]
 
-  alias Explorer.Celo.AbiHandler
   alias Explorer.SmartContract.Reader
 
   use Explorer.Chain.MapCache,
@@ -24,31 +23,35 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   @registry_proxy_contract_address "0x000000000000000000000000000000000000ce10"
   @nil_address "0x0000000000000000000000000000000000000000"
 
-  @registry_proxy_abi [%{
-    "constant" => true,
-    "inputs" => [],
-    "name" => "_getImplementation",
-    "outputs" => [
-      %{
-        "internalType" => "address",
-        "name" => "implementation",
-        "type" => "address"
-      }
-    ],
-    "payable" => false,
-    "stateMutability" => "view",
-    "type" => "function"
-  }]
+  @registry_proxy_abi [
+    %{
+      "constant" => true,
+      "inputs" => [],
+      "name" => "_getImplementation",
+      "outputs" => [
+        %{
+          "internalType" => "address",
+          "name" => "implementation",
+          "type" => "address"
+        }
+      ],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
 
-  @registry_abi [%{
-    "constant" => true,
-    "inputs" => [%{"name" => "identifier", "type" => "string"}],
-    "name" => "getAddressForString",
-    "outputs" => [%{"name" => "", "type" => "address"}],
-    "payable" => false,
-    "stateMutability" => "view",
-    "type" => "function"
-  }]
+  @registry_abi [
+    %{
+      "constant" => true,
+      "inputs" => [%{"name" => "identifier", "type" => "string"}],
+      "name" => "getAddressForString",
+      "outputs" => [%{"name" => "", "type" => "address"}],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
 
   @contract_atoms [
     :celo_token

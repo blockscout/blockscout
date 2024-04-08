@@ -21,6 +21,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Explorer.Chain.Cache.CeloCoreContracts
+  alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Import.Runner.Blocks, as: BlocksRunner
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
@@ -305,12 +306,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     internal_transactions_and_empty_block_numbers = internal_transactions_params_marked ++ empty_block_numbers
 
-    %{token_transfers: celo_native_token_transfers, tokens: _} =
+    celo_token_transfers_params =
+      %{token_transfers: celo_token_transfers, tokens: _} =
       CeloTransactionTokenTransfers.parse_internal_transactions(internal_transactions_params_marked)
 
     imports =
       Chain.import(%{
-        token_transfers: %{params: celo_native_token_transfers},
+        token_transfers: %{params: celo_token_transfers},
         addresses: %{params: addresses_params},
         internal_transactions: %{params: internal_transactions_and_empty_block_numbers, with: :blockless_changeset},
         timeout: :infinity
@@ -325,7 +327,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number
         })
 
-        async_import_celo_token_balances(addresses_params)
+        async_import_celo_token_balances(celo_token_transfers_params)
 
       {:error, step, reason, _changes_so_far} ->
         Logger.error(
@@ -444,38 +446,38 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   if Application.compile_env(:explorer, :chain_type) == "celo" do
-    defp decode("0x" <> str) do
-      %{bytes: Base.decode16!(str, case: :mixed)}
+    defp to_address_token_balances(token_transfers, celo_token) do
+      %{token_transfers: token_transfers}
+      |> Addresses.extract_addresses()
+      |> Enum.map(fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
+        with {:ok, address_hash} <- Address.cast(hash),
+             {:ok, token_contract_address_hash} <- Address.cast(celo_token.contract_address_hash) do
+          %{
+            address_hash: address_hash,
+            token_contract_address_hash: token_contract_address_hash,
+            block_number: block_number,
+            token_type: celo_token.type,
+            token_id: nil
+          }
+        else
+          error -> Logger.error("Failed to cast string to hash: #{inspect(error)}")
+        end
+      end)
+      |> MapSet.new()
     end
 
-    defp add_celo_token_balances(addresses, celo_token) do
-      initial = MapSet.new()
-
-      addresses
-      |> Enum.reduce(initial, fn
-        %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
-          MapSet.put(acc, %{
-            address_hash: decode(hash),
-            token_contract_address_hash: decode(celo_token),
-            block_number: bn,
-            token_type: "ERC-20",
-            token_id: nil
+    defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: tokens}) do
+      case tokens do
+        [token] ->
+          async_import_token_balances(%{
+            address_token_balances: to_address_token_balances(token_transfers, token)
           })
 
-        _, acc ->
-          acc
-      end)
-      |> MapSet.to_list()
-    end
-
-    defp async_import_celo_token_balances(addresses) do
-      celo_token = CeloCoreContracts.get_contract_addresses().celo_token
-
-      async_import_token_balances(%{
-        address_token_balances: add_celo_token_balances(addresses, celo_token)
-      })
+        _ ->
+          :ok
+      end
     end
   else
-    defp async_import_celo_token_balances(_addresses), do: :ok
+    defp async_import_celo_token_balances(_token_transfers), do: :ok
   end
 end
