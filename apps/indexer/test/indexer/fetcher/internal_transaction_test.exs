@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   alias Explorer.Chain.{Block, PendingBlockOperation}
   alias Explorer.Chain.Import.Runner.Blocks
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
-  alias Indexer.Fetcher.{InternalTransaction, PendingTransaction}
+  alias Indexer.Fetcher.{InternalTransaction, PendingTransaction, TokenBalance}
 
   # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
   # it to use expectations and stubs from test's pid.
@@ -68,6 +68,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
     CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     PendingTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+    TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
     wait_for_results(fn ->
       Repo.one!(from(transaction in Explorer.Chain.Transaction, where: is_nil(transaction.block_hash), limit: 1))
