@@ -24,6 +24,32 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   @registry_proxy_contract_address "0x000000000000000000000000000000000000ce10"
   @nil_address "0x0000000000000000000000000000000000000000"
 
+  @registry_proxy_abi [%{
+    "constant" => true,
+    "inputs" => [],
+    "name" => "_getImplementation",
+    "outputs" => [
+      %{
+        "internalType" => "address",
+        "name" => "implementation",
+        "type" => "address"
+      }
+    ],
+    "payable" => false,
+    "stateMutability" => "view",
+    "type" => "function"
+  }]
+
+  @registry_abi [%{
+    "constant" => true,
+    "inputs" => [%{"name" => "identifier", "type" => "string"}],
+    "name" => "getAddressForString",
+    "outputs" => [%{"name" => "", "type" => "address"}],
+    "payable" => false,
+    "stateMutability" => "view",
+    "type" => "function"
+  }]
+
   @contract_atoms [
     :celo_token
   ]
@@ -96,20 +122,19 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   end
 
   def fetch_address_for_contract_name(contract_name) do
-    with abi <- AbiHandler.get_abi(),
-         # 42404e07 = keccak(_getImplementation())
-         %{"42404e07" => {:ok, [implementation_address]}} <-
+    # 42404e07 = keccak(_getImplementation())
+    # 853db323 = keccak(getAddressForString(string))
+    with %{"42404e07" => {:ok, [implementation_address]}} <-
            Reader.query_contract(
              @registry_proxy_contract_address,
-             abi,
+             @registry_proxy_abi,
              %{"42404e07" => []},
              false
            ),
-         # 853db323 = keccak(getAddressForString(string))
          %{"853db323" => {:ok, [contract_address]}} <-
            Reader.query_contract(
              implementation_address,
-             abi,
+             @registry_abi,
              %{"853db323" => [contract_name]},
              false
            ) do
