@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
               Logger.warning("Celo Registry returned address #{@nil_address} for contract #{atom}")
 
             {atom, %{address: nil}} ->
-              Logger.error("Could not fetch address for contract #{atom}l")
+              Logger.error("Could not fetch address for contract #{atom}")
           end)
 
           contracts
