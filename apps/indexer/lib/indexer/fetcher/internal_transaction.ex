@@ -284,46 +284,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
       {:retry, block_numbers}
   end
 
-  if Application.compile_env(:explorer, :chain_type) == "celo" do
-    defp decode("0x" <> str) do
-      %{bytes: Base.decode16!(str, case: :mixed)}
-    end
-
-    defp add_celo_token_balances(addresses, celo_token) do
-      initial = MapSet.new()
-
-      Enum.reduce(addresses, initial, fn
-        %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
-          MapSet.put(acc, %{
-            address_hash: decode(hash),
-            token_contract_address_hash: decode(celo_token),
-            block_number: bn,
-            token_type: "ERC-20",
-            token_id: nil
-          })
-
-        _, acc ->
-          acc
-      end)
-      |> MapSet.to_list()
-    end
-
-    defp async_import_celo_token_balances(addresses) do
-      celo_token = CeloCoreContracts.get_contract_addresses().celo_token
-
-      async_import_token_balances(%{
-        address_token_balances: add_celo_token_balances(addresses, celo_token)
-      })
-    end
-  else
-    defp async_import_celo_token_balances(_addresses), do: :ok
-  end
-
   defp import_internal_transaction(internal_transactions_params, unique_numbers) do
     internal_transactions_params_marked = mark_failed_transactions(internal_transactions_params)
-
-    %{token_transfers: celo_native_token_transfers, tokens: _} =
-      CeloTransactionTokenTransfers.parse_internal_transactions(internal_transactions_params_marked)
 
     addresses_params =
       Addresses.extract_addresses(%{
@@ -342,6 +304,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
       |> Enum.map(&%{block_number: &1})
 
     internal_transactions_and_empty_block_numbers = internal_transactions_params_marked ++ empty_block_numbers
+
+    %{token_transfers: celo_native_token_transfers, tokens: _} =
+      CeloTransactionTokenTransfers.parse_internal_transactions(internal_transactions_params_marked)
 
     imports =
       Chain.import(%{
@@ -476,5 +441,41 @@ defmodule Indexer.Fetcher.InternalTransaction do
       task_supervisor: Indexer.Fetcher.InternalTransaction.TaskSupervisor,
       metadata: [fetcher: :internal_transaction]
     ]
+  end
+
+  if Application.compile_env(:explorer, :chain_type) == "celo" do
+    defp decode("0x" <> str) do
+      %{bytes: Base.decode16!(str, case: :mixed)}
+    end
+
+    defp add_celo_token_balances(addresses, celo_token) do
+      initial = MapSet.new()
+
+      addresses
+      |> Enum.reduce(initial, fn
+        %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
+          MapSet.put(acc, %{
+            address_hash: decode(hash),
+            token_contract_address_hash: decode(celo_token),
+            block_number: bn,
+            token_type: "ERC-20",
+            token_id: nil
+          })
+
+        _, acc ->
+          acc
+      end)
+      |> MapSet.to_list()
+    end
+
+    defp async_import_celo_token_balances(addresses) do
+      celo_token = CeloCoreContracts.get_contract_addresses().celo_token
+
+      async_import_token_balances(%{
+        address_token_balances: add_celo_token_balances(addresses, celo_token)
+      })
+    end
+  else
+    defp async_import_celo_token_balances(_addresses), do: :ok
   end
 end

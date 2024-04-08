@@ -36,7 +36,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
         transactions
         |> Enum.filter(fn tx -> tx.value > 0 end)
         |> Enum.map(fn tx ->
-          to_address_hash = Map.get(tx, :to_address_hash, nil) || Map.get(tx, :created_contract_address_hash, nil)
+          to_address_hash = Map.get(tx, :to_address_hash) || Map.get(tx, :created_contract_address_hash)
           log_index = -1 * (tx.index + 1) * @transaction_buffer_size
 
           %{
@@ -55,8 +55,6 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
 
       Logger.info("Found #{length(token_transfers)} Celo token transfers.")
 
-      # dbg(token_transfers)
-
       %{
         token_transfers: token_transfers,
         tokens: to_tokens(token_transfers)
@@ -73,7 +71,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
             (not Map.has_key?(tx, :call_type) || tx.call_type != "delegatecall")
         end)
         |> Enum.map(fn tx ->
-          to_address_hash = tx.to_address_hash || tx.created_contract_address_hash
+          to_address_hash = Map.get(tx, :to_address_hash) || Map.get(tx, :created_contract_address_hash)
           log_index = -1 * (tx.transaction_index * @transaction_buffer_size + tx.index)
 
           %{
@@ -91,8 +89,6 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
         end)
 
       Logger.info("Found #{length(token_transfers)} Celo token transfers from internal transactions.")
-
-      dbg(token_transfers)
 
       %{
         token_transfers: token_transfers,
