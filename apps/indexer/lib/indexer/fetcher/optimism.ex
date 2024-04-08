@@ -261,7 +261,8 @@ defmodule Indexer.Fetcher.Optimism do
          block_check_interval: block_check_interval,
          start_block: start_block,
          end_block: last_safe_block,
-         json_rpc_named_arguments: json_rpc_named_arguments
+         json_rpc_named_arguments: json_rpc_named_arguments,
+         stop: false
        }}
     else
       {:start_block_l1_undefined, true} ->

@@ -129,6 +129,8 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
     new_end_index = game_count - 1
 
+    update_game_statuses(json_rpc_named_arguments)
+
     delay =
       if new_end_index == end_index do
         # there are no new games, so wait for some time to let the new game appear
@@ -148,6 +150,67 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     {:noreply, state}
   end
 
+  @doc """
+    Returns the last index written to op_dispute_games table. If there is no one, returns -1.
+  """
+  @spec get_last_known_index() :: integer()
+  def get_last_known_index do
+    query =
+      from(game in DisputeGame,
+        select: game.index,
+        order_by: [desc: game.index],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||(-1)
+  end
+
+  defp update_game_statuses(json_rpc_named_arguments) do
+    query =
+      from(
+        game in DisputeGame,
+        select: %{index: game.index, address: game.address},
+        where: is_nil(game.resolved_at),
+        order_by: [desc: game.index],
+        limit: 1000
+      )
+
+    update_count =
+      query
+      |> Repo.all(timeout: :infinity)
+      |> Enum.chunk_every(@games_range_size)
+      |> Enum.reduce(0, fn games_chunk, update_count_acc ->
+        resolved_at_by_index = read_extra_data("0x19effeb4", "resolvedAt()", games_chunk, json_rpc_named_arguments)
+
+        games_resolved =
+          games_chunk
+          |> Enum.filter(fn %{index: index} ->
+            resolved_at = quantity_to_integer(resolved_at_by_index[index])
+            resolved_at > 0 and not is_nil(resolved_at)
+          end)
+
+        status_by_index = read_extra_data("0x200d2ed2", "status()", games_resolved, json_rpc_named_arguments)
+
+        Enum.reduce(games_resolved, update_count_acc, fn %{index: index}, acc ->
+          resolved_at = sanitize_resolved_at(resolved_at_by_index[index])
+          status = quantity_to_integer(status_by_index[index])
+          
+          {local_update_count, _} = Repo.update_all(
+             from(game in DisputeGame, where: game.index == ^index),
+             set: [resolved_at: resolved_at, status: status]
+          )
+
+          acc + local_update_count
+        end)
+      end)
+
+    if update_count > 0 do
+      Logger.info("A new game status for #{update_count} game(s) was set.")
+    end
+  end
+
   defp get_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments, retries \\ 3) do
     req = Contract.eth_call_request("0xf2b4e617", optimism_portal, 0, nil, nil)
     error_message = &"Cannot fetch DisputeGameFactory contract address. Error: #{inspect(&1)}"
@@ -164,19 +227,6 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       {:ok, count} -> quantity_to_integer(count)
       _ -> nil
     end
-  end
-
-  defp get_last_known_index do
-    query =
-      from(game in DisputeGame,
-        select: game.index,
-        order_by: [desc: game.index],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> Kernel.||(-1)
   end
 
   defp get_start_index(end_index, new_end_index) do
@@ -231,14 +281,14 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     requests =
       start_index..end_index
       |> Enum.map(fn index ->
-        calldata = "0x" <>
-          (ABI.TypeEncoder.encode([index], %ABI.FunctionSelector{
-             function: "gameAtIndex",
-             types: [
-               {:uint,256}
-             ]
-           })
-           |> Base.encode16(case: :lower))
+        encoded_call = ABI.TypeEncoder.encode([index], %ABI.FunctionSelector{
+          function: "gameAtIndex",
+          types: [
+            {:uint,256}
+          ]
+        })
+
+        calldata = "0x" <> Base.encode16(encoded_call, case: :lower)
 
         Contract.eth_call_request(calldata, dispute_game_factory, index, nil, nil)
       end)
@@ -254,19 +304,20 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
          status_by_index = read_extra_data("0x200d2ed2", "status()", games, json_rpc_named_arguments),
          false <- is_nil(status_by_index) do
       Enum.map(games, fn game ->
-        resolved_at =
-          case quantity_to_integer(resolved_at_by_index[game.index]) do
-            0 -> nil
-            value -> Timex.from_unix(value)
-          end
-
         game
         |> Map.put(:extra_data, extra_data_by_index[game.index])
-        |> Map.put(:resolved_at, resolved_at)
+        |> Map.put(:resolved_at, sanitize_resolved_at(resolved_at_by_index[game.index]))
         |> Map.put(:status, quantity_to_integer(status_by_index[game.index]))
       end)
     else
       _ -> []
+    end
+  end
+
+  defp sanitize_resolved_at(resolved_at) do
+    case quantity_to_integer(resolved_at) do
+      0 -> nil
+      value -> Timex.from_unix(value)
     end
   end
 
@@ -288,7 +339,12 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     requests =
       games
       |> Enum.map(fn game ->
-        address = "0x" <> Base.encode16(game.address, case: :lower)
+        address =
+          if is_binary(game.address) do
+            "0x" <> Base.encode16(game.address, case: :lower)
+          else
+            game.address
+          end
         Contract.eth_call_request(method_id, address, game.index, nil, nil)
       end)
 

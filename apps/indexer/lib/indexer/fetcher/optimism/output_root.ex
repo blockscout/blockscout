@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
 
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Optimism.OutputRoot
+  alias Indexer.Fetcher.Optimism.DisputeGame
   alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
   alias Indexer.Helper, as: IndexerHelper
 
@@ -59,7 +60,8 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
           block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          stop: stop
         } = state
       ) do
     # credo:disable-for-next-line
@@ -118,28 +120,37 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
         end
       end)
 
-    new_start_block = last_written_block + 1
+    if stop do
+      Logger.warning("#{__MODULE__} is being stopped because dispute games exist.")
+      {:stop, :normal, state}
+    else
+      new_start_block = last_written_block + 1
 
-    {:ok, new_end_block} =
-      Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
+      {:ok, new_end_block} =
+        Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
 
-    delay =
-      if new_end_block == last_written_block do
-        # there is no new block, so wait for some time to let the chain issue the new block
-        max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
-      else
-        0
-      end
+      delay =
+        if new_end_block == last_written_block do
+          # there is no new block, so wait for some time to let the chain issue the new block
+          max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
+        else
+          0
+        end
 
-    Process.send_after(self(), :continue, delay)
+      Process.send_after(self(), :continue, delay)
 
-    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
+      {:noreply, %{state | start_block: new_start_block, end_block: new_end_block, stop: dispute_games_exist?()}}
+    end
   end
 
   @impl GenServer
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  defp dispute_games_exist? do
+    DisputeGame.get_last_known_index() >= 0
   end
 
   defp events_to_output_roots(events) do
