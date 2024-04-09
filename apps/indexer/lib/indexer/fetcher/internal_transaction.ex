@@ -20,8 +20,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Accounts, Blocks}
-  alias Explorer.Chain.Cache.CeloCoreContracts
-  alias Explorer.Chain.Hash.Address
+  alias Explorer.Chain.{Hash, Hash.Address}
   alias Explorer.Chain.Import.Runner.Blocks, as: BlocksRunner
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
@@ -89,23 +88,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
     final
   end
 
-  # defp params(%{block_number: block_number, hash: hash, index: index}) when is_integer(block_number) do
-  #   %{block_number: block_number, hash_data: to_string(hash), transaction_index: index}
-  # end
-
-  defp params(%{
-         block_number: block_number,
-         hash: hash,
-         index: index,
-         block_hash: block_hash
-       })
-       when is_integer(block_number) do
-    %{
-      block_number: block_number,
-      hash_data: to_string(hash),
-      transaction_index: index,
-      block_hash: block_hash
-    }
+  defp params(%{block_number: block_number, hash: hash, index: index}) when is_integer(block_number) do
+    %{block_number: block_number, hash_data: to_string(hash), transaction_index: index}
   end
 
   @impl BufferedTask
@@ -242,26 +226,17 @@ defmodule Indexer.Fetcher.InternalTransaction do
           [] ->
             {:ok, []}
 
-          [%{block_hash: block_hash} | _] = transactions ->
+          transactions ->
             try do
-              {block_hash, EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)}
+              EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
             catch
               :exit, error ->
                 {:error, error, __STACKTRACE__}
             end
         end
         |> case do
-          {block_hash, {:ok, internal_transactions}} ->
-            {
-              :ok,
-              Enum.map(
-                internal_transactions,
-                fn tx -> Map.put(tx, :block_hash, block_hash) end
-              ) ++ acc_list
-            }
-
-          error_or_ignore ->
-            error_or_ignore
+          {:ok, internal_transactions} -> {:ok, internal_transactions ++ acc_list}
+          error_or_ignore -> error_or_ignore
         end
 
       _, error_or_ignore ->
@@ -308,7 +283,22 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     celo_token_transfers_params =
       %{token_transfers: celo_token_transfers, tokens: _} =
-      CeloTransactionTokenTransfers.parse_internal_transactions(internal_transactions_params_marked)
+      if Application.get_env(:explorer, :chain_type) == "celo" do
+        block_number_to_block_hash =
+          unique_numbers
+          |> Chain.block_hash_by_number()
+          |> Map.new(fn
+            {block_number, block_hash} ->
+              {block_number, Hash.to_string(block_hash)}
+          end)
+
+        CeloTransactionTokenTransfers.parse_internal_transactions(
+          internal_transactions_params_marked,
+          block_number_to_block_hash
+        )
+      else
+        %{token_transfers: [], tokens: []}
+      end
 
     imports =
       Chain.import(%{
@@ -450,8 +440,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
       %{token_transfers: token_transfers}
       |> Addresses.extract_addresses()
       |> Enum.map(fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
-        with {:ok, address_hash} <- Address.cast(hash),
-             {:ok, token_contract_address_hash} <- Address.cast(celo_token.contract_address_hash) do
+        with {:ok, address_hash} <- Hash.Address.cast(hash),
+             {:ok, token_contract_address_hash} <- Hash.Address.cast(celo_token.contract_address_hash) do
           %{
             address_hash: address_hash,
             token_contract_address_hash: token_contract_address_hash,
