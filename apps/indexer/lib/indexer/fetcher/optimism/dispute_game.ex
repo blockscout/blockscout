@@ -13,6 +13,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Contract
+  alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Optimism.DisputeGame
   alias Indexer.Helper, as: IndexerHelper
@@ -56,6 +57,8 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
          {:dispute_game_factory_available, true} <- {:dispute_game_factory_available, !is_nil(dispute_game_factory)},
          game_count = get_game_count(dispute_game_factory, json_rpc_named_arguments),
          {:game_count_available, true} <- {:game_count_available, !is_nil(game_count)} do
+      set_dispute_game_finality_delay_seconds(optimism_portal, json_rpc_named_arguments)
+      set_proof_maturity_delay_seconds(optimism_portal, json_rpc_named_arguments)
 
       Process.send(self(), :continue, [])
 
@@ -65,6 +68,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       {:noreply,
        %{
          dispute_game_factory: dispute_game_factory,
+         optimism_portal: optimism_portal,
          start_index: get_start_index(last_known_index, end_index),
          end_index: end_index,
          json_rpc_named_arguments: json_rpc_named_arguments
@@ -79,7 +83,10 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
         {:stop, :normal, %{}}
 
       {:dispute_game_factory_available, false} ->
-        Logger.error("Cannot get DisputeGameFactory contract address from the OptimismPortal contract.")
+        Logger.error(
+          "Cannot get DisputeGameFactory contract address from the OptimismPortal contract. Probably, this is the first implementation of OptimismPortal."
+        )
+
         {:stop, :normal, %{}}
 
       {:game_count_available, false} ->
@@ -93,12 +100,15 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
         :continue,
         %{
           dispute_game_factory: dispute_game_factory,
+          optimism_portal: optimism_portal,
           start_index: start_index,
           end_index: end_index,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
     time_before = Timex.now()
+
+    update_respected_game_type(optimism_portal, json_rpc_named_arguments)
 
     chunks_number = ceil((end_index - start_index + 1) / @games_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
@@ -129,7 +139,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
     new_end_index = game_count - 1
 
-    Logger.info("Found #{new_end_index - end_index} new game(s).")
+    Logger.info("Found #{new_end_index - end_index} new game(s) since the last games filling.")
 
     update_game_statuses(json_rpc_named_arguments)
 
@@ -150,6 +160,39 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  defp set_dispute_game_finality_delay_seconds(optimism_portal, json_rpc_named_arguments) do
+    set_constant_value(
+      "0x952b2797",
+      "disputeGameFinalityDelaySeconds()",
+      optimism_portal,
+      "OptimismPortal",
+      "optimism_dispute_game_finality_delay_seconds",
+      json_rpc_named_arguments
+    )
+  end
+
+  defp set_proof_maturity_delay_seconds(optimism_portal, json_rpc_named_arguments) do
+    set_constant_value(
+      "0xbf653a5c",
+      "proofMaturityDelaySeconds()",
+      optimism_portal,
+      "OptimismPortal",
+      "optimism_proof_maturity_delay_seconds",
+      json_rpc_named_arguments
+    )
+  end
+
+  defp update_respected_game_type(optimism_portal, json_rpc_named_arguments) do
+    set_constant_value(
+      "0x3c9f397c",
+      "respectedGameType()",
+      optimism_portal,
+      "OptimismPortal",
+      "optimism_respected_game_type",
+      json_rpc_named_arguments
+    )
   end
 
   defp update_game_statuses(json_rpc_named_arguments) do
@@ -181,11 +224,12 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
         Enum.reduce(games_resolved, update_count_acc, fn %{index: index}, acc ->
           resolved_at = sanitize_resolved_at(resolved_at_by_index[index])
           status = quantity_to_integer(status_by_index[index])
-          
-          {local_update_count, _} = Repo.update_all(
-             from(game in DisputeGame, where: game.index == ^index),
-             set: [resolved_at: resolved_at, status: status]
-          )
+
+          {local_update_count, _} =
+            Repo.update_all(
+              from(game in DisputeGame, where: game.index == ^index),
+              set: [resolved_at: resolved_at, status: status]
+            )
 
           acc + local_update_count
         end)
@@ -199,6 +243,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   defp get_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments, retries \\ 3) do
     req = Contract.eth_call_request("0xf2b4e617", optimism_portal, 0, nil, nil)
     error_message = &"Cannot fetch DisputeGameFactory contract address. Error: #{inspect(&1)}"
+
     case IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries) do
       {:ok, "0x000000000000000000000000" <> address} -> "0x" <> address
       _ -> nil
@@ -208,6 +253,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   defp get_game_count(dispute_game_factory, json_rpc_named_arguments, retries \\ 3) do
     req = Contract.eth_call_request("0x4d1975b4", dispute_game_factory, 0, nil, nil)
     error_message = &"Cannot fetch game count from the DisputeGameFactory contract. Error: #{inspect(&1)}"
+
     case IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries) do
       {:ok, count} -> quantity_to_integer(count)
       _ -> nil
@@ -266,12 +312,13 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     requests =
       start_index..end_index
       |> Enum.map(fn index ->
-        encoded_call = ABI.TypeEncoder.encode([index], %ABI.FunctionSelector{
-          function: "gameAtIndex",
-          types: [
-            {:uint,256}
-          ]
-        })
+        encoded_call =
+          ABI.TypeEncoder.encode([index], %ABI.FunctionSelector{
+            function: "gameAtIndex",
+            types: [
+              {:uint, 256}
+            ]
+          })
 
         calldata = "0x" <> Base.encode16(encoded_call, case: :lower)
 
@@ -279,8 +326,9 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       end)
 
     error_message = &"Cannot call gameAtIndex() public getter of DisputeGameFactory. Error: #{inspect(&1)}"
-    
-    with {:ok, responses} <- IndexerHelper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, retries),
+
+    with {:ok, responses} <-
+           IndexerHelper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, retries),
          games = decode_games(responses),
          extra_data_by_index = read_extra_data("0x609d3334", "extraData()", games, json_rpc_named_arguments),
          false <- is_nil(extra_data_by_index),
@@ -309,7 +357,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   defp decode_games(responses) do
     responses
     |> Enum.map(fn response ->
-      [game_type, created_at, address] = Helper.decode_data(response.result, [{:uint,32}, {:uint,64}, :address])
+      [game_type, created_at, address] = Helper.decode_data(response.result, [{:uint, 32}, {:uint, 64}, :address])
 
       %{
         index: response.id,
@@ -330,10 +378,12 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
           else
             game.address
           end
+
         Contract.eth_call_request(method_id, address, game.index, nil, nil)
       end)
 
     error_message = &"Cannot call #{method_name} public getter of FaultDisputeGame. Error: #{inspect(&1)}"
+
     case IndexerHelper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, retries) do
       {:ok, responses} ->
         Enum.reduce(responses, %{}, fn response, acc ->
@@ -354,6 +404,26 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       Logger.warning(
         "As L1 reorg was detected, all rows with index >= #{starting_index} were removed from the op_dispute_games table. Number of removed rows: #{deleted_count}."
       )
+    end
+  end
+
+  defp set_constant_value(
+         method_id,
+         method_name,
+         contract_address,
+         contract_name,
+         constant_name,
+         json_rpc_named_arguments
+       ) do
+    req = Contract.eth_call_request(method_id, contract_address, 0, nil, nil)
+    error_message = &"Cannot get #{method_name} from #{contract_name} contract. Error: #{inspect(&1)}"
+
+    case IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, 10) do
+      {:ok, value} ->
+        Constants.set_constant_value(constant_name, Integer.to_string(quantity_to_integer(value)))
+
+      _ ->
+        raise "Cannot get #{method_name} from #{contract_name} contract."
     end
   end
 end
