@@ -3,7 +3,10 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
 
   use Explorer.Schema
 
+  import Ecto.Query
+
   alias Explorer.Chain.{Data, Hash}
+  alias Explorer.Repo
 
   @required_attrs ~w(index game_type address created_at)a
   @optional_attrs ~w(extra_data resolved_at status)a
@@ -36,5 +39,22 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> unique_constraint(:index)
+  end
+
+  @doc """
+    Returns the last index written to op_dispute_games table. If there is no one, returns -1.
+  """
+  @spec get_last_known_index() :: integer()
+  def get_last_known_index do
+    query =
+      from(game in __MODULE__,
+        select: game.index,
+        order_by: [desc: game.index],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||(-1)
   end
 end

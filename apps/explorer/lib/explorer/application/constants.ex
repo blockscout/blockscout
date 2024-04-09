@@ -30,10 +30,31 @@ defmodule Explorer.Application.Constants do
     |> validate_required(@required_attrs)
   end
 
-  def get_constant_by_key(key, options) do
+  def get_constant_by_key(key, options \\ []) do
     __MODULE__
     |> where([constant], constant.key == ^key)
     |> Chain.select_repo(options).one()
+  end
+
+  def get_constant_value(key, options \\ []) do
+    __MODULE__
+    |> where([constant], constant.key == ^key)
+    |> select([constant], constant.value)
+    |> Chain.select_repo(options).one()
+  end
+
+  def set_constant_value(key, value) do
+    existing_value = Repo.get(__MODULE__, key)
+
+    if existing_value do
+      existing_value
+      |> changeset(%{value: value})
+      |> Repo.update!()
+    else
+      %{key: key, value: value}
+      |> changeset()
+      |> Repo.insert!()
+    end
   end
 
   def insert_keys_manager_contract_address(value) do
@@ -51,17 +72,7 @@ defmodule Explorer.Application.Constants do
   """
   @spec insert_last_processed_token_address_hash(Hash.Address.t()) :: Ecto.Schema.t()
   def insert_last_processed_token_address_hash(address_hash) do
-    existing_value = Repo.get(__MODULE__, @last_processed_erc_721_token)
-
-    if existing_value do
-      existing_value
-      |> changeset(%{value: to_string(address_hash)})
-      |> Repo.update!()
-    else
-      %{key: @last_processed_erc_721_token, value: to_string(address_hash)}
-      |> changeset()
-      |> Repo.insert!()
-    end
+    set_constant_value(@last_processed_erc_721_token, to_string(address_hash))
   end
 
   @doc """

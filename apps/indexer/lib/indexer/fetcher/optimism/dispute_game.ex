@@ -18,7 +18,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   alias Indexer.Helper, as: IndexerHelper
 
   @fetcher_name :optimism_dispute_games
-  @game_check_interval 15_000
+  @game_check_interval 60
   @games_range_size 50
 
   def child_spec(start_link_arguments) do
@@ -59,7 +59,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
       Process.send(self(), :continue, [])
 
-      last_known_index = get_last_known_index()
+      last_known_index = DisputeGame.get_last_known_index()
       end_index = game_count - 1
 
       {:noreply,
@@ -129,12 +129,14 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
     new_end_index = game_count - 1
 
+    Logger.info("Found #{new_end_index - end_index} new game(s).")
+
     update_game_statuses(json_rpc_named_arguments)
 
     delay =
       if new_end_index == end_index do
-        # there are no new games, so wait for some time to let the new game appear
-        max(@game_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
+        # there are no new games, so wait for @game_check_interval seconds to let the new game appear
+        max(@game_check_interval * 1000 - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
       else
         0
       end
@@ -148,23 +150,6 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
-  end
-
-  @doc """
-    Returns the last index written to op_dispute_games table. If there is no one, returns -1.
-  """
-  @spec get_last_known_index() :: integer()
-  def get_last_known_index do
-    query =
-      from(game in DisputeGame,
-        select: game.index,
-        order_by: [desc: game.index],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> Kernel.||(-1)
   end
 
   defp update_game_statuses(json_rpc_named_arguments) do
