@@ -213,8 +213,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     |> Map.merge(bytecode_info(address))
   end
 
-  def prepare_smart_contract(address, _) do
-    bytecode_info(address)
+  def prepare_smart_contract(address, conn) do
+    read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
+    write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
+
+    %{
+      "has_custom_methods_read" => read_custom_abi?,
+      "has_custom_methods_write" => write_custom_abi?
+    }
+    |> Map.merge(bytecode_info(address))
   end
 
   @doc """

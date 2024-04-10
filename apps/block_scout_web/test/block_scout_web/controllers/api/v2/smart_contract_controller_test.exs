@@ -36,6 +36,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert response ==
                %{
+                 "has_custom_methods_read" => false,
+                 "has_custom_methods_write" => false,
                  "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" => nil
@@ -53,6 +55,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert response ==
                %{
+                 "has_custom_methods_read" => false,
+                 "has_custom_methods_write" => false,
                  "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
@@ -527,6 +531,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert response ==
                %{
+                 "has_custom_methods_read" => false,
+                 "has_custom_methods_write" => false,
                  "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
@@ -608,6 +614,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert response ==
                %{
+                 "has_custom_methods_read" => false,
+                 "has_custom_methods_write" => false,
                  "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
@@ -734,6 +742,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert response ==
                %{
+                 "has_custom_methods_read" => false,
+                 "has_custom_methods_write" => false,
                  "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
@@ -821,6 +831,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert response ==
                %{
+                 "has_custom_methods_read" => false,
+                 "has_custom_methods_write" => false,
                  "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
@@ -927,6 +939,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert response ==
                %{
+                 "has_custom_methods_read" => false,
+                 "has_custom_methods_write" => false,
                  "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
@@ -1038,6 +1052,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert response ==
                %{
+                 "has_custom_methods_read" => false,
+                 "has_custom_methods_write" => false,
                  "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
@@ -1149,6 +1165,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert response ==
                %{
+                 "has_custom_methods_read" => false,
+                 "has_custom_methods_write" => false,
                  "is_self_destructed" => false,
                  "deployed_bytecode" => to_string(address.contract_code),
                  "creation_bytecode" =>
