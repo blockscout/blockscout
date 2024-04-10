@@ -57,6 +57,10 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     :celo_token
   ]
 
+  def get_celo_token_address() do
+    get_contract_addresses()[:celo_token]
+  end
+
   defp default_addresses do
     case Application.get_env(:explorer, __MODULE__)[:celo_network] do
       "mainnet" -> %{celo_token: "0x471ece3750da237f93b8e339c536989b8978a438"}

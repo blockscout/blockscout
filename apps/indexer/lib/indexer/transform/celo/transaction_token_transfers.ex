@@ -30,6 +30,8 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
   internal transactions.
   """
   def parse_transactions(transactions) do
+    celo_token_address = CeloCoreContracts.get_celo_token_address()
+
     token_transfers =
       transactions
       |> Enum.filter(fn tx -> tx.value > 0 end)
@@ -44,7 +46,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
           from_address_hash: tx.from_address_hash,
           log_index: log_index,
           to_address_hash: to_address_hash,
-          token_contract_address_hash: celo_native_token_address_hash(),
+          token_contract_address_hash: celo_token_address,
           token_ids: nil,
           token_type: @token_type,
           transaction_hash: tx.hash
@@ -60,6 +62,8 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
   end
 
   def parse_internal_transactions(transactions, block_number_to_block_hash) do
+    celo_token_address = CeloCoreContracts.get_celo_token_address()
+
     token_transfers =
       transactions
       |> Enum.filter(fn tx ->
@@ -79,7 +83,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
           from_address_hash: tx.from_address_hash,
           log_index: log_index,
           to_address_hash: to_address_hash,
-          token_contract_address_hash: celo_native_token_address_hash(),
+          token_contract_address_hash: celo_token_address,
           token_ids: nil,
           token_type: @token_type,
           transaction_hash: tx.transaction_hash
@@ -94,16 +98,12 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
     }
   end
 
-  defp celo_native_token_address_hash do
-    CeloCoreContracts.get_contract_addresses().celo_token
-  end
-
   defp to_tokens([]), do: []
 
   defp to_tokens(_token_transfers) do
     [
       %{
-        contract_address_hash: celo_native_token_address_hash(),
+        contract_address_hash: CeloCoreContracts.get_celo_token_address(),
         type: @token_type
       }
     ]

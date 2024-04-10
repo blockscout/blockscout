@@ -14,7 +14,15 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
+
+  alias Explorer.Chain.Cache.{
+    Accounts,
+    BlockNumber,
+    Transactions,
+    Uncles,
+    CeloCoreContracts
+  }
+
   alias Indexer.Block.Fetcher.Receipts
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
@@ -202,7 +210,8 @@ defmodule Indexer.Block.Fetcher do
              blocks_params: blocks,
              logs_params: logs,
              transactions_params: transactions_with_receipts,
-             withdrawals: withdrawals_params
+             withdrawals: withdrawals_params,
+             celo_token_transfers: token_transfers
            }
            |> AddressCoinBalances.params_set(),
          beneficiaries_with_gas_payment =
