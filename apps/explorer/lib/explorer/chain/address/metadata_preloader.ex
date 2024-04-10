@@ -289,12 +289,16 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     nil
   end
 
-  defp alter_address(%NotLoaded{}, address_hash, names, field) do
-    %{field => names[Address.checksum(address_hash)]}
+  defp alter_address(%NotLoaded{}, address_hash, names, :ens_domain_name) do
+    %{ens_domain_name: names[to_string(address_hash)]}
+  end
+
+  defp alter_address(%NotLoaded{}, address_hash, names, :metadata) do
+    %{metadata: names[Address.checksum(address_hash)]}
   end
 
   defp alter_address(%Address{} = address, address_hash, names, :ens_domain_name) do
-    %Address{address | ens_domain_name: names[Address.checksum(address_hash)]}
+    %Address{address | ens_domain_name: names[to_string(address_hash)]}
   end
 
   defp alter_address(%Address{} = address, address_hash, names, :metadata) do
