@@ -1,6 +1,46 @@
 defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   @moduledoc """
-  TBD
+    Manages the tracking and updating of the statuses of rollup batches, confirmations, and cross-chain message executions for an Arbitrum rollup.
+
+    This module orchestrates the workflow for discovering new and historical
+    batches of rollup transactions, confirmations of rollup blocks, and
+    executions of L2-to-L1 messages. It ensures the accurate tracking and
+    updating of the rollup process stages.
+
+    The fetcher's operation cycle begins with the `:init_worker` message, which
+    establishes the initial state with the necessary configuration.
+
+    The process then progresses through a sequence of steps, each triggered by
+    specific messages:
+    - `:check_new_batches`: Discovers new batches of rollup transactions and
+      updates their statuses.
+    - `:check_new_confirmations`: Identifies new confirmations of rollup blocks
+      to update their statuses.
+    - `:check_new_executions`: Finds new executions of L2-to-L1 messages to
+      update their statuses.
+    - `:check_historical_batches`: Processes historical batches of rollup
+      transactions.
+    - `:check_historical_confirmations`: Handles historical confirmations of
+      rollup blocks.
+    - `:check_historical_executions`: Manages historical executions of L2-to-L1
+      messages.
+    - `:check_lifecycle_txs_finalization`: Finalizes the status of lifecycle
+      transactions, confirming the blocks and messages involved.
+
+    Discovery of rollup transaction batches is executed by requesting logs on L1
+    that correspond to the `SequencerBatchDelivered` event emitted by the
+    Arbitrum `SequencerInbox` contract.
+
+    Discovery of rollup block confirmations is executed by requesting logs on L1
+    that correspond to the `SendRootUpdated` event emitted by the Arbitrum
+    `Outbox` contract.
+
+    Discovery of the L2-to-L1 message executions occurs by requesting logs on L1
+    that correspond to the `OutBoxTransactionExecuted` event emitted by the
+    Arbitrum `Outbox` contract.
+
+    When processing batches or confirmations, the L2-to-L1 messages included in
+    the corresponding rollup blocks are updated to reflect their status changes.
   """
 
   use GenServer
@@ -85,7 +125,24 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:noreply, state}
   end
 
-  # TBD
+  # Initializes the worker for discovering batches of rollup transactions, confirmations of rollup blocks, and executions of L2-to-L1 messages.
+  #
+  # This function sets up the initial state for the fetcher, identifying the
+  # starting blocks for new and historical discoveries of batches, confirmations,
+  # and executions. It also retrieves addresses for the Arbitrum Outbox and
+  # SequencerInbox contracts.
+  #
+  # After initializing these parameters, it immediately sends `:check_new_batches`
+  # to commence the fetcher loop.
+  #
+  # ## Parameters
+  # - `:init_worker`: The message triggering the initialization.
+  # - `state`: The current state of the process, containing initial configuration
+  #            data.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` is updated with Arbitrum contract
+  #   addresses and starting blocks for new and historical discoveries.
   @impl GenServer
   def handle_info(
         :init_worker,
@@ -148,13 +205,27 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:noreply, new_state}
   end
 
-  # TBD
+  # Initiates the process of discovering and handling new batches of rollup transactions.
+  #
+  # This function fetches logs within the calculated L1 block range to identify new
+  # batches of rollup transactions. The discovered batches and their corresponding
+  # rollup blocks and transactions are processed and linked. The L2-to-L1 messages
+  # included in these rollup blocks are also updated to reflect their commitment.
+  #
+  # After processing, it immediately transitions to checking new confirmations of
+  # rollup blocks by sending the `:check_new_confirmations` message.
+  #
+  # ## Parameters
+  # - `:check_new_batches`: The message that triggers the function.
+  # - `state`: The current state of the fetcher, containing configuration and data
+  #            needed for the discovery of new batches.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` is updated with the new start block for
+  #   the next iteration of new batch discovery.
   @impl GenServer
   def handle_info(:check_new_batches, state) do
-    {handle_duration, {:ok, end_block}} =
-      :timer.tc(&discover_new_batches/1, [
-        state
-      ])
+    {handle_duration, {:ok, end_block}} = :timer.tc(&NewBatches.discover_new_batches/1, [state])
 
     Process.send(self(), :check_new_confirmations, [])
 
@@ -167,13 +238,27 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Initiates the discovery and processing of new confirmations for rollup blocks.
+  #
+  # This function fetches logs within the calculated L1 block range to identify
+  # new confirmations for rollup blocks. The discovered confirmations are
+  # processed to update the status of rollup blocks and L2-to-L1 messages
+  # accordingly.
+  #
+  # After processing, it immediately transitions to discovering new executions
+  # of L2-to-L1 messages by sending the `:check_new_executions` message.
+  #
+  # ## Parameters
+  # - `:check_new_confirmations`: The message that triggers the function.
+  # - `state`: The current state of the fetcher, containing configuration and
+  #            data needed for the discovery of new rollup block confirmations.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` is updated with the new start
+  #   block for the next iteration of new confirmation discovery.
   @impl GenServer
   def handle_info(:check_new_confirmations, state) do
-    {handle_duration, {retcode, end_block}} =
-      :timer.tc(&discover_new_rollup_confirmation/1, [
-        state
-      ])
+    {handle_duration, {retcode, end_block}} = :timer.tc(&NewConfirmations.discover_new_rollup_confirmation/1, [state])
 
     Process.send(self(), :check_new_executions, [])
 
@@ -193,13 +278,26 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Initiates the process of discovering and handling new executions for L2-to-L1 messages.
+  #
+  # This function identifies new executions of L2-to-L1 messages by fetching logs
+  # for the calculated L1 block range. It updates the status of these messages and
+  # links them with the corresponding lifecycle transactions.
+  #
+  # After processing, it immediately transitions to checking historical batches of
+  # rollup transaction by sending the `:check_historical_batches` message.
+  #
+  # ## Parameters
+  # - `:check_new_executions`: The message that triggers the function.
+  # - `state`: The current state of the fetcher, containing configuration and data
+  #            needed for the discovery of new message executions.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` is updated with the new start
+  #   block for the next iteration of new message executions discovery.
   @impl GenServer
   def handle_info(:check_new_executions, state) do
-    {handle_duration, {:ok, end_block}} =
-      :timer.tc(&discover_new_l1_messages_executions/1, [
-        state
-      ])
+    {handle_duration, {:ok, end_block}} = :timer.tc(&NewL1Executions.discover_new_l1_messages_executions/1, [state])
 
     Process.send(self(), :check_historical_batches, [])
 
@@ -212,13 +310,29 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Initiates the process of discovering and handling historical batches of rollup transactions.
+  #
+  # This function fetches logs within the calculated L1 block range to identify the
+  # historical batches of rollup transactions. After discovery the linkage between
+  # batches and the corresponding rollup blocks and transactions are build. The
+  # status of the L2-to-L1 messages included in the  corresponding rollup blocks is
+  # also updated.
+  #
+  # After processing, it immediately transitions to checking historical
+  # confirmations of rollup blocks by sending the `:check_historical_confirmations`
+  # message.
+  #
+  # ## Parameters
+  # - `:check_historical_batches`: The message that triggers the function.
+  # - `state`: The current state of the fetcher, containing configuration and data
+  #            needed for the discovery of historical batches.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` is updated with the new end block
+  #   for the next iteration of historical batch discovery.
   @impl GenServer
   def handle_info(:check_historical_batches, state) do
-    {handle_duration, {:ok, start_block}} =
-      :timer.tc(&discover_historical_batches/1, [
-        state
-      ])
+    {handle_duration, {:ok, start_block}} = :timer.tc(&NewBatches.discover_historical_batches/1, [state])
 
     Process.send(self(), :check_historical_confirmations, [])
 
@@ -231,13 +345,28 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Initiates the process of discovering and handling historical confirmations of rollup blocks.
+  #
+  # This function fetches logs within the calculated range to identify the
+  # historical confirmations of rollup blocks. The discovered confirmations are
+  # processed to update the status of rollup blocks and L2-to-L1 messages
+  # accordingly.
+  #
+  # After processing, it immediately transitions to checking historical executions
+  # of L2-to-L1 messages by sending the `:check_historical_executions` message.
+  #
+  # ## Parameters
+  # - `:check_historical_confirmations`: The message that triggers the function.
+  # - `state`: The current state of the fetcher, containing configuration and data
+  #            needed for the discovery of historical confirmations.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` is updated with the new start and
+  #   end blocks for the next iteration of historical confirmations discovery.
   @impl GenServer
   def handle_info(:check_historical_confirmations, state) do
     {handle_duration, {retcode, {start_block, end_block}}} =
-      :timer.tc(&discover_historical_rollup_confirmation/1, [
-        state
-      ])
+      :timer.tc(&NewConfirmations.discover_historical_rollup_confirmation/1, [state])
 
     Process.send(self(), :check_historical_executions, [])
 
@@ -256,13 +385,28 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Initiates the discovery and handling of historical L2-to-L1 message executions.
+  #
+  # This function discovers historical executions of L2-to-L1 messages by retrieving
+  # logs within a specified L1 block range. It updates their status accordingly and
+  # builds the link between the messages and the lifecycle transactions where they
+  # are executed.
+  #
+  # After processing, it immediately transitions to finalizing lifecycle transactions
+  # by sending the `:check_lifecycle_txs_finalization` message.
+  #
+  # ## Parameters
+  # - `:check_historical_executions`: The message that triggers the function.
+  # - `state`: The current state of the fetcher, containing configuration and data
+  #            needed for the discovery of historical executions.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` is updated with the new end block for
+  #   the next iteration of historical executions.
   @impl GenServer
   def handle_info(:check_historical_executions, state) do
     {handle_duration, {:ok, start_block}} =
-      :timer.tc(&discover_historical_l1_messages_executions/1, [
-        state
-      ])
+      :timer.tc(&NewL1Executions.discover_historical_l1_messages_executions/1, [state])
 
     Process.send(self(), :check_lifecycle_txs_finalization, [])
 
@@ -275,14 +419,28 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:noreply, %{state | data: new_data}}
   end
 
-  # TBD
+  # Handles the periodic finalization check of lifecycle transactions.
+  #
+  # This function updates the finalization status of lifecycle transactions based on
+  # the current state of the L1 blockchain. It discovers all transactions that are not
+  # yet finalized up to the `safe` L1 block and changes their status to `:finalized`.
+  #
+  # After processing, as the final handler in the loop, it schedules the
+  # `:check_new_batches` message to initiate the next iteration. The scheduling of this
+  # message is delayed to account for the time spent on the previous handlers' execution.
+  #
+  # ## Parameters
+  # - `:check_lifecycle_txs_finalization`: The message that triggers the function.
+  # - `state`: The current state of the fetcher, containing the configuration needed for
+  #            the lifecycle transactions status update.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where `new_state` is the updated state with the reset duration.
   @impl GenServer
   def handle_info(:check_lifecycle_txs_finalization, state) do
     {handle_duration, _} =
       if state.config.l1_rpc.track_finalization do
-        :timer.tc(&monitor_lifecycle_txs_finalization/1, [
-          state
-        ])
+        :timer.tc(&L1Finalization.monitor_lifecycle_txs/1, [state])
       else
         {0, nil}
       end
@@ -299,242 +457,5 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       })
 
     {:noreply, %{state | data: new_data}}
-  end
-
-  def discover_new_batches(
-        %{
-          config: %{
-            l1_rpc: l1_rpc_config,
-            rollup_rpc: rollup_rpc_config,
-            l1_sequencer_inbox_address: sequencer_inbox_address,
-            messages_to_blocks_shift: messages_to_blocks_shift,
-            new_batches_limit: new_batches_limit
-          },
-          data: %{new_batches_start_block: start_block}
-        } = _state
-      ) do
-    # Requesting the "latest" block instead of "safe" allows to catch new batches
-    # without latency.
-    {:ok, latest_block} =
-      IndexerHelper.get_block_number_by_tag(
-        "latest",
-        l1_rpc_config.json_rpc_named_arguments,
-        Rpc.get_resend_attempts()
-      )
-
-    end_block = min(start_block + l1_rpc_config.logs_block_range - 1, latest_block)
-
-    if start_block <= end_block do
-      Logger.info("Block range for new batches discovery: #{start_block}..#{end_block}")
-
-      NewBatches.discover(
-        sequencer_inbox_address,
-        start_block,
-        end_block,
-        new_batches_limit,
-        messages_to_blocks_shift,
-        l1_rpc_config,
-        rollup_rpc_config
-      )
-
-      {:ok, end_block}
-    else
-      {:ok, start_block - 1}
-    end
-  end
-
-  def discover_historical_batches(
-        %{
-          config: %{
-            l1_rpc: l1_rpc_config,
-            rollup_rpc: rollup_rpc_config,
-            l1_sequencer_inbox_address: sequencer_inbox_address,
-            messages_to_blocks_shift: messages_to_blocks_shift,
-            l1_rollup_init_block: l1_rollup_init_block,
-            new_batches_limit: new_batches_limit
-          },
-          data: %{historical_batches_end_block: end_block}
-        } = _state
-      ) do
-    if end_block >= l1_rollup_init_block do
-      start_block = max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
-
-      Logger.info("Block range for historical batches discovery: #{start_block}..#{end_block}")
-
-      NewBatches.discover_historical(
-        sequencer_inbox_address,
-        start_block,
-        end_block,
-        new_batches_limit,
-        messages_to_blocks_shift,
-        l1_rpc_config,
-        rollup_rpc_config
-      )
-
-      {:ok, start_block}
-    else
-      {:ok, l1_rollup_init_block}
-    end
-  end
-
-  def discover_new_rollup_confirmation(
-        %{
-          config: %{
-            l1_rpc: l1_rpc_config,
-            l1_outbox_address: outbox_address,
-            rollup_rpc: rollup_rpc_config
-          },
-          data: %{new_confirmations_start_block: start_block}
-        } = _state
-      ) do
-    # It makes sense to use "safe" here. Blocks are confirmed with delay in one week
-    # (applicable for ArbitrumOne and Nova), so 10 mins delay is not significant
-    {:ok, latest_block} =
-      IndexerHelper.get_block_number_by_tag(
-        if(l1_rpc_config.finalized_confirmations, do: "safe", else: "latest"),
-        l1_rpc_config.json_rpc_named_arguments,
-        Rpc.get_resend_attempts()
-      )
-
-    end_block = min(start_block + l1_rpc_config.logs_block_range - 1, latest_block)
-
-    if start_block <= end_block do
-      Logger.info("Block range for new rollup confirmations discovery: #{start_block}..#{end_block}")
-
-      retcode =
-        NewConfirmations.discover(
-          outbox_address,
-          start_block,
-          end_block,
-          l1_rpc_config,
-          rollup_rpc_config
-        )
-
-      {retcode, end_block}
-    else
-      {:ok, start_block - 1}
-    end
-  end
-
-  def discover_historical_rollup_confirmation(
-        %{
-          config: %{
-            l1_rpc: l1_rpc_config,
-            l1_outbox_address: outbox_address,
-            rollup_rpc: rollup_rpc_config,
-            l1_start_block: l1_start_block,
-            l1_rollup_init_block: l1_rollup_init_block
-          },
-          data: %{
-            historical_confirmations_end_block: expected_confirmation_end_block,
-            historical_confirmations_start_block: expected_confirmation_start_block
-          }
-        } = _state
-      ) do
-    {interim_start_block, end_block} =
-      case expected_confirmation_end_block do
-        nil ->
-          Db.l1_blocks_to_expect_rollup_blocks_confirmation(nil)
-
-        _ ->
-          {expected_confirmation_start_block, expected_confirmation_end_block}
-      end
-
-    with {:end_block_defined, false} <- {:end_block_defined, is_nil(end_block)},
-         {:genesis_not_reached, true} <- {:genesis_not_reached, end_block >= l1_rollup_init_block} do
-      start_block =
-        case interim_start_block do
-          nil ->
-            max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
-
-          value ->
-            Enum.max([l1_rollup_init_block, value, end_block - l1_rpc_config.logs_block_range + 1])
-        end
-
-      Logger.info("Block range for historical rollup confirmations discovery: #{start_block}..#{end_block}")
-
-      retcode =
-        NewConfirmations.discover(
-          outbox_address,
-          start_block,
-          end_block,
-          l1_rpc_config,
-          rollup_rpc_config
-        )
-
-      {retcode, {start_block, interim_start_block}}
-    else
-      # TODO: Check the case when all blocks are confirmed
-      {:end_block_defined, true} -> {:ok, {l1_start_block, nil}}
-      {:genesis_not_reached, false} -> {:ok, {l1_rollup_init_block, nil}}
-    end
-  end
-
-  defp discover_new_l1_messages_executions(
-         %{
-           config: %{
-             l1_rpc: l1_rpc_config,
-             l1_outbox_address: outbox_address
-           },
-           data: %{new_executions_start_block: start_block}
-         } = _state
-       ) do
-    # Requesting the "latest" block instead of "safe" allows to catch executions
-    # without latency.
-    {:ok, latest_block} =
-      IndexerHelper.get_block_number_by_tag(
-        "latest",
-        l1_rpc_config.json_rpc_named_arguments,
-        Rpc.get_resend_attempts()
-      )
-
-    end_block = min(start_block + l1_rpc_config.logs_block_range - 1, latest_block)
-
-    if start_block <= end_block do
-      Logger.info("Block range for new l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
-
-      NewL1Executions.discover(
-        outbox_address,
-        start_block,
-        end_block,
-        l1_rpc_config
-      )
-
-      {:ok, end_block}
-    else
-      {:ok, start_block - 1}
-    end
-  end
-
-  defp discover_historical_l1_messages_executions(
-         %{
-           config: %{
-             l1_rpc: l1_rpc_config,
-             l1_outbox_address: outbox_address,
-             l1_rollup_init_block: l1_rollup_init_block
-           },
-           data: %{historical_executions_end_block: end_block}
-         } = _state
-       ) do
-    if end_block >= l1_rollup_init_block do
-      start_block = max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
-
-      Logger.info("Block range for historical l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
-
-      NewL1Executions.discover(
-        outbox_address,
-        start_block,
-        end_block,
-        l1_rpc_config
-      )
-
-      {:ok, start_block}
-    else
-      {:ok, l1_rollup_init_block}
-    end
-  end
-
-  defp monitor_lifecycle_txs_finalization(state) do
-    L1Finalization.monitor_lifecycle_txs(state.config.l1_rpc.json_rpc_named_arguments)
   end
 end
