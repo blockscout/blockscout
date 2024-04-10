@@ -40,8 +40,8 @@ defmodule BlockScoutWeb.PagingHelper do
   def allowed_stability_validators_states, do: @allowed_stability_validators_states
 
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}, [:validated | _]) do
-    with {block_number, ""} <- Integer.parse(block_number_string),
-         {index, ""} <- Integer.parse(index_string) do
+    with {:ok, block_number} <- Helper.safe_parse_non_negative_integer(block_number_string),
+         {:ok, index} <- Helper.safe_parse_non_negative_integer(index_string) do
       [paging_options: %{@default_paging_options | key: {block_number, index}}]
     else
       _ ->
