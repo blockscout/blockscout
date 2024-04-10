@@ -8,13 +8,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction}
   alias Explorer.Repo
 
-  @first_topic_hex_string_1 "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
-
-  defp topic(topic_hex_string) do
-    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
-    topic
-  end
-
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.TransactionsApiV2.child_id())
     Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.TransactionsApiV2.child_id())
@@ -975,6 +968,13 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   if Application.compile_env(:explorer, :chain_type) == "stability" do
+    @first_topic_hex_string_1 "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
+
+    defp topic(topic_hex_string) do
+      {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+      topic
+    end
+
     describe "stability fees" do
       test "check stability fees", %{conn: conn} do
         tx = insert(:transaction) |> with_block()
