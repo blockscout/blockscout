@@ -322,7 +322,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp invalid_block_numbers(transactions, internal_transactions_params) do
-    # Finds all mistmatches between transactions and internal transactions
+    # Finds all mismatches between transactions and internal transactions
     # for a block number:
     # - there are no internal txs for some transactions
     # - there are internal txs with a different block number than their transactions
