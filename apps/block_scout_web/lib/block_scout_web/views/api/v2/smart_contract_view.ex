@@ -337,14 +337,23 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   def render_json(value, type) when is_list(value) do
-    type =
-      if String.ends_with?(type, "[]") do
-        String.slice(type, 0..-3)
-      else
-        type
+    # try/rescue is added because of the issue https://github.com/poanetwork/ex_abi/issues/168
+    item_type =
+      try do
+        case FunctionSelector.decode_type(type) do
+          {:array, item_type, _} -> item_type
+          {:array, item_type} -> item_type
+        end
+      rescue
+        _ ->
+          if String.ends_with?(type, "[]") do
+            String.slice(type, 0..-3)
+          else
+            type
+          end
       end
 
-    value |> Enum.map(&render_json(&1, type))
+    value |> Enum.map(&render_json(&1, item_type))
   end
 
   def render_json(value, type) when type in [:address, "address", "address payable"] do
