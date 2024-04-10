@@ -9,7 +9,7 @@ defmodule Explorer.Helper do
 
   import Ecto.Query, only: [where: 3]
 
-  @max_safe_block_number round(:math.pow(2, 63)) - 1
+  @max_safe_integer round(:math.pow(2, 63)) - 1
 
   @spec decode_data(binary() | map(), list()) :: list() | nil
   def decode_data("0x", types) do
@@ -70,31 +70,31 @@ defmodule Explorer.Helper do
   end
 
   @doc """
-    Converts a block number from a string to an integer, ensuring it's
-    non-negative and within the acceptable range for database insertion.
+    Converts a string to an integer, ensuring it's non-negative and within the
+    acceptable range for database insertion.
 
     ## Examples
 
-        iex> safe_parse_block_number("0")
+        iex> safe_parse_non_negative_integer("0")
         {:ok, 0}
 
-        iex> safe_parse_block_number("-1")
-        {:error, :negative_block_number}
+        iex> safe_parse_non_negative_integer("-1")
+        {:error, :negative_integer}
 
-        iex> safe_parse_block_number("27606393966689717254124294199939478533331961967491413693980084341759630764504")
-        {:error, :too_big_block_number}
+        iex> safe_parse_non_negative_integer("27606393966689717254124294199939478533331961967491413693980084341759630764504")
+        {:error, :too_big_integer}
   """
-  def safe_parse_block_number(string) do
+  def safe_parse_non_negative_integer(string) do
     case Integer.parse(string) do
       {num, ""} ->
         case num do
-          _ when num > @max_safe_block_number -> {:error, :too_big_block_number}
-          _ when num < 0 -> {:error, :negative_block_number}
+          _ when num > @max_safe_integer -> {:error, :too_big_integer}
+          _ when num < 0 -> {:error, :negative_integer}
           _ -> {:ok, num}
         end
 
       _ ->
-        {:error, :invalid_block_number}
+        {:error, :invalid_integer}
     end
   end
 

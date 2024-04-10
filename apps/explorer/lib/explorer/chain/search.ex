@@ -485,7 +485,7 @@ defmodule Explorer.Chain.Search do
         )
 
       _ ->
-        case ExplorerHelper.safe_parse_block_number(term) do
+        case ExplorerHelper.safe_parse_non_negative_integer(term) do
           {:ok, block_number} ->
             from(block in Block,
               where: block.number == ^block_number,
