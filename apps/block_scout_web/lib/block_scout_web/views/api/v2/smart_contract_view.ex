@@ -336,21 +336,40 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end)
   end
 
-  def render_json(value, type) when is_list(value) do
-    # try/rescue is added because of the issue https://github.com/poanetwork/ex_abi/issues/168
+  def render_json(value, type) when is_list(value) and is_tuple(type) do
     item_type =
-      try do
-        case FunctionSelector.decode_type(type) do
-          {:array, item_type, _} -> item_type
-          {:array, item_type} -> item_type
-        end
-      rescue
+      case type do
+        {:array, item_type, _} -> item_type
+        {:array, item_type} -> item_type
+      end
+
+    value |> Enum.map(&render_json(&1, item_type))
+  end
+
+  def render_json(value, type) when is_list(value) and not is_tuple(type) do
+    sanitized_type =
+      case type do
+        "tuple[" <> rest ->
+          # we need to convert tuple[...][] or tuple[...][n] into (...)[] or (...)[n]
+          # before sending it to the `FunctionSelector.decode_type/1. See https://github.com/poanetwork/ex_abi/issues/168.
+          tuple_item_types =
+            rest
+            |> String.split("]")
+            |> Enum.slice(0..-3)
+            |> Enum.join("]")
+
+          array_str = "[" <> (rest |> String.split("[") |> List.last())
+
+          "(" <> tuple_item_types <> ")" <> array_str
+
         _ ->
-          if String.ends_with?(type, "[]") do
-            String.slice(type, 0..-3)
-          else
-            type
-          end
+          type
+      end
+
+    item_type =
+      case FunctionSelector.decode_type(sanitized_type) do
+        {:array, item_type, _} -> item_type
+        {:array, item_type} -> item_type
       end
 
     value |> Enum.map(&render_json(&1, item_type))
