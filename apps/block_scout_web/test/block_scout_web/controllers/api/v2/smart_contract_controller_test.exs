@@ -1770,6 +1770,158 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                "names" => ["bytes"]
              } in response
     end
+
+    test "Digests tuple array type", %{conn: conn} do
+      abi = [
+        %{
+          "inputs" => [],
+          "stateMutability" => "nonpayable",
+          "type" => "constructor"
+        },
+        %{
+          "inputs" => [
+            %{
+              "internalType" => "address",
+              "name" => "",
+              "type" => "address"
+            }
+          ],
+          "name" => "contributions",
+          "outputs" => [
+            %{
+              "internalType" => "uint256",
+              "name" => "iterations",
+              "type" => "uint256"
+            }
+          ],
+          "stateMutability" => "view",
+          "type" => "function"
+        },
+        %{
+          "inputs" => [
+            %{
+              "internalType" => "uint256",
+              "name" => "",
+              "type" => "uint256"
+            }
+          ],
+          "name" => "contributors",
+          "outputs" => [
+            %{
+              "internalType" => "address",
+              "name" => "",
+              "type" => "address"
+            }
+          ],
+          "stateMutability" => "view",
+          "type" => "function"
+        },
+        %{
+          "inputs" => [],
+          "name" => "getTopTenContributors",
+          "outputs" => [
+            %{
+              "internalType" => "address[10]",
+              "name" => "",
+              "type" => "address[10]"
+            },
+            %{
+              "internalType" => "uint256[10]",
+              "name" => "",
+              "type" => "uint256[10]"
+            }
+          ],
+          "stateMutability" => "view",
+          "type" => "function"
+        }
+      ]
+
+      # id_2 =
+      #   abi
+      #   |> ABI.parse_specification()
+      #   |> Enum.at(0)
+      #   |> Map.fetch!(:method_id)
+
+      target_contract = insert(:smart_contract, abi: abi)
+      address_hash_string = to_string(target_contract.address_hash)
+
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               method: "eth_call",
+               params: [
+                 %{data: "0x94ec8506", to: ^address_hash_string},
+                 "latest"
+               ]
+             }
+           ],
+           _opts ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result:
+                 "0x000000000000000000000000af1caf51d49b0e63d1ff7e5d4ed6ea26d15f3f9d0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+             }
+           ]}
+        end
+      )
+
+      request = get(conn, "/api/v2/smart-contracts/#{target_contract.address_hash}/methods-read")
+      assert response = json_response(request, 200)
+
+      assert [
+               %{
+                 "inputs" => [%{"internalType" => "address", "name" => "", "type" => "address"}],
+                 "method_id" => "42e94c90",
+                 "name" => "contributions",
+                 "outputs" => [%{"internalType" => "uint256", "name" => "iterations", "type" => "uint256"}],
+                 "stateMutability" => "view",
+                 "type" => "function"
+               },
+               %{
+                 "inputs" => [%{"internalType" => "uint256", "name" => "", "type" => "uint256"}],
+                 "method_id" => "3cb5d100",
+                 "name" => "contributors",
+                 "outputs" => [%{"internalType" => "address", "name" => "", "type" => "address"}],
+                 "stateMutability" => "view",
+                 "type" => "function"
+               },
+               %{
+                 "inputs" => [],
+                 "method_id" => "94ec8506",
+                 "name" => "getTopTenContributors",
+                 "names" => ["address[10]", "uint256[10]"],
+                 "outputs" => [
+                   %{
+                     "type" => "address[10]",
+                     "value" => [
+                       "0xaf1caf51d49b0e63d1ff7e5d4ed6ea26d15f3f9d",
+                       "0x0000000000000000000000000000000000000000",
+                       "0x0000000000000000000000000000000000000000",
+                       "0x0000000000000000000000000000000000000000",
+                       "0x0000000000000000000000000000000000000000",
+                       "0x0000000000000000000000000000000000000000",
+                       "0x0000000000000000000000000000000000000000",
+                       "0x0000000000000000000000000000000000000000",
+                       "0x0000000000000000000000000000000000000000",
+                       "0x0000000000000000000000000000000000000000"
+                     ]
+                   },
+                   %{
+                     "type" => "uint256[10]",
+                     "value" => ["1", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+                   }
+                 ],
+                 "stateMutability" => "view",
+                 "type" => "function"
+               }
+             ] == response
+    end
   end
 
   describe "/smart-contracts/{address_hash}/query-read-method" do
