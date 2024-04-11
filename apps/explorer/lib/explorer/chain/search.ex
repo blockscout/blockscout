@@ -630,6 +630,7 @@ defmodule Explorer.Chain.Search do
   defp merge_address_search_result_with_ens_info([address], ens_info) do
     address
     |> compose_result_checksummed_address_hash()
+    |> Map.put(:type, "ens_domain")
     |> Map.put(:ens_info, ens_info)
     |> Map.put(:priority, 2)
   end
