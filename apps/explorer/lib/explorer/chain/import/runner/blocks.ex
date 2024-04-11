@@ -639,27 +639,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         )
       end)
 
-    refs_to_token_transfers =
-      from(historical_tt in subquery(historical_token_transfers_query),
-        inner_join: tt in subquery(filtered_query),
-        on:
-          tt.token_contract_address_hash == historical_tt.token_contract_address_hash and
-            tt.block_number == historical_tt.block_number and
-            fragment("? @> ARRAY[?::decimal]", tt.token_ids, historical_tt.token_id),
-        select: %{
-          token_contract_address_hash: tt.token_contract_address_hash,
-          token_id: historical_tt.token_id,
-          log_index: max(tt.log_index),
-          block_number: tt.block_number
-        },
-        group_by: [tt.token_contract_address_hash, historical_tt.token_id, tt.block_number]
-      )
+    refs_to_token_transfers = refs_to_token_transfers_query(historical_token_transfers_query, filtered_query)
 
-    derived_token_transfers_query =
-      from(tt in filtered_query,
-        inner_join: tt_1 in subquery(refs_to_token_transfers),
-        on: tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number
-      )
+    derived_token_transfers_query = derived_token_transfers_query(refs_to_token_transfers, filtered_query)
 
     changes =
       derived_token_transfers_query
@@ -742,6 +724,64 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           block_number: token_transfer.block_number,
           log_index: token_transfer.log_index
         }
+      )
+    end
+  end
+
+  defp refs_to_token_transfers_query(historical_token_transfers_query, filtered_query) do
+    if Application.get_env(:explorer, :chain_type) == "polygon_zkevm" do
+      from(historical_tt in subquery(historical_token_transfers_query),
+        inner_join: tt in subquery(filtered_query),
+        on:
+          tt.token_contract_address_hash == historical_tt.token_contract_address_hash and
+            tt.block_number == historical_tt.block_number and
+            fragment("? @> ARRAY[?::decimal]", tt.token_ids, historical_tt.token_id),
+        inner_join: t in Transaction,
+        on: tt.transaction_hash == t.hash,
+        select: %{
+          token_contract_address_hash: tt.token_contract_address_hash,
+          token_id: historical_tt.token_id,
+          block_number: tt.block_number,
+          transaction_hash: t.hash,
+          log_index: tt.log_index,
+          position:
+            over(row_number(),
+              partition_by: [tt.token_contract_address_hash, historical_tt.token_id, tt.block_number],
+              order_by: [desc: t.index, desc: tt.log_index]
+            )
+        }
+      )
+    else
+      from(historical_tt in subquery(historical_token_transfers_query),
+        inner_join: tt in subquery(filtered_query),
+        on:
+          tt.token_contract_address_hash == historical_tt.token_contract_address_hash and
+            tt.block_number == historical_tt.block_number and
+            fragment("? @> ARRAY[?::decimal]", tt.token_ids, historical_tt.token_id),
+        select: %{
+          token_contract_address_hash: tt.token_contract_address_hash,
+          token_id: historical_tt.token_id,
+          log_index: max(tt.log_index),
+          block_number: tt.block_number
+        },
+        group_by: [tt.token_contract_address_hash, historical_tt.token_id, tt.block_number]
+      )
+    end
+  end
+
+  defp derived_token_transfers_query(refs_to_token_transfers, filtered_query) do
+    if Application.get_env(:explorer, :chain_type) == "polygon_zkevm" do
+      from(tt in filtered_query,
+        inner_join: tt_1 in subquery(refs_to_token_transfers),
+        on:
+          tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number and
+            tt_1.transaction_hash == tt.transaction_hash,
+        where: tt_1.position == 1
+      )
+    else
+      from(tt in filtered_query,
+        inner_join: tt_1 in subquery(refs_to_token_transfers),
+        on: tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number
       )
     end
   end
