@@ -125,11 +125,13 @@ defmodule Explorer.Chain.Transaction.Schema do
                                 type: Hash.Address
                               )
 
-                              belongs_to(:gas_currency, Address,
+                              belongs_to(:gas_token_contract_address, Address,
                                 foreign_key: :gas_token_contract_address_hash,
                                 references: :hash,
                                 type: Hash.Address
                               )
+
+                              has_one(:gas_token, through: [:gas_token_contract_address, :token])
                             end,
                             2
                           )

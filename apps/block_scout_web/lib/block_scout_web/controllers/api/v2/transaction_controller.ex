@@ -120,6 +120,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           |> Map.put([execution_node: :names], :optional)
           |> Map.put([wrapped_to_address: :names], :optional)
 
+        "celo" ->
+          necessity_by_association_with_actions
+          |> Map.put(:gas_token, :optional)
+
         _ ->
           necessity_by_association_with_actions
       end
