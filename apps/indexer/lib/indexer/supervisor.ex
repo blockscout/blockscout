@@ -254,6 +254,7 @@ defmodule Indexer.Supervisor do
        ) do
     case Keyword.fetch(json_rpc_named_arguments, :variant) do
       {:ok, ignored_variant} when ignored_variant in @variants_with_unimplemented_fetch_beneficiaries ->
+        Application.put_env(:indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true)
         fetchers
 
       _ ->
