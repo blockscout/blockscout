@@ -5,12 +5,22 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
   import Explorer.Chain, only: [select_repo: 1]
 
+  alias Explorer.Application.Constants
   alias Explorer.Chain.{Block, Hash, Transaction}
   alias Explorer.Chain.Cache.OptimismFinalizationPeriod
-  alias Explorer.Chain.Optimism.{OutputRoot, WithdrawalEvent}
-  alias Explorer.{PagingOptions, Repo}
+  alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot, WithdrawalEvent}
+  alias Explorer.{Helper, PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
+
+  @game_status_defender_wins 2
+
+  @withdrawal_status_waiting_for_state_root "Waiting for state root"
+  @withdrawal_status_ready_to_prove "Ready to prove"
+  @withdrawal_status_waiting_to_resolve "Waiting a game to resolve"
+  @withdrawal_status_in_challenge "In challenge period"
+  @withdrawal_status_ready_for_relay "Ready for relay"
+  @withdrawal_status_relayed "Relayed"
 
   @required_attrs ~w(msg_nonce hash l2_transaction_hash l2_block_number)a
 
@@ -118,16 +128,16 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   """
   @spec status(map()) :: {String.t(), DateTime.t() | nil}
   def status(w) when is_nil(w.l1_transaction_hash) do
-    l1_timestamp =
+    withdrawal_event =
       Repo.replica().one(
         from(
           we in WithdrawalEvent,
-          select: we.l1_timestamp,
+          select: {we.l1_timestamp, we.game_index},
           where: we.withdrawal_hash == ^w.hash and we.l1_event_type == :WithdrawalProven
         )
       )
 
-    if is_nil(l1_timestamp) do
+    if is_nil(withdrawal_event) do
       last_root_l2_block_number =
         Repo.replica().one(
           from(root in OutputRoot,
@@ -137,27 +147,104 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
           )
         ) || 0
 
-      if w.l2_block_number > last_root_l2_block_number do
-        {"Waiting for state root", nil}
+      if w.l2_block_number <= last_root_l2_block_number or appropriate_games_found(w.l2_block_number) do
+        {@withdrawal_status_ready_to_prove, nil}
       else
-        {"Ready to prove", nil}
+        {@withdrawal_status_waiting_for_state_root, nil}
       end
     else
-      challenge_period =
-        case OptimismFinalizationPeriod.get_period() do
-          nil -> 604_800
-          period -> period
+      {l1_timestamp, game_index} = withdrawal_event
+
+      game =
+        if not is_nil(game_index) do
+          Repo.replica().one(
+            from(
+              g in DisputeGame,
+              select: %{created_at: g.created_at, resolved_at: g.resolved_at, status: g.status},
+              where: g.index == ^game_index
+            )
+          )
         end
 
-      if DateTime.compare(l1_timestamp, DateTime.add(DateTime.utc_now(), -challenge_period, :second)) == :lt do
-        {"Ready for relay", nil}
+      if is_nil(game) or DateTime.compare(l1_timestamp, game.created_at) == :lt do
+        # the old status determining approach
+        pre_fault_proofs_status(l1_timestamp)
       else
-        {"In challenge period", DateTime.add(l1_timestamp, challenge_period, :second)}
+        # the new status determining approach
+        post_fault_proofs_status(l1_timestamp, game)
       end
     end
   end
 
   def status(_w) do
-    {"Relayed", nil}
+    {@withdrawal_status_relayed, nil}
+  end
+
+  defp appropriate_games_found(withdrawal_l2_block_number) do
+    case Helper.parse_integer(Constants.get_constant_value("optimism_respected_game_type")) do
+      nil ->
+        false
+
+      game_type ->
+        query =
+          from(g in DisputeGame,
+            where: g.game_type == ^game_type,
+            order_by: [desc: g.index],
+            limit: 100
+          )
+
+        query
+        |> Repo.all(timeout: :infinity)
+        |> Enum.any?(fn game ->
+          [l2_block_number] = Helper.decode_data(game.extra_data, [{:uint, 256}])
+          withdrawal_l2_block_number <= l2_block_number
+        end)
+    end
+  end
+
+  defp pre_fault_proofs_status(l1_timestamp) do
+    challenge_period =
+      case OptimismFinalizationPeriod.get_period() do
+        nil -> 604_800
+        period -> period
+      end
+
+    if DateTime.compare(l1_timestamp, DateTime.add(DateTime.utc_now(), -challenge_period)) == :lt do
+      {@withdrawal_status_ready_for_relay, nil}
+    else
+      {@withdrawal_status_in_challenge, DateTime.add(l1_timestamp, challenge_period)}
+    end
+  end
+
+  defp post_fault_proofs_status(l1_timestamp, game) do
+    if game.status != @game_status_defender_wins do
+      # the game status is not DEFENDER_WINS
+      {@withdrawal_status_waiting_to_resolve, nil}
+    else
+      dispute_game_finality_delay_seconds =
+        Helper.parse_integer(Constants.get_constant_value("optimism_dispute_game_finality_delay_seconds"))
+
+      proof_maturity_delay_seconds =
+        Helper.parse_integer(Constants.get_constant_value("optimism_proof_maturity_delay_seconds"))
+
+      false = is_nil(dispute_game_finality_delay_seconds)
+      false = is_nil(proof_maturity_delay_seconds)
+
+      finality_delayed = DateTime.add(game.resolved_at, dispute_game_finality_delay_seconds)
+      proof_delayed = DateTime.add(l1_timestamp, proof_maturity_delay_seconds)
+
+      now = DateTime.utc_now()
+
+      if DateTime.compare(now, finality_delayed) == :lt or DateTime.compare(now, finality_delayed) == :eq or
+           DateTime.compare(now, proof_delayed) == :lt or DateTime.compare(now, proof_delayed) == :eq do
+        seconds_left1 = max(DateTime.diff(finality_delayed, now), 0)
+        seconds_left2 = max(DateTime.diff(proof_delayed, now), 0)
+        seconds_left = max(seconds_left1, seconds_left2)
+
+        {@withdrawal_status_in_challenge, DateTime.add(now, seconds_left)}
+      else
+        {@withdrawal_status_ready_for_relay, nil}
+      end
+    end
   end
 end

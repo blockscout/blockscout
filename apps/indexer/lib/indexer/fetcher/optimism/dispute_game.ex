@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
+  alias ABI.TypeEncoder
   alias EthereumJSONRPC.Contract
   alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
@@ -313,7 +314,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       start_index..end_index
       |> Enum.map(fn index ->
         encoded_call =
-          ABI.TypeEncoder.encode([index], %ABI.FunctionSelector{
+          TypeEncoder.encode([index], %ABI.FunctionSelector{
             function: "gameAtIndex",
             types: [
               {:uint, 256}
@@ -337,8 +338,10 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
          status_by_index = read_extra_data("0x200d2ed2", "status()", games, json_rpc_named_arguments),
          false <- is_nil(status_by_index) do
       Enum.map(games, fn game ->
+        [extra_data] = Helper.decode_data(extra_data_by_index[game.index], [:bytes])
+
         game
-        |> Map.put(:extra_data, extra_data_by_index[game.index])
+        |> Map.put(:extra_data, "0x" <> Base.encode16(extra_data, case: :lower))
         |> Map.put(:resolved_at, sanitize_resolved_at(resolved_at_by_index[game.index]))
         |> Map.put(:status, quantity_to_integer(status_by_index[game.index]))
       end)

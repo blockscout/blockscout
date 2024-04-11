@@ -17,5 +17,7 @@ defmodule Explorer.Repo.Optimism.Migrations.FaultProofsSupport do
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
+
+    create(index(:op_dispute_games, :game_type))
   end
 end
