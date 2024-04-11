@@ -14,7 +14,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
   def get_implementation_address(address_hash, options \\ []) do
     address_hash
     |> get_implementation_address_hash_string(options)
-    |> implementation_to_smart_contract(options)
+    |> Proxy.implementation_to_smart_contract(options)
   end
 
   @doc """
@@ -53,18 +53,5 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
       _ ->
         nil
     end
-  end
-
-  defp implementation_to_smart_contract(nil, _options), do: nil
-
-  defp implementation_to_smart_contract(address_hash, options) do
-    necessity_by_association = %{
-      :smart_contract_additional_sources => :optional
-    }
-
-    address_hash
-    |> SmartContract.get_smart_contract_query()
-    |> Chain.join_associations(necessity_by_association)
-    |> Chain.select_repo(options).one(timeout: 10_000)
   end
 end

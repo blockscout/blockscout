@@ -10,6 +10,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   import Explorer.Chain,
     only: [
+      join_associations: 2,
+      select_repo: 1,
       string_to_address_hash: 1
     ]
 
@@ -298,5 +300,22 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     address_hex = storage_value |> String.slice(-40, 40) |> String.pad_leading(40, ["0"])
 
     "0x" <> address_hex
+  end
+
+  @doc """
+  implementation address hash to SmartContract
+  """
+  @spec implementation_to_smart_contract(nil | Hash.Address.t(), Keyword.t()) :: nil | SmartContract.t()
+  def implementation_to_smart_contract(nil, _options), do: nil
+
+  def implementation_to_smart_contract(address_hash, options) do
+    necessity_by_association = %{
+      :smart_contract_additional_sources => :optional
+    }
+
+    address_hash
+    |> SmartContract.get_smart_contract_query()
+    |> join_associations(necessity_by_association)
+    |> select_repo(options).one(timeout: 10_000)
   end
 end

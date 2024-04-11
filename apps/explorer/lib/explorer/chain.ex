@@ -85,7 +85,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
-  alias Explorer.Chain.SmartContract.Proxy.EIP1167
+  alias Explorer.Chain.SmartContract.Proxy.{EIP1167, EIP1967}
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
@@ -1193,6 +1193,7 @@ defmodule Explorer.Chain do
 
             address_verified_twin_contract =
               EIP1167.get_implementation_address(hash, options) ||
+                EIP1967.get_implementation_address(hash, options) ||
                 SmartContract.get_address_verified_twin_contract(hash, options).verified_contract
 
             SmartContract.add_twin_info_to_contract(address_result, address_verified_twin_contract, hash)

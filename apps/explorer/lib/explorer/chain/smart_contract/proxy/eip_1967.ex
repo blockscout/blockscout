@@ -3,7 +3,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   Module for fetching proxy implementation from https://eips.ethereum.org/EIPS/eip-1967 (Proxy Storage Slots)
   """
   alias EthereumJSONRPC.Contract
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Basic
 
@@ -19,6 +19,16 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   # changes requested by https://github.com/blockscout/blockscout/issues/5292
   # This is the keccak-256 hash of "org.zeppelinos.proxy.implementation"
   @storage_slot_openzeppelin_contract_address "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
+
+  @doc """
+  Get implementation address following EIP-1167
+  """
+  @spec get_implementation_address(Hash.Address.t(), Keyword.t()) :: SmartContract.t() | nil
+  def get_implementation_address(address_hash, options \\ []) do
+    address_hash
+    |> get_implementation_address_hash_string()
+    |> Proxy.implementation_to_smart_contract(options)
+  end
 
   @doc """
   Get implementation address hash string following EIP-1967

@@ -31,7 +31,7 @@ defmodule Explorer.Chain.SmartContract do
   alias Explorer.Chain.Address.Name, as: AddressName
 
   alias Explorer.Chain.SmartContract.{ExternalLibrary, Proxy}
-  alias Explorer.Chain.SmartContract.Proxy.EIP1167
+  alias Explorer.Chain.SmartContract.Proxy.{EIP1167, EIP1967}
   alias Explorer.SmartContract.Helper
   alias Explorer.SmartContract.Solidity.Verifier
   alias Timex.Duration
@@ -724,6 +724,7 @@ defmodule Explorer.Chain.SmartContract do
   def compose_smart_contract(address_result, hash, options) do
     address_verified_twin_contract =
       EIP1167.get_implementation_address(hash, options) ||
+        EIP1967.get_implementation_address(hash, options) ||
         get_address_verified_twin_contract(hash, options).verified_contract
 
     if address_verified_twin_contract do
@@ -1021,6 +1022,7 @@ defmodule Explorer.Chain.SmartContract do
     with true <- is_nil(current_smart_contract),
          address_verified_twin_contract =
            EIP1167.get_implementation_address(address_hash, options) ||
+             EIP1967.get_implementation_address(address_hash, options) ||
              get_address_verified_twin_contract(address_hash, options).verified_contract,
          false <- is_nil(address_verified_twin_contract) do
       address_verified_twin_contract
