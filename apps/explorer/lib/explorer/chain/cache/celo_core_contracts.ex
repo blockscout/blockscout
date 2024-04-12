@@ -74,7 +74,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     # This will get the task PID if one exists and launch a new task if not
     # See next `handle_fallback` definition
 
-    get_async_task()
+    # warn: uncomment
+    # get_async_task()
 
     {:return, default_addresses()}
   end
