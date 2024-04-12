@@ -1,8 +1,7 @@
 defmodule BlockScoutWeb.API.V2.MudView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.{Block, Mud, Mud.Table, Transaction}
-  alias Explorer.Chain.ZkSync.TransactionBatch
+  alias Explorer.Chain.{Mud, Mud.Table}
 
   @doc """
     Function to render GET requests to `/api/v2/mud/worlds` endpoint.

@@ -234,7 +234,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
       |> Enum.reduce(%{}, fn {key, type}, acc ->
         with param when param != nil <- Map.get(params, key),
              {:ok, val} <- type.cast(param) do
-          acc |> Map.put(String.to_atom(key), val)
+          acc |> Map.put(String.to_existing_atom(key), val)
         else
           _ -> acc
         end

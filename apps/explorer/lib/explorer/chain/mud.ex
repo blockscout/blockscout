@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Mud do
       limit: 2
     ]
 
-  alias ABI.{TypeDecoder, TypeEncoder}
+  alias ABI.TypeDecoder
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
@@ -140,7 +140,7 @@ defmodule Explorer.Chain.Mud do
   end
 
   def preload_records_timestamps(records) do
-    block_numbers = records |> Enum.map(& &1.block_number |> Decimal.to_integer()) |> Enum.uniq()
+    block_numbers = records |> Enum.map(&(&1.block_number |> Decimal.to_integer())) |> Enum.uniq()
 
     Block
     |> where([b], b.number in ^block_numbers)
