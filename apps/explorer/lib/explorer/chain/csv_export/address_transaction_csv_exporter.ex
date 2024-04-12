@@ -67,7 +67,13 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
         if Map.has_key?(acc, date) do
           acc
         else
-          Map.put(acc, date, price_at_date(date))
+          market_history = MarketHistory.price_at_date(date)
+
+          Map.put(
+            acc,
+            date,
+            {market_history && market_history.opening_price, market_history && market_history.closing_price}
+          )
         end
       end)
 
@@ -109,19 +115,6 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
     |> case do
       {:actual, value} -> value
       {:maximum, value} -> "Max of #{value}"
-    end
-  end
-
-  defp price_at_date(date) do
-    query =
-      from(
-        mh in MarketHistory,
-        where: mh.date == ^date
-      )
-
-    case Repo.one(query) do
-      nil -> {nil, nil}
-      price -> {price.opening_price, price.closing_price}
     end
   end
 end
