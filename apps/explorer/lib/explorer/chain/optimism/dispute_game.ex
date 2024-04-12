@@ -4,12 +4,15 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   use Explorer.Schema
 
   import Ecto.Query
+  import Explorer.Chain, only: [select_repo: 1]
 
   alias Explorer.Chain.{Data, Hash}
-  alias Explorer.Repo
+  alias Explorer.{PagingOptions, Repo}
 
   @required_attrs ~w(index game_type address created_at)a
   @optional_attrs ~w(extra_data resolved_at status)a
+
+  @default_paging_options %PagingOptions{page_size: 50}
 
   @type t :: %__MODULE__{
           index: non_neg_integer(),
@@ -56,5 +59,31 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
     query
     |> Repo.one()
     |> Kernel.||(-1)
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.Optimism.DisputeGame.t/0`'s' in descending order based on a game index.
+
+  """
+  @spec list :: [__MODULE__.t()]
+  def list(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
+      from(g in __MODULE__,
+        order_by: [desc: g.index],
+        select: g
+      )
+
+    base_query
+    |> page_dispute_games(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  defp page_dispute_games(query, %PagingOptions{key: nil}), do: query
+
+  defp page_dispute_games(query, %PagingOptions{key: {index}}) do
+    from(g in query, where: g.index < ^index)
   end
 end

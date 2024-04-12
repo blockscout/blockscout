@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     ]
 
   alias Explorer.Chain
-  alias Explorer.Chain.Optimism.{Deposit, OutputRoot, TxnBatch, Withdrawal}
+  alias Explorer.Chain.Optimism.{Deposit, DisputeGame, OutputRoot, TxnBatch, Withdrawal}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -55,6 +55,28 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   def output_roots_count(conn, _params) do
     items_count(conn, OutputRoot)
+  end
+
+  def games(conn, params) do
+    {games, next_page} =
+      params
+      |> paging_options()
+      |> Keyword.put(:api?, true)
+      |> DisputeGame.list()
+      |> split_list_by_page()
+
+    next_page_params = next_page_params(next_page, games, params)
+
+    conn
+    |> put_status(200)
+    |> render(:optimism_games, %{
+      games: games,
+      next_page_params: next_page_params
+    })
+  end
+
+  def games_count(conn, _params) do
+    items_count(conn, DisputeGame)
   end
 
   def deposits(conn, params) do

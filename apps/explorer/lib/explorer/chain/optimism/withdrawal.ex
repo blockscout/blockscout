@@ -123,11 +123,13 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     end)
   end
 
+  @spec status(map(), list() | nil) :: {String.t(), DateTime.t() | nil}
+  def status(w, respected_games \\ nil)
+
   @doc """
     Gets Optimism Withdrawal status and remaining time to unlock (when the status is `In challenge period`).
   """
-  @spec status(map()) :: {String.t(), DateTime.t() | nil}
-  def status(w) when is_nil(w.l1_transaction_hash) do
+  def status(w, respected_games) when is_nil(w.l1_transaction_hash) do
     withdrawal_event =
       Repo.replica().one(
         from(
@@ -138,19 +140,15 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       )
 
     if is_nil(withdrawal_event) do
-      last_root_l2_block_number =
-        Repo.replica().one(
-          from(root in OutputRoot,
-            select: root.l2_block_number,
-            order_by: [desc: root.l2_output_index],
-            limit: 1
-          )
-        ) || 0
+      cond do
+        appropriate_games_found(w.l2_block_number, respected_games) ->
+          {@withdrawal_status_ready_to_prove, nil}
 
-      if w.l2_block_number <= last_root_l2_block_number or appropriate_games_found(w.l2_block_number) do
-        {@withdrawal_status_ready_to_prove, nil}
-      else
-        {@withdrawal_status_waiting_for_state_root, nil}
+        appropriate_root_found(w.l2_block_number) ->
+          {@withdrawal_status_ready_to_prove, nil}
+
+        true ->
+          {@withdrawal_status_waiting_for_state_root, nil}
       end
     else
       {l1_timestamp, game_index} = withdrawal_event
@@ -176,14 +174,14 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     end
   end
 
-  def status(_w) do
+  def status(_w, _respected_games) do
     {@withdrawal_status_relayed, nil}
   end
 
-  defp appropriate_games_found(withdrawal_l2_block_number) do
+  def respected_games do
     case Helper.parse_integer(Constants.get_constant_value("optimism_respected_game_type")) do
       nil ->
-        false
+        []
 
       game_type ->
         query =
@@ -193,13 +191,36 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
             limit: 100
           )
 
-        query
-        |> Repo.all(timeout: :infinity)
-        |> Enum.any?(fn game ->
-          [l2_block_number] = Helper.decode_data(game.extra_data, [{:uint, 256}])
-          withdrawal_l2_block_number <= l2_block_number
-        end)
+        Repo.all(query, timeout: :infinity)
     end
+  end
+
+  defp appropriate_games_found(withdrawal_l2_block_number, respected_games) do
+    respected_games =
+      if is_nil(respected_games) do
+        respected_games()
+      else
+        respected_games
+      end
+
+    respected_games
+    |> Enum.any?(fn game ->
+      [l2_block_number] = Helper.decode_data(game.extra_data, [{:uint, 256}])
+      withdrawal_l2_block_number <= l2_block_number
+    end)
+  end
+
+  defp appropriate_root_found(withdrawal_l2_block_number) do
+    last_root_l2_block_number =
+      Repo.replica().one(
+        from(root in OutputRoot,
+          select: root.l2_block_number,
+          order_by: [desc: root.l2_output_index],
+          limit: 1
+        )
+      ) || 0
+
+    withdrawal_l2_block_number <= last_root_l2_block_number
   end
 
   defp pre_fault_proofs_status(l1_timestamp) do

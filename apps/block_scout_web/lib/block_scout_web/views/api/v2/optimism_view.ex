@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Optimism.Withdrawal
 
@@ -65,6 +66,36 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  def render("optimism_games.json", %{
+        games: games,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(games, fn g ->
+          status =
+            case g.status do
+              0 -> "In progress"
+              1 -> "Challenger wins"
+              2 -> "Defender wins"
+            end
+
+          [l2_block_number] = ExplorerHelper.decode_data(g.extra_data, [{:uint, 256}])
+
+          %{
+            "index" => g.index,
+            "game_type" => g.game_type,
+            "contract_address" => g.address,
+            "l2_block_number" => l2_block_number,
+            "created_at" => g.created_at,
+            "status" => status,
+            "resolved_at" => g.resolved_at
+          }
+        end),
+      next_page_params: next_page_params
+    }
+  end
+
   def render("optimism_deposits.json", %{
         deposits: deposits,
         next_page_params: next_page_params
@@ -101,6 +132,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         next_page_params: next_page_params,
         conn: conn
       }) do
+    respected_games = Withdrawal.respected_games()
+
     %{
       items:
         Enum.map(withdrawals, fn w ->
@@ -125,7 +158,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               _ -> {nil, nil}
             end
 
-          {status, challenge_period_end} = Withdrawal.status(w)
+          {status, challenge_period_end} = Withdrawal.status(w, respected_games)
 
           %{
             "msg_nonce_raw" => Decimal.to_string(w.msg_nonce, :normal),
