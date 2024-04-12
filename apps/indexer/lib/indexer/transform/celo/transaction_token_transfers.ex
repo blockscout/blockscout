@@ -53,7 +53,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
         }
       end)
 
-    Logger.info("Found #{length(token_transfers)} Celo token transfers.")
+    Logger.debug("Found #{length(token_transfers)} Celo token transfers.")
 
     %{
       token_transfers: token_transfers,
@@ -90,7 +90,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
         }
       end)
 
-    Logger.info("Found #{length(token_transfers)} Celo token transfers from internal transactions.")
+    Logger.debug("Found #{length(token_transfers)} Celo token transfers from internal transactions.")
 
     %{
       token_transfers: token_transfers,
