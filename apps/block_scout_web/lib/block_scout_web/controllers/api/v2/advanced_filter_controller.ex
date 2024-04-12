@@ -3,8 +3,11 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   import BlockScoutWeb.Chain, only: [default_paging_options: 0, split_list_by_page: 1, next_page_params: 4]
 
-  alias Explorer.Chain
+  alias BlockScoutWeb.API.V2.{AdvancedFilterView, CSVExportController}
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.AdvancedFilter
+  alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
+  alias Plug.Conn
 
   def list(conn, params) do
     full_options = params |> extract_filters() |> Keyword.merge(paging_options(params))
@@ -17,6 +20,30 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       next_page |> next_page_params(advanced_filters, Map.take(params, ["items_count"]), &paging_params/1)
 
     render(conn, :advanced_filters, advanced_filters: advanced_filters, next_page_params: next_page_params)
+  end
+
+  def list_csv(conn, params) do
+    full_options =
+      params
+      |> extract_filters()
+      |> Keyword.merge(paging_options(params))
+      |> Keyword.update(:paging_options, %PagingOptions{page_size: CSVHelper.limit()}, fn paging_options ->
+        %PagingOptions{paging_options | page_size: CSVHelper.limit()}
+      end)
+
+    full_options
+    |> AdvancedFilter.list()
+    |> AdvancedFilterView.to_csv_format()
+    |> CSVHelper.dump_to_stream()
+    |> Enum.reduce_while(CSVExportController.put_resp_params(conn), fn chunk, conn ->
+      case Conn.chunk(conn, chunk) do
+        {:ok, conn} ->
+          {:cont, conn}
+
+        {:error, :closed} ->
+          {:halt, conn}
+      end
+    end)
   end
 
   @methods [

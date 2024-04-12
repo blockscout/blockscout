@@ -37,6 +37,8 @@ defmodule Explorer.Chain.AdvancedFilter do
 
     has_one(:token_transfer, TokenTransfer, foreign_key: :transaction_hash, references: :hash, null: true)
 
+    field(:fee, :decimal)
+
     field(:block_number, :integer)
     field(:transaction_index, :integer)
     field(:internal_transaction_index, :integer)
@@ -121,7 +123,8 @@ defmodule Explorer.Chain.AdvancedFilter do
       timestamp: transaction.block_timestamp,
       from_address: transaction.from_address,
       to_address: transaction.to_address,
-      value: transaction.value,
+      value: transaction.value.value,
+      fee: transaction.gas_price && Decimal.mult(transaction.gas_price.value, transaction.gas_used),
       block_number: transaction.block_number,
       transaction_index: transaction.index
     }
@@ -135,7 +138,10 @@ defmodule Explorer.Chain.AdvancedFilter do
       timestamp: internal_transaction.transaction.block_timestamp,
       from_address: internal_transaction.from_address,
       to_address: internal_transaction.to_address,
-      value: internal_transaction.value,
+      value: internal_transaction.value.value,
+      fee:
+        internal_transaction.transaction.gas_price && internal_transaction.gas_used &&
+          Decimal.mult(internal_transaction.transaction.gas_price.value, internal_transaction.gas_used),
       block_number: internal_transaction.transaction.block_number,
       transaction_index: internal_transaction.transaction.index,
       internal_transaction_index: internal_transaction.index
@@ -150,6 +156,9 @@ defmodule Explorer.Chain.AdvancedFilter do
       timestamp: token_transfer.transaction.block_timestamp,
       from_address: token_transfer.from_address,
       to_address: token_transfer.to_address,
+      fee:
+        token_transfer.transaction.gas_price &&
+          Decimal.mult(token_transfer.transaction.gas_price.value, token_transfer.transaction.gas_used),
       token_transfer: token_transfer,
       block_number: token_transfer.block_number,
       transaction_index: token_transfer.transaction.index,
@@ -234,8 +243,8 @@ defmodule Explorer.Chain.AdvancedFilter do
         join: to_address in assoc(internal_transaction, :to_address),
         preload: [transaction: transaction, from_address: from_address, to_address: to_address],
         order_by: [
-          desc: transaction.block_number,
-          desc: transaction.index,
+          desc: internal_transaction.block_number,
+          desc: internal_transaction.transaction_index,
           desc: internal_transaction.index
         ]
       )

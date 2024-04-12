@@ -349,6 +349,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/advanced-filters" do
       get("/", V2.AdvancedFilterController, :list)
+      get("/csv", V2.AdvancedFilterController, :list_csv)
       get("/methods", V2.AdvancedFilterController, :list_methods)
     end
   end
