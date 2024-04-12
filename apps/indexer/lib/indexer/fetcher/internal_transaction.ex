@@ -436,6 +436,14 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   if Application.compile_env(:explorer, :chain_type) == "celo" do
+    defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: [token]}) do
+      async_import_token_balances(%{
+        address_token_balances: to_address_token_balances(token_transfers, token)
+      })
+    end
+
+    defp async_import_celo_token_balances(_token_transfers), do: :ok
+
     defp to_address_token_balances(token_transfers, celo_token) do
       %{token_transfers: token_transfers}
       |> Addresses.extract_addresses()
@@ -454,18 +462,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
         end
       end)
       |> MapSet.new()
-    end
-
-    defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: tokens}) do
-      case tokens do
-        [token] ->
-          async_import_token_balances(%{
-            address_token_balances: to_address_token_balances(token_transfers, token)
-          })
-
-        _ ->
-          :ok
-      end
     end
   else
     defp async_import_celo_token_balances(_token_transfers), do: :ok

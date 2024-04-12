@@ -20,7 +20,7 @@ defmodule Indexer.Block.Fetcher do
     BlockNumber,
     CeloCoreContracts,
     Transactions,
-    Uncles,
+    Uncles
   }
 
   alias Indexer.Block.Fetcher.Receipts
