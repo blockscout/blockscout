@@ -62,6 +62,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.PolygonZkevm.Bridge, as: PolygonZkevmBridge
 
   alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
+  alias Indexer.Transform.Celo.TransactionGasTokens, as: CeloTransactionGasTokens
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
@@ -166,8 +167,16 @@ defmodule Indexer.Block.Fetcher do
              do: CeloTransactionTokenTransfers.parse_transactions(transactions_with_receipts),
              else: %{token_transfers: [], tokens: []}
            ),
+         # todo: we might also need to fetch token balances of beneficiareis,
+         # shouldn't we?
+         celo_gas_tokens =
+           if(
+             Application.get_env(:explorer, :chain_type) == "celo",
+             do: CeloTransactionGasTokens.parse(transactions_with_receipts),
+             else: []
+           ),
          token_transfers = token_transfers ++ celo_native_token_transfers,
-         tokens = Enum.uniq(tokens ++ celo_tokens),
+         tokens = Enum.uniq(tokens ++ celo_tokens ++ celo_gas_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          optimism_withdrawals =
