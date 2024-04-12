@@ -1,6 +1,6 @@
 defmodule Indexer.Transform.Celo.TransactionGasTokens do
   @moduledoc """
-  Helper functions for extracting tokens specefied as gas fee currency.
+  Helper functions for extracting tokens specified as gas fee currency.
   """
 
   @doc """

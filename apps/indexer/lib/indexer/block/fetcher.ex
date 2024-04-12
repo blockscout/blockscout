@@ -167,7 +167,7 @@ defmodule Indexer.Block.Fetcher do
              do: CeloTransactionTokenTransfers.parse_transactions(transactions_with_receipts),
              else: %{token_transfers: [], tokens: []}
            ),
-         # todo: we might also need to fetch token balances of beneficiareis,
+         # todo: we might also need to fetch token balances of beneficiaries,
          # shouldn't we?
          celo_gas_tokens =
            if(
