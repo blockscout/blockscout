@@ -728,13 +728,7 @@ defmodule Explorer.Chain.SmartContract do
         get_address_verified_twin_contract(hash, options).verified_contract
 
     if address_verified_twin_contract do
-      address_verified_twin_contract_updated =
-        address_verified_twin_contract
-        |> Map.put(:address_hash, hash)
-        |> Map.put(:metadata_from_verified_twin, true)
-        |> Map.put(:implementation_address_hash, nil)
-        |> Map.put(:implementation_name, nil)
-        |> Map.put(:implementation_fetched_at, nil)
+      address_verified_twin_contract_updated = put_verified_from_twin(address_verified_twin_contract, hash)
 
       address_result
       |> Map.put(:smart_contract, address_verified_twin_contract_updated)
@@ -849,13 +843,7 @@ defmodule Explorer.Chain.SmartContract do
       do: address_result
 
   def add_twin_info_to_contract(address_result, address_verified_twin_contract, hash) do
-    address_verified_twin_contract_updated =
-      address_verified_twin_contract
-      |> Map.put(:address_hash, hash)
-      |> Map.put(:metadata_from_verified_twin, true)
-      |> Map.put(:implementation_address_hash, nil)
-      |> Map.put(:implementation_name, nil)
-      |> Map.put(:implementation_fetched_at, nil)
+    address_verified_twin_contract_updated = put_verified_from_twin(address_verified_twin_contract, hash)
 
     address_result
     |> Map.put(:smart_contract, address_verified_twin_contract_updated)
@@ -1025,16 +1013,20 @@ defmodule Explorer.Chain.SmartContract do
              EIP1967.get_implementation_address(address_hash, options) ||
              get_address_verified_twin_contract(address_hash, options).verified_contract,
          false <- is_nil(address_verified_twin_contract) do
-      address_verified_twin_contract
-      |> Map.put(:address_hash, address_hash)
-      |> Map.put(:metadata_from_verified_twin, true)
-      |> Map.put(:implementation_address_hash, nil)
-      |> Map.put(:implementation_name, nil)
-      |> Map.put(:implementation_fetched_at, nil)
+      put_verified_from_twin(address_verified_twin_contract, address_hash)
     else
       _ ->
         current_smart_contract
     end
+  end
+
+  defp put_verified_from_twin(address_verified_twin_contract, address_hash) do
+    address_verified_twin_contract
+    |> Map.put(:address_hash, address_hash)
+    |> Map.put(:metadata_from_verified_twin, true)
+    |> Map.put(:implementation_address_hash, nil)
+    |> Map.put(:implementation_name, nil)
+    |> Map.put(:implementation_fetched_at, nil)
   end
 
   @doc """
