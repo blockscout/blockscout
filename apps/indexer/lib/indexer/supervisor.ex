@@ -241,11 +241,10 @@ defmodule Indexer.Supervisor do
     end
   end
 
-  @variants_with_unimplemented_fetch_beneficiaries [
-    EthereumJSONRPC.Filecoin,
-    EthereumJSONRPC.Ganache,
-    EthereumJSONRPC.Geth,
-    EthereumJSONRPC.RSK
+  @variants_with_implemented_fetch_beneficiaries [
+    EthereumJSONRPC.Besu,
+    EthereumJSONRPC.Erigon,
+    EthereumJSONRPC.Nethermind
   ]
 
   defp maybe_add_block_reward_fetcher(
@@ -253,7 +252,7 @@ defmodule Indexer.Supervisor do
          {_, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: _memory_monitor]]} = params
        ) do
     case Keyword.fetch(json_rpc_named_arguments, :variant) do
-      {:ok, ignored_variant} when ignored_variant in @variants_with_unimplemented_fetch_beneficiaries ->
+      {:ok, ignored_variant} when ignored_variant not in @variants_with_implemented_fetch_beneficiaries ->
         Application.put_env(:indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true)
         fetchers
 
