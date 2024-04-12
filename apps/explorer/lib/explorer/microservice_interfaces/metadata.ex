@@ -22,10 +22,25 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
         addresses: addresses,
         tags: %{
           limit: to_string(@tags_per_address_limit)
-        }
+        },
+        chainId: to_string(Application.get_env(:block_scout_web, :chain_id))
       }
 
       http_post_request(addresses_metadata_url(), body)
+    end
+  end
+
+  def get_addresses_by_tag(tag) do
+    with :ok <- Microservice.check_enabled(__MODULE__) do
+      body = %{
+        slug: tag,
+        chainId: to_string(Application.get_env(:block_scout_web, :chain_id)),
+        tagTypes: ["classifier", "generic", "information", "name", "protocol"],
+        exact: true
+      }
+
+      # to add response code and other
+      http_post_request(tags_search_url(), body)
     end
   end
 
@@ -50,6 +65,10 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
   defp addresses_metadata_url do
     "#{base_url()}/metadata"
+  end
+
+  defp tags_search_url do
+    "#{base_url()}/tags:search"
   end
 
   defp base_url do
