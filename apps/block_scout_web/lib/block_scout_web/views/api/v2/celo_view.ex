@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.API.V2.CeloView do
   require Logger
 
-  alias Explorer.Chain.Transaction
   alias BlockScoutWeb.API.V2.TokenView
+  alias Explorer.Chain.Transaction
 
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     out_json
@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   defp render_token(%Transaction{gas_token_contract_address: nil}), do: nil
 
-  defp render_token(transaction = %Transaction{gas_token: nil}) do
+  defp render_token(%Transaction{gas_token: nil} = transaction) do
     Logger.error(
       "Transaction #{transaction.hash} has a gas token contract address '#{transaction.gas_token_contract_address}' but no associated token found in the database"
     )

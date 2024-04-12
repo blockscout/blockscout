@@ -3,8 +3,8 @@ defmodule Indexer.Transform.AddressCoinBalances do
   Extracts `Explorer.Chain.Address.CoinBalance` params from other schema's params.
   """
 
-  alias Explorer.Chain.TokenTransfer
   alias Explorer.Chain.Cache.CeloCoreContracts
+  alias Explorer.Chain.TokenTransfer
 
   def params_set(%{} = import_options) do
     Enum.reduce(import_options, MapSet.new(), &reducer/2)
@@ -121,19 +121,16 @@ defmodule Indexer.Transform.AddressCoinBalances do
        )
        when is_integer(block_number) and is_binary(from_address_hash) do
     # a transaction MUST have a `from_address_hash`
-    acc = MapSet.put(initial, %{address_hash: from_address_hash, block_number: block_number})
+    initial
+    |> MapSet.put(%{address_hash: from_address_hash, block_number: block_number})
+    |> (&(case transaction_params do
+            %{to_address_hash: to_address_hash} when is_binary(to_address_hash) ->
+              MapSet.put(&1, %{address_hash: to_address_hash, block_number: block_number})
 
-    # `to_address_hash` is optional
-    acc =
-      case transaction_params do
-        %{to_address_hash: to_address_hash} when is_binary(to_address_hash) ->
-          MapSet.put(acc, %{address_hash: to_address_hash, block_number: block_number})
-
-        _ ->
-          acc
-      end
-
-    transactions_params_chain_type_fields_reducer(transaction_params, acc)
+            _ ->
+              &1
+          end)).()
+    |> (&transactions_params_chain_type_fields_reducer(transaction_params, &1)).()
   end
 
   # todo: subject for deprecation, since celo transactions with

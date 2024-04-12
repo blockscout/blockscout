@@ -57,7 +57,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     :celo_token
   ]
 
-  def get_celo_token_address() do
+  def get_celo_token_address do
     get_contract_addresses()[:celo_token]
   end
 

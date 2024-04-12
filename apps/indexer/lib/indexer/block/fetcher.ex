@@ -18,9 +18,9 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Cache.{
     Accounts,
     BlockNumber,
+    CeloCoreContracts,
     Transactions,
     Uncles,
-    CeloCoreContracts
   }
 
   alias Indexer.Block.Fetcher.Receipts
@@ -61,8 +61,8 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.Blocks, as: TransformBlocks
   alias Indexer.Transform.PolygonZkevm.Bridge, as: PolygonZkevmBridge
 
-  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
   alias Indexer.Transform.Celo.TransactionGasTokens, as: CeloTransactionGasTokens
+  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
