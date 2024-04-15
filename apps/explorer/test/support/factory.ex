@@ -550,7 +550,7 @@ defmodule Explorer.Factory do
         collated_params
       )
       when is_list(collated_params) do
-    next_transaction_index = block_hash_to_next_transaction_index(block_hash)
+    next_transaction_index = collated_params[:index] || block_hash_to_next_transaction_index(block_hash)
 
     cumulative_gas_used = collated_params[:cumulative_gas_used] || Enum.random(21_000..100_000)
     gas_used = collated_params[:gas_used] || Enum.random(21_000..100_000)
