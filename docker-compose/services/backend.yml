@@ -17,5 +17,5 @@ services:
       - MICROSERVICE_SC_VERIFIER_URL=http://smart-contract-verifier:8050/
       - MICROSERVICE_SC_VERIFIER_TYPE=sc_verifier
     volumes:
-      - ./blockscout-data/${SCHAIN_NAME}/logs/:/app/logs/
+      - ${SCHAIN_DATA_DIR:-./blockscout-data/${SCHAIN_NAME}}/logs/:/app/logs/
       - ${CONFIG_PATH:-./}:/opt/app/config.json
