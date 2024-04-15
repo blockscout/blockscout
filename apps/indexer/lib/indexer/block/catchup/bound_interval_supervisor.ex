@@ -185,7 +185,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
        state
        | task:
            Task.Supervisor.async_nolink(Catchup.TaskSupervisor, Catchup.Fetcher, :task, [catchup],
-             shutdown: :timer.minutes(5)
+             shutdown: Application.get_env(:indexer, :graceful_shutdown_period)
            )
      }}
   end

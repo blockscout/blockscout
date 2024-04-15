@@ -33,8 +33,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   @behaviour Block.Fetcher
 
-  @shutdown_after :timer.minutes(5)
-
   defstruct block_fetcher: nil,
             memory_monitor: nil
 
@@ -146,7 +144,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       &fetch_and_import_missing_range(state, &1),
       max_concurrency: blocks_concurrency(),
       timeout: :infinity,
-      shutdown: @shutdown_after
+      shutdown: Application.get_env(:indexer, :graceful_shutdown_period)
     )
     |> Stream.run()
   end

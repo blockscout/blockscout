@@ -107,6 +107,9 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     )
   end
 
+  @doc """
+  Converts initial ranges to ranges with size less or equal to the given size
+  """
   @spec split([Range.t()], integer) :: [Range.t()]
   def split(ranges, size) do
     ranges
