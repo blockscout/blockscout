@@ -1363,9 +1363,14 @@ defmodule Explorer.Chain.Transaction do
     from_block = Chain.from_block(options)
     to_block = Chain.to_block(options)
 
-    options
-    |> Keyword.get(:paging_options, Chain.default_paging_options())
-    |> fetch_transactions(from_block, to_block, !only_mined?)
+    paging_options =
+      options
+      |> Keyword.get(:paging_options, Chain.default_paging_options())
+
+    case paging_options do
+      %PagingOptions{key: {0, 0}, is_index_in_asc_order: false} -> []
+      _ -> fetch_transactions(paging_options, from_block, to_block, !only_mined?)
+    end
   end
 
   def address_to_transactions_tasks_query(options, _only_mined?, false) do

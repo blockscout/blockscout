@@ -46,16 +46,22 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   def list(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    base_query =
-      from(tb in __MODULE__,
-        order_by: [desc: tb.l2_block_number]
-      )
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
 
-    base_query
-    |> join_association(:frame_sequence, :required)
-    |> page_txn_batches(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
+      _ ->
+        base_query =
+          from(tb in __MODULE__,
+            order_by: [desc: tb.l2_block_number]
+          )
+
+        base_query
+        |> join_association(:frame_sequence, :required)
+        |> page_txn_batches(paging_options)
+        |> limit(^paging_options.page_size)
+        |> select_repo(options).all()
+    end
   end
 
   @doc """
