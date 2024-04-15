@@ -919,6 +919,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
+      get_eip1967_implementation_non_zero_address()
+
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
       assert_receive %Phoenix.Socket.Message{
@@ -1032,6 +1034,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
+      get_eip1967_implementation_non_zero_address()
+
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
       assert_receive %Phoenix.Socket.Message{
@@ -1144,6 +1148,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
+
+      get_eip1967_implementation_non_zero_address()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
