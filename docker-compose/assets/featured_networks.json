@@ -32,12 +32,12 @@
 		"title": "Block Brawlers",
 		"url": "https://eth.blockscout.com/",
 		"group": "Mainnets",
-		"icon": "https://raw.githubusercontent.com/skalenetwork/skale-network/blob/master/metadata/mainnet/logos/frayed-decent-antares.png"
+		"icon": "https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/logos/frayed-decent-antares.png"
 	},
 	{
 		"title": "StrayShot",
 		"url": "https://eth.blockscout.com/",
 		"group": "Mainnets",
-		"icon": "https://raw.githubusercontent.com/skalenetwork/skale-network/blob/master/metadata/mainnet/logos/fussy-smoggy-megrez.svg"
+		"icon": "https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/logos/fussy-smoggy-megrez.svg"
 	}
 ]
