@@ -807,6 +807,7 @@ defmodule Indexer.Block.FetcherTest do
               from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
               to_address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
               transaction_hash = "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+              gas_token_contract_address_hash = "0x471ece3750da237f93b8e339c536989b8978a438"
 
               transaction = %{
                 "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
@@ -832,7 +833,7 @@ defmodule Indexer.Block.FetcherTest do
                 "v" => "0xbe",
                 "value" => "0x0",
                 # Celo-specific fields
-                "feeCurrency" => "0x471ece3750da237f93b8e339c536989b8978a438",
+                "feeCurrency" => gas_token_contract_address_hash,
                 "gatewayFeeRecipient" => nil,
                 "gatewayFee" => "0x0",
                 "ethCompatible" => false
@@ -927,16 +928,16 @@ defmodule Indexer.Block.FetcherTest do
               end)
               # async requests need to be grouped in one expect because the order is non-deterministic while multiple expect
               # calls on the same name/arity are used in order
-              |> expect(:json_rpc, 9, fn json, _options ->
-                [request] = json
-
-                case request do
-                  %{
-                    id: 0,
-                    jsonrpc: "2.0",
-                    method: "eth_getBlockByNumber",
-                    params: [^block_quantity, true]
-                  } ->
+              |> expect(:json_rpc, 10, fn json, _options ->
+                case json do
+                  [
+                    %{
+                      id: 0,
+                      jsonrpc: "2.0",
+                      method: "eth_getBlockByNumber",
+                      params: [^block_quantity, true]
+                    }
+                  ] ->
                     {:ok,
                      [
                        %{
@@ -974,13 +975,13 @@ defmodule Indexer.Block.FetcherTest do
                        }
                      ]}
 
-                  %{id: id, method: "eth_getBalance", params: [^to_address_hash, ^block_quantity]} ->
+                  [%{id: id, method: "eth_getBalance", params: [^to_address_hash, ^block_quantity]}] ->
                     {:ok, [%{id: id, jsonrpc: "2.0", result: "0x1"}]}
 
-                  %{id: id, method: "eth_getBalance", params: [^from_address_hash, ^block_quantity]} ->
+                  [%{id: id, method: "eth_getBalance", params: [^from_address_hash, ^block_quantity]}] ->
                     {:ok, [%{id: id, jsonrpc: "2.0", result: "0xd0d4a965ab52d8cd740000"}]}
 
-                  %{id: id, method: "trace_replayBlockTransactions", params: [^block_quantity, ["trace"]]} ->
+                  [%{id: id, method: "trace_replayBlockTransactions", params: [^block_quantity, ["trace"]]}] ->
                     {:ok,
                      [
                        %{
@@ -1013,6 +1014,36 @@ defmodule Indexer.Block.FetcherTest do
                          ]
                        }
                      ]}
+
+                  requests ->
+                    {:ok,
+                     Enum.map(requests, fn
+                       %{id: id, method: "eth_call", params: [%{data: "0x313ce567", to: _}, "latest"]} ->
+                         %{
+                           id: id,
+                           result: "0x0000000000000000000000000000000000000000000000000000000000000012"
+                         }
+
+                       %{id: id, method: "eth_call", params: [%{data: "0x06fdde03", to: _}, "latest"]} ->
+                         %{
+                           id: id,
+                           result:
+                             "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000642616e636f720000000000000000000000000000000000000000000000000000"
+                         }
+
+                       %{id: id, method: "eth_call", params: [%{data: "0x95d89b41", to: _}, "latest"]} ->
+                         %{
+                           id: id,
+                           result:
+                             "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003424e540000000000000000000000000000000000000000000000000000000000"
+                         }
+
+                       %{id: id, method: "eth_call", params: [%{data: "0x18160ddd", to: _}, "latest"]} ->
+                         %{
+                           id: id,
+                           result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+                         }
+                     end)}
                 end
               end)
 
@@ -1023,23 +1054,6 @@ defmodule Indexer.Block.FetcherTest do
 
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Nethermind ->
-            transaction = %Transaction{
-              block_number: block_number,
-              index: 0,
-              hash: %Explorer.Chain.Hash{
-                byte_count: 32,
-                bytes:
-                  <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101,
-                    36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-              },
-              gas_token_contract_address_hash: %Explorer.Chain.Hash{
-                byte_count: 20,
-                bytes: <<71, 30, 206, 55, 80, 218, 35, 127, 147, 184, 227, 57, 197, 54, 152, 155, 137, 120, 164, 56>>
-              },
-              gas_fee_recipient_address_hash: nil,
-              gateway_fee: %Explorer.Chain.Wei{value: Decimal.new(0)}
-            }
-
             gateway_fee_value = Decimal.new(0)
 
             assert {:ok,
@@ -1103,7 +1117,7 @@ defmodule Indexer.Block.FetcherTest do
                                   164, 56>>
                             },
                             gas_fee_recipient_address_hash: nil,
-                            gateway_fee: %Explorer.Chain.Wei{value: gateway_fee_value}
+                            gateway_fee: %Explorer.Chain.Wei{value: ^gateway_fee_value}
                           }
                         ]
                       },
