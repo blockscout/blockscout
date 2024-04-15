@@ -25,9 +25,9 @@ services:
       - NEXT_PUBLIC_IS_TESTNET=false
       - NEXT_PUBLIC_HIDE_INDEXING_ALERT_BLOCKS=true
       - NEXT_PUBLIC_HIDE_INDEXING_ALERT_INT_TXS=true
-      - NEXT_PUBLIC_NETWORK_LOGO=https://www.dropbox.com/s/qje23cz66vdzh73/SKALE_White_Transparent.png
-      - NEXT_PUBLIC_NETWORK_ICON=https://cdn.iconscout.com/icon/free/png-256/free-skale-5529801-4626481.png?f=webp
-      - NEXT_PUBLIC_FEATURED_NETWORKS=https://raw.githubusercontent.com/skalenetwork/skale-explorer/add-networks/data/configs/networks.json
+      - NEXT_PUBLIC_NETWORK_LOGO=https://raw.githubusercontent.com/skalenetwork/blockscout/new-ui/docker-compose/assets/network_logo.png
+      - NEXT_PUBLIC_NETWORK_ICON=https://raw.githubusercontent.com/skalenetwork/blockscout/new-ui/docker-compose/assets/network_icon.png
+      - NEXT_PUBLIC_FEATURED_NETWORKS=https://raw.githubusercontent.com/skalenetwork/blockscout/new-ui/docker-compose/assets/featured_networks.json
     env_file:
       -  ../envs/common-frontend.env
     volumes:
