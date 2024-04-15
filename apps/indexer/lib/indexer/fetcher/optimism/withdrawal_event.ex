@@ -201,11 +201,10 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
       {l1_event_type, game_index} =
         if Enum.at(event["topics"], 0) == @withdrawal_proven_event do
-          {game_index, ""} =
+          game_index =
             input_by_hash
             |> Map.get(tx_hash)
-            |> String.slice(74..137)
-            |> Integer.parse(16)
+            |> input_to_game_index()
 
           {"WithdrawalProven", game_index}
         else
@@ -254,6 +253,20 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     case Optimism.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
+    end
+  end
+
+  defp input_to_game_index(input) do
+    method_signature = String.slice(input, 0..9)
+
+    if method_signature == "0x4870496f" do
+      # the signature of `proveWithdrawalTransaction(tuple _tx, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+      {game_index, ""} =
+        input
+        |> String.slice(74..137)
+        |> Integer.parse(16)
+
+      game_index
     end
   end
 end

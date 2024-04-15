@@ -20,6 +20,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   @withdrawal_status_waiting_to_resolve "Waiting a game to resolve"
   @withdrawal_status_in_challenge "In challenge period"
   @withdrawal_status_ready_for_relay "Ready for relay"
+  @withdrawal_status_proven "Proven"
   @withdrawal_status_relayed "Relayed"
 
   @required_attrs ~w(msg_nonce hash l2_transaction_hash l2_block_number)a
@@ -124,22 +125,22 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   end
 
   @spec status(map(), list() | nil) :: {String.t(), DateTime.t() | nil}
-  def status(w, respected_games \\ nil)
-
   @doc """
     Gets Optimism Withdrawal status and remaining time to unlock (when the status is `In challenge period`).
   """
-  def status(w, respected_games) when is_nil(w.l1_transaction_hash) do
-    withdrawal_event =
-      Repo.replica().one(
-        from(
-          we in WithdrawalEvent,
-          select: {we.l1_timestamp, we.game_index},
-          where: we.withdrawal_hash == ^w.hash and we.l1_event_type == :WithdrawalProven
-        )
-      )
+  def status(w, respected_games \\ nil)
 
-    if is_nil(withdrawal_event) do
+  def status(w, respected_games) when is_nil(w.l1_transaction_hash) do
+    proven_event = proven_event_by_hash(w.hash)
+
+    respected_games =
+      if is_nil(respected_games) do
+        respected_games()
+      else
+        respected_games
+      end
+
+    if is_nil(proven_event) do
       cond do
         appropriate_games_found(w.l2_block_number, respected_games) ->
           {@withdrawal_status_ready_to_prove, nil}
@@ -151,26 +152,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
           {@withdrawal_status_waiting_for_state_root, nil}
       end
     else
-      {l1_timestamp, game_index} = withdrawal_event
-
-      game =
-        if not is_nil(game_index) do
-          Repo.replica().one(
-            from(
-              g in DisputeGame,
-              select: %{created_at: g.created_at, resolved_at: g.resolved_at, status: g.status},
-              where: g.index == ^game_index
-            )
-          )
-        end
-
-      if is_nil(game) or DateTime.compare(l1_timestamp, game.created_at) == :lt do
-        # the old status determining approach
-        pre_fault_proofs_status(l1_timestamp)
-      else
-        # the new status determining approach
-        post_fault_proofs_status(l1_timestamp, game)
-      end
+      handle_proven_status(proven_event, respected_games)
     end
   end
 
@@ -178,6 +160,11 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     {@withdrawal_status_relayed, nil}
   end
 
+  @doc """
+    Returns the list of games which type is equal to the current respected game type
+    received from OptimismPortal contract.
+  """
+  @spec respected_games() :: list()
   def respected_games do
     case Helper.parse_integer(Constants.get_constant_value("optimism_respected_game_type")) do
       nil ->
@@ -196,13 +183,6 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   end
 
   defp appropriate_games_found(withdrawal_l2_block_number, respected_games) do
-    respected_games =
-      if is_nil(respected_games) do
-        respected_games()
-      else
-        respected_games
-      end
-
     respected_games
     |> Enum.any?(fn game ->
       [l2_block_number] = Helper.decode_data(game.extra_data, [{:uint, 256}])
@@ -221,6 +201,48 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       ) || 0
 
     withdrawal_l2_block_number <= last_root_l2_block_number
+  end
+
+  defp game_by_index(game_index) do
+    if not is_nil(game_index) do
+      Repo.replica().one(
+        from(
+          g in DisputeGame,
+          select: %{created_at: g.created_at, resolved_at: g.resolved_at, status: g.status},
+          where: g.index == ^game_index
+        )
+      )
+    end
+  end
+
+  defp handle_proven_status({l1_timestamp, game_index}, respected_games) do
+    game = game_by_index(game_index)
+
+    cond do
+      is_nil(game_index) and not Enum.empty?(respected_games) ->
+        # here we cannot exactly determine the status `Waiting a game to resolve` or
+        # `Ready for relay` or `In challenge period`
+        # as we don't know the game index. In this case we display the `Proven` status
+        {@withdrawal_status_proven, nil}
+
+      is_nil(game) or DateTime.compare(l1_timestamp, game.created_at) == :lt ->
+        # the old status determining approach
+        pre_fault_proofs_status(l1_timestamp)
+
+      true ->
+        # the new status determining approach
+        post_fault_proofs_status(l1_timestamp, game)
+    end
+  end
+
+  defp proven_event_by_hash(withdrawal_hash) do
+    Repo.replica().one(
+      from(
+        we in WithdrawalEvent,
+        select: {we.l1_timestamp, we.game_index},
+        where: we.withdrawal_hash == ^withdrawal_hash and we.l1_event_type == :WithdrawalProven
+      )
+    )
   end
 
   defp pre_fault_proofs_status(l1_timestamp) do
