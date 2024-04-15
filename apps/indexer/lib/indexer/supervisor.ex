@@ -118,8 +118,6 @@ defmodule Indexer.Supervisor do
 
         # Async catchup fetchers
         {UncleBlock.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor]]},
-        {BlockReward.Supervisor,
-         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {InternalTransaction.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {CoinBalanceCatchup.Supervisor,
@@ -216,6 +214,9 @@ defmodule Indexer.Supervisor do
       basic_fetchers
       |> maybe_add_bridged_tokens_fetchers()
       |> add_chain_type_dependent_fetchers()
+      |> maybe_add_block_reward_fetcher(
+        {BlockReward.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
+      )
 
     Supervisor.init(
       all_fetchers,
@@ -237,6 +238,26 @@ defmodule Indexer.Supervisor do
       [{SetAmbBridgedMetadataForTokens, [[], []]} | extended_fetchers]
     else
       extended_fetchers
+    end
+  end
+
+  @variants_with_implemented_fetch_beneficiaries [
+    EthereumJSONRPC.Besu,
+    EthereumJSONRPC.Erigon,
+    EthereumJSONRPC.Nethermind
+  ]
+
+  defp maybe_add_block_reward_fetcher(
+         fetchers,
+         {_, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: _memory_monitor]]} = params
+       ) do
+    case Keyword.fetch(json_rpc_named_arguments, :variant) do
+      {:ok, ignored_variant} when ignored_variant not in @variants_with_implemented_fetch_beneficiaries ->
+        Application.put_env(:indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true)
+        fetchers
+
+      _ ->
+        [params | fetchers]
     end
   end
 
