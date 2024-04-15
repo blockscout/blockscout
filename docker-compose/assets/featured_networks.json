@@ -1,0 +1,43 @@
+[{
+    "title": "Europa Liquidity Hub",
+    "url": "https://eth.blockscout.com/",
+    "group": "Mainnets",
+    "icon": "https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/elated-tan-skat.svg"
+},
+{
+    "title": "Calypso Hub",
+    "url": "https://eth.blockscout.com/",
+    "group": "Mainnets",
+    "icon": "https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/honorable-steel-rasalhague.svg"
+},
+{
+    "title": "Titan AI Hub",
+    "url": "https://eth.blockscout.com/",
+    "group": "Mainnets",
+    "icon": "https://portal.skale.space/assets/parallel-stormy-spica-068cfa33.png"
+},
+{
+    "title": "Nebula Gaming Hub",
+    "url": "https://eth.blockscout.com/",
+    "group": "Mainnets",
+    "icon": "https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/green-giddy-denebola.svg"
+},
+{
+    "title": "Nebula Gaming Hub",
+    "url": "https://eth.blockscout.com/",
+    "group": "Testnets",
+    "icon": "https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/green-giddy-denebola.svg"
+},
+	{
+		"title": "Block Brawlers",
+		"url": "https://eth.blockscout.com/",
+		"group": "Mainnets",
+		"icon": "https://raw.githubusercontent.com/skalenetwork/skale-network/blob/master/metadata/mainnet/logos/frayed-decent-antares.png"
+	},
+	{
+		"title": "StrayShot",
+		"url": "https://eth.blockscout.com/",
+		"group": "Mainnets",
+		"icon": "https://raw.githubusercontent.com/skalenetwork/skale-network/blob/master/metadata/mainnet/logos/fussy-smoggy-megrez.svg"
+	}
+]
