@@ -32,16 +32,20 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
     Supervisor.child_spec({BufferedTask, [{module, merged_init_options}, gen_server_options]}, id: module)
   end
 
-  def run(entries, json_rpc_named_arguments, filter_non_traceable_blocks? \\ true) do
+  def run(entries, json_rpc_named_arguments, fetcher_type) do
     # the same address may be used more than once in the same block, but we only want one `Balance` for a given
     # `{address, block}`, so take unique params only
     unique_entries = Enum.uniq(entries)
 
     unique_filtered_entries =
-      if filter_non_traceable_blocks? do
-        Enum.filter(unique_entries, fn {_hash, block_number} -> RangesHelper.traceable_block_number?(block_number) end)
-      else
-        unique_entries
+      case fetcher_type do
+        :realtime ->
+          unique_entries
+
+        _ ->
+          Enum.filter(unique_entries, fn {_hash, block_number} ->
+            RangesHelper.traceable_block_number?(block_number)
+          end)
       end
 
     unique_entry_count = Enum.count(unique_filtered_entries)
@@ -54,7 +58,7 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments)
     |> case do
       {:ok, fetched_balances} ->
-        run_fetched_balances(fetched_balances, unique_filtered_entries)
+        run_fetched_balances(fetched_balances, fetcher_type)
 
       {:error, reason} ->
         Logger.error(
@@ -126,8 +130,8 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
     })
   end
 
-  defp run_fetched_balances(%FetchedBalances{errors: errors} = fetched_balances, _) do
-    with {:ok, imported} <- import_fetched_balances(fetched_balances) do
+  defp run_fetched_balances(%FetchedBalances{errors: errors} = fetched_balances, fetcher_type) do
+    with {:ok, imported} <- import_fetched_balances(fetched_balances, fetcher_type) do
       Accounts.drop(imported[:addresses])
     end
 
