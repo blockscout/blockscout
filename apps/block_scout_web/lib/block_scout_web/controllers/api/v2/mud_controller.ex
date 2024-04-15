@@ -55,21 +55,19 @@ defmodule BlockScoutWeb.API.V2.MudController do
     with {:ok, world} <- Hash.Address.cast(world_param) do
       options = params |> mud_paging_options(["table_id"], [Hash.Full]) |> Keyword.merge(mud_tables_filter(params))
 
-      {table_ids, next_page} =
+      {tables, next_page} =
         world
         |> Mud.world_tables(options)
         |> split_list_by_page()
 
-      schemas = Mud.world_table_schemas(world, table_ids)
-
       next_page_params =
-        next_page_params(next_page, table_ids, conn.query_params, fn item ->
-          %{"table_id" => item}
+        next_page_params(next_page, tables, conn.query_params, fn item ->
+          %{"table_id" => item |> elem(0)}
         end)
 
       conn
       |> put_status(200)
-      |> render(:tables, %{table_ids: table_ids, schemas: schemas, next_page_params: next_page_params})
+      |> render(:tables, %{tables: tables, next_page_params: next_page_params})
     end
   end
 
@@ -95,9 +93,8 @@ defmodule BlockScoutWeb.API.V2.MudController do
   @spec world_table_records(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def world_table_records(conn, %{"world" => world_param, "table_id" => table_id_param} = params) do
     with {:ok, world} <- Hash.Address.cast(world_param),
-         {:ok, table_id} <- Hash.Full.cast(table_id_param) do
-      schema = Mud.world_table_schema(world, table_id)
-
+         {:ok, table_id} <- Hash.Full.cast(table_id_param),
+         {:ok, schema} <- Mud.world_table_schema(world, table_id) do
       options =
         params
         |> mud_paging_options(["key_bytes", "key0", "key1"], [Data, Hash.Full, Hash.Full])
@@ -132,15 +129,9 @@ defmodule BlockScoutWeb.API.V2.MudController do
   @spec world_table_records_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def world_table_records_count(conn, %{"world" => world_param, "table_id" => table_id_param} = params) do
     with {:ok, world} <- Hash.Address.cast(world_param),
-         {:ok, table_id} <- Hash.Full.cast(table_id_param) do
-      options =
-        if Map.has_key?(params, "filter_key0") or Map.has_key?(params, "filter_key1") do
-          schema = Mud.world_table_schema(world, table_id)
-
-          params |> mud_records_filter(schema)
-        else
-          []
-        end
+         {:ok, table_id} <- Hash.Full.cast(table_id_param),
+         {:ok, schema} <- Mud.world_table_schema(world, table_id) do
+      options = params |> mud_records_filter(schema)
 
       count = Mud.world_table_records_count(world, table_id, options)
 
@@ -160,11 +151,9 @@ defmodule BlockScoutWeb.API.V2.MudController do
       ) do
     with {:ok, world} <- Hash.Address.cast(world_param),
          {:ok, table_id} <- Hash.Full.cast(table_id_param),
-         {:ok, record_id} <- Data.cast(record_id_param) do
-      schema = Mud.world_table_schema(world, table_id)
-
-      record = Mud.world_table_record(world, table_id, record_id)
-
+         {:ok, record_id} <- Data.cast(record_id_param),
+         {:ok, schema} <- Mud.world_table_schema(world, table_id),
+         {:ok, record} <- Mud.world_table_record(world, table_id, record_id) do
       blocks = Mud.preload_records_timestamps([record])
 
       conn

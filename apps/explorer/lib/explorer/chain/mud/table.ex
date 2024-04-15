@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Mud.Table do
   @moduledoc """
-    Represents a MUD framework database table.
+    Represents a decoded MUD framework database table ID.
   """
 
   alias Explorer.Chain.Hash

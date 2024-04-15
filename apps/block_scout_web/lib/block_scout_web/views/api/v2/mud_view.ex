@@ -26,9 +26,9 @@ defmodule BlockScoutWeb.API.V2.MudView do
   @doc """
     Function to render GET requests to `/api/v2/mud/worlds/:world/tables` endpoint.
   """
-  def render("tables.json", %{table_ids: table_ids, schemas: schemas, next_page_params: next_page_params}) do
+  def render("tables.json", %{tables: tables, next_page_params: next_page_params}) do
     %{
-      items: table_ids |> Enum.map(&%{table: Table.from(&1), schema: schemas[&1]}),
+      items: tables |> Enum.map(&%{table: Table.from(&1 |> elem(0)), schema: &1 |> elem(1)}),
       next_page_params: next_page_params
     }
   end

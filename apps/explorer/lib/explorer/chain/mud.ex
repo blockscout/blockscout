@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Mud do
   import Ecto.Query,
     only: [
       distinct: 2,
+      order_by: 3,
       select: 3,
       where: 3,
       limit: 2
@@ -82,7 +83,16 @@ defmodule Explorer.Chain.Mud do
   end
 
   def world_table_schema(world, table_id) do
-    world_table_schemas(world, [table_id])[table_id]
+    Mud
+    |> where([r], r.address == ^world and r.table_id == ^@store_tables_table_id and r.key0 == ^table_id)
+    |> Repo.Mud.one()
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      r ->
+        {:ok, decode_schema(r)}
+    end
   end
 
   def world_tables(world, options \\ []) do
@@ -90,17 +100,17 @@ defmodule Explorer.Chain.Mud do
     filter_namespace = Keyword.get(options, :filter_namespace, nil)
 
     Mud
-    |> select([r], r.table_id)
-    |> distinct(true)
-    |> where([r], r.address == ^world)
+    |> where([r], r.address == ^world and r.table_id == ^@store_tables_table_id)
     |> filter_tables(filter_namespace)
     |> page_tables(paging_options)
+    |> order_by([r], asc: r.key0)
     |> limit(^paging_options.page_size)
     |> Repo.Mud.all()
+    |> Enum.map(&{&1.key0, decode_schema(&1)})
   end
 
   defp page_tables(query, %PagingOptions{key: %{table_id: table_id}}) do
-    query |> where([item], item.table_id > ^table_id)
+    query |> where([item], item.key0 > ^table_id)
   end
 
   defp page_tables(query, _), do: query
@@ -109,9 +119,7 @@ defmodule Explorer.Chain.Mud do
     filter_namespace = Keyword.get(options, :filter_namespace, nil)
 
     Mud
-    |> select([r], r.table_id)
-    |> distinct(true)
-    |> where([r], r.address == ^world)
+    |> where([r], r.address == ^world and r.table_id == ^@store_tables_table_id)
     |> filter_tables(filter_namespace)
     |> Repo.Mud.aggregate(:count)
   end
@@ -119,7 +127,7 @@ defmodule Explorer.Chain.Mud do
   defp filter_tables(query, nil), do: query
 
   defp filter_tables(query, namespace) do
-    query |> where([tb], fragment("substring(? FROM 3 FOR 14)", tb.table_id) == ^namespace)
+    query |> where([tb], fragment("substring(? FROM 3 FOR 14)", tb.key0) == ^namespace)
   end
 
   @default_sorting [
@@ -167,24 +175,26 @@ defmodule Explorer.Chain.Mud do
     Mud
     |> where([r], r.address == ^world and r.table_id == ^table_id and r.key_bytes == ^record_id)
     |> Repo.Mud.one()
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      r ->
+        {:ok, r}
+    end
   end
 
-  def world_table_schemas(world, table_ids) do
-    Mud
-    |> where([r], r.address == ^world and r.table_id == ^@store_tables_table_id and r.key0 in ^table_ids)
-    |> Repo.Mud.all()
-    |> Enum.into(%{}, fn r ->
-      schema_record = decode_record(r, @store_tables_table_schema)
+  defp decode_schema(nil), do: nil
 
-      schema = %Schema{
-        key_schema: schema_record["keySchema"] |> FieldSchema.from(),
-        value_schema: schema_record["valueSchema"] |> FieldSchema.from(),
-        key_names: schema_record["abiEncodedKeyNames"] |> decode_abi_encoded_strings(),
-        value_names: schema_record["abiEncodedValueNames"] |> decode_abi_encoded_strings()
-      }
+  defp decode_schema(record) do
+    schema_record = decode_record(record, @store_tables_table_schema)
 
-      {r.key0, schema}
-    end)
+    %Schema{
+      key_schema: schema_record["keySchema"] |> FieldSchema.from(),
+      value_schema: schema_record["valueSchema"] |> FieldSchema.from(),
+      key_names: schema_record["abiEncodedKeyNames"] |> decode_abi_encoded_strings(),
+      value_names: schema_record["abiEncodedValueNames"] |> decode_abi_encoded_strings()
+    }
   end
 
   defp decode_abi_encoded_strings("0x" <> hex_encoded) do
