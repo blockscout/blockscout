@@ -12,8 +12,8 @@ defmodule Explorer.Utility.MissingRangesManipulator do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def get_latest_batch do
-    GenServer.call(__MODULE__, :get_latest_batch)
+  def get_latest_batch(size) do
+    GenServer.call(__MODULE__, {:get_latest_batch, size})
   end
 
   def clear_batch(batch) do
@@ -34,8 +34,8 @@ defmodule Explorer.Utility.MissingRangesManipulator do
   end
 
   @impl true
-  def handle_call(:get_latest_batch, _from, state) do
-    {:reply, MissingBlockRange.get_latest_batch(), state}
+  def handle_call({:get_latest_batch, size}, _from, state) do
+    {:reply, MissingBlockRange.get_latest_batch(size), state}
   end
 
   def handle_call({:clear_batch, batch}, _from, state) do
