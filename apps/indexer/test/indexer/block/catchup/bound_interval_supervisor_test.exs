@@ -388,7 +388,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
       assert :ok = Supervisor.terminate_child(pid, :task)
 
-      assert_receive {:DOWN, ^reference, :process, ^child_pid, :shutdown}
+      assert_receive {:DOWN, ^reference, :process, ^child_pid, :normal}
     end
 
     test "with other child_id returns {:error, :not_found}", %{pid: pid} do
