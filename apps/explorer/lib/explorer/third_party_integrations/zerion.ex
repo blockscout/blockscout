@@ -42,8 +42,4 @@ defmodule Explorer.ThirdPartyIntegrations.Zerion do
   defp api_key do
     Application.get_env(:explorer, __MODULE__)[:api_key]
   end
-
-  defp api_key_name do
-    Application.get_env(:explorer, __MODULE__)[:api_key_name]
-  end
 end
