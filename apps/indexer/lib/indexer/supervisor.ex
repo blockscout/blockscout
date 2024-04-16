@@ -50,7 +50,6 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
 
   alias Indexer.Temporary.{
-    BlocksTransactionsMismatch,
     UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
@@ -187,8 +186,6 @@ defmodule Indexer.Supervisor do
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},
         {UnclesWithoutIndex.Supervisor,
-         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-        {BlocksTransactionsMismatch.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},
         {PendingBlockOperationsSanitizer, [[]]},
