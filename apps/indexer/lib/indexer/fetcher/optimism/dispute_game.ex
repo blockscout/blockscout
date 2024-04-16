@@ -270,7 +270,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
   defp get_start_index(end_index, new_end_index) do
     if new_end_index < end_index do
-      # reorg occured
+      # reorg occurred
       remove_games_after_reorg(new_end_index)
       max(new_end_index, 0)
     else
