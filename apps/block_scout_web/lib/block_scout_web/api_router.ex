@@ -316,6 +316,10 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/bundles", V2.Proxy.AccountAbstractionController, :bundles)
         get("/operations", V2.Proxy.AccountAbstractionController, :operations)
       end
+
+      scope "/zerion" do
+        get("/wallet-portfolio/:address_hash_param", V2.Proxy.ZerionController, :wallet_portfolio)
+      end
     end
 
     scope "/blobs" do
