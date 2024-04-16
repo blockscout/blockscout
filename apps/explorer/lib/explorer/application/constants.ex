@@ -30,12 +30,20 @@ defmodule Explorer.Application.Constants do
     |> validate_required(@required_attrs)
   end
 
+  @doc """
+    Reads constant row from the database by constant's key.
+  """
+  @spec get_constant_by_key(binary(), list()) :: Ecto.Schema.t() | term() | nil
   def get_constant_by_key(key, options \\ []) do
     __MODULE__
     |> where([constant], constant.key == ^key)
     |> Chain.select_repo(options).one()
   end
 
+  @doc """
+    Reads constant value from the database by constant's key.
+  """
+  @spec get_constant_value(binary(), list()) :: binary() | nil
   def get_constant_value(key, options \\ []) do
     __MODULE__
     |> where([constant], constant.key == ^key)
@@ -43,6 +51,10 @@ defmodule Explorer.Application.Constants do
     |> Chain.select_repo(options).one()
   end
 
+  @doc """
+    Sets or updates a value of the specified constant by its key.
+  """
+  @spec set_constant_value(binary(), binary()) :: Ecto.Schema.t()
   def set_constant_value(key, value) do
     existing_value = Repo.get(__MODULE__, key)
 
@@ -57,12 +69,20 @@ defmodule Explorer.Application.Constants do
     end
   end
 
+  @doc """
+    For usage in Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand
+  """
+  @spec insert_keys_manager_contract_address(binary()) :: Ecto.Schema.t()
   def insert_keys_manager_contract_address(value) do
     %{key: @keys_manager_contract_address_key, value: value}
     |> changeset()
     |> Repo.insert!()
   end
 
+  @doc """
+    For usage in Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand and Explorer.Chain.Block.Reward
+  """
+  @spec get_keys_manager_contract_address(list()) :: %__MODULE__{} | nil
   def get_keys_manager_contract_address(options \\ []) do
     get_constant_by_key(@keys_manager_contract_address_key, options)
   end

@@ -9,6 +9,10 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Optimism.Withdrawal
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
+  """
+  @spec render(binary(), map()) :: map() | list() | non_neg_integer()
   def render("optimism_txn_batches.json", %{
         batches: batches,
         next_page_params: next_page_params
@@ -46,6 +50,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/output-roots` endpoint.
+  """
   def render("optimism_output_roots.json", %{
         roots: roots,
         next_page_params: next_page_params
@@ -66,6 +73,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/games` endpoint.
+  """
   def render("optimism_games.json", %{
         games: games,
         next_page_params: next_page_params
@@ -96,6 +106,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/deposits` endpoint.
+  """
   def render("optimism_deposits.json", %{
         deposits: deposits,
         next_page_params: next_page_params
@@ -116,6 +129,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/main-page/optimism-deposits` endpoint.
+  """
   def render("optimism_deposits.json", %{deposits: deposits}) do
     Enum.map(deposits, fn deposit ->
       %{
@@ -127,6 +143,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     end)
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/withdrawals` endpoint.
+  """
   def render("optimism_withdrawals.json", %{
         withdrawals: withdrawals,
         next_page_params: next_page_params,
@@ -176,10 +195,18 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/:entity/count` endpoints.
+  """
   def render("optimism_items_count.json", %{count: count}) do
     count
   end
 
+  @doc """
+    Extends the json output with a sub-map containing information related
+    zksync: batch number and associated L1 transactions and their timestmaps.
+  """
+  @spec extend_transaction_json_response(map(), map()) :: map()
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     out_json
     |> add_optional_transaction_field(transaction, :l1_fee)
