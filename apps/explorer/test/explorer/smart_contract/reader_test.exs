@@ -214,7 +214,8 @@ defmodule Explorer.SmartContract.ReaderTest do
                  @abi,
                  %{
                    "c87b56dd" => [18_290_729_947_667_102_496]
-                 }
+                 },
+                 false
                )
     end
 
@@ -257,7 +258,8 @@ defmodule Explorer.SmartContract.ReaderTest do
                  @abi_uri,
                  %{
                    "0e89341c" => [18_290_729_947_667_102_496]
-                 }
+                 },
+                 false
                )
     end
   end
