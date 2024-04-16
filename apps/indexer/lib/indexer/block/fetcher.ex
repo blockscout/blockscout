@@ -14,15 +14,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-
-  alias Explorer.Chain.Cache.{
-    Accounts,
-    BlockNumber,
-    CeloCoreContracts,
-    Transactions,
-    Uncles
-  }
-
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
