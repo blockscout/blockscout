@@ -241,11 +241,18 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     end
   end
 
-  defp get_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments, retries \\ 3) do
+  defp get_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments) do
     req = Contract.eth_call_request("0xf2b4e617", optimism_portal, 0, nil, nil)
-    error_message = &"Cannot fetch DisputeGameFactory contract address. Error: #{inspect(&1)}"
 
-    case IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries) do
+    error_message =
+      &"Cannot fetch DisputeGameFactory contract address. Probably, this is the first implementation of OptimismPortal. Error: #{inspect(&1)}"
+
+    case IndexerHelper.repeated_call(
+           &json_rpc/2,
+           [req, json_rpc_named_arguments],
+           error_message,
+           IndexerHelper.infinite_retries_number()
+         ) do
       {:ok, "0x000000000000000000000000" <> address} -> "0x" <> address
       _ -> nil
     end
