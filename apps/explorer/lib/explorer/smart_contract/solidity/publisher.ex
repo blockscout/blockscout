@@ -199,7 +199,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     create_or_update_smart_contract(address_hash, attrs)
   end
 
-  defp create_or_update_smart_contract(address_hash, attrs) do
+  def create_or_update_smart_contract(address_hash, attrs) do
     Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
 
     if SmartContract.verified?(address_hash) do
