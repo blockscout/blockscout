@@ -318,7 +318,7 @@ defmodule BlockScoutWeb.ApiRouter do
       end
 
       scope "/zerion" do
-        get("/wallet-portfolio/:address_hash_param", V2.Proxy.ZerionController, :wallet_portfolio)
+        get("/wallets/:address_hash_param/portfolio", V2.Proxy.ZerionController, :wallet_portfolio)
       end
     end
 
