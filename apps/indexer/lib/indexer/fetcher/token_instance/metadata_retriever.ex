@@ -6,12 +6,12 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   require Logger
 
   alias Explorer.Helper, as: ExplorerHelper
-  alias Explorer.SmartContract.Reader
   alias HTTPoison.{Error, Response}
 
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @ipfs_protocol "ipfs://"
+  @invalid_base64_data "invalid data:application/json;base64"
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -20,17 +20,28 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
   @ignored_hosts ["localhost", "127.0.0.1", "0.0.0.0", "", nil]
 
-  defp ipfs_link do
-    link =
+  @spec ipfs_link(uid :: any()) :: String.t()
+  defp ipfs_link(uid) do
+    base_url =
       :indexer
-      |> Application.get_env(:ipfs_gateway_url)
+      |> Application.get_env(:ipfs)
+      |> Keyword.get(:gateway_url)
       |> String.trim_trailing("/")
 
-    link <> "/"
-  end
+    url = base_url <> "/" <> uid
 
-  def query_contract(contract_address_hash, contract_functions, abi) do
-    Reader.query_contract(contract_address_hash, abi, contract_functions, false)
+    ipfs_params = Application.get_env(:indexer, :ipfs)
+
+    if ipfs_params[:gateway_url_param_location] == "query" do
+      gateway_url_param_key = ipfs_params[:gateway_url_param_key]
+      gateway_url_param_value = ipfs_params[:gateway_url_param_value]
+
+      if gateway_url_param_key && gateway_url_param_value do
+        url <> "?#{gateway_url_param_key}=#{gateway_url_param_value}"
+      end
+    else
+      url
+    end
   end
 
   @doc """
@@ -40,7 +51,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
           {:error, binary} | {:error_code, any} | {:ok, %{metadata: any}}
   def fetch_json(uri, token_id \\ nil, hex_token_id \\ nil, from_base_uri? \\ false)
 
-  def fetch_json(uri, _token_id, _hex_token_id, _from_base_uri?) when uri in [{:ok, [""]}, {:ok, [""]}] do
+  def fetch_json(uri, _token_id, _hex_token_id, _from_base_uri?) when uri == {:ok, [""]} do
     {:error, @no_uri_error}
   end
 
@@ -64,7 +75,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   # CIDv0 IPFS links # https://docs.ipfs.tech/concepts/content-addressing/#version-0-v0
   defp fetch_json_from_uri({:ok, ["Qm" <> _ = result]}, token_id, hex_token_id, from_base_uri?) do
     if String.length(result) == 46 do
-      fetch_json_from_uri({:ok, [ipfs_link() <> result]}, token_id, hex_token_id, from_base_uri?)
+      fetch_json_from_uri({:ok, [ipfs_link(result)]}, token_id, hex_token_id, from_base_uri?)
     else
       Logger.warn(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
 
@@ -109,7 +120,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
         fetch_json_from_uri({:ok, [base64_decoded]}, token_id, hex_token_id, from_base_uri?)
 
       _ ->
-        {:error, "invalid data:application/json;base64"}
+        {:error, @invalid_base64_data}
     end
   rescue
     e ->
@@ -121,7 +132,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
         fetcher: :token_instances
       )
 
-      {:error, "invalid data:application/json;base64"}
+      {:error, @invalid_base64_data}
   end
 
   defp fetch_json_from_uri({:ok, ["#{@ipfs_protocol}ipfs/" <> right]}, _token_id, hex_token_id, _from_base_uri?) do
@@ -169,7 +180,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   end
 
   defp fetch_from_ipfs(ipfs_uid, hex_token_id) do
-    ipfs_url = ipfs_link() <> ipfs_uid
+    ipfs_url = ipfs_link(ipfs_uid)
     fetch_metadata_inner(ipfs_url, nil, hex_token_id)
   end
 
@@ -194,11 +205,11 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
         {:error, "ignored host #{host}"}
 
       _ ->
-        fetch_metadata_from_uri_inner(uri, hex_token_id)
+        fetch_metadata_from_uri_request(uri, hex_token_id)
     end
   end
 
-  def fetch_metadata_from_uri_inner(uri, hex_token_id) do
+  defp fetch_metadata_from_uri_request(uri, hex_token_id) do
     case Application.get_env(:explorer, :http_adapter).get(uri, [],
            recv_timeout: 30_000,
            follow_redirect: true,
@@ -311,5 +322,11 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
     Truncate error string to @max_error_length symbols
   """
   @spec truncate_error(binary()) :: binary()
-  def truncate_error(error), do: String.slice(error, 0, @max_error_length)
+  def truncate_error(error) do
+    if String.length(error) > @max_error_length - 2 do
+      String.slice(error, 0, @max_error_length - 3) <> "..."
+    else
+      error
+    end
+  end
 end
