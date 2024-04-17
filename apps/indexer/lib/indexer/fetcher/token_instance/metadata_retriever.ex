@@ -69,7 +69,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
           {:error, binary} | {:error_code, any} | {:ok, %{metadata: any}}
   def fetch_json(uri, token_id \\ nil, hex_token_id \\ nil, from_base_uri? \\ false)
 
-  def fetch_json(uri, _token_id, _hex_token_id, _from_base_uri?) when uri == {:ok, [""]} do
+  def fetch_json({:ok, [""]}, _token_id, _hex_token_id, _from_base_uri?) do
     {:error, @no_uri_error}
   end
 
