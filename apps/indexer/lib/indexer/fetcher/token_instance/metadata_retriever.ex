@@ -38,6 +38,8 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
       if gateway_url_param_key && gateway_url_param_value do
         url <> "?#{gateway_url_param_key}=#{gateway_url_param_value}"
+      else
+        url
       end
     else
       url
