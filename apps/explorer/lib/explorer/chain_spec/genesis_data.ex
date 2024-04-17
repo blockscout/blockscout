@@ -162,8 +162,8 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   # Reads and parses JSON data from a file.
   @spec fetch_from_file(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t()}
+  # sobelow_skip ["Traversal"]
   defp fetch_from_file(path) do
-    # sobelow_skip ["Traversal"]
     with {:ok, data} <- File.read(path) do
       Jason.decode(data)
     end
