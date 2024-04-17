@@ -1,6 +1,10 @@
 defmodule Explorer.ChainSpec.GenesisData do
   @moduledoc """
-  Fetches genesis data.
+  Handles the genesis data import.
+
+  This module is responsible for managing the import of genesis data into the
+  database, which includes pre-mined balances and precompiled smart contract
+  bytecodes.
   """
 
   use GenServer
@@ -29,13 +33,23 @@ defmodule Explorer.ChainSpec.GenesisData do
   # Callback for errored fetch
   @impl GenServer
   def handle_info({_ref, {:error, reason}}, state) do
-    Logger.warn(fn -> "Failed to fetch genesis data '#{reason}'." end)
+    Logger.warn(fn -> "Failed to fetch and import genesis data or precompiled contracts: '#{reason}'." end)
 
     fetch_genesis_data()
 
     {:noreply, state}
   end
 
+  # Initiates the import of genesis data.
+  #
+  # This function triggers the fetching and importing of genesis data, including pre-mined balances and precompiled smart contract bytecodes.
+  #
+  # ## Parameters
+  # - `:import`: The message that triggers this function.
+  # - `state`: The current state of the GenServer.
+  #
+  # ## Returns
+  # - `{:noreply, state}`
   @impl GenServer
   def handle_info(:import, state) do
     Logger.debug(fn -> "Importing genesis data" end)
@@ -58,9 +72,18 @@ defmodule Explorer.ChainSpec.GenesisData do
   end
 
   @doc """
-  Fetches pre-mined balances and pre-compiled smart-contract bytecodes from genesis.json
+    Fetches and processes the genesis data, which includes pre-mined balances and precompiled smart contract bytecodes.
+
+    This function retrieves the chain specification and precompiled contracts
+    configuration from specified paths in the application settings. Then it
+    asynchronously extends the chain spec with precompiled contracts, imports
+    genesis accounts, and the precompiled contracts' sources and ABIs.
+
+    ## Returns
+    - `Task.t()`: A task handle if the fetch and processing are scheduled successfully.
+    - `:ok`: Indicates no fetch was attempted due to missing configuration paths.
   """
-  @spec fetch_genesis_data() :: Task.t() | :ok
+  @spec fetch_genesis_data() :: Task.t() | :error
   def fetch_genesis_data do
     chain_spec_path = get_path(:chain_spec_path)
     precompiled_config_path = get_path(:precompiled_config_path)
@@ -83,6 +106,7 @@ defmodule Explorer.ChainSpec.GenesisData do
     end
   end
 
+  @spec get_path(atom()) :: nil | binary()
   defp get_path(key) do
     case Application.get_env(:explorer, __MODULE__)[key] do
       nil -> nil
@@ -90,6 +114,8 @@ defmodule Explorer.ChainSpec.GenesisData do
     end
   end
 
+  # Retrieves the chain specification, returning an empty map if unsuccessful.
+  @spec fetch_chain_spec(binary() | nil) :: map() | list()
   defp fetch_chain_spec(path) do
     case do_fetch(path, "Failed to fetch chain spec.") do
       nil -> %{}
@@ -97,6 +123,8 @@ defmodule Explorer.ChainSpec.GenesisData do
     end
   end
 
+  # Retrieves the precompiled contracts configuration, returning an empty list if unsuccessful.
+  @spec fetch_precompiles_config(binary() | nil) :: list()
   defp fetch_precompiles_config(path) do
     case do_fetch(path, "Failed to fetch precompiles config.") do
       nil -> []
@@ -104,6 +132,8 @@ defmodule Explorer.ChainSpec.GenesisData do
     end
   end
 
+  # Fetches JSON data from a specified path.
+  @spec do_fetch(binary() | nil, binary()) :: list() | map() | nil
   defp do_fetch(path, warn_message_prefix) do
     if path do
       case fetch_spec_as_json(path) do
@@ -120,6 +150,8 @@ defmodule Explorer.ChainSpec.GenesisData do
     end
   end
 
+  # Retrieves a JSON data from either a file or URL based on the source.
+  @spec fetch_spec_as_json(binary()) :: {:ok, list() | map()} | {:error, any()}
   defp fetch_spec_as_json(path) do
     if Helper.valid_url?(path) do
       fetch_from_url(path)
@@ -128,13 +160,16 @@ defmodule Explorer.ChainSpec.GenesisData do
     end
   end
 
-  # sobelow_skip ["Traversal"]
+  # Reads and parses JSON data from a file.
+  @spec fetch_from_file(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t()}
   defp fetch_from_file(path) do
     with {:ok, data} <- File.read(path) do
       Jason.decode(data)
     end
   end
 
+  # Fetches JSON data from a provided URL.
+  @spec fetch_from_url(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t() | HTTPoison.Error.t()}
   defp fetch_from_url(url) do
     case HTTPoison.get(url) do
       {:ok, %Response{body: body, status_code: 200}} ->
@@ -145,6 +180,22 @@ defmodule Explorer.ChainSpec.GenesisData do
     end
   end
 
+  # Extends the chain specification with precompiled contract information.
+  #
+  # This function modifies the chain specification to include precompiled
+  # contracts that are not originally listed in the spec. It handles different
+  # formats of chain specs (list or map) according to the `variant` specified
+  # and adds precompiles.
+  #
+  # ## Parameters
+  # - `chain_spec`: The original chain specification in map or list format.
+  # - `precompiles_config`: A list of precompiled contracts to be added.
+  # - `variant`: The client variant (e.g., Geth or Parity), which dictates the
+  #   spec structure.
+  #
+  # ## Returns
+  # - The modified chain specification with precompiled contracts included.
+  @spec extend_chain_spec(map() | list(), list(), EthereumJSONRPC.Geth | EthereumJSONRPC.Parity) :: map() | list()
   defp extend_chain_spec(chain_spec, [], _) do
     chain_spec
   end
@@ -220,6 +271,10 @@ defmodule Explorer.ChainSpec.GenesisData do
     Map.put(chain_spec, "accounts", updated_accounts)
   end
 
+  # Imports genesis accounts from the specified chain specification and updates
+  # `Explorer.Chain.Address` and `Explorer.Chain.Address.CoinBalance`, and
+  # `Explorer.Chain.Address.CoinBalanceDaily`.
+  @spec import_genesis_accounts(map() | list(), EthereumJSONRPC.Geth | EthereumJSONRPC.Parity) :: any()
   defp import_genesis_accounts(chain_spec, variant) do
     if not Enum.empty?(chain_spec) do
       case variant do
@@ -233,6 +288,9 @@ defmodule Explorer.ChainSpec.GenesisData do
     end
   end
 
+  # Iterates through the list of precompiles descriptions, and creating/updating
+  # each smart contract.
+  @spec import_precompiles_sources_and_abi([map()]) :: any()
   defp import_precompiles_sources_and_abi(precompiles_config) do
     precompiles_config
     |> Enum.each(fn contract ->
