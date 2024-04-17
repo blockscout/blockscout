@@ -165,6 +165,50 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetrieverTest do
       Application.put_env(:indexer, :ipfs, configuration)
     end
 
+    test "Constructs IPFS link with additional header" do
+      configuration = Application.get_env(:indexer, :ipfs)
+
+      Application.put_env(:indexer, :ipfs,
+        gateway_url: Keyword.get(configuration, :gateway_url),
+        gateway_url_param_location: "header",
+        gateway_url_param_key: "x-apikey",
+        gateway_url_param_value: "mykey"
+      )
+
+      data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+
+      result = %{
+        "name" => "asda",
+        "description" => "asda",
+        "salePrice" => 34,
+        "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+        "collectionId" => "1871_1665123820823"
+      }
+
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://ipfs.io/ipfs/QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP",
+                         [{"x-apikey", "mykey"}],
+                         _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(result)}}
+      end)
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "collectionId" => "1871_1665123820823",
+                  "description" => "asda",
+                  "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+                  "name" => "asda",
+                  "salePrice" => 34
+                }
+              }} == MetadataRetriever.fetch_json({:ok, [data]})
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
+      Application.put_env(:indexer, :ipfs, configuration)
+    end
+
     test "fetches json with latin1 encoding", %{bypass: bypass} do
       path = "/api/card/55265"
 
@@ -206,7 +250,8 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetrieverTest do
         Conn.resp(conn, 200, json)
       end)
 
-      {:ok, %{metadata: metadata}} = MetadataRetriever.fetch_metadata_from_uri("http://localhost:#{bypass.port}#{path}")
+      {:ok, %{metadata: metadata}} =
+        MetadataRetriever.fetch_metadata_from_uri("http://localhost:#{bypass.port}#{path}", [])
 
       assert Map.get(metadata, "attributes") == Jason.decode!(attributes)
     end
