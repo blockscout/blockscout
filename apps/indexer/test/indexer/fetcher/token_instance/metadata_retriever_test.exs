@@ -84,7 +84,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetrieverTest do
 
       Application.put_env(:indexer, :ipfs,
         gateway_url: Keyword.get(configuration, :gateway_url),
-        gateway_url_param_location: "query",
+        gateway_url_param_location: :query,
         gateway_url_param_key: "x-apikey",
         gateway_url_param_value: "mykey"
       )
@@ -128,7 +128,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetrieverTest do
 
       Application.put_env(:indexer, :ipfs,
         gateway_url: Keyword.get(configuration, :gateway_url),
-        gateway_url_param_location: "query2",
+        gateway_url_param_location: :query2,
         gateway_url_param_key: "x-apikey",
         gateway_url_param_value: "mykey"
       )
@@ -170,7 +170,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetrieverTest do
 
       Application.put_env(:indexer, :ipfs,
         gateway_url: Keyword.get(configuration, :gateway_url),
-        gateway_url_param_location: "header",
+        gateway_url_param_location: :header,
         gateway_url_param_key: "x-apikey",
         gateway_url_param_value: "mykey"
       )

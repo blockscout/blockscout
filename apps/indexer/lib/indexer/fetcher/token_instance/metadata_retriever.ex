@@ -32,7 +32,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
     ipfs_params = Application.get_env(:indexer, :ipfs)
 
-    if ipfs_params[:gateway_url_param_location] == "query" do
+    if ipfs_params[:gateway_url_param_location] == :query do
       gateway_url_param_key = ipfs_params[:gateway_url_param_key]
       gateway_url_param_value = ipfs_params[:gateway_url_param_value]
 
@@ -48,7 +48,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   defp ipfs_headers do
     ipfs_params = Application.get_env(:indexer, :ipfs)
 
-    if ipfs_params[:gateway_url_param_location] == "header" do
+    if ipfs_params[:gateway_url_param_location] == :header do
       gateway_url_param_key = ipfs_params[:gateway_url_param_key]
       gateway_url_param_value = ipfs_params[:gateway_url_param_value]
 
