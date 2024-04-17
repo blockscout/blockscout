@@ -176,7 +176,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   end
 
   case Application.compile_env(:explorer, :chain_type) do
-    "rsk" ->
+    :rsk ->
       defp add_chain_type_fields(response) do
         alias Explorer.Chain.Cache.RootstockLockedBTC
 

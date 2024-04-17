@@ -3,7 +3,7 @@ defmodule Explorer.Counters.LastOutputRootSizeCounterTest do
 
   alias Explorer.Counters.LastOutputRootSizeCounter
 
-  if Application.compile_env(:explorer, :chain_type) == "optimism" do
+  if Application.compile_env(:explorer, :chain_type) == :optimism do
     test "populates the cache with the number of transactions in last output root" do
       first_block = insert(:block)
 

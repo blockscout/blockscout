@@ -109,7 +109,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
 
   defp default_on_conflict do
     case Application.get_env(:explorer, :chain_type) do
-      "suave" ->
+      :suave ->
         from(
           transaction in Transaction,
           update: [
@@ -205,7 +205,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
             )
         )
 
-      "optimism" ->
+      :optimism ->
         from(
           transaction in Transaction,
           update: [

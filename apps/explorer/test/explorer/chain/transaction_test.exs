@@ -863,7 +863,7 @@ defmodule Explorer.Chain.TransactionTest do
         block: %{base_fee_per_gas: %Explorer.Chain.Wei{value: 42_000_000_000}}
       }
 
-      if Application.get_env(:explorer, :chain_type) == "optimism" do
+      if Application.get_env(:explorer, :chain_type) == :optimism do
         {:actual, nil} ==
           Transaction.fee(
             transaction,
