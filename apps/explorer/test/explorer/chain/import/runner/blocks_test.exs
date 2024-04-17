@@ -83,6 +83,123 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
              "Tuple was written even though it is not distinct"
     end
 
+    test "update_token_instances_owner inserts correct token instances in cases when log_index is not unique within block",
+         %{
+           consensus_block: %{hash: previous_block_hash, miner_hash: miner_hash, number: previous_block_number},
+           options: options
+         } do
+      old_env = Application.get_env(:explorer, :chain_type)
+
+      Application.put_env(:explorer, :chain_type, "polygon_zkevm")
+
+      previous_consensus_block = insert(:block, hash: previous_block_hash, number: previous_block_number)
+      %{hash: block_hash, number: block_number} = consensus_block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(consensus_block)
+
+      transaction_with_previous_transfer =
+        :transaction
+        |> insert()
+        |> with_block(previous_consensus_block, index: 1)
+
+      older_transaction_with_previous_transfer =
+        :transaction
+        |> insert()
+        |> with_block(previous_consensus_block, index: 0)
+
+      transaction_of_other_instance =
+        :transaction
+        |> insert()
+        |> with_block(previous_consensus_block)
+
+      token = insert(:token, type: "ERC-721")
+      correct_token_id = Decimal.new(1)
+
+      forked_token_transfer =
+        insert(:token_transfer,
+          token_type: "ERC-721",
+          token_contract_address: token.contract_address,
+          transaction: transaction,
+          token_ids: [correct_token_id],
+          block_number: block_number
+        )
+
+      _token_instance =
+        insert(:token_instance,
+          token_id: correct_token_id,
+          token_contract_address_hash: token.contract_address_hash,
+          owner_updated_at_block: block_number,
+          owner_updated_at_log_index: forked_token_transfer.log_index
+        )
+
+      _previous_token_transfer =
+        insert(:token_transfer,
+          token_type: "ERC-721",
+          token_contract_address: token.contract_address,
+          transaction: transaction_with_previous_transfer,
+          token_ids: [correct_token_id],
+          block_number: previous_block_number,
+          log_index: 10
+        )
+
+      _older_previous_token_transfer =
+        insert(:token_transfer,
+          token_type: "ERC-721",
+          token_contract_address: token.contract_address,
+          transaction: older_transaction_with_previous_transfer,
+          token_ids: [correct_token_id],
+          block_number: previous_block_number,
+          log_index: 11
+        )
+
+      _unsuitable_token_instance =
+        insert(:token_instance,
+          token_id: 2,
+          token_contract_address_hash: token.contract_address_hash,
+          owner_updated_at_block: previous_block_number,
+          owner_updated_at_log_index: forked_token_transfer.log_index
+        )
+
+      _unsuitable_token_transfer =
+        insert(:token_transfer,
+          token_type: "ERC-721",
+          token_contract_address: token.contract_address,
+          transaction: transaction_of_other_instance,
+          token_ids: [2],
+          block_number: previous_block_number,
+          log_index: forked_token_transfer.log_index
+        )
+
+      block_params =
+        params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: false)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+      changes_list = [block_changes]
+
+      assert {:ok, %{}}
+
+      assert {:ok,
+              %{
+                update_token_instances_owner: [
+                  %{
+                    token_id: ^correct_token_id,
+                    owner_updated_at_block: ^previous_block_number,
+                    owner_updated_at_log_index: 10
+                  }
+                ]
+              }} =
+               Multi.new()
+               |> Blocks.run(changes_list, options)
+               |> Repo.transaction()
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :chain_type, old_env)
+      end)
+    end
+
     test "delete_address_current_token_balances deletes rows with matching block number when consensus is true",
          %{consensus_block: %{number: block_number} = block, options: options} do
       %Address.CurrentTokenBalance{address_hash: address_hash, token_contract_address_hash: token_contract_address_hash} =

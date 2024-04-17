@@ -1,4 +1,6 @@
 defmodule ConfigHelper do
+  require Logger
+
   import Bitwise
   alias Explorer.ExchangeRates.Source
   alias Explorer.Market.History.Source.{MarketCap, Price, TVL}
@@ -94,6 +96,35 @@ defmodule ConfigHelper do
       {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
       _ -> 0
     end
+  end
+
+  @doc """
+  Parses value of env var through catalogued values list. If a value is not in the list, nil is returned.
+  Also, the application shutdown option is supported, if a value is wrong.
+  """
+  @spec parse_catalog_value(String.t(), List.t(), bool(), String.t() | nil) :: atom() | nil
+  def parse_catalog_value(env_var, catalog, shutdown_on_wrong_value?, default_value \\ nil) do
+    value = env_var |> safe_get_env(default_value)
+
+    if value !== "" do
+      if value in catalog do
+        String.to_atom(value)
+      else
+        if shutdown_on_wrong_value? do
+          Logger.error(wrong_value_error(value, env_var, catalog))
+          exit(:shutdown)
+        else
+          Logger.warning(wrong_value_error(value, env_var, catalog))
+          nil
+        end
+      end
+    else
+      nil
+    end
+  end
+
+  defp wrong_value_error(value, env_var, catalog) do
+    "Wrong value #{value} of #{env_var} environment variable. Supported values are #{inspect(catalog)}"
   end
 
   def safe_get_env(env_var, default_value) do

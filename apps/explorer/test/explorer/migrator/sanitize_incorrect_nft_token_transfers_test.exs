@@ -57,7 +57,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfersTest do
 
       token_address_hash = token_address.hash
       assert %{token_contract_address_hash: ^token_address_hash, token_ids: nil} = Repo.one(TokenTransfer)
-      assert %{consensus: false} = Repo.get_by(Block, hash: block.hash)
+      assert %{consensus: true, refetch_needed: true} = Repo.get_by(Block, hash: block.hash)
     end
   end
 end

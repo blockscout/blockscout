@@ -27,9 +27,22 @@ defmodule Explorer.Utility.MissingBlockRange do
     size
     |> get_latest_ranges_query()
     |> Repo.all()
-    |> Enum.map(fn %{from_number: from, to_number: to} ->
-      %Range{first: from, last: to, step: if(from > to, do: -1, else: 1)}
+    |> Enum.reduce_while({size, []}, fn %{from_number: from, to_number: to}, {remaining_count, ranges} ->
+      range_size = from - to + 1
+
+      cond do
+        range_size < remaining_count ->
+          {:cont, {remaining_count - range_size, [Range.new(from, to, -1) | ranges]}}
+
+        range_size > remaining_count ->
+          {:halt, {0, [Range.new(from, from - remaining_count + 1, -1) | ranges]}}
+
+        range_size == remaining_count ->
+          {:halt, {0, [Range.new(from, to, -1) | ranges]}}
+      end
     end)
+    |> elem(1)
+    |> Enum.reverse()
   end
 
   def add_ranges_by_block_numbers(numbers) do

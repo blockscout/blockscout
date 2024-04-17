@@ -1551,12 +1551,13 @@ defmodule Explorer.Chain do
     Repo.get(Block, block_hash)
   end
 
-  def filter_consensus_block_numbers(block_numbers) do
+  def filter_non_refetch_needed_block_numbers(block_numbers) do
     query =
       from(
         block in Block,
         where: block.number in ^block_numbers,
         where: block.consensus == true,
+        where: block.refetch_needed == false,
         select: block.number
       )
 
@@ -2256,7 +2257,7 @@ defmodule Explorer.Chain do
                 SELECT distinct b1.number
                 FROM generate_series((?)::integer, (?)::integer) AS b1(number)
                 WHERE NOT EXISTS
-                  (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus)
+                  (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus AND NOT b2.refetch_needed)
                 AND NOT EXISTS (SELECT 1 FROM null_round_heights nrh where nrh.height=b1.number)
                 ORDER BY b1.number DESC
               )
@@ -2278,7 +2279,7 @@ defmodule Explorer.Chain do
                 SELECT distinct b1.number
                 FROM generate_series((?)::integer, (?)::integer) AS b1(number)
                 WHERE NOT EXISTS
-                  (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus)
+                  (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus AND NOT b2.refetch_needed)
                 ORDER BY b1.number DESC
               )
               """,
@@ -2882,19 +2883,6 @@ defmodule Explorer.Chain do
       ) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    gas_hex =
-      if gas do
-        gas_hex_without_prefix =
-          gas
-          |> Decimal.to_integer()
-          |> Integer.to_string(16)
-          |> String.downcase()
-
-        "0x" <> gas_hex_without_prefix
-      else
-        "0x0"
-      end
-
     req =
       EthereumJSONRPCTransaction.eth_call_request(
         0,
@@ -2902,7 +2890,7 @@ defmodule Explorer.Chain do
         data,
         to_address_hash,
         from_address_hash,
-        gas_hex,
+        Wei.hex_format(gas),
         Wei.hex_format(gas_price),
         Wei.hex_format(value)
       )
