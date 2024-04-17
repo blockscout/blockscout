@@ -111,7 +111,7 @@ defmodule ConfigHelper do
       else
         if shutdown_on_wrong_value? do
           Logger.error(wrong_value_error(value, env_var, catalog))
-          exit(:wrong_value)
+          exit(:shutdown)
         else
           Logger.warning(wrong_value_error(value, env_var, catalog))
           nil
