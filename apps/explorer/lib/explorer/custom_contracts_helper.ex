@@ -1,0 +1,18 @@
+defmodule Explorer.CustomContractsHelper do
+  @moduledoc """
+  Helper to enable custom contracts themes
+  """
+
+  def get_custom_addresses_list(env_var) do
+    addresses_var = Application.get_env(:block_scout_web, env_var)
+    addresses_list = (addresses_var && String.split(addresses_var, ",")) || []
+
+    formatted_addresses_list =
+      addresses_list
+      |> Enum.map(fn addr ->
+        String.downcase(addr)
+      end)
+
+    formatted_addresses_list
+  end
+end
