@@ -4,8 +4,6 @@ defmodule Explorer.Repo.Migrations.EnhanceIndexForTokenTransfersList do
   @disable_migration_lock true
 
   def change do
-    create_if_not_exists(
-      index(:token_transfers, ["token_contract_address_hash, block_number DESC, log_index DESC"], concurrently: true)
-    )
+    drop_if_exists(index(:token_transfers, [:token_contract_address_hash, :block_number], concurrently: true))
   end
 end
