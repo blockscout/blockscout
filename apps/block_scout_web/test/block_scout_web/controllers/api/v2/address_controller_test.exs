@@ -1684,11 +1684,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert [
-               %{"date" => _, "value" => "2000"},
-               %{"date" => _, "value" => "1000"},
-               %{"date" => _, "value" => "1000"}
-             ] = response
+      assert %{
+               "days" => 10,
+               "items" => [
+                 %{"date" => _, "value" => "2000"},
+                 %{"date" => _, "value" => "1000"},
+                 %{"date" => _, "value" => "1000"}
+               ]
+             } = response
     end
   end
 

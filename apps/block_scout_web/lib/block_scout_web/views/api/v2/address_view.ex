@@ -34,7 +34,11 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   end
 
   def render("coin_balances_by_day.json", %{coin_balances_by_day: coin_balances_by_day}) do
-    Enum.map(coin_balances_by_day, &prepare_coin_balance_history_by_day_entry/1)
+    %{
+      :items => Enum.map(coin_balances_by_day, &prepare_coin_balance_history_by_day_entry/1),
+      :days =>
+        Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
+    }
   end
 
   def render("tokens.json", %{tokens: tokens, next_page_params: next_page_params}) do
