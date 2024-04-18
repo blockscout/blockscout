@@ -144,6 +144,7 @@ defmodule Indexer.Supervisor do
           [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
         ),
         configure(Indexer.Fetcher.Optimism.OutputRoot.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.Optimism.DisputeGame.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.Optimism.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(
           Indexer.Fetcher.Optimism.Withdrawal.Supervisor,

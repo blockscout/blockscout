@@ -255,6 +255,8 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/deposits/count", V2.OptimismController, :deposits_count)
         get("/withdrawals", V2.OptimismController, :withdrawals)
         get("/withdrawals/count", V2.OptimismController, :withdrawals_count)
+        get("/games", V2.OptimismController, :games)
+        get("/games/count", V2.OptimismController, :games_count)
       end
     end
 

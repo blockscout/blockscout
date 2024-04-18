@@ -23,6 +23,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Optimism.FrameSequences,
     Runner.Optimism.TxnBatches,
     Runner.Optimism.OutputRoots,
+    Runner.Optimism.DisputeGames,
     Runner.Optimism.Deposits,
     Runner.Optimism.Withdrawals,
     Runner.Optimism.WithdrawalEvents

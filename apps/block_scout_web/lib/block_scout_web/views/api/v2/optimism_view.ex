@@ -5,9 +5,14 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Optimism.Withdrawal
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
+  """
+  @spec render(binary(), map()) :: map() | list() | non_neg_integer()
   def render("optimism_txn_batches.json", %{
         batches: batches,
         next_page_params: next_page_params
@@ -45,6 +50,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/output-roots` endpoint.
+  """
   def render("optimism_output_roots.json", %{
         roots: roots,
         next_page_params: next_page_params
@@ -65,6 +73,42 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/games` endpoint.
+  """
+  def render("optimism_games.json", %{
+        games: games,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(games, fn g ->
+          status =
+            case g.status do
+              0 -> "In progress"
+              1 -> "Challenger wins"
+              2 -> "Defender wins"
+            end
+
+          [l2_block_number] = ExplorerHelper.decode_data(g.extra_data, [{:uint, 256}])
+
+          %{
+            "index" => g.index,
+            "game_type" => g.game_type,
+            "contract_address" => g.address,
+            "l2_block_number" => l2_block_number,
+            "created_at" => g.created_at,
+            "status" => status,
+            "resolved_at" => g.resolved_at
+          }
+        end),
+      next_page_params: next_page_params
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/deposits` endpoint.
+  """
   def render("optimism_deposits.json", %{
         deposits: deposits,
         next_page_params: next_page_params
@@ -85,6 +129,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/main-page/optimism-deposits` endpoint.
+  """
   def render("optimism_deposits.json", %{deposits: deposits}) do
     Enum.map(deposits, fn deposit ->
       %{
@@ -96,11 +143,16 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     end)
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/withdrawals` endpoint.
+  """
   def render("optimism_withdrawals.json", %{
         withdrawals: withdrawals,
         next_page_params: next_page_params,
         conn: conn
       }) do
+    respected_games = Withdrawal.respected_games()
+
     %{
       items:
         Enum.map(withdrawals, fn w ->
@@ -125,7 +177,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               _ -> {nil, nil}
             end
 
-          {status, challenge_period_end} = Withdrawal.status(w)
+          {status, challenge_period_end} = Withdrawal.status(w, respected_games)
 
           %{
             "msg_nonce_raw" => Decimal.to_string(w.msg_nonce, :normal),
@@ -143,10 +195,18 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     }
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/:entity/count` endpoints.
+  """
   def render("optimism_items_count.json", %{count: count}) do
     count
   end
 
+  @doc """
+    Extends the json output with a sub-map containing information related
+    zksync: batch number and associated L1 transactions and their timestmaps.
+  """
+  @spec extend_transaction_json_response(map(), map()) :: map()
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     out_json
     |> add_optional_transaction_field(transaction, :l1_fee)
