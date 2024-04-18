@@ -3306,7 +3306,7 @@ defmodule Explorer.Chain do
     if desc do
       query
     else
-      where(query, [internal_transaction], internal_transaction.index > ^index)
+      where(query, [internal_transaction], internal_transaction.index > 0)
     end
   end
 
