@@ -2,7 +2,8 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.{AccessHelper, LayoutView}
-  alias Explorer.{Chain, CustomContractsHelper}
+  alias ConfigHelper
+  alias Explorer.{Chain}
   alias Explorer.Chain.{Address, CurrencyHelper, SmartContract, Token}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.{Helper, Writer}

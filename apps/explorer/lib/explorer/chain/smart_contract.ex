@@ -1288,6 +1288,8 @@ defmodule Explorer.Chain.SmartContract do
   """
   @spec set_smart_contracts_certified_flag(list()) ::
           {:ok, []} | {:error, String.t()}
+  def set_smart_contracts_certified_flag([]), do: {:ok, []}
+
   def set_smart_contracts_certified_flag(address_hashes) do
     query =
       from(

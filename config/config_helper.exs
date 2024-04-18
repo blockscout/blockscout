@@ -249,18 +249,23 @@ defmodule ConfigHelper do
     err -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(err)}"
   end
 
-  @spec parse_list_env_var(String.t(), String.t()) :: list()
-  def parse_list_env_var(env_var, default_value) do
+  @spec parse_list_env_var(String.t(), String.t() | nil) :: list()
+  def parse_list_env_var(env_var, default_value \\ nil) do
     addresses_var = safe_get_env(env_var, default_value)
-    addresses_list = (addresses_var && String.split(addresses_var, ",")) || []
 
-    formatted_addresses_list =
-      addresses_list
-      |> Enum.map(fn addr ->
-        String.downcase(addr)
-      end)
+    if addresses_var !== "" do
+      addresses_list = (addresses_var && String.split(addresses_var, ",")) || []
 
-    formatted_addresses_list
+      formatted_addresses_list =
+        addresses_list
+        |> Enum.map(fn addr ->
+          String.downcase(addr)
+        end)
+
+      formatted_addresses_list
+    else
+      []
+    end
   end
 
   @supported_chain_types [
