@@ -208,7 +208,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           do: format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
         ),
       "language" => smart_contract_language(smart_contract),
-      "license_type" => smart_contract.license_type
+      "license_type" => smart_contract.license_type,
+      "certified" => smart_contract.certified
     }
     |> Map.merge(bytecode_info(address))
   end
