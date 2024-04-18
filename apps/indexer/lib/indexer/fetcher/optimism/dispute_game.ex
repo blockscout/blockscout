@@ -16,12 +16,16 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   alias EthereumJSONRPC.Contract
   alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
-  alias Explorer.Chain.Optimism.DisputeGame
+  alias Explorer.Chain.Optimism.{DisputeGame, Withdrawal}
   alias Indexer.Helper, as: IndexerHelper
 
   @fetcher_name :optimism_dispute_games
   @game_check_interval 60
   @games_range_size 50
+
+  @extra_data_method_signature "0x609d3334"
+  @resolved_at_method_signature "0x19effeb4"
+  @status_method_signature "0x200d2ed2"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -169,7 +173,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       "disputeGameFinalityDelaySeconds()",
       optimism_portal,
       "OptimismPortal",
-      "optimism_dispute_game_finality_delay_seconds",
+      Withdrawal.dispute_game_finality_delay_seconds_constant(),
       json_rpc_named_arguments
     )
   end
@@ -180,7 +184,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       "proofMaturityDelaySeconds()",
       optimism_portal,
       "OptimismPortal",
-      "optimism_proof_maturity_delay_seconds",
+      Withdrawal.proof_maturity_delay_seconds_constant(),
       json_rpc_named_arguments
     )
   end
@@ -211,7 +215,8 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       |> Repo.all(timeout: :infinity)
       |> Enum.chunk_every(@games_range_size)
       |> Enum.reduce(0, fn games_chunk, update_count_acc ->
-        resolved_at_by_index = read_extra_data("0x19effeb4", "resolvedAt()", games_chunk, json_rpc_named_arguments)
+        resolved_at_by_index =
+          read_extra_data(@resolved_at_method_signature, "resolvedAt()", games_chunk, json_rpc_named_arguments)
 
         games_resolved =
           games_chunk
@@ -220,7 +225,8 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
             resolved_at > 0 and not is_nil(resolved_at)
           end)
 
-        status_by_index = read_extra_data("0x200d2ed2", "status()", games_resolved, json_rpc_named_arguments)
+        status_by_index =
+          read_extra_data(@status_method_signature, "status()", games_resolved, json_rpc_named_arguments)
 
         Enum.reduce(games_resolved, update_count_acc, fn %{index: index}, acc ->
           resolved_at = sanitize_resolved_at(resolved_at_by_index[index])
@@ -338,11 +344,13 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     with {:ok, responses} <-
            IndexerHelper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, retries),
          games = decode_games(responses),
-         extra_data_by_index = read_extra_data("0x609d3334", "extraData()", games, json_rpc_named_arguments),
+         extra_data_by_index =
+           read_extra_data(@extra_data_method_signature, "extraData()", games, json_rpc_named_arguments),
          false <- is_nil(extra_data_by_index),
-         resolved_at_by_index = read_extra_data("0x19effeb4", "resolvedAt()", games, json_rpc_named_arguments),
+         resolved_at_by_index =
+           read_extra_data(@resolved_at_method_signature, "resolvedAt()", games, json_rpc_named_arguments),
          false <- is_nil(resolved_at_by_index),
-         status_by_index = read_extra_data("0x200d2ed2", "status()", games, json_rpc_named_arguments),
+         status_by_index = read_extra_data(@status_method_signature, "status()", games, json_rpc_named_arguments),
          false <- is_nil(status_by_index) do
       Enum.map(games, fn game ->
         [extra_data] = Helper.decode_data(extra_data_by_index[game.index], [:bytes])

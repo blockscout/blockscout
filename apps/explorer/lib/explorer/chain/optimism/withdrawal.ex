@@ -23,6 +23,9 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   @withdrawal_status_proven "Proven"
   @withdrawal_status_relayed "Relayed"
 
+  @dispute_game_finality_delay_seconds "optimism_dispute_game_finality_delay_seconds"
+  @proof_maturity_delay_seconds "optimism_proof_maturity_delay_seconds"
+
   @required_attrs ~w(msg_nonce hash l2_transaction_hash l2_block_number)a
 
   @type t :: %__MODULE__{
@@ -182,6 +185,22 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     end
   end
 
+  @doc """
+    Returns a name of the dispute_game_finality_delay_seconds constant.
+  """
+  @spec dispute_game_finality_delay_seconds_constant() :: binary()
+  def dispute_game_finality_delay_seconds_constant do
+    @dispute_game_finality_delay_seconds
+  end
+
+  @doc """
+    Returns a name of the proof_maturity_delay_seconds constant.
+  """
+  @spec proof_maturity_delay_seconds_constant() :: binary()
+  def proof_maturity_delay_seconds_constant do
+    @proof_maturity_delay_seconds
+  end
+
   defp appropriate_games_found(withdrawal_l2_block_number, respected_games) do
     respected_games
     |> Enum.any?(fn game ->
@@ -265,10 +284,9 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       {@withdrawal_status_waiting_to_resolve, nil}
     else
       dispute_game_finality_delay_seconds =
-        Helper.parse_integer(Constants.get_constant_value("optimism_dispute_game_finality_delay_seconds"))
+        Helper.parse_integer(Constants.get_constant_value(@dispute_game_finality_delay_seconds))
 
-      proof_maturity_delay_seconds =
-        Helper.parse_integer(Constants.get_constant_value("optimism_proof_maturity_delay_seconds"))
+      proof_maturity_delay_seconds = Helper.parse_integer(Constants.get_constant_value(@proof_maturity_delay_seconds))
 
       false = is_nil(dispute_game_finality_delay_seconds)
       false = is_nil(proof_maturity_delay_seconds)
