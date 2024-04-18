@@ -3184,7 +3184,7 @@ defmodule Explorer.Chain do
 
   defp handle_block_paging_options(query, paging_options) do
     case paging_options do
-      %PagingOptions{key: {_block_number, 0}} ->
+      %PagingOptions{key: {_block_number, 0}, is_index_in_asc_order: false} ->
         []
 
       _ ->
