@@ -159,8 +159,6 @@ defmodule Indexer.Block.Fetcher do
              do: CeloTransactionTokenTransfers.parse_transactions(transactions_with_receipts),
              else: %{token_transfers: [], tokens: []}
            ),
-         # todo: we might also need to fetch token balances of beneficiaries,
-         # shouldn't we?
          celo_gas_tokens =
            if(
              Application.get_env(:explorer, :chain_type) == "celo",
@@ -168,7 +166,7 @@ defmodule Indexer.Block.Fetcher do
              else: []
            ),
          token_transfers = token_transfers ++ celo_native_token_transfers,
-         tokens = Enum.uniq(tokens ++ celo_tokens ++ celo_gas_tokens),
+         tokens = Enum.uniq(tokens ++ celo_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          optimism_withdrawals =
@@ -246,7 +244,8 @@ defmodule Indexer.Block.Fetcher do
            polygon_edge_withdrawals: polygon_edge_withdrawals,
            polygon_edge_deposit_executes: polygon_edge_deposit_executes,
            polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
-           shibarium_bridge_operations: shibarium_bridge_operations
+           shibarium_bridge_operations: shibarium_bridge_operations,
+           celo_gas_tokens: celo_gas_tokens
          },
          {:ok, inserted} <-
            __MODULE__.import(
@@ -280,7 +279,8 @@ defmodule Indexer.Block.Fetcher do
          polygon_edge_withdrawals: polygon_edge_withdrawals,
          polygon_edge_deposit_executes: polygon_edge_deposit_executes,
          polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
-         shibarium_bridge_operations: shibarium_bridge_operations
+         shibarium_bridge_operations: shibarium_bridge_operations,
+         celo_gas_tokens: celo_gas_tokens
        }) do
     case Application.get_env(:explorer, :chain_type) do
       "ethereum" ->
@@ -305,6 +305,18 @@ defmodule Indexer.Block.Fetcher do
       "shibarium" ->
         basic_import_options
         |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
+
+      "celo" ->
+        tokens =
+          basic_import_options
+          |> Map.get(:tokens, %{})
+          |> Map.get(:params, [])
+
+        basic_import_options
+        |> Map.put(
+          :tokens,
+          %{params: (tokens ++ celo_gas_tokens) |> Enum.uniq()}
+        )
 
       _ ->
         basic_import_options
