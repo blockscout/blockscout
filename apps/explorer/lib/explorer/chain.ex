@@ -3302,8 +3302,7 @@ defmodule Explorer.Chain do
     hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, desc)
   end
 
-  def page_internal_transaction(query, %PagingOptions{key: {index}}, %{index_int_tx_desc_order: desc})
-      when index == 0 do
+  def page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_int_tx_desc_order: desc}) do
     if desc do
       query
     else
