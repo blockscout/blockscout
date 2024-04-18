@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.EnhanceIndexForTokenTransfersList do
+defmodule Explorer.Repo.Migrations.DropOutdatedIndexForTokenTransfersList do
   use Ecto.Migration
   @disable_ddl_transaction true
   @disable_migration_lock true
