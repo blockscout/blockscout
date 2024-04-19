@@ -14,7 +14,7 @@ services:
       PROXY_PORT: ${PROXY_PORT:-80}
       HOST: ${HOST:-localhost}
     ports:
-      - target: 80
+      - target: ${PROXY_BASE_PORT:-80}
         published: ${PROXY_PORT:-80}
       - target: 8080
         published: ${STATS_PORT:-8080}
