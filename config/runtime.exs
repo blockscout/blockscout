@@ -247,7 +247,7 @@ config :explorer, Explorer.Chain.Events.Listener,
 
 precompiled_config_default_path =
   case ConfigHelper.chain_type() do
-    "arbitrum" -> "/app/config/assets/precompiles-arbitrum.json"
+    :arbitrum -> "/app/config/assets/precompiles-arbitrum.json"
     _ -> nil
   end
 
