@@ -243,10 +243,7 @@ defmodule Explorer.ChainSpec.GenesisData do
     updated_accounts =
       precompiles_config
       |> Enum.reduce(accounts, fn contract, acc ->
-        case acc[contract["address"]] do
-          nil -> Map.put(acc, contract["address"], %{"balance" => 0, "code" => contract["bytecode"]})
-          _ -> acc
-        end
+        Map.put_new(acc, contract["address"], %{"balance" => 0, "code" => contract["bytecode"]})
       end)
 
     Map.put(chain_spec, "alloc", updated_accounts)
@@ -263,10 +260,7 @@ defmodule Explorer.ChainSpec.GenesisData do
     updated_accounts =
       precompiles_config
       |> Enum.reduce(accounts, fn contract, acc ->
-        case acc[contract["address"]] do
-          nil -> Map.put(acc, contract["address"], %{"balance" => 0, "constructor" => contract["bytecode"]})
-          _ -> acc
-        end
+        Map.put_new(acc, contract["address"], %{"balance" => 0, "constructor" => contract["bytecode"]})
       end)
 
     Map.put(chain_spec, "accounts", updated_accounts)
