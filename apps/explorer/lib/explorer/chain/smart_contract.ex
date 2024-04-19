@@ -346,7 +346,7 @@ defmodule Explorer.Chain.SmartContract do
       :bytecode_checked_at,
       :contract_code_md5,
       :compiler_settings,
-      :license_type
+      :license_type,
       :certified
     ])
     |> validate_required([

@@ -104,8 +104,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         options
       )
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    {implementation_address_hash_string, _name} =
-      get_implementation_address_hash(smart_contract, options)
+    {implementation_address_hash_string, _name} = get_implementation_address_hash(smart_contract, options)
 
     SmartContract.get_smart_contract_abi(implementation_address_hash_string)
   end
