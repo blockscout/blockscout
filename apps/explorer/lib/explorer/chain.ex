@@ -3323,7 +3323,8 @@ defmodule Explorer.Chain do
       where(
         query,
         [internal_transaction],
-        internal_transaction.block_number == 0 and internal_transaction.index > ^index
+        internal_transaction.block_number == 0 and
+        internal_transaction.transaction_index == 0 and internal_transaction.index > ^index
       )
 
   defp hardcoded_where_for_page_int_tx(query, block_number, 0, index, false),
@@ -3332,7 +3333,8 @@ defmodule Explorer.Chain do
         query,
         [internal_transaction],
         internal_transaction.block_number < ^block_number or
-          (internal_transaction.block_number == ^block_number and internal_transaction.index > ^index)
+          (internal_transaction.block_number == ^block_number and
+          internal_transaction.transaction_index == 0 and internal_transaction.index > ^index)
       )
 
   defp hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, false),
