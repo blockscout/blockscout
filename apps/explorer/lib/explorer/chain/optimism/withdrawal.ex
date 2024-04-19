@@ -59,30 +59,36 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   def list(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    base_query =
-      from(w in __MODULE__,
-        order_by: [desc: w.msg_nonce],
-        left_join: l2_tx in Transaction,
-        on: w.l2_transaction_hash == l2_tx.hash,
-        left_join: l2_block in Block,
-        on: w.l2_block_number == l2_block.number,
-        left_join: we in WithdrawalEvent,
-        on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
-        select: %{
-          msg_nonce: w.msg_nonce,
-          hash: w.hash,
-          l2_block_number: w.l2_block_number,
-          l2_timestamp: l2_block.timestamp,
-          l2_transaction_hash: w.l2_transaction_hash,
-          l1_transaction_hash: we.l1_transaction_hash,
-          from: l2_tx.from_address_hash
-        }
-      )
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
 
-    base_query
-    |> page_optimism_withdrawals(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
+      _ ->
+        base_query =
+          from(w in __MODULE__,
+            order_by: [desc: w.msg_nonce],
+            left_join: l2_tx in Transaction,
+            on: w.l2_transaction_hash == l2_tx.hash,
+            left_join: l2_block in Block,
+            on: w.l2_block_number == l2_block.number,
+            left_join: we in WithdrawalEvent,
+            on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
+            select: %{
+              msg_nonce: w.msg_nonce,
+              hash: w.hash,
+              l2_block_number: w.l2_block_number,
+              l2_timestamp: l2_block.timestamp,
+              l2_transaction_hash: w.l2_transaction_hash,
+              l1_transaction_hash: we.l1_transaction_hash,
+              from: l2_tx.from_address_hash
+            }
+          )
+
+        base_query
+        |> page_optimism_withdrawals(paging_options)
+        |> limit(^paging_options.page_size)
+        |> select_repo(options).all()
+    end
   end
 
   defp page_optimism_withdrawals(query, %PagingOptions{key: nil}), do: query

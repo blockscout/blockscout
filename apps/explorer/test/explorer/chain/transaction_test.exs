@@ -864,11 +864,11 @@ defmodule Explorer.Chain.TransactionTest do
       }
 
       if Application.get_env(:explorer, :chain_type) == :optimism do
-        {:actual, nil} ==
-          Transaction.fee(
-            transaction,
-            :wei
-          )
+        assert {:actual, nil} ==
+                 Transaction.fee(
+                   transaction,
+                   :wei
+                 )
       else
         assert {:actual, Decimal.new("5200000000000")} ==
                  Transaction.fee(
