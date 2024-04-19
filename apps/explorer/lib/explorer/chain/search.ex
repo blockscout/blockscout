@@ -47,7 +47,7 @@ defmodule Explorer.Chain.Search do
             from(items in subquery(query),
               order_by: [
                 desc: items.priority,
-                asc: items.certified,
+                desc_nulls_last: items.certified,
                 desc_nulls_last: items.circulating_market_cap,
                 desc_nulls_last: items.exchange_rate,
                 desc_nulls_last: items.is_verified_via_admin_panel,
