@@ -361,7 +361,8 @@ defmodule Explorer.Chain.Search do
       left_join: address in Address,
       on: smart_contract.address_hash == address.hash,
       where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", smart_contract.name, ^term),
-      select: ^contract_search_fields
+      select: ^contract_search_fields,
+      order_by: [desc: smart_contract.certified]
     )
   end
 

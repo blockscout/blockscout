@@ -123,6 +123,7 @@ defmodule Explorer.Application do
         configure(Explorer.Counters.Transactions24hStats),
         configure(Explorer.Validator.MetadataProcessor),
         configure(Explorer.Tags.AddressTag.Cataloger),
+        configure(Explorer.SmartContract.CertifiedSmartContractCataloger),
         configure(MinMissingBlockNumber),
         configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
         configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
