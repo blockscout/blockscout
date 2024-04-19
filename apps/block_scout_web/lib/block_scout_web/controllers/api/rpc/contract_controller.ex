@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias BlockScoutWeb.API.RPC.{AddressController, Helper}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, SmartContract}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.SmartContract.Proxy.VerificationStatus, as: ProxyVerificationStatus
   alias Explorer.Chain.SmartContract.VerificationStatus
   alias Explorer.Etherscan.Contracts
@@ -230,13 +231,13 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
              api?: true
            ),
          {:not_found, false} <- {:not_found, is_nil(smart_contract)},
+         implementation_updated_at <- Implementation.get_proxy_implementation_updated_at(address_hash, []),
          {:time_interval, true} <-
-           {:time_interval,
-            SmartContract.check_implementation_refetch_necessity(smart_contract.implementation_fetched_at)},
+           {:time_interval, Implementation.check_implementation_refetch_necessity(implementation_updated_at)},
          uid <- ProxyVerificationStatus.generate_uid(address_hash) do
       ProxyVerificationStatus.insert_status(uid, :pending, address_hash)
 
-      SmartContract.get_implementation_address_hash(smart_contract,
+      Implementation.get_implementation_address_hash(smart_contract,
         timeout: 0,
         uid: uid,
         callback: &ProxyVerificationStatus.set_proxy_verification_result/2
@@ -254,7 +255,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         render(conn, :error, error: @restricted_access)
 
       {:time_interval, false} ->
-        render(conn, :error, error: "Only one attempt in #{SmartContract.get_fresh_time_distance()}ms")
+        render(conn, :error, error: "Only one attempt in #{Implementation.get_fresh_time_distance()}ms")
     end
   end
 
@@ -268,7 +269,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       :pass ->
         render(conn, :show, %{
           result:
-            "The proxy's (#{submission.contract_address_hash}) implementation contract is found at #{SmartContract.address_hash_to_smart_contract(submission.contract_address_hash).implementation_address_hash} and is successfully updated."
+            "The proxy's (#{submission.contract_address_hash}) implementation contract is found at #{Implementation.get_proxy_implementation(submission.contract_address_hash, []).address_hash} and is successfully updated."
         })
 
       :fail ->

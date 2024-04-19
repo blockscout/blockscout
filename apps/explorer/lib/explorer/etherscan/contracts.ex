@@ -15,6 +15,7 @@ defmodule Explorer.Etherscan.Contracts do
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.EIP1167
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @doc """
     Returns address with preloaded SmartContract and proxy info if it exists
@@ -79,7 +80,7 @@ defmodule Explorer.Etherscan.Contracts do
         |> Map.put(
           :implementation_address_hash_string,
           smart_contract
-          |> SmartContract.get_implementation_address_hash()
+          |> Implementation.get_implementation_address_hash()
           |> Tuple.to_list()
           |> List.first()
         )

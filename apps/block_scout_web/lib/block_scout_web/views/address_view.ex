@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
 
@@ -208,11 +209,6 @@ defmodule BlockScoutWeb.AddressView do
         nil
     end
   end
-
-  def implementation_name(%Address{smart_contract: %{implementation_name: implementation_name}}),
-    do: implementation_name
-
-  def implementation_name(_), do: nil
 
   def primary_validator_metadata(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do

@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.SmartContract.{Reader, Writer}
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.ThirdPartyIntegrations.SolidityScan
@@ -102,7 +103,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
       implementation_address_hash_string =
         address.smart_contract
-        |> SmartContract.get_implementation_address_hash(@api_true)
+        |> Implementation.get_implementation_address_hash(@api_true)
         |> Tuple.to_list()
         |> List.first() || burn_address_hash_string()
 
@@ -124,7 +125,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
       implementation_address_hash_string =
         address.smart_contract
-        |> SmartContract.get_implementation_address_hash(@api_true)
+        |> Implementation.get_implementation_address_hash(@api_true)
         |> Tuple.to_list()
         |> List.first() || burn_address_hash_string()
 

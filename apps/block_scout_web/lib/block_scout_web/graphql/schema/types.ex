@@ -116,8 +116,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
     field(:file_path, :string)
     field(:is_vyper_contract, :boolean)
     field(:is_changed_bytecode, :boolean)
-    field(:implementation_name, :string)
-    field(:implementation_address_hash, :address_hash)
     field(:compiler_settings, :json)
     field(:verified_via_eth_bytecode_db, :boolean)
   end

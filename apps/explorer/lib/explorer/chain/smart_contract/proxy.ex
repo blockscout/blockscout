@@ -15,7 +15,10 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       string_to_address_hash: 1
     ]
 
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0, is_burn_signature: 1]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
+    only: [is_burn_signature: 1, get_implementation_address_hash: 2, save_implementation_data: 4]
 
   # supported signatures:
   # 5c60da1b = keccak256(implementation())
@@ -38,7 +41,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       when not is_nil(proxy_address_hash) and not is_nil(proxy_abi) do
     implementation_address_hash_string = get_implementation_address_hash_string(proxy_address_hash, proxy_abi)
 
-    SmartContract.save_implementation_data(
+    save_implementation_data(
       implementation_address_hash_string,
       proxy_address_hash,
       metadata_from_verified_twin,
@@ -53,7 +56,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @doc """
   Checks if smart-contract is proxy. Returns true/false.
   """
-  @spec proxy_contract?(SmartContract.t(), any()) :: boolean()
+  @spec proxy_contract?(SmartContract.t(), Keyword.t()) :: boolean()
   def proxy_contract?(smart_contract, options \\ []) do
     {:ok, burn_address_hash} = string_to_address_hash(SmartContract.burn_address_hash_string())
 
@@ -61,7 +64,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
          smart_contract.implementation_address_hash.bytes !== burn_address_hash.bytes do
       true
     else
-      {implementation_address_hash_string, _} = SmartContract.get_implementation_address_hash(smart_contract, options)
+      {implementation_address_hash_string, _} = get_implementation_address_hash(smart_contract, options)
 
       with false <- is_nil(implementation_address_hash_string),
            {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
@@ -101,7 +104,9 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         options
       )
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    {implementation_address_hash_string, _name} = SmartContract.get_implementation_address_hash(smart_contract, options)
+    {implementation_address_hash_string, _name} =
+      get_implementation_address_hash(smart_contract, options)
+
     SmartContract.get_smart_contract_abi(implementation_address_hash_string)
   end
 

@@ -20,7 +20,7 @@
     <dt class="col-lg-2"> <%= gettext "Address" %> </dt>
     <dd class="col-lg-10">
       <h3 class="logs-hash">
-        <% name = implementation_name(@log.address) || primary_name(@log.address)%>
+        <% name = Implementation.name(@log.address) || primary_name(@log.address)%>
         <%= link(
             (if name, do: name <> " | "<> to_string(@log.address), else: @log.address),
             to: address_path(@conn, :show, @log.address),

@@ -7,7 +7,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Basic
 
-  import Explorer.Chain.SmartContract, only: [is_burn_signature: 1]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [is_burn_signature: 1]
 
   # supported signatures:
   # 5c60da1b = keccak256(implementation())
