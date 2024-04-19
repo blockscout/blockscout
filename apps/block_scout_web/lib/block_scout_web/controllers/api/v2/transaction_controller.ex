@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   case Application.compile_env(:explorer, :chain_type) do
-    "ethereum" ->
+    :ethereum ->
       @chain_type_transaction_necessity_by_association %{
         :beacon_blob_transaction => :optional
       }
@@ -101,20 +101,20 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
     necessity_by_association =
       case Application.get_env(:explorer, :chain_type) do
-        "polygon_zkevm" ->
+        :polygon_zkevm ->
           necessity_by_association_with_actions
           |> Map.put(:zkevm_batch, :optional)
           |> Map.put(:zkevm_sequence_transaction, :optional)
           |> Map.put(:zkevm_verify_transaction, :optional)
 
-        "zksync" ->
+        :zksync ->
           necessity_by_association_with_actions
           |> Map.put(:zksync_batch, :optional)
           |> Map.put(:zksync_commit_transaction, :optional)
           |> Map.put(:zksync_prove_transaction, :optional)
           |> Map.put(:zksync_execute_transaction, :optional)
 
-        "suave" ->
+        :suave ->
           necessity_by_association_with_actions
           |> Map.put(:logs, :optional)
           |> Map.put([execution_node: :names], :optional)

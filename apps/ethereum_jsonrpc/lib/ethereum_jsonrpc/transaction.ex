@@ -12,7 +12,7 @@ defmodule EthereumJSONRPC.Transaction do
   alias EthereumJSONRPC
 
   case Application.compile_env(:explorer, :chain_type) do
-    "ethereum" ->
+    :ethereum ->
       @chain_type_fields quote(
                            do: [
                              max_fee_per_blob_gas: non_neg_integer(),
@@ -20,7 +20,7 @@ defmodule EthereumJSONRPC.Transaction do
                            ]
                          )
 
-    "optimism" ->
+    :optimism ->
       @chain_type_fields quote(
                            do: [
                              l1_tx_origin: EthereumJSONRPC.hash(),
@@ -28,7 +28,7 @@ defmodule EthereumJSONRPC.Transaction do
                            ]
                          )
 
-    "suave" ->
+    :suave ->
       @chain_type_fields quote(
                            do: [
                              execution_node_hash: EthereumJSONRPC.address(),
@@ -84,15 +84,15 @@ defmodule EthereumJSONRPC.Transaction do
    * `"maxFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"type"` - `t:EthereumJSONRPC.quantity/0` denotes transaction type. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    #{case Application.compile_env(:explorer, :chain_type) do
-    "ethereum" -> """
+    :ethereum -> """
        * `"maxFeePerBlobGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of blob gas used. Introduced in [EIP-4844](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4844.md)
        * `"blobVersionedHashes"` - `t:list/0` of `t:EthereumJSONRPC.hash/0` of included data blobs hashes. Introduced in [EIP-4844](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4844.md)
       """
-    "optimism" -> """
+    :optimism -> """
        * `"l1TxOrigin"` - .
        * `"l1BlockNumber"` - .
       """
-    "suave" -> """
+    :suave -> """
        * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).
        * `"requestRecord"` - map of wrapped transaction data (used by Suave).
       """
@@ -470,13 +470,13 @@ defmodule EthereumJSONRPC.Transaction do
 
   defp chain_type_fields(params, elixir) do
     case Application.get_env(:explorer, :chain_type) do
-      "ethereum" ->
+      :ethereum ->
         put_if_present(elixir, params, [
           {"blobVersionedHashes", :blob_versioned_hashes},
           {"maxFeePerBlobGas", :max_fee_per_blob_gas}
         ])
 
-      "optimism" ->
+      :optimism ->
         # we need to put blobVersionedHashes for Indexer.Fetcher.Optimism.TxnBatch module
         put_if_present(elixir, params, [
           {"l1TxOrigin", :l1_tx_origin},
@@ -484,7 +484,7 @@ defmodule EthereumJSONRPC.Transaction do
           {"blobVersionedHashes", :blob_versioned_hashes}
         ])
 
-      "suave" ->
+      :suave ->
         wrapped = Map.get(elixir, "requestRecord")
 
         if is_nil(wrapped) do

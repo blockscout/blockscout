@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.PagingHelper do
   @allowed_filter_labels ["validated", "pending"]
 
   case Application.compile_env(:explorer, :chain_type) do
-    "ethereum" ->
+    :ethereum ->
       @allowed_type_labels [
         "coin_transfer",
         "contract_call",

@@ -2248,7 +2248,7 @@ defmodule Explorer.Chain do
     range_max = max(range_start, range_end)
 
     ordered_missing_query =
-      if Application.get_env(:explorer, :chain_type) == "filecoin" do
+      if Application.get_env(:explorer, :chain_type) == :filecoin do
         from(b in Block,
           right_join:
             missing_range in fragment(

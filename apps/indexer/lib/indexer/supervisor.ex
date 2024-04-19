@@ -261,7 +261,7 @@ defmodule Indexer.Supervisor do
 
   defp add_chain_type_dependent_fetchers(fetchers) do
     case Application.get_env(:explorer, :chain_type) do
-      "stability" ->
+      :stability ->
         [{ValidatorStability, []} | fetchers]
 
       _ ->
