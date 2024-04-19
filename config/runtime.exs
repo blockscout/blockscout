@@ -187,7 +187,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   block_traceable?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_GETH_TRACE_BY_BLOCK"),
   debug_trace_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
   tracer:
-    if(ConfigHelper.chain_type() == "polygon_edge",
+    if(ConfigHelper.chain_type() == :polygon_edge,
       do: "polygon_edge",
       else: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "call_tracer")
     )
@@ -291,7 +291,7 @@ config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
   global_ttl: ConfigHelper.parse_time_env_var("ROOTSTOCK_LOCKED_BTC_CACHE_PERIOD", "10m"),
   locking_cap: ConfigHelper.parse_integer_env_var("ROOTSTOCK_LOCKING_CAP", 21_000_000)
 
-config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: ConfigHelper.chain_type() == "optimism"
+config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: ConfigHelper.chain_type() == :optimism
 
 config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD", "30m")
@@ -320,8 +320,8 @@ config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
 
 config :explorer, Explorer.Counters.LastOutputRootSizeCounter,
-  enabled: ConfigHelper.chain_type() == "optimism",
-  enable_consolidation: ConfigHelper.chain_type() == "optimism",
+  enabled: ConfigHelper.chain_type() == :optimism,
+  enable_consolidation: ConfigHelper.chain_type() == :optimism,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_LAST_OUTPUT_ROOT_SIZE_COUNTER_PERIOD", "5m")
 
 config :explorer, Explorer.Counters.Transactions24hStats,
@@ -452,6 +452,10 @@ config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
   service_url: System.get_env("NOVES_FI_BASE_API_URL") || "https://blockscout.noves.fi",
   chain_name: System.get_env("NOVES_FI_CHAIN_NAME"),
   api_key: System.get_env("NOVES_FI_API_TOKEN")
+
+config :explorer, Explorer.ThirdPartyIntegrations.Zerion,
+  service_url: System.get_env("ZERION_BASE_API_URL", "https://api.zerion.io/v1"),
+  api_key: System.get_env("ZERION_API_TOKEN")
 
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED", "true")
 # or "eth_bytecode_db"
@@ -601,8 +605,14 @@ config :indexer,
     ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 100_000),
   coin_balances_fetcher_init_limit:
     ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 2000),
-  ipfs_gateway_url: System.get_env("IPFS_GATEWAY_URL", "https://ipfs.io/ipfs"),
   graceful_shutdown_period: ConfigHelper.parse_time_env_var("INDEXER_GRACEFUL_SHUTDOWN_PERIOD", "5m")
+
+config :indexer, :ipfs,
+  gateway_url: System.get_env("IPFS_GATEWAY_URL", "https://ipfs.io/ipfs"),
+  gateway_url_param_key: System.get_env("IPFS_GATEWAY_URL_PARAM_KEY"),
+  gateway_url_param_value: System.get_env("IPFS_GATEWAY_URL_PARAM_VALUE"),
+  gateway_url_param_location:
+    ConfigHelper.parse_catalog_value("IPFS_GATEWAY_URL_PARAM_LOCATION", ["query", "header"], true)
 
 config :indexer, Indexer.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 
@@ -751,11 +761,12 @@ config :indexer, Indexer.Fetcher.CoinBalance.Realtime,
   batch_size: coin_balances_batch_size,
   concurrency: coin_balances_concurrency
 
-config :indexer, Indexer.Fetcher.Optimism.TxnBatch.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
+config :indexer, Indexer.Fetcher.Optimism.TxnBatch.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.DisputeGame.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
@@ -789,15 +800,15 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
 
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
+config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == :polygon_edge
 
 config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor,
-  enabled: ConfigHelper.chain_type() == "polygon_edge"
+  enabled: ConfigHelper.chain_type() == :polygon_edge
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
+config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == :polygon_edge
 
 config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor,
-  enabled: ConfigHelper.chain_type() == "polygon_edge"
+  enabled: ConfigHelper.chain_type() == :polygon_edge
 
 config :indexer, Indexer.Fetcher.PolygonEdge,
   polygon_edge_l1_rpc: System.get_env("INDEXER_POLYGON_EDGE_L1_RPC"),
@@ -837,7 +848,7 @@ config :indexer, Indexer.Fetcher.ZkSync.BatchesStatusTracker.Supervisor,
 
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
   disabled?:
-    ConfigHelper.chain_type() != "rsk" || ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ROOTSTOCK_DATA_FETCHER")
+    ConfigHelper.chain_type() != :rsk || ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ROOTSTOCK_DATA_FETCHER")
 
 config :indexer, Indexer.Fetcher.RootstockData,
   interval: ConfigHelper.parse_time_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_INTERVAL", "3s"),
@@ -849,7 +860,7 @@ config :indexer, Indexer.Fetcher.Beacon, beacon_rpc: System.get_env("INDEXER_BEA
 
 config :indexer, Indexer.Fetcher.Beacon.Blob.Supervisor,
   disabled?:
-    ConfigHelper.chain_type() != "ethereum" ||
+    ConfigHelper.chain_type() != :ethereum ||
       ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BEACON_BLOB_FETCHER")
 
 config :indexer, Indexer.Fetcher.Beacon.Blob,
@@ -876,9 +887,9 @@ config :indexer, Indexer.Fetcher.Shibarium.L2,
   weth: System.get_env("INDEXER_SHIBARIUM_L2_WETH_CONTRACT"),
   bone_withdraw: System.get_env("INDEXER_SHIBARIUM_L2_BONE_WITHDRAW_CONTRACT")
 
-config :indexer, Indexer.Fetcher.Shibarium.L1.Supervisor, enabled: ConfigHelper.chain_type() == "shibarium"
+config :indexer, Indexer.Fetcher.Shibarium.L1.Supervisor, enabled: ConfigHelper.chain_type() == :shibarium
 
-config :indexer, Indexer.Fetcher.Shibarium.L2.Supervisor, enabled: ConfigHelper.chain_type() == "shibarium"
+config :indexer, Indexer.Fetcher.Shibarium.L2.Supervisor, enabled: ConfigHelper.chain_type() == :shibarium
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1,
   rpc: System.get_env("INDEXER_POLYGON_ZKEVM_L1_RPC"),
@@ -889,10 +900,10 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1,
   rollup_network_id_l1: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NETWORK_ID"),
   rollup_index_l1: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_ROLLUP_INDEX")
 
-config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_zkevm"
+config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, enabled: ConfigHelper.chain_type() == :polygon_zkevm
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens.Supervisor,
-  enabled: ConfigHelper.chain_type() == "polygon_zkevm"
+  enabled: ConfigHelper.chain_type() == :polygon_zkevm
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2,
   start_block: System.get_env("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_START_BLOCK"),
@@ -900,7 +911,7 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2,
   rollup_network_id_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_NETWORK_ID"),
   rollup_index_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_ROLLUP_INDEX")
 
-config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_zkevm"
+config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, enabled: ConfigHelper.chain_type() == :polygon_zkevm
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch,
   chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_CHUNK_SIZE", 20),
@@ -908,7 +919,7 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch,
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,
   enabled:
-    ConfigHelper.chain_type() == "polygon_zkevm" &&
+    ConfigHelper.chain_type() == :polygon_zkevm &&
       ConfigHelper.parse_bool_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED")
 
 Code.require_file("#{config_env()}.exs", "config/runtime")

@@ -183,7 +183,7 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
          data: %{block_quantity: block_quantity, hash_data: hash_data}
        })
        when is_integer(code) and is_binary(message) and is_binary(block_quantity) and is_binary(hash_data) do
-    [hash_data, "@", quantity_to_integer(block_quantity), ": (", to_string(code), ") ", message, ?\n]
+    [hash_data, "@", block_quantity |> quantity_to_integer() |> to_string(), ": (", to_string(code), ") ", message, ?\n]
   end
 
   def block_timestamp_map(params_list, json_rpc_named_arguments) do

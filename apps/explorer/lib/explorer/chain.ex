@@ -198,48 +198,54 @@ defmodule Explorer.Chain do
 
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    if direction == nil || direction == "" do
-      query_to_address_hash_wrapped =
-        InternalTransaction
-        |> InternalTransaction.where_nonpending_block()
-        |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
-        |> where_block_number_in_period(from_block, to_block)
-        |> common_where_limit_order(paging_options)
-        |> wrapped_union_subquery()
+    case paging_options do
+      %PagingOptions{key: {0, 0, 0}} ->
+        []
 
-      query_from_address_hash_wrapped =
-        InternalTransaction
-        |> InternalTransaction.where_nonpending_block()
-        |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
-        |> where_block_number_in_period(from_block, to_block)
-        |> common_where_limit_order(paging_options)
-        |> wrapped_union_subquery()
+      _ ->
+        if direction == nil || direction == "" do
+          query_to_address_hash_wrapped =
+            InternalTransaction
+            |> InternalTransaction.where_nonpending_block()
+            |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
+            |> where_block_number_in_period(from_block, to_block)
+            |> common_where_limit_order(paging_options)
+            |> wrapped_union_subquery()
 
-      query_created_contract_address_hash_wrapped =
-        InternalTransaction
-        |> InternalTransaction.where_nonpending_block()
-        |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
-        |> where_block_number_in_period(from_block, to_block)
-        |> common_where_limit_order(paging_options)
-        |> wrapped_union_subquery()
+          query_from_address_hash_wrapped =
+            InternalTransaction
+            |> InternalTransaction.where_nonpending_block()
+            |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
+            |> where_block_number_in_period(from_block, to_block)
+            |> common_where_limit_order(paging_options)
+            |> wrapped_union_subquery()
 
-      query_to_address_hash_wrapped
-      |> union(^query_from_address_hash_wrapped)
-      |> union(^query_created_contract_address_hash_wrapped)
-      |> wrapped_union_subquery()
-      |> common_where_limit_order(paging_options)
-      |> preload(:block)
-      |> join_associations(necessity_by_association)
-      |> select_repo(options).all()
-    else
-      InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
-      |> InternalTransaction.where_address_fields_match(hash, direction)
-      |> where_block_number_in_period(from_block, to_block)
-      |> common_where_limit_order(paging_options)
-      |> preload(:block)
-      |> join_associations(necessity_by_association)
-      |> select_repo(options).all()
+          query_created_contract_address_hash_wrapped =
+            InternalTransaction
+            |> InternalTransaction.where_nonpending_block()
+            |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
+            |> where_block_number_in_period(from_block, to_block)
+            |> common_where_limit_order(paging_options)
+            |> wrapped_union_subquery()
+
+          query_to_address_hash_wrapped
+          |> union(^query_from_address_hash_wrapped)
+          |> union(^query_created_contract_address_hash_wrapped)
+          |> wrapped_union_subquery()
+          |> common_where_limit_order(paging_options)
+          |> preload(:block)
+          |> join_associations(necessity_by_association)
+          |> select_repo(options).all()
+        else
+          InternalTransaction
+          |> InternalTransaction.where_nonpending_block()
+          |> InternalTransaction.where_address_fields_match(hash, direction)
+          |> where_block_number_in_period(from_block, to_block)
+          |> common_where_limit_order(paging_options)
+          |> preload(:block)
+          |> join_associations(necessity_by_association)
+          |> select_repo(options).all()
+        end
     end
   end
 
@@ -290,13 +296,20 @@ defmodule Explorer.Chain do
   @spec address_hash_to_token_transfers(Hash.Address.t(), Keyword.t()) :: [Transaction.t()]
   def address_hash_to_token_transfers(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    direction = Keyword.get(options, :direction)
 
-    direction
-    |> Transaction.transactions_with_token_transfers_direction(address_hash)
-    |> Transaction.preload_token_transfers(address_hash)
-    |> Transaction.handle_paging_options(paging_options)
-    |> Repo.all()
+    case paging_options do
+      %PagingOptions{key: {0, 0}, is_index_in_asc_order: false} ->
+        []
+
+      _ ->
+        direction = Keyword.get(options, :direction)
+
+        direction
+        |> Transaction.transactions_with_token_transfers_direction(address_hash)
+        |> Transaction.preload_token_transfers(address_hash)
+        |> Transaction.handle_paging_options(paging_options)
+        |> Repo.all()
+    end
   end
 
   @spec address_hash_to_token_transfers_new(Hash.Address.t() | String.t(), Keyword.t()) :: [TokenTransfer.t()]
@@ -320,13 +333,19 @@ defmodule Explorer.Chain do
   def address_hash_to_token_transfers_by_token_address_hash(address_hash, token_address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    necessity_by_association = Keyword.get(options, :necessity_by_association)
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
 
-    address_hash
-    |> TokenTransfer.token_transfers_by_address_hash_and_token_address_hash(token_address_hash)
-    |> join_associations(necessity_by_association)
-    |> TokenTransfer.handle_paging_options(paging_options)
-    |> select_repo(options).all()
+      _ ->
+        necessity_by_association = Keyword.get(options, :necessity_by_association)
+
+        address_hash
+        |> TokenTransfer.token_transfers_by_address_hash_and_token_address_hash(token_address_hash)
+        |> join_associations(necessity_by_association)
+        |> TokenTransfer.handle_paging_options(paging_options)
+        |> select_repo(options).all()
+    end
   end
 
   @spec address_hash_to_withdrawals(
@@ -348,45 +367,51 @@ defmodule Explorer.Chain do
   def address_to_logs(address_hash, csv_export?, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
-    from_block = from_block(options)
-    to_block = to_block(options)
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
 
-    base =
-      if DenormalizationHelper.transactions_denormalization_finished?() do
-        from(log in Log,
-          order_by: [desc: log.block_number, desc: log.index],
-          where: log.address_hash == ^address_hash,
-          limit: ^paging_options.page_size,
-          select: log,
-          inner_join: transaction in assoc(log, :transaction),
-          where: transaction.block_consensus == true
-        )
-      else
-        from(log in Log,
-          order_by: [desc: log.block_number, desc: log.index],
-          where: log.address_hash == ^address_hash,
-          limit: ^paging_options.page_size,
-          select: log,
-          inner_join: block in Block,
-          on: block.hash == log.block_hash,
-          where: block.consensus == true
-        )
-      end
+      _ ->
+        from_block = from_block(options)
+        to_block = to_block(options)
 
-    preloaded_query =
-      if csv_export? do
-        base
-      else
-        base
-        |> preload(transaction: [:to_address, :from_address])
-      end
+        base =
+          if DenormalizationHelper.transactions_denormalization_finished?() do
+            from(log in Log,
+              order_by: [desc: log.block_number, desc: log.index],
+              where: log.address_hash == ^address_hash,
+              limit: ^paging_options.page_size,
+              select: log,
+              inner_join: transaction in assoc(log, :transaction),
+              where: transaction.block_consensus == true
+            )
+          else
+            from(log in Log,
+              order_by: [desc: log.block_number, desc: log.index],
+              where: log.address_hash == ^address_hash,
+              limit: ^paging_options.page_size,
+              select: log,
+              inner_join: block in Block,
+              on: block.hash == log.block_hash,
+              where: block.consensus == true
+            )
+          end
 
-    preloaded_query
-    |> page_logs(paging_options)
-    |> filter_topic(Keyword.get(options, :topic))
-    |> where_block_number_in_period(from_block, to_block)
-    |> select_repo(options).all()
-    |> Enum.take(paging_options.page_size)
+        preloaded_query =
+          if csv_export? do
+            base
+          else
+            base
+            |> preload(transaction: [:to_address, :from_address])
+          end
+
+        preloaded_query
+        |> page_logs(paging_options)
+        |> filter_topic(Keyword.get(options, :topic))
+        |> where_block_number_in_period(from_block, to_block)
+        |> select_repo(options).all()
+        |> Enum.take(paging_options.page_size)
+    end
   end
 
   defp filter_topic(base_query, nil), do: base_query
@@ -437,11 +462,17 @@ defmodule Explorer.Chain do
   def address_to_transactions_with_token_transfers(address_hash, token_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    address_hash
-    |> Transaction.transactions_with_token_transfers(token_hash)
-    |> Transaction.preload_token_transfers(address_hash)
-    |> Transaction.handle_paging_options(paging_options)
-    |> Repo.all()
+    case paging_options do
+      %PagingOptions{key: {0, 0}, is_index_in_asc_order: false} ->
+        []
+
+      _ ->
+        address_hash
+        |> Transaction.transactions_with_token_transfers(token_hash)
+        |> Transaction.preload_token_transfers(address_hash)
+        |> Transaction.handle_paging_options(paging_options)
+        |> Repo.all()
+    end
   end
 
   @doc """
@@ -1400,7 +1431,10 @@ defmodule Explorer.Chain do
 
     transactions =
       if paging_options do
-        Transaction.fetch_transactions(paging_options)
+        case paging_options do
+          %PagingOptions{key: {0, 0}, is_index_in_asc_order: false} -> []
+          _ -> Transaction.fetch_transactions(paging_options)
+        end
       else
         Transaction.fetch_transactions()
       end
@@ -1643,13 +1677,19 @@ defmodule Explorer.Chain do
   end
 
   defp fetch_blocks(block_type, paging_options, necessity_by_association, options) do
-    Block
-    |> Block.block_type_filter(block_type)
-    |> page_blocks(paging_options)
-    |> limit(^paging_options.page_size)
-    |> order_by(desc: :number)
-    |> join_associations(necessity_by_association)
-    |> select_repo(options).all()
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
+
+      _ ->
+        Block
+        |> Block.block_type_filter(block_type)
+        |> page_blocks(paging_options)
+        |> limit(^paging_options.page_size)
+        |> order_by(desc: :number)
+        |> join_associations(necessity_by_association)
+        |> select_repo(options).all()
+    end
   end
 
   @doc """
@@ -1726,13 +1766,19 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    Block
-    |> join_associations(necessity_by_association)
-    |> where(miner_hash: ^address_hash)
-    |> page_blocks(paging_options)
-    |> limit(^paging_options.page_size)
-    |> order_by(desc: :number)
-    |> select_repo(options).all()
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
+
+      _ ->
+        Block
+        |> join_associations(necessity_by_association)
+        |> where(miner_hash: ^address_hash)
+        |> page_blocks(paging_options)
+        |> limit(^paging_options.page_size)
+        |> order_by(desc: :number)
+        |> select_repo(options).all()
+    end
   end
 
   @doc """
@@ -2248,7 +2294,7 @@ defmodule Explorer.Chain do
     range_max = max(range_start, range_end)
 
     ordered_missing_query =
-      if Application.get_env(:explorer, :chain_type) == "filecoin" do
+      if Application.get_env(:explorer, :chain_type) == :filecoin do
         from(b in Block,
           right_join:
             missing_range in fragment(
@@ -2566,20 +2612,28 @@ defmodule Explorer.Chain do
         type_filter,
         options
       ) do
-    paging_options
-    |> Transaction.fetch_transactions()
-    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
-    |> apply_filter_by_method_id_to_transactions(method_id_filter)
-    |> apply_filter_by_tx_type_to_transactions(type_filter)
-    |> join_associations(necessity_by_association)
-    |> Transaction.put_has_token_transfers_to_tx(old_ui?)
-    |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
-    |> select_repo(options).all()
-    |> (&if(old_ui?,
-          do: &1,
-          else:
-            Enum.map(&1, fn tx -> preload_token_transfers(tx, @token_transfers_necessity_by_association, options) end)
-        )).()
+    case paging_options do
+      %PagingOptions{key: {0, 0}, is_index_in_asc_order: false} ->
+        []
+
+      _ ->
+        paging_options
+        |> Transaction.fetch_transactions()
+        |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+        |> apply_filter_by_method_id_to_transactions(method_id_filter)
+        |> apply_filter_by_tx_type_to_transactions(type_filter)
+        |> join_associations(necessity_by_association)
+        |> Transaction.put_has_token_transfers_to_tx(old_ui?)
+        |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
+        |> select_repo(options).all()
+        |> (&if(old_ui?,
+              do: &1,
+              else:
+                Enum.map(&1, fn tx ->
+                  preload_token_transfers(tx, @token_transfers_necessity_by_association, options)
+                end)
+            )).()
+    end
   end
 
   @doc """
@@ -2794,23 +2848,30 @@ defmodule Explorer.Chain do
   def transaction_to_token_transfers(transaction_hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = options |> Keyword.get(:paging_options, @default_paging_options) |> Map.put(:asc_order, true)
-    token_type = Keyword.get(options, :token_type)
 
-    TokenTransfer
-    |> join(:inner, [token_transfer], transaction in assoc(token_transfer, :transaction))
-    |> where(
-      [token_transfer, transaction],
-      transaction.hash == ^transaction_hash and token_transfer.block_hash == transaction.block_hash and
-        token_transfer.block_number == transaction.block_number
-    )
-    |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
-    |> preload([token: token], [{:token, token}])
-    |> TokenTransfer.filter_by_type(token_type)
-    |> TokenTransfer.page_token_transfer(paging_options)
-    |> limit(^paging_options.page_size)
-    |> order_by([token_transfer], asc: token_transfer.log_index)
-    |> join_associations(necessity_by_association)
-    |> select_repo(options).all()
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
+
+      _ ->
+        token_type = Keyword.get(options, :token_type)
+
+        TokenTransfer
+        |> join(:inner, [token_transfer], transaction in assoc(token_transfer, :transaction))
+        |> where(
+          [token_transfer, transaction],
+          transaction.hash == ^transaction_hash and token_transfer.block_hash == transaction.block_hash and
+            token_transfer.block_number == transaction.block_number
+        )
+        |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+        |> preload([token: token], [{:token, token}])
+        |> TokenTransfer.filter_by_type(token_type)
+        |> TokenTransfer.page_token_transfer(paging_options)
+        |> limit(^paging_options.page_size)
+        |> order_by([token_transfer], asc: token_transfer.log_index)
+        |> join_associations(necessity_by_association)
+        |> select_repo(options).all()
+    end
   end
 
   @doc """
@@ -3122,9 +3183,15 @@ defmodule Explorer.Chain do
   defp handle_block_paging_options(query, %PagingOptions{key: nil, page_size: nil}), do: query
 
   defp handle_block_paging_options(query, paging_options) do
-    query
-    |> page_block_transactions(paging_options)
-    |> limit(^paging_options.page_size)
+    case paging_options do
+      %PagingOptions{key: {_block_number, 0}, is_index_in_asc_order: false} ->
+        []
+
+      _ ->
+        query
+        |> page_block_transactions(paging_options)
+        |> limit(^paging_options.page_size)
+    end
   end
 
   defp handle_withdrawals_paging_options(query, nil), do: query
@@ -3235,6 +3302,14 @@ defmodule Explorer.Chain do
     hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, desc)
   end
 
+  def page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_int_tx_desc_order: desc}) do
+    if desc do
+      query
+    else
+      where(query, [internal_transaction], internal_transaction.index > 0)
+    end
+  end
+
   def page_internal_transaction(query, %PagingOptions{key: {index}}, %{index_int_tx_desc_order: desc}) do
     if desc do
       where(query, [internal_transaction], internal_transaction.index < ^index)
@@ -3242,6 +3317,25 @@ defmodule Explorer.Chain do
       where(query, [internal_transaction], internal_transaction.index > ^index)
     end
   end
+
+  defp hardcoded_where_for_page_int_tx(query, 0, 0, index, false),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number == 0 and
+          internal_transaction.transaction_index == 0 and internal_transaction.index > ^index
+      )
+
+  defp hardcoded_where_for_page_int_tx(query, block_number, 0, index, false),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index == 0 and internal_transaction.index > ^index)
+      )
 
   defp hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, false),
     do:
@@ -3253,6 +3347,43 @@ defmodule Explorer.Chain do
              internal_transaction.transaction_index < ^transaction_index) or
           (internal_transaction.block_number == ^block_number and
              internal_transaction.transaction_index == ^transaction_index and internal_transaction.index > ^index)
+      )
+
+  defp hardcoded_where_for_page_int_tx(query, 0, 0, index, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number == 0 and
+          internal_transaction.transaction_index == 0 and internal_transaction.index < ^index
+      )
+
+  defp hardcoded_where_for_page_int_tx(query, block_number, 0, 0, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number
+      )
+
+  defp hardcoded_where_for_page_int_tx(query, block_number, 0, index, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index == 0 and internal_transaction.index < ^index)
+      )
+
+  defp hardcoded_where_for_page_int_tx(query, block_number, transaction_index, 0, true),
+    do:
+      where(
+        query,
+        [internal_transaction],
+        internal_transaction.block_number < ^block_number or
+          (internal_transaction.block_number == ^block_number and
+             internal_transaction.transaction_index < ^transaction_index)
       )
 
   defp hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, true),
@@ -3271,6 +3402,22 @@ defmodule Explorer.Chain do
 
   defp page_logs(query, %PagingOptions{key: {index}}) do
     where(query, [log], log.index > ^index)
+  end
+
+  defp page_logs(query, %PagingOptions{key: {0, log_index}}) do
+    where(
+      query,
+      [log],
+      log.block_number == 0 and log.index < ^log_index
+    )
+  end
+
+  defp page_logs(query, %PagingOptions{key: {block_number, 0}}) do
+    where(
+      query,
+      [log],
+      log.block_number < ^block_number
+    )
   end
 
   defp page_logs(query, %PagingOptions{key: {block_number, log_index}}) do
@@ -3736,11 +3883,18 @@ defmodule Explorer.Chain do
   def fetch_paginated_last_token_balances(address_hash, options) do
     filter = Keyword.get(options, :token_type)
     options = Keyword.delete(options, :token_type)
+    paging_options = Keyword.get(options, :paging_options)
 
-    address_hash
-    |> CurrentTokenBalance.last_token_balances(options, filter)
-    |> page_current_token_balances(options)
-    |> select_repo(options).all()
+    case paging_options do
+      %PagingOptions{key: {nil, 0, _id}} ->
+        []
+
+      _ ->
+        address_hash
+        |> CurrentTokenBalance.last_token_balances(options, filter)
+        |> page_current_token_balances(paging_options)
+        |> select_repo(options).all()
+    end
   end
 
   @spec nft_instance_from_token_id_and_token_address(
@@ -3805,6 +3959,16 @@ defmodule Explorer.Chain do
   def address_to_coin_balances(address, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
+
+      _ ->
+        address_to_coin_balances_internal(address, options, paging_options)
+    end
+  end
+
+  defp address_to_coin_balances_internal(address, options, paging_options) do
     balances_raw =
       address
       |> fetch_coin_balances(paging_options)
@@ -5049,12 +5213,19 @@ defmodule Explorer.Chain do
 
   def list_withdrawals(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    Withdrawal.list_withdrawals()
-    |> join_associations(necessity_by_association)
-    |> handle_withdrawals_paging_options(paging_options)
-    |> select_repo(options).all()
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
+
+      _ ->
+        necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+        Withdrawal.list_withdrawals()
+        |> join_associations(necessity_by_association)
+        |> handle_withdrawals_paging_options(paging_options)
+        |> select_repo(options).all()
+    end
   end
 
   def sum_withdrawals do

@@ -12,12 +12,14 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
+  alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
-  alias Explorer.Chain.Optimism.OutputRoot
+  alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot}
   alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
   alias Indexer.Helper, as: IndexerHelper
 
   @fetcher_name :optimism_output_roots
+  @stop_constant_key "optimism_output_roots_stopped"
 
   # 32-byte signature of the event OutputProposed(bytes32 indexed outputRoot, uint256 indexed l2OutputIndex, uint256 indexed l2BlockNumber, uint256 l1Timestamp)
   @output_proposed_event "0xa7aaf2512769da4e444e3de247be2564225c2e7a8f74cfe528e46e17d24868e2"
@@ -46,9 +48,13 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
   def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
-    env = Application.get_all_env(:indexer)[__MODULE__]
-
-    Optimism.init_continue(env, env[:output_oracle], __MODULE__)
+    if Constants.get_constant_value(@stop_constant_key) == "true" do
+      Logger.warning("#{__MODULE__} will not start because dispute games exist.")
+      {:stop, :normal, %{}}
+    else
+      env = Application.get_all_env(:indexer)[__MODULE__]
+      Optimism.init_continue(env, env[:output_oracle], __MODULE__)
+    end
   end
 
   @impl GenServer
@@ -59,7 +65,8 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
           block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          stop: stop
         } = state
       ) do
     # credo:disable-for-next-line
@@ -118,28 +125,38 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
         end
       end)
 
-    new_start_block = last_written_block + 1
+    if stop do
+      Logger.warning("#{__MODULE__} is being stopped because dispute games exist.")
+      Constants.set_constant_value(@stop_constant_key, "true")
+      {:stop, :normal, state}
+    else
+      new_start_block = last_written_block + 1
 
-    {:ok, new_end_block} =
-      Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
+      {:ok, new_end_block} =
+        Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
 
-    delay =
-      if new_end_block == last_written_block do
-        # there is no new block, so wait for some time to let the chain issue the new block
-        max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
-      else
-        0
-      end
+      delay =
+        if new_end_block == last_written_block do
+          # there is no new block, so wait for some time to let the chain issue the new block
+          max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
+        else
+          0
+        end
 
-    Process.send_after(self(), :continue, delay)
+      Process.send_after(self(), :continue, delay)
 
-    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
+      {:noreply, %{state | start_block: new_start_block, end_block: new_end_block, stop: dispute_games_exist?()}}
+    end
   end
 
   @impl GenServer
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  defp dispute_games_exist? do
+    DisputeGame.get_last_known_index() >= 0
   end
 
   defp events_to_output_roots(events) do

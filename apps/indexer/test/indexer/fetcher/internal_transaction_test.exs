@@ -505,7 +505,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     assert %{block_number: ^block_number, block_hash: ^block_hash} = Repo.one(PendingBlockOperation)
   end
 
-  if Application.compile_env(:explorer, :chain_type) == "arbitrum" do
+  if Application.compile_env(:explorer, :chain_type) == :arbitrum do
     test "fetches internal transactions from Arbitrum", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do

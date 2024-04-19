@@ -117,14 +117,14 @@ defmodule EthereumJSONRPC.Blocks do
           total_difficulty: 131072,
           transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
   #{case Application.compile_env(:explorer, :chain_type) do
-    "rsk" -> """
+    :rsk -> """
               bitcoin_merged_mining_coinbase_transaction: nil,\
               bitcoin_merged_mining_header: nil,\
               bitcoin_merged_mining_merkle_proof: nil,\
               hash_for_merged_mining: nil,\
               minimum_gas_price: nil,\
       """
-    "ethereum" -> """
+    :ethereum -> """
               withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
               blob_gas_used: 0,\
               excess_blob_gas: 0,\
