@@ -1,12 +1,60 @@
-# ChangeLog
+# Changelog
 
-## Current
+## 6.5.0
 
-### Features
+### 🚀 Features
 
-### Fixes
+- Certified smart contracts ([#9910](https://github.com/blockscout/blockscout/issues/9910))
+- Exit on provided invalid CHAIN_TYPE ([#9904](https://github.com/blockscout/blockscout/issues/9904))
+- IPFS gateway URL extra params ([#9898](https://github.com/blockscout/blockscout/issues/9898))
+- Zerion API proxy ([#9896](https://github.com/blockscout/blockscout/issues/9896))
+- Support Optimism Fault Proofs ([#9892](https://github.com/blockscout/blockscout/issues/9892))
+- Return number of days in address's coin-balance-history-by-day API v2 endpoint ([#9806](https://github.com/blockscout/blockscout/issues/9806))
+- Allow the use of Coingecko demo account ([#9835](https://github.com/blockscout/blockscout/issues/9835))
 
-### Chore
+### 🐛 Bug Fixes
+
+- `coin_price_change_percentage` calculation ([#9774](https://github.com/blockscout/blockscout/issues/9774))
+- Remove backend dependency in microservices.yml ([#9905](https://github.com/blockscout/blockscout/issues/9905))
+- Expand memory only if it was shrunk ([#9907](https://github.com/blockscout/blockscout/issues/9907))
+- Coin balances fetcher error logging ([#9902](https://github.com/blockscout/blockscout/issues/9902))
+- Refactor catchup rudimentaries + fix graceful shutdown ([#9729](https://github.com/blockscout/blockscout/issues/9729))
+- Handle transactions with `gas_price` set to `nil` in `transaction_revert_reason/2` ([#9647](https://github.com/blockscout/blockscout/issues/9647))
+- Correct processing of sized array to view in API v2 ([#9854](https://github.com/blockscout/blockscout/issues/9854))
+- Broadcast realtime coin balances ([#9804](https://github.com/blockscout/blockscout/issues/9804))
+- Disable BlockReward fetcher for unsupported variants ([#9859](https://github.com/blockscout/blockscout/issues/9859))
+- Add non-unique log_index support in update_token_instances_owner ([#9862](https://github.com/blockscout/blockscout/issues/9862))
+
+### ⚡ Performance
+
+- Paging function edge cases fix ([#9820](https://github.com/blockscout/blockscout/issues/9820))
+- Adjust unfetched_address_token_balances_index to fit all bound query conditions ([#9912](https://github.com/blockscout/blockscout/issues/9912))
+- Enhance index for token holders list ([#9816](https://github.com/blockscout/blockscout/issues/9816))
+- Improve performance of token page transfers tab ([#9809](https://github.com/blockscout/blockscout/issues/9809))
+
+### ⚙️ Miscellaneous Tasks
+
+- Fix some typos in comments ([#9900](https://github.com/blockscout/blockscout/issues/9900))
+- Add queue expanding logic to memory monitor ([#9870](https://github.com/blockscout/blockscout/issues/9870))
+- Bump ex_doc from 0.31.2 to 0.32.1 ([#9889](https://github.com/blockscout/blockscout/issues/9889))
+- Separate reorgs from blocks that just need refetch ([#9674](https://github.com/blockscout/blockscout/issues/9674))
+- Unknown token in email template ([#9883](https://github.com/blockscout/blockscout/issues/9883))
+- Bump tesla from 1.8.0 to 1.9.0 ([#9886](https://github.com/blockscout/blockscout/issues/9886))
+- Bump logger_file_backend from 0.0.13 to 0.0.14 ([#9885](https://github.com/blockscout/blockscout/issues/9885))
+- Bump cloak_ecto from 1.2.0 to 1.3.0 ([#9890](https://github.com/blockscout/blockscout/issues/9890))
+- Bump ex_secp256k1 from 0.7.2 to 0.7.3 ([#9888](https://github.com/blockscout/blockscout/issues/9888))
+- Bump ex_cldr_units from 3.16.4 to 3.16.5 ([#9884](https://github.com/blockscout/blockscout/issues/9884))
+- Move `has_methods_*` fields to `/smart-contracts` endpoint response ([#9599](https://github.com/blockscout/blockscout/issues/9599))
+- Add metrics for realtime event handlers queue length ([#9822](https://github.com/blockscout/blockscout/issues/9822))
+- Increase MissingRangesCollector past check interval after the first cycle ([#9872](https://github.com/blockscout/blockscout/issues/9872))
+- Reduce number of warnings in web tests ([#9851](https://github.com/blockscout/blockscout/issues/9851))
+- Fix some typos in conments ([#9838](https://github.com/blockscout/blockscout/issues/9838))
+- Bump ex_abi from 0.7.1 to 0.7.2 ([#9841](https://github.com/blockscout/blockscout/issues/9841))
+- Remove /config/json-rpc-url API endpoint ([#9798](https://github.com/blockscout/blockscout/issues/9798))
+- Bump junit_formatter from 3.3.1 to 3.4.0 ([#9842](https://github.com/blockscout/blockscout/issues/9842))
+- Bump number from 1.0.4 to 1.0.5 ([#9843](https://github.com/blockscout/blockscout/issues/9843))
+- Bump absinthe_phoenix from 2.0.2 to 2.0.3 ([#9840](https://github.com/blockscout/blockscout/issues/9840))
+- Bump plug_cowboy from 2.7.0 to 2.7.1 ([#9844](https://github.com/blockscout/blockscout/issues/9844))
 
 ## 6.4.0
 
