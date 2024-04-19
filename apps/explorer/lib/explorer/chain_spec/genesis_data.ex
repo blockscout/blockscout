@@ -83,7 +83,7 @@ defmodule Explorer.ChainSpec.GenesisData do
     - `Task.t()`: A task handle if the fetch and processing are scheduled successfully.
     - `:ok`: Indicates no fetch was attempted due to missing configuration paths.
   """
-  @spec fetch_genesis_data() :: Task.t() | :error
+  @spec fetch_genesis_data() :: Task.t() | :ok
   def fetch_genesis_data do
     chain_spec_path = get_path(:chain_spec_path)
     precompiled_config_path = get_path(:precompiled_config_path)
