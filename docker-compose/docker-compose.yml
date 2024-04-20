@@ -40,7 +40,6 @@ services:
         ETHEREUM_JSONRPC_TRACE_URL: ${TRACE_ENDPOINT}
         JSON_RPC: ${ENDPOINT}
         CHAIN_ID: ${CHAIN_ID}
-        LOGO: "/images/skale_logo.png"
         SUBNETWORK: ${SCHAIN_NAME}
         ETHEREUM_JSONRPC_VARIANT: "geth"
         NETWORK: "SKALE"
