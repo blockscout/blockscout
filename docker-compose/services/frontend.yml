@@ -25,7 +25,7 @@ services:
       - NEXT_PUBLIC_GAS_TRACKER_ENABLED=false
       - NEXT_PUBLIC_AD_BANNER_PROVIDER=none
       - NEXT_PUBLIC_AD_TEXT_PROVIDER=none
-      - NEXT_PUBLIC_IS_TESTNET=false
+      - NEXT_PUBLIC_IS_TESTNET=${NEXT_PUBLIC_IS_TESTNET:-false}
       - NEXT_PUBLIC_HIDE_INDEXING_ALERT_BLOCKS=true
       - NEXT_PUBLIC_HIDE_INDEXING_ALERT_INT_TXS=true
       - NEXT_PUBLIC_NETWORK_LOGO=https://raw.githubusercontent.com/skalenetwork/blockscout/new-ui/docker-compose/assets/network_logo.png
