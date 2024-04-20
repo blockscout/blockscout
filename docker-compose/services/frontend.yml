@@ -8,7 +8,7 @@ services:
     restart: always
     container_name: '${SCHAIN_NAME}_frontend'
     environment:
-      - NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=df9e82bd782b81fc4a495019e95078ed
+      - NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=${NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID}
       - NEXT_PUBLIC_API_HOST=${HOST:-localhost}
       - NEXT_PUBLIC_APP_HOST=${HOST:-localhost}
       - NEXT_PUBLIC_API_PORT=${PROXY_PORT:-80}
