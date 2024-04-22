@@ -137,7 +137,12 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   def enabled?, do: Microservice.check_enabled(__MODULE__) == :ok
 
   defp batch_resolve_name_url do
-    "#{addresses_url()}:batch-resolve-names"
+    # workaround for https://github.com/PSPDFKit-labs/bypass/issues/122
+    if Mix.env() == :test do
+      "#{addresses_url()}:batch_resolve_names"
+    else
+      "#{addresses_url()}:batch-resolve-names"
+    end
   end
 
   defp address_lookup_url do
