@@ -3,25 +3,26 @@ defmodule Explorer.Etherscan do
   The etherscan context.
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, or_where: 3, union: 2, subquery: 1, order_by: 3]
+  import Ecto.Query,
+    only: [from: 2, where: 3, union: 2, subquery: 1, order_by: 3, limit: 2, offset: 2, preload: 3]
+
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
-  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Transaction.History.TransactionStats
 
   @default_options %{
     order_by_direction: :desc,
     page_number: 1,
     page_size: 10_000,
-    start_block: nil,
-    end_block: nil,
+    startblock: nil,
+    endblock: nil,
     start_timestamp: nil,
     end_timestamp: nil
   }
-
-  @burn_address_hash_str "0x0000000000000000000000000000000000000000"
 
   @doc """
   Returns the maximum allowed page size number.
@@ -102,18 +103,33 @@ defmodule Explorer.Etherscan do
   @spec list_internal_transactions(Hash.Full.t()) :: [map()]
   def list_internal_transactions(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash) do
     query =
-      from(
-        it in InternalTransaction,
-        inner_join: t in assoc(it, :transaction),
-        inner_join: b in assoc(t, :block),
-        where: it.transaction_hash == ^transaction_hash,
-        limit: 10_000,
-        select:
-          merge(map(it, ^@internal_transaction_fields), %{
-            block_timestamp: b.timestamp,
-            block_number: b.number
-          })
-      )
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        from(
+          it in InternalTransaction,
+          inner_join: transaction in assoc(it, :transaction),
+          where: not is_nil(transaction.block_hash),
+          where: it.transaction_hash == ^transaction_hash,
+          limit: 10_000,
+          select:
+            merge(map(it, ^@internal_transaction_fields), %{
+              block_timestamp: transaction.block_timestamp,
+              block_number: transaction.block_number
+            })
+        )
+      else
+        from(
+          it in InternalTransaction,
+          inner_join: t in assoc(it, :transaction),
+          inner_join: b in assoc(t, :block),
+          where: it.transaction_hash == ^transaction_hash,
+          limit: 10_000,
+          select:
+            merge(map(it, ^@internal_transaction_fields), %{
+              block_timestamp: b.timestamp,
+              block_number: b.number
+            })
+        )
+      end
 
     query
     |> Chain.where_transaction_has_multiple_internal_transactions()
@@ -159,8 +175,8 @@ defmodule Explorer.Etherscan do
       query =
         from(
           it in InternalTransaction,
-          inner_join: b in subquery(consensus_blocks),
-          on: it.block_number == b.number,
+          inner_join: block in subquery(consensus_blocks),
+          on: it.block_number == block.number,
           order_by: [
             {^options.order_by_direction, it.block_number},
             {:desc, it.transaction_index},
@@ -170,8 +186,8 @@ defmodule Explorer.Etherscan do
           offset: ^offset(options),
           select:
             merge(map(it, ^@internal_transaction_fields), %{
-              block_timestamp: b.timestamp,
-              block_number: b.number
+              block_timestamp: block.timestamp,
+              block_number: block.number
             })
         )
 
@@ -213,19 +229,35 @@ defmodule Explorer.Etherscan do
       |> Repo.replica().all()
     else
       query =
-        from(
-          it in InternalTransaction,
-          inner_join: t in assoc(it, :transaction),
-          inner_join: b in assoc(t, :block),
-          order_by: [{^options.order_by_direction, t.block_number}],
-          limit: ^options.page_size,
-          offset: ^offset(options),
-          select:
-            merge(map(it, ^@internal_transaction_fields), %{
-              block_timestamp: b.timestamp,
-              block_number: b.number
-            })
-        )
+        if DenormalizationHelper.transactions_denormalization_finished?() do
+          from(
+            it in InternalTransaction,
+            inner_join: transaction in assoc(it, :transaction),
+            where: not is_nil(transaction.block_hash),
+            order_by: [{^options.order_by_direction, transaction.block_number}],
+            limit: ^options.page_size,
+            offset: ^offset(options),
+            select:
+              merge(map(it, ^@internal_transaction_fields), %{
+                block_timestamp: transaction.block_timestamp,
+                block_number: transaction.block_number
+              })
+          )
+        else
+          from(
+            it in InternalTransaction,
+            inner_join: t in assoc(it, :transaction),
+            inner_join: b in assoc(t, :block),
+            order_by: [{^options.order_by_direction, t.block_number}],
+            limit: ^options.page_size,
+            offset: ^offset(options),
+            select:
+              merge(map(it, ^@internal_transaction_fields), %{
+                block_timestamp: b.timestamp,
+                block_number: b.number
+              })
+          )
+        end
 
       query
       |> Chain.where_transaction_has_multiple_internal_transactions()
@@ -259,6 +291,50 @@ defmodule Explorer.Etherscan do
   end
 
   @doc """
+    Gets a list of ERC-721 token transfers for a given address_hash. If contract_address_hash is not nil, transfers will be filtered by contract.
+  """
+  @spec list_nft_token_transfers(Hash.Address.t(), Hash.Address.t() | nil, map()) :: [TokenTransfer.t()]
+  def list_nft_token_transfers(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
+        contract_address_hash,
+        options \\ @default_options
+      ) do
+    options
+    |> base_nft_token_transfers_query(contract_address_hash)
+    |> where([tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
+    |> Repo.replica().all()
+  end
+
+  @doc """
+    Gets a list of ERC-721 token transfers for a given token contract_address_hash.
+  """
+  @spec list_nft_token_transfers_by_token(Hash.Address.t(), map()) :: [TokenTransfer.t()]
+  def list_nft_token_transfers_by_token(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = contract_address_hash,
+        options \\ @default_options
+      ) do
+    options
+    |> base_nft_token_transfers_query(contract_address_hash)
+    |> Repo.replica().all()
+  end
+
+  defp base_nft_token_transfers_query(options, contract_address_hash) do
+    options = Map.merge(@default_options, options)
+
+    TokenTransfer.erc_721_token_transfers_query()
+    |> where_contract_address_match(contract_address_hash)
+    |> order_by([tt], [
+      {^options.order_by_direction, tt.block_number},
+      {^options.order_by_direction, tt.log_index}
+    ])
+    |> where_start_block_match_tt(options)
+    |> where_end_block_match_tt(options)
+    |> limit(^options.page_size)
+    |> offset(^offset(options))
+    |> preload([block: block], [{:block, block}, :transaction])
+  end
+
+  @doc """
   Gets a list of blocks mined by `t:Explorer.Chain.Hash.Address.t/0`.
 
   For each block it returns the block's number, timestamp, and reward.
@@ -280,14 +356,14 @@ defmodule Explorer.Etherscan do
 
     query =
       from(
-        b in Block,
-        where: b.miner_hash == ^address_hash,
-        order_by: [desc: b.number],
+        block in Block,
+        where: block.miner_hash == ^address_hash,
+        order_by: [desc: block.number],
         limit: ^merged_options.page_size,
         offset: ^offset(merged_options),
         select: %{
-          number: b.number,
-          timestamp: b.timestamp
+          number: block.number,
+          timestamp: block.timestamp
         }
       )
 
@@ -344,6 +420,8 @@ defmodule Explorer.Etherscan do
   @transaction_fields ~w(
     block_hash
     block_number
+    block_consensus
+    block_timestamp
     created_contract_address_hash
     cumulative_gas_used
     from_address_hash
@@ -394,23 +472,39 @@ defmodule Explorer.Etherscan do
 
   defp list_transactions(address_hash, max_block_number, options) do
     query =
-      from(
-        t in Transaction,
-        inner_join: b in assoc(t, :block),
-        order_by: [{^options.order_by_direction, t.block_number}],
-        limit: ^options.page_size,
-        offset: ^offset(options),
-        select:
-          merge(map(t, ^@transaction_fields), %{
-            block_timestamp: b.timestamp,
-            confirmations: fragment("? - ?", ^max_block_number, t.block_number)
-          })
-      )
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        from(
+          t in Transaction,
+          where: not is_nil(t.block_hash),
+          where: t.block_consensus == true,
+          order_by: [{^options.order_by_direction, t.block_number}],
+          limit: ^options.page_size,
+          offset: ^offset(options),
+          select:
+            merge(map(t, ^@transaction_fields), %{
+              confirmations: fragment("? - ?", ^max_block_number, t.block_number)
+            })
+        )
+      else
+        from(
+          t in Transaction,
+          inner_join: b in assoc(t, :block),
+          where: b.consensus == true,
+          order_by: [{^options.order_by_direction, t.block_number}],
+          limit: ^options.page_size,
+          offset: ^offset(options),
+          select:
+            merge(map(t, ^@transaction_fields), %{
+              block_timestamp: b.timestamp,
+              confirmations: fragment("? - ?", ^max_block_number, t.block_number)
+            })
+        )
+      end
 
     query
     |> where_address_match(address_hash, options)
-    |> where_start_block_match(options)
-    |> where_end_block_match(options)
+    |> where_start_transaction_block_match(options)
+    |> where_end_transaction_block_match(options)
     |> where_start_timestamp_match(options)
     |> where_end_timestamp_match(options)
     |> Repo.replica().all()
@@ -425,15 +519,18 @@ defmodule Explorer.Etherscan do
   end
 
   defp where_address_match(query, address_hash, _) do
-    query
-    |> where([t], t.to_address_hash == ^address_hash)
-    |> or_where([t], t.from_address_hash == ^address_hash)
-    |> or_where([t], t.created_contract_address_hash == ^address_hash)
+    where(
+      query,
+      [t],
+      t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or
+        t.created_contract_address_hash == ^address_hash
+    )
   end
 
   @token_transfer_fields ~w(
     block_number
     block_hash
+    block_consensus
     token_contract_address_hash
     transaction_hash
     from_address_hash
@@ -465,76 +562,153 @@ defmodule Explorer.Etherscan do
 
     tt_specific_token_query =
       tt_query
+      |> where_start_block_match_tt(options)
+      |> where_end_block_match_tt(options)
       |> where_contract_address_match(contract_address_hash)
 
     wrapped_query =
-      from(
-        tt in subquery(tt_specific_token_query),
-        inner_join: t in Transaction,
-        on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
-        inner_join: b in assoc(t, :block),
-        order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.token_log_index}],
-        select: %{
-          token_contract_address_hash: tt.token_contract_address_hash,
-          transaction_hash: tt.transaction_hash,
-          from_address_hash: tt.from_address_hash,
-          to_address_hash: tt.to_address_hash,
-          amount: tt.amount,
-          amounts: tt.amounts,
-          transaction_nonce: t.nonce,
-          transaction_index: t.index,
-          transaction_gas: t.gas,
-          transaction_gas_price: t.gas_price,
-          transaction_gas_used: t.gas_used,
-          transaction_cumulative_gas_used: t.cumulative_gas_used,
-          transaction_input: t.input,
-          block_hash: b.hash,
-          block_number: b.number,
-          block_timestamp: b.timestamp,
-          confirmations: fragment("? - ?", ^block_height, t.block_number),
-          token_ids: tt.token_ids,
-          token_name: tt.token_name,
-          token_symbol: tt.token_symbol,
-          token_decimals: tt.token_decimals,
-          token_type: tt.token_type,
-          token_log_index: tt.token_log_index
-        }
-      )
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        from(
+          tt in subquery(tt_specific_token_query),
+          inner_join: t in Transaction,
+          on:
+            tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash and
+              t.block_consensus == true,
+          order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.token_log_index}],
+          select: %{
+            token_contract_address_hash: tt.token_contract_address_hash,
+            transaction_hash: tt.transaction_hash,
+            from_address_hash: tt.from_address_hash,
+            to_address_hash: tt.to_address_hash,
+            amount: tt.amount,
+            amounts: tt.amounts,
+            transaction_nonce: t.nonce,
+            transaction_index: t.index,
+            transaction_gas: t.gas,
+            transaction_gas_price: t.gas_price,
+            transaction_gas_used: t.gas_used,
+            transaction_cumulative_gas_used: t.cumulative_gas_used,
+            transaction_input: t.input,
+            block_hash: t.block_hash,
+            block_number: t.block_number,
+            block_timestamp: t.block_timestamp,
+            confirmations: fragment("? - ?", ^block_height, t.block_number),
+            token_ids: tt.token_ids,
+            token_name: tt.token_name,
+            token_symbol: tt.token_symbol,
+            token_decimals: tt.token_decimals,
+            token_type: tt.token_type,
+            token_log_index: tt.token_log_index
+          }
+        )
+      else
+        from(
+          tt in subquery(tt_specific_token_query),
+          inner_join: t in Transaction,
+          on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
+          inner_join: b in assoc(t, :block),
+          where: b.consensus == true,
+          order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.token_log_index}],
+          select: %{
+            token_contract_address_hash: tt.token_contract_address_hash,
+            transaction_hash: tt.transaction_hash,
+            from_address_hash: tt.from_address_hash,
+            to_address_hash: tt.to_address_hash,
+            amount: tt.amount,
+            amounts: tt.amounts,
+            transaction_nonce: t.nonce,
+            transaction_index: t.index,
+            transaction_gas: t.gas,
+            transaction_gas_price: t.gas_price,
+            transaction_gas_used: t.gas_used,
+            transaction_cumulative_gas_used: t.cumulative_gas_used,
+            transaction_input: t.input,
+            block_hash: b.hash,
+            block_number: b.number,
+            block_timestamp: b.timestamp,
+            confirmations: fragment("? - ?", ^block_height, t.block_number),
+            token_ids: tt.token_ids,
+            token_name: tt.token_name,
+            token_symbol: tt.token_symbol,
+            token_decimals: tt.token_decimals,
+            token_type: tt.token_type,
+            token_log_index: tt.token_log_index
+          }
+        )
+      end
 
     wrapped_query
-    |> where_start_block_match(options)
-    |> where_end_block_match(options)
     |> Repo.replica().all()
   end
 
-  defp where_start_block_match(query, %{start_block: nil}), do: query
+  defp where_start_block_match(query, %{startblock: nil}), do: query
 
-  defp where_start_block_match(query, %{start_block: start_block}) do
+  defp where_start_block_match(query, %{startblock: start_block}) do
     where(query, [..., block], block.number >= ^start_block)
   end
 
-  defp where_end_block_match(query, %{end_block: nil}), do: query
+  defp where_end_block_match(query, %{endblock: nil}), do: query
 
-  defp where_end_block_match(query, %{end_block: end_block}) do
+  defp where_end_block_match(query, %{endblock: end_block}) do
     where(query, [..., block], block.number <= ^end_block)
+  end
+
+  defp where_start_transaction_block_match(query, %{startblock: nil}), do: query
+
+  defp where_start_transaction_block_match(query, %{startblock: start_block} = params) do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      where(query, [transaction], transaction.block_number >= ^start_block)
+    else
+      where_start_block_match(query, params)
+    end
+  end
+
+  defp where_end_transaction_block_match(query, %{endblock: nil}), do: query
+
+  defp where_end_transaction_block_match(query, %{endblock: end_block} = params) do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      where(query, [transaction], transaction.block_number <= ^end_block)
+    else
+      where_end_block_match(query, params)
+    end
+  end
+
+  defp where_start_block_match_tt(query, %{startblock: nil}), do: query
+
+  defp where_start_block_match_tt(query, %{startblock: start_block}) do
+    where(query, [tt], tt.block_number >= ^start_block)
+  end
+
+  defp where_end_block_match_tt(query, %{endblock: nil}), do: query
+
+  defp where_end_block_match_tt(query, %{endblock: end_block}) do
+    where(query, [tt], tt.block_number <= ^end_block)
   end
 
   defp where_start_timestamp_match(query, %{start_timestamp: nil}), do: query
 
   defp where_start_timestamp_match(query, %{start_timestamp: start_timestamp}) do
-    where(query, [..., block], ^start_timestamp <= block.timestamp)
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      where(query, [transaction], ^start_timestamp <= transaction.block_timestamp)
+    else
+      where(query, [..., block], ^start_timestamp <= block.timestamp)
+    end
   end
 
   defp where_end_timestamp_match(query, %{end_timestamp: nil}), do: query
 
   defp where_end_timestamp_match(query, %{end_timestamp: end_timestamp}) do
-    where(query, [..., block], block.timestamp <= ^end_timestamp)
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      where(query, [transaction], transaction.block_timestamp <= ^end_timestamp)
+    else
+      where(query, [..., block], block.timestamp <= ^end_timestamp)
+    end
   end
 
   defp where_contract_address_match(query, nil), do: query
 
   defp where_contract_address_match(query, contract_address_hash) do
-    where(query, [tt, _], tt.token_contract_address_hash == ^contract_address_hash)
+    where(query, [tt], tt.token_contract_address_hash == ^contract_address_hash)
   end
 
   defp offset(options), do: (options.page_number - 1) * options.page_size
@@ -585,7 +759,7 @@ defmodule Explorer.Etherscan do
 
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
   def fetch_sum_coin_total_supply_minus_burnt do
-    {:ok, burn_address_hash} = Chain.string_to_address_hash(@burn_address_hash_str)
+    {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
 
     query =
       from(

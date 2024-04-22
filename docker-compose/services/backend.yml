@@ -1,0 +1,21 @@
+version: '3.9'
+
+services:
+  backend:
+    image: skalenetwork/blockscout:${DOCKER_TAG:-latest}
+    pull_policy: always
+    restart: always
+    stop_grace_period: 5m
+    container_name: '${SCHAIN_NAME}_backend'
+    command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ../envs/common-blockscout.env
+    environment:
+      - MICROSERVICE_SC_VERIFIER_ENABLED=true
+      - MICROSERVICE_SC_VERIFIER_URL=http://smart-contract-verifier:8050/
+      - MICROSERVICE_SC_VERIFIER_TYPE=sc_verifier
+    volumes:
+      - ${SCHAIN_DATA_DIR:-./blockscout-data/${SCHAIN_NAME}}/logs/:/app/logs/
+      - ${CONFIG_PATH:-./}:/opt/app/config.json

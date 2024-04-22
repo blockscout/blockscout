@@ -9,6 +9,8 @@ defmodule Explorer.Chain.Supply.RSKTest do
   @coin_address "0x0000000000000000000000000000000001000006"
   @mult 1_000_000_000_000_000_000
 
+  setup :verify_on_exit!
+
   test "total is 21_000_000" do
     assert Decimal.equal?(RSK.total(), Decimal.new(21_000_000))
   end

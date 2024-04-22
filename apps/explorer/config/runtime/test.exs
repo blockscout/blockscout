@@ -24,11 +24,23 @@ config :explorer, Explorer.Chain.Cache.VerifiedContractsCounter, enabled: false,
 config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter, enabled: false, enable_consolidation: false
 config :explorer, Explorer.Chain.Cache.WithdrawalsSum, enabled: false, enable_consolidation: false
 
+config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
+  enabled: true,
+  global_ttl: :timer.minutes(10),
+  locking_cap: 21_000_000
+
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
 config :explorer, Explorer.Tracer, disabled?: false
 
-config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: false
+config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: false
+
+config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: false
+config :explorer, Explorer.Migrator.AddressCurrentTokenBalanceTokenType, enabled: false
+config :explorer, Explorer.Migrator.AddressTokenBalanceTokenType, enabled: false
+config :explorer, Explorer.Migrator.SanitizeMissingBlockRanges, enabled: false
+config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, enabled: false
+config :explorer, Explorer.Migrator.TokenTransferTokenType, enabled: false
 
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender

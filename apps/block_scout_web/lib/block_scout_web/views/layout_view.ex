@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain
-  alias Plug.Conn
+  alias EthereumJSONRPC.Variant
+  alias Explorer.{Chain, Helper}
   alias Poison.Parser
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
@@ -63,48 +63,26 @@ defmodule BlockScoutWeb.LayoutView do
     SocialMedia.links()
   end
 
-  def issue_link(conn) do
+  @doc """
+  Generates URL for new issue creation on Github
+  """
+  @spec issue_link() :: [term()]
+  def issue_link do
+    {os_family, os_name} = :os.type()
+
     params = [
-      labels: "BlockScout",
-      body: issue_body(conn),
-      title: subnetwork_title() <> ": <Issue Title>"
+      template: "bug_report.yml",
+      labels: "triage",
+      "backend-version": version(),
+      "elixir-version": "Elixir #{System.version()} Erlang/OTP #{System.otp_release()}",
+      "os-version": "#{os_family} #{os_name}",
+      "archive-node-type": Variant.get(),
+      "additional-information": "The issue happened at #{subnetwork_title()} Blockscout instance"
     ]
 
     issue_url = "#{Application.get_env(:block_scout_web, :footer)[:github_link]}/issues/new"
 
     [issue_url, "?", URI.encode_query(params)]
-  end
-
-  defp issue_body(conn) do
-    user_agent =
-      case Conn.get_req_header(conn, "user-agent") do
-        [] -> "unknown"
-        [user_agent] -> if String.valid?(user_agent), do: user_agent, else: "unknown"
-        _other -> "unknown"
-      end
-
-    """
-    *Describe your issue here.*
-
-    ### Environment
-    * Elixir Version: #{System.version()}
-    * Erlang Version: #{System.otp_release()}
-    * BlockScout Version: #{version()}
-
-    * User Agent: `#{user_agent}`
-
-    ### Steps to reproduce
-
-    *Tell us how to reproduce this issue. If possible, push up a branch to your fork with a regression test we can run to reproduce locally.*
-
-    ### Expected Behaviour
-
-    *Tell us what should happen.*
-
-    ### Actual Behaviour
-
-    *Tell us what happens instead.*
-    """
   end
 
   def version do
@@ -225,7 +203,7 @@ defmodule BlockScoutWeb.LayoutView do
   def webapp_url(conn) do
     :block_scout_web
     |> Application.get_env(:webapp_url)
-    |> validate_url()
+    |> Helper.validate_url()
     |> case do
       :error -> chain_path(conn, :show)
       {:ok, url} -> url
@@ -235,7 +213,7 @@ defmodule BlockScoutWeb.LayoutView do
   def api_url do
     :block_scout_web
     |> Application.get_env(:api_url)
-    |> validate_url()
+    |> Helper.validate_url()
     |> case do
       :error -> ""
       {:ok, url} -> url
@@ -257,15 +235,6 @@ defmodule BlockScoutWeb.LayoutView do
       []
     end
   end
-
-  defp validate_url(url) when is_binary(url) do
-    case URI.parse(url) do
-      %URI{host: nil} -> :error
-      _ -> {:ok, url}
-    end
-  end
-
-  defp validate_url(_), do: :error
 
   def sign_in_link do
     if Mix.env() == :test do

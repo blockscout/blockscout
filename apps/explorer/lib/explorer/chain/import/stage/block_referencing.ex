@@ -1,26 +1,83 @@
 defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   @moduledoc """
   Imports any tables that reference `t:Explorer.Chain.Block.t/0` and that were
-  imported by `Explorer.Chain.Import.Stage.Addresses` and
-  `Explorer.Chain.Import.Stage.AddressReferencing`.
+  imported by `Explorer.Chain.Import.Stage.AddressesBlocksCoinBalances`.
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
 
   @behaviour Stage
+  @default_runners [
+    Runner.Transactions,
+    Runner.Transaction.Forks,
+    Runner.Logs,
+    Runner.Tokens,
+    Runner.TokenTransfers,
+    Runner.TokenInstances,
+    Runner.Address.TokenBalances,
+    Runner.TransactionActions,
+    Runner.Withdrawals
+  ]
+
+  @optimism_runners [
+    Runner.Optimism.FrameSequences,
+    Runner.Optimism.TxnBatches,
+    Runner.Optimism.OutputRoots,
+    Runner.Optimism.Deposits,
+    Runner.Optimism.Withdrawals,
+    Runner.Optimism.WithdrawalEvents
+  ]
+
+  @polygon_edge_runners [
+    Runner.PolygonEdge.Deposits,
+    Runner.PolygonEdge.DepositExecutes,
+    Runner.PolygonEdge.Withdrawals,
+    Runner.PolygonEdge.WithdrawalExits
+  ]
+
+  @polygon_zkevm_runners [
+    Runner.PolygonZkevm.LifecycleTransactions,
+    Runner.PolygonZkevm.TransactionBatches,
+    Runner.PolygonZkevm.BatchTransactions,
+    Runner.PolygonZkevm.BridgeL1Tokens,
+    Runner.PolygonZkevm.BridgeOperations
+  ]
+
+  @shibarium_runners [
+    Runner.Shibarium.BridgeOperations
+  ]
+
+  @ethereum_runners [
+    Runner.Beacon.BlobTransactions
+  ]
 
   @impl Stage
-  def runners,
-    do: [
-      Runner.Transactions,
-      Runner.Transaction.Forks,
-      Runner.Logs,
-      Runner.Tokens,
-      Runner.TokenTransfers,
-      Runner.Address.TokenBalances,
-      Runner.TransactionActions,
-      Runner.Withdrawals
-    ]
+  def runners do
+    case Application.get_env(:explorer, :chain_type) do
+      "optimism" ->
+        @default_runners ++ @optimism_runners
+
+      "polygon_edge" ->
+        @default_runners ++ @polygon_edge_runners
+
+      "polygon_zkevm" ->
+        @default_runners ++ @polygon_zkevm_runners
+
+      "shibarium" ->
+        @default_runners ++ @shibarium_runners
+
+      "ethereum" ->
+        @default_runners ++ @ethereum_runners
+
+      _ ->
+        @default_runners
+    end
+  end
+
+  @impl Stage
+  def all_runners do
+    @default_runners ++ @optimism_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners
+  end
 
   @impl Stage
   def multis(runner_to_changes_list, options) do

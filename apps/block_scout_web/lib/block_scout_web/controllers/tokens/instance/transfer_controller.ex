@@ -8,14 +8,15 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id_str, "type" => "JSON"} = params) do
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(hash),
-         false <- Chain.is_erc_20_token?(token),
+         false <- Chain.erc_20_token?(token),
          {token_id, ""} <- Integer.parse(token_id_str),
          token_transfers <-
            Chain.fetch_token_transfers_from_token_hash_and_token_id(hash, token_id, paging_options(params)) do
@@ -60,7 +61,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
 
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
-         false <- Chain.is_erc_20_token?(token),
+         false <- Chain.erc_20_token?(token),
          {token_id, ""} <- Integer.parse(token_id_str) do
       case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, hash) do
         {:ok, token_instance} -> Helper.render(conn, token_instance, hash, token_id, token)

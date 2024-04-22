@@ -160,6 +160,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
             token_ids: Enum.map(0..50, fn _x -> id end),
+            token_type: "ERC-1155",
             amounts: Enum.map(0..50, fn x -> x end)
           )
         end
@@ -192,7 +193,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
-            token_ids: [i]
+            token_ids: [i],
+            token_type: "ERC-721"
           )
         end
 
@@ -218,6 +220,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..50, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..50, fn x -> x end)
         )
 
@@ -250,6 +253,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx_1.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..24, fn x -> x end)
         )
 
@@ -267,6 +271,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..49, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(25..49, fn x -> x end)
         )
 
@@ -282,6 +287,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: [50],
+          token_type: "ERC-1155",
           amounts: [50]
         )
 
@@ -308,6 +314,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx_1.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..24, fn x -> x end)
         )
 
@@ -325,6 +332,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..50, fn x -> x end),
+          token_type: "ERC-1155",
           amounts: Enum.map(25..50, fn x -> x end)
         )
 
@@ -390,29 +398,439 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       check_paginated_response(response, response_2nd_page, token_balances)
     end
+
+    test "check pagination with the same values", %{conn: conn} do
+      token = insert(:token)
+
+      token_balances =
+        for _ <- 0..50 do
+          insert(
+            :address_current_token_balance,
+            token_contract_address_hash: token.contract_address_hash,
+            value: 1000
+          )
+        end
+        |> Enum.sort_by(fn x -> x.address_hash end, :asc)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/holders")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/tokens/#{token.contract_address.hash}/holders", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_balances)
+    end
   end
 
   describe "/tokens" do
+    defp check_tokens_pagination(tokens, conn, additional_params \\ %{}) do
+      request = get(conn, "/api/v2/tokens", additional_params)
+      assert response = json_response(request, 200)
+      request_2nd_page = get(conn, "/api/v2/tokens", additional_params |> Map.merge(response["next_page_params"]))
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+      check_paginated_response(response, response_2nd_page, tokens)
+
+      # by fiat_value
+      tokens_ordered_by_fiat_value = Enum.sort(tokens, &(Decimal.compare(&1.fiat_value, &2.fiat_value) in [:eq, :lt]))
+
+      request_ordered_by_fiat_value =
+        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "fiat_value", "order" => "desc"}))
+
+      assert response_ordered_by_fiat_value = json_response(request_ordered_by_fiat_value, 200)
+
+      request_ordered_by_fiat_value_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "fiat_value", "order" => "desc"})
+          |> Map.merge(response_ordered_by_fiat_value["next_page_params"])
+        )
+
+      assert response_ordered_by_fiat_value_2nd_page = json_response(request_ordered_by_fiat_value_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_fiat_value,
+        response_ordered_by_fiat_value_2nd_page,
+        tokens_ordered_by_fiat_value
+      )
+
+      tokens_ordered_by_fiat_value_asc =
+        Enum.sort(tokens, &(Decimal.compare(&1.fiat_value, &2.fiat_value) in [:eq, :gt]))
+
+      request_ordered_by_fiat_value_asc =
+        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "fiat_value", "order" => "asc"}))
+
+      assert response_ordered_by_fiat_value_asc = json_response(request_ordered_by_fiat_value_asc, 200)
+
+      request_ordered_by_fiat_value_asc_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "fiat_value", "order" => "asc"})
+          |> Map.merge(response_ordered_by_fiat_value_asc["next_page_params"])
+        )
+
+      assert response_ordered_by_fiat_value_asc_2nd_page =
+               json_response(request_ordered_by_fiat_value_asc_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_fiat_value_asc,
+        response_ordered_by_fiat_value_asc_2nd_page,
+        tokens_ordered_by_fiat_value_asc
+      )
+
+      # by holders
+      tokens_ordered_by_holders = Enum.sort(tokens, &(&1.holder_count <= &2.holder_count))
+
+      request_ordered_by_holders =
+        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "holder_count", "order" => "desc"}))
+
+      assert response_ordered_by_holders = json_response(request_ordered_by_holders, 200)
+
+      request_ordered_by_holders_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "holder_count", "order" => "desc"})
+          |> Map.merge(response_ordered_by_holders["next_page_params"])
+        )
+
+      assert response_ordered_by_holders_2nd_page = json_response(request_ordered_by_holders_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_holders,
+        response_ordered_by_holders_2nd_page,
+        tokens_ordered_by_holders
+      )
+
+      tokens_ordered_by_holders_asc = Enum.sort(tokens, &(&1.holder_count >= &2.holder_count))
+
+      request_ordered_by_holders_asc =
+        get(conn, "/api/v2/tokens", additional_params |> Map.merge(%{"sort" => "holder_count", "order" => "asc"}))
+
+      assert response_ordered_by_holders_asc = json_response(request_ordered_by_holders_asc, 200)
+
+      request_ordered_by_holders_asc_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "holder_count", "order" => "asc"})
+          |> Map.merge(response_ordered_by_holders_asc["next_page_params"])
+        )
+
+      assert response_ordered_by_holders_asc_2nd_page = json_response(request_ordered_by_holders_asc_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_holders_asc,
+        response_ordered_by_holders_asc_2nd_page,
+        tokens_ordered_by_holders_asc
+      )
+
+      # by circulating_market_cap
+      tokens_ordered_by_circulating_market_cap =
+        Enum.sort(tokens, &(&1.circulating_market_cap <= &2.circulating_market_cap))
+
+      request_ordered_by_circulating_market_cap =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params |> Map.merge(%{"sort" => "circulating_market_cap", "order" => "desc"})
+        )
+
+      assert response_ordered_by_circulating_market_cap = json_response(request_ordered_by_circulating_market_cap, 200)
+
+      request_ordered_by_circulating_market_cap_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "circulating_market_cap", "order" => "desc"})
+          |> Map.merge(response_ordered_by_circulating_market_cap["next_page_params"])
+        )
+
+      assert response_ordered_by_circulating_market_cap_2nd_page =
+               json_response(request_ordered_by_circulating_market_cap_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_circulating_market_cap,
+        response_ordered_by_circulating_market_cap_2nd_page,
+        tokens_ordered_by_circulating_market_cap
+      )
+
+      tokens_ordered_by_circulating_market_cap_asc =
+        Enum.sort(tokens, &(&1.circulating_market_cap >= &2.circulating_market_cap))
+
+      request_ordered_by_circulating_market_cap_asc =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params |> Map.merge(%{"sort" => "circulating_market_cap", "order" => "asc"})
+        )
+
+      assert response_ordered_by_circulating_market_cap_asc =
+               json_response(request_ordered_by_circulating_market_cap_asc, 200)
+
+      request_ordered_by_circulating_market_cap_asc_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens",
+          additional_params
+          |> Map.merge(%{"sort" => "circulating_market_cap", "order" => "asc"})
+          |> Map.merge(response_ordered_by_circulating_market_cap_asc["next_page_params"])
+        )
+
+      assert response_ordered_by_circulating_market_cap_asc_2nd_page =
+               json_response(request_ordered_by_circulating_market_cap_asc_2nd_page, 200)
+
+      check_paginated_response(
+        response_ordered_by_circulating_market_cap_asc,
+        response_ordered_by_circulating_market_cap_asc_2nd_page,
+        tokens_ordered_by_circulating_market_cap_asc
+      )
+    end
+
     test "get empty list", %{conn: conn} do
       request = get(conn, "/api/v2/tokens")
 
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
-    test "check pagination", %{conn: conn} do
+    test "ignores wrong ordering params", %{conn: conn} do
       tokens =
         for i <- 0..50 do
+          insert(:token, fiat_value: i)
+        end
+
+      request = get(conn, "/api/v2/tokens", %{"sort" => "foo", "order" => "bar"})
+
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/tokens", %{"sort" => "foo", "order" => "bar"} |> Map.merge(response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+      check_paginated_response(response, response_2nd_page, tokens)
+    end
+
+    test "tokens are filtered by single type", %{conn: conn} do
+      erc_20_tokens =
+        for i <- 0..50 do
+          insert(:token, fiat_value: i)
+        end
+
+      erc_721_tokens =
+        for _i <- 0..50 do
+          insert(:token, type: "ERC-721")
+        end
+
+      erc_1155_tokens =
+        for _i <- 0..50 do
+          insert(:token, type: "ERC-1155")
+        end
+
+      check_tokens_pagination(erc_20_tokens, conn, %{"type" => "ERC-20"})
+      check_tokens_pagination(erc_721_tokens |> Enum.reverse(), conn, %{"type" => "ERC-721"})
+      check_tokens_pagination(erc_1155_tokens |> Enum.reverse(), conn, %{"type" => "ERC-1155"})
+    end
+
+    test "tokens are filtered by multiple type", %{conn: conn} do
+      erc_20_tokens =
+        for i <- 11..36 do
+          insert(:token, fiat_value: i)
+        end
+
+      erc_721_tokens =
+        for _i <- 0..25 do
+          insert(:token, type: "ERC-721")
+        end
+
+      erc_1155_tokens =
+        for _i <- 0..24 do
+          insert(:token, type: "ERC-1155")
+        end
+
+      check_tokens_pagination(
+        erc_721_tokens |> Kernel.++(erc_1155_tokens) |> Enum.reverse(),
+        conn,
+        %{
+          "type" => "ERC-1155,ERC-721"
+        }
+      )
+
+      check_tokens_pagination(
+        erc_1155_tokens |> Enum.reverse() |> Kernel.++(erc_20_tokens),
+        conn,
+        %{
+          "type" => "[erc-20,ERC-1155]"
+        }
+      )
+    end
+
+    test "sorting by fiat_value", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, fiat_value: i)
+        end
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    # these tests that tokens paginates by each parameter separately and by any combination of them
+    test "pagination by address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, name: nil)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by name", %{conn: conn} do
+      named_token = insert(:token, holder_count: 0)
+      empty_named_token = insert(:token, name: "", holder_count: 0)
+
+      tokens =
+        for i <- 1..49 do
           insert(:token, holder_count: i)
         end
 
-      request = get(conn, "/api/v2/tokens")
-      assert response = json_response(request, 200)
+      tokens = [named_token, empty_named_token | tokens]
 
-      request_2nd_page = get(conn, "/api/v2/tokens", response["next_page_params"])
+      check_tokens_pagination(tokens, conn)
+    end
 
-      assert response_2nd_page = json_response(request_2nd_page, 200)
+    test "pagination by holders", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, holder_count: i, name: nil)
+        end
 
-      check_paginated_response(response, response_2nd_page, tokens)
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, circulating_market_cap: i, name: nil)
+        end
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by name and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by holders and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, holder_count: 1, name: nil)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, circulating_market_cap: 1, name: nil)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by holders and name", %{conn: conn} do
+      tokens =
+        for i <- 1..51 do
+          insert(:token, holder_count: 1, name: List.to_string([i]))
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap and name", %{conn: conn} do
+      tokens =
+        for i <- 1..51 do
+          insert(:token, circulating_market_cap: 1, name: List.to_string([i]))
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap and holders", %{conn: conn} do
+      tokens =
+        for i <- 0..50 do
+          insert(:token, circulating_market_cap: 1, holder_count: i, name: nil)
+        end
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by holders, name and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, holder_count: 1)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap, name and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, circulating_market_cap: 1)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap, holders and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, circulating_market_cap: 1, holder_count: 1, name: nil)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap, holders and name", %{conn: conn} do
+      tokens =
+        for i <- 1..51 do
+          insert(:token, circulating_market_cap: 1, holder_count: 1, name: List.to_string([i]))
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
+    end
+
+    test "pagination by circulating_market_cap, holders, name and address", %{conn: conn} do
+      tokens =
+        for _i <- 0..50 do
+          insert(:token, holder_count: 1, circulating_market_cap: 1)
+        end
+        |> Enum.reverse()
+
+      check_tokens_pagination(tokens, conn)
     end
 
     test "check nil", %{conn: conn} do
@@ -471,6 +889,87 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       check_paginated_response(response, response_2nd_page, instances)
     end
+
+    test "get instances list by holder erc-721", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert_list(51, :token_instance, token_contract_address_hash: token.contract_address_hash)
+
+      address = insert(:address, contract_code: Enum.random([nil, "0x010101"]))
+
+      insert_list(51, :token_instance)
+
+      token_instances =
+        for _ <- 0..50 do
+          insert(:token_instance,
+            owner_address_hash: address.hash,
+            token_contract_address_hash: token.contract_address_hash
+          )
+          |> Repo.preload([:token, :owner])
+        end
+
+      filter = %{"holder_address_hash" => to_string(address.hash)}
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens/#{token.contract_address_hash}/instances",
+          Map.merge(response["next_page_params"], filter)
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_instances)
+    end
+
+    test "get instances list by holder erc-1155", %{conn: conn} do
+      token = insert(:token, type: "ERC-1155")
+
+      insert_list(51, :token_instance, token_contract_address_hash: token.contract_address_hash)
+
+      address = insert(:address, contract_code: Enum.random([nil, "0x010101"]))
+
+      insert_list(51, :token_instance)
+
+      token_instances =
+        for _ <- 0..50 do
+          ti =
+            insert(:token_instance,
+              token_contract_address_hash: token.contract_address_hash
+            )
+            |> Repo.preload([:token])
+
+          current_token_balance =
+            insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+              address: address,
+              token_type: "ERC-1155",
+              token_id: ti.token_id,
+              token_contract_address_hash: token.contract_address_hash,
+              value: Enum.random(1..2)
+            )
+
+          %Instance{ti | current_token_balance: current_token_balance, owner: address}
+        end
+
+      filter = %{"holder_address_hash" => to_string(address.hash)}
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances", filter)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens/#{token.contract_address_hash}/instances",
+          Map.merge(response["next_page_params"], filter)
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_instances)
+    end
   end
 
   describe "/tokens/{address_hash}/instances/{token_id}" do
@@ -506,7 +1005,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         insert(:token_transfer,
           token_contract_address: token.contract_address,
           transaction: transaction,
-          token_ids: [0]
+          token_ids: [0],
+          token_type: "ERC-721"
         )
 
       for _ <- 1..50 do
@@ -517,7 +1017,27 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert data = json_response(request, 200)
       assert compare_item(instance, data)
-      assert compare_item(transfer.to_address, data["owner"])
+      assert Address.checksum(instance.owner_address_hash) == data["owner"]["hash"]
+    end
+
+    test "get token instance by token id which is not presented in DB", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
+      token_address = Address.checksum(token.contract_address.hash)
+      token_name = token.name
+      token_type = token.type
+
+      assert %{
+               "animation_url" => nil,
+               "external_app_url" => nil,
+               "id" => "0",
+               "image_url" => nil,
+               "is_unique" => true,
+               "metadata" => nil,
+               "owner" => nil,
+               "token" => %{"address" => ^token_address, "name" => ^token_name, "type" => ^token_type}
+             } = json_response(request, 200)
     end
   end
 
@@ -556,6 +1076,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         token_contract_address: token.contract_address,
         transaction: transaction,
         token_ids: [id + 1],
+        token_type: "ERC-1155",
         amounts: [1]
       )
 
@@ -564,6 +1085,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           token_contract_address: token.contract_address,
           transaction: transaction,
           token_ids: [id, id + 1],
+          token_type: "ERC-1155",
           amounts: [1, 2]
         )
 
@@ -577,7 +1099,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token_transfer,
             token_contract_address: token.contract_address,
             transaction: transaction,
-            token_ids: [id]
+            token_ids: [id],
+            token_type: "ERC-1155"
           )
         end
 
@@ -609,7 +1132,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
             block: tx.block,
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
-            token_ids: [id]
+            token_ids: [id],
+            token_type: "ERC-721"
           )
         end
 
@@ -644,6 +1168,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           block_number: tx.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..50, fn _x -> id end),
+          token_type: "ERC-1155",
           amounts: Enum.map(0..50, fn x -> x end)
         )
 
@@ -672,6 +1197,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
             block_number: tx.block_number,
             token_contract_address: token.contract_address,
             token_ids: Enum.map(0..50, fn x -> x end) ++ [id],
+            token_type: "ERC-1155",
             amounts: Enum.map(1..51, fn x -> x end) ++ [amount]
           )
         end
@@ -801,7 +1327,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       insert_list(count, :token_transfer,
         token_contract_address: token.contract_address,
         transaction: transaction,
-        token_ids: [0]
+        token_ids: [0],
+        token_type: "ERC-721"
       )
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0/transfers-count")
@@ -846,11 +1373,53 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     compare_item(Repo.preload(ctb, [{:token, :contract_address}]).token, json["token"])
   end
 
+  def compare_item(%Instance{token: %Token{} = token} = instance, json) do
+    token_type = token.type
+    value = to_string(value(token.type, instance))
+    id = to_string(instance.token_id)
+    metadata = instance.metadata
+    token_address_hash = Address.checksum(token.contract_address_hash)
+    app_url = instance.metadata["external_url"]
+    animation_url = instance.metadata["animation_url"]
+    image_url = instance.metadata["image_url"]
+    token_name = token.name
+    owner_address_hash = Address.checksum(instance.owner.hash)
+    is_contract = !is_nil(instance.owner.contract_code)
+    is_unique = value == "1"
+
+    assert %{
+             "token_type" => ^token_type,
+             "value" => ^value,
+             "id" => ^id,
+             "metadata" => ^metadata,
+             "token" => %{"address" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
+             "external_app_url" => ^app_url,
+             "animation_url" => ^animation_url,
+             "image_url" => ^image_url,
+             "is_unique" => ^is_unique
+           } = json
+
+    if is_unique do
+      assert owner_address_hash == json["owner"]["hash"]
+      assert is_contract == json["owner"]["is_contract"]
+    else
+      assert json["owner"] == nil
+    end
+  end
+
   def compare_item(%Instance{} = instance, json) do
     assert to_string(instance.token_id) == json["id"]
     assert Jason.decode!(Jason.encode!(instance.metadata)) == json["metadata"]
     assert json["is_unique"]
     compare_item(Repo.preload(instance, [{:token, :contract_address}]).token, json["token"])
+  end
+
+  defp value("ERC-721", _), do: 1
+  defp value(_, nft), do: nft.current_token_balance.value
+
+  # with the current implementation no transfers should come with list in totals
+  def check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
+    false
   end
 
   def check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-1155"] do
@@ -860,11 +1429,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   def check_total(%Token{type: nft}, json, token_transfer) when nft in ["ERC-721"] do
     json["token_id"] in Enum.map(token_transfer.token_ids, fn x -> to_string(x) end)
-  end
-
-  # with the current implementation no transfers should come with list in totals
-  def check_total(%Token{type: nft}, json, _token_transfer) when nft in ["ERC-721", "ERC-1155"] and is_list(json) do
-    false
   end
 
   def check_total(_, _, _), do: true

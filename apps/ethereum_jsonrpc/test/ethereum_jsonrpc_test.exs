@@ -2,6 +2,7 @@ defmodule EthereumJSONRPCTest do
   use EthereumJSONRPC.Case, async: true
 
   import EthereumJSONRPC.Case
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Mox
 
   alias EthereumJSONRPC.{Blocks, FetchedBalances, FetchedBeneficiaries, FetchedCodes, Subscription}
@@ -543,61 +544,92 @@ defmodule EthereumJSONRPCTest do
     end
   end
 
+  describe "fetch_block_by_tag/2" do
+    @supported_tags ~w(earliest latest pending)
+
+    @tag capture_log: false
+    test "with all supported tags", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      for tag <- @supported_tags do
+        if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+          expect(EthereumJSONRPC.Mox, :json_rpc, fn [
+                                                      %{
+                                                        id: id,
+                                                        method: "eth_getBlockByNumber",
+                                                        params: [^tag, false]
+                                                      }
+                                                    ],
+                                                    _options ->
+            block_response(id, tag == "pending", "0x1")
+          end)
+        end
+
+        log_bad_gateway(
+          fn -> EthereumJSONRPC.fetch_block_by_tag(tag, json_rpc_named_arguments) end,
+          fn result ->
+            {:ok, %Blocks{blocks_params: [_ | _], transactions_params: []}} = result
+          end
+        )
+      end
+    end
+
+    test "unknown errors are returned", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      # Can't be faked reliably on real chain
+      moxed_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+      unknown_error = %{"code" => 500, "message" => "Unknown error"}
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:error, unknown_error}
+      end)
+
+      assert {:error, ^unknown_error} = EthereumJSONRPC.fetch_block_by_tag("latest", moxed_json_rpc_named_arguments)
+    end
+  end
+
   describe "fetch_block_number_by_tag" do
-    @tag capture_log: false
-    test "with earliest", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, %{"number" => "0x0"}}
-        end)
-      end
-
-      log_bad_gateway(
-        fn -> EthereumJSONRPC.fetch_block_number_by_tag("earliest", json_rpc_named_arguments) end,
-        fn result ->
-          assert {:ok, 0} = result
-        end
-      )
-    end
+    @supported_tags %{"earliest" => "0x0", "latest" => "0x1", "pending" => nil}
 
     @tag capture_log: false
-    test "with latest", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, %{"number" => "0x1"}}
-        end)
-      end
-
-      log_bad_gateway(
-        fn -> EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) end,
-        fn result ->
-          assert {:ok, number} = result
-          assert number > 0
+    test "with all supported tags", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      for {tag, expected_result} <- @supported_tags do
+        if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+          expect(EthereumJSONRPC.Mox, :json_rpc, fn [
+                                                      %{
+                                                        id: id,
+                                                        method: "eth_getBlockByNumber",
+                                                        params: [^tag, false]
+                                                      }
+                                                    ],
+                                                    _options ->
+            if tag == "pending" do
+              {:ok, [%{id: id, result: nil}]}
+            else
+              block_response(id, false, expected_result)
+            end
+          end)
         end
-      )
-    end
 
-    @tag capture_log: false
-    test "with pending", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, nil}
-        end)
+        log_bad_gateway(
+          fn -> EthereumJSONRPC.fetch_block_number_by_tag(tag, json_rpc_named_arguments) end,
+          if tag == "pending" do
+            fn
+              # Parity after https://github.com/paritytech/parity-ethereum/pull/8281 and anything spec-compliant
+              {:error, reason} ->
+                assert reason == :not_found
+
+              # Parity before https://github.com/paritytech/parity-ethereum/pull/8281
+              {:ok, number} ->
+                assert is_integer(number)
+                assert number > 0
+            end
+          else
+            fn result ->
+              integer_result = expected_result && quantity_to_integer(expected_result)
+              assert {:ok, ^integer_result} = result
+            end
+          end
+        )
       end
-
-      log_bad_gateway(
-        fn -> EthereumJSONRPC.fetch_block_number_by_tag("pending", json_rpc_named_arguments) end,
-        fn
-          # Parity after https://github.com/paritytech/parity-ethereum/pull/8281 and anything spec-compliant
-          {:error, reason} ->
-            assert reason == :not_found
-
-          # Parity before https://github.com/paritytech/parity-ethereum/pull/8281
-          {:ok, number} ->
-            assert is_integer(number)
-            assert number > 0
-        end
-      )
     end
 
     test "unknown errors are returned", %{json_rpc_named_arguments: json_rpc_named_arguments} do
@@ -912,12 +944,43 @@ defmodule EthereumJSONRPCTest do
         :ok
     end
   end
+
+  defp block_response(id, pending, block_number) do
+    block_hash = "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c"
+    transaction_hash = "0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e"
+
+    {:ok,
+     [
+       %{
+         id: id,
+         result: %{
+           "difficulty" => "0x0",
+           "gasLimit" => "0x0",
+           "gasUsed" => "0x0",
+           "hash" => if(pending, do: nil, else: block_hash),
+           "extraData" => "0x0",
+           "logsBloom" => "0x0",
+           "miner" => "0x0",
+           "number" => block_number,
+           "parentHash" => "0x0",
+           "receiptsRoot" => "0x0",
+           "size" => "0x0",
+           "sha3Uncles" => "0x0",
+           "stateRoot" => "0x0",
+           "timestamp" => "0x0",
+           "totalDifficulty" => "0x0",
+           "transactions" => [transaction_hash],
+           "transactionsRoot" => "0x0",
+           "uncles" => []
+         }
+       }
+     ]}
+  end
 end
 
 defmodule EthereumJSONRPCSyncTest do
   use EthereumJSONRPC.Case, async: false
 
-  import EthereumJSONRPC.Case
   import Mox
 
   alias EthereumJSONRPC.FetchedBalances
@@ -931,26 +994,72 @@ defmodule EthereumJSONRPCSyncTest do
       on_exit(fn -> Application.put_all_env([{:indexer, initial_env}]) end)
     end
 
-    test "ignores all request with block_quantity != latest when env ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES is true",
+    test "ignores all request with block_quantity != latest or lower than window when env ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES is true",
          %{
            json_rpc_named_arguments: json_rpc_named_arguments
          } do
       hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
       expected_fetched_balance = 1
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: 0,
-                                                       jsonrpc: "2.0",
-                                                       method: "eth_getBalance",
-                                                       params: [^hash, "latest"]
-                                                     }
-                                                   ],
-                                                   _options ->
-        {:ok, [%{id: 0, result: EthereumJSONRPC.integer_to_quantity(expected_fetched_balance)}]}
+      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
+        [
+          %{
+            id: 0,
+            jsonrpc: "2.0",
+            method: "eth_getBalance",
+            params: [^hash, "0x4"]
+          },
+          %{
+            id: 1,
+            jsonrpc: "2.0",
+            method: "eth_getBalance",
+            params: [^hash, "latest"]
+          }
+        ],
+        _options ->
+          {:ok,
+           [
+             %{id: 0, result: EthereumJSONRPC.integer_to_quantity(expected_fetched_balance)},
+             %{id: 1, result: EthereumJSONRPC.integer_to_quantity(expected_fetched_balance)}
+           ]}
+
+        [
+          %{
+            id: id,
+            method: "eth_getBlockByNumber"
+          }
+        ],
+        _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "difficulty" => "0x0",
+                 "gasLimit" => "0x0",
+                 "gasUsed" => "0x0",
+                 "hash" => "0x29c850324e357f3c0c836d79860c5af55f7b651e5d7ee253c1af1b14908af49c",
+                 "extraData" => "0x0",
+                 "logsBloom" => "0x0",
+                 "miner" => "0x0",
+                 "number" => "0x4",
+                 "parentHash" => "0x0",
+                 "receiptsRoot" => "0x0",
+                 "size" => "0x0",
+                 "sha3Uncles" => "0x0",
+                 "stateRoot" => "0x0",
+                 "timestamp" => "0x0",
+                 "totalDifficulty" => "0x0",
+                 "transactions" => ["0xa2e81bb56b55ba3dab2daf76501b50dfaad240cccb905dbf89d65c7a84a4a48e"],
+                 "transactionsRoot" => "0x0",
+                 "uncles" => []
+               }
+             }
+           ]}
       end)
 
       Application.put_env(:ethereum_jsonrpc, :disable_archive_balances?, "true")
+      Application.put_env(:ethereum_jsonrpc, :archive_balances_window, 1)
 
       assert EthereumJSONRPC.fetch_balances(
                [
@@ -967,7 +1076,12 @@ defmodule EthereumJSONRPCSyncTest do
                   params_list: [
                     %{
                       address_hash: hash,
-                      block_number: :error,
+                      block_number: nil,
+                      value: expected_fetched_balance
+                    },
+                    %{
+                      address_hash: hash,
+                      block_number: 4,
                       value: expected_fetched_balance
                     }
                   ]

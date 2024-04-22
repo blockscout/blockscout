@@ -11,7 +11,7 @@ defmodule EthereumJsonrpc.MixProject do
       deps_path: "../../deps",
       description: "Ethereum JSONRPC client.",
       dialyzer: [
-        plt_add_deps: :transitive,
+        plt_add_deps: :app_tree,
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer-ignore"
       ],
@@ -23,7 +23,7 @@ defmodule EthereumJsonrpc.MixProject do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "5.1.4"
+      version: "6.2.2"
     ]
   end
 
@@ -85,7 +85,8 @@ defmodule EthereumJsonrpc.MixProject do
       {:decimal, "~> 2.0"},
       {:decorator, "~> 1.4"},
       {:hackney, "~> 1.18"},
-      {:poolboy, "~> 1.5.2"}
+      {:poolboy, "~> 1.5.2"},
+      {:logger_json, "~> 5.1"}
     ]
   end
 end

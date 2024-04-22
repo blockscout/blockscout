@@ -8,59 +8,41 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
       from: 2
     ]
 
-  alias Explorer.{Chain, Market, PagingOptions, Repo}
+  alias Explorer.{Market, PagingOptions, Repo}
   alias Explorer.Market.MarketHistory
-  alias Explorer.Chain.{Address, Transaction, Wei}
+  alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
-  alias Explorer.ExchangeRates.Token
 
-  @necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      [token_transfers: :token] => :optional,
-      [token_transfers: :to_address] => :optional,
-      [token_transfers: :from_address] => :optional,
-      [token_transfers: :token_contract_address] => :optional,
-      :block => :required
-    }
-  ]
+  @paging_options %PagingOptions{page_size: Helper.limit()}
 
-  @paging_options %PagingOptions{page_size: Helper.page_size() + 1}
-
-  @spec export(Address.t(), String.t(), String.t()) :: Enumerable.t()
-  def export(address, from_period, to_period) do
+  @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
+  def export(address_hash, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_coin_exchange_rate()
 
-    address.hash
-    |> fetch_all_transactions(from_block, to_block, @paging_options)
-    |> to_csv_format(address, exchange_rate)
+    address_hash
+    |> fetch_transactions(from_block, to_block, filter_type, filter_value, @paging_options)
+    |> to_csv_format(address_hash, exchange_rate)
     |> Helper.dump_to_stream()
   end
 
-  def fetch_all_transactions(address_hash, from_block, to_block, paging_options, acc \\ []) do
+  # sobelow_skip ["DOS.StringToAtom"]
+  def fetch_transactions(address_hash, from_block, to_block, filter_type, filter_value, paging_options) do
     options =
-      @necessity_by_association
+      []
+      |> DenormalizationHelper.extend_block_necessity(:required)
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
+      |> (&if(Helper.valid_filter?(filter_type, filter_value, "transactions"),
+            do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
+            else: &1
+          )).()
 
-    transactions = Chain.address_to_transactions_without_rewards(address_hash, options)
-    new_acc = transactions ++ acc
-
-    case Enum.split(transactions, Helper.page_size()) do
-      {_transactions, [%Transaction{block_number: block_number, index: index}]} ->
-        new_paging_options = %{@paging_options | key: {block_number, index}}
-        fetch_all_transactions(address_hash, from_block, to_block, new_paging_options, new_acc)
-
-      {_, []} ->
-        new_acc
-    end
+    Transaction.address_to_transactions_without_rewards(address_hash, options)
   end
 
-  defp to_csv_format(transactions, address, exchange_rate) do
+  defp to_csv_format(transactions, address_hash, exchange_rate) do
     row_names = [
       "TxHash",
       "BlockNumber",
@@ -78,19 +60,30 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
       "TxDateClosingPrice"
     ]
 
+    date_to_prices =
+      Enum.reduce(transactions, %{}, fn tx, acc ->
+        date = tx |> Transaction.block_timestamp() |> DateTime.to_date()
+
+        if Map.has_key?(acc, date) do
+          acc
+        else
+          Map.put(acc, date, price_at_date(date))
+        end
+      end)
+
     transaction_lists =
       transactions
       |> Stream.map(fn transaction ->
-        {opening_price, closing_price} = price_at_date(transaction.block.timestamp)
+        {opening_price, closing_price} = date_to_prices[DateTime.to_date(Transaction.block_timestamp(transaction))]
 
         [
           to_string(transaction.hash),
           transaction.block_number,
-          transaction.block.timestamp,
-          to_string(transaction.from_address),
-          to_string(transaction.to_address),
-          to_string(transaction.created_contract_address),
-          type(transaction, address.hash),
+          Transaction.block_timestamp(transaction),
+          Address.checksum(transaction.from_address_hash),
+          Address.checksum(transaction.to_address_hash),
+          Address.checksum(transaction.created_contract_address_hash),
+          type(transaction, address_hash),
           Wei.to(transaction.value, :wei),
           fee(transaction),
           transaction.status,
@@ -112,16 +105,14 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
 
   defp fee(transaction) do
     transaction
-    |> Chain.fee(:wei)
+    |> Transaction.fee(:wei)
     |> case do
       {:actual, value} -> value
       {:maximum, value} -> "Max of #{value}"
     end
   end
 
-  defp price_at_date(datetime) do
-    date = DateTime.to_date(datetime)
-
+  defp price_at_date(date) do
     query =
       from(
         mh in MarketHistory,

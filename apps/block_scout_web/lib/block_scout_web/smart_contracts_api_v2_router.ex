@@ -27,6 +27,9 @@ defmodule BlockScoutWeb.SmartContractsApiV2Router do
     get("/:address_hash/methods-read-proxy", V2.SmartContractController, :methods_read_proxy)
     get("/:address_hash/methods-write-proxy", V2.SmartContractController, :methods_write_proxy)
     post("/:address_hash/query-read-method", V2.SmartContractController, :query_read_method)
+    get("/:address_hash/solidityscan-report", V2.SmartContractController, :solidityscan_report)
+    post("/:address_hash/audit-reports", V2.SmartContractController, :audit_report_submission)
+    get("/:address_hash/audit-reports", V2.SmartContractController, :audit_reports_list)
 
     get("/verification/config", V2.VerificationController, :config)
 
@@ -37,6 +40,7 @@ defmodule BlockScoutWeb.SmartContractsApiV2Router do
       post("/multi-part", V2.VerificationController, :verification_via_multi_part)
       post("/vyper-code", V2.VerificationController, :verification_via_vyper_code)
       post("/vyper-multi-part", V2.VerificationController, :verification_via_vyper_multipart)
+      post("/vyper-standard-input", V2.VerificationController, :verification_via_vyper_standard_input)
     end
   end
 end

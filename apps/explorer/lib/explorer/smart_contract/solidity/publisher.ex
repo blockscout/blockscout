@@ -3,12 +3,17 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   Module responsible to control the contract verification.
   """
 
-  import Explorer.SmartContract.Helper, only: [cast_libraries: 1]
+  require Logger
 
-  alias Explorer.Chain
+  import Explorer.SmartContract.Helper, only: [cast_libraries: 1, prepare_license_type: 1]
+
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Helper}
   alias Explorer.SmartContract.Solidity.Verifier
+
+  @sc_verification_via_flattened_file_started "Smart-contract verification via flattened file started"
+  @sc_verification_via_standard_json_input_started "Smart-contract verification via standard json input started"
+  @sc_verification_via_multipart_files_started "Smart-contract verification via multipart files started"
 
   @doc """
   Evaluates smart contract authenticity and saves its details.
@@ -27,6 +32,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   """
   def publish(address_hash, params, external_libraries \\ %{}) do
+    Logger.info(@sc_verification_via_flattened_file_started)
     params_with_external_libraries = add_external_libraries(params, external_libraries)
 
     case Verifier.evaluate_authenticity(address_hash, params_with_external_libraries) do
@@ -42,7 +48,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "sourceFiles" => _
         } = result_params
       } ->
-        process_rust_verifier_response(result_params, address_hash, false, false)
+        process_rust_verifier_response(result_params, address_hash, params, false, false)
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}} ->
         params_with_constructor_arguments =
@@ -65,6 +71,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   end
 
   def publish_with_standard_json_input(%{"address_hash" => address_hash} = params, json_input) do
+    Logger.info(@sc_verification_via_standard_json_input_started)
+
     case Verifier.evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
       {:ok,
        %{
@@ -76,7 +84,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
          "sourceFiles" => _,
          "compilerSettings" => _
        } = result_params} ->
-        process_rust_verifier_response(result_params, address_hash, true, true)
+        process_rust_verifier_response(result_params, address_hash, params, true, true)
 
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}, additional_params} ->
         params_with_constructor_arguments =
@@ -102,6 +110,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   end
 
   def publish_with_multi_part_files(%{"address_hash" => address_hash} = params, external_libraries \\ %{}, files) do
+    Logger.info(@sc_verification_via_multipart_files_started)
     params_with_external_libraries = add_external_libraries(params, external_libraries)
 
     case Verifier.evaluate_authenticity_via_multi_part_files(address_hash, params_with_external_libraries, files) do
@@ -115,7 +124,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
          "sourceFiles" => _,
          "compilerSettings" => _
        } = result_params} ->
-        process_rust_verifier_response(result_params, address_hash, false, true)
+        process_rust_verifier_response(result_params, address_hash, params, false, true)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
@@ -133,11 +142,14 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "contractName" => contract_name,
           "fileName" => file_name,
           "sourceFiles" => sources,
-          "compilerSettings" => compiler_settings_string
-        },
+          "compilerSettings" => compiler_settings_string,
+          "matchType" => match_type
+        } = source,
         address_hash,
+        initial_params,
         is_standard_json?,
-        save_file_path?
+        save_file_path?,
+        automatically_verified? \\ false
       ) do
     secondary_sources =
       for {file, source} <- sources,
@@ -163,6 +175,10 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("file_path", if(save_file_path?, do: file_name))
       |> Map.put("secondary_sources", secondary_sources)
       |> Map.put("compiler_settings", if(is_standard_json?, do: compiler_settings))
+      |> Map.put("partially_verified", match_type == "PARTIAL")
+      |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
+      |> Map.put("verified_via_sourcify", source["sourcify?"])
+      |> Map.put("license_type", initial_params["license_type"])
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
   end
@@ -183,14 +199,16 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   end
 
   defp create_or_update_smart_contract(address_hash, attrs) do
-    if Chain.smart_contract_verified?(address_hash) do
-      Chain.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
+
+    if SmartContract.verified?(address_hash) do
+      SmartContract.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
     else
-      Chain.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+      SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
     end
   end
 
-  defp unverified_smart_contract(address_hash, params, error, error_message, json_verification \\ false) do
+  defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do
     attrs =
       address_hash
       |> attributes(params)
@@ -202,8 +220,10 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         attrs,
         error,
         error_message,
-        json_verification
+        verification_with_files?
       )
+
+    Logger.error("Solidity smart-contract verification #{address_hash} failed because of the error #{error}")
 
     %{changeset | action: :insert}
   end
@@ -247,12 +267,14 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       external_libraries: prepared_external_libraries,
       secondary_sources: params["secondary_sources"],
       abi: abi,
-      verified_via_sourcify: params["verified_via_sourcify"],
-      partially_verified: params["partially_verified"],
+      verified_via_sourcify: params["verified_via_sourcify"] || false,
+      partially_verified: params["partially_verified"] || false,
       is_vyper_contract: false,
       autodetect_constructor_args: params["autodetect_constructor_args"],
       is_yul: params["is_yul"] || false,
-      compiler_settings: clean_compiler_settings
+      compiler_settings: clean_compiler_settings,
+      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
+      license_type: prepare_license_type(params["license_type"]) || :none
     }
   end
 

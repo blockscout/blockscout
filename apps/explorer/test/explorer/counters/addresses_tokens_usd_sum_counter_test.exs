@@ -19,15 +19,15 @@ defmodule Explorer.Counters.AddressTokenUsdSumTest do
       )
 
     AddressTokenUsdSum.fetch(address.hash, [
-      {address_current_token_balance, address_current_token_balance.token},
-      {address_current_token_balance_2, address_current_token_balance_2.token}
+      address_current_token_balance,
+      address_current_token_balance_2
     ])
 
     Process.sleep(200)
 
     assert AddressTokenUsdSum.fetch(address.hash, [
-             {address_current_token_balance, address_current_token_balance.token},
-             {address_current_token_balance_2, address_current_token_balance_2.token}
+             address_current_token_balance,
+             address_current_token_balance_2
            ]) ==
              Decimal.new(2_010_000)
   end

@@ -3,7 +3,7 @@ defmodule Explorer.Chain.TokenTransferTest do
 
   import Explorer.Factory
 
-  alias Explorer.{PagingOptions, Repo}
+  alias Explorer.PagingOptions
   alias Explorer.Chain.TokenTransfer
 
   doctest Explorer.Chain.TokenTransfer
@@ -323,6 +323,30 @@ defmodule Explorer.Chain.TokenTransferTest do
         })
 
       assert Enum.member?(page_two, transaction_one_bytes) == true
+    end
+  end
+
+  describe "uncataloged_token_transfer_block_numbers/0" do
+    test "returns a list of block numbers" do
+      block = insert(:block)
+      address = insert(:address)
+
+      log =
+        insert(:token_transfer_log,
+          transaction:
+            insert(:transaction,
+              block_number: block.number,
+              block_hash: block.hash,
+              cumulative_gas_used: 0,
+              gas_used: 0,
+              index: 0
+            ),
+          block: block,
+          address_hash: address.hash
+        )
+
+      block_number = log.block_number
+      assert {:ok, [^block_number]} = TokenTransfer.uncataloged_token_transfer_block_numbers()
     end
   end
 end

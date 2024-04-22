@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
   use Explorer.History.Historian
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.{Block, DenormalizationHelper, Transaction}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.History.Process, as: HistoryProcess
@@ -89,25 +89,38 @@ defmodule Explorer.Chain.Transaction.History.Historian do
     Logger.info("tx/per day chart: min/max block numbers [#{min_block}, #{max_block}]")
 
     all_transactions_query =
-      from(
-        transaction in Transaction,
-        where: transaction.block_number >= ^min_block and transaction.block_number <= ^max_block
-      )
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        from(
+          transaction in Transaction,
+          where: transaction.block_number >= ^min_block and transaction.block_number <= ^max_block,
+          where: transaction.block_consensus == true,
+          select: transaction
+        )
+      else
+        from(
+          transaction in Transaction,
+          where: transaction.block_number >= ^min_block and transaction.block_number <= ^max_block
+        )
+      end
 
     all_blocks_query =
       from(
         block in Block,
         where: block.consensus == true,
         where: block.number >= ^min_block and block.number <= ^max_block,
-        select: block.hash
+        select: block.number
       )
 
     query =
-      from(transaction in subquery(all_transactions_query),
-        join: block in subquery(all_blocks_query),
-        on: transaction.block_hash == block.hash,
-        select: transaction
-      )
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        all_transactions_query
+      else
+        from(transaction in subquery(all_transactions_query),
+          join: block in subquery(all_blocks_query),
+          on: transaction.block_number == block.number,
+          select: transaction
+        )
+      end
 
     num_transactions = Repo.aggregate(query, :count, :hash, timeout: :infinity)
     Logger.info("tx/per day chart: num of transactions #{num_transactions}")
@@ -115,11 +128,18 @@ defmodule Explorer.Chain.Transaction.History.Historian do
     Logger.info("tx/per day chart: total gas used #{gas_used}")
 
     total_fee_query =
-      from(transaction in subquery(all_transactions_query),
-        join: block in subquery(all_blocks_query),
-        on: transaction.block_hash == block.hash,
-        select: fragment("SUM(? * ?)", transaction.gas_price, transaction.gas_used)
-      )
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        from(transaction in subquery(all_transactions_query),
+          select: fragment("SUM(? * ?)", transaction.gas_price, transaction.gas_used)
+        )
+      else
+        from(transaction in subquery(all_transactions_query),
+          join: block in Block,
+          on: transaction.block_hash == block.hash,
+          where: block.consensus == true,
+          select: fragment("SUM(? * ?)", transaction.gas_price, transaction.gas_used)
+        )
+      end
 
     total_fee = Repo.one(total_fee_query, timeout: :infinity)
     Logger.info("tx/per day chart: total fee #{total_fee}")

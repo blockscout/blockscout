@@ -8,8 +8,8 @@ defmodule Explorer.Chain.Validator do
   alias Explorer.{Chain, Repo}
 
   @primary_key false
-  schema "validators" do
-    field(:address_hash, Address, primary_key: true)
+  typed_schema "validators" do
+    field(:address_hash, Address, primary_key: true, null: false)
     field(:is_validator, :boolean)
     field(:payout_key_hash, Address)
     field(:info_updated_at_block, :integer)

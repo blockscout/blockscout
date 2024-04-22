@@ -52,13 +52,15 @@ defmodule Indexer.Temporary.UnclesWithoutIndex do
     query =
       from(bsdr in SecondDegreeRelation,
         join: block in assoc(bsdr, :nephew),
-        where: is_nil(bsdr.index) and is_nil(bsdr.uncle_fetched_at) and block.consensus,
+        where: is_nil(bsdr.index) and is_nil(bsdr.uncle_fetched_at) and block.consensus == true,
         select: bsdr.nephew_hash,
         group_by: bsdr.nephew_hash
       )
 
     {:ok, final} =
-      Repo.stream_reduce(query, initial, fn nephew_hash, acc ->
+      query
+      |> Chain.add_fetcher_limit(true)
+      |> Repo.stream_reduce(initial, fn nephew_hash, acc ->
         nephew_hash
         |> to_string()
         |> reducer.(acc)

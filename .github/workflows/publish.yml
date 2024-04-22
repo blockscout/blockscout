@@ -1,0 +1,52 @@
+name: Build and publish
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+      - stable
+      - beta
+      - develop
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.11
+    - name: Build and publish container
+      run: |
+        export BRANCH=${GITHUB_REF##*/}
+        export VERSION=$(cat VERSION)
+        echo "Branch: $BRANCH"
+        echo "Base version: $VERSION"
+        export VERSION=$(bash ./scripts/calculate_version.sh)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "Version $VERSION"
+        export RELEASE=true
+        ( test $BRANCH = "stable" && export PRERELEASE=false ) || export PRERELEASE=true
+        echo "PRERELEASE=$PRERELEASE" >> $GITHUB_ENV
+        echo "RELEASE=$RELEASE" >> $GITHUB_ENV
+        bash ./scripts/build_and_publish.sh
+    - name: Checkout code
+      uses: actions/checkout@master
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.VERSION }}
+        release_name: ${{ env.VERSION }}
+        draft: false
+        prerelease: ${{ env.PRERELEASE }}

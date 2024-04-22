@@ -4,6 +4,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   """
 
   use GenServer
+  require Logger
 
   alias EthereumJSONRPC.Utility.EndpointAvailabilityObserver
 
@@ -32,7 +33,9 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
       Enum.reduce(unavailable_endpoints_arguments, [], fn json_rpc_named_arguments, acc ->
         case fetch_latest_block_number(json_rpc_named_arguments) do
           {:ok, _number} ->
-            EndpointAvailabilityObserver.enable_endpoint(json_rpc_named_arguments[:transport_options][:url])
+            url = json_rpc_named_arguments[:transport_options][:url]
+            EndpointAvailabilityObserver.enable_endpoint(url)
+            Logger.info("URL #{inspect(url)} is available now, switching back to it")
             acc
 
           _ ->

@@ -11,7 +11,7 @@ defmodule Explorer.Mixfile do
       deps_path: "../../deps",
       description: "Read-access to indexed block chain data.",
       dialyzer: [
-        plt_add_deps: :transitive,
+        plt_add_deps: :app_tree,
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
@@ -24,8 +24,8 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "5.1.4",
-      xref: [exclude: [BlockScoutWeb.WebRouter.Helpers]]
+      version: "6.2.2",
+      xref: [exclude: [BlockScoutWeb.WebRouter.Helpers, Indexer.Helper]]
     ]
   end
 
@@ -61,7 +61,7 @@ defmodule Explorer.Mixfile do
       {:mime, "~> 2.0"},
       {:bcrypt_elixir, "~> 3.0"},
       # benchmark optimizations
-      {:benchee, "~> 1.1.0", only: :test},
+      {:benchee, "~> 1.3.0", only: :test},
       # CSV output for benchee
       {:benchee_csv, "~> 1.0.0", only: :test},
       {:bypass, "~> 2.1", only: :test},
@@ -113,11 +113,13 @@ defmodule Explorer.Mixfile do
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.7.0"},
+      {:tesla, "~> 1.8.0"},
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.2.0"},
       {:redix, "~> 1.1"},
-      {:hammer_backend_redis, "~> 6.1"}
+      {:hammer_backend_redis, "~> 6.1"},
+      {:logger_json, "~> 5.1"},
+      {:typed_ecto_schema, "~> 0.4.1", runtime: false}
     ]
   end
 

@@ -12,6 +12,17 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
     %{"name" => identity.name, "email" => identity.email, "avatar" => identity.avatar, "nickname" => identity.nickname}
   end
 
+  def render("watchlist_addresses.json", %{
+        watchlist_addresses: watchlist_addresses,
+        exchange_rate: exchange_rate,
+        next_page_params: next_page_params
+      }) do
+    %{
+      "items" => Enum.map(watchlist_addresses, &prepare_watchlist_address(&1, exchange_rate)),
+      "next_page_params" => next_page_params
+    }
+  end
+
   def render("watchlist_addresses.json", %{watchlist_addresses: watchlist_addresses, exchange_rate: exchange_rate}) do
     Enum.map(watchlist_addresses, &prepare_watchlist_address(&1, exchange_rate))
   end
@@ -20,12 +31,20 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
     prepare_watchlist_address(watchlist_address, exchange_rate)
   end
 
+  def render("address_tags.json", %{address_tags: address_tags, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(address_tags, &prepare_address_tag/1), "next_page_params" => next_page_params}
+  end
+
   def render("address_tags.json", %{address_tags: address_tags}) do
     Enum.map(address_tags, &prepare_address_tag/1)
   end
 
   def render("address_tag.json", %{address_tag: address_tag}) do
     prepare_address_tag(address_tag)
+  end
+
+  def render("transaction_tags.json", %{transaction_tags: transaction_tags, next_page_params: next_page_params}) do
+    %{"items" => Enum.map(transaction_tags, &prepare_transaction_tag/1), "next_page_params" => next_page_params}
   end
 
   def render("transaction_tags.json", %{transaction_tags: transaction_tags}) do
@@ -76,7 +95,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
 
     %{
       "id" => watchlist.id,
-      "address" => Helper.address_with_info(nil, address, watchlist.address_hash),
+      "address" => Helper.address_with_info(nil, address, watchlist.address_hash, false),
       "address_hash" => watchlist.address_hash,
       "name" => watchlist.name,
       "address_balance" => if(address && address.fetched_coin_balance, do: address.fetched_coin_balance.value),
@@ -102,7 +121,10 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
       },
       "notification_methods" => %{
         "email" => watchlist.notify_email
-      }
+      },
+      "tokens_fiat_value" => watchlist.tokens_fiat_value,
+      "tokens_count" => watchlist.tokens_count,
+      "tokens_overflow" => watchlist.tokens_overflow
     }
   end
 
@@ -112,7 +134,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
     %{
       "id" => custom_abi.id,
       "contract_address_hash" => custom_abi.address_hash,
-      "contract_address" => Helper.address_with_info(nil, address, custom_abi.address_hash),
+      "contract_address" => Helper.address_with_info(nil, address, custom_abi.address_hash, false),
       "name" => custom_abi.name,
       "abi" => custom_abi.abi
     }
@@ -128,7 +150,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
     %{
       "id" => address_tag.id,
       "address_hash" => address_tag.address_hash,
-      "address" => Helper.address_with_info(nil, address, address_tag.address_hash),
+      "address" => Helper.address_with_info(nil, address, address_tag.address_hash, false),
       "name" => address_tag.name
     }
   end
@@ -142,7 +164,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserView do
   def prepare_public_tags_request(public_tags_request) do
     addresses =
       Enum.map(public_tags_request.addresses, fn address_hash ->
-        Helper.address_with_info(nil, get_address(address_hash), address_hash)
+        Helper.address_with_info(nil, get_address(address_hash), address_hash, false)
       end)
 
     %{

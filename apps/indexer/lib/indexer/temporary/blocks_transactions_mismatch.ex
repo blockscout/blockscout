@@ -14,9 +14,9 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   import Ecto.Query
 
   alias EthereumJSONRPC.Blocks
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block
-  alias Explorer.Repo
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.BufferedTask
 
   @behaviour BufferedTask
@@ -58,7 +58,10 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
         select: {block.hash, count(transactions.hash)}
       )
 
-    {:ok, final} = Repo.stream_reduce(query, initial, &reducer.(&1, &2))
+    {:ok, final} =
+      query
+      |> Chain.add_fetcher_limit(true)
+      |> Repo.stream_reduce(initial, &reducer.(&1, &2))
 
     final
   end
@@ -117,7 +120,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
         |> Enum.map(fn {hash, _trans_num} -> hash end)
         |> update_in_order(refetch_needed: false, consensus: false)
 
-      MissingBlockRange.add_ranges_by_block_numbers(updated_numbers)
+      MissingRangesManipulator.add_ranges_by_block_numbers(updated_numbers)
     end
 
     if Enum.empty?(missing_blocks_data) do
@@ -133,7 +136,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
         where: block.hash in ^hashes,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     Repo.update_all(

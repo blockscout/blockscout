@@ -8,14 +8,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, Transaction}
+  alias EthereumJSONRPC.Utility.RangesHelper
+  alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, TokenTransfer, Transaction}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Runner
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.MissingRangesManipulator
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query
 
   @behaviour Runner
 
@@ -146,7 +147,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end)
     |> Multi.run(:remove_consensus_of_invalid_blocks, fn repo, %{invalid_block_numbers: invalid_block_numbers} ->
       Instrumenter.block_import_stage_runner(
-        fn -> remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) end,
+        fn -> remove_consensus_of_invalid_blocks(repo, invalid_block_numbers, timestamps) end,
         :block_pending,
         :internal_transactions,
         :remove_consensus_of_invalid_blocks
@@ -282,11 +283,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     query =
       from(
         block in Block,
-        where: block.number in ^block_numbers and block.consensus,
+        where: block.number in ^block_numbers and block.consensus == true,
         select: block.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     {:ok, repo.all(query)}
@@ -311,10 +312,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       from(
         t in Transaction,
         where: t.block_hash in ^pending_block_hashes,
-        select: map(t, [:hash, :block_hash, :block_number, :cumulative_gas_used]),
+        select: map(t, [:hash, :block_hash, :block_number, :cumulative_gas_used, :status]),
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: t.hash],
-        lock: "FOR UPDATE"
+        lock: "FOR NO KEY UPDATE"
       )
 
     {:ok, repo.all(query)}
@@ -332,6 +333,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     # common_tuples = MapSet.intersection(required_tuples, candidate_tuples) #should be added
     # |> MapSet.difference(internal_transactions_tuples) should be replaced with |> MapSet.difference(common_tuples)
 
+    # Note: for zetachain, the case "# - there are no internal txs for some transactions" is removed since
+    # there are may be non-traceable transactions
+
     transactions_tuples = MapSet.new(transactions, &{&1.hash, &1.block_number})
 
     internal_transactions_tuples = MapSet.new(internal_transactions_params, &{&1.transaction_hash, &1.block_number})
@@ -339,10 +343,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     all_tuples = MapSet.union(transactions_tuples, internal_transactions_tuples)
 
     invalid_block_numbers =
-      all_tuples
-      |> MapSet.difference(internal_transactions_tuples)
-      |> MapSet.new(fn {_hash, block_number} -> block_number end)
-      |> MapSet.to_list()
+      if Application.get_env(:explorer, :chain_type) == "zetachain" do
+        Enum.reduce(internal_transactions_tuples, [], fn {transaction_hash, block_number}, acc ->
+          # credo:disable-for-next-line
+          case Enum.find(transactions_tuples, fn {t_hash, _block_number} -> t_hash == transaction_hash end) do
+            nil -> acc
+            {_t_hash, ^block_number} -> acc
+            _ -> [block_number | acc]
+          end
+        end)
+      else
+        all_tuples
+        |> MapSet.difference(internal_transactions_tuples)
+        |> MapSet.new(fn {_hash, block_number} -> block_number end)
+        |> MapSet.to_list()
+      end
 
     {:ok, invalid_block_numbers}
   end
@@ -380,7 +395,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       block_hash = Map.fetch!(blocks_map, block_number)
 
       entries
-      |> Enum.sort_by(&{&1.transaction_hash, &1.index})
+      |> Enum.sort_by(
+        &{(Map.has_key?(&1, :transaction_index) && &1.transaction_index) || &1.transaction_hash, &1.index}
+      )
       |> Enum.with_index()
       |> Enum.map(fn {entry, index} ->
         entry
@@ -514,6 +531,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           timeout,
           timestamps,
           first_trace,
+          transaction_from_db,
           transaction_receipt_from_node
         )
 
@@ -525,7 +543,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           transaction_hashes_iterator,
           timeout,
           timestamps,
-          first_trace
+          first_trace,
+          transaction_from_db
         )
 
       true ->
@@ -539,6 +558,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           timeout,
           timestamps,
           first_trace,
+          transaction_from_db,
           transaction_receipt_from_node
         )
     end
@@ -579,6 +599,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
+  # credo:disable-for-next-line
   defp update_transactions_inner(
          repo,
          valid_internal_transactions,
@@ -587,6 +608,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
          timeout,
          timestamps,
          first_trace,
+         transaction_from_db,
          transaction_receipt_from_node \\ nil
        ) do
     valid_internal_transactions_count = Enum.count(valid_internal_transactions)
@@ -595,6 +617,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     set =
       generate_transaction_set_to_update(
         first_trace,
+        transaction_from_db,
         transaction_receipt_from_node,
         timestamps,
         txs_with_error_in_internal_txs
@@ -628,19 +651,20 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   def generate_transaction_set_to_update(
         first_trace,
+        transaction_from_db,
         transaction_receipt_from_node,
         timestamps,
         txs_with_error_in_internal_txs
       ) do
     default_set = [
       created_contract_address_hash: first_trace.created_contract_address_hash,
-      error: first_trace.error,
-      status: first_trace.status,
       updated_at: timestamps.updated_at
     ]
 
     set =
       default_set
+      |> put_status_in_update_set(first_trace, transaction_from_db)
+      |> put_error_in_update_set(first_trace, transaction_from_db, transaction_receipt_from_node)
       |> Keyword.put_new(:block_hash, first_trace.block_hash)
       |> Keyword.put_new(:block_number, first_trace.block_number)
       |> Keyword.put_new(:index, transaction_receipt_from_node && transaction_receipt_from_node.transaction_index)
@@ -665,24 +689,60 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     filtered_set
   end
 
-  defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
-    minimal_block = EthereumJSONRPC.first_block_to_fetch(:trace_first_block)
+  defp put_status_in_update_set(update_set, first_trace, %{status: nil}),
+    do: Keyword.put_new(update_set, :status, first_trace.status)
 
+  defp put_status_in_update_set(update_set, _first_trace, _transaction_from_db), do: update_set
+
+  defp put_error_in_update_set(update_set, first_trace, _transaction_from_db, %{status: :error}),
+    do: Keyword.put_new(update_set, :error, first_trace.error)
+
+  defp put_error_in_update_set(update_set, first_trace, %{status: :error}, _transaction_receipt_from_node),
+    do: Keyword.put_new(update_set, :error, first_trace.error)
+
+  defp put_error_in_update_set(update_set, first_trace, _transaction_from_db, _transaction_receipt_from_node) do
+    case update_set[:status] do
+      :error -> Keyword.put_new(update_set, :error, first_trace.error)
+      _ -> update_set
+    end
+  end
+
+  defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers, %{updated_at: updated_at}) do
     if Enum.count(invalid_block_numbers) > 0 do
-      update_query =
+      update_block_query =
         from(
           block in Block,
-          where: block.number in ^invalid_block_numbers and block.consensus,
-          where: block.number > ^minimal_block,
+          where: block.number in ^invalid_block_numbers and block.consensus == true,
+          where: ^traceable_blocks_dynamic_query(),
           select: block.hash,
           # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
-          update: [set: [consensus: false]]
+          update: [set: [consensus: false, updated_at: ^updated_at]]
+        )
+
+      update_transaction_query =
+        from(
+          transaction in Transaction,
+          where: transaction.block_number in ^invalid_block_numbers and transaction.block_consensus,
+          where: ^traceable_block_number_dynamic_query(),
+          # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+          update: [set: [block_consensus: false, updated_at: ^updated_at]]
+        )
+
+      update_token_transfers_query =
+        from(
+          token_transfer in TokenTransfer,
+          where: token_transfer.block_number in ^invalid_block_numbers and token_transfer.block_consensus,
+          where: ^traceable_block_number_dynamic_query(),
+          # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+          update: [set: [block_consensus: false, updated_at: ^updated_at]]
         )
 
       try do
-        {_num, result} = repo.update_all(update_query, [])
+        {_num, result} = repo.update_all(update_block_query, [])
+        {_num, _result} = repo.update_all(update_transaction_query, [])
+        {_num, _result} = repo.update_all(update_token_transfers_query, [])
 
-        MissingBlockRange.add_ranges_by_block_numbers(invalid_block_numbers)
+        MissingRangesManipulator.add_ranges_by_block_numbers(invalid_block_numbers)
 
         Logger.debug(fn ->
           [
@@ -723,6 +783,32 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, pending_hashes: valid_block_hashes}}
+    end
+  end
+
+  defp traceable_blocks_dynamic_query do
+    if RangesHelper.trace_ranges_present?() do
+      block_ranges = RangesHelper.get_trace_block_ranges()
+
+      Enum.reduce(block_ranges, dynamic([_], false), fn
+        _from.._to = range, acc -> dynamic([block], ^acc or block.number in ^range)
+        num_to_latest, acc -> dynamic([block], ^acc or block.number >= ^num_to_latest)
+      end)
+    else
+      dynamic([_], true)
+    end
+  end
+
+  defp traceable_block_number_dynamic_query do
+    if RangesHelper.trace_ranges_present?() do
+      block_ranges = RangesHelper.get_trace_block_ranges()
+
+      Enum.reduce(block_ranges, dynamic([_], false), fn
+        _from.._to = range, acc -> dynamic([transaction_or_tt], ^acc or transaction_or_tt.block_number in ^range)
+        num_to_latest, acc -> dynamic([transaction_or_tt], ^acc or transaction_or_tt.block_number >= ^num_to_latest)
+      end)
+    else
+      dynamic([_], true)
     end
   end
 end

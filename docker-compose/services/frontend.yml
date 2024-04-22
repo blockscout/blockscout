@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  frontend:
+    image: ghcr.io/blockscout/frontend:${FRONTEND_DOCKER_TAG:-v1.28.1}
+    pull_policy: always
+    platform: linux/amd64
+    restart: always
+    container_name: '${SCHAIN_NAME}_frontend'
+    environment:
+      - NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=${NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID}
+      - NEXT_PUBLIC_API_HOST=${HOST:-localhost}
+      - NEXT_PUBLIC_APP_HOST=${HOST:-localhost}
+      - NEXT_PUBLIC_API_PORT=${PROXY_PORT:-80}
+      - NEXT_PUBLIC_APP_PROTOCOL=${NEXT_PUBLIC_APP_PROTOCOL:-http}
+      - NEXT_PUBLIC_API_PROTOCOL=${NEXT_PUBLIC_API_PROTOCOL:-http}
+      - NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL=${NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL:-ws}
+      - NEXT_PUBLIC_STATS_API_HOST=${STATS_PROTOCOL:-http}://${HOST:-localhost}:${STATS_PORT:-8080}
+      - NEXT_PUBLIC_IS_ACCOUNT_SUPPORTED=false
+      - NEXT_PUBLIC_NETWORK_NAME=${SCHAIN_APP_NAME:-SKALE}
+      - NEXT_PUBLIC_NETWORK_ID=${CHAIN_ID}
+      - NEXT_PUBLIC_NETWORK_CURRENCY_NAME=sFUEL
+      - NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL=sFUEL
+      - NEXT_PUBLIC_NETWORK_RPC_URL=${ENDPOINT}
+      - NEXT_PUBLIC_GAS_TRACKER_ENABLED=false
+      - NEXT_PUBLIC_AD_BANNER_PROVIDER=none
+      - NEXT_PUBLIC_AD_TEXT_PROVIDER=none
+      - NEXT_PUBLIC_IS_TESTNET=${NEXT_PUBLIC_IS_TESTNET:-false}
+      - NEXT_PUBLIC_HIDE_INDEXING_ALERT_BLOCKS=true
+      - NEXT_PUBLIC_HIDE_INDEXING_ALERT_INT_TXS=true
+      - NEXT_PUBLIC_NETWORK_LOGO=https://raw.githubusercontent.com/skalenetwork/blockscout/develop/docker-compose/assets/network_logo.png
+      - NEXT_PUBLIC_NETWORK_ICON=https://raw.githubusercontent.com/skalenetwork/blockscout/develop/docker-compose/assets/network_icon.png
+      - NEXT_PUBLIC_FEATURED_NETWORKS=https://raw.githubusercontent.com/skalenetwork/blockscout/develop/docker-compose/assets/featured_networks.json
+    env_file:
+      -  ../envs/common-frontend.env
+    volumes:
+      - ${BLOCKSCOUT_ASSETS_DIR:-../assets}:/app/public/assets

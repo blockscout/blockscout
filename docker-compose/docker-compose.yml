@@ -1,22 +1,25 @@
-version: '3.8'
+version: '3.9'
 
 services:
-  redis_db:
+  db-init:
     extends:
-      file: ./services/docker-compose-redis.yml
-      service: redis_db
+      file: ./services/db.yml
+      service: db-init
 
   db:
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
     extends:
-      file: ./services/docker-compose-db.yml
+      file: ./services/db.yml
       service: db
 
-  blockscout:
+  backend:
     depends_on:
       - db
-      - smart-contract-verifier
-      - redis_db
-    image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    extends:
+      file: ./services/backend.yml
+      service: backend
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
@@ -28,33 +31,74 @@ services:
         CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
         ADMIN_PANEL_ENABLED: ""
-        RELEASE_VERSION: 5.1.4
-    restart: always
-    stop_grace_period: 5m
-    container_name: 'blockscout'
+        RELEASE_VERSION: 6.2.2
     links:
       - db:database
-    command: bash -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
-    env_file:
-      -  ./envs/common-blockscout.env
-    ports:
-      - 4000:4000
-    volumes:
-      - ./logs/:/app/logs/
+    environment:
+        ETHEREUM_JSONRPC_HTTP_URL: ${ENDPOINT}
+        ETHEREUM_JSONRPC_WS_URL: ${WS_ENDPOINT}
+        ETHEREUM_JSONRPC_TRACE_URL: ${TRACE_ENDPOINT}
+        JSON_RPC: ${ENDPOINT}
+        CHAIN_ID: ${CHAIN_ID}
+        SUBNETWORK: ${SCHAIN_NAME}
+        ETHEREUM_JSONRPC_VARIANT: "geth"
+        NETWORK: "SKALE"
+        FIRST_BLOCK: ${FIRST_BLOCK:-0}
+        TRACE_FIRST_BLOCK: ${FIRST_BLOCK:-0}
+        INDEXER_RECEIPTS_BATCH_SIZE: 100
+        INDEXER_COIN_BALANCES_BATCH_SIZE: 100
+        POOL_SIZE: 130
+        INDEXER_DISABLE_BLOCK_REWARD_FETCHER: "true"
+        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: "true"
+        INDEXER_DISABLE_EMPTY_BLOCKS_SANITIZER: "true"
+        ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES: "true"
+        ETHEREUM_JSONRPC_GETH_TRACE_BY_BLOCK: "true"
+        INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: "true"
+        INDEXER_CATCHUP_BLOCK_INTERVAL: "10s"
+        INDEXER_HIDE_INDEXING_PROGRESS_ALERT: "true"
+        CHAIN_SPEC_PATH: "/opt/app/config.json"
+        SECRET_KEY_BASE: "RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
+        MICROSERVICE_SIG_PROVIDER_ENABLED: "false"
+        INDEXER_TOKEN_INSTANCE_RETRY_REFETCH_INTERVAL: "30s"
+
+  frontend:
+    depends_on:
+      - backend
+    extends:
+      file: ./services/frontend.yml
+      service: frontend
+
+  stats-db-init:
+    extends:
+      file: ./services/stats.yml
+      service: stats-db-init
+
+  stats-db:
+    depends_on:
+      stats-db-init:
+        condition: service_completed_successfully
+    extends:
+      file: ./services/stats.yml
+      service: stats-db
+
+  stats:
+    depends_on:
+      - stats-db
+      - backend
+    extends:
+      file: ./services/stats.yml
+      service: stats
+
+  proxy:
+    depends_on:
+      - backend
+      - frontend
+      - stats
+    extends:
+      file: ./services/nginx.yml
+      service: proxy
 
   smart-contract-verifier:
     extends:
-      file: ./services/docker-compose-smart-contract-verifier.yml
+      file: ./services/smart-contract-verifier.yml
       service: smart-contract-verifier
-
-  visualizer:
-    extends:
-      file: ./services/docker-compose-visualizer.yml
-      service: visualizer
-
-  sig-provider:
-    extends:
-      file: ./services/docker-compose-sig-provider.yml
-      service: sig-provider

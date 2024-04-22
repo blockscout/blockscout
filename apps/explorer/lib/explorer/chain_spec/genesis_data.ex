@@ -9,6 +9,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   alias Explorer.ChainSpec.Geth.Importer, as: GethImporter
   alias Explorer.ChainSpec.Parity.Importer
+  alias Explorer.Helper
   alias HTTPoison.Response
 
   @interval :timer.minutes(2)
@@ -55,6 +56,10 @@ defmodule Explorer.ChainSpec.GenesisData do
     {:noreply, state}
   end
 
+  @doc """
+  Fetches pre-mined balances and pre-compiled smart-contract bytecodes from genesis.json
+  """
+  @spec fetch_genesis_data() :: Task.t() | :ok
   def fetch_genesis_data do
     path = Application.get_env(:explorer, __MODULE__)[:chain_spec_path]
 
@@ -66,10 +71,6 @@ defmodule Explorer.ChainSpec.GenesisData do
         case fetch_spec(path) do
           {:ok, chain_spec} ->
             case variant do
-              EthereumJSONRPC.Nethermind ->
-                Importer.import_emission_rewards(chain_spec)
-                {:ok, _} = Importer.import_genesis_accounts(chain_spec)
-
               EthereumJSONRPC.Geth ->
                 {:ok, _} = GethImporter.import_genesis_accounts(chain_spec)
 
@@ -89,7 +90,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   end
 
   defp fetch_spec(path) do
-    if valid_url?(path) do
+    if Helper.valid_url?(path) do
       fetch_from_url(path)
     else
       fetch_from_file(path)
@@ -111,11 +112,5 @@ defmodule Explorer.ChainSpec.GenesisData do
       reason ->
         {:error, reason}
     end
-  end
-
-  defp valid_url?(string) do
-    uri = URI.parse(string)
-
-    uri.scheme != nil && uri.host =~ "."
   end
 end

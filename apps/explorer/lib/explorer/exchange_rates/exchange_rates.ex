@@ -10,6 +10,7 @@ defmodule Explorer.ExchangeRates do
   require Logger
 
   alias Explorer.Chain.Events.Publisher
+  alias Explorer.Market
   alias Explorer.ExchangeRates.{Source, Token}
 
   @interval Application.compile_env(:explorer, __MODULE__)[:cache_period]
@@ -84,9 +85,11 @@ defmodule Explorer.ExchangeRates do
   @doc """
   Lists exchange rates for the tracked tickers.
   """
-  @spec list :: [Token.t()]
+  @spec list :: [Token.t()] | nil
   def list do
-    list_from_store(store())
+    if enabled?() do
+      list_from_store(store())
+    end
   end
 
   @doc """
@@ -121,8 +124,27 @@ defmodule Explorer.ExchangeRates do
   @spec fetch_rates :: Task.t()
   defp fetch_rates do
     Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
-      Source.fetch_exchange_rates()
+      case Source.fetch_exchange_rates() do
+        {:ok, tokens} -> {:ok, add_coin_info_from_db(tokens)}
+        err -> err
+      end
     end)
+  end
+
+  defp add_coin_info_from_db(tokens) do
+    case Market.fetch_recent_history() do
+      [today | _the_rest] ->
+        tvl_from_history = Map.get(today, :tvl)
+
+        tokens
+        |> Enum.map(fn
+          %Token{tvl_usd: nil} = token -> %{token | tvl_usd: tvl_from_history}
+          token -> token
+        end)
+
+      _ ->
+        tokens
+    end
   end
 
   defp list_from_store(:ets) do

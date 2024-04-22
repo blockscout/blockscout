@@ -80,6 +80,10 @@
             <%= render BlockScoutWeb.TransactionView,
             "_link.html",
             transaction_hash: "0x" <> Base.encode16(@result.tx_hash, case: :lower) %>
+        <% "user_operation" -> %>
+            <%= "0x" <> Base.encode16(@result.user_operation_hash, case: :lower) %>
+        <% "blob" -> %>
+            <%= "0x" <> Base.encode16(@result.blob_hash, case: :lower) %>
         <% "block" -> %>
             <%= link(
                 "0x" <> Base.encode16(@result.block_hash, case: :lower),
