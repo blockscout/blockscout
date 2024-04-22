@@ -14,7 +14,6 @@ defmodule Explorer.Etherscan.Contracts do
   alias Explorer.Repo
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Chain.SmartContract.Proxy.EIP1167
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @doc """
@@ -42,8 +41,13 @@ defmodule Explorer.Etherscan.Contracts do
               | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
             }
           else
-            address_verified_twin_contract =
-              EIP1167.get_implementation_address(address_hash) || maybe_fetch_twin(twin_needed?, address_hash)
+            {implementation_address_hash, _} = Implementation.get_implementation_address_hash(address_hash, [])
+
+            implementation_address =
+              implementation_address_hash
+              |> Proxy.implementation_to_smart_contract([])
+
+            address_verified_twin_contract = implementation_address || maybe_fetch_twin(twin_needed?, address_hash)
 
             compose_address_with_smart_contract(
               address_with_smart_contract,

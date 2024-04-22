@@ -11,7 +11,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
-  alias Explorer.Chain.SmartContract.Proxy.{EIP1167, EIP1967}
+  alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Visualize.Sol2uml
 
   require Logger
@@ -147,12 +148,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   # credo:disable-for-next-line
   def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address, conn) do
-    minimal_proxy_template = EIP1167.get_implementation_address(address.hash, @api_true)
+    {implementation_address_hash, _} = Implementation.get_implementation_address_hash(address.hash, @api_true)
 
-    storage_slots_template = EIP1967.get_implementation_address(address.hash, @api_true)
+    implementation_address =
+      implementation_address_hash
+      |> Proxy.implementation_to_smart_contract(@api_true)
 
     bytecode_twin = SmartContract.get_address_verified_twin_contract(address.hash, @api_true)
-    metadata_for_verification = minimal_proxy_template || bytecode_twin.verified_contract
+    metadata_for_verification = implementation_address || bytecode_twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
     fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
     write_methods? = AddressView.smart_contract_with_write_functions?(address)
@@ -166,7 +169,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       additional_sources(
         smart_contract,
         smart_contract_verified,
-        minimal_proxy_template || storage_slots_template,
+        implementation_address,
         bytecode_twin
       )
 
@@ -191,7 +194,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "has_methods_read_proxy" => is_proxy,
       "has_methods_write_proxy" => is_proxy && write_methods?,
       "minimal_proxy_address_hash" =>
-        minimal_proxy_template && Address.checksum(metadata_for_verification.address_hash),
+        implementation_address && Address.checksum(metadata_for_verification.address_hash),
       "sourcify_repo_url" =>
         if(address.smart_contract.verified_via_sourcify && smart_contract_verified,
           do: AddressContractView.sourcify_repo_url(address.hash, address.smart_contract.partially_verified)

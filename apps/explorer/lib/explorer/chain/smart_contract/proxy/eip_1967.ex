@@ -21,7 +21,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   @storage_slot_openzeppelin_contract_address "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
 
   @doc """
-  Get implementation address following EIP-1167
+  Get implementation address following EIP-1967
   """
   @spec get_implementation_address(Hash.Address.t(), Keyword.t()) :: SmartContract.t() | nil
   def get_implementation_address(address_hash, options \\ []) do

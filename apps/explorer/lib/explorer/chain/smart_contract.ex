@@ -29,8 +29,8 @@ defmodule Explorer.Chain.SmartContract do
 
   alias Explorer.Chain.Address.Name, as: AddressName
 
-  alias Explorer.Chain.SmartContract.ExternalLibrary
-  alias Explorer.Chain.SmartContract.Proxy.{EIP1167, EIP1967}
+  alias Explorer.Chain.SmartContract.{ExternalLibrary, Proxy}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.SmartContract.Helper
   alias Explorer.SmartContract.Solidity.Verifier
 
@@ -571,9 +571,14 @@ defmodule Explorer.Chain.SmartContract do
   """
   @spec compose_smart_contract(map(), Hash.t(), any()) :: map()
   def compose_smart_contract(address_result, hash, options) do
+    {implementation_address_hash, _} = Implementation.get_implementation_address_hash(hash, options)
+
+    implementation_address =
+      implementation_address_hash
+      |> Proxy.implementation_to_smart_contract(options)
+
     address_verified_twin_contract =
-      EIP1167.get_implementation_address(hash, options) ||
-        EIP1967.get_implementation_address(hash, options) ||
+      implementation_address ||
         get_address_verified_twin_contract(hash, options).verified_contract
 
     if address_verified_twin_contract do
@@ -857,9 +862,10 @@ defmodule Explorer.Chain.SmartContract do
     current_smart_contract = address_hash_to_smart_contract_without_twin(address_hash, options)
 
     with true <- is_nil(current_smart_contract),
+         {implementation_address_hash, _} = Implementation.get_implementation_address_hash(address_hash, options),
+         implementation_address = implementation_address_hash |> Proxy.implementation_to_smart_contract(options),
          address_verified_twin_contract =
-           EIP1167.get_implementation_address(address_hash, options) ||
-             EIP1967.get_implementation_address(address_hash, options) ||
+           implementation_address ||
              get_address_verified_twin_contract(address_hash, options).verified_contract,
          false <- is_nil(address_verified_twin_contract) do
       put_verified_from_twin(address_verified_twin_contract, address_hash)
