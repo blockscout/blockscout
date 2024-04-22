@@ -606,6 +606,11 @@ defmodule Explorer.Chain.Search do
     end
   end
 
+  @doc """
+  Try to resolve ENS domain via BENS
+  """
+  @spec search_ens_name_in_bens(binary()) ::
+          nil | %{address_hash: binary(), expiry_date: any(), name: any(), names_count: non_neg_integer()}
   def search_ens_name_in_bens(search_query) do
     trimmed_query = String.trim(search_query)
 
