@@ -300,4 +300,8 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   defp alter_address(%Address{} = address, address_hash, names, :metadata) do
     %Address{address | metadata: names[Address.checksum(address_hash)]}
   end
+
+  defp alter_address(map, address_hash, names, field) when is_map(map) do
+    Map.put(map, field, names[Address.checksum(address_hash)])
+  end
 end
