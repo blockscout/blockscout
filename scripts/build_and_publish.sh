@@ -10,10 +10,14 @@ set -e
 
 REPO_NAME=skalenetwork/blockscout
 IMAGE_NAME=$REPO_NAME:$VERSION
-LATEST_IMAGE_NAME=$REPO_NAME:$BRANCH-latest
+
+if [ "$BRANCH" = "stable" ]; then
+  LATEST_IMAGE_NAME=$REPO_NAME:latest
+else
+  LATEST_IMAGE_NAME=$REPO_NAME:$BRANCH-latest
+fi
 
 # Build image
-
 echo "Building $IMAGE_NAME..."
 DOCKER_TAG=$VERSION docker-compose -f docker-compose/docker-compose.yml build backend || exit $?
 docker tag $IMAGE_NAME $LATEST_IMAGE_NAME
