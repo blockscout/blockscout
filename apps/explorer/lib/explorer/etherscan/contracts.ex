@@ -41,17 +41,19 @@ defmodule Explorer.Etherscan.Contracts do
               | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
             }
           else
-            {implementation_address_hash, _} = Implementation.get_implementation_address_hash(address_hash, [])
+            {implementation_address_hash, _} =
+              Implementation.get_implementation_address_hash(address_hash, [{:unverified_proxy_only?, true}])
 
             implementation_address =
               implementation_address_hash
               |> Proxy.implementation_to_smart_contract([])
 
-            address_verified_twin_contract = implementation_address || maybe_fetch_twin(twin_needed?, address_hash)
+            address_verified_bytecode_twin_contract =
+              implementation_address || maybe_fetch_bytecode_twin(twin_needed?, address_hash)
 
             compose_address_with_smart_contract(
               address_with_smart_contract,
-              address_verified_twin_contract
+              address_verified_bytecode_twin_contract
             )
           end
       end
@@ -60,16 +62,16 @@ defmodule Explorer.Etherscan.Contracts do
     |> append_proxy_info()
   end
 
-  defp maybe_fetch_twin(twin_needed?, address_hash),
-    do: if(twin_needed?, do: SmartContract.get_address_verified_twin_contract(address_hash).verified_contract)
+  defp maybe_fetch_bytecode_twin(twin_needed?, address_hash),
+    do: if(twin_needed?, do: SmartContract.get_address_verified_bytecode_twin_contract(address_hash).verified_contract)
 
-  defp compose_address_with_smart_contract(address_with_smart_contract, address_verified_twin_contract) do
-    if address_verified_twin_contract do
-      formatted_code = format_source_code_output(address_verified_twin_contract)
+  defp compose_address_with_smart_contract(address_with_smart_contract, address_verified_bytecode_twin_contract) do
+    if address_verified_bytecode_twin_contract do
+      formatted_code = format_source_code_output(address_verified_bytecode_twin_contract)
 
       %{
         address_with_smart_contract
-        | smart_contract: %{address_verified_twin_contract | contract_source_code: formatted_code}
+        | smart_contract: %{address_verified_bytecode_twin_contract | contract_source_code: formatted_code}
       }
     else
       address_with_smart_contract

@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
 
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Factory
+  alias Explorer.{Factory, TestHelper}
 
   describe "GET index/3" do
     test "returns not found for nonexistent address", %{conn: conn} do
@@ -46,6 +46,8 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
         block_hash: transaction.block_hash,
         block_index: 0
       )
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address)))
 

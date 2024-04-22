@@ -201,9 +201,9 @@ defmodule BlockScoutWeb.AddressView do
 
   def primary_name(%Address{names: _} = address) do
     with false <- is_nil(address.contract_code),
-         twin <- SmartContract.get_verified_twin_contract(address),
-         false <- is_nil(twin) do
-      twin.name
+         bytecode_twin <- SmartContract.get_verified_bytecode_twin_contract(address),
+         false <- is_nil(bytecode_twin) do
+      bytecode_twin.name
     else
       _ ->
         nil
@@ -245,7 +245,7 @@ defmodule BlockScoutWeb.AddressView do
     |> Base.encode64()
   end
 
-  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
 
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
 

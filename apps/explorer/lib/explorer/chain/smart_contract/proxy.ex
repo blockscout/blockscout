@@ -7,7 +7,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.{Basic, EIP1167, EIP1822, EIP1967, EIP930, MasterCopy}
-  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   import Explorer.Chain,
     only: [
@@ -19,7 +18,12 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
-    only: [is_burn_signature: 1, get_implementation_address_hash: 2, save_implementation_data: 5]
+    only: [
+      is_burn_signature: 1,
+      get_implementation_address_hash: 2,
+      get_proxy_implementations: 1,
+      save_implementation_data: 5
+    ]
 
   # supported signatures:
   # 5c60da1b = keccak256(implementation())
@@ -31,22 +35,41 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   # aaf10f42 = keccak256(getAddress(bytes32))
   @get_address_signature "21f8a721"
 
-  @typep api? :: {:api?, true | false}
+  @typep options :: [{:api?, true | false}, {:unverified_proxy_only?, true | false}]
+
+  @api_true [api?: true]
 
   @doc """
   Fetches into DB proxy contract implementation's address and name from different proxy patterns
   """
-  @spec fetch_implementation_address_hash(Hash.Address.t(), list(), boolean() | nil, [api?]) ::
+  @spec fetch_implementation_address_hash(Hash.Address.t(), list(), boolean() | nil, options) ::
           {String.t() | nil | :empty, String.t() | nil | :empty}
-  def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, metadata_from_verified_twin, options)
-      when not is_nil(proxy_address_hash) and not is_nil(proxy_abi) do
-    implementation_address_hash_string = get_implementation_address_hash_string(proxy_address_hash, proxy_abi)
+  def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, metadata_from_verified_bytecode_twin, options)
+      when not is_nil(proxy_address_hash) do
+    implementation_address_hash_string =
+      if options[:unverified_proxy_only?] do
+        get_implementation_address_hash_string_for_non_verified_proxy(proxy_address_hash)
+      else
+        get_implementation_address_hash_string(proxy_address_hash, proxy_abi)
+      end
+
+    implementation_name =
+      if implementation_address_hash_string do
+        {:ok, implementation_address_hash} = string_to_address_hash(implementation_address_hash_string)
+
+        implementation_smart_contract =
+          SmartContract.address_hash_to_smart_contract(implementation_address_hash, @api_true)
+
+        implementation_smart_contract && implementation_smart_contract.name
+      else
+        nil
+      end
 
     save_implementation_data(
       implementation_address_hash_string,
-      nil,
+      implementation_name,
       proxy_address_hash,
-      metadata_from_verified_twin,
+      metadata_from_verified_bytecode_twin,
       options
     )
   end
@@ -61,31 +84,34 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @spec proxy_contract?(SmartContract.t(), Keyword.t()) :: boolean()
   def proxy_contract?(smart_contract, options \\ []) do
     {:ok, burn_address_hash} = string_to_address_hash(SmartContract.burn_address_hash_string())
-    implementation = Implementation.get_proxy_implementation(smart_contract.address_hash)
+    implementation = get_proxy_implementations(smart_contract.address_hash)
 
-    if implementation && implementation.address_hash &&
-         implementation.address_hash.bytes !== burn_address_hash.bytes do
+    with false <- is_nil(implementation),
+         false <- Enum.empty?(implementation.address_hashes),
+         implementation_address_hash = Enum.at(implementation.address_hashes, 0),
+         false <- implementation_address_hash.bytes == burn_address_hash.bytes do
       true
     else
-      {implementation_address_hash_string, implementation_name} =
-        get_implementation_address_hash(smart_contract, options)
+      _ ->
+        {implementation_address_hash_string, _implementation_name} =
+          get_implementation_address_hash(smart_contract, options)
 
-      save_implementation_data(
-        implementation_address_hash_string,
-        implementation_name,
-        smart_contract.address_hash,
-        false,
-        options
-      )
+        # save_implementation_data(
+        #   implementation_address_hash_string,
+        #   implementation_name,
+        #   smart_contract.address_hash,
+        #   false,
+        #   options
+        # )
 
-      with false <- is_nil(implementation_address_hash_string),
-           {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
-           false <- implementation_address_hash.bytes == burn_address_hash.bytes do
-        true
-      else
-        _ ->
-          false
-      end
+        with false <- is_nil(implementation_address_hash_string),
+             {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
+             false <- implementation_address_hash.bytes == burn_address_hash.bytes do
+          true
+        else
+          _ ->
+            false
+        end
     end
   end
 
@@ -175,6 +201,14 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end
   end
 
+  defp get_implementation_address_hash_string_for_non_verified_proxy(proxy_address_hash) do
+    get_implementation_address_hash_string_eip1167(
+      proxy_address_hash,
+      nil,
+      false
+    )
+  end
+
   defp get_implementation_address_hash_string(proxy_address_hash, proxy_abi) do
     get_implementation_address_hash_string_eip1167(
       proxy_address_hash,
@@ -185,52 +219,63 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @doc """
   Returns EIP-1167 implementation address or tries next proxy pattern
   """
-  @spec get_implementation_address_hash_string_eip1167(Hash.Address.t(), any()) :: String.t() | nil
-  def get_implementation_address_hash_string_eip1167(proxy_address_hash, proxy_abi) do
+  @spec get_implementation_address_hash_string_eip1167(Hash.Address.t(), any(), bool()) :: String.t() | nil
+  def get_implementation_address_hash_string_eip1167(proxy_address_hash, proxy_abi, go_to_fallback? \\ true) do
     get_implementation_address_hash_string_by_module(
       EIP1167,
-      :get_implementation_address_hash_string_eip1967,
       [
         proxy_address_hash,
-        proxy_abi
-      ]
+        proxy_abi,
+        go_to_fallback?
+      ],
+      :get_implementation_address_hash_string_eip1967
     )
   end
 
   @doc """
   Returns EIP-1967 implementation address or tries next proxy pattern
   """
-  @spec get_implementation_address_hash_string_eip1967(Hash.Address.t(), any()) :: String.t() | nil
-  def get_implementation_address_hash_string_eip1967(proxy_address_hash, proxy_abi) do
+  @spec get_implementation_address_hash_string_eip1967(Hash.Address.t(), any(), bool()) :: String.t() | nil
+  def get_implementation_address_hash_string_eip1967(proxy_address_hash, proxy_abi, go_to_fallback?) do
     get_implementation_address_hash_string_by_module(
       EIP1967,
-      :get_implementation_address_hash_string_eip1822,
       [
         proxy_address_hash,
-        proxy_abi
-      ]
+        proxy_abi,
+        go_to_fallback?
+      ],
+      :get_implementation_address_hash_string_eip1822
     )
   end
 
   @doc """
   Returns EIP-1822 implementation address or tries next proxy pattern
   """
-  @spec get_implementation_address_hash_string_eip1822(Hash.Address.t(), any()) :: String.t() | nil
-  def get_implementation_address_hash_string_eip1822(proxy_address_hash, proxy_abi) do
-    get_implementation_address_hash_string_by_module(EIP1822, [proxy_address_hash, proxy_abi])
+  @spec get_implementation_address_hash_string_eip1822(Hash.Address.t(), any(), bool()) :: String.t() | nil
+  def get_implementation_address_hash_string_eip1822(proxy_address_hash, proxy_abi, go_to_fallback?) do
+    get_implementation_address_hash_string_by_module(EIP1822, [proxy_address_hash, proxy_abi, go_to_fallback?])
   end
 
   defp get_implementation_address_hash_string_by_module(
          module,
-         next_func \\ :fallback_proxy_detection,
-         [proxy_address_hash, _proxy_abi] = args
+         [proxy_address_hash, proxy_abi, go_to_fallback?] = args,
+         next_func \\ :fallback_proxy_detection
        ) do
     implementation_address_hash_string = module.get_implementation_address_hash_string(proxy_address_hash)
 
     if !is_nil(implementation_address_hash_string) && implementation_address_hash_string !== burn_address_hash_string() do
       implementation_address_hash_string
     else
-      apply(__MODULE__, next_func, args)
+      cond do
+        next_func !== :fallback_proxy_detection ->
+          apply(__MODULE__, next_func, args)
+
+        go_to_fallback? && next_func == :fallback_proxy_detection ->
+          apply(__MODULE__, :fallback_proxy_detection, [proxy_address_hash, proxy_abi])
+
+        true ->
+          nil
+      end
     end
   end
 

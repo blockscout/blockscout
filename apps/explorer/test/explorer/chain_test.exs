@@ -26,7 +26,7 @@ defmodule Explorer.ChainTest do
     Wei
   }
 
-  alias Explorer.{Chain, Etherscan}
+  alias Explorer.{Chain, Etherscan, TestHelper}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
@@ -2601,6 +2601,8 @@ defmodule Explorer.ChainTest do
           :contracts_creation_transaction => :optional
         }
       ]
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       response = Chain.find_contract_address(address.hash, options, true)
 

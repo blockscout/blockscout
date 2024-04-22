@@ -1188,25 +1188,38 @@ defmodule Explorer.Chain do
           if smart_contract do
             CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, smart_contract)
+
             SmartContract.check_and_update_constructor_args(address_result)
           else
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
 
-            {implementation_address_hash, _} = Implementation.get_implementation_address_hash(hash, options)
+            {implementation_address_hash, _} =
+              Implementation.get_implementation_address_hash(
+                {:updated,
+                 %SmartContract{
+                   address_hash: hash,
+                   abi: nil,
+                   metadata_from_verified_bytecode_twin: false
+                 }},
+                Keyword.put(options, :unverified_proxy_only?, true)
+              )
 
             implementation_address =
               implementation_address_hash
               |> Proxy.implementation_to_smart_contract(options)
 
-            address_verified_twin_contract =
+            address_verified_bytecode_twin_contract =
               implementation_address ||
-                SmartContract.get_address_verified_twin_contract(hash, options).verified_contract
+                SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
 
-            SmartContract.add_twin_info_to_contract(address_result, address_verified_twin_contract, hash)
+            address_result
+            |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
+            |> SmartContract.add_implementation_info_to_contract(implementation_address_hash)
           end
 
         _ ->
           LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
+
           address_result
       end
 

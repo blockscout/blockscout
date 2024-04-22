@@ -100,7 +100,7 @@ defmodule Explorer.SmartContract.Reader do
 
   defp prepare_abi(nil, address_hash) do
     address_hash
-    |> SmartContract.address_hash_to_smart_contract_with_twin()
+    |> SmartContract.address_hash_to_smart_contract_with_bytecode_twin()
     |> Map.get(:abi)
   end
 
@@ -630,7 +630,7 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   defp get_abi(contract_address_hash, type, options) do
-    contract = SmartContract.address_hash_to_smart_contract_with_twin(contract_address_hash, options)
+    contract = SmartContract.address_hash_to_smart_contract_with_bytecode_twin(contract_address_hash, options)
 
     if type == :proxy do
       Proxy.get_implementation_abi_from_proxy(contract, options)

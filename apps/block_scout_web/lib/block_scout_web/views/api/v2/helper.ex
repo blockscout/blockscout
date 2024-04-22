@@ -106,7 +106,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def address_name(_), do: nil
 
   def verified?(%Address{smart_contract: nil}), do: false
-  def verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+  def verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
   def verified?(%Address{smart_contract: %NotLoaded{}}), do: nil
   def verified?(%Address{smart_contract: _}), do: true
 

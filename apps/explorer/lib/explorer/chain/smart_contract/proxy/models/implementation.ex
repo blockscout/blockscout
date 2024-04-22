@@ -22,13 +22,14 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   @typedoc """
   * `proxy_address_hash` - proxy `smart_contract` address hash.
-  * `address_hash` - implementation `smart_contract` address hash. Proxy can contain multiple implementations at once.
-  * `name` - name of the proxy implementation.
+  * `address_hashes` - array of implementation `smart_contract` address hashes. Proxy can contain multiple implementations at once.
+  * `names` - array of implementation `smart_contract` names.
   """
+  @primary_key false
   typed_schema "proxy_implementations" do
-    field(:proxy_address_hash, Hash.Address, null: false)
-    field(:address_hash, Hash.Address, null: false)
-    field(:name, :string, null: true)
+    field(:proxy_address_hash, Hash.Address, primary_key: true, null: false)
+    field(:address_hashes, {:array, Hash.Address}, null: false)
+    field(:names, {:array, :string}, null: false)
 
     timestamps()
   end
@@ -37,17 +38,18 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     proxy_implementation
     |> cast(attrs, [
       :proxy_address_hash,
-      :address_hash
+      :address_hashes,
+      :names
     ])
-    |> validate_required([:proxy_address_hash, :address_hash])
-    |> unique_constraint([:proxy_address_hash, :address_hash])
+    |> validate_required([:proxy_address_hash, :address_hashes, :names])
+    |> unique_constraint([:proxy_address_hash])
   end
 
   @doc """
   Returns all implementations for the given smart-contract address hash
   """
-  @spec get_proxy_implementations(Hash.Address.t() | nil, Keyword.t()) :: [__MODULE__.t()]
-  def get_proxy_implementations(address_hash, options) do
+  @spec get_proxy_implementations(Hash.Address.t() | nil, Keyword.t()) :: __MODULE__.t() | nil
+  def get_proxy_implementations(address_hash, options \\ []) do
     all_implementations_query =
       from(
         p in __MODULE__,
@@ -55,27 +57,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       )
 
     all_implementations_query
-    |> select_repo(options).all()
-  end
-
-  @doc """
-  Returns a single implementation for the given smart-contract address hash
-  """
-  @spec get_proxy_implementation(Hash.Address.t() | nil, Keyword.t()) :: __MODULE__.t() | nil
-  def get_proxy_implementation(address_hash, options \\ []) do
-    all_implementations_query =
-      from(
-        p in __MODULE__,
-        where: p.proxy_address_hash == ^address_hash,
-        limit: 1
-      )
-
-    all_implementations_query
     |> select_repo(options).one()
   end
 
   @doc """
-  Returns all implementations for the given smart-contract address hash
+  Returns the last implementation updated_at for the given smart-contract address hash
   """
   @spec get_proxy_implementation_updated_at(Hash.Address.t() | nil, Keyword.t()) :: DateTime.t()
   def get_proxy_implementation_updated_at(address_hash, options) do
@@ -83,7 +69,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       from(
         p in __MODULE__,
         where: p.proxy_address_hash == ^address_hash,
-        select: max(p.updated_at)
+        select: p.updated_at
       )
 
     max_updated_at_query
@@ -96,9 +82,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   @spec get_implementation_address_hash(any(), any()) :: {any(), any()}
   def get_implementation_address_hash(smart_contract, options \\ [])
 
-  def get_implementation_address_hash(%SmartContract{abi: nil}, _), do: {nil, nil}
-
-  def get_implementation_address_hash(%SmartContract{metadata_from_verified_twin: true} = smart_contract, options) do
+  def get_implementation_address_hash(
+        %SmartContract{metadata_from_verified_bytecode_twin: true} = smart_contract,
+        options
+      ) do
     get_implementation_address_hash({:updated, smart_contract}, options)
   end
 
@@ -113,7 +100,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     updated_smart_contract =
       if Application.get_env(:explorer, :proxy)[:caching_implementation_data_enabled] &&
            check_implementation_refetch_necessity(implementation_updated_at) do
-        SmartContract.address_hash_to_smart_contract_with_twin(address_hash, options)
+        SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options)
       else
         smart_contract
       end
@@ -126,7 +113,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
          %SmartContract{
            address_hash: address_hash,
            abi: abi,
-           metadata_from_verified_twin: metadata_from_verified_twin
+           metadata_from_verified_bytecode_twin: metadata_from_verified_bytecode_twin
          }},
         options
       ) do
@@ -136,10 +123,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
     # todo: process multiple implementations in case of Diamond proxy
     {implementation_address_hash_from_db, implementation_name_from_db} =
-      if Enum.count(proxy_implementations) == 1 do
-        implementation = proxy_implementations |> Enum.at(0)
+      if proxy_implementations && Enum.count(proxy_implementations.address_hashes) == 1 do
+        implementation_address_hash = proxy_implementations.address_hashes |> Enum.at(0)
+        implementation_name = proxy_implementations.names |> Enum.at(0)
 
-        {implementation.address_hash, implementation.name}
+        {implementation_address_hash, implementation_name}
       else
         {nil, nil}
       end
@@ -147,7 +135,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     if check_implementation_refetch_necessity(implementation_updated_at) do
       get_implementation_address_hash_task =
         Task.async(fn ->
-          result = Proxy.fetch_implementation_address_hash(address_hash, abi, metadata_from_verified_twin, options)
+          result =
+            Proxy.fetch_implementation_address_hash(address_hash, abi, metadata_from_verified_bytecode_twin, options)
+
           callback = Keyword.get(options, :callback, nil)
           uid = Keyword.get(options, :uid)
 
@@ -231,23 +221,26 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   end
 
   @doc """
-  Saves proxy implementation into the DB
+  Saves proxy's implementation into the DB
   """
   @spec save_implementation_data(String.t() | nil, String.t() | nil, Hash.Address.t(), boolean(), Keyword.t()) ::
           {nil, nil} | {String.t(), String.t() | nil}
-  def save_implementation_data(nil, _, _, _, _), do: {nil, nil}
+  def save_implementation_data(nil, _, _proxy_address_hash, _, _options) do
+    # upsert_implementation(proxy_address_hash, nil, nil, options)
 
-  def save_implementation_data(empty_address_hash_string, _, proxy_address_hash, metadata_from_verified_twin, options)
+    {nil, nil}
+  end
+
+  def save_implementation_data(
+        empty_address_hash_string,
+        _,
+        proxy_address_hash,
+        metadata_from_verified_bytecode_twin,
+        options
+      )
       when is_burn_signature(empty_address_hash_string) do
-    if is_nil(metadata_from_verified_twin) or !metadata_from_verified_twin do
-      proxy_implementations = get_proxy_implementations(proxy_address_hash, options)
-
-      # todo: process multiple implementations in case of Diamond proxy
-      if Enum.count(proxy_implementations) == 1 do
-        proxy_implementations
-        |> Enum.at(0)
-        |> update_implementation(nil, nil)
-      end
+    if is_nil(metadata_from_verified_bytecode_twin) or !metadata_from_verified_bytecode_twin do
+      upsert_implementation(proxy_address_hash, nil, nil, options)
     end
 
     {:empty, :empty}
@@ -262,61 +255,71 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       )
       when is_binary(implementation_address_hash_string) do
     with {:ok, address_hash} <- string_to_address_hash(implementation_address_hash_string),
-         proxy_implementations <- get_proxy_implementations(proxy_address_hash, options),
-         # todo: process multiple implementations in case of Diamond proxy
-         1 <- Enum.count(proxy_implementations),
-         implementation <- proxy_implementations |> Enum.at(0),
-         false <- is_nil(implementation),
-         %SmartContract{name: name} <- SmartContract.address_hash_to_smart_contract_with_twin(address_hash, options) do
-      implementation
-      |> update_implementation(implementation_address_hash_string, name)
+         proxy_contract <- SmartContract.address_hash_to_smart_contract(proxy_address_hash, options),
+         false <- is_nil(proxy_contract),
+         %{implementation: %SmartContract{name: name}, proxy: _proxy_contract} <- %{
+           implementation: SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options),
+           proxy: proxy_contract
+         } do
+      upsert_implementation(proxy_address_hash, implementation_address_hash_string, name, options)
 
       {implementation_address_hash_string, name}
     else
       %{implementation: _, proxy: proxy_contract} ->
-        proxy_implementations = get_proxy_implementations(proxy_contract.address_hash, options)
-        # todo: process multiple implementations in case of Diamond proxy
-        if Enum.count(proxy_implementations) == 1 do
-          implementation = proxy_implementations |> Enum.at(0)
-
-          implementation
-          |> update_implementation(implementation_address_hash_string, implementation_name)
-        end
+        upsert_implementation(
+          proxy_contract.address_hash,
+          implementation_address_hash_string,
+          nil,
+          options
+        )
 
         {implementation_address_hash_string, nil}
 
       true ->
         {:ok, address_hash} = string_to_address_hash(implementation_address_hash_string)
-        smart_contract = SmartContract.address_hash_to_smart_contract_with_twin(address_hash, options)
+        smart_contract = SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options)
 
-        implementation_name = (smart_contract && smart_contract.name) || implementation_name || nil
+        implementation_name = implementation_name || (smart_contract && smart_contract.name) || nil
 
-        insert_implementation(proxy_address_hash, implementation_address_hash_string, implementation_name)
+        # insert_implementation(proxy_address_hash, implementation_address_hash_string, implementation_name)
 
-        {implementation_address_hash_string, smart_contract && smart_contract.name}
+        {implementation_address_hash_string, implementation_name}
 
       _ ->
-        insert_implementation(proxy_address_hash, implementation_address_hash_string, implementation_name)
+        # insert_implementation(proxy_address_hash, implementation_address_hash_string, implementation_name)
         {implementation_address_hash_string, implementation_name}
     end
   end
 
+  defp upsert_implementation(proxy_address_hash, implementation_address_hash_string, name, options) do
+    proxy = get_proxy_implementations(proxy_address_hash, options)
+
+    if proxy do
+      update_implementation(proxy, implementation_address_hash_string, name)
+    else
+      insert_implementation(proxy_address_hash, implementation_address_hash_string, name)
+    end
+  end
+
   defp insert_implementation(proxy_address_hash, implementation_address_hash_string, name)
-       when not is_nil(proxy_address_hash) and not is_nil(implementation_address_hash_string) do
-    %__MODULE__{}
-    |> changeset(%{
+       when not is_nil(proxy_address_hash) do
+    changeset = %{
       proxy_address_hash: proxy_address_hash,
-      address_hash: implementation_address_hash_string,
-      name: name
-    })
+      # address_hashes: (implementation_address_hash_string && [implementation_address_hash_string]) || [],
+      address_hashes: [implementation_address_hash_string],
+      names: (name && [name]) || []
+    }
+
+    %__MODULE__{}
+    |> changeset(changeset)
     |> Repo.insert()
   end
 
-  defp update_implementation(implementation, implementation_address_hash_string, name) do
-    implementation
+  defp update_implementation(proxy, implementation_address_hash_string, name) do
+    proxy
     |> changeset(%{
-      address_hash: implementation_address_hash_string,
-      name: name
+      address_hashes: (implementation_address_hash_string && [implementation_address_hash_string]) || [],
+      names: (name && [name]) || []
     })
     |> Repo.update()
   end
@@ -335,9 +338,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     proxy_implementations = get_proxy_implementations(proxy_address.hash, options)
 
     # todo: process multiple implementations in case of Diamond proxy
-    if Enum.count(proxy_implementations) == 1 do
-      implementation = proxy_implementations |> Enum.at(0)
-      implementation.name
+    if proxy_implementations && not Enum.empty?(proxy_implementations.names) do
+      proxy_implementations.names |> Enum.at(0)
     else
       nil
     end

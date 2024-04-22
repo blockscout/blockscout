@@ -49,6 +49,7 @@ defmodule Explorer.Factory do
   }
 
   alias Explorer.Chain.Optimism.OutputRoot
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   alias Explorer.SmartContract.Helper
   alias Explorer.Tags.{AddressTag, AddressToTag}
@@ -906,6 +907,10 @@ defmodule Explorer.Factory do
       decompiler_version: "test_decompiler",
       decompiled_source_code: contract_code_info.source_code
     }
+  end
+
+  def proxy_implementation_factory do
+    %Implementation{}
   end
 
   def token_instance_factory do

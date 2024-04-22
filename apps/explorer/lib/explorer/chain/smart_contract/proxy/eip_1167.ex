@@ -10,8 +10,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
   @doc """
   Get implementation address following EIP-1167
   """
-  @spec get_implementation_address(Hash.Address.t(), Keyword.t()) :: SmartContract.t() | nil
-  def get_implementation_address(address_hash, options \\ []) do
+  @spec get_implementation_smart_contract(Hash.Address.t(), Keyword.t()) :: SmartContract.t() | nil
+  def get_implementation_smart_contract(address_hash, options \\ []) do
     address_hash
     |> get_implementation_address_hash_string(options)
     |> Proxy.implementation_to_smart_contract(options)

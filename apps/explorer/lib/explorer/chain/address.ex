@@ -92,6 +92,7 @@ defmodule Explorer.Chain.Address do
     field(:gas_used, :integer)
     field(:ens_domain_name, :string, virtual: true)
     field(:metadata, :any, virtual: true)
+    field(:implementation, :any, virtual: true)
 
     has_one(:smart_contract, SmartContract, references: :hash)
     has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)

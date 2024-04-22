@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   alias BlockScoutWeb.AddressContractView
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.TestHelper
   alias Plug.Conn
 
   setup :set_mox_from_context
@@ -31,6 +32,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     test "get unverified smart-contract info", %{conn: conn} do
       address = insert(:contract_address)
 
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
 
@@ -49,6 +52,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
       )
       |> with_block()
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
@@ -128,7 +133,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "certified" => false
       }
 
-      get_eip1967_implementation_non_zero_address()
+      TestHelper.get_eip1967_implementation_non_zero_address()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
@@ -231,7 +236,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "certified" => false
       }
 
-      get_eip1967_implementation_error_response()
+      TestHelper.get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
@@ -239,7 +244,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert correct_response == response
     end
 
-    test "get smart-contract data from twin without constructor args", %{conn: conn} do
+    test "get smart-contract data from bytecode twin without constructor args", %{conn: conn} do
       lib_address = build(:address)
       lib_address_string = to_string(lib_address)
 
@@ -307,7 +312,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "has_methods_write_proxy" => false,
         "has_custom_methods_read" => false,
         "has_custom_methods_write" => false,
-        "minimal_proxy_address_hash" => nil,
+        "minimal_proxy_address_hash" => Address.checksum(target_contract.address_hash),
         "sourcify_repo_url" => nil,
         "can_be_visualized_via_sol2uml" => false,
         "name" => target_contract && target_contract.name,
@@ -336,7 +341,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "certified" => false
       }
 
-      get_eip1967_implementation_error_response()
+      TestHelper.get_eip1967_implementation_error_response()
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
@@ -407,6 +413,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           contract_code: proxy_deployed_bytecode
         )
 
+      # insert(:proxy_implementation,
+      #   proxy_address_hash: proxy_address.hash,
+      #   address_hashes: [implementation_contract.address_hash],
+      #   names: []
+      # )
+
       insert(:transaction,
         created_contract_address_hash: proxy_address.hash,
         input: proxy_tx_input
@@ -427,7 +439,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "has_methods_write_proxy" => true,
         "has_custom_methods_read" => false,
         "has_custom_methods_write" => false,
-        "minimal_proxy_address_hash" => Address.checksum("0x" <> implementation_contract_address_hash_string),
+        "minimal_proxy_address_hash" => Address.checksum(implementation_contract.address_hash),
         "sourcify_repo_url" => nil,
         "can_be_visualized_via_sol2uml" => false,
         "name" => implementation_contract && implementation_contract.name,
@@ -513,7 +525,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
-      get_eip1967_implementation_error_response()
+      TestHelper.get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -542,6 +554,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
@@ -596,7 +610,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
-      get_eip1967_implementation_error_response()
+      TestHelper.get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -625,6 +639,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
@@ -726,6 +742,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
       assert_receive %Phoenix.Socket.Message{
@@ -754,7 +772,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
 
-      get_eip1967_implementation_error_response()
+      TestHelper.get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
@@ -813,7 +831,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
-      get_eip1967_implementation_error_response()
+      TestHelper.get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -842,6 +860,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
@@ -923,7 +943,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
-      get_eip1967_implementation_non_zero_address()
+      TestHelper.get_eip1967_implementation_non_zero_address()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -952,6 +972,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
+
+      TestHelper.get_eip1967_implementation_non_zero_address()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
@@ -1038,7 +1060,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
-      get_eip1967_implementation_non_zero_address()
+      TestHelper.get_eip1967_implementation_non_zero_address()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1067,6 +1089,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
@@ -1153,7 +1177,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
-      get_eip1967_implementation_non_zero_address()
+      TestHelper.get_eip1967_implementation_non_zero_address()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1182,6 +1206,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
@@ -1266,27 +1292,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, "{\"sources\": []}")
       end)
 
-      _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
-
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_not_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
-
-      :timer.sleep(10)
-
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
-        Conn.resp(conn, 200, "{\"sources\": []}")
-      end)
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1309,6 +1315,32 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
         Conn.resp(conn, 200, "{\"sources\": []}")
       end)
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
+      _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "eth_bytecode_db_lookup_started",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{},
+                       event: "smart_contract_was_not_verified",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      :timer.sleep(10)
+
+      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
+        Conn.resp(conn, 200, "{\"sources\": []}")
+      end)
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1329,6 +1361,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       :timer.sleep(10)
 
       Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, fetch_interval: 10000)
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -2018,6 +2052,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     test "return 404 on unverified contract", %{conn: conn} do
       address = insert(:contract_address)
 
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       request =
         post(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/query-read-method", %{
           "contract_type" => "regular",
@@ -2664,6 +2700,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         custom_abi
       )
 
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
@@ -2802,6 +2840,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
     test "return 404 on unverified contract", %{conn: conn} do
       address = insert(:contract_address)
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/methods-read-proxy")
       assert %{"message" => "Not found"} = json_response(request, 404)
@@ -3172,6 +3212,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     test "return 404 on unverified contract", %{conn: conn} do
       address = insert(:contract_address)
 
+      TestHelper.get_eip1967_implementation_zero_addresses()
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/methods-write-proxy")
       assert %{"message" => "Not found"} = json_response(request, 404)
     end
@@ -3424,120 +3465,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   end
 
   defp mock_logic_storage_pointer_request(address_hash) do
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                id: 0,
-                                                method: "eth_getStorageAt",
-                                                params: [
-                                                  _,
-                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                  "latest"
-                                                ]
-                                              },
-                                              _options ->
-      {:ok, "0x000000000000000000000000#{address_hash |> to_string() |> String.replace("0x", "")}"}
-    end)
-  end
+    response = "0x000000000000000000000000#{address_hash |> to_string() |> String.replace("0x", "")}"
 
-  def get_eip1967_implementation_non_zero_address do
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                id: 0,
-                                                method: "eth_getStorageAt",
-                                                params: [
-                                                  _,
-                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                  "latest"
-                                                ]
-                                              },
-                                              _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
-    end)
-  end
-
-  def get_eip1967_implementation_error_response do
     EthereumJSONRPC.Mox
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:error, "error"}
-    end)
-    |> mock_empty_beacon_storage_pointer_request()
-    |> mock_empty_oz_storage_pointer_request()
-    |> mock_empty_eip_1822_storage_pointer_request()
-  end
-
-  defp mock_empty_beacon_storage_pointer_request(mox) do
-    expect(mox, :json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-  end
-
-  defp mock_empty_eip_1822_storage_pointer_request(mox) do
-    expect(mox, :json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-  end
-
-  defp mock_empty_oz_storage_pointer_request(mox) do
-    expect(mox, :json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
+    |> TestHelper.mock_logic_storage_pointer_request(response)
   end
 end
