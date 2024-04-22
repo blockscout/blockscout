@@ -587,7 +587,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     _ = PublishHelper.check_and_verify(Hash.to_string(address_hash))
 
     result =
-      case SmartContract.address_hash_to_smart_contract(address_hash) do
+      case SmartContract.address_hash_to_smart_contract_with_twin(address_hash) do
         nil ->
           :not_found
 

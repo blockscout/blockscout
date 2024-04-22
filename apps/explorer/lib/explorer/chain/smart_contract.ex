@@ -847,8 +847,8 @@ defmodule Explorer.Chain.SmartContract do
   @doc """
   Converts address hash to smart-contract object
   """
-  @spec address_hash_to_smart_contract_without_twin(Hash.Address.t(), [api?]) :: __MODULE__.t() | nil
-  def address_hash_to_smart_contract_without_twin(address_hash, options) do
+  @spec address_hash_to_smart_contract(Hash.Address.t(), [api?]) :: __MODULE__.t() | nil
+  def address_hash_to_smart_contract(address_hash, options) do
     query = get_smart_contract_query(address_hash)
 
     Chain.select_repo(options).one(query)
@@ -857,9 +857,9 @@ defmodule Explorer.Chain.SmartContract do
   @doc """
   Converts address hash to smart-contract object with metadata_from_verified_twin=true
   """
-  @spec address_hash_to_smart_contract(Hash.Address.t(), [api?]) :: __MODULE__.t() | nil
-  def address_hash_to_smart_contract(address_hash, options \\ []) do
-    current_smart_contract = address_hash_to_smart_contract_without_twin(address_hash, options)
+  @spec address_hash_to_smart_contract_with_twin(Hash.Address.t(), [api?]) :: __MODULE__.t() | nil
+  def address_hash_to_smart_contract_with_twin(address_hash, options \\ []) do
+    current_smart_contract = address_hash_to_smart_contract(address_hash, options)
 
     with true <- is_nil(current_smart_contract),
          {implementation_address_hash, _} = Implementation.get_implementation_address_hash(address_hash, options),
@@ -949,7 +949,7 @@ defmodule Explorer.Chain.SmartContract do
     with {:ok, implementation_address_hash} <- Chain.string_to_address_hash(address_hash_string),
          implementation_smart_contract =
            implementation_address_hash
-           |> address_hash_to_smart_contract(options),
+           |> address_hash_to_smart_contract_with_twin(options),
          false <- is_nil(implementation_smart_contract) do
       implementation_smart_contract
       |> Map.get(:abi)
@@ -1095,7 +1095,7 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   defp check_verified_with_full_match(address_hash, options) do
-    smart_contract = address_hash_to_smart_contract_without_twin(address_hash, options)
+    smart_contract = address_hash_to_smart_contract(address_hash, options)
 
     if smart_contract, do: !smart_contract.partially_verified, else: false
   end

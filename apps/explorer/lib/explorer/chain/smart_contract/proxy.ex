@@ -7,6 +7,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.{Basic, EIP1167, EIP1822, EIP1967, EIP930, MasterCopy}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   import Explorer.Chain,
     only: [
@@ -18,7 +19,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
-    only: [is_burn_signature: 1, get_implementation_address_hash: 2, save_implementation_data: 4]
+    only: [is_burn_signature: 1, get_implementation_address_hash: 2, save_implementation_data: 5]
 
   # supported signatures:
   # 5c60da1b = keccak256(implementation())
@@ -43,6 +44,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
     save_implementation_data(
       implementation_address_hash_string,
+      nil,
       proxy_address_hash,
       metadata_from_verified_twin,
       options
@@ -59,12 +61,22 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @spec proxy_contract?(SmartContract.t(), Keyword.t()) :: boolean()
   def proxy_contract?(smart_contract, options \\ []) do
     {:ok, burn_address_hash} = string_to_address_hash(SmartContract.burn_address_hash_string())
+    implementation = Implementation.get_proxy_implementation(smart_contract.address_hash)
 
-    if smart_contract.implementation_address_hash &&
-         smart_contract.implementation_address_hash.bytes !== burn_address_hash.bytes do
+    if implementation && implementation.address_hash &&
+         implementation.address_hash.bytes !== burn_address_hash.bytes do
       true
     else
-      {implementation_address_hash_string, _} = get_implementation_address_hash(smart_contract, options)
+      {implementation_address_hash_string, implementation_name} =
+        get_implementation_address_hash(smart_contract, options)
+
+      save_implementation_data(
+        implementation_address_hash_string,
+        implementation_name,
+        smart_contract.address_hash,
+        false,
+        options
+      )
 
       with false <- is_nil(implementation_address_hash_string),
            {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
