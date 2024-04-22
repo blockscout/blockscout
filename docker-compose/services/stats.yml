@@ -36,7 +36,7 @@ services:
       start_period: 10s
 
   stats:
-    image: ghcr.io/blockscout/stats:${STATS_DOCKER_TAG:-latest}
+    image: ghcr.io/blockscout/stats:${STATS_DOCKER_TAG:-v1.5.2}
     pull_policy: always
     platform: linux/amd64
     restart: always
