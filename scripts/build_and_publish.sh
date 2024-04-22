@@ -15,7 +15,7 @@ LATEST_IMAGE_NAME=$REPO_NAME:$BRANCH-latest
 # Build image
 
 echo "Building $IMAGE_NAME..."
-DOCKER_TAG=$VERSION docker-compose -f docker-compose/docker-compose-skale.yml build blockscout || exit $?
+DOCKER_TAG=$VERSION docker-compose -f docker-compose/docker-compose.yml build blockscout || exit $?
 docker tag $IMAGE_NAME $LATEST_IMAGE_NAME
 
 echo "========================================================================================="
