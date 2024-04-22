@@ -1,10 +1,16 @@
 defmodule BlockScoutWeb.SmartContractView do
   use BlockScoutWeb, :view
 
+  import Explorer.SmartContract.Reader, only: [zip_tuple_values_with_types: 2]
+
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Hash.Address, as: HashAddress
+  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.SmartContract.Proxy.EIP1167
   alias Explorer.SmartContract.Helper
+
+  require Logger
 
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
 
@@ -63,14 +69,14 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "address") ->
         values =
           value
-          |> Enum.map_join(", ", &binary_to_utf_string(&1))
+          |> Enum.map_join(", ", &cast_address(&1))
 
         render_array_type_value(type, values, fetch_name(names, index))
 
       String.starts_with?(type, "bytes") ->
         values =
           value
-          |> Enum.map_join(", ", &binary_to_utf_string(&1))
+          |> Enum.join(", ")
 
         render_array_type_value(type, values, fetch_name(names, index))
 
@@ -105,6 +111,9 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_with_type(value, string, names, index, _components) when string in ["string", :string],
     do: render_type_value("string", Helper.sanitize_input(value), fetch_name(names, index))
 
+  def values_with_type(value, "bytes" <> _ = bytes_type, names, index, _components),
+    do: render_type_value(bytes_type, Helper.sanitize_input(value), fetch_name(names, index))
+
   def values_with_type(value, bytes, names, index, _components) when bytes in [:bytes],
     do: render_type_value("bytes", Helper.sanitize_input(value), fetch_name(names, index))
 
@@ -112,10 +121,21 @@ defmodule BlockScoutWeb.SmartContractView do
     do: render_type_value("bool", Helper.sanitize_input(to_string(value)), fetch_name(names, index))
 
   def values_with_type(value, type, names, index, _components),
-    do: render_type_value(type, Helper.sanitize_input(binary_to_utf_string(value)), fetch_name(names, index))
+    do: render_type_value(type, Helper.sanitize_input(value), fetch_name(names, index))
 
   def values_with_type(value, :error, _components),
     do: render_type_value("error", Helper.sanitize_input(value), "error")
+
+  def cast_address(value) do
+    case HashAddress.cast(value) do
+      {:ok, address} ->
+        to_string(address)
+
+      _ ->
+        Logger.warn(fn -> ["Error decoding address value: #{inspect(value)}"] end)
+        "(decoding error)"
+    end
+  end
 
   defp fetch_name(nil, _index), do: nil
 
@@ -137,84 +157,15 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp tuple_to_array(value, type, names) do
-    types_string =
-      type
-      |> String.slice(6..-2)
-
-    types =
-      if String.trim(types_string) == "" do
-        []
-      else
-        types_string
-        |> String.split(",")
-      end
-
-    {tuple_types, _} =
-      types
-      |> Enum.reduce({[], nil}, fn val, acc ->
-        {arr, to_merge} = acc
-
-        if to_merge do
-          compose_array_if_to_merge(arr, val, to_merge)
-        else
-          compose_array_else(arr, val, to_merge)
-        end
-      end)
-
-    values_list =
-      value
-      |> Tuple.to_list()
-
-    values_types_list = Enum.zip(tuple_types, values_list)
-
-    values_types_list
+    value
+    |> zip_tuple_values_with_types(type)
     |> Enum.with_index()
     |> Enum.map(fn {{type, value}, index} ->
       values_with_type(value, type, fetch_name(names, index), 0)
     end)
   end
 
-  defp compose_array_if_to_merge(arr, val, to_merge) do
-    if count_string_symbols(val)["]"] > count_string_symbols(val)["["] do
-      updated_arr = update_last_list_item(arr, val)
-      {updated_arr, !to_merge}
-    else
-      updated_arr = update_last_list_item(arr, val)
-      {updated_arr, to_merge}
-    end
-  end
-
-  defp compose_array_else(arr, val, to_merge) do
-    if count_string_symbols(val)["["] > count_string_symbols(val)["]"] do
-      # credo:disable-for-next-line
-      {arr ++ [val], !to_merge}
-    else
-      # credo:disable-for-next-line
-      {arr ++ [val], to_merge}
-    end
-  end
-
-  defp update_last_list_item(arr, new_val) do
-    arr
-    |> Enum.with_index()
-    |> Enum.map(fn {item, index} ->
-      if index == Enum.count(arr) - 1 do
-        item <> "," <> new_val
-      else
-        item
-      end
-    end)
-  end
-
-  defp count_string_symbols(str) do
-    str
-    |> String.graphemes()
-    |> Enum.reduce(%{"[" => 0, "]" => 0}, fn char, acc ->
-      Map.update(acc, char, 1, &(&1 + 1))
-    end)
-  end
-
-  defp binary_to_utf_string(item) do
+  def binary_to_utf_string(item) do
     case Integer.parse(to_string(item)) do
       {item_integer, ""} ->
         to_string(item_integer)
@@ -229,11 +180,7 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp add_0x(item) do
-    if String.starts_with?(item, "0x") do
-      item
-    else
-      "0x" <> Base.encode16(item, case: :lower)
-    end
+    "0x" <> Base.encode16(item, case: :lower)
   end
 
   defp render_type_value(type, value, type) do
@@ -250,7 +197,7 @@ defmodule BlockScoutWeb.SmartContractView do
     render_type_value(type, value_to_display, name)
   end
 
-  defp supplement_type_with_components(type, components) do
+  def supplement_type_with_components(type, components) do
     if type == "tuple" && components do
       types =
         components
@@ -265,7 +212,7 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def decode_revert_reason(to_address, revert_reason, options \\ []) do
-    smart_contract = Chain.address_hash_to_smart_contract(to_address, options)
+    smart_contract = SmartContract.address_hash_to_smart_contract(to_address, options)
 
     Transaction.decoded_revert_reason(
       %Transaction{to_address: %{smart_contract: smart_contract}, hash: to_address},

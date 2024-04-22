@@ -9,16 +9,17 @@ defmodule Explorer.Chain.DecompiledSmartContract do
 
   @derive {Jason.Encoder, only: [:address_hash, :decompiler_version, :decompiled_source_code]}
 
-  schema "decompiled_smart_contracts" do
-    field(:decompiler_version, :string)
-    field(:decompiled_source_code, :string)
+  typed_schema "decompiled_smart_contracts" do
+    field(:decompiler_version, :string, null: false)
+    field(:decompiled_source_code, :string, null: false)
 
     belongs_to(
       :address,
       Address,
       foreign_key: :address_hash,
       references: :hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     timestamps()

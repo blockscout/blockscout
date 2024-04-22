@@ -26,6 +26,15 @@ Mox.defmock(Explorer.ExchangeRates.Source.TestSource, for: Explorer.ExchangeRate
 
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonEdge, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonZkevm, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.RSK, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Shibarium, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Suave, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Beacon, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Stability, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.BridgedTokens, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Filecoin, :manual)
 
 Absinthe.Test.prime(BlockScoutWeb.Schema)
 

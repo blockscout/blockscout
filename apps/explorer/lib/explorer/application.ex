@@ -5,12 +5,14 @@ defmodule Explorer.Application do
 
   use Application
 
-  alias Explorer.{Admin, TokenTransferTokenIdMigration}
+  alias Explorer.Admin
 
   alias Explorer.Chain.Cache.{
     Accounts,
+    AddressesTabsCounters,
     AddressSum,
     AddressSumMinusBurnt,
+    BackgroundMigrations,
     Block,
     BlockNumber,
     Blocks,
@@ -18,6 +20,8 @@ defmodule Explorer.Application do
     GasUsage,
     MinMissingBlockNumber,
     NetVersion,
+    PendingBlockOperation,
+    StateChanges,
     Transaction,
     Transactions,
     TransactionsApiV2,
@@ -44,33 +48,40 @@ defmodule Explorer.Application do
     base_children = [
       Explorer.Repo,
       Explorer.Repo.Replica1,
-      Explorer.Repo.Account,
       Explorer.Vault,
       Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor}, id: GenesisDataTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.LookUpSmartContractSourcesTaskSupervisor},
+        id: LookUpSmartContractSourcesTaskSupervisor
+      ),
       Explorer.SmartContract.SolcDownloader,
       Explorer.SmartContract.VyperDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
-      Transaction,
+      Accounts,
       AddressSum,
       AddressSumMinusBurnt,
+      BackgroundMigrations,
       Block,
+      BlockNumber,
       Blocks,
       GasPriceOracle,
       GasUsage,
       NetVersion,
-      BlockNumber,
-      con_cache_child_spec(MarketHistoryCache.cache_name()),
-      con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
+      PendingBlockOperation,
+      Transaction,
+      StateChanges,
       Transactions,
       TransactionsApiV2,
-      Accounts,
       Uncles,
-      {Redix, redix_opts()}
+      AddressesTabsCounters,
+      con_cache_child_spec(MarketHistoryCache.cache_name()),
+      con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
+      {Redix, redix_opts()},
+      {Explorer.Utility.MissingRangesManipulator, []}
     ]
 
     children = base_children ++ configurable_children()
@@ -81,41 +92,79 @@ defmodule Explorer.Application do
   end
 
   defp configurable_children do
-    [
-      configure(Explorer.ExchangeRates),
-      configure(Explorer.ExchangeRates.TokenExchangeRates),
-      configure(Explorer.ChainSpec.GenesisData),
-      configure(Explorer.Market.History.Cataloger),
-      configure(Explorer.Chain.Cache.ContractsCounter),
-      configure(Explorer.Chain.Cache.NewContractsCounter),
-      configure(Explorer.Chain.Cache.VerifiedContractsCounter),
-      configure(Explorer.Chain.Cache.NewVerifiedContractsCounter),
-      configure(Explorer.Chain.Cache.TransactionActionTokensData),
-      configure(Explorer.Chain.Cache.TransactionActionUniswapPools),
-      configure(Explorer.Chain.Cache.WithdrawalsSum),
-      configure(Explorer.Chain.Transaction.History.Historian),
-      configure(Explorer.Chain.Events.Listener),
-      configure(Explorer.Counters.AddressesWithBalanceCounter),
-      configure(Explorer.Counters.AddressesCounter),
-      configure(Explorer.Counters.AddressTransactionsCounter),
-      configure(Explorer.Counters.AddressTokenTransfersCounter),
-      configure(Explorer.Counters.AddressTransactionsGasUsageCounter),
-      configure(Explorer.Counters.AddressTokenUsdSum),
-      configure(Explorer.Counters.TokenHoldersCounter),
-      configure(Explorer.Counters.TokenTransfersCounter),
-      configure(Explorer.Counters.BlockBurnedFeeCounter),
-      configure(Explorer.Counters.BlockPriorityFeeCounter),
-      configure(Explorer.Counters.AverageBlockTime),
-      configure(Explorer.Counters.Bridge),
-      configure(Explorer.Validator.MetadataProcessor),
-      configure(Explorer.Tags.AddressTag.Cataloger),
-      configure(MinMissingBlockNumber),
-      configure(TokenTransferTokenIdMigration.Supervisor),
-      configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
-      configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
-      sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
-    ]
-    |> List.flatten()
+    configurable_children_set =
+      [
+        configure(Explorer.ExchangeRates),
+        configure(Explorer.ExchangeRates.TokenExchangeRates),
+        configure(Explorer.ChainSpec.GenesisData),
+        configure(Explorer.Market.History.Cataloger),
+        configure(Explorer.Chain.Cache.ContractsCounter),
+        configure(Explorer.Chain.Cache.NewContractsCounter),
+        configure(Explorer.Chain.Cache.VerifiedContractsCounter),
+        configure(Explorer.Chain.Cache.NewVerifiedContractsCounter),
+        configure(Explorer.Chain.Cache.TransactionActionTokensData),
+        configure(Explorer.Chain.Cache.TransactionActionUniswapPools),
+        configure(Explorer.Chain.Cache.WithdrawalsSum),
+        configure(Explorer.Chain.Transaction.History.Historian),
+        configure(Explorer.Chain.Events.Listener),
+        configure(Explorer.Counters.AddressesWithBalanceCounter),
+        configure(Explorer.Counters.AddressesCounter),
+        configure(Explorer.Counters.AddressTransactionsCounter),
+        configure(Explorer.Counters.AddressTokenTransfersCounter),
+        configure(Explorer.Counters.AddressTransactionsGasUsageCounter),
+        configure(Explorer.Counters.AddressTokenUsdSum),
+        configure(Explorer.Counters.TokenHoldersCounter),
+        configure(Explorer.Counters.TokenTransfersCounter),
+        configure(Explorer.Counters.BlockBurntFeeCounter),
+        configure(Explorer.Counters.BlockPriorityFeeCounter),
+        configure(Explorer.Counters.AverageBlockTime),
+        configure(Explorer.Validator.MetadataProcessor),
+        configure(Explorer.Tags.AddressTag.Cataloger),
+        configure(MinMissingBlockNumber),
+        configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
+        configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
+        configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
+        sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
+        configure(Explorer.Chain.Cache.RootstockLockedBTC),
+        configure(Explorer.Chain.Cache.OptimismFinalizationPeriod),
+        configure(Explorer.Migrator.TransactionsDenormalization),
+        configure(Explorer.Migrator.AddressCurrentTokenBalanceTokenType),
+        configure(Explorer.Migrator.AddressTokenBalanceTokenType),
+        configure(Explorer.Migrator.SanitizeMissingBlockRanges),
+        configure(Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers),
+        configure(Explorer.Migrator.TokenTransferTokenType),
+        configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, "stability")
+      ]
+      |> List.flatten()
+
+    repos_by_chain_type() ++ account_repo() ++ configurable_children_set
+  end
+
+  defp repos_by_chain_type do
+    if Mix.env() == :test do
+      [
+        Explorer.Repo.Beacon,
+        Explorer.Repo.Optimism,
+        Explorer.Repo.PolygonEdge,
+        Explorer.Repo.PolygonZkevm,
+        Explorer.Repo.RSK,
+        Explorer.Repo.Shibarium,
+        Explorer.Repo.Suave,
+        Explorer.Repo.BridgedTokens,
+        Explorer.Repo.Filecoin,
+        Explorer.Repo.Stability
+      ]
+    else
+      []
+    end
+  end
+
+  defp account_repo do
+    if System.get_env("ACCOUNT_DATABASE_URL") || Mix.env() == :test do
+      [Explorer.Repo.Account]
+    else
+      []
+    end
   end
 
   defp should_start?(process) do
@@ -130,10 +179,16 @@ defmodule Explorer.Application do
     end
   end
 
-  defp sc_microservice_configure(process) do
-    config = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, [])
+  defp configure_chain_type_dependent_process(process, chain_type) do
+    if Application.get_env(:explorer, :chain_type) == chain_type do
+      process
+    else
+      []
+    end
+  end
 
-    if config[:enabled] && config[:type] == "eth_bytecode_db" do
+  defp sc_microservice_configure(process) do
+    if Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)[:eth_bytecode_db?] do
       process
     else
       []

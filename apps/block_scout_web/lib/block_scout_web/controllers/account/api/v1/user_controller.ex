@@ -2,19 +2,29 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
+  import BlockScoutWeb.Chain,
+    only: [
+      next_page_params: 3,
+      paging_options: 1,
+      split_list_by_page: 1
+    ]
+
+  import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
+
   import Ecto.Query, only: [from: 2]
 
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Explorer.Account.CustomABI
   alias Explorer.Account.{Identity, PublicTagsRequest, TagAddress, TagTransaction, WatchlistAddress}
-  alias Explorer.ExchangeRates.Token
-  alias Explorer.{Market, Repo}
+  alias Explorer.{Chain, Market, PagingOptions, Repo}
   alias Plug.CSRFProtection
 
   action_fallback(BlockScoutWeb.Account.Api.V1.FallbackController)
 
   @ok_message "OK"
+  @token_balances_amount 150
 
   def info(conn, _params) do
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
@@ -25,17 +35,85 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     end
   end
 
-  def watchlist(conn, _params) do
+  def watchlist_old(conn, _params) do
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
          {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)},
          watchlist_with_addresses <- preload_watchlist_addresses(watchlist) do
+      watchlist_addresses =
+        Enum.map(watchlist_with_addresses.watchlist_addresses, fn wa ->
+          balances =
+            Chain.fetch_paginated_last_token_balances(wa.address_hash,
+              paging_options: %PagingOptions{page_size: @token_balances_amount + 1}
+            )
+
+          count = Enum.count(balances)
+          overflow? = count > @token_balances_amount
+
+          fiat_sum =
+            balances
+            |> Enum.take(@token_balances_amount)
+            |> Enum.reduce(Decimal.new(0), fn tb, acc -> Decimal.add(acc, tb.fiat_value || 0) end)
+
+          %WatchlistAddress{
+            wa
+            | tokens_fiat_value: fiat_sum,
+              tokens_count: min(count, @token_balances_amount),
+              tokens_overflow: overflow?
+          }
+        end)
+
       conn
       |> put_status(200)
       |> render(:watchlist_addresses, %{
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        watchlist_addresses: watchlist_with_addresses.watchlist_addresses
+        exchange_rate: Market.get_coin_exchange_rate(),
+        watchlist_addresses: watchlist_addresses
+      })
+    end
+  end
+
+  def watchlist(conn, params) do
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
+         {:watchlist, %{watchlists: [watchlist | _]}} <-
+           {:watchlist, Repo.account_repo().preload(identity, :watchlists)} do
+      results_plus_one = WatchlistAddress.get_watchlist_addresses_by_watchlist_id(watchlist.id, paging_options(params))
+
+      {watchlist_addresses, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params =
+        next_page |> next_page_params(watchlist_addresses, delete_parameters_from_next_page_params(params))
+
+      watchlist_addresses_prepared =
+        Enum.map(watchlist_addresses, fn wa ->
+          balances =
+            Chain.fetch_paginated_last_token_balances(wa.address_hash,
+              paging_options: %PagingOptions{page_size: @token_balances_amount + 1}
+            )
+
+          count = Enum.count(balances)
+          overflow? = count > @token_balances_amount
+
+          fiat_sum =
+            balances
+            |> Enum.take(@token_balances_amount)
+            |> Enum.reduce(Decimal.new(0), fn tb, acc -> Decimal.add(acc, tb.fiat_value || 0) end)
+
+          %WatchlistAddress{
+            wa
+            | tokens_fiat_value: fiat_sum,
+              tokens_count: min(count, @token_balances_amount),
+              tokens_overflow: overflow?
+          }
+        end)
+
+      conn
+      |> put_status(200)
+      |> render(:watchlist_addresses, %{
+        exchange_rate: Market.get_coin_exchange_rate(),
+        watchlist_addresses: watchlist_addresses_prepared,
+        next_page_params: next_page_params
       })
     end
   end
@@ -103,7 +181,7 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       |> put_status(200)
       |> render(:watchlist_address, %{
         watchlist_address: watchlist_address,
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_coin_exchange_rate()
       })
     end
   end
@@ -160,18 +238,33 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
       |> put_status(200)
       |> render(:watchlist_address, %{
         watchlist_address: watchlist_address,
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+        exchange_rate: Market.get_coin_exchange_rate()
       })
     end
   end
 
-  def tags_address(conn, _params) do
+  def tags_address_old(conn, _params) do
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
          {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
          address_tags <- TagAddress.get_tags_address_by_identity_id(identity.id) do
       conn
       |> put_status(200)
       |> render(:address_tags, %{address_tags: address_tags})
+    end
+  end
+
+  def tags_address(conn, params) do
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)} do
+      results_plus_one = TagAddress.get_tags_address_by_identity_id(identity.id, paging_options(params))
+
+      {tags, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params = next_page |> next_page_params(tags, delete_parameters_from_next_page_params(params))
+
+      conn
+      |> put_status(200)
+      |> render(:address_tags, %{address_tags: tags, next_page_params: next_page_params})
     end
   end
 
@@ -219,13 +312,28 @@ defmodule BlockScoutWeb.Account.Api.V1.UserController do
     end
   end
 
-  def tags_transaction(conn, _params) do
+  def tags_transaction_old(conn, _params) do
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
          {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
          transaction_tags <- TagTransaction.get_tags_transaction_by_identity_id(identity.id) do
       conn
       |> put_status(200)
       |> render(:transaction_tags, %{transaction_tags: transaction_tags})
+    end
+  end
+
+  def tags_transaction(conn, params) do
+    with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
+         {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)} do
+      results_plus_one = TagTransaction.get_tags_transaction_by_identity_id(identity.id, paging_options(params))
+
+      {tags, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params = next_page |> next_page_params(tags, delete_parameters_from_next_page_params(params))
+
+      conn
+      |> put_status(200)
+      |> render(:transaction_tags, %{transaction_tags: tags, next_page_params: next_page_params})
     end
   end
 

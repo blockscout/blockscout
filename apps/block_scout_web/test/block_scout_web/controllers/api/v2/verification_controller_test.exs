@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
 
       request = post(conn, "/api/v2/smart-contracts/#{contract_address.hash}/verification/via/flattened-code", params)
 
-      assert %{"message" => "Verification started"} = json_response(request, 200)
+      assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{status: "success"},
@@ -118,7 +118,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
 
       request = post(conn, "/api/v2/smart-contracts/#{contract_address.hash}/verification/via/flattened-code", params)
 
-      assert %{"message" => "Verification started"} = json_response(request, 200)
+      assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{status: "error", errors: %{name: ["Wrong contract name, please try again."]}},
@@ -198,7 +198,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
           body
         )
 
-      assert %{"message" => "Verification started"} = json_response(request, 200)
+      assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{status: "success"},
@@ -222,7 +222,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
     end
 
     test "verify contract from sourcify repo", %{conn: conn} do
-      address = "0x18d89C12e9463Be6343c35C9990361bA4C42AfC2"
+      address = "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1"
 
       _contract = insert(:address, hash: address, contract_code: "0x01")
 
@@ -259,7 +259,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
           body
         )
 
-      assert %{"message" => "Verification started"} = json_response(request, 200)
+      assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{status: "success"},
@@ -329,7 +329,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
 
       request = post(conn, "/api/v2/smart-contracts/#{contract_address.hash}/verification/via/vyper-code", params)
 
-      assert %{"message" => "Verification started"} = json_response(request, 200)
+      assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{status: "success"},

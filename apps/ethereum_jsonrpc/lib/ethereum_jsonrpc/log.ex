@@ -33,8 +33,7 @@ defmodule EthereumJSONRPC.Log do
       ...>     "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
       ...>     "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
       ...>     "transactionIndex" => 0,
-      ...>     "transactionLogIndex" => 0,
-      ...>     "type" => "mined"
+      ...>     "transactionLogIndex" => 0
       ...>   }
       ...> )
       %{
@@ -47,11 +46,8 @@ defmodule EthereumJSONRPC.Log do
         index: 0,
         second_topic: nil,
         third_topic: nil,
-        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-        type: "mined"
+        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
       }
-
-  Geth does not supply a `"type"`
 
       iex> EthereumJSONRPC.Log.elixir_to_params(
       ...>   %{
@@ -82,18 +78,16 @@ defmodule EthereumJSONRPC.Log do
       }
 
   """
-  def elixir_to_params(
-        %{
-          "address" => address_hash,
-          "blockNumber" => block_number,
-          "blockHash" => block_hash,
-          "data" => data,
-          "polarity" => polarity,
-          "logIndex" => index,
-          "topics" => topics,
-          "transactionHash" => transaction_hash
-        } = elixir
-      ) do
+  def elixir_to_params(%{
+        "address" => address_hash,
+        "blockNumber" => block_number,
+        "blockHash" => block_hash,
+        "data" => data,
+        "polarity" => polarity,
+        "logIndex" => index,
+        "topics" => topics,
+        "transactionHash" => transaction_hash
+      }) do
     %{
       address_hash: address_hash,
       block_number: block_number,
@@ -104,7 +98,6 @@ defmodule EthereumJSONRPC.Log do
       transaction_hash: transaction_hash
     }
     |> put_topics(topics)
-    |> put_type(elixir)
   end
 
   @doc """
@@ -120,8 +113,7 @@ defmodule EthereumJSONRPC.Log do
       ...>   "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
       ...>   "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
       ...>   "transactionIndex" => "0x0",
-      ...>   "transactionLogIndex" => "0x0",
-      ...>   "type" => "mined"
+      ...>   "transactionLogIndex" => "0x0"
       ...>   }
       ...> )
       %{
@@ -133,8 +125,7 @@ defmodule EthereumJSONRPC.Log do
         "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
         "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
         "transactionIndex" => 0,
-        "transactionLogIndex" => 0,
-        "type" => "mined"
+        "transactionLogIndex" => 0
       }
 
   Geth includes a `"removed"` key
@@ -174,7 +165,7 @@ defmodule EthereumJSONRPC.Log do
   end
 
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(polarity address blockHash data removed topics transactionHash type timestamp),
+       when key in ~w(polarity address blockHash data removed topics transactionHash timestamp),
        do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(blockNumber logIndex transactionIndex transactionLogIndex) do
@@ -185,6 +176,10 @@ defmodule EthereumJSONRPC.Log do
     end
   end
 
+  defp entry_to_elixir(_) do
+    {nil, nil}
+  end
+
   defp put_topics(params, topics) when is_map(params) and is_list(topics) do
     params
     |> Map.put(:first_topic, Enum.at(topics, 0))
@@ -192,10 +187,4 @@ defmodule EthereumJSONRPC.Log do
     |> Map.put(:third_topic, Enum.at(topics, 2))
     |> Map.put(:fourth_topic, Enum.at(topics, 3))
   end
-
-  defp put_type(params, %{"type" => type}) do
-    Map.put(params, :type, type)
-  end
-
-  defp put_type(params, _), do: params
 end

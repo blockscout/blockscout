@@ -1,10 +1,15 @@
 defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
-  alias ABI.{FunctionSelector, TypeDecoder}
+  require Logger
+
+  import Explorer.Helper, only: [decode_data: 2]
+
+  alias ABI.FunctionSelector
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
-  alias Explorer.SmartContract.Helper
+  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.SmartContract.Proxy.EIP1167
 
   def render("scripts.html", %{conn: conn}) do
     render_scripts(conn, "address_contract/code_highlighting.js")
@@ -34,9 +39,12 @@ defmodule BlockScoutWeb.AddressContractView do
       |> decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn {val, %{"type" => type}}, {count, acc} ->
-        formatted_val = Helper.sanitize_input(val_to_string(val, type, conn))
+        formatted_val = val_to_string(val, type, conn)
 
-        {count + 1, "#{acc}Arg [#{count}] (<b>#{Helper.sanitize_input(type)}</b>) : #{formatted_val}\n"}
+        {count + 1,
+         ~E"""
+         <%= acc %>Arg [<%= count %>] (<b><%= type %></b>) : <%= formatted_val %>
+         """}
       end)
 
     result
@@ -82,27 +90,19 @@ defmodule BlockScoutWeb.AddressContractView do
 
   defp get_formatted_address_data(address, address_hash, conn) do
     if address != nil do
-      "<a href=" <> address_path(conn, :show, address) <> ">" <> address_hash <> "</a>"
+      ~E"<a href=<%= address_path(conn, :show, address) %>><%= address_hash %></a>"
     else
       address_hash
     end
-  end
-
-  def decode_data("0x" <> encoded_data, types) do
-    decode_data(encoded_data, types)
-  end
-
-  def decode_data(encoded_data, types) do
-    encoded_data
-    |> Base.decode16!(case: :mixed)
-    |> TypeDecoder.decode_raw(types)
   end
 
   def format_external_libraries(libraries, conn) do
     Enum.reduce(libraries, "", fn %{name: name, address_hash: address_hash}, acc ->
       address = get_address(address_hash)
 
-      "#{acc}<span class=\"hljs-title\">#{Helper.sanitize_input(name)}</span> : #{get_formatted_address_data(address, address_hash, conn)}  \n"
+      ~E"""
+      <%= acc %><span class="hljs-title"><%= name %></span> : <%= get_formatted_address_data(address, address_hash, conn) %>
+      """
     end)
   end
 
@@ -134,6 +134,12 @@ defmodule BlockScoutWeb.AddressContractView do
     chain_id = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:chain_id]
     repo_url = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:repo_url]
     match = if partial_match, do: "/partial_match/", else: "/full_match/"
-    repo_url <> match <> chain_id <> "/" <> checksummed_hash <> "/"
+
+    if chain_id do
+      repo_url <> match <> chain_id <> "/" <> checksummed_hash <> "/"
+    else
+      Logger.warning("chain_id is nil. Please set CHAIN_ID env variable.")
+      nil
+    end
   end
 end

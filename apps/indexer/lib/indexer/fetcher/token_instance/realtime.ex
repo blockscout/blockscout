@@ -32,10 +32,12 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
   end
 
   @impl BufferedTask
-  def run([%{contract_address_hash: hash, token_id: token_id}], _json_rpc_named_arguments) do
-    if not Chain.token_instance_exists?(token_id, hash) do
-      fetch_instance(hash, token_id)
-    end
+  def run(token_instances, _) when is_list(token_instances) do
+    token_instances
+    |> Enum.filter(fn %{contract_address_hash: hash, token_id: token_id} ->
+      Chain.token_instance_with_unfetched_metadata?(token_id, hash)
+    end)
+    |> batch_fetch_instances()
 
     :ok
   end
@@ -75,7 +77,7 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
     [
       flush_interval: 100,
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
-      max_batch_size: @default_max_batch_size,
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
       poll: false,
       task_supervisor: __MODULE__.TaskSupervisor
     ]

@@ -1,7 +1,32 @@
 defmodule ConfigHelper do
   import Bitwise
   alias Explorer.ExchangeRates.Source
+  alias Explorer.Market.History.Source.{MarketCap, Price, TVL}
   alias Indexer.Transform.Blocks
+
+  def repos do
+    base_repos = [Explorer.Repo, Explorer.Repo.Account]
+
+    repos =
+      case System.get_env("CHAIN_TYPE") do
+        "ethereum" -> base_repos ++ [Explorer.Repo.Beacon]
+        "optimism" -> base_repos ++ [Explorer.Repo.Optimism]
+        "polygon_edge" -> base_repos ++ [Explorer.Repo.PolygonEdge]
+        "polygon_zkevm" -> base_repos ++ [Explorer.Repo.PolygonZkevm]
+        "rsk" -> base_repos ++ [Explorer.Repo.RSK]
+        "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
+        "suave" -> base_repos ++ [Explorer.Repo.Suave]
+        "filecoin" -> base_repos ++ [Explorer.Repo.Filecoin]
+        "stability" -> base_repos ++ [Explorer.Repo.Stability]
+        _ -> base_repos
+      end
+
+    if System.get_env("BRIDGED_TOKENS_ENABLED") do
+      repos ++ [Explorer.Repo.BridgedTokens]
+    else
+      repos
+    end
+  end
 
   @spec hackney_options() :: any()
   def hackney_options() do
@@ -25,7 +50,7 @@ defmodule ConfigHelper do
     |> :timer.seconds()
   end
 
-  @spec parse_integer_env_var(String.t(), String.t()) :: non_neg_integer()
+  @spec parse_integer_env_var(String.t(), integer()) :: non_neg_integer()
   def parse_integer_env_var(env_var, default_value) do
     env_var
     |> safe_get_env(to_string(default_value))
@@ -33,6 +58,17 @@ defmodule ConfigHelper do
     |> case do
       {integer, _} -> integer
       _ -> 0
+    end
+  end
+
+  @spec parse_integer_or_nil_env_var(String.t()) :: non_neg_integer() | nil
+  def parse_integer_or_nil_env_var(env_var) do
+    env_var
+    |> System.get_env("")
+    |> Integer.parse()
+    |> case do
+      {integer, _} -> integer
+      _ -> nil
     end
   end
 
@@ -88,10 +124,37 @@ defmodule ConfigHelper do
 
   @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap
   def exchange_rates_source do
-    cond do
-      System.get_env("EXCHANGE_RATES_SOURCE") == "coin_gecko" -> Source.CoinGecko
-      System.get_env("EXCHANGE_RATES_SOURCE") == "coin_market_cap" -> Source.CoinMarketCap
-      true -> Source.CoinGecko
+    case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
+      "coin_gecko" -> Source.CoinGecko
+      "coin_market_cap" -> Source.CoinMarketCap
+      _ -> Source.CoinGecko
+    end
+  end
+
+  @spec exchange_rates_market_cap_source() :: MarketCap.CoinGecko | MarketCap.CoinMarketCap
+  def exchange_rates_market_cap_source do
+    case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
+      "coin_gecko" -> MarketCap.CoinGecko
+      "coin_market_cap" -> MarketCap.CoinMarketCap
+      _ -> MarketCap.CoinGecko
+    end
+  end
+
+  @spec exchange_rates_tvl_source() :: TVL.DefiLlama
+  def exchange_rates_tvl_source do
+    case System.get_env("EXCHANGE_RATES_TVL_SOURCE") do
+      "defillama" -> TVL.DefiLlama
+      _ -> TVL.DefiLlama
+    end
+  end
+
+  @spec exchange_rates_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare
+  def exchange_rates_price_source do
+    case System.get_env("EXCHANGE_RATES_PRICE_SOURCE") do
+      "coin_gecko" -> Price.CoinGecko
+      "coin_market_cap" -> Price.CoinMarketCap
+      "crypto_compare" -> Price.CryptoCompare
+      _ -> Price.CryptoCompare
     end
   end
 
@@ -118,5 +181,22 @@ defmodule ConfigHelper do
       transformer ->
         transformer
     end
+  end
+
+  @spec parse_json_env_var(String.t(), String.t()) :: any()
+  def parse_json_env_var(env_var, default_value) do
+    env_var
+    |> safe_get_env(default_value)
+    |> Jason.decode!()
+  rescue
+    err -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(err)}"
+  end
+
+  @spec chain_type() :: String.t()
+  def chain_type, do: System.get_env("CHAIN_TYPE") || "default"
+
+  @spec eth_call_url(String.t() | nil) :: String.t() | nil
+  def eth_call_url(default \\ nil) do
+    System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URL") || System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || default
   end
 end

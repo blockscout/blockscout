@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
   Background smart contract verification worker.
   """
 
+  require Logger
+
   use Que.Worker, concurrency: 5
 
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
@@ -47,15 +49,12 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
   end
 
   def perform({"json_api", %{"address_hash" => address_hash} = params, json_input, uid}) when is_binary(uid) do
-    VerificationStatus.insert_status(uid, :pending, address_hash)
+    publish_and_update_status(:publish_with_standard_json_input, [params, json_input], address_hash, uid)
+  end
 
-    case Publisher.publish_with_standard_json_input(params, json_input) do
-      {:ok, _contract} ->
-        VerificationStatus.update_status(uid, :pass)
-
-      {:error, _changeset} ->
-        VerificationStatus.update_status(uid, :fail)
-    end
+  def perform({"flattened_api", %{"address_hash" => address_hash} = params, external_libraries, uid})
+      when is_binary(uid) do
+    publish_and_update_status(:publish, [address_hash, params, external_libraries], address_hash, uid)
   end
 
   defp broadcast(method, address_hash, args, conn \\ nil) do
@@ -65,13 +64,31 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
           result
 
         {:error, changeset} ->
+          Logger.error(
+            "Solidity smart-contract verification #{address_hash} failed because of the error: #{inspect(changeset)}"
+          )
+
           {:error, changeset}
       end
+
+    Logger.info("Smart-contract #{address_hash} verification: broadcast verification results")
 
     if conn do
       EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)
     else
       EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result}}], :on_demand)
+    end
+  end
+
+  defp publish_and_update_status(method, args, address_hash, uid) do
+    VerificationStatus.insert_status(uid, :pending, address_hash)
+
+    case apply(Publisher, method, args) do
+      {:ok, _contract} ->
+        VerificationStatus.update_status(uid, :pass)
+
+      {:error, _changeset} ->
+        VerificationStatus.update_status(uid, :fail)
     end
   end
 end

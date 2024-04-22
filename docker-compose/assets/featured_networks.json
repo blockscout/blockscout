@@ -1,0 +1,128 @@
+[
+   {
+      "title":"Block Brawlers",
+      "url":"https://frayed-decent-antares.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/frayed-decent-antares.svg"
+   },
+   {
+      "title":"Calypso Hub",
+      "url":"https://honorable-steel-rasalhague.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/honorable-steel-rasalhague.svg"
+   },
+   {
+      "title":"Calypso Hub",
+      "url":"https://giant-half-dual-testnet.explorer.testnet.skalenodes.com/",
+      "group":"Testnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/testnet/logos/giant-half-dual-testnet.png"
+   },
+   {
+      "title":"Crypto Colosseum",
+      "url":"https://haunting-devoted-deneb.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/logos/haunting-devoted-deneb.png"
+   },
+   {
+      "title":"CryptoBlades",
+      "url":"https://affectionate-immediate-pollux.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/affectionate-immediate-pollux.svg"
+   },
+   {
+      "title":"Curio DAO",
+      "url":"https://fit-betelgeuse.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/logos/fit-betelgeuse.png"
+   },
+   {
+      "title":"DEXGAME",
+      "url":"https://round-hasty-alsafi.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/logos/round-hasty-alsafi.png"
+   },
+   {
+      "title":"Europa Liquidity Hub",
+      "url":"https://elated-tan-skat.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/elated-tan-skat.svg"
+   },
+   {
+      "title":"Europa Liquidity Hub",
+      "url":"https://juicy-low-small-testnet.explorer.testnet.skalenodes.com/",
+      "group":"Testnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/testnet/logos/juicy-low-small-testnet.png"
+   },
+   {
+      "title":"Exorde Network",
+      "url":"https://light-vast-diphda.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://assets-global.website-files.com/620398f412d5829aa28fbb86/62278b9e5b5e997aa9683b35_mark-logo-color.svg"
+   },
+   {
+      "title":"Fireside",
+      "url":"https://curly-red-alterf.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/curly-red-alterf.svg"
+   },
+   {
+      "title":"HUMAN Protocol",
+      "url":"https://wan-red-ain.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/wan-red-ain.svg"
+   },
+   {
+      "title":"Ivy Cash",
+      "url":"https://plain-rotanev.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/logos/plain-rotanev.png"
+   },
+   {
+      "title":"Nebula Gaming Hub",
+      "url":"https://green-giddy-denebola.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/green-giddy-denebola.svg"
+   },
+   {
+      "title":"Nebula Gaming Hub",
+      "url":"https://lanky-ill-funny-testnet.explorer.testnet.skalenodes.com/",
+      "group":"Testnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/testnet/logos/lanky-ill-funny-testnet.png"
+   },
+   {
+      "title":"Razor Network",
+      "url":"https://turbulent-unique-scheat.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/turbulent-unique-scheat.svg"
+   },
+   {
+      "title":"Solydaria",
+      "url":"https://portly-passionate-sirius.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/logos/portly-passionate-sirius.png"
+   },
+   {
+      "title":"StrayShot",
+      "url":"https://fussy-smoggy-megrez.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/fussy-smoggy-megrez.svg"
+   },
+   {
+      "title":"StreamMyScreen",
+      "url":"https://adorable-quaint-bellatrix.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/icons/adorable-quaint-bellatrix.svg"
+   },
+   {
+      "title":"Titan AI Hub",
+      "url":"https://parallel-stormy-spica.explorer.mainnet.skalenodes.com/",
+      "group":"Mainnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/mainnet/logos/parallel-stormy-spica.png"
+   },
+   {
+      "title":"Titan AI Hub",
+      "url":"https://aware-fake-trim-testnet.explorer.testnet.skalenodes.com/",
+      "group":"Testnets",
+      "icon":"https://raw.githubusercontent.com/skalenetwork/skale-network/master/metadata/testnet/logos/aware-fake-trim-testnet.png"
+   }
+]

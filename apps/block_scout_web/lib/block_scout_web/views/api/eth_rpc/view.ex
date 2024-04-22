@@ -59,6 +59,14 @@ defmodule BlockScoutWeb.API.EthRPC.View do
       """
     end
 
+    def encode(%BlockScoutWeb.API.EthRPC.View{id: id, error: error}, _options) when is_map(error) do
+      error = Poison.encode!(error)
+
+      """
+      {"jsonrpc":"2.0","error": #{error},"id": #{id}}
+      """
+    end
+
     def encode(%BlockScoutWeb.API.EthRPC.View{id: id, error: error}, _options) do
       """
       {"jsonrpc":"2.0","error": "#{error}","id": #{id}}
@@ -72,6 +80,14 @@ defmodule BlockScoutWeb.API.EthRPC.View do
 
       """
       {"jsonrpc":"2.0","result":#{result},"id":#{id}}
+      """
+    end
+
+    def encode(%BlockScoutWeb.API.EthRPC.View{id: id, error: error}, _options) when is_map(error) do
+      error = Jason.encode!(error)
+
+      """
+      {"jsonrpc":"2.0","error": #{error},"id": #{id}}
       """
     end
 

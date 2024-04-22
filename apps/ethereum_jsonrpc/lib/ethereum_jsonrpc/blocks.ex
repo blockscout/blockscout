@@ -34,6 +34,7 @@ defmodule EthereumJSONRPC.Blocks do
   def from_responses(responses, id_to_params) when is_list(responses) and is_map(id_to_params) do
     %{errors: errors, blocks: blocks} =
       responses
+      |> EthereumJSONRPC.sanitize_responses(id_to_params)
       |> Enum.map(&Block.from_response(&1, id_to_params))
       |> Enum.reduce(%{errors: [], blocks: []}, fn
         {:ok, block}, %{blocks: blocks} = acc ->
@@ -114,9 +115,23 @@ defmodule EthereumJSONRPC.Blocks do
           state_root: "0xfad4af258fd11939fae0c6c6eec9d340b1caac0b0196fd9a1bc3f489c5bf00b3",
           timestamp: Timex.parse!("1970-01-01T00:00:00Z", "{ISO:Extended:Z}"),
           total_difficulty: 131072,
-          transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-          uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"],
-          withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
+          transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
+  #{case Application.compile_env(:explorer, :chain_type) do
+    "rsk" -> """
+              bitcoin_merged_mining_coinbase_transaction: nil,\
+              bitcoin_merged_mining_header: nil,\
+              bitcoin_merged_mining_merkle_proof: nil,\
+              hash_for_merged_mining: nil,\
+              minimum_gas_price: nil,\
+      """
+    "ethereum" -> """
+              withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
+              blob_gas_used: 0,\
+              excess_blob_gas: 0,\
+      """
+    _ -> ""
+  end}
+          uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"]
         }
       ]
 

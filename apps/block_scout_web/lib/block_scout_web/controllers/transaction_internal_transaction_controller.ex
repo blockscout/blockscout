@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
 
   alias BlockScoutWeb.{AccessHelper, Controller, InternalTransactionView, TransactionController}
   alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Chain.DenormalizationHelper
   alias Phoenix.View
 
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
@@ -18,20 +18,19 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       full_options =
-        Keyword.merge(
-          [
-            necessity_by_association: %{
-              [created_contract_address: :names] => :optional,
-              [from_address: :names] => :optional,
-              [to_address: :names] => :optional,
-              [transaction: :block] => :optional,
-              [created_contract_address: :smart_contract] => :optional,
-              [from_address: :smart_contract] => :optional,
-              [to_address: :smart_contract] => :optional
-            }
-          ],
-          paging_options(params)
-        )
+        [
+          necessity_by_association: %{
+            [created_contract_address: :names] => :optional,
+            [from_address: :names] => :optional,
+            [to_address: :names] => :optional,
+            [created_contract_address: :smart_contract] => :optional,
+            [from_address: :smart_contract] => :optional,
+            [to_address: :smart_contract] => :optional,
+            :transaction => :optional
+          }
+        ]
+        |> DenormalizationHelper.extend_transaction_block_necessity(:optional)
+        |> Keyword.merge(paging_options(params))
 
       internal_transactions_plus_one = Chain.transaction_to_internal_transactions(transaction_hash, full_options)
 
@@ -102,7 +101,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
       render(
         conn,
         "index.html",
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        exchange_rate: Market.get_coin_exchange_rate(),
         current_path: Controller.current_full_path(conn),
         current_user: current_user(conn),
         block_height: Chain.block_height(),
