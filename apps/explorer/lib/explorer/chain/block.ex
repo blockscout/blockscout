@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Block.Schema do
   alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
+  alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
                         "ethereum" ->
@@ -35,6 +36,20 @@ defmodule Explorer.Chain.Block.Schema do
                               has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
                               has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
                               has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
+                            end,
+                            2
+                          )
+
+                        "arbitrum" ->
+                          elem(
+                            quote do
+                              has_one(:arbitrum_batch_block, ArbitrumBatchBlock, foreign_key: :hash, references: :hash)
+                              has_one(:arbitrum_batch, through: [:arbitrum_batch_block, :batch])
+                              has_one(:arbitrum_commit_transaction, through: [:arbitrum_batch, :commit_transaction])
+
+                              has_one(:arbitrum_confirm_transaction,
+                                through: [:arbitrum_batch_block, :confirm_transaction]
+                              )
                             end,
                             2
                           )

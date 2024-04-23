@@ -114,6 +114,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           |> Map.put(:zksync_prove_transaction, :optional)
           |> Map.put(:zksync_execute_transaction, :optional)
 
+        "arbitrum" ->
+          necessity_by_association_with_actions
+          |> Map.put(:arbitrum_batch, :optional)
+          |> Map.put(:arbitrum_commit_transaction, :optional)
+          |> Map.put(:arbitrum_confirm_transaction, :optional)
+          |> Map.put(:arbitrum_message_to_l2, :optional)
+          |> Map.put(:arbitrum_message_from_l2, :optional)
+
         "suave" ->
           necessity_by_association_with_actions
           |> Map.put(:logs, :optional)
