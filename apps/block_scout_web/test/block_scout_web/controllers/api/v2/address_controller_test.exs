@@ -24,6 +24,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   alias Explorer.Account.WatchlistAddress
   alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Plug.Conn
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
@@ -1761,6 +1762,84 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/logs", response["next_page_params"])
       assert response_2nd_page = json_response(request_2nd_page, 200)
       check_paginated_response(response, response_2nd_page, logs)
+    end
+
+    # https://github.com/blockscout/blockscout/issues/9926
+    test "regression test for 9926", %{conn: conn} do
+      address = insert(:address, hash: "0x036cec1a199234fC02f72d29e596a09440825f1C")
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      log =
+        insert(:log,
+          transaction: tx,
+          index: 1,
+          block: tx.block,
+          block_number: tx.block_number,
+          address: address
+        )
+
+      bypass = Bypass.open()
+
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+      old_env_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      old_env_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Bypass.expect_once(bypass, "POST", "api/v1/#{chain_id}/addresses:batch_resolve_names", fn conn ->
+        Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "names" => %{
+              to_string(address) => "test.eth"
+            }
+          })
+        )
+      end)
+
+      Bypass.expect_once(bypass, "POST", "api/v1/metadata", fn conn ->
+        Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "addresses" => %{
+              to_string(address) => %{"tags" => [%{"slug" => "tag", "meta" => "{\"styles\":\"danger_high\"}"}]}
+            }
+          })
+        )
+      end)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      compare_item(log, Enum.at(response["items"], 0))
+      log = Enum.at(response["items"], 0)
+      assert log["address"]["ens_domain_name"] == "test.eth"
+      assert log["address"]["metadata"] == %{"tags" => [%{"slug" => "tag", "meta" => %{"styles" => "danger_high"}}]}
+
+      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
+      Bypass.down(bypass)
     end
 
     test "logs can be filtered by topic", %{conn: conn} do
