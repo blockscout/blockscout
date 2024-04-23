@@ -14,6 +14,8 @@
 
 ### 🐛 Bug Fixes
 
+- Handle "null" filter in api/v1/logs-csv ([#9933](https://github.com/blockscout/blockscout/issues/9933))
+- Fix metadata preload ([#9925](https://github.com/blockscout/blockscout/issues/9925))
 - `coin_price_change_percentage` calculation ([#9774](https://github.com/blockscout/blockscout/issues/9774))
 - Remove backend dependency in microservices.yml ([#9905](https://github.com/blockscout/blockscout/issues/9905))
 - Expand memory only if it was shrunk ([#9907](https://github.com/blockscout/blockscout/issues/9907))
