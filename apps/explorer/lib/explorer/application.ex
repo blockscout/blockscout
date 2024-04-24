@@ -173,7 +173,7 @@ defmodule Explorer.Application do
   end
 
   defp mud_repo do
-    if System.get_env("MUD_DATABASE_URL") || Mix.env() == :test do
+    if ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED") || Mix.env() == :test do
       [Explorer.Repo.Mud]
     else
       []

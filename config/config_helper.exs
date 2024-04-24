@@ -26,8 +26,8 @@ defmodule ConfigHelper do
 
     ext_repos =
       [
-        {System.get_env("BRIDGED_TOKENS_ENABLED"), Explorer.Repo.BridgedTokens},
-        {System.get_env("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud}
+        {parse_bool_env_var("BRIDGED_TOKENS_ENABLED"), Explorer.Repo.BridgedTokens},
+        {parse_bool_env_var("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud}
       ]
       |> Enum.filter(&elem(&1, 0))
       |> Enum.map(&elem(&1, 1))
