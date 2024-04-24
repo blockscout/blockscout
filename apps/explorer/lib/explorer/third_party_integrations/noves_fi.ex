@@ -9,12 +9,12 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   @recv_timeout 60_000
 
   @doc """
-  Proxy request to noves.fi API endpoints
+  Proxy request to Noves.fi API endpoints
   """
-  @spec noves_fi_api_request(String.t(), Plug.Conn.t(), :get | :post_transactions) :: {any(), integer()}
-  def noves_fi_api_request(url, conn, method \\ :get)
+  @spec api_request(String.t(), Plug.Conn.t(), :get | :post_transactions) :: {any(), integer()}
+  def api_request(url, conn, method \\ :get)
 
-  def noves_fi_api_request(url, conn, :post_transactions) do
+  def api_request(url, conn, :post_transactions) do
     headers = [{"apiKey", api_key()}, {"Content-Type", "application/json"}, {"accept", "text/plain"}]
 
     hashes =
@@ -38,7 +38,7 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
     end
   end
 
-  def noves_fi_api_request(url, conn, :get) do
+  def api_request(url, conn, :get) do
     headers = [{"apiKey", api_key()}]
 
     url_with_params = url <> "?" <> conn.query_string

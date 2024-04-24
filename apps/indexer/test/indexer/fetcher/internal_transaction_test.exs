@@ -511,7 +511,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     assert %{block_number: ^block_number, block_hash: ^block_hash} = Repo.one(PendingBlockOperation)
   end
 
-  if Application.compile_env(:explorer, :chain_type) == "arbitrum" do
+  if Application.compile_env(:explorer, :chain_type) == :arbitrum do
     test "fetches internal transactions from Arbitrum", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -618,7 +618,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   # Due to token-duality feature in Celo network (native coin transfers are
   # treated as token transfers), we need to fetch updated token balances after
   # parsing the internal transactions
-  if Application.compile_env(:explorer, :chain_type) == "celo" do
+  if Application.compile_env(:explorer, :chain_type) == :celo do
     defp start_token_balance_fetcher(json_rpc_named_arguments) do
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     end

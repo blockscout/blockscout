@@ -1,4 +1,4 @@
-defmodule Explorer.Token.InstanceMetadataRetrieverTest do
+defmodule Indexer.Fetcher.TokenInstance.MetadataRetrieverTest do
   use EthereumJSONRPC.Case
 
   alias Indexer.Fetcher.TokenInstance.MetadataRetriever
@@ -9,144 +9,204 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
   setup :verify_on_exit!
   setup :set_mox_global
 
-  @abi [
-    %{
-      "type" => "function",
-      "stateMutability" => "view",
-      "payable" => false,
-      "outputs" => [
-        %{"type" => "string", "name" => ""}
-      ],
-      "name" => "tokenURI",
-      "inputs" => [
-        %{
-          "type" => "uint256",
-          "name" => "_tokenId"
-        }
-      ],
-      "constant" => true
-    }
-  ]
-
-  @abi_uri [
-    %{
-      "type" => "function",
-      "stateMutability" => "view",
-      "payable" => false,
-      "outputs" => [
-        %{
-          "type" => "string",
-          "name" => "",
-          "internalType" => "string"
-        }
-      ],
-      "name" => "uri",
-      "inputs" => [
-        %{
-          "type" => "uint256",
-          "name" => "_id",
-          "internalType" => "uint256"
-        }
-      ],
-      "constant" => true
-    }
-  ]
-
-  describe "fetch_metadata/2" do
-    @tag :no_nethermind
-    @tag :no_geth
-    test "fetches json metadata", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        EthereumJSONRPC.Mox
-        |> expect(:json_rpc, fn [
-                                  %{
-                                    id: 0,
-                                    jsonrpc: "2.0",
-                                    method: "eth_call",
-                                    params: [
-                                      %{
-                                        data:
-                                          "0xc87b56dd000000000000000000000000000000000000000000000000fdd5b9fa9d4bfb20",
-                                        to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
-                                      },
-                                      "latest"
-                                    ]
-                                  }
-                                ],
-                                _options ->
-          {:ok,
-           [
-             %{
-               id: 0,
-               jsonrpc: "2.0",
-               result:
-                 "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003568747470733a2f2f7661756c742e7761727269646572732e636f6d2f31383239303732393934373636373130323439362e6a736f6e0000000000000000000000"
-             }
-           ]}
-        end)
-      end
-
-      assert %{
-               "c87b56dd" => {:ok, ["https://vault.warriders.com/18290729947667102496.json"]}
-             } ==
-               MetadataRetriever.query_contract(
-                 "0x5caebd3b32e210e85ce3e9d51638b9c445481567",
-                 %{
-                   "c87b56dd" => [18_290_729_947_667_102_496]
-                 },
-                 @abi
-               )
-    end
-
-    test "fetches json metadata for ERC-1155 token", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        EthereumJSONRPC.Mox
-        |> expect(:json_rpc, fn [
-                                  %{
-                                    id: 0,
-                                    jsonrpc: "2.0",
-                                    method: "eth_call",
-                                    params: [
-                                      %{
-                                        data:
-                                          "0x0e89341c000000000000000000000000000000000000000000000000fdd5b9fa9d4bfb20",
-                                        to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
-                                      },
-                                      "latest"
-                                    ]
-                                  }
-                                ],
-                                _options ->
-          {:ok,
-           [
-             %{
-               id: 0,
-               jsonrpc: "2.0",
-               result:
-                 "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003568747470733a2f2f7661756c742e7761727269646572732e636f6d2f31383239303732393934373636373130323439362e6a736f6e0000000000000000000000"
-             }
-           ]}
-        end)
-      end
-
-      assert %{
-               "0e89341c" => {:ok, ["https://vault.warriders.com/18290729947667102496.json"]}
-             } ==
-               MetadataRetriever.query_contract(
-                 "0x5caebd3b32e210e85ce3e9d51638b9c445481567",
-                 %{
-                   "0e89341c" => [18_290_729_947_667_102_496]
-                 },
-                 @abi_uri
-               )
-    end
-  end
-
-  describe "fetch_json/1" do
+  describe "fetch_json/4" do
     setup do
       bypass = Bypass.open()
 
       {:ok, bypass: bypass}
+    end
+
+    test "returns {:error, @no_uri_error} when empty uri is passed" do
+      error = {:error, "no uri"}
+      token_id = "TOKEN_ID"
+      hex_token_id = "HEX_TOKEN_ID"
+      from_base_uri = true
+
+      result = MetadataRetriever.fetch_json({:ok, [""]}, token_id, hex_token_id, from_base_uri)
+
+      assert result == error
+    end
+
+    test "returns {:error, @vm_execution_error} when 'execution reverted' error passed in uri" do
+      uri_error = {:error, "something happened: execution reverted"}
+      token_id = "TOKEN_ID"
+      hex_token_id = "HEX_TOKEN_ID"
+      from_base_uri = true
+      result_error = {:error, "VM execution error"}
+
+      result = MetadataRetriever.fetch_json(uri_error, token_id, hex_token_id, from_base_uri)
+
+      assert result == result_error
+    end
+
+    test "returns {:error, @vm_execution_error} when 'VM execution error' error passed in uri" do
+      error = {:error, "VM execution error"}
+      token_id = "TOKEN_ID"
+      hex_token_id = "HEX_TOKEN_ID"
+      from_base_uri = true
+
+      result = MetadataRetriever.fetch_json(error, token_id, hex_token_id, from_base_uri)
+
+      assert result == error
+    end
+
+    test "returns {:error, error} when all other errors passed in uri" do
+      error = {:error, "Some error"}
+      token_id = "TOKEN_ID"
+      hex_token_id = "HEX_TOKEN_ID"
+      from_base_uri = true
+
+      result = MetadataRetriever.fetch_json(error, token_id, hex_token_id, from_base_uri)
+
+      assert result == error
+    end
+
+    test "returns {:error, truncated_error} when long error passed in uri" do
+      error =
+        {:error,
+         "ERROR: Unable to establish a connection to the database server. The database server may be offline, or there could be a network issue preventing access. Please ensure that the database server is running and that the network configuration is correct. Additionally, check the database credentials and permissions to ensure they are valid. If the issue persists, contact your system administrator for further assistance. Error code: DB_CONN_FAILED_101234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"}
+
+      token_id = "TOKEN_ID"
+      hex_token_id = "HEX_TOKEN_ID"
+      from_base_uri = true
+
+      truncated_error =
+        {:error,
+         "ERROR: Unable to establish a connection to the database server. The database server may be offline, or there could be a network issue preventing access. Please ensure that the database server is running and that the network configuration is correct. Ad..."}
+
+      result = MetadataRetriever.fetch_json(error, token_id, hex_token_id, from_base_uri)
+
+      assert result == truncated_error
+    end
+
+    test "Constructs IPFS link with query param" do
+      configuration = Application.get_env(:indexer, :ipfs)
+
+      Application.put_env(:indexer, :ipfs,
+        gateway_url: Keyword.get(configuration, :gateway_url),
+        gateway_url_param_location: :query,
+        gateway_url_param_key: "x-apikey",
+        gateway_url_param_value: "mykey"
+      )
+
+      data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+
+      result = %{
+        "name" => "asda",
+        "description" => "asda",
+        "salePrice" => 34,
+        "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+        "collectionId" => "1871_1665123820823"
+      }
+
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://ipfs.io/ipfs/QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP?x-apikey=mykey",
+                         _headers,
+                         _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(result)}}
+      end)
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "collectionId" => "1871_1665123820823",
+                  "description" => "asda",
+                  "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+                  "name" => "asda",
+                  "salePrice" => 34
+                }
+              }} == MetadataRetriever.fetch_json({:ok, [data]})
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
+      Application.put_env(:indexer, :ipfs, configuration)
+    end
+
+    test "Constructs IPFS link with no query param, if gateway_url_param_location is invalid" do
+      configuration = Application.get_env(:indexer, :ipfs)
+
+      Application.put_env(:indexer, :ipfs,
+        gateway_url: Keyword.get(configuration, :gateway_url),
+        gateway_url_param_location: :query2,
+        gateway_url_param_key: "x-apikey",
+        gateway_url_param_value: "mykey"
+      )
+
+      data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+
+      result = %{
+        "name" => "asda",
+        "description" => "asda",
+        "salePrice" => 34,
+        "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+        "collectionId" => "1871_1665123820823"
+      }
+
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://ipfs.io/ipfs/QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP", _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(result)}}
+      end)
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "collectionId" => "1871_1665123820823",
+                  "description" => "asda",
+                  "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+                  "name" => "asda",
+                  "salePrice" => 34
+                }
+              }} == MetadataRetriever.fetch_json({:ok, [data]})
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
+      Application.put_env(:indexer, :ipfs, configuration)
+    end
+
+    test "Constructs IPFS link with additional header" do
+      configuration = Application.get_env(:indexer, :ipfs)
+
+      Application.put_env(:indexer, :ipfs,
+        gateway_url: Keyword.get(configuration, :gateway_url),
+        gateway_url_param_location: :header,
+        gateway_url_param_key: "x-apikey",
+        gateway_url_param_value: "mykey"
+      )
+
+      data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+
+      result = %{
+        "name" => "asda",
+        "description" => "asda",
+        "salePrice" => 34,
+        "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+        "collectionId" => "1871_1665123820823"
+      }
+
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://ipfs.io/ipfs/QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP",
+                         [{"x-apikey", "mykey"}],
+                         _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(result)}}
+      end)
+
+      assert {:ok,
+              %{
+                metadata: %{
+                  "collectionId" => "1871_1665123820823",
+                  "description" => "asda",
+                  "img_hash" => "QmUfW3PVnh9GGuHcQgc3ZeNEbhwp5HE8rS5ac9MDWWQebz",
+                  "name" => "asda",
+                  "salePrice" => 34
+                }
+              }} == MetadataRetriever.fetch_json({:ok, [data]})
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
+      Application.put_env(:indexer, :ipfs, configuration)
     end
 
     test "fetches json with latin1 encoding", %{bypass: bypass} do
@@ -190,7 +250,8 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
         Conn.resp(conn, 200, json)
       end)
 
-      {:ok, %{metadata: metadata}} = MetadataRetriever.fetch_metadata_from_uri("http://localhost:#{bypass.port}#{path}")
+      {:ok, %{metadata: metadata}} =
+        MetadataRetriever.fetch_metadata_from_uri("http://localhost:#{bypass.port}#{path}", [])
 
       assert Map.get(metadata, "attributes") == Jason.decode!(attributes)
     end

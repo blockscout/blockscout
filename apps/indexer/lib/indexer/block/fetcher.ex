@@ -155,13 +155,13 @@ defmodule Indexer.Block.Fetcher do
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{token_transfers: celo_native_token_transfers, tokens: celo_tokens} =
            if(
-             Application.get_env(:explorer, :chain_type) == "celo",
+             Application.get_env(:explorer, :chain_type) == :celo,
              do: CeloTransactionTokenTransfers.parse_transactions(transactions_with_receipts),
              else: %{token_transfers: [], tokens: []}
            ),
          celo_gas_tokens =
            if(
-             Application.get_env(:explorer, :chain_type) == "celo",
+             Application.get_env(:explorer, :chain_type) == :celo,
              do: CeloTransactionGasTokens.parse(transactions_with_receipts),
              else: []
            ),
@@ -283,30 +283,30 @@ defmodule Indexer.Block.Fetcher do
          celo_gas_tokens: celo_gas_tokens
        }) do
     case Application.get_env(:explorer, :chain_type) do
-      "ethereum" ->
+      :ethereum ->
         basic_import_options
         |> Map.put_new(:beacon_blob_transactions, %{
           params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
         })
 
-      "optimism" ->
+      :optimism ->
         basic_import_options
         |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
 
-      "polygon_edge" ->
+      :polygon_edge ->
         basic_import_options
         |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
         |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
 
-      "polygon_zkevm" ->
+      :polygon_zkevm ->
         basic_import_options
         |> Map.put_new(:polygon_zkevm_bridge_operations, %{params: polygon_zkevm_bridge_operations})
 
-      "shibarium" ->
+      :shibarium ->
         basic_import_options
         |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
 
-      "celo" ->
+      :celo ->
         tokens =
           basic_import_options
           |> Map.get(:tokens, %{})

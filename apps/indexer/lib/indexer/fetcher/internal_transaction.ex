@@ -247,7 +247,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   @zetachain_non_traceable_type 88
   defp filter_non_traceable_transactions(transactions) do
     case Application.get_env(:explorer, :chain_type) do
-      "zetachain" -> Enum.reject(transactions, &(&1.type == @zetachain_non_traceable_type))
+      :zetachain -> Enum.reject(transactions, &(&1.type == @zetachain_non_traceable_type))
       _ -> transactions
     end
   end
@@ -283,7 +283,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     celo_token_transfers_params =
       %{token_transfers: celo_token_transfers, tokens: _} =
-      if Application.get_env(:explorer, :chain_type) == "celo" do
+      if Application.get_env(:explorer, :chain_type) == :celo do
         block_number_to_block_hash =
           unique_numbers
           |> Chain.block_hash_by_number()
@@ -435,7 +435,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     ]
   end
 
-  if Application.compile_env(:explorer, :chain_type) == "celo" do
+  if Application.compile_env(:explorer, :chain_type) == :celo do
     defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: [token]}) do
       async_import_token_balances(%{
         address_token_balances: to_address_token_balances(token_transfers, token)

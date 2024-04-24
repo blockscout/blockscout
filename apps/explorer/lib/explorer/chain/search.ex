@@ -47,6 +47,7 @@ defmodule Explorer.Chain.Search do
             from(items in subquery(query),
               order_by: [
                 desc: items.priority,
+                desc_nulls_last: items.certified,
                 desc_nulls_last: items.circulating_market_cap,
                 desc_nulls_last: items.exchange_rate,
                 desc_nulls_last: items.is_verified_via_admin_panel,
@@ -117,7 +118,7 @@ defmodule Explorer.Chain.Search do
             tx_block_query
           end
 
-        if Application.get_env(:explorer, :chain_type) == "ethereum" do
+        if Application.get_env(:explorer, :chain_type) == :ethereum do
           blob_query = search_blob_query(string)
 
           tx_block_op_query
@@ -203,7 +204,7 @@ defmodule Explorer.Chain.Search do
           end
 
         blob_result =
-          if valid_full_hash?(search_query) && Application.get_env(:explorer, :chain_type) == "ethereum" do
+          if valid_full_hash?(search_query) && Application.get_env(:explorer, :chain_type) == :ethereum do
             search_query
             |> search_blob_query()
             |> select_repo(options).all()
@@ -324,6 +325,7 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:icon_url, dynamic([token, _], token.icon_url))
       |> Map.put(:token_type, dynamic([token, _], token.type))
       |> Map.put(:verified, dynamic([_, smart_contract], not is_nil(smart_contract)))
+      |> Map.put(:certified, dynamic([_, smart_contract], smart_contract.certified))
       |> Map.put(:exchange_rate, dynamic([token, _], token.fiat_value))
       |> Map.put(:total_supply, dynamic([token, _], token.total_supply))
       |> Map.put(:circulating_market_cap, dynamic([token, _], token.circulating_market_cap))
@@ -355,6 +357,7 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:type, "contract")
       |> Map.put(:name, dynamic([smart_contract, _], smart_contract.name))
       |> Map.put(:inserted_at, dynamic([_, address], address.inserted_at))
+      |> Map.put(:certified, dynamic([smart_contract, _], smart_contract.certified))
       |> Map.put(:verified, true)
 
     from(smart_contract in SmartContract,
@@ -635,6 +638,7 @@ defmodule Explorer.Chain.Search do
       token_type: nil,
       timestamp: dynamic([_, _], type(^nil, :utc_datetime_usec)),
       verified: nil,
+      certified: nil,
       exchange_rate: nil,
       total_supply: nil,
       circulating_market_cap: nil,

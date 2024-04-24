@@ -772,7 +772,7 @@ defmodule Indexer.Block.FetcherTest do
     end
   end
 
-  if Application.compile_env(:explorer, :chain_type) == "celo" do
+  if Application.compile_env(:explorer, :chain_type) == :celo do
     describe "import_range/2 celo" do
       setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
         CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)

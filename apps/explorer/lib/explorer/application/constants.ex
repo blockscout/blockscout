@@ -30,18 +30,59 @@ defmodule Explorer.Application.Constants do
     |> validate_required(@required_attrs)
   end
 
-  def get_constant_by_key(key, options) do
+  @doc """
+    Reads constant row from the database by constant's key.
+  """
+  @spec get_constant_by_key(binary(), list()) :: Ecto.Schema.t() | term() | nil
+  def get_constant_by_key(key, options \\ []) do
     __MODULE__
     |> where([constant], constant.key == ^key)
     |> Chain.select_repo(options).one()
   end
 
+  @doc """
+    Reads constant value from the database by constant's key.
+  """
+  @spec get_constant_value(binary(), list()) :: binary() | nil
+  def get_constant_value(key, options \\ []) do
+    __MODULE__
+    |> where([constant], constant.key == ^key)
+    |> select([constant], constant.value)
+    |> Chain.select_repo(options).one()
+  end
+
+  @doc """
+    Sets or updates a value of the specified constant by its key.
+  """
+  @spec set_constant_value(binary(), binary()) :: Ecto.Schema.t()
+  def set_constant_value(key, value) do
+    existing_value = Repo.get(__MODULE__, key)
+
+    if existing_value do
+      existing_value
+      |> changeset(%{value: value})
+      |> Repo.update!()
+    else
+      %{key: key, value: value}
+      |> changeset()
+      |> Repo.insert!()
+    end
+  end
+
+  @doc """
+    For usage in Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand
+  """
+  @spec insert_keys_manager_contract_address(binary()) :: Ecto.Schema.t()
   def insert_keys_manager_contract_address(value) do
     %{key: @keys_manager_contract_address_key, value: value}
     |> changeset()
     |> Repo.insert!()
   end
 
+  @doc """
+    For usage in Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand and Explorer.Chain.Block.Reward
+  """
+  @spec get_keys_manager_contract_address(list()) :: %__MODULE__{} | nil
   def get_keys_manager_contract_address(options \\ []) do
     get_constant_by_key(@keys_manager_contract_address_key, options)
   end
@@ -51,17 +92,7 @@ defmodule Explorer.Application.Constants do
   """
   @spec insert_last_processed_token_address_hash(Hash.Address.t()) :: Ecto.Schema.t()
   def insert_last_processed_token_address_hash(address_hash) do
-    existing_value = Repo.get(__MODULE__, @last_processed_erc_721_token)
-
-    if existing_value do
-      existing_value
-      |> changeset(%{value: to_string(address_hash)})
-      |> Repo.update!()
-    else
-      %{key: @last_processed_erc_721_token, value: to_string(address_hash)}
-      |> changeset()
-      |> Repo.insert!()
-    end
+    set_constant_value(@last_processed_erc_721_token, to_string(address_hash))
   end
 
   @doc """

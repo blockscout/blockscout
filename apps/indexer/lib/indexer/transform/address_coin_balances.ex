@@ -65,7 +65,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
     end)
   end
 
-  if Application.compile_env(:explorer, :chain_type) == "celo" do
+  if Application.compile_env(:explorer, :chain_type) == :celo do
     defp reducer({:celo_token_transfers, token_transfers}, acc) when is_list(token_transfers) do
       celo_token_contract_address_hash = CeloCoreContracts.get_celo_token_address()
 
@@ -145,7 +145,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
        )
        when is_integer(block_number) and is_binary(recipient_address_hash) and
               recipient_address_hash != "0x0000000000000000000000000000000000000000" do
-    if Application.get_env(:explorer, :chain_type) == "celo" do
+    if Application.get_env(:explorer, :chain_type) == :celo do
       MapSet.put(initial, %{address_hash: recipient_address_hash, block_number: block_number})
     else
       initial

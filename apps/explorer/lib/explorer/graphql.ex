@@ -93,7 +93,7 @@ defmodule Explorer.GraphQL do
       tt in TokenTransfer,
       inner_join: t in assoc(tt, :transaction),
       where: tt.token_contract_address_hash == ^token_contract_address_hash,
-      order_by: [desc: tt.block_number],
+      order_by: [desc: tt.block_number, desc: tt.log_index],
       select: tt
     )
   end

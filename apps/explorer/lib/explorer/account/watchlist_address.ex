@@ -133,12 +133,18 @@ defmodule Explorer.Account.WatchlistAddress do
   def get_watchlist_addresses_by_watchlist_id(watchlist_id, options) when not is_nil(watchlist_id) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
-    watchlist_id
-    |> watchlist_addresses_by_watchlist_id_query()
-    |> order_by([wla], desc: wla.id)
-    |> page_watchlist_address(paging_options)
-    |> limit(^paging_options.page_size)
-    |> Repo.account_repo().all()
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
+
+      _ ->
+        watchlist_id
+        |> watchlist_addresses_by_watchlist_id_query()
+        |> order_by([wla], desc: wla.id)
+        |> page_watchlist_address(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Repo.account_repo().all()
+    end
   end
 
   def get_watchlist_addresses_by_watchlist_id(_, _), do: []

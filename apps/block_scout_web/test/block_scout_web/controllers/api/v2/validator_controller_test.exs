@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
   use BlockScoutWeb.ConnCase
 
-  if Application.compile_env(:explorer, :chain_type) == "stability" do
+  if Application.compile_env(:explorer, :chain_type) == :stability do
     alias Explorer.Chain.Address
     alias Explorer.Chain.Cache.StabilityValidatorsCounters
     alias Explorer.Chain.Stability.Validator, as: ValidatorStability

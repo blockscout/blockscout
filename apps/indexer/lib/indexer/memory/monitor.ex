@@ -17,7 +17,8 @@ defmodule Indexer.Memory.Monitor do
   defstruct limit: 0,
             timer_interval: :timer.minutes(1),
             timer_reference: nil,
-            shrinkable_set: MapSet.new()
+            shrinkable_set: MapSet.new(),
+            shrunk?: false
 
   use GenServer
 
@@ -67,19 +68,27 @@ defmodule Indexer.Memory.Monitor do
   def handle_info(:check, state) do
     total = :erlang.memory(:total)
 
-    if memory_limit() < total do
-      log_memory(%{limit: memory_limit(), total: total})
-      shrink_or_log(state)
-    end
+    shrunk_state =
+      if memory_limit() < total do
+        log_memory(%{limit: memory_limit(), total: total})
+        shrink_or_log(state)
+        %{state | shrunk?: true}
+      else
+        state
+      end
 
-    if total <= memory_limit() * @expandable_memory_coefficient do
-      log_expandable_memory(%{limit: memory_limit(), total: total})
-      expand(state)
-    end
+    final_state =
+      if state.shrunk? and total <= memory_limit() * @expandable_memory_coefficient do
+        log_expandable_memory(%{limit: memory_limit(), total: total})
+        expand(state)
+        %{state | shrunk?: false}
+      else
+        shrunk_state
+      end
 
     flush(:check)
 
-    {:noreply, state}
+    {:noreply, final_state}
   end
 
   defp flush(message) do
