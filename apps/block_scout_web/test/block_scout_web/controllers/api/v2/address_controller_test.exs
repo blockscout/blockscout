@@ -121,7 +121,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       tx_hash = to_string(tx.hash)
       address_hash = Address.checksum(smart_contract.address_hash)
 
-      TestHelper.get_eip1967_implementation_non_zero_address()
+      implementation_address = insert(:address)
+      implementation_address_hash_string = to_string(implementation_address.hash)
+      TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(smart_contract.address_hash)}")
 
@@ -135,7 +137,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
                "creation_tx_hash" => ^tx_hash,
-               "implementation_address" => "0x0000000000000000000000000000000000000001"
+               "implementation_address" => ^implementation_address_hash_string
              } = json_response(request, 200)
     end
 

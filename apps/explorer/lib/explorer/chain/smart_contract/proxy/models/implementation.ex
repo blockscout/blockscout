@@ -225,20 +225,22 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   """
   @spec save_implementation_data(String.t() | nil, String.t() | nil, Hash.Address.t(), boolean(), Keyword.t()) ::
           {nil, nil} | {String.t(), String.t() | nil}
-  def save_implementation_data(nil, _, _proxy_address_hash, _, _options) do
-    # upsert_implementation(proxy_address_hash, nil, nil, options)
+  def save_implementation_data(nil, _, proxy_address_hash, metadata_from_verified_bytecode_twin, options) do
+    if is_nil(metadata_from_verified_bytecode_twin) or !metadata_from_verified_bytecode_twin do
+      upsert_implementation(proxy_address_hash, nil, nil, options)
+    end
 
-    {nil, nil}
+    {:empty, :empty}
   end
 
   def save_implementation_data(
-        empty_address_hash_string,
+        empty_implementation_address_hash_string,
         _,
         proxy_address_hash,
         metadata_from_verified_bytecode_twin,
         options
       )
-      when is_burn_signature(empty_address_hash_string) do
+      when is_burn_signature(empty_implementation_address_hash_string) do
     if is_nil(metadata_from_verified_bytecode_twin) or !metadata_from_verified_bytecode_twin do
       upsert_implementation(proxy_address_hash, nil, nil, options)
     end
@@ -254,17 +256,32 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         options
       )
       when is_binary(implementation_address_hash_string) do
-    with {:ok, address_hash} <- string_to_address_hash(implementation_address_hash_string),
+    with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
          proxy_contract <- SmartContract.address_hash_to_smart_contract(proxy_address_hash, options),
-         false <- is_nil(proxy_contract),
+         {:smart_contract_exists, true, implementation_address_hash} <-
+           {:smart_contract_exists, not is_nil(proxy_contract), implementation_address_hash},
          %{implementation: %SmartContract{name: name}, proxy: _proxy_contract} <- %{
-           implementation: SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options),
+           implementation:
+             SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options),
            proxy: proxy_contract
          } do
       upsert_implementation(proxy_address_hash, implementation_address_hash_string, name, options)
 
       {implementation_address_hash_string, name}
     else
+      :error ->
+        {:empty, :empty}
+
+      {:smart_contract_exists, false, implementation_address_hash} ->
+        smart_contract =
+          SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options)
+
+        implementation_name = implementation_name || (smart_contract && smart_contract.name) || nil
+
+        upsert_implementation(proxy_address_hash, implementation_address_hash_string, implementation_name, options)
+
+        {implementation_address_hash_string, implementation_name}
+
       %{implementation: _, proxy: proxy_contract} ->
         upsert_implementation(
           proxy_contract.address_hash,
@@ -274,20 +291,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         )
 
         {implementation_address_hash_string, nil}
-
-      true ->
-        {:ok, address_hash} = string_to_address_hash(implementation_address_hash_string)
-        smart_contract = SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options)
-
-        implementation_name = implementation_name || (smart_contract && smart_contract.name) || nil
-
-        # insert_implementation(proxy_address_hash, implementation_address_hash_string, implementation_name)
-
-        {implementation_address_hash_string, implementation_name}
-
-      _ ->
-        # insert_implementation(proxy_address_hash, implementation_address_hash_string, implementation_name)
-        {implementation_address_hash_string, implementation_name}
     end
   end
 
@@ -305,8 +308,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
        when not is_nil(proxy_address_hash) do
     changeset = %{
       proxy_address_hash: proxy_address_hash,
-      # address_hashes: (implementation_address_hash_string && [implementation_address_hash_string]) || [],
-      address_hashes: [implementation_address_hash_string],
+      address_hashes: (implementation_address_hash_string && [implementation_address_hash_string]) || [],
       names: (name && [name]) || []
     }
 

@@ -279,12 +279,13 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
   defp blockchain_get_implementation_mock do
     EthereumJSONRPC.Mox
-    |> TestHelper.mock_logic_storage_pointer_request("0xcebb2CCCFe291F0c442841cBE9C1D06EED61Ca02")
+    |> TestHelper.mock_logic_storage_pointer_request(false, "0xcebb2CCCFe291F0c442841cBE9C1D06EED61Ca02")
   end
 
   defp blockchain_get_implementation_mock_2 do
     EthereumJSONRPC.Mox
     |> TestHelper.mock_logic_storage_pointer_request(
+      false,
       "0x000000000000000000000000cebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"
     )
   end

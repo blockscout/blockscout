@@ -5,8 +5,11 @@ defmodule Explorer.TestHelper do
 
   def mock_logic_storage_pointer_request(
         mox,
+        error?,
         resp \\ "0x0000000000000000000000000000000000000000000000000000000000000000"
       ) do
+    response = if error?, do: {:error, "error"}, else: {:ok, resp}
+
     expect(mox, :json_rpc, fn %{
                                 id: 0,
                                 method: "eth_getStorageAt",
@@ -17,14 +20,17 @@ defmodule Explorer.TestHelper do
                                 ]
                               },
                               _options ->
-      {:ok, resp}
+      response
     end)
   end
 
   def mock_beacon_storage_pointer_request(
         mox,
+        error?,
         resp \\ "0x0000000000000000000000000000000000000000000000000000000000000000"
       ) do
+    response = if error?, do: {:error, "error"}, else: {:ok, resp}
+
     expect(mox, :json_rpc, fn %{
                                 id: 0,
                                 method: "eth_getStorageAt",
@@ -35,32 +41,17 @@ defmodule Explorer.TestHelper do
                                 ]
                               },
                               _options ->
-      {:ok, resp}
-    end)
-  end
-
-  def mock_eip_1822_storage_pointer_request(
-        mox,
-        resp \\ "0x0000000000000000000000000000000000000000000000000000000000000000"
-      ) do
-    expect(mox, :json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-      {:ok, resp}
+      response
     end)
   end
 
   def mock_oz_storage_pointer_request(
         mox,
+        error?,
         resp \\ "0x0000000000000000000000000000000000000000000000000000000000000000"
       ) do
+    response = if error?, do: {:error, "error"}, else: {:ok, resp}
+
     expect(mox, :json_rpc, fn %{
                                 id: 0,
                                 method: "eth_getStorageAt",
@@ -71,41 +62,51 @@ defmodule Explorer.TestHelper do
                                 ]
                               },
                               _options ->
-      {:ok, resp}
+      response
     end)
   end
 
-  def get_eip1967_implementation_non_zero_address do
+  def mock_eip_1822_storage_pointer_request(
+        mox,
+        error?,
+        resp \\ "0x0000000000000000000000000000000000000000000000000000000000000000"
+      ) do
+    response = if error?, do: {:error, "error"}, else: {:ok, resp}
+
+    expect(mox, :json_rpc, fn %{
+                                id: 0,
+                                method: "eth_getStorageAt",
+                                params: [
+                                  _,
+                                  "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
+                                  "latest"
+                                ]
+                              },
+                              _options ->
+      response
+    end)
+  end
+
+  def get_eip1967_implementation_non_zero_address(address_hash_string) do
     EthereumJSONRPC.Mox
-    |> mock_logic_storage_pointer_request()
-    |> mock_beacon_storage_pointer_request()
-    |> mock_oz_storage_pointer_request("0x0000000000000000000000000000000000000000000000000000000000000001")
+    |> mock_logic_storage_pointer_request(false)
+    |> mock_beacon_storage_pointer_request(false)
+    |> mock_oz_storage_pointer_request(false, "0x000000000000000000000000" <> address_hash_string)
   end
 
   def get_eip1967_implementation_zero_addresses do
     EthereumJSONRPC.Mox
-    |> mock_logic_storage_pointer_request()
-    |> mock_beacon_storage_pointer_request()
-    |> mock_oz_storage_pointer_request()
-    |> mock_eip_1822_storage_pointer_request()
+    |> mock_logic_storage_pointer_request(false)
+    |> mock_beacon_storage_pointer_request(false)
+    |> mock_oz_storage_pointer_request(false)
+    |> mock_eip_1822_storage_pointer_request(false)
   end
 
   def get_eip1967_implementation_error_response do
     EthereumJSONRPC.Mox
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:error, "error"}
-    end)
-    |> mock_beacon_storage_pointer_request()
-    |> mock_oz_storage_pointer_request()
-    |> mock_eip_1822_storage_pointer_request()
+    |> mock_logic_storage_pointer_request(true)
+    |> mock_beacon_storage_pointer_request(true)
+    |> mock_oz_storage_pointer_request(true)
+    |> mock_eip_1822_storage_pointer_request(true)
   end
 end
