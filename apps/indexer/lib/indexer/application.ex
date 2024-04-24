@@ -29,9 +29,21 @@ defmodule Indexer.Application do
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
 
     pool_size =
-      Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)[:concurrency] +
-        Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime)[:concurrency] +
-        Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Sanitize)[:concurrency]
+      token_instance_fetcher_pool_size(
+        Indexer.Fetcher.TokenInstance.Realtime,
+        Indexer.Fetcher.TokenInstance.Realtime.Supervisor
+      ) +
+        token_instance_fetcher_pool_size(
+          Indexer.Fetcher.TokenInstance.Retry,
+          Indexer.Fetcher.TokenInstance.Retry.Supervisor
+        ) +
+        token_instance_fetcher_pool_size(
+          Indexer.Fetcher.TokenInstance.Sanitize,
+          Indexer.Fetcher.TokenInstance.Sanitize.Supervisor
+        ) +
+        token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.LegacySanitize, nil) +
+        token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC1155, nil) +
+        token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC721, nil)
 
     base_children = [
       :hackney_pool.child_spec(:token_instance_fetcher, max_connections: pool_size),
@@ -56,5 +68,23 @@ defmodule Indexer.Application do
     ]
 
     Supervisor.start_link(children, opts)
+  end
+
+  defp token_instance_fetcher_pool_size(fetcher, nil) do
+    envs = Application.get_env(:indexer, fetcher)
+
+    if envs[:enabled] do
+      envs[:concurrency]
+    else
+      0
+    end
+  end
+
+  defp token_instance_fetcher_pool_size(fetcher, supervisor) do
+    if Application.get_env(:indexer, supervisor)[:disabled?] do
+      0
+    else
+      Application.get_env(:indexer, fetcher)[:concurrency]
+    end
   end
 end
