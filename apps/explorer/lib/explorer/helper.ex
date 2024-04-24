@@ -90,22 +90,24 @@ defmodule Explorer.Helper do
   Decode json
   """
   @spec decode_json(any()) :: map() | list() | nil
-  def decode_json(nil), do: nil
+  def decode_json(data, nft? \\ false)
 
-  def decode_json(data) do
+  def decode_json(nil, _), do: nil
+
+  def decode_json(data, nft?) do
     if String.valid?(data) do
-      safe_decode_json(data)
+      safe_decode_json(data, nft?)
     else
       data
       |> :unicode.characters_to_binary(:latin1)
-      |> safe_decode_json()
+      |> safe_decode_json(nft?)
     end
   end
 
-  defp safe_decode_json(data) do
+  defp safe_decode_json(data, nft?) do
     case Jason.decode(data) do
       {:ok, decoded} -> decoded
-      _ -> %{error: data}
+      _ -> if nft?, do: {:error, data}, else: %{error: data}
     end
   end
 
@@ -114,7 +116,7 @@ defmodule Explorer.Helper do
   """
   @spec maybe_decode(binary) :: any
   def maybe_decode(data) do
-    case safe_decode_json(data) do
+    case safe_decode_json(data, false) do
       %{error: _} -> data
       decoded -> decoded
     end
