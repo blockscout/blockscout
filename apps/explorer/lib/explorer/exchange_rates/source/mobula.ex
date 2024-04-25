@@ -3,6 +3,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   Adapter for fetching exchange rates from https://mobula.io
   """
 
+  require Logger
   alias Explorer.{Chain, Helper}
   alias Explorer.ExchangeRates.{Source, Token}
 
@@ -11,14 +12,12 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   @behaviour Source
 
   @impl Source
-  def format_data(%{} = market_data_for_tokens) do
-
-    market_data = market_data_for_tokens["data"]
+  def format_data(%{"data" => %{"market_cap" => _} = market_data}) do
 
     current_price = market_data["price"]
     image_url = market_data["logo"]
 
-    id = String.downcase(market_data["symbol"])
+    id = market_data["symbol"]
 
     btc_value =
       if Application.get_env(:explorer, Explorer.ExchangeRates)[:fetch_btc_value], do: get_btc_value(id, market_data)
@@ -47,18 +46,48 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   end
 
   @impl Source
+  def format_data(%{"data" => data}) do
+
+    data
+    |> Enum.reduce(%{}, fn
+      {address_hash_string, market_data}, acc ->
+        case Explorer.Chain.Hash.Address.cast(address_hash_string) do
+          {:ok, address_hash} ->
+            acc
+            |> Map.put(address_hash, %{
+              fiat_value: Map.get(market_data, "price"),
+              circulating_market_cap: Map.get(market_data, "market_cap"),
+              volume_24h: Map.get(market_data, "volume")
+            })
+
+          _ ->
+            acc
+        end
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  @impl Source
   def format_data(_), do: []
 
   @impl Source
   def source_url do
-   "#{base_url()}/search?input=#{coin_id()}"
+   "#{base_url()}/market/data?asset=#{Explorer.coin()}"
   end
 
   @impl Source
   def source_url(token_addresses) when is_list(token_addresses) do
     joined_addresses = token_addresses |> Enum.map_join(",", &to_string/1)
 
-    "#{base_url()}/market/multi-data?blockchains=#{chain()}&assets=#{joined_addresses}"
+    "#{base_url()}/market/multi-data?blockchains=XDAI&assets=#{joined_addresses}"
+  end
+
+  @impl Source
+  def source_url(input) do
+    symbol = input
+    "#{base_url()}/market/data&asset=#{symbol}"
   end
 
   @impl Source
@@ -122,7 +151,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
      config(:base_url) || "https://api.mobula.io/api/1"
   end
 
-  defp get_btc_price() do
+  defp get_btc_price(currency \\ "usd") do
     url = "#{base_url()}/market/data?asset=Bitcoin"
 
     case Source.http_request(url, headers()) do
