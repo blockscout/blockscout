@@ -173,7 +173,7 @@ defmodule Explorer.Application do
   end
 
   defp mud_repo do
-    if ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED") || Mix.env() == :test do
+    if Application.get_env(:explorer, Explorer.Chain.Mud)[:enabled] || Mix.env() == :test do
       [Explorer.Repo.Mud]
     else
       []
