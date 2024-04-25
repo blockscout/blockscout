@@ -81,7 +81,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   def source_url(token_addresses) when is_list(token_addresses) do
     joined_addresses = token_addresses |> Enum.map_join(",", &to_string/1)
 
-    "#{base_url()}/market/multi-data?blockchains=XDAI&assets=#{joined_addresses}"
+    "#{base_url()}/market/multi-data?blockchains=#{chain()}&assets=#{joined_addresses}"
   end
 
   @impl Source
@@ -114,10 +114,6 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
     config(:api_key) || nil
   end
 
-  def coin_id do
-    symbol = String.downcase(Explorer.coin())
-  end
-
   defp get_current_price(market_data) do
     if market_data["price"] do
       to_decimal(market_data["price"])
@@ -144,7 +140,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   end
 
   defp chain do
-    config(:platform) || "ethereum"
+    config(:chain) || "ethereum"
   end
 
   defp base_url do
