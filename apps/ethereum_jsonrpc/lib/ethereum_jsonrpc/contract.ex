@@ -66,7 +66,7 @@ defmodule EthereumJSONRPC.Contract do
       indexed_responses[index]
       |> case do
         nil ->
-          {:error, "No result"}
+          {:error, {"No result", requests, indexed_responses}}
 
         response ->
           selectors = define_selectors(parsed_abi, method_id)
@@ -77,7 +77,10 @@ defmodule EthereumJSONRPC.Contract do
     end)
   rescue
     error ->
-      Enum.map(requests, fn _ -> format_error(error) end)
+      Enum.map(requests, fn _ ->
+        {:error, str_message} = format_error(error)
+        {:error, {str_message, requests, Exception.format_stacktrace()}}
+      end)
   end
 
   defp format_args(function, args) do
