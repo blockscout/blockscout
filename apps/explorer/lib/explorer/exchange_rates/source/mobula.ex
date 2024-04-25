@@ -147,7 +147,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
      config(:base_url) || "https://api.mobula.io/api/1"
   end
 
-  defp get_btc_price(currency \\ "usd") do
+  defp get_btc_price() do
     url = "#{base_url()}/market/data?asset=Bitcoin"
 
     case Source.http_request(url, headers()) do
