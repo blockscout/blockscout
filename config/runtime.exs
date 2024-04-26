@@ -245,9 +245,14 @@ config :explorer, Explorer.Chain.Events.Listener,
       else: true
     )
 
-precompiled_config_default_path =
+  precompiled_config_base_dir =
+    case config_env() do
+      :prod -> "/app/"
+      _ -> "./"
+    end
+  precompiled_config_default_path =
   case ConfigHelper.chain_type() do
-    "arbitrum" -> "/app/config/assets/precompiles-arbitrum.json"
+    "arbitrum" -> "#{precompiled_config_base_dir}config/assets/precompiles-arbitrum.json"
     _ -> nil
   end
 
