@@ -157,10 +157,16 @@ defmodule Explorer.Chain.ZkSync.Reader do
       else
         paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
-        base_query
-        |> Chain.join_associations(necessity_by_association)
-        |> page_batches(paging_options)
-        |> limit(^paging_options.page_size)
+        case paging_options do
+          %PagingOptions{key: {0}} ->
+            []
+
+          _ ->
+            base_query
+            |> Chain.join_associations(necessity_by_association)
+            |> page_batches(paging_options)
+            |> limit(^paging_options.page_size)
+        end
       end
 
     select_repo(options).all(query)

@@ -277,6 +277,7 @@ defmodule Explorer.Chain.SmartContract do
   * `implementation_address_hash` - address hash of the proxy's implementation if any
   * `autodetect_constructor_args` - field was added for storing user's choice
   * `is_yul` - field was added for storing user's choice
+  * `certified` - boolean flag, which can be set for set of smart-contracts via runtime env variable to prioritize those smart-contracts in the search.
   """
   typed_schema "smart_contracts" do
     field(:name, :string, null: false)
@@ -305,6 +306,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:is_yul, :boolean, virtual: true)
     field(:metadata_from_verified_twin, :boolean, virtual: true)
     field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
+    field(:certified, :boolean)
 
     has_many(
       :decompiled_smart_contracts,
@@ -358,7 +360,8 @@ defmodule Explorer.Chain.SmartContract do
       :compiler_settings,
       :implementation_address_hash,
       :implementation_fetched_at,
-      :license_type
+      :license_type,
+      :certified
     ])
     |> validate_required([
       :name,
@@ -401,7 +404,8 @@ defmodule Explorer.Chain.SmartContract do
         :contract_code_md5,
         :implementation_name,
         :autodetect_constructor_args,
-        :license_type
+        :license_type,
+        :certified
       ])
       |> (&if(verification_with_files?,
             do: &1,
@@ -1276,6 +1280,26 @@ defmodule Explorer.Chain.SmartContract do
     case repo.update_all(query, set: [verified: true]) do
       {1, _} -> {:ok, []}
       _ -> {:error, "There was an error annotating that the address has been verified."}
+    end
+  end
+
+  @doc """
+  Sets smart-contract certified flag
+  """
+  @spec set_smart_contracts_certified_flag(list()) ::
+          {:ok, []} | {:error, String.t()}
+  def set_smart_contracts_certified_flag([]), do: {:ok, []}
+
+  def set_smart_contracts_certified_flag(address_hashes) do
+    query =
+      from(
+        contract in __MODULE__,
+        where: contract.address_hash in ^address_hashes
+      )
+
+    case Repo.update_all(query, set: [certified: true]) do
+      {1, _} -> {:ok, []}
+      _ -> {:error, "There was an error in setting certified flag."}
     end
   end
 

@@ -109,7 +109,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
       pop_in(options_with_block_rewards_errors[:block_rewards][:errors])
 
     full_chain_import_options =
-      put_in(options_without_block_rewards_errors, [:blocks, :params, Access.all(), :consensus], true)
+      options_without_block_rewards_errors
+      |> put_in([:blocks, :params, Access.all(), :consensus], true)
+      |> put_in([:blocks, :params, Access.all(), :refetch_needed], false)
 
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(full_chain_import_options)} do
       async_import_remaining_block_data(

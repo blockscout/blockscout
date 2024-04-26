@@ -144,15 +144,15 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
       get("/stats", V2.TransactionController, :stats)
 
-      if Application.compile_env(:explorer, :chain_type) == "polygon_zkevm" do
+      if Application.compile_env(:explorer, :chain_type) == :polygon_zkevm do
         get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
       end
 
-      if Application.compile_env(:explorer, :chain_type) == "zksync" do
+      if Application.compile_env(:explorer, :chain_type) == :zksync do
         get("/zksync-batch/:batch_number", V2.TransactionController, :zksync_batch)
       end
 
-      if Application.compile_env(:explorer, :chain_type) == "suave" do
+      if Application.compile_env(:explorer, :chain_type) == :suave do
         get("/execution-node/:execution_node_hash_param", V2.TransactionController, :execution_node)
       end
 
@@ -164,7 +164,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
 
-      if Application.compile_env(:explorer, :chain_type) == "ethereum" do
+      if Application.compile_env(:explorer, :chain_type) == :ethereum do
         get("/:transaction_hash_param/blobs", V2.TransactionController, :blobs)
       end
     end
@@ -220,16 +220,16 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/transactions/watchlist", V2.MainPageController, :watchlist_transactions)
       get("/indexing-status", V2.MainPageController, :indexing_status)
 
-      if Application.compile_env(:explorer, :chain_type) == "optimism" do
+      if Application.compile_env(:explorer, :chain_type) == :optimism do
         get("/optimism-deposits", V2.MainPageController, :optimism_deposits)
       end
 
-      if Application.compile_env(:explorer, :chain_type) == "polygon_zkevm" do
+      if Application.compile_env(:explorer, :chain_type) == :polygon_zkevm do
         get("/zkevm/batches/confirmed", V2.PolygonZkevmController, :batches_confirmed)
         get("/zkevm/batches/latest-number", V2.PolygonZkevmController, :batch_latest_number)
       end
 
-      if Application.compile_env(:explorer, :chain_type) == "zksync" do
+      if Application.compile_env(:explorer, :chain_type) == :zksync do
         get("/zksync/batches/confirmed", V2.ZkSyncController, :batches_confirmed)
         get("/zksync/batches/latest-number", V2.ZkSyncController, :batch_latest_number)
       end
@@ -246,7 +246,7 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/optimism" do
-      if Application.compile_env(:explorer, :chain_type) == "optimism" do
+      if Application.compile_env(:explorer, :chain_type) == :optimism do
         get("/txn-batches", V2.OptimismController, :txn_batches)
         get("/txn-batches/count", V2.OptimismController, :txn_batches_count)
         get("/output-roots", V2.OptimismController, :output_roots)
@@ -255,11 +255,13 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/deposits/count", V2.OptimismController, :deposits_count)
         get("/withdrawals", V2.OptimismController, :withdrawals)
         get("/withdrawals/count", V2.OptimismController, :withdrawals_count)
+        get("/games", V2.OptimismController, :games)
+        get("/games/count", V2.OptimismController, :games_count)
       end
     end
 
     scope "/polygon-edge" do
-      if Application.compile_env(:explorer, :chain_type) == "polygon_edge" do
+      if Application.compile_env(:explorer, :chain_type) == :polygon_edge do
         get("/deposits", V2.PolygonEdgeController, :deposits)
         get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
         get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
@@ -268,7 +270,7 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/shibarium" do
-      if Application.compile_env(:explorer, :chain_type) == "shibarium" do
+      if Application.compile_env(:explorer, :chain_type) == :shibarium do
         get("/deposits", V2.ShibariumController, :deposits)
         get("/deposits/count", V2.ShibariumController, :deposits_count)
         get("/withdrawals", V2.ShibariumController, :withdrawals)
@@ -282,7 +284,7 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/zkevm" do
-      if Application.compile_env(:explorer, :chain_type) == "polygon_zkevm" do
+      if Application.compile_env(:explorer, :chain_type) == :polygon_zkevm do
         get("/batches", V2.PolygonZkevmController, :batches)
         get("/batches/count", V2.PolygonZkevmController, :batches_count)
         get("/batches/:batch_number", V2.PolygonZkevmController, :batch)
@@ -323,13 +325,13 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/blobs" do
-      if Application.compile_env(:explorer, :chain_type) == "ethereum" do
+      if Application.compile_env(:explorer, :chain_type) == :ethereum do
         get("/:blob_hash_param", V2.BlobController, :blob)
       end
     end
 
     scope "/validators" do
-      if Application.compile_env(:explorer, :chain_type) == "stability" do
+      if Application.compile_env(:explorer, :chain_type) == :stability do
         scope "/stability" do
           get("/", V2.ValidatorController, :stability_validators_list)
           get("/counters", V2.ValidatorController, :stability_validators_counters)
@@ -338,7 +340,7 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/zksync" do
-      if Application.compile_env(:explorer, :chain_type) == "zksync" do
+      if Application.compile_env(:explorer, :chain_type) == :zksync do
         get("/batches", V2.ZkSyncController, :batches)
         get("/batches/count", V2.ZkSyncController, :batches_count)
         get("/batches/:batch_number", V2.ZkSyncController, :batch)

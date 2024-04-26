@@ -100,7 +100,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   def count_withdrawals(_), do: nil
 
   case Application.compile_env(:explorer, :chain_type) do
-    "rsk" ->
+    :rsk ->
       defp chain_type_fields(result, block, single_block?) do
         if single_block? do
           # credo:disable-for-next-line Credo.Check.Design.AliasUsage
@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
         end
       end
 
-    "zksync" ->
+    :zksync ->
       defp chain_type_fields(result, block, single_block?) do
         if single_block? do
           # credo:disable-for-next-line Credo.Check.Design.AliasUsage
@@ -120,7 +120,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
         end
       end
 
-    "ethereum" ->
+    :ethereum ->
       defp chain_type_fields(result, block, single_block?) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.EthereumView.extend_block_json_response(result, block, single_block?)

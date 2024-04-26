@@ -967,7 +967,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  if Application.compile_env(:explorer, :chain_type) == "stability" do
+  if Application.compile_env(:explorer, :chain_type) == :stability do
     @first_topic_hex_string_1 "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
 
     defp topic(topic_hex_string) do
