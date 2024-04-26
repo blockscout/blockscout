@@ -414,9 +414,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp filter_topic(base_query, nil), do: base_query
-
-  defp filter_topic(base_query, ""), do: base_query
+  defp filter_topic(base_query, null) when null in [nil, "", "null"], do: base_query
 
   defp filter_topic(base_query, topic) do
     from(log in base_query,

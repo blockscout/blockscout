@@ -124,7 +124,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
         "language" => smart_contract_language(target_contract),
-        "license_type" => "none"
+        "license_type" => "none",
+        "certified" => false
       }
 
       get_eip1967_implementation_non_zero_address()
@@ -226,7 +227,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
         "language" => smart_contract_language(target_contract),
-        "license_type" => "gnu_agpl_v3"
+        "license_type" => "gnu_agpl_v3",
+        "certified" => false
       }
 
       get_eip1967_implementation_error_response()
@@ -330,7 +332,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
         "language" => smart_contract_language(target_contract),
-        "license_type" => "none"
+        "license_type" => "none",
+        "certified" => false
       }
 
       get_eip1967_implementation_error_response()
@@ -450,7 +453,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_verified_via_eth_bytecode_db" => implementation_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => implementation_contract.verified_via_verifier_alliance,
         "language" => smart_contract_language(implementation_contract),
-        "license_type" => "bsd_3_clause"
+        "license_type" => "bsd_3_clause",
+        "certified" => false
       }
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
