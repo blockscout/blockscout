@@ -13,7 +13,6 @@
         "AIRTABLE",
         "ARGMAX",
         "Aiubo",
-        "Arbitrum",
         "Asfpp",
         "Asfpp",
         "Autodetection",
@@ -644,7 +643,10 @@
         "zksync",
         "filecoin",
         "Filecoin",
-        "permissionless"
+        "permissionless",
+        "feelin",
+        "KnxbUejwY",
+        "Btvk"
     ],
     "enableFiletypes": [
         "dotenv",

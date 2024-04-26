@@ -157,31 +157,45 @@ defmodule Explorer.Chain.TokenTransfer do
   @spec fetch_token_transfers_from_token_hash(Hash.t(), [paging_options | api?]) :: []
   def fetch_token_transfers_from_token_hash(token_address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
 
-    only_consensus_transfers_query()
-    |> where([tt], tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number))
-    |> preload(^preloads)
-    |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
-    |> page_token_transfer(paging_options)
-    |> limit(^paging_options.page_size)
-    |> Chain.select_repo(options).all()
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
+
+      _ ->
+        preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
+
+        only_consensus_transfers_query()
+        |> where([tt], tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number))
+        |> preload(^preloads)
+        |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+        |> page_token_transfer(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Chain.select_repo(options).all()
+    end
   end
 
   @spec fetch_token_transfers_from_token_hash_and_token_id(Hash.t(), non_neg_integer(), [paging_options | api?]) :: []
   def fetch_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
 
-    only_consensus_transfers_query()
-    |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
-    |> where([tt], fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)))
-    |> where([tt], not is_nil(tt.block_number))
-    |> preload(^preloads)
-    |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
-    |> page_token_transfer(paging_options)
-    |> limit(^paging_options.page_size)
-    |> Chain.select_repo(options).all()
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
+
+      _ ->
+        preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
+
+        only_consensus_transfers_query()
+        |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
+        |> where([tt], fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)))
+        |> where([tt], not is_nil(tt.block_number))
+        |> preload(^preloads)
+        |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+        |> page_token_transfer(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Chain.select_repo(options).all()
+    end
   end
 
   @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
@@ -228,6 +242,14 @@ defmodule Explorer.Chain.TokenTransfer do
     )
   end
 
+  def page_token_transfer(query, %PagingOptions{key: {block_number, 0}}) do
+    where(
+      query,
+      [tt],
+      tt.block_number < ^block_number
+    )
+  end
+
   def page_token_transfer(query, %PagingOptions{key: {block_number, log_index}}) do
     where(
       query,
@@ -251,33 +273,45 @@ defmodule Explorer.Chain.TokenTransfer do
   to the address hash.
   """
   def where_any_address_fields_match(:to, address_hash, paging_options) do
-    query =
-      from(
-        tt in TokenTransfer,
-        where: tt.to_address_hash == ^address_hash,
-        select: type(tt.transaction_hash, :binary),
-        distinct: tt.transaction_hash
-      )
+    case paging_options do
+      %PagingOptions{key: {0, _index}} ->
+        []
 
-    query
-    |> page_transaction_hashes_from_token_transfers(paging_options)
-    |> limit(^paging_options.page_size)
-    |> Repo.all()
+      _ ->
+        query =
+          from(
+            tt in TokenTransfer,
+            where: tt.to_address_hash == ^address_hash,
+            select: type(tt.transaction_hash, :binary),
+            distinct: tt.transaction_hash
+          )
+
+        query
+        |> page_transaction_hashes_from_token_transfers(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Repo.all()
+    end
   end
 
   def where_any_address_fields_match(:from, address_hash, paging_options) do
-    query =
-      from(
-        tt in TokenTransfer,
-        where: tt.from_address_hash == ^address_hash,
-        select: type(tt.transaction_hash, :binary),
-        distinct: tt.transaction_hash
-      )
+    case paging_options do
+      %PagingOptions{key: {0, _index}} ->
+        []
 
-    query
-    |> page_transaction_hashes_from_token_transfers(paging_options)
-    |> limit(^paging_options.page_size)
-    |> Repo.all()
+      _ ->
+        query =
+          from(
+            tt in TokenTransfer,
+            where: tt.from_address_hash == ^address_hash,
+            select: type(tt.transaction_hash, :binary),
+            distinct: tt.transaction_hash
+          )
+
+        query
+        |> page_transaction_hashes_from_token_transfers(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Repo.all()
+    end
   end
 
   def where_any_address_fields_match(_, address_hash, paging_options) do
@@ -287,17 +321,24 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   defp transaction_hashes_from_token_transfers_sql(address_bytes, %PagingOptions{page_size: page_size} = paging_options) do
-    query =
-      from(token_transfer in TokenTransfer,
-        where: token_transfer.to_address_hash == ^address_bytes or token_transfer.from_address_hash == ^address_bytes,
-        select: type(token_transfer.transaction_hash, :binary),
-        distinct: token_transfer.transaction_hash,
-        limit: ^page_size
-      )
+    case paging_options do
+      %PagingOptions{key: {0, _index}} ->
+        []
 
-    query
-    |> page_transaction_hashes_from_token_transfers(paging_options)
-    |> Repo.all()
+      _ ->
+        query =
+          from(token_transfer in TokenTransfer,
+            where:
+              token_transfer.to_address_hash == ^address_bytes or token_transfer.from_address_hash == ^address_bytes,
+            select: type(token_transfer.transaction_hash, :binary),
+            distinct: token_transfer.transaction_hash,
+            limit: ^page_size
+          )
+
+        query
+        |> page_transaction_hashes_from_token_transfers(paging_options)
+        |> Repo.all()
+    end
   end
 
   defp page_transaction_hashes_from_token_transfers(query, %PagingOptions{key: nil}), do: query

@@ -76,11 +76,11 @@ defmodule EthereumJSONRPC.Receipt do
         transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
         transaction_index: 0,\
   #{case Application.compile_env(:explorer, :chain_type) do
-    "ethereum" -> """
+    :ethereum -> """
             blob_gas_price: 0,\
             blob_gas_used: 0\
       """
-    "optimism" -> """
+    :optimism -> """
           l1_fee: 0,\
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
@@ -122,11 +122,11 @@ defmodule EthereumJSONRPC.Receipt do
         transaction_hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
         transaction_index: 0,\
   #{case Application.compile_env(:explorer, :chain_type) do
-    "ethereum" -> """
+    :ethereum -> """
             blob_gas_price: 0,\
             blob_gas_used: 0\
       """
-    "optimism" -> """
+    :optimism -> """
           l1_fee: 0,\
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
@@ -186,14 +186,14 @@ defmodule EthereumJSONRPC.Receipt do
 
   defp chain_type_fields(params, elixir) do
     case Application.get_env(:explorer, :chain_type) do
-      "ethereum" ->
+      :ethereum ->
         params
         |> Map.merge(%{
           blob_gas_price: Map.get(elixir, "blobGasPrice", 0),
           blob_gas_used: Map.get(elixir, "blobGasUsed", 0)
         })
 
-      "optimism" ->
+      :optimism ->
         params
         |> Map.merge(%{
           l1_fee: Map.get(elixir, "l1Fee", 0),

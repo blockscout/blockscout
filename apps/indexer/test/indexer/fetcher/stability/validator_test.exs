@@ -40,7 +40,7 @@ defmodule Indexer.Fetcher.Stability.ValidatorTest do
     ]
   }
 
-  if Application.compile_env(:explorer, :chain_type) == "stability" do
+  if Application.compile_env(:explorer, :chain_type) == :stability do
     describe "check update_validators_list" do
       test "deletes absent validators" do
         _validator = insert(:validator_stability)
