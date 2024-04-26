@@ -14,12 +14,12 @@ defmodule Explorer.Chain.Transaction.Schema do
     Wei
   }
 
-  alias Explorer.Chain.PolygonZkevm.BatchTransaction, as: ZkevmBatchTransaction
-  alias Explorer.Chain.Transaction.{Fork, Status}
-  alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Arbitrum.BatchTransaction, as: ArbitrumBatchTransaction
   alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
+  alias Explorer.Chain.PolygonZkevm.BatchTransaction, as: ZkevmBatchTransaction
+  alias Explorer.Chain.Transaction.{Fork, Status}
+  alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
                         "ethereum" ->

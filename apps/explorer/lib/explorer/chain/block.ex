@@ -2,9 +2,9 @@ defmodule Explorer.Chain.Block.Schema do
   @moduledoc false
 
   alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
+  alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
-  alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
                         "ethereum" ->

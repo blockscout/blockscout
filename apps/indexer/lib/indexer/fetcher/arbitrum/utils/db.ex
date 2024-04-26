@@ -466,7 +466,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
             batch_number: non_neg_integer(),
             block_num: FullBlock.block_number(),
             confirm_id: nil,
-            hash: Hash
+            hash: Hash.t()
           }
         ]
   def unconfirmed_rollup_blocks(first_block, last_block)
