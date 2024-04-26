@@ -87,7 +87,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   @doc """
-    Function to render GET requests to `/api/v2/main-page/arbitrum/batches/confirmed` endpoint.
+    Function to render GET requests to `/api/v2/main-page/arbitrum/batches/committed` endpoint.
   """
   def render("arbitrum_batches.json", %{batches: batches}) do
     %{items: render_arbitrum_batches(batches)}

@@ -116,15 +116,15 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/main-page/arbitrum/batches/confirmed` endpoint.
+    Function to handle GET requests to `/api/v2/main-page/arbitrum/batches/committed` endpoint.
   """
-  @spec batches_confirmed(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def batches_confirmed(conn, _params) do
+  @spec batches_committed(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def batches_committed(conn, _params) do
     batches =
       []
       |> Keyword.put(:necessity_by_association, @batch_necessity_by_association)
       |> Keyword.put(:api?, true)
-      |> Keyword.put(:confirmed?, true)
+      |> Keyword.put(:committed?, true)
       |> Reader.batches()
 
     conn

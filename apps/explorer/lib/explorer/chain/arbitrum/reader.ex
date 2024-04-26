@@ -821,7 +821,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     This function constructs and executes a query to retrieve batches based on provided
     pagination options. These options dictate not only the number of items to retrieve
-    but also how many items to skip from the top. If the `confirmed?` option is set to true,
+    but also how many items to skip from the top. If the `committed?` option is set to true,
     it returns the ten most recent committed batches; otherwise, it fetches batches as
     dictated by other pagination parameters.
 
@@ -834,7 +834,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   """
   @spec batches(
           necessity_by_association: %{atom() => :optional | :required},
-          confirmed?: boolean(),
+          committed?: boolean(),
           paging_options: PagingOptions.t(),
           api?: boolean()
         ) :: [L1Batch]
@@ -847,7 +847,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     query =
-      if Keyword.get(options, :confirmed?, false) do
+      if Keyword.get(options, :committed?, false) do
         base_query
         |> Chain.join_associations(necessity_by_association)
         |> where([batch], not is_nil(batch.commit_id) and batch.commit_id > 0)
