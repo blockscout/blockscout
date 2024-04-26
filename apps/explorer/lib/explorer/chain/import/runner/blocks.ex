@@ -719,7 +719,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp refs_to_token_transfers_query(historical_token_transfers_query, filtered_query) do
-    if Application.get_env(:explorer, :chain_type) == "polygon_zkevm" do
+    if Application.get_env(:explorer, :chain_type) == :polygon_zkevm do
       from(historical_tt in subquery(historical_token_transfers_query),
         inner_join: tt in subquery(filtered_query),
         on:
@@ -760,7 +760,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp derived_token_transfers_query(refs_to_token_transfers, filtered_query) do
-    if Application.get_env(:explorer, :chain_type) == "polygon_zkevm" do
+    if Application.get_env(:explorer, :chain_type) == :polygon_zkevm do
       from(tt in filtered_query,
         inner_join: tt_1 in subquery(refs_to_token_transfers),
         on:

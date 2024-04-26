@@ -90,7 +90,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
          } do
       old_env = Application.get_env(:explorer, :chain_type)
 
-      Application.put_env(:explorer, :chain_type, "polygon_zkevm")
+      Application.put_env(:explorer, :chain_type, :polygon_zkevm)
 
       previous_consensus_block = insert(:block, hash: previous_block_hash, number: previous_block_number)
       %{hash: block_hash, number: block_number} = consensus_block = insert(:block)

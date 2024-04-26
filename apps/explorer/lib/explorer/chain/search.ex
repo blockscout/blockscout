@@ -117,7 +117,7 @@ defmodule Explorer.Chain.Search do
             tx_block_query
           end
 
-        if Application.get_env(:explorer, :chain_type) == "ethereum" do
+        if Application.get_env(:explorer, :chain_type) == :ethereum do
           blob_query = search_blob_query(string)
 
           tx_block_op_query
@@ -203,7 +203,7 @@ defmodule Explorer.Chain.Search do
           end
 
         blob_result =
-          if valid_full_hash?(search_query) && Application.get_env(:explorer, :chain_type) == "ethereum" do
+          if valid_full_hash?(search_query) && Application.get_env(:explorer, :chain_type) == :ethereum do
             search_query
             |> search_blob_query()
             |> select_repo(options).all()

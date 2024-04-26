@@ -782,7 +782,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp hash_to_blob(hash) do
-    if Application.get_env(:explorer, :chain_type) == "ethereum" do
+    if Application.get_env(:explorer, :chain_type) == :ethereum do
       BeaconReader.blob(hash, false)
     else
       {:error, :not_found}

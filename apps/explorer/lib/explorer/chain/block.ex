@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Block.Schema do
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
-                        "ethereum" ->
+                        :ethereum ->
                           elem(
                             quote do
                               field(:blob_gas_used, :decimal)
@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Block.Schema do
                             2
                           )
 
-                        "rsk" ->
+                        :rsk ->
                           elem(
                             quote do
                               field(:bitcoin_merged_mining_header, :binary)
@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Block.Schema do
                             2
                           )
 
-                        "zksync" ->
+                        :zksync ->
                           elem(
                             quote do
                               has_one(:zksync_batch_block, ZkSyncBatchBlock, foreign_key: :hash, references: :hash)
@@ -106,11 +106,11 @@ defmodule Explorer.Chain.Block do
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
                   |> (&(case Application.compile_env(:explorer, :chain_type) do
-                          "rsk" ->
+                          :rsk ->
                             &1 ++
                               ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
-                          "ethereum" ->
+                          :ethereum ->
                             &1 ++
                               ~w(blob_gas_used excess_blob_gas)a
 
@@ -155,14 +155,14 @@ defmodule Explorer.Chain.Block do
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `base_fee_per_gas` - Minimum fee required per unit of gas. Fee adjusts based on network congestion.
   #{case Application.compile_env(:explorer, :chain_type) do
-    "rsk" -> """
+    :rsk -> """
        * `bitcoin_merged_mining_header` - Bitcoin merged mining header on Rootstock chains.
        * `bitcoin_merged_mining_coinbase_transaction` - Bitcoin merged mining coinbase transaction on Rootstock chains.
        * `bitcoin_merged_mining_merkle_proof` - Bitcoin merged mining merkle proof on Rootstock chains.
        * `hash_for_merged_mining` - Hash for merged mining on Rootstock chains.
        * `minimum_gas_price` - Minimum block gas price on Rootstock chains.
       """
-    "ethereum" -> """
+    :ethereum -> """
        * `blob_gas_used` - The total amount of blob gas consumed by the transactions within the block.
        * `excess_blob_gas` - The running total of blob gas consumed in excess of the target, prior to the block.
       """

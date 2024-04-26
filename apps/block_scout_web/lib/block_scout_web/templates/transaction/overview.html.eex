@@ -195,7 +195,7 @@
               </dd>
             </dl>
           <% end %>
-          <%= if Application.get_env(:explorer, :chain_type) == "optimism" && @transaction.l1_block_number do %>
+          <%= if Application.get_env(:explorer, :chain_type) == :optimism && @transaction.l1_block_number do %>
             <!-- L1 Block -->
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
@@ -394,7 +394,7 @@
           <!-- L1/L2 Gas Price -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
-              <%= if Application.get_env(:explorer, :chain_type) == "optimism" do %>
+              <%= if Application.get_env(:explorer, :chain_type) == :optimism do %>
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                   text: gettext("Price per unit of gas specified by the sender on L2. Higher gas prices can prioritize transaction inclusion during times of high usage.") %>
                 <%= gettext "L2 Gas Price" %>
@@ -420,7 +420,7 @@
           <!-- Gas Limit -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
-              <%= if Application.get_env(:explorer, :chain_type) == "optimism" do %>
+              <%= if Application.get_env(:explorer, :chain_type) == :optimism do %>
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                   text: gettext("Maximum gas amount approved for the transaction on L2.") %>
                 <%= gettext "L2 Gas Limit" %>
@@ -479,7 +479,7 @@
           <!-- L1/L2 Gas Used by Transaction -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted transaction-gas-used">
-              <%= if Application.get_env(:explorer, :chain_type) == "optimism" do %>
+              <%= if Application.get_env(:explorer, :chain_type) == :optimism do %>
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                   text: gettext("Actual gas amount used by the transaction on L2.") %>
                 <%= gettext "L2 Gas Used by Transaction" %>
@@ -492,7 +492,7 @@
             <% gas_used_perc = gas_used_perc(@transaction) %>
             <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "| #{gas_used_perc}%" %></dd>
           </dl>
-          <%= if Application.get_env(:explorer, :chain_type) == "optimism" do %>
+          <%= if Application.get_env(:explorer, :chain_type) == :optimism do %>
             <%= if @transaction.l1_gas_used do %>
               <!-- L1 Gas Used by Transaction -->
               <dl class="row">

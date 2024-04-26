@@ -42,9 +42,9 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
     coin_price_change =
       case Market.fetch_recent_history() do
-        [today, yesterday | _] ->
-          today.closing_price && yesterday.closing_price &&
-            today.closing_price
+        [_today, yesterday | _] ->
+          exchange_rate.usd_value && yesterday.closing_price &&
+            exchange_rate.usd_value
             |> Decimal.div(yesterday.closing_price)
             |> Decimal.sub(1)
             |> Decimal.mult(100)
@@ -176,7 +176,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   end
 
   case Application.compile_env(:explorer, :chain_type) do
-    "rsk" ->
+    :rsk ->
       defp add_chain_type_fields(response) do
         alias Explorer.Chain.Cache.RootstockLockedBTC
 
