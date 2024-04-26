@@ -89,7 +89,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       :zksync ->
         @default_runners ++ @zksync_runners
 
-      "arbitrum" ->
+      :arbitrum ->
         @default_runners ++ @arbitrum_runners
 
       _ ->

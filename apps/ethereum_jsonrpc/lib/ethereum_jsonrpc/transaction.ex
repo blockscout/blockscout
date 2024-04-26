@@ -48,7 +48,7 @@ defmodule EthereumJSONRPC.Transaction do
                            ]
                          )
 
-    "arbitrum" ->
+    :arbitrum ->
       @chain_type_fields quote(
                            do: [
                              request_id: non_neg_integer()
@@ -516,7 +516,7 @@ defmodule EthereumJSONRPC.Transaction do
           })
         end
 
-      "arbitrum" ->
+      :arbitrum ->
         put_if_present(elixir, params, [
           {"requestId", :request_id}
         ])

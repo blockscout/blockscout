@@ -290,7 +290,7 @@ defmodule Indexer.Block.Fetcher do
         basic_import_options
         |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
 
-      "arbitrum" ->
+      :arbitrum ->
         basic_import_options
         |> Map.put_new(:arbitrum_messages, %{params: arbitrum_xlevel_messages})
 
