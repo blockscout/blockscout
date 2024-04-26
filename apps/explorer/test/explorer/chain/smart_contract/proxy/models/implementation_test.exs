@@ -44,7 +44,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
       expect_address_in_response(string_implementation_address_hash)
 
-      assert {^string_implementation_address_hash, "implementation"} =
+      assert {[^string_implementation_address_hash], ["implementation"]} =
                Implementation.get_implementation_address_hash(smart_contract)
 
       verify!(EthereumJSONRPC.Mox)
@@ -57,7 +57,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
       TestHelper.get_eip1967_implementation_error_response()
 
-      assert {^string_implementation_address_hash, "implementation"} =
+      assert {[^string_implementation_address_hash], ["implementation"]} =
                Implementation.get_implementation_address_hash(smart_contract)
 
       verify!(EthereumJSONRPC.Mox)
@@ -78,7 +78,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
       Application.put_env(:explorer, :proxy, proxy)
 
-      assert {^string_implementation_address_hash, "implementation"} =
+      assert {[^string_implementation_address_hash], ["implementation"]} =
                Implementation.get_implementation_address_hash(smart_contract)
 
       contract_2 = SmartContract.address_hash_to_smart_contract_with_bytecode_twin(smart_contract.address_hash)
@@ -136,14 +136,14 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
       expect_address_in_response(string_implementation_address_hash)
 
-      assert {^string_implementation_address_hash, "implementation"} =
+      assert {[^string_implementation_address_hash], ["implementation"]} =
                Implementation.get_implementation_address_hash(bytecode_twin)
 
       verify!(EthereumJSONRPC.Mox)
 
       refute_implementations(smart_contract.address_hash)
 
-      assert {^string_implementation_address_hash, "implementation"} =
+      assert {[^string_implementation_address_hash], ["implementation"]} =
                Implementation.get_implementation_address_hash(bytecode_twin)
 
       verify!(EthereumJSONRPC.Mox)
@@ -178,7 +178,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
       expect_address_in_response(string_implementation_address_hash)
 
-      assert {^string_implementation_address_hash, "implementation"} =
+      assert {[^string_implementation_address_hash], ["implementation"]} =
                Implementation.get_implementation_address_hash(bytecode_twin)
 
       verify!(EthereumJSONRPC.Mox)
@@ -187,7 +187,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
       TestHelper.get_eip1967_implementation_error_response()
 
-      assert {^string_implementation_address_hash, "implementation"} =
+      assert {[^string_implementation_address_hash], ["implementation"]} =
                Implementation.get_implementation_address_hash(bytecode_twin)
 
       verify!(EthereumJSONRPC.Mox)
@@ -234,7 +234,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
       expect_address_in_response(string_implementation_address_hash)
 
-      assert {^string_implementation_address_hash, "implementation"} =
+      assert {[^string_implementation_address_hash], ["implementation"]} =
                Implementation.get_implementation_address_hash(bytecode_twin)
 
       verify!(EthereumJSONRPC.Mox)
