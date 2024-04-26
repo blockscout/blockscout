@@ -180,7 +180,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:block_hash_or_number/internal-transactions", V2.BlockController, :internal_transactions)
       get("/:block_hash_or_number/withdrawals", V2.BlockController, :withdrawals)
 
-      if Application.compile_env(:explorer, :chain_type) == "arbitrum" do
+      if Application.compile_env(:explorer, :chain_type) == :arbitrum do
         get("/arbitrum-batch/:batch_number", V2.BlockController, :arbitrum_batch)
       end
     end
@@ -242,7 +242,7 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/zksync/batches/latest-number", V2.ZkSyncController, :batch_latest_number)
       end
 
-      if Application.compile_env(:explorer, :chain_type) == "arbitrum" do
+      if Application.compile_env(:explorer, :chain_type) == :arbitrum do
         get("/arbitrum/messages/to-rollup", V2.ArbitrumController, :recent_messages_to_l2)
         get("/arbitrum/batches/committed", V2.ArbitrumController, :batches_committed)
         get("/arbitrum/batches/latest-number", V2.ArbitrumController, :batch_latest_number)
@@ -362,7 +362,7 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/arbitrum" do
-      if Application.compile_env(:explorer, :chain_type) == "arbitrum" do
+      if Application.compile_env(:explorer, :chain_type) == :arbitrum do
         get("/messages/:direction", V2.ArbitrumController, :messages)
         get("/messages/:direction/count", V2.ArbitrumController, :messages_count)
         get("/batches", V2.ArbitrumController, :batches)

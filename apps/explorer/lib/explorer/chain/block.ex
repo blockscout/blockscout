@@ -40,7 +40,7 @@ defmodule Explorer.Chain.Block.Schema do
                             2
                           )
 
-                        "arbitrum" ->
+                        :arbitrum ->
                           elem(
                             quote do
                               has_one(:arbitrum_batch_block, ArbitrumBatchBlock, foreign_key: :hash, references: :hash)

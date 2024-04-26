@@ -117,7 +117,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                             2
                           )
 
-                        "arbitrum" ->
+                        :arbitrum ->
                           elem(
                             quote do
                               has_one(:arbitrum_batch_transaction, ArbitrumBatchTransaction,

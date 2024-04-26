@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :zksync_execute_transaction => :optional
       }
 
-    "arbitrum" ->
+    :arbitrum ->
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{
         :arbitrum_batch => :optional,
