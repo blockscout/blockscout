@@ -35,10 +35,9 @@ defmodule Explorer.ExchangeRates.Source do
   @spec fetch_market_data_for_token_addresses([Hash.Address.t()]) ::
           {:ok, %{Hash.Address.t() => %{fiat_value: float() | nil, circulating_market_cap: float() | nil}}}
           | {:error, any}
-  def fetch_market_data_for_token_addresses(address_hashes) do
-    source_url = CoinGecko.source_url(address_hashes)
-    headers = CoinGecko.headers()
-    fetch_exchange_rates_request(CoinGecko, source_url, headers)
+  def fetch_market_data_for_token_addresses(address_hashes, source \\ exchange_rates_source()) do
+    source_url = source.source_url(address_hashes)
+    fetch_exchange_rates_request(source, source_url, source.headers())
   end
 
   @spec fetch_token_hashes_with_market_data :: {:ok, [String.t()]} | {:error, any}
