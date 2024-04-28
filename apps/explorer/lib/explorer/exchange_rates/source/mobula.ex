@@ -147,7 +147,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   end
 
   defp chain do
-    config(:chain) || "ethereum"
+    config(:chain_id) || "ethereum"
   end
 
   defp base_url do
