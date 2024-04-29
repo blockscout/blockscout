@@ -861,24 +861,39 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-  Inserts a `t:SmartContract.t/0`.
+    Inserts a new smart contract and associated data into the database.
 
-  As part of inserting a new smart contract, an additional record is inserted for
-  naming the address for reference.
+    This function creates a new smart contract entry in the database. It calculates an MD5 hash of
+    the contract's bytecode, upserts contract methods, and handles the linkage of external libraries and
+    additional secondary sources. It also updates the associated address to mark the contract as
+    verified and manages the naming records for the address.
+
+    ## Parameters
+    - `attrs`: Attributes for the new smart contract.
+    - `external_libraries`: A list of external libraries used by the contract.
+    - `secondary_sources`: Additional source data related to the contract.
+
+    ## Returns
+    - `{:ok, smart_contract}` on successful insertion.
+    - `{:error, data}` on failure, returning the changeset or, if any issues happen during setting the address as verified, an error message.
   """
   @spec create_smart_contract(map(), list(), list()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
   def create_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
     new_contract = %__MODULE__{}
 
+    # Updates contract attributes with calculated MD5 for the contract's bytecode
     attrs =
       attrs
       |> Helper.add_contract_code_md5()
 
+    # Prepares changeset and extends it with external libraries.
+    # As part of changeset preparation and verification, contract methods are upserted
     smart_contract_changeset =
       new_contract
       |> __MODULE__.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
 
+    # Prepares changesets for additional sources associated with the contract
     new_contract_additional_source = %SmartContractAdditionalSource{}
 
     smart_contract_additional_sources_changesets =
@@ -894,7 +909,10 @@ defmodule Explorer.Chain.SmartContract do
 
     address_hash = Changeset.get_field(smart_contract_changeset, :address_hash)
 
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    # Prepares the queries to update Explorer.Chain.Address to mark the contract as
+    # verified, clear the primary flag for the contract address in
+    # Explorer.Chain.Address.Name if any (enforce ShareLocks tables order (see
+    # docs: sharelocks.md)) and insert the contract details.
     insert_contract_query =
       Multi.new()
       |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
@@ -903,6 +921,8 @@ defmodule Explorer.Chain.SmartContract do
       end)
       |> Multi.insert(:smart_contract, smart_contract_changeset)
 
+    # Updates the queries from the previous step with inserting additional sources
+    # of the contract
     insert_contract_query_with_additional_sources =
       smart_contract_additional_sources_changesets
       |> Enum.with_index()
@@ -910,10 +930,12 @@ defmodule Explorer.Chain.SmartContract do
         Multi.insert(multi, "smart_contract_additional_source_#{Integer.to_string(index)}", changeset)
       end)
 
+    # Applying the queries to the database
     insert_result =
       insert_contract_query_with_additional_sources
       |> Repo.transaction()
 
+    # Set the primary mark for the contract name
     AddressName.create_primary_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
 
     case insert_result do
@@ -929,16 +951,28 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-  Updates a `t:SmartContract.t/0`.
+    Updates an existing smart contract and associated data into the database.
 
-  Has the similar logic as create_smart_contract/1.
-  Used in cases when you need to update row in DB contains SmartContract, e.g. in case of changing
-  status `partially verified` to `fully verified` (re-verify).
+    This function is similar to `create_smart_contract/1` but is used for updating an existing smart
+    contract, such as changing its verification status from `partially verified` to `fully verified`.
+    It handles the updates including external libraries and secondary sources associated with the contract.
+    Notably, it updates contract methods based on the new ABI provided: if the new ABI does not contain
+    some of the previously listed methods, those methods are retained in the database.
+
+    ## Parameters
+    - `attrs`: Attributes for the smart contract to be updated.
+    - `external_libraries`: A list of external libraries associated with the contract.
+    - `secondary_sources`: A list of secondary source data associated with the contract.
+
+    ## Returns
+    - `{:ok, smart_contract}` on successful update.
+    - `{:error, changeset}` on failure, indicating issues with the data provided for update.
   """
   @spec update_smart_contract(map(), list(), list()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
   def update_smart_contract(attrs \\ %{}, external_libraries \\ [], secondary_sources \\ []) do
     address_hash = Map.get(attrs, :address_hash)
 
+    # Removes all additional sources associated with the contract
     query_sources =
       from(
         source in SmartContractAdditionalSource,
@@ -947,14 +981,20 @@ defmodule Explorer.Chain.SmartContract do
 
     _delete_sources = Repo.delete_all(query_sources)
 
+    # Retrieve the existing smart contract
     query = get_smart_contract_query(address_hash)
     smart_contract = Repo.one(query)
 
+    # Updates existing changeset and extends it with external libraries.
+    # As part of changeset preparation and verification, contract methods are
+    # updated as so if new ABI does not contain some of previous methods, they
+    # are still kept in the database
     smart_contract_changeset =
       smart_contract
       |> __MODULE__.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
 
+    # Prepares changesets for additional sources associated with the contract
     new_contract_additional_source = %SmartContractAdditionalSource{}
 
     smart_contract_additional_sources_changesets =
@@ -968,7 +1008,9 @@ defmodule Explorer.Chain.SmartContract do
         []
       end
 
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    # Prepares the queries to clear the primary flag for the contract address in
+    # Explorer.Chain.Address.Name if any (enforce ShareLocks tables order (see
+    # docs: sharelocks.md)) and updated the contract details.
     insert_contract_query =
       Multi.new()
       |> Multi.run(:clear_primary_address_names, fn repo, _ ->
@@ -976,6 +1018,8 @@ defmodule Explorer.Chain.SmartContract do
       end)
       |> Multi.update(:smart_contract, smart_contract_changeset)
 
+    # Updates the queries from the previous step with inserting additional sources
+    # of the contract
     insert_contract_query_with_additional_sources =
       smart_contract_additional_sources_changesets
       |> Enum.with_index()
@@ -983,10 +1027,12 @@ defmodule Explorer.Chain.SmartContract do
         Multi.insert(multi, "smart_contract_additional_source_#{Integer.to_string(index)}", changeset)
       end)
 
+    # Applying the queries to the database
     insert_result =
       insert_contract_query_with_additional_sources
       |> Repo.transaction()
 
+    # Set the primary mark for the contract name
     AddressName.create_primary_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
 
     case insert_result do
@@ -995,9 +1041,6 @@ defmodule Explorer.Chain.SmartContract do
 
       {:error, :smart_contract, changeset, _} ->
         {:error, changeset}
-
-      {:error, :set_address_verified, message, _} ->
-        {:error, message}
     end
   end
 
@@ -1059,10 +1102,14 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-  Checks if it exists a verified `t:Explorer.Chain.SmartContract.t/0` for the
-  `t:Explorer.Chain.Address.t/0` with the provided `hash`.
+    Checks if a `Explorer.Chain.SmartContract` exists for the provided address hash.
 
-  Returns `true` if found and `false` otherwise.
+    ## Parameters
+    - `address_hash_str` or `address_hash`: The hash of the address in binary string
+                                            form or directly as an address hash.
+
+    ## Returns
+    - `boolean()`: `true` if a smart contract exists, `false` otherwise.
   """
   @spec verified?(Hash.Address.t() | String.t()) :: boolean()
   def verified?(address_hash_str) when is_binary(address_hash_str) do
@@ -1118,7 +1165,13 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-  Gets smart-contract by address hash
+    Composes a query for fetching a smart contract by its address hash.
+
+    ## Parameters
+    - `address_hash`: The hash of the smart contract's address.
+
+    ## Returns
+    - An `Ecto.Query.t()` that represents the query to fetch the smart contract.
   """
   @spec get_smart_contract_query(Hash.Address.t() | binary) :: Ecto.Query.t()
   def get_smart_contract_query(address_hash) do
@@ -1263,6 +1316,8 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
+  # Checks if a smart contract exists in `Explorer.Chain.SmartContract` for a given
+  # address hash.
   @spec verified_smart_contract_exists?(Hash.Address.t()) :: boolean()
   defp verified_smart_contract_exists?(address_hash) do
     query = get_smart_contract_query(address_hash)
