@@ -72,8 +72,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "token" => nil,
         "coin_balance" => nil,
         "exchange_rate" => nil,
-        "implementation_name" => nil,
-        "implementation_address" => nil,
+        "implementation_name" => [],
+        "implementation_address" => [],
         "block_number_balance_updated_at" => nil,
         "has_custom_methods_read" => false,
         "has_custom_methods_write" => false,
@@ -138,7 +138,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
                "creation_tx_hash" => ^tx_hash,
-               "implementation_address" => ^implementation_address_hash_string
+               "implementation_address" => [^implementation_address_hash_string]
              } = json_response(request, 200)
     end
 

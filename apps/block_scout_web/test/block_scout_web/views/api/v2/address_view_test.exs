@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.API.V2.AddressViewTest do
       proxy_address_hash: proxy_address.hash,
       proxy_type: "eip1967",
       address_hashes: [implementation_address.hash],
-      names: []
+      names: [nil]
     )
 
     TestHelper.get_eip1967_implementation_zero_addresses()

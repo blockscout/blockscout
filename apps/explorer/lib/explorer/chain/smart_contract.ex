@@ -571,21 +571,29 @@ defmodule Explorer.Chain.SmartContract do
   """
   @spec compose_smart_contract(map(), Hash.t(), any()) :: map()
   def compose_smart_contract(address_result, hash, options) do
-    {implementation_address_hash, _} =
-      Implementation.get_implementation_address_hash(hash, Keyword.put(options, :unverified_proxy_only?, true))
-
-    implementation_address =
-      implementation_address_hash
-      |> Proxy.implementation_to_smart_contract(options)
+    implementation_smart_contract =
+      single_implementation_smart_contract_from_proxy(hash, Keyword.put(options, :unverified_proxy_only?, true))
 
     address_verified_bytecode_twin_contract =
-      implementation_address ||
+      implementation_smart_contract ||
         get_address_verified_bytecode_twin_contract(hash, options).verified_contract
 
     if address_verified_bytecode_twin_contract do
       add_bytecode_twin_info_to_contract(address_result, address_verified_bytecode_twin_contract, hash)
     else
       address_result
+    end
+  end
+
+  def single_implementation_smart_contract_from_proxy(proxy_hash, options) do
+    {implementation_address_hashes, _} = Implementation.get_implementation_address_hash(proxy_hash, options)
+
+    if implementation_address_hashes && Enum.count(implementation_address_hashes) == 1 do
+      implementation_address_hashes
+      |> Enum.at(0)
+      |> Proxy.implementation_to_smart_contract(options)
+    else
+      nil
     end
   end
 
@@ -919,14 +927,13 @@ defmodule Explorer.Chain.SmartContract do
     current_smart_contract = address_hash_to_smart_contract(address_hash, options)
 
     with true <- is_nil(current_smart_contract),
-         {implementation_address_hash, _} =
-           Implementation.get_implementation_address_hash(
+         implementation_smart_contract =
+           single_implementation_smart_contract_from_proxy(
              address_hash,
              Keyword.put(options, :unverified_proxy_only?, true)
            ),
-         implementation_address = implementation_address_hash |> Proxy.implementation_to_smart_contract(options),
          address_verified_bytecode_twin_contract =
-           implementation_address ||
+           implementation_smart_contract ||
              get_address_verified_bytecode_twin_contract(address_hash, options).verified_contract,
          false <- is_nil(address_verified_bytecode_twin_contract) do
       put_from_verified_twin(address_verified_bytecode_twin_contract, address_hash)
