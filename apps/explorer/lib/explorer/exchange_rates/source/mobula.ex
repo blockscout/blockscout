@@ -13,7 +13,6 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @impl Source
   def format_data(%{"data" => %{"market_cap" => _} = market_data}) do
-
     current_price = market_data["price"]
     image_url = market_data["logo"]
 
@@ -47,7 +46,6 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @impl Source
   def format_data(%{"data" => data}) do
-
     data
     |> Enum.reduce(%{}, fn
       {address_hash_string, market_data}, acc ->
@@ -74,7 +72,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @impl Source
   def source_url do
-   "#{base_url()}/market/data?asset=#{Explorer.coin()}"
+    "#{base_url()}/market/data?asset=#{Explorer.coin()}"
   end
 
   @impl Source
@@ -98,12 +96,13 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @spec history_url(non_neg_integer()) :: String.t()
   def history_url(previous_days) do
-
     now = DateTime.utc_now()
     date_days_ago = DateTime.add(now, -previous_days, :day)
     timestamp_ms = DateTime.to_unix(date_days_ago) * 1000
 
-    Logger.info("Fetching price history from Mobula: #{history_source_url()} for the last #{previous_days} days. Timestamp: #{timestamp_ms} ms. Now: #{DateTime.to_unix(now)} ms. Date days ago: #{DateTime.to_unix(date_days_ago)} ms.")
+    Logger.info(
+      "Fetching price history from Mobula: #{history_source_url()} for the last #{previous_days} days. Timestamp: #{timestamp_ms} ms. Now: #{DateTime.to_unix(now)} ms. Date days ago: #{DateTime.to_unix(date_days_ago)} ms."
+    )
 
     "#{history_source_url()}&from=#{timestamp_ms}"
   end
@@ -151,7 +150,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   end
 
   defp base_url do
-     config(:base_url) || "https://api.mobula.io/api/1"
+    config(:base_url) || "https://api.mobula.io/api/1"
   end
 
   defp get_btc_price() do
@@ -160,7 +159,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
     case Source.http_request(url, headers()) do
       {:ok, data} = resp ->
         if is_map(data) do
-          current_price = data['price']
+          current_price = data[~c"price"]
 
           {:ok, current_price}
         else

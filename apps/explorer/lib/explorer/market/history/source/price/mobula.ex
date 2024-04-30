@@ -17,7 +17,6 @@ defmodule Explorer.Market.History.Source.Price.Mobula do
 
     case Source.http_request(url, ExchangeRatesSourceMobula.headers()) do
       {:ok, data} ->
-
         result =
           data
           |> format_data(secondary_coin?)
