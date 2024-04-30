@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.{AdvancedFilter, Data}
+  alias Explorer.Factory
 
   describe "/advanced_filters" do
     test "empty list", %{conn: conn} do
@@ -142,6 +143,17 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
     test "filter by methods", %{conn: conn} do
       tx = :transaction |> insert() |> with_block()
+      # contract_address = insert(:smart_contract).address
+
+      smart_contract = build(:smart_contract)
+
+      contract_address =
+        insert(:address,
+          hash: address_hash(),
+          verified: true,
+          contract_code: Factory.contract_code_info().bytecode,
+          smart_contract: smart_contract
+        )
 
       method_id1_string = "0xa9059cbb"
       method_id2_string = "0xa0712d68"
@@ -156,6 +168,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       for i <- 0..4 do
         insert(:internal_transaction,
           transaction: tx,
+          to_address_hash: contract_address.hash,
+          to_address: contract_address,
           block_hash: tx.block_hash,
           index: i,
           block_index: i,
@@ -166,6 +180,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       for i <- 5..9 do
         insert(:internal_transaction,
           transaction: tx,
+          to_address_hash: contract_address.hash,
+          to_address: contract_address,
           block_hash: tx.block_hash,
           index: i,
           block_index: i,
@@ -173,11 +189,23 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         )
       end
 
-      5 |> insert_list(:transaction, input: method2) |> with_block()
-      5 |> insert_list(:transaction, input: method3) |> with_block()
+      5
+      |> insert_list(:transaction, to_address_hash: contract_address.hash, to_address: contract_address, input: method2)
+      |> with_block()
 
-      method3_transaction = :transaction |> insert(input: method3) |> with_block()
-      method4_transaction = :transaction |> insert(input: method4) |> with_block()
+      5
+      |> insert_list(:transaction, to_address_hash: contract_address.hash, to_address: contract_address, input: method3)
+      |> with_block()
+
+      method3_transaction =
+        :transaction
+        |> insert(to_address_hash: contract_address.hash, to_address: contract_address, input: method3)
+        |> with_block()
+
+      method4_transaction =
+        :transaction
+        |> insert(to_address_hash: contract_address.hash, to_address: contract_address, input: method4)
+        |> with_block()
 
       5 |> insert_list(:token_transfer, transaction: method3_transaction)
       5 |> insert_list(:token_transfer, transaction: method4_transaction)
@@ -186,7 +214,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert response = json_response(request, 200)
 
       assert Enum.all?(response["items"], fn item ->
-               String.slice(item["raw_input"], 0..9) in [method_id2_string, method_id3_string]
+               String.slice(item["method"], 0..9) in [method_id2_string, method_id3_string]
              end)
 
       assert Enum.count(response["items"]) == 21
@@ -219,7 +247,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert Enum.count(response["items"]) == 9
     end
 
-    test "filter by from address", %{conn: conn} do
+    test "filter by from address include", %{conn: conn} do
       address = insert(:address)
 
       for i <- 0..4 do
@@ -256,14 +284,112 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         end
       end
 
-      request = get(conn, "/api/v2/advanced-filters", %{"from_address_hashes" => to_string(address.hash)})
+      request = get(conn, "/api/v2/advanced-filters", %{"from_address_hashes_to_include" => to_string(address.hash)})
 
       assert response = json_response(request, 200)
 
       assert Enum.count(response["items"]) == 6
     end
 
-    test "filter by to address", %{conn: conn} do
+    test "filter by from address exclude", %{conn: conn} do
+      address = insert(:address)
+
+      for i <- 0..4 do
+        tx = :transaction |> insert() |> with_block()
+
+        if i < 4 do
+          :transaction |> insert(from_address_hash: address.hash, from_address: address) |> with_block()
+
+          insert(:internal_transaction,
+            transaction: tx,
+            from_address_hash: address.hash,
+            from_address: address,
+            block_hash: tx.block_hash,
+            index: i,
+            block_index: i
+          )
+
+          insert(:token_transfer,
+            from_address_hash: address.hash,
+            from_address: address,
+            transaction: tx,
+            block_number: tx.block_number,
+            log_index: i
+          )
+        else
+          insert(:internal_transaction,
+            transaction: tx,
+            block_hash: tx.block_hash,
+            index: i,
+            block_index: i
+          )
+
+          insert(:token_transfer, transaction: tx, block_number: tx.block_number, log_index: i)
+        end
+      end
+
+      request = get(conn, "/api/v2/advanced-filters", %{"from_address_hashes_to_exclude" => to_string(address.hash)})
+
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 7
+    end
+
+    test "filter by from address include and exclude", %{conn: conn} do
+      address_to_include = insert(:address)
+      address_to_exclude = insert(:address)
+
+      for i <- 0..2 do
+        tx =
+          :transaction
+          |> insert(from_address_hash: address_to_exclude.hash, from_address: address_to_exclude)
+          |> with_block()
+
+        if i < 4 do
+          :transaction
+          |> insert(from_address_hash: address_to_include.hash, from_address: address_to_include)
+          |> with_block()
+
+          insert(:internal_transaction,
+            transaction: tx,
+            from_address_hash: address_to_include.hash,
+            from_address: address_to_include,
+            block_hash: tx.block_hash,
+            index: i,
+            block_index: i
+          )
+
+          insert(:token_transfer,
+            from_address_hash: address_to_include.hash,
+            from_address: address_to_include,
+            transaction: tx,
+            block_number: tx.block_number,
+            log_index: i
+          )
+        else
+          insert(:internal_transaction,
+            transaction: tx,
+            block_hash: tx.block_hash,
+            index: i,
+            block_index: i
+          )
+
+          insert(:token_transfer, transaction: tx, block_number: tx.block_number, log_index: i)
+        end
+      end
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "from_address_hashes_to_include" => to_string(address_to_include.hash),
+          "from_address_hashes_to_exclude" => to_string(address_to_exclude.hash)
+        })
+
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 9
+    end
+
+    test "filter by to address include", %{conn: conn} do
       address = insert(:address)
 
       for i <- 0..4 do
@@ -300,11 +426,109 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         end
       end
 
-      request = get(conn, "/api/v2/advanced-filters", %{"to_address_hashes" => to_string(address.hash)})
+      request = get(conn, "/api/v2/advanced-filters", %{"to_address_hashes_to_include" => to_string(address.hash)})
 
       assert response = json_response(request, 200)
 
       assert Enum.count(response["items"]) == 6
+    end
+
+    test "filter by to address exclude", %{conn: conn} do
+      address = insert(:address)
+
+      for i <- 0..4 do
+        tx = :transaction |> insert() |> with_block()
+
+        if i < 4 do
+          :transaction |> insert(to_address_hash: address.hash, to_address: address) |> with_block()
+
+          insert(:internal_transaction,
+            transaction: tx,
+            to_address_hash: address.hash,
+            to_address: address,
+            block_hash: tx.block_hash,
+            index: i,
+            block_index: i
+          )
+
+          insert(:token_transfer,
+            to_address_hash: address.hash,
+            to_address: address,
+            transaction: tx,
+            block_number: tx.block_number,
+            log_index: i
+          )
+        else
+          insert(:internal_transaction,
+            transaction: tx,
+            block_hash: tx.block_hash,
+            index: i,
+            block_index: i
+          )
+
+          insert(:token_transfer, transaction: tx, block_number: tx.block_number, log_index: i)
+        end
+      end
+
+      request = get(conn, "/api/v2/advanced-filters", %{"to_address_hashes_to_exclude" => to_string(address.hash)})
+
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 7
+    end
+
+    test "filter by to address include and exclude", %{conn: conn} do
+      address_to_include = insert(:address)
+      address_to_exclude = insert(:address)
+
+      for i <- 0..2 do
+        tx =
+          :transaction
+          |> insert(to_address_hash: address_to_exclude.hash, to_address: address_to_exclude)
+          |> with_block()
+
+        if i < 4 do
+          :transaction
+          |> insert(to_address_hash: address_to_include.hash, to_address: address_to_include)
+          |> with_block()
+
+          insert(:internal_transaction,
+            transaction: tx,
+            to_address_hash: address_to_include.hash,
+            to_address: address_to_include,
+            block_hash: tx.block_hash,
+            index: i,
+            block_index: i
+          )
+
+          insert(:token_transfer,
+            to_address_hash: address_to_include.hash,
+            to_address: address_to_include,
+            transaction: tx,
+            block_number: tx.block_number,
+            log_index: i
+          )
+        else
+          insert(:internal_transaction,
+            transaction: tx,
+            block_hash: tx.block_hash,
+            index: i,
+            block_index: i
+          )
+
+          insert(:token_transfer, transaction: tx, block_number: tx.block_number, log_index: i)
+        end
+      end
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "to_address_hashes_to_include" => to_string(address_to_include.hash),
+          "to_address_hashes_to_exclude" => to_string(address_to_exclude.hash)
+        })
+
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 9
     end
 
     test "filter by from and to address", %{conn: conn} do
@@ -400,8 +624,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       request =
         get(conn, "/api/v2/advanced-filters", %{
-          "from_address_hashes" => to_string(from_address.hash),
-          "to_address_hashes" => to_string(to_address.hash),
+          "from_address_hashes_to_include" => to_string(from_address.hash),
+          "to_address_hashes_to_include" => to_string(to_address.hash),
           "address_relation" => "AnD"
         })
 
@@ -503,8 +727,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       request =
         get(conn, "/api/v2/advanced-filters", %{
-          "from_address_hashes" => to_string(from_address.hash),
-          "to_address_hashes" => to_string(to_address.hash)
+          "from_address_hashes_to_include" => to_string(from_address.hash),
+          "to_address_hashes_to_include" => to_string(to_address.hash)
         })
 
       assert response = json_response(request, 200)

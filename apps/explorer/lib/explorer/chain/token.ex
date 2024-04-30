@@ -240,6 +240,14 @@ defmodule Explorer.Chain.Token do
   end
 
   @doc """
+    Gets tokens with given contract address hashes.
+  """
+  @spec get_by_contract_address_hashes([Hash.Address.t()], [Chain.api?()]) :: [Token.t()]
+  def get_by_contract_address_hashes(hashes, options) do
+    Chain.select_repo(options).all(from(t in __MODULE__, where: t.contract_address_hash in ^hashes))
+  end
+
+  @doc """
     For usage in Indexer.Fetcher.TokenInstance.LegacySanitizeERC721
   """
   @spec ordered_erc_721_token_address_hashes_list_query(integer(), Hash.Address.t() | nil) :: Ecto.Query.t()

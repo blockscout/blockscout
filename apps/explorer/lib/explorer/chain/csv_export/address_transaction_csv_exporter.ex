@@ -3,12 +3,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
   Exports transactions to a csv file.
   """
 
-  import Ecto.Query,
-    only: [
-      from: 2
-    ]
-
-  alias Explorer.{Market, PagingOptions, Repo}
+  alias Explorer.{Market, PagingOptions}
   alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper

@@ -9,7 +9,7 @@ defmodule Explorer.Chain.ContractMethod do
   use Explorer.Schema
 
   alias Explorer.Chain.{Hash, MethodIdentifier, SmartContract}
-  alias Explorer.Repo
+  alias Explorer.{Chain, Repo}
 
   typed_schema "contract_methods" do
     field(:identifier, MethodIdentifier)
@@ -74,6 +74,21 @@ defmodule Explorer.Chain.ContractMethod do
       where: contract_method.identifier == ^method_id,
       limit: ^limit
     )
+  end
+
+  @doc """
+  Finds limited number of contract methods by selector id
+  """
+  @spec find_contract_methods(binary(), [Chain.api?()]) :: [__MODULE__.t()]
+  def find_contract_methods(method_ids, options) do
+    query =
+      from(
+        contract_method in __MODULE__,
+        distinct: true,
+        where: contract_method.identifier in ^method_ids
+      )
+
+    Chain.select_repo(options).all(query)
   end
 
   defp abi_element_to_contract_method(element) do
