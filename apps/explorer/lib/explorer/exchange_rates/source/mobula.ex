@@ -4,7 +4,6 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   """
 
   require Logger
-  alias Explorer.{Chain, Helper}
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
