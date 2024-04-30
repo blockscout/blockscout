@@ -256,7 +256,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert PendingBlockOperation |> Repo.get(full_block.hash) |> is_nil()
     end
 
-    test "removes consensus to blocks where not all transactions are filled" do
+    test "sets refetch_needed=true for blocks where not all transactions are filled" do
       full_block = insert(:block)
       transaction_a = insert(:transaction) |> with_block(full_block)
       transaction_b = insert(:transaction) |> with_block(full_block)
@@ -270,7 +270,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_a.hash) |> Repo.one() |> is_nil()
       assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_b.hash) |> Repo.one() |> is_nil()
 
-      assert %{consensus: false} = Repo.get(Block, full_block.hash)
+      assert %{consensus: true, refetch_needed: true} = Repo.get(Block, full_block.hash)
       assert not is_nil(Repo.get(PendingBlockOperation, full_block.hash))
     end
 

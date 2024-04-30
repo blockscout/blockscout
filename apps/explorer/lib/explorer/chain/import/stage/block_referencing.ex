@@ -23,6 +23,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Optimism.FrameSequences,
     Runner.Optimism.TxnBatches,
     Runner.Optimism.OutputRoots,
+    Runner.Optimism.DisputeGames,
     Runner.Optimism.Deposits,
     Runner.Optimism.Withdrawals,
     Runner.Optimism.WithdrawalEvents
@@ -61,22 +62,22 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   @impl Stage
   def runners do
     case Application.get_env(:explorer, :chain_type) do
-      "optimism" ->
+      :optimism ->
         @default_runners ++ @optimism_runners
 
-      "polygon_edge" ->
+      :polygon_edge ->
         @default_runners ++ @polygon_edge_runners
 
-      "polygon_zkevm" ->
+      :polygon_zkevm ->
         @default_runners ++ @polygon_zkevm_runners
 
-      "shibarium" ->
+      :shibarium ->
         @default_runners ++ @shibarium_runners
 
-      "ethereum" ->
+      :ethereum ->
         @default_runners ++ @ethereum_runners
 
-      "zksync" ->
+      :zksync ->
         @default_runners ++ @zksync_runners
 
       _ ->

@@ -17,9 +17,12 @@ defmodule Indexer.Memory.Monitor do
   defstruct limit: 0,
             timer_interval: :timer.minutes(1),
             timer_reference: nil,
-            shrinkable_set: MapSet.new()
+            shrinkable_set: MapSet.new(),
+            shrunk?: false
 
   use GenServer
+
+  @expandable_memory_coefficient 0.4
 
   @doc """
   Registers caller as `Indexer.Memory.Shrinkable`.
@@ -65,14 +68,27 @@ defmodule Indexer.Memory.Monitor do
   def handle_info(:check, state) do
     total = :erlang.memory(:total)
 
-    if memory_limit() < total do
-      log_memory(%{limit: memory_limit(), total: total})
-      shrink_or_log(state)
-    end
+    shrunk_state =
+      if memory_limit() < total do
+        log_memory(%{limit: memory_limit(), total: total})
+        shrink_or_log(state)
+        %{state | shrunk?: true}
+      else
+        state
+      end
+
+    final_state =
+      if state.shrunk? and total <= memory_limit() * @expandable_memory_coefficient do
+        log_expandable_memory(%{limit: memory_limit(), total: total})
+        expand(state)
+        %{state | shrunk?: false}
+      else
+        shrunk_state
+      end
 
     flush(:check)
 
-    {:noreply, state}
+    {:noreply, final_state}
   end
 
   defp flush(message) do
@@ -100,7 +116,20 @@ defmodule Indexer.Memory.Monitor do
         to_string(limit),
         " bytes (",
         to_string(div(100 * total, limit)),
-        "%) of memory limit used."
+        "%) of memory limit used, shrinking queues"
+      ]
+    end)
+  end
+
+  defp log_expandable_memory(%{total: total, limit: limit}) do
+    Logger.info(fn ->
+      [
+        to_string(total),
+        " / ",
+        to_string(limit),
+        " bytes (",
+        to_string(div(100 * total, limit)),
+        "%) of memory limit used, expanding queues"
       ]
     end)
   end
@@ -162,6 +191,15 @@ defmodule Indexer.Memory.Monitor do
 
         shrink(tail)
     end
+  end
+
+  defp expand(%__MODULE__{} = state) do
+    state
+    |> shrinkable_memory_pairs()
+    |> Enum.each(fn {pid, _memory} ->
+      Logger.info(fn -> ["Expanding queue ", process(pid)] end)
+      Shrinkable.expand(pid)
+    end)
   end
 
   defp shrinkable_memory_pairs(%__MODULE__{shrinkable_set: shrinkable_set}) do

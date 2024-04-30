@@ -9,7 +9,7 @@ defmodule Explorer.Chain.BlockNumberHelper do
   def next_block_number(number), do: neighbor_block_number(number, :next)
 
   case Application.compile_env(:explorer, :chain_type) do
-    "filecoin" ->
+    :filecoin ->
       def null_rounds_count, do: Explorer.Chain.NullRoundHeight.total()
 
       defp neighbor_block_number(number, direction),

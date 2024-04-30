@@ -101,11 +101,11 @@ defmodule EthereumJSONRPC.Receipts do
           transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
           transaction_index: 0,\
   #{case Application.compile_env(:explorer, :chain_type) do
-    "ethereum" -> """
+    :ethereum -> """
             blob_gas_price: 0,\
             blob_gas_used: 0\
       """
-    "optimism" -> """
+    :optimism -> """
         l1_fee: 0,\
         l1_fee_scalar: 0,\
         l1_gas_price: 0,\

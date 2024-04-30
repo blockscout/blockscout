@@ -170,7 +170,13 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @impl Source
   def headers do
     if api_key() do
-      [{"X-Cg-Pro-Api-Key", "#{api_key()}"}]
+      case base_pro_url() do
+        "https://api.coingecko.com" <> _ ->
+          [{"X-Cg-Demo-Api-Key", "#{api_key()}"}]
+
+        _ ->
+          [{"X-Cg-Pro-Api-Key", "#{api_key()}"}]
+      end
     else
       []
     end

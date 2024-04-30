@@ -349,18 +349,24 @@ defmodule Explorer.Chain.Address do
   defp fetch_top_addresses(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    base_query =
-      from(a in Address,
-        where: a.fetched_coin_balance > ^0,
-        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        preload: [:names, :smart_contract],
-        select: {a, a.transactions_count}
-      )
+    case paging_options do
+      %PagingOptions{key: {0, _hash}} ->
+        []
 
-    base_query
-    |> page_addresses(paging_options)
-    |> limit(^paging_options.page_size)
-    |> Chain.select_repo(options).all()
+      _ ->
+        base_query =
+          from(a in Address,
+            where: a.fetched_coin_balance > ^0,
+            order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+            preload: [:names, :smart_contract],
+            select: {a, a.transactions_count}
+          )
+
+        base_query
+        |> page_addresses(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Chain.select_repo(options).all()
+    end
   end
 
   defp page_addresses(query, %PagingOptions{key: nil}), do: query

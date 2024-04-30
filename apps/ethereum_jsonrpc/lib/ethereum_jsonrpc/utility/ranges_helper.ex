@@ -107,6 +107,27 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     )
   end
 
+  @doc """
+  Converts initial ranges to ranges with size less or equal to the given size
+  """
+  @spec split([Range.t()], integer) :: [Range.t()]
+  def split(ranges, size) do
+    ranges
+    |> Enum.reduce([], fn from..to = range, acc ->
+      range_size = Range.size(range)
+
+      if range_size > size do
+        Enum.reduce(Range.new(0, range_size - 1, size), acc, fn iterator, inner_acc ->
+          start_from = from - iterator
+          [Range.new(start_from, max(start_from - size + 1, to), -1) | inner_acc]
+        end)
+      else
+        [range | acc]
+      end
+    end)
+    |> Enum.reverse()
+  end
+
   defp parse_integer(string) do
     case Integer.parse(string) do
       {number, ""} -> number

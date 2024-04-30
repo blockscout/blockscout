@@ -323,6 +323,10 @@ defmodule Indexer.BufferedTask do
     {:reply, BoundQueue.shrunk?(bound_queue), state}
   end
 
+  def handle_call(:expand, _from, %__MODULE__{bound_queue: bound_queue} = state) do
+    {:reply, :ok, %{state | bound_queue: BoundQueue.expand(bound_queue)}}
+  end
+
   defp drop_task(state, ref) do
     spawn_next_batch(%BufferedTask{state | task_ref_to_batch: Map.delete(state.task_ref_to_batch, ref)})
   end
