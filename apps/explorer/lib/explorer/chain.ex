@@ -3256,6 +3256,22 @@ defmodule Explorer.Chain do
 
   def limit_showing_transactions, do: @limit_showing_transactions
 
+  @doc """
+    Dynamically joins and preloads associations in a query based on necessity.
+
+    This function adjusts the provided Ecto query to include joins for associations. It supports
+    both optional and required joins. Optional joins use the `preload` function to fetch associations
+    without enforcing their presence. Required joins ensure the association exists.
+
+    ## Parameters
+    - `query`: The initial Ecto query.
+    - `associations`: A single association or a tuple with nested association preloads.
+    - `necessity`: Specifies if the association is `:optional` or `:required`.
+
+    ## Returns
+    - The modified query with the specified associations joined according to the defined necessity.
+  """
+  @spec join_association(atom() | Ecto.Query.t(), [{atom(), atom()}], :optional | :required) :: Ecto.Query.t()
   def join_association(query, [{association, nested_preload}], necessity)
       when is_atom(association) and is_atom(nested_preload) do
     case necessity do
@@ -3273,6 +3289,7 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec join_association(atom() | Ecto.Query.t(), atom(), :optional | :required) :: Ecto.Query.t()
   def join_association(query, association, necessity) do
     case necessity do
       :optional ->
@@ -3283,10 +3300,23 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec join_associations(atom() | Ecto.Query.t(), map) :: Ecto.Query.t()
   @doc """
-    Function to preload entities associated with selected in provided query items
+    Applies dynamic joins to a query based on provided association necessities.
+
+    This function iterates over a map of associations with their required join types, either
+    `:optional` or `:required`, and applies the corresponding joins to the given query.
+
+    More info is available on https://hexdocs.pm/ecto/Ecto.Query.html#preload/3
+
+    ## Parameters
+    - `query`: The base query to which associations will be joined.
+    - `necessity_by_association`: A map specifying each association and its necessity
+      (`:optional` or `:required`).
+
+    ## Returns
+    - The query with all specified associations joined according to their necessity.
   """
+  @spec join_associations(atom() | Ecto.Query.t(), %{any() => :optional | :required}) :: Ecto.Query.t()
   def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)

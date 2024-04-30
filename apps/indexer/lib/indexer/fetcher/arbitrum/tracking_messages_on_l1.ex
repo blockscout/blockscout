@@ -76,7 +76,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
      %{
        config: %{
          json_l2_rpc_named_arguments: args[:json_rpc_named_arguments],
-         json_l1_rpc_named_arguments: IndexerHelper.build_json_rpc_named_arguments(l1_rpc),
+         json_l1_rpc_named_arguments: IndexerHelper.json_rpc_named_arguments(l1_rpc),
          recheck_interval: recheck_interval,
          l1_rpc_chunk_size: l1_rpc_chunk_size,
          l1_rpc_block_range: l1_rpc_block_range,

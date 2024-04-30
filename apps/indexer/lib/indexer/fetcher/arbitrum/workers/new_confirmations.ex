@@ -1044,9 +1044,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   end
 
   defp get_confirmed_l2_to_l1_messages(block_number) do
-    Db.sent_l2_to_l1_messages(block_number)
+    block_number
+    |> Db.sent_l2_to_l1_messages()
     |> Enum.map(fn tx ->
-      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
       Map.put(tx, :status, :confirmed)
     end)
   end

@@ -120,7 +120,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     case query
-         |> Chain.join_associations(%{:commit_transaction => :optional})
+         |> Chain.join_associations(%{:commit_transaction => :required})
          |> Repo.one() do
       nil -> nil
       batch -> batch.commit_transaction.block
@@ -147,7 +147,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     case query
-         |> Chain.join_associations(%{:commit_transaction => :optional})
+         |> Chain.join_associations(%{:commit_transaction => :required})
          |> Repo.one() do
       nil -> nil
       batch -> batch.commit_transaction.block
@@ -357,9 +357,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     query
-    |> Chain.join_associations(%{
-      :commit_transaction => :optional
-    })
+    |> Chain.join_associations(%{:commit_transaction => :required})
     |> Repo.one()
   end
 
@@ -480,12 +478,12 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - `last_block`:The rollup block number ending the lookup range.
 
     ## Returns
-    - A list of maps containing the batch number, rollup block number and hash, and confirm Id for
-      each unconfirmed block within the range. Returns `[]` if no unconfirmed blocks are found
+    - A list of maps containing the batch number, rollup block number and hash for each
+      unconfirmed block within the range. Returns `[]` if no unconfirmed blocks are found
       within the range, or if the block fetcher has not indexed them.
   """
   @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [
-          %{batch_number: non_neg_integer, block_num: FullBlock.block_number(), confirm_id: nil, hash: Hash}
+          %{batch_number: non_neg_integer, block_num: FullBlock.block_number(), hash: Hash.t()}
         ]
   def unconfirmed_rollup_blocks(first_block, last_block)
       when is_integer(first_block) and first_block >= 0 and
@@ -498,8 +496,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         select: %{
           batch_number: rb.batch_number,
           hash: rb.hash,
-          block_num: fb.number,
-          confirm_id: rb.confirm_id
+          block_num: fb.number
         },
         where: fb.number >= ^first_block and fb.number <= ^last_block and is_nil(rb.confirm_id),
         order_by: [asc: fb.number]
@@ -523,7 +520,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         rb in BatchBlock,
-        where: rb.batch_number >= ^batch_number and not is_nil(rb.confirm_id)
+        where: rb.batch_number == ^batch_number and not is_nil(rb.confirm_id)
       )
 
     Repo.aggregate(query, :count, timeout: :infinity)

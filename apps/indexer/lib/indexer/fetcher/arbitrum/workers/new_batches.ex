@@ -968,9 +968,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   # Retrieves initiated L2-to-L1 messages up to specified block number and marks them as 'sent'.
   defp get_committed_l2_to_l1_messages(block_number) do
-    Db.initiated_l2_to_l1_messages(block_number)
+    block_number
+    |> Db.initiated_l2_to_l1_messages()
     |> Enum.map(fn tx ->
-      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
       Map.put(tx, :status, :sent)
     end)
   end

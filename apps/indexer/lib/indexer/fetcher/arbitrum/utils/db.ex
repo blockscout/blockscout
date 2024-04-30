@@ -385,8 +385,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         ]
   def lifecycle_unfinalized_transactions(finalized_block)
       when is_integer(finalized_block) and finalized_block >= 0 do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.lifecycle_unfinalized_transactions(finalized_block)
+    finalized_block
+    |> Reader.lifecycle_unfinalized_transactions()
     |> Enum.map(&lifecycle_transaction_to_map/1)
   end
 
@@ -465,8 +465,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
           %{
             batch_number: non_neg_integer(),
             block_num: FullBlock.block_number(),
-            confirm_id: nil,
-            hash: Hash
+            hash: Hash.t()
           }
         ]
   def unconfirmed_rollup_blocks(first_block, last_block)
