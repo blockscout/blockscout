@@ -112,17 +112,6 @@ defmodule Explorer.Helper do
   end
 
   @doc """
-    Tries to decode binary to json, return either decoded object, or initial binary
-  """
-  @spec maybe_decode(binary) :: any
-  def maybe_decode(data) do
-    case safe_decode_json(data, false) do
-      %{error: _} -> data
-      decoded -> decoded
-    end
-  end
-
-  @doc """
   Checks if input is a valid URL
   """
   @spec validate_url(String.t() | nil) :: {:ok, String.t()} | :error
