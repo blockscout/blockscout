@@ -13,9 +13,10 @@ defmodule Indexer.Fetcher.TransactionAction do
       from: 2
     ]
 
+  import Explorer.Helper, only: [parse_integer: 1]
+
   alias Explorer.{Chain, Repo}
-  alias Explorer.Helper, as: ExplorerHelper
-  alias Explorer.Chain.{Block, Log, TransactionAction}
+  alias Explorer.Chain.{Block, BlockNumberHelper, Log, TransactionAction}
   alias Indexer.Transform.{Addresses, TransactionActions}
 
   @stage_first_block "tx_action_first_block"
@@ -157,7 +158,7 @@ defmodule Indexer.Fetcher.TransactionAction do
         |> Decimal.round(2)
         |> Decimal.to_string()
 
-      next_block_new = block_number - 1
+      next_block_new = BlockNumberHelper.previous_block_number(block_number)
 
       Logger.info(
         "Block #{block_number} handled successfully. Progress: #{progress_percentage}%. Initial block range: #{first_block}..#{last_block}." <>
@@ -197,8 +198,8 @@ defmodule Indexer.Fetcher.TransactionAction do
     logger_metadata = Logger.metadata()
     Logger.metadata(fetcher: :transaction_action)
 
-    first_block = ExplorerHelper.parse_integer(first_block)
-    last_block = ExplorerHelper.parse_integer(last_block)
+    first_block = parse_integer(first_block)
+    last_block = parse_integer(last_block)
 
     return =
       if is_nil(first_block) or is_nil(last_block) or first_block <= 0 or last_block <= 0 or first_block > last_block do

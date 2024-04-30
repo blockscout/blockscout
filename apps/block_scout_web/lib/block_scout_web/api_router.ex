@@ -47,73 +47,14 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(RateLimit)
   end
 
-  alias BlockScoutWeb.Account.Api.V1.{AuthenticateController, EmailController, TagsController, UserController}
+  pipeline :api_v1_graphql do
+    plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(:accepts, ["json"])
+    plug(RateLimit, graphql?: true)
+  end
+
+  alias BlockScoutWeb.Account.Api.V2.{AuthenticateController, EmailController, TagsController, UserController}
   alias BlockScoutWeb.API.V2
-
-  # TODO: Remove /account/v1 paths
-  scope "/account/v1", as: :account_v1 do
-    pipe_through(:api)
-    pipe_through(:account_api)
-
-    get("/authenticate", AuthenticateController, :authenticate_get)
-    post("/authenticate", AuthenticateController, :authenticate_post)
-
-    get("/get_csrf", UserController, :get_csrf)
-
-    scope "/email" do
-      get("/resend", EmailController, :resend_email)
-    end
-
-    scope "/user" do
-      get("/info", UserController, :info)
-
-      get("/watchlist", UserController, :watchlist_old)
-      delete("/watchlist/:id", UserController, :delete_watchlist)
-      post("/watchlist", UserController, :create_watchlist)
-      put("/watchlist/:id", UserController, :update_watchlist)
-
-      get("/api_keys", UserController, :api_keys)
-      delete("/api_keys/:api_key", UserController, :delete_api_key)
-      post("/api_keys", UserController, :create_api_key)
-      put("/api_keys/:api_key", UserController, :update_api_key)
-
-      get("/custom_abis", UserController, :custom_abis)
-      delete("/custom_abis/:id", UserController, :delete_custom_abi)
-      post("/custom_abis", UserController, :create_custom_abi)
-      put("/custom_abis/:id", UserController, :update_custom_abi)
-
-      get("/public_tags", UserController, :public_tags_requests)
-      delete("/public_tags/:id", UserController, :delete_public_tags_request)
-      post("/public_tags", UserController, :create_public_tags_request)
-      put("/public_tags/:id", UserController, :update_public_tags_request)
-
-      scope "/tags" do
-        get("/address/", UserController, :tags_address_old)
-        get("/address/:id", UserController, :tags_address)
-        delete("/address/:id", UserController, :delete_tag_address)
-        post("/address/", UserController, :create_tag_address)
-        put("/address/:id", UserController, :update_tag_address)
-
-        get("/transaction/", UserController, :tags_transaction_old)
-        get("/transaction/:id", UserController, :tags_transaction)
-        delete("/transaction/:id", UserController, :delete_tag_transaction)
-        post("/transaction/", UserController, :create_tag_transaction)
-        put("/transaction/:id", UserController, :update_tag_transaction)
-      end
-    end
-  end
-
-  # TODO: Remove /account/v1 paths
-  scope "/account/v1" do
-    pipe_through(:api)
-    pipe_through(:account_api)
-
-    scope "/tags" do
-      get("/address/:address_hash", TagsController, :tags_address)
-
-      get("/transaction/:transaction_hash", TagsController, :tags_transaction)
-    end
-  end
 
   scope "/account/v2", as: :account_v2 do
     pipe_through(:api)
@@ -195,19 +136,23 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/config" do
-      get("/json-rpc-url", V2.ConfigController, :json_rpc_url)
       get("/backend-version", V2.ConfigController, :backend_version)
     end
 
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
+      get("/stats", V2.TransactionController, :stats)
 
-      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
-        get("/zkevm-batch/:batch_number", V2.TransactionController, :zkevm_batch)
+      if Application.compile_env(:explorer, :chain_type) == :polygon_zkevm do
+        get("/zkevm-batch/:batch_number", V2.TransactionController, :polygon_zkevm_batch)
       end
 
-      if System.get_env("CHAIN_TYPE") == "suave" do
+      if Application.compile_env(:explorer, :chain_type) == :zksync do
+        get("/zksync-batch/:batch_number", V2.TransactionController, :zksync_batch)
+      end
+
+      if Application.compile_env(:explorer, :chain_type) == :suave do
         get("/execution-node/:execution_node_hash_param", V2.TransactionController, :execution_node)
       end
 
@@ -218,12 +163,17 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:transaction_hash_param/raw-trace", V2.TransactionController, :raw_trace)
       get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
+
+      if Application.compile_env(:explorer, :chain_type) == :ethereum do
+        get("/:transaction_hash_param/blobs", V2.TransactionController, :blobs)
+      end
     end
 
     scope "/blocks" do
       get("/", V2.BlockController, :blocks)
       get("/:block_hash_or_number", V2.BlockController, :block)
       get("/:block_hash_or_number/transactions", V2.BlockController, :transactions)
+      get("/:block_hash_or_number/internal-transactions", V2.BlockController, :internal_transactions)
       get("/:block_hash_or_number/withdrawals", V2.BlockController, :withdrawals)
     end
 
@@ -256,6 +206,7 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/:address_hash_param/counters", V2.TokenController, :counters)
       get("/:address_hash_param/transfers", V2.TokenController, :transfers)
       get("/:address_hash_param/holders", V2.TokenController, :holders)
+      get("/:address_hash_param/holders/csv", V2.CSVExportController, :export_token_holders)
       get("/:address_hash_param/instances", V2.TokenController, :instances)
       get("/:address_hash_param/instances/:token_id", V2.TokenController, :instance)
       get("/:address_hash_param/instances/:token_id/transfers", V2.TokenController, :transfers_by_instance)
@@ -269,9 +220,18 @@ defmodule BlockScoutWeb.ApiRouter do
       get("/transactions/watchlist", V2.MainPageController, :watchlist_transactions)
       get("/indexing-status", V2.MainPageController, :indexing_status)
 
-      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
-        get("/zkevm/batches/confirmed", V2.ZkevmController, :batches_confirmed)
-        get("/zkevm/batches/latest-number", V2.ZkevmController, :batch_latest_number)
+      if Application.compile_env(:explorer, :chain_type) == :optimism do
+        get("/optimism-deposits", V2.MainPageController, :optimism_deposits)
+      end
+
+      if Application.compile_env(:explorer, :chain_type) == :polygon_zkevm do
+        get("/zkevm/batches/confirmed", V2.PolygonZkevmController, :batches_confirmed)
+        get("/zkevm/batches/latest-number", V2.PolygonZkevmController, :batch_latest_number)
+      end
+
+      if Application.compile_env(:explorer, :chain_type) == :zksync do
+        get("/zksync/batches/confirmed", V2.ZkSyncController, :batches_confirmed)
+        get("/zksync/batches/latest-number", V2.ZkSyncController, :batch_latest_number)
       end
     end
 
@@ -281,11 +241,27 @@ defmodule BlockScoutWeb.ApiRouter do
       scope "/charts" do
         get("/transactions", V2.StatsController, :transactions_chart)
         get("/market", V2.StatsController, :market_chart)
+        get("/secondary-coin-market", V2.StatsController, :secondary_coin_market_chart)
+      end
+    end
+
+    scope "/optimism" do
+      if Application.compile_env(:explorer, :chain_type) == :optimism do
+        get("/txn-batches", V2.OptimismController, :txn_batches)
+        get("/txn-batches/count", V2.OptimismController, :txn_batches_count)
+        get("/output-roots", V2.OptimismController, :output_roots)
+        get("/output-roots/count", V2.OptimismController, :output_roots_count)
+        get("/deposits", V2.OptimismController, :deposits)
+        get("/deposits/count", V2.OptimismController, :deposits_count)
+        get("/withdrawals", V2.OptimismController, :withdrawals)
+        get("/withdrawals/count", V2.OptimismController, :withdrawals_count)
+        get("/games", V2.OptimismController, :games)
+        get("/games/count", V2.OptimismController, :games_count)
       end
     end
 
     scope "/polygon-edge" do
-      if System.get_env("CHAIN_TYPE") == "polygon_edge" do
+      if Application.compile_env(:explorer, :chain_type) == :polygon_edge do
         get("/deposits", V2.PolygonEdgeController, :deposits)
         get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
         get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
@@ -294,7 +270,7 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/shibarium" do
-      if System.get_env("CHAIN_TYPE") == "shibarium" do
+      if Application.compile_env(:explorer, :chain_type) == :shibarium do
         get("/deposits", V2.ShibariumController, :deposits)
         get("/deposits/count", V2.ShibariumController, :deposits_count)
         get("/withdrawals", V2.ShibariumController, :withdrawals)
@@ -308,22 +284,29 @@ defmodule BlockScoutWeb.ApiRouter do
     end
 
     scope "/zkevm" do
-      if System.get_env("CHAIN_TYPE") == "polygon_zkevm" do
-        get("/batches", V2.ZkevmController, :batches)
-        get("/batches/count", V2.ZkevmController, :batches_count)
-        get("/batches/:batch_number", V2.ZkevmController, :batch)
+      if Application.compile_env(:explorer, :chain_type) == :polygon_zkevm do
+        get("/batches", V2.PolygonZkevmController, :batches)
+        get("/batches/count", V2.PolygonZkevmController, :batches_count)
+        get("/batches/:batch_number", V2.PolygonZkevmController, :batch)
+        get("/deposits", V2.PolygonZkevmController, :deposits)
+        get("/deposits/count", V2.PolygonZkevmController, :deposits_count)
+        get("/withdrawals", V2.PolygonZkevmController, :withdrawals)
+        get("/withdrawals/count", V2.PolygonZkevmController, :withdrawals_count)
       end
     end
 
     scope "/proxy" do
       scope "/noves-fi" do
         get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
-        get("/transactions/:transaction_hash_param/describe", V2.Proxy.NovesFiController, :describe_transaction)
+
         get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+
+        get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
       end
 
       scope "/account-abstraction" do
         get("/operations/:operation_hash_param", V2.Proxy.AccountAbstractionController, :operation)
+        get("/operations/:operation_hash_param/summary", V2.Proxy.AccountAbstractionController, :summary)
         get("/bundlers/:address_hash_param", V2.Proxy.AccountAbstractionController, :bundler)
         get("/bundlers", V2.Proxy.AccountAbstractionController, :bundlers)
         get("/factories/:address_hash_param", V2.Proxy.AccountAbstractionController, :factory)
@@ -335,6 +318,46 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/bundles", V2.Proxy.AccountAbstractionController, :bundles)
         get("/operations", V2.Proxy.AccountAbstractionController, :operations)
       end
+
+      scope "/zerion" do
+        get("/wallets/:address_hash_param/portfolio", V2.Proxy.ZerionController, :wallet_portfolio)
+      end
+    end
+
+    scope "/blobs" do
+      if Application.compile_env(:explorer, :chain_type) == :ethereum do
+        get("/:blob_hash_param", V2.BlobController, :blob)
+      end
+    end
+
+    scope "/validators" do
+      if Application.compile_env(:explorer, :chain_type) == :stability do
+        scope "/stability" do
+          get("/", V2.ValidatorController, :stability_validators_list)
+          get("/counters", V2.ValidatorController, :stability_validators_counters)
+        end
+      end
+    end
+
+    scope "/zksync" do
+      if Application.compile_env(:explorer, :chain_type) == :zksync do
+        get("/batches", V2.ZkSyncController, :batches)
+        get("/batches/count", V2.ZkSyncController, :batches_count)
+        get("/batches/:batch_number", V2.ZkSyncController, :batch)
+      end
+    end
+  end
+
+  scope "/v1/graphql" do
+    pipe_through(:api_v1_graphql)
+
+    if Application.compile_env(:block_scout_web, Api.GraphQL)[:enabled] do
+      forward("/", Absinthe.Plug,
+        schema: BlockScoutWeb.GraphQL.Schema,
+        analyze_complexity: true,
+        max_complexity: Application.compile_env(:block_scout_web, Api.GraphQL)[:max_complexity],
+        token_limit: Application.compile_env(:block_scout_web, Api.GraphQL)[:token_limit]
+      )
     end
   end
 
@@ -346,14 +369,6 @@ defmodule BlockScoutWeb.ApiRouter do
 
     # leave the same endpoint in v1 in order to keep backward compatibility
     get("/search", SearchController, :search)
-
-    @max_complexity 200
-
-    forward("/graphql", Absinthe.Plug,
-      schema: BlockScoutWeb.Schema,
-      analyze_complexity: true,
-      max_complexity: @max_complexity
-    )
 
     get("/transactions-csv", AddressTransactionController, :transactions_csv)
 

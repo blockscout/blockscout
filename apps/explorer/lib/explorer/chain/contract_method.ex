@@ -11,13 +11,7 @@ defmodule Explorer.Chain.ContractMethod do
   alias Explorer.Chain.{Hash, MethodIdentifier, SmartContract}
   alias Explorer.Repo
 
-  @type t :: %__MODULE__{
-          identifier: MethodIdentifier.t(),
-          abi: map(),
-          type: String.t()
-        }
-
-  schema "contract_methods" do
+  typed_schema "contract_methods" do
     field(:identifier, MethodIdentifier)
     field(:abi, :map)
     field(:type, :string)
@@ -87,8 +81,13 @@ defmodule Explorer.Chain.ContractMethod do
       [selector] ->
         now = DateTime.utc_now()
 
+        # For events, the method_id (signature) is 32 bytes, whereas for methods
+        # and errors it is 4 bytes. To avoid complications with different sizes,
+        # we always take only the first 4 bytes of the hash.
+        <<first_four_bytes::binary-size(4), _::binary>> = selector.method_id
+
         %{
-          identifier: selector.method_id,
+          identifier: first_four_bytes,
           abi: element,
           type: Atom.to_string(selector.type),
           inserted_at: now,

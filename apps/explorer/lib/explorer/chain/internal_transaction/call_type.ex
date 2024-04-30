@@ -5,6 +5,13 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
 
   use Ecto.Type
 
+  @base_call_types ~w(call callcode delegatecall staticcall)a
+  if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+    @call_types @base_call_types ++ ~w(invalid)a
+  else
+    @call_types @base_call_types
+  end
+
   @typedoc """
    * `:call` - call a function in a contract by jumping into the contract's context
    * `:callcode`
@@ -12,8 +19,19 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
      the current contract's context with the delegated contract's code.  There's some good chances for finding bugs
      when fuzzing these if the memory layout differs between the current contract and the delegated contract.
    * `:staticcall`
+   #{if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+    """
+      * `:invalid`
+    """
+  else
+    ""
+  end}
   """
-  @type t :: :call | :callcode | :delegatecall | :staticcall
+  if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+    @type t :: :call | :callcode | :delegatecall | :staticcall | :invalid
+  else
+    @type t :: :call | :callcode | :delegatecall | :staticcall
+  end
 
   @doc """
   Casts `term` to `t:t/0`
@@ -48,11 +66,15 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   """
   @impl Ecto.Type
   @spec cast(term()) :: {:ok, t()} | :error
-  def cast(t) when t in ~w(call callcode delegatecall staticcall)a, do: {:ok, t}
-  def cast("call"), do: {:ok, :call}
-  def cast("callcode"), do: {:ok, :callcode}
-  def cast("delegatecall"), do: {:ok, :delegatecall}
-  def cast("staticcall"), do: {:ok, :staticcall}
+  def cast(type) when type in @call_types, do: {:ok, type}
+
+  def cast(call_type) when call_type in ["call", "callcode", "delegatecall", "staticcall"],
+    do: {:ok, String.to_existing_atom(call_type)}
+
+  if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+    def cast("invalid"), do: {:ok, :invalid}
+  end
+
   def cast(_), do: :error
 
   @doc """
@@ -75,10 +97,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   """
   @impl Ecto.Type
   @spec dump(term()) :: {:ok, String.t()} | :error
-  def dump(:call), do: {:ok, "call"}
-  def dump(:callcode), do: {:ok, "callcode"}
-  def dump(:delegatecall), do: {:ok, "delegatecall"}
-  def dump(:staticcall), do: {:ok, "staticcall"}
+  def dump(call_type) when call_type in @call_types, do: {:ok, Atom.to_string(call_type)}
   def dump(_), do: :error
 
   @doc """
@@ -101,10 +120,13 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   """
   @impl Ecto.Type
   @spec load(term()) :: {:ok, t()} | :error
-  def load("call"), do: {:ok, :call}
-  def load("callcode"), do: {:ok, :callcode}
-  def load("delegatecall"), do: {:ok, :delegatecall}
-  def load("staticcall"), do: {:ok, :staticcall}
+  def load(call_type) when call_type in ["call", "callcode", "delegatecall", "staticcall"],
+    do: {:ok, String.to_existing_atom(call_type)}
+
+  if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+    def load("invalid"), do: {:ok, :invalid}
+  end
+
   def load(_), do: :error
 
   @doc """

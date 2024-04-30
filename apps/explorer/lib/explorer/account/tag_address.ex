@@ -14,12 +14,12 @@ defmodule Explorer.Account.TagAddress do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
-  schema "account_tag_addresses" do
-    field(:address_hash_hash, Cloak.Ecto.SHA256)
-    field(:name, Explorer.Encrypted.Binary)
-    field(:address_hash, Explorer.Encrypted.AddressHash)
+  typed_schema "account_tag_addresses" do
+    field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
+    field(:name, Explorer.Encrypted.Binary, null: false)
+    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
 
-    belongs_to(:identity, Identity)
+    belongs_to(:identity, Identity, null: false)
 
     timestamps()
   end
@@ -99,12 +99,18 @@ defmodule Explorer.Account.TagAddress do
   def get_tags_address_by_identity_id(id, options) when not is_nil(id) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
-    id
-    |> tags_address_by_identity_id_query()
-    |> order_by([tag], desc: tag.id)
-    |> page_address_tags(paging_options)
-    |> limit(^paging_options.page_size)
-    |> Repo.account_repo().all()
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
+
+      _ ->
+        id
+        |> tags_address_by_identity_id_query()
+        |> order_by([tag], desc: tag.id)
+        |> page_address_tags(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Repo.account_repo().all()
+    end
   end
 
   def get_tags_address_by_identity_id(_, _), do: []

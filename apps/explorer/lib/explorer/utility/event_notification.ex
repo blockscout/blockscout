@@ -5,7 +5,7 @@ defmodule Explorer.Utility.EventNotification do
 
   use Explorer.Schema
 
-  schema "event_notifications" do
+  typed_schema "event_notifications" do
     field(:data, :string)
   end
 

@@ -3,8 +3,11 @@ defmodule Explorer.Chain.InternalTransaction do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Block, Data, Gas, Hash, PendingBlockOperation, Transaction, Wei}
+  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.{Address, Block, Data, Hash, PendingBlockOperation, Transaction, Wei}
   alias Explorer.Chain.InternalTransaction.{Action, CallType, Result, Type}
+
+  @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
    * `block_number` - the `t:Explorer.Chain.Block.t/0` `number` that the `transaction` is collated into.
@@ -32,50 +35,23 @@ defmodule Explorer.Chain.InternalTransaction do
    * `block_index` - the index of this internal transaction inside the `block`
    * `pending_block` - `nil` if `block` has all its internal transactions fetched
   """
-  @type t :: %__MODULE__{
-          block_number: Explorer.Chain.Block.block_number() | nil,
-          type: Type.t(),
-          call_type: CallType.t() | nil,
-          created_contract_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          created_contract_address_hash: Hash.t() | nil,
-          created_contract_code: Data.t() | nil,
-          error: String.t(),
-          from_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          from_address_hash: Hash.Address.t(),
-          gas: Gas.t() | nil,
-          gas_used: Gas.t() | nil,
-          index: non_neg_integer(),
-          init: Data.t() | nil,
-          input: Data.t() | nil,
-          output: Data.t() | nil,
-          to_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          to_address_hash: Hash.Address.t() | nil,
-          trace_address: [non_neg_integer()],
-          transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
-          transaction_hash: Hash.t(),
-          transaction_index: Transaction.transaction_index() | nil,
-          value: Wei.t(),
-          block_hash: Hash.Full.t(),
-          block_index: non_neg_integer()
-        }
-
   @primary_key false
-  schema "internal_transactions" do
+  typed_schema "internal_transactions" do
     field(:call_type, CallType)
     field(:created_contract_code, Data)
     field(:error, :string)
     field(:gas, :decimal)
     field(:gas_used, :decimal)
-    field(:index, :integer, primary_key: true)
+    field(:index, :integer, primary_key: true, null: false)
     field(:init, Data)
     field(:input, Data)
     field(:output, Data)
-    field(:trace_address, {:array, :integer})
-    field(:type, Type)
-    field(:value, Wei)
+    field(:trace_address, {:array, :integer}, null: false)
+    field(:type, Type, null: false)
+    field(:value, Wei, null: false)
     field(:block_number, :integer)
     field(:transaction_index, :integer)
-    field(:block_index, :integer)
+    field(:block_index, :integer, null: false)
 
     timestamps()
 
@@ -92,7 +68,8 @@ defmodule Explorer.Chain.InternalTransaction do
       Address,
       foreign_key: :from_address_hash,
       references: :hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     belongs_to(
@@ -107,13 +84,15 @@ defmodule Explorer.Chain.InternalTransaction do
       foreign_key: :transaction_hash,
       primary_key: true,
       references: :hash,
-      type: Hash.Full
+      type: Hash.Full,
+      null: false
     )
 
     belongs_to(:block, Block,
       foreign_key: :block_hash,
       references: :hash,
-      type: Hash.Full
+      type: Hash.Full,
+      null: false
     )
 
     belongs_to(:pending_block, PendingBlockOperation,
@@ -443,7 +422,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> validate_required(@call_required_fields)
     |> validate_call_error_or_result()
     |> check_constraint(:call_type, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
-    |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_call_type)
+    |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_input)
     |> foreign_key_constraint(:transaction_hash)
     |> unique_constraint(:index)
   end
@@ -709,5 +688,129 @@ defmodule Explorer.Chain.InternalTransaction do
       "result",
       Result.to_raw(%{"gasUsed" => gas_used, "code" => code, "address" => created_contract_address_hash})
     )
+  end
+
+  @doc """
+  `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`.
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest `{index}`). Results will be the internal transactions older than
+      the `index` that is passed.
+
+  """
+
+  @spec all_transaction_to_internal_transactions(Hash.Full.t(), [
+          Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
+        ]) :: [
+          __MODULE__.t()
+        ]
+  def all_transaction_to_internal_transactions(hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    __MODULE__
+    |> for_parent_transaction(hash)
+    |> Chain.join_associations(necessity_by_association)
+    |> where_nonpending_block()
+    |> Chain.page_internal_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> Chain.select_repo(options).all()
+  end
+
+  @spec transaction_to_internal_transactions(Hash.Full.t(), [
+          Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
+        ]) ::
+          [
+            __MODULE__.t()
+          ]
+  def transaction_to_internal_transactions(hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    __MODULE__
+    |> for_parent_transaction(hash)
+    |> Chain.join_associations(necessity_by_association)
+    |> where_transaction_has_multiple_internal_transactions()
+    |> where_is_different_from_parent_transaction()
+    |> where_nonpending_block()
+    |> Chain.page_internal_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> preload(:block)
+    |> Chain.select_repo(options).all()
+  end
+
+  @spec block_to_internal_transactions(Hash.Full.t(), [
+          Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
+        ]) ::
+          [
+            __MODULE__.t()
+          ]
+  def block_to_internal_transactions(hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    __MODULE__
+    |> where([internal_transaction], internal_transaction.block_hash == ^hash)
+    |> Chain.join_associations(necessity_by_association)
+    |> where_is_different_from_parent_transaction()
+    |> where_nonpending_block()
+    |> page_block_internal_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([internal_transaction], asc: internal_transaction.block_index)
+    |> Chain.select_repo(options).all()
+  end
+
+  defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
+    from(
+      child in query,
+      inner_join: transaction in assoc(child, :transaction),
+      where: transaction.hash == ^hash
+    )
+  end
+
+  @doc """
+  Ensures the following conditions are true:
+
+    * excludes internal transactions of type call with no siblings in the
+      transaction
+    * includes internal transactions of type create, reward, or selfdestruct
+      even when they are alone in the parent transaction
+
+  """
+  @spec where_transaction_has_multiple_internal_transactions(Ecto.Query.t()) :: Ecto.Query.t()
+  def where_transaction_has_multiple_internal_transactions(query) do
+    where(
+      query,
+      [internal_transaction, transaction],
+      internal_transaction.type != ^:call or
+        fragment(
+          """
+          EXISTS (SELECT sibling.*
+          FROM internal_transactions AS sibling
+          WHERE sibling.transaction_hash = ? AND sibling.index != ?
+          )
+          """,
+          transaction.hash,
+          internal_transaction.index
+        )
+    )
+  end
+
+  defp page_block_internal_transaction(query, %PagingOptions{key: %{block_index: block_index}}) do
+    query
+    |> where([internal_transaction], internal_transaction.block_index > ^block_index)
+  end
+
+  defp page_block_internal_transaction(query, _), do: query
+
+  def internal_transaction_to_block_paging_options(%__MODULE__{block_index: block_index}) do
+    %{"block_index" => block_index}
   end
 end

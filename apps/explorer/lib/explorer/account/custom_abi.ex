@@ -14,15 +14,15 @@ defmodule Explorer.Account.CustomABI do
 
   @max_abis_per_account 15
 
-  schema "account_custom_abis" do
-    field(:abi, {:array, :map})
+  typed_schema "account_custom_abis" do
+    field(:abi, {:array, :map}, null: false)
     field(:given_abi, :string, virtual: true)
     field(:abi_validating_error, :string, virtual: true)
-    field(:address_hash_hash, Cloak.Ecto.SHA256)
-    field(:address_hash, Explorer.Encrypted.AddressHash)
-    field(:name, Explorer.Encrypted.Binary)
+    field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
+    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:name, Explorer.Encrypted.Binary, null: false)
 
-    belongs_to(:identity, Identity)
+    belongs_to(:identity, Identity, null: false)
 
     timestamps()
   end
@@ -100,7 +100,7 @@ defmodule Explorer.Account.CustomABI do
   defp check_is_abi_valid?(%{abi: abi} = custom_abi, given_abi) when is_list(abi) do
     with true <- length(abi) > 0,
          filtered_abi <- filter_abi(abi),
-         true <- Enum.count(filtered_abi) > 0 do
+         false <- Enum.empty?(filtered_abi) do
       Map.put(custom_abi, :abi, filtered_abi)
     else
       _ ->

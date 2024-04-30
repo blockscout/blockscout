@@ -69,10 +69,11 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
     ordered_changes_list =
       changes_list
       |> Enum.map(fn change ->
-        if Map.has_key?(change, :token_id) and Map.get(change, :token_type) == "ERC-1155" do
-          change
-        else
-          Map.put(change, :token_id, nil)
+        cond do
+          Map.has_key?(change, :token_id) and Map.get(change, :token_type) == "ERC-1155" -> change
+          Map.get(change, :token_type) == "ERC-404" and Map.has_key?(change, :token_id) -> Map.put(change, :value, nil)
+          Map.get(change, :token_type) == "ERC-404" and Map.has_key?(change, :value) -> Map.put(change, :token_id, nil)
+          true -> Map.put(change, :token_id, nil)
         end
       end)
       |> Enum.group_by(fn %{
@@ -89,7 +90,9 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash, &1.block_number})
 
     {:ok, inserted_changes_list} =
-      if Enum.count(ordered_changes_list) > 0 do
+      if Enum.empty?(ordered_changes_list) do
+        {:ok, []}
+      else
         Import.insert_changes_list(
           repo,
           ordered_changes_list,
@@ -101,8 +104,6 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
           timeout: timeout,
           timestamps: timestamps
         )
-      else
-        {:ok, []}
       end
 
     {:ok, inserted_changes_list}

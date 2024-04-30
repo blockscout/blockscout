@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.AddressDecompiledContractController do
 
   alias BlockScoutWeb.AccessHelper
   alias Explorer.{Chain, Market}
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),

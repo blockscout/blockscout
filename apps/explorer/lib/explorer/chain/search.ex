@@ -20,6 +20,7 @@ defmodule Explorer.Chain.Search do
 
   alias Explorer.Chain.{
     Address,
+    Beacon.Blob,
     Block,
     DenormalizationHelper,
     SmartContract,
@@ -46,6 +47,7 @@ defmodule Explorer.Chain.Search do
             from(items in subquery(query),
               order_by: [
                 desc: items.priority,
+                desc_nulls_last: items.certified,
                 desc_nulls_last: items.circulating_market_cap,
                 desc_nulls_last: items.exchange_rate,
                 desc_nulls_last: items.is_verified_via_admin_panel,
@@ -76,7 +78,7 @@ defmodule Explorer.Chain.Search do
 
     ens_result = (ens_task && await_ens_task(ens_task)) || []
 
-    result ++ ens_result
+    ens_result ++ result
   end
 
   def base_joint_query(string, term) do
@@ -101,17 +103,28 @@ defmodule Explorer.Chain.Search do
       valid_full_hash?(string) ->
         tx_query = search_tx_query(string)
 
-        if UserOperation.user_operations_enabled?() do
-          user_operation_query = search_user_operation_query(string)
+        tx_block_query =
+          basic_query
+          |> union(^tx_query)
+          |> union(^block_query)
 
-          basic_query
-          |> union(^tx_query)
-          |> union(^user_operation_query)
-          |> union(^block_query)
+        tx_block_op_query =
+          if UserOperation.enabled?() do
+            user_operation_query = search_user_operation_query(string)
+
+            tx_block_query
+            |> union(^user_operation_query)
+          else
+            tx_block_query
+          end
+
+        if Application.get_env(:explorer, :chain_type) == :ethereum do
+          blob_query = search_blob_query(string)
+
+          tx_block_op_query
+          |> union(^blob_query)
         else
-          basic_query
-          |> union(^tx_query)
-          |> union(^block_query)
+          tx_block_op_query
         end
 
       block_query ->
@@ -137,6 +150,7 @@ defmodule Explorer.Chain.Search do
       2. Results couldn't be paginated
   """
   @spec balanced_unpaginated_search(PagingOptions.t(), binary(), [Chain.api?()] | []) :: list
+  # credo:disable-for-next-line
   def balanced_unpaginated_search(paging_options, raw_search_query, options \\ []) do
     search_query = String.trim(raw_search_query)
     ens_task = Task.async(fn -> search_ens_name(raw_search_query, options) end)
@@ -181,9 +195,18 @@ defmodule Explorer.Chain.Search do
           end
 
         op_result =
-          if valid_full_hash?(search_query) && UserOperation.user_operations_enabled?() do
+          if valid_full_hash?(search_query) && UserOperation.enabled?() do
             search_query
             |> search_user_operation_query()
+            |> select_repo(options).all()
+          else
+            []
+          end
+
+        blob_result =
+          if valid_full_hash?(search_query) && Application.get_env(:explorer, :chain_type) == :ethereum do
+            search_query
+            |> search_blob_query()
             |> select_repo(options).all()
           else
             []
@@ -215,11 +238,12 @@ defmodule Explorer.Chain.Search do
             labels_result,
             tx_result,
             op_result,
+            blob_result,
             address_result,
             blocks_result,
             ens_result
           ]
-          |> Enum.filter(fn list -> Enum.count(list) > 0 end)
+          |> Enum.filter(fn list -> not Enum.empty?(list) end)
           |> Enum.sort_by(fn list -> Enum.count(list) end, :asc)
 
         to_take =
@@ -234,6 +258,7 @@ defmodule Explorer.Chain.Search do
           |> compose_result_checksummed_address_hash()
           |> format_timestamp()
         end)
+        |> Enum.sort_by(fn item -> item.priority end, :desc)
 
       _ ->
         []
@@ -301,6 +326,7 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:icon_url, dynamic([token, _], token.icon_url))
       |> Map.put(:token_type, dynamic([token, _], token.type))
       |> Map.put(:verified, dynamic([_, smart_contract], not is_nil(smart_contract)))
+      |> Map.put(:certified, dynamic([_, smart_contract], smart_contract.certified))
       |> Map.put(:exchange_rate, dynamic([token, _], token.fiat_value))
       |> Map.put(:total_supply, dynamic([token, _], token.total_supply))
       |> Map.put(:circulating_market_cap, dynamic([token, _], token.circulating_market_cap))
@@ -332,6 +358,7 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:type, "contract")
       |> Map.put(:name, dynamic([smart_contract, _], smart_contract.name))
       |> Map.put(:inserted_at, dynamic([_, address], address.inserted_at))
+      |> Map.put(:certified, dynamic([smart_contract, _], smart_contract.certified))
       |> Map.put(:verified, true)
 
     from(smart_contract in SmartContract,
@@ -380,7 +407,7 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_tx_query(term) do
-    if DenormalizationHelper.denormalization_finished?() do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
       transaction_search_fields =
         search_fields()
         |> Map.put(:tx_hash, dynamic([transaction], transaction.hash))
@@ -428,6 +455,19 @@ defmodule Explorer.Chain.Search do
       on: user_operation.block_hash == block.hash,
       where: user_operation.hash == ^term,
       select: ^user_operation_search_fields
+    )
+  end
+
+  defp search_blob_query(term) do
+    blob_search_fields =
+      search_fields()
+      |> Map.put(:blob_hash, dynamic([blob, _], blob.hash))
+      |> Map.put(:type, "blob")
+      |> Map.put(:inserted_at, dynamic([blob, _], blob.inserted_at))
+
+    from(blob in Blob,
+      where: blob.hash == ^term,
+      select: ^blob_search_fields
     )
   end
 
@@ -554,10 +594,7 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_ens_name(search_query, options) do
-    trimmed_query = String.trim(search_query)
-
-    with true <- Regex.match?(~r/\w+\.\w+/, trimmed_query),
-         result when is_map(result) <- ens_domain_name_lookup(search_query) do
+    if result = search_ens_name_in_bens(search_query) do
       [
         result[:address_hash]
         |> search_address_query()
@@ -565,20 +602,42 @@ defmodule Explorer.Chain.Search do
         |> merge_address_search_result_with_ens_info(result)
       ]
     else
+      []
+    end
+  end
+
+  @doc """
+  Try to resolve ENS domain via BENS
+  """
+  @spec search_ens_name_in_bens(binary()) ::
+          nil | %{address_hash: binary(), expiry_date: any(), name: any(), names_count: non_neg_integer()}
+  def search_ens_name_in_bens(search_query) do
+    trimmed_query = String.trim(search_query)
+
+    with true <- Regex.match?(~r/\w+\.\w+/, trimmed_query),
+         %{address_hash: _address_hash} = result <- ens_domain_name_lookup(search_query) do
+      result
+    else
       _ ->
-        []
+        nil
     end
   end
 
   defp merge_address_search_result_with_ens_info([], ens_info) do
     search_fields()
     |> Map.put(:address_hash, ens_info[:address_hash])
-    |> Map.put(:type, "address")
+    |> Map.put(:type, "ens_domain")
     |> Map.put(:ens_info, ens_info)
+    |> Map.put(:timestamp, nil)
+    |> Map.put(:priority, 2)
   end
 
   defp merge_address_search_result_with_ens_info([address], ens_info) do
-    Map.put(address |> compose_result_checksummed_address_hash(), :ens_info, ens_info)
+    address
+    |> compose_result_checksummed_address_hash()
+    |> Map.put(:type, "ens_domain")
+    |> Map.put(:ens_info, ens_info)
+    |> Map.put(:priority, 2)
   end
 
   defp search_fields do
@@ -586,6 +645,7 @@ defmodule Explorer.Chain.Search do
       address_hash: dynamic([_], type(^nil, :binary)),
       tx_hash: dynamic([_], type(^nil, :binary)),
       user_operation_hash: dynamic([_], type(^nil, :binary)),
+      blob_hash: dynamic([_], type(^nil, :binary)),
       block_hash: dynamic([_], type(^nil, :binary)),
       type: nil,
       name: nil,
@@ -597,6 +657,7 @@ defmodule Explorer.Chain.Search do
       token_type: nil,
       timestamp: dynamic([_, _], type(^nil, :utc_datetime_usec)),
       verified: nil,
+      certified: nil,
       exchange_rate: nil,
       total_supply: nil,
       circulating_market_cap: nil,

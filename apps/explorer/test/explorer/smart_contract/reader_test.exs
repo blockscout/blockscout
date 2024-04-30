@@ -102,6 +102,166 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       assert %{"6d4ce63c" => {:error, "no function clause matches"}} = response
     end
+
+    test "with function ABI that is missing the outputs field" do
+      smart_contract =
+        build(:smart_contract,
+          abi: [
+            %{
+              "type" => "function",
+              "stateMutability" => "view",
+              "name" => "assumeLastTokenIdMatches",
+              "inputs" => [
+                %{
+                  "type" => "uint256",
+                  "name" => "lastTokenId",
+                  "internalType" => "uint256"
+                }
+              ]
+            }
+          ]
+        )
+
+      contract_address_hash = Hash.to_string(smart_contract.address_hash)
+      abi = smart_contract.abi
+
+      blockchain_get_function_mock()
+
+      response = Reader.query_contract(contract_address_hash, abi, %{"e72878b4" => [123]}, false)
+
+      assert response == %{"e72878b4" => {:ok, []}}
+    end
+
+    @abi [
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [
+          %{"type" => "string", "name" => ""}
+        ],
+        "name" => "tokenURI",
+        "inputs" => [
+          %{
+            "type" => "uint256",
+            "name" => "_tokenId"
+          }
+        ],
+        "constant" => true
+      }
+    ]
+
+    @abi_uri [
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [
+          %{
+            "type" => "string",
+            "name" => "",
+            "internalType" => "string"
+          }
+        ],
+        "name" => "uri",
+        "inputs" => [
+          %{
+            "type" => "uint256",
+            "name" => "_id",
+            "internalType" => "uint256"
+          }
+        ],
+        "constant" => true
+      }
+    ]
+
+    test "fetches json metadata", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [
+                                  %{
+                                    id: 0,
+                                    jsonrpc: "2.0",
+                                    method: "eth_call",
+                                    params: [
+                                      %{
+                                        data:
+                                          "0xc87b56dd000000000000000000000000000000000000000000000000fdd5b9fa9d4bfb20",
+                                        to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                      },
+                                      "latest"
+                                    ]
+                                  }
+                                ],
+                                _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result:
+                 "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003568747470733a2f2f7661756c742e7761727269646572732e636f6d2f31383239303732393934373636373130323439362e6a736f6e0000000000000000000000"
+             }
+           ]}
+        end)
+      end
+
+      assert %{
+               "c87b56dd" => {:ok, ["https://vault.warriders.com/18290729947667102496.json"]}
+             } ==
+               Reader.query_contract(
+                 "0x5caebd3b32e210e85ce3e9d51638b9c445481567",
+                 @abi,
+                 %{
+                   "c87b56dd" => [18_290_729_947_667_102_496]
+                 },
+                 false
+               )
+    end
+
+    test "fetches json metadata for ERC-1155 token", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [
+                                  %{
+                                    id: 0,
+                                    jsonrpc: "2.0",
+                                    method: "eth_call",
+                                    params: [
+                                      %{
+                                        data:
+                                          "0x0e89341c000000000000000000000000000000000000000000000000fdd5b9fa9d4bfb20",
+                                        to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                      },
+                                      "latest"
+                                    ]
+                                  }
+                                ],
+                                _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result:
+                 "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003568747470733a2f2f7661756c742e7761727269646572732e636f6d2f31383239303732393934373636373130323439362e6a736f6e0000000000000000000000"
+             }
+           ]}
+        end)
+      end
+
+      assert %{
+               "0e89341c" => {:ok, ["https://vault.warriders.com/18290729947667102496.json"]}
+             } ==
+               Reader.query_contract(
+                 "0x5caebd3b32e210e85ce3e9d51638b9c445481567",
+                 @abi_uri,
+                 %{
+                   "0e89341c" => [18_290_729_947_667_102_496]
+                 },
+                 false
+               )
+    end
   end
 
   describe "query_verified_contract/3" do

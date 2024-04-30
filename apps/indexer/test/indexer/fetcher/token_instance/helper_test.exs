@@ -50,26 +50,15 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       }
       """
 
-      abi =
-        [
-          %{
-            "type" => "function",
-            "stateMutability" => "nonpayable",
-            "payable" => false,
-            "outputs" => [],
-            "name" => "tokenURI",
-            "inputs" => [
-              %{"type" => "string", "name" => "name", "internalType" => "string"}
-            ]
-          }
-        ]
-        |> ABI.parse_specification()
-        |> Enum.at(0)
-
       encoded_url =
-        abi
-        |> Encoder.encode_function_call(["http://localhost:#{bypass.port}/api/card/{id}"])
-        |> String.replace("4cf12d26", "")
+        "0x" <>
+          (ABI.TypeEncoder.encode(["http://localhost:#{bypass.port}/api/card/{id}"], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [
@@ -173,6 +162,154 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
              ] = Helper.batch_fetch_instances([{"0x7e01CC81fCfdf6a71323900288A69e234C464f63", 0}])
 
       Application.put_env(:explorer, :http_adapter, HTTPoison)
+    end
+
+    test "re-fetch metadata from baseURI", %{bypass: bypass} do
+      json = """
+      {
+        "name": "123"
+      }
+      """
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data:
+                                        "0xc87b56dd0000000000000000000000000000000000000000000000004f3f5ce294ff3d36",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             error: %{code: -32015, data: "Reverted 0x", message: "execution reverted"},
+             id: id,
+             jsonrpc: "2.0"
+           }
+         ]}
+      end)
+
+      encoded_url =
+        "0x" <>
+          (ABI.TypeEncoder.encode(["http://localhost:#{bypass.port}/api/card/"], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data: "0x6c0360eb",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             jsonrpc: "2.0",
+             result: encoded_url
+           }
+         ]}
+      end)
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/card/5710384980761197878",
+        fn conn ->
+          Conn.resp(conn, 200, json)
+        end
+      )
+
+      insert(:token,
+        contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+        type: "ERC-721"
+      )
+
+      Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, base_uri_retry?: true)
+
+      assert [
+               {:ok,
+                %Instance{
+                  metadata: %{
+                    "name" => "123"
+                  }
+                }}
+             ] =
+               Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 5_710_384_980_761_197_878}])
+
+      Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, base_uri_retry?: false)
+    end
+
+    # https://github.com/blockscout/blockscout/issues/9696
+    test "fetch json in utf8 format" do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data:
+                                        "0xc87b56dd000000000000000000000000000000000000000000000000042a0d58bfd13000",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             result:
+               "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000115646174613a6170706c69636174696f6e2f6a736f6e3b757466382c7b226e616d65223a20224f4d4e493430342023333030303637303030303030303030303030222c226465736372697074696f6e223a225468652066726f6e74696572206f66207065726d697373696f6e6c657373206173736574732e222c2265787465726e616c5f75726c223a2268747470733a2f2f747769747465722e636f6d2f6f6d6e69636861696e343034222c22696d616765223a2268747470733a2f2f697066732e696f2f697066732f516d55364447586369535a5854483166554b6b45716a3734503846655850524b7853546a675273564b55516139352f626173652f3330303036373030303030303030303030302e4a5047227d0000000000000000000000"
+           }
+         ]}
+      end)
+
+      insert(:token,
+        contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+        type: "ERC-404"
+      )
+
+      assert [
+               {:ok,
+                %Instance{
+                  metadata: %{
+                    "name" => "OMNI404 #300067000000000000",
+                    "description" => "The frontier of permissionless assets.",
+                    "external_url" => "https://twitter.com/omnichain404",
+                    "image" =>
+                      "https://ipfs.io/ipfs/QmU6DGXciSZXTH1fUKkEqj74P8FeXPRKxSTjgRsVKUQa95/base/300067000000000000.JPG"
+                  }
+                }}
+             ] = Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 300_067_000_000_000_000}])
     end
   end
 end

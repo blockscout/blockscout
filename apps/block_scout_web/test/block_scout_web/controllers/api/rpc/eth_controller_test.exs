@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
   alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
   alias Explorer.Repo
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
   @first_topic_hex_string_2 "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
@@ -198,7 +198,8 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert Enum.count(response["result"]) == 1000
 
-      {last_log_index, ""} = Integer.parse(List.last(response["result"])["logIndex"], 16)
+      "0x" <> hexadecimal_digits = List.last(response["result"])["logIndex"]
+      {last_log_index, ""} = Integer.parse(hexadecimal_digits, 16)
 
       next_page_params = %{
         "blockNumber" => Integer.to_string(transaction.block_number, 16),
@@ -225,7 +226,8 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert Enum.all?(inserted_records, fn record ->
                Enum.any?(all_found_logs, fn found_log ->
-                 {index, ""} = Integer.parse(found_log["logIndex"], 16)
+                 "0x" <> hexadecimal_digits = found_log["logIndex"]
+                 {index, ""} = Integer.parse(hexadecimal_digits, 16)
 
                  record.index == index
                end)
@@ -455,6 +457,49 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
                |> json_response(200)
 
       assert [%{"data" => "0x030303"}] = response["result"]
+    end
+
+    test "numerical fields are hexadecimals with 0x prefix",
+         %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+      block = insert(:block, number: 0)
+      transaction = insert(:transaction, from_address: address) |> with_block(block)
+
+      insert(:log,
+        block: block,
+        block_number: block.number,
+        address: address,
+        transaction: transaction,
+        data: "0x010101",
+        first_topic: topic(@first_topic_hex_string_1)
+      )
+
+      params =
+        params(api_params, [
+          %{
+            "address" => to_string(address.hash),
+            "topics" => [@first_topic_hex_string_1]
+          }
+        ])
+
+      response =
+        conn
+        |> post("/api/eth-rpc", params)
+        |> json_response(200)
+
+      [result] = response["result"]
+
+      assert result
+             |> Map.take([
+               "address",
+               "blockHash",
+               "blockNumber",
+               "data",
+               "transactionIndex",
+               "logIndex",
+               "transactionHash"
+             ])
+             |> Enum.all?(fn {_, v} -> String.starts_with?(v, "0x") end)
     end
   end
 
