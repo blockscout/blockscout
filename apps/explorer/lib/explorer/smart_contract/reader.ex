@@ -860,7 +860,15 @@ defmodule Explorer.SmartContract.Reader do
     value
   end
 
-  @spec zip_tuple_values_with_types(tuple, binary) :: [{binary, any}]
+  @spec zip_tuple_values_with_types(tuple, binary | tuple()) :: [{binary, any}]
+  def zip_tuple_values_with_types(value, {:tuple, tuple_types}) do
+    values_list =
+      value
+      |> Tuple.to_list()
+
+    Enum.zip(tuple_types, values_list)
+  end
+
   def zip_tuple_values_with_types(value, type) do
     types_string =
       type

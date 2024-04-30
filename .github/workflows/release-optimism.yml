@@ -1,4 +1,4 @@
-name: Release for Ethereum
+name: Release for Optimism
 
 on:
   release:

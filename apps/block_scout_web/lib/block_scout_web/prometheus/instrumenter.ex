@@ -1,16 +1,17 @@
 defmodule BlockScoutWeb.Prometheus.Instrumenter do
   @moduledoc """
-  Phoenix request metrics for `Prometheus`.
+  BlockScoutWeb metrics for `Prometheus`.
   """
 
-  @dialyzer {:no_match,
-             [
-               phoenix_channel_join: 3,
-               phoenix_channel_receive: 3,
-               phoenix_controller_call: 3,
-               phoenix_controller_render: 3,
-               setup: 0
-             ]}
+  use Prometheus.Metric
 
-  use Prometheus.PhoenixInstrumenter
+  @gauge [
+    name: :event_handler_queue_length,
+    labels: [:handler],
+    help: "Number of events in event handlers queue"
+  ]
+
+  def event_handler_queue_length(handler, length) do
+    Gauge.set([name: :event_handler_queue_length, labels: [handler]], length)
+  end
 end

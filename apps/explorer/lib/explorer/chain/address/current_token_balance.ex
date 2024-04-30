@@ -92,14 +92,21 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   """
   def token_holders_ordered_by_value_query_without_address_preload(token_contract_address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
-    token_contract_address_hash
-    |> token_holders_query
-    |> order_by([tb], desc: :value, desc: :address_hash)
-    |> Chain.page_token_balances(paging_options)
-    |> limit(^paging_options.page_size)
-    |> offset(^offset)
+    case paging_options do
+      %PagingOptions{key: {0, _}} ->
+        []
+
+      _ ->
+        offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
+
+        token_contract_address_hash
+        |> token_holders_query
+        |> order_by([tb], desc: :value, desc: :address_hash)
+        |> Chain.page_token_balances(paging_options)
+        |> limit(^paging_options.page_size)
+        |> offset(^offset)
+    end
   end
 
   @doc """
@@ -116,12 +123,18 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   def token_holders_1155_by_token_id(token_contract_address_hash, token_id, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    token_contract_address_hash
-    |> token_holders_by_token_id_query(token_id)
-    |> preload(:address)
-    |> order_by([tb], desc: :value, desc: :address_hash)
-    |> Chain.page_token_balances(paging_options)
-    |> limit(^paging_options.page_size)
+    case paging_options do
+      %PagingOptions{key: {0, _}} ->
+        []
+
+      _ ->
+        token_contract_address_hash
+        |> token_holders_by_token_id_query(token_id)
+        |> preload(:address)
+        |> order_by([tb], desc: :value, desc: :address_hash)
+        |> Chain.page_token_balances(paging_options)
+        |> limit(^paging_options.page_size)
+    end
   end
 
   @doc """
