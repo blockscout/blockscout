@@ -78,7 +78,7 @@ defmodule Explorer.Chain.Search do
 
     ens_result = (ens_task && await_ens_task(ens_task)) || []
 
-    result ++ ens_result
+    ens_result ++ result
   end
 
   def base_joint_query(string, term) do
@@ -258,6 +258,7 @@ defmodule Explorer.Chain.Search do
           |> compose_result_checksummed_address_hash()
           |> format_timestamp()
         end)
+        |> Enum.sort_by(fn item -> item.priority end, :desc)
 
       _ ->
         []
@@ -593,10 +594,7 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_ens_name(search_query, options) do
-    trimmed_query = String.trim(search_query)
-
-    with true <- Regex.match?(~r/\w+\.\w+/, trimmed_query),
-         result when is_map(result) <- ens_domain_name_lookup(search_query) do
+    if result = search_ens_name_in_bens(search_query) do
       [
         result[:address_hash]
         |> search_address_query()
@@ -604,21 +602,42 @@ defmodule Explorer.Chain.Search do
         |> merge_address_search_result_with_ens_info(result)
       ]
     else
+      []
+    end
+  end
+
+  @doc """
+  Try to resolve ENS domain via BENS
+  """
+  @spec search_ens_name_in_bens(binary()) ::
+          nil | %{address_hash: binary(), expiry_date: any(), name: any(), names_count: non_neg_integer()}
+  def search_ens_name_in_bens(search_query) do
+    trimmed_query = String.trim(search_query)
+
+    with true <- Regex.match?(~r/\w+\.\w+/, trimmed_query),
+         %{address_hash: _address_hash} = result <- ens_domain_name_lookup(search_query) do
+      result
+    else
       _ ->
-        []
+        nil
     end
   end
 
   defp merge_address_search_result_with_ens_info([], ens_info) do
     search_fields()
     |> Map.put(:address_hash, ens_info[:address_hash])
-    |> Map.put(:type, "address")
+    |> Map.put(:type, "ens_domain")
     |> Map.put(:ens_info, ens_info)
     |> Map.put(:timestamp, nil)
+    |> Map.put(:priority, 2)
   end
 
   defp merge_address_search_result_with_ens_info([address], ens_info) do
-    Map.put(address |> compose_result_checksummed_address_hash(), :ens_info, ens_info)
+    address
+    |> compose_result_checksummed_address_hash()
+    |> Map.put(:type, "ens_domain")
+    |> Map.put(:ens_info, ens_info)
+    |> Map.put(:priority, 2)
   end
 
   defp search_fields do

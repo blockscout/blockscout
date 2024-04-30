@@ -280,7 +280,8 @@ defmodule ConfigHelper do
     "shibarium",
     "stability",
     "suave",
-    "zetachain"
+    "zetachain",
+    "zksync"
   ]
 
   @spec chain_type() :: atom() | nil

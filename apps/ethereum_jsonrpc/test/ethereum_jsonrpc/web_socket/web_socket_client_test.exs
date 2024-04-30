@@ -10,7 +10,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClientTest do
     setup :example_state
 
     test "reconnects", %{state: state} do
-      assert {:reconnect, _} = WebSocketClient.ondisconnect({:closed, :remote}, state)
+      assert {:reconnect, _, _} = WebSocketClient.ondisconnect({:closed, :remote}, state)
     end
 
     test "treats in-progress unsubscribes as successful", %{state: state} do
@@ -23,7 +23,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClientTest do
 
       state = put_registration(state, registration)
 
-      assert {_, disconnected_state} = WebSocketClient.ondisconnect({:closed, :remote}, state)
+      assert {_, _, disconnected_state} = WebSocketClient.ondisconnect({:closed, :remote}, state)
 
       assert Enum.empty?(disconnected_state.request_id_to_registration)
       assert Enum.empty?(disconnected_state.subscription_id_to_subscription_reference)
@@ -36,7 +36,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClientTest do
     test "keeps :json_rpc requests for re-requesting on reconnect", %{state: state} do
       state = put_registration(state, %{type: :json_rpc, method: "eth_getBlockByNumber", params: [1, true]})
 
-      assert {_, disconnected_state} = WebSocketClient.ondisconnect({:closed, :remote}, state)
+      assert {_, _, disconnected_state} = WebSocketClient.ondisconnect({:closed, :remote}, state)
 
       assert Enum.count(disconnected_state.request_id_to_registration) == 1
     end
@@ -44,7 +44,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClientTest do
     test "keeps :subscribe requests for re-requesting on reconnect", %{state: state} do
       state = put_registration(state, %{type: :subscribe})
 
-      assert {_, disconnected_state} = WebSocketClient.ondisconnect({:closed, :remote}, state)
+      assert {_, _, disconnected_state} = WebSocketClient.ondisconnect({:closed, :remote}, state)
 
       assert Enum.count(disconnected_state.request_id_to_registration) == 1
     end
