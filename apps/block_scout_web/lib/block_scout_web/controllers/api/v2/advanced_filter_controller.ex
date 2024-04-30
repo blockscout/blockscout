@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   @api_true [api?: true]
 
   @methods [
-    # %{method_id: "0xa9059cbb", name: "transfer"},
+    %{method_id: "0xa9059cbb", name: "transfer"},
     %{method_id: "0xa0712d68", name: "mint"},
     %{method_id: "0x095ea7b3", name: "approve"},
     %{method_id: "0x40993b26", name: "buy"},
