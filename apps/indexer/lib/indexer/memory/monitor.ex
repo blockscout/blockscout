@@ -13,6 +13,7 @@ defmodule Indexer.Memory.Monitor do
   import Indexer.Logger, only: [process: 1]
 
   alias Indexer.Memory.Shrinkable
+  alias Indexer.Prometheus.Instrumenter
 
   defstruct limit: 0,
             timer_interval: :timer.minutes(1),
@@ -67,6 +68,8 @@ defmodule Indexer.Memory.Monitor do
   @impl GenServer
   def handle_info(:check, state) do
     total = :erlang.memory(:total)
+
+    set_metrics(state)
 
     shrunk_state =
       if memory_limit() < total do
@@ -200,6 +203,35 @@ defmodule Indexer.Memory.Monitor do
       Logger.info(fn -> ["Expanding queue ", process(pid)] end)
       Shrinkable.expand(pid)
     end)
+  end
+
+  @megabytes_divisor 2 ** 20
+  defp set_metrics(%__MODULE__{shrinkable_set: shrinkable_set}) do
+    total_memory =
+      Enum.reduce(shrinkable_set, 0, fn pid, acc ->
+        memory = memory(pid) / @megabytes_divisor
+        name = name(pid)
+
+        Instrumenter.set_memory_consumed(name, memory)
+
+        acc + memory
+      end)
+
+    Instrumenter.set_memory_consumed(:total, total_memory)
+  end
+
+  defp name(pid) do
+    case Process.info(pid, :registered_name) do
+      {:registered_name, name} when is_atom(name) ->
+        name
+        |> to_string()
+        |> String.split(".")
+        |> Enum.slice(-2, 2)
+        |> Enum.join(".")
+
+      _ ->
+        nil
+    end
   end
 
   defp shrinkable_memory_pairs(%__MODULE__{shrinkable_set: shrinkable_set}) do
