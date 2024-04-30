@@ -14,30 +14,24 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   def format_data(%{"data" => %{"market_cap" => _} = market_data}) do
     current_price = market_data["price"]
     image_url = market_data["logo"]
-
     id = market_data["symbol"]
 
     btc_value =
       if Application.get_env(:explorer, Explorer.ExchangeRates)[:fetch_btc_value], do: get_btc_value(id, market_data)
 
-    circulating_supply_data = market_data && market_data["circulating_supply"]
-    total_supply_data = market_data && market_data["total_supply"]
-    market_cap_data_usd = market_data && market_data["market_cap"]
-    total_volume_data_usd = market_data && market_data["volume"]
-
     [
       %Token{
-        available_supply: to_decimal(circulating_supply_data),
-        total_supply: to_decimal(total_supply_data) || to_decimal(circulating_supply_data),
+        available_supply: to_decimal(market_data["circulating_supply"]),
+        total_supply: to_decimal(market_data["total_supply"]) || to_decimal(market_data["circulating_supply"]),
         btc_value: btc_value,
         id: id,
         last_updated: nil,
-        market_cap_usd: to_decimal(market_cap_data_usd),
+        market_cap_usd: to_decimal(market_data["market_cap"]),
         tvl_usd: nil,
         name: market_data["name"],
         symbol: String.upcase(market_data["symbol"]),
         usd_value: current_price,
-        volume_24h_usd: to_decimal(total_volume_data_usd),
+        volume_24h_usd: to_decimal(market_data["volume"]),
         image_url: image_url
       }
     ]
