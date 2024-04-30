@@ -203,7 +203,8 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec exchange_rates_secondary_coin_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare | Price.Mobula
+  @spec exchange_rates_secondary_coin_price_source() ::
+          Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare | Price.Mobula
   def exchange_rates_secondary_coin_price_source do
     cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
     cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_ID")
