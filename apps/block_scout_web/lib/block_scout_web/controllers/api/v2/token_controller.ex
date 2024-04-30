@@ -1,9 +1,11 @@
 defmodule BlockScoutWeb.API.V2.TokenController do
+  alias Bamboo.SentEmailViewerPlug.Helper
+  alias Explorer.PagingOptions
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
 
@@ -14,7 +16,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       next_page_params: 3,
       token_transfers_next_page_params: 3,
       unique_tokens_paging_options: 1,
-      unique_tokens_next_page: 3
+      unique_tokens_next_page: 3,
+      default_paging_options: 0
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -300,6 +303,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     options =
       params
       |> paging_options()
+      |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
+                                                                        page_size: page_size
+                                                                      } = paging_options ->
+        mb_parsed_limit = Helper.parse_integer(params["limit"])
+        %PagingOptions{paging_options | page_size: min(page_size, mb_parsed_limit && abs(mb_parsed_limit))}
+      end)
       |> Keyword.merge(token_transfers_types_options(params))
       |> Keyword.merge(tokens_sorting(params))
       |> Keyword.merge(@api_true)

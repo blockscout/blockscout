@@ -64,6 +64,7 @@ defmodule Explorer.Chain.AdvancedFilter do
           | amount()
           | token_contract_address_hashes()
           | Chain.paging_options()
+          | Chain.api?()
         ]
 
   @spec list(options()) :: [__MODULE__.t()]
@@ -415,14 +416,13 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp prepare_methods(methods) do
     methods
-    |> Enum.map(fn
+    |> Enum.flat_map(fn
       method ->
         case Data.cast(method) do
-          {:ok, method} -> method.bytes
-          _ -> nil
+          {:ok, method} -> [method.bytes]
+          _ -> []
         end
     end)
-    |> Enum.reject(&is_nil(&1))
   end
 
   defp filter_by_timestamp(query, %DateTime{} = from, %DateTime{} = to) do
@@ -439,23 +439,58 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp filter_by_timestamp(query, _, _), do: query
 
-  defp filter_by_addresses(query, [_ | _] = from_addresses, [_ | _] = to_addresses, :and) do
-    query |> where([t], t.from_address_hash in ^from_addresses and t.to_address_hash in ^to_addresses)
+  defp filter_by_addresses(query, from_addresses, to_addresses, relation) do
+    to_address_dynamic = do_filter_by_addresses(:to_address_hash, to_addresses)
+
+    from_address_dynamic = do_filter_by_addresses(:from_address_hash, from_addresses)
+
+    final_condition =
+      case {to_address_dynamic, from_address_dynamic} do
+        {not_nil_to_address, not_nil_from_address} when nil not in [not_nil_to_address, not_nil_from_address] ->
+          combine_filter_by_addresses(not_nil_to_address, not_nil_from_address, relation)
+
+        _ ->
+          to_address_dynamic || from_address_dynamic
+      end
+
+    case final_condition do
+      not_nil when not is_nil(not_nil) -> query |> where(^not_nil)
+      _ -> query
+    end
   end
 
-  defp filter_by_addresses(query, [_ | _] = from_addresses, [_ | _] = to_addresses, :or) do
-    query |> where([t], t.from_address_hash in ^from_addresses or t.to_address_hash in ^to_addresses)
+  defp do_filter_by_addresses(field, addresses) do
+    to_include_dynamic = do_filter_by_addresses_inclusion(field, addresses && Keyword.get(addresses, :include))
+    to_exclude_dynamic = do_filter_by_addresses_exclusion(field, addresses && Keyword.get(addresses, :exclude))
+
+    case {to_include_dynamic, to_exclude_dynamic} do
+      {not_nil_include, not_nil_exclude} when nil not in [not_nil_include, not_nil_exclude] ->
+        dynamic([t], ^not_nil_include and ^not_nil_exclude)
+
+      _ ->
+        to_include_dynamic || to_exclude_dynamic
+    end
   end
 
-  defp filter_by_addresses(query, [_ | _] = from_addresses, _, _) do
-    query |> where([t], t.from_address_hash in ^from_addresses)
+  defp do_filter_by_addresses_inclusion(field, [_ | _] = addresses) do
+    dynamic([t], field(t, ^field) in ^addresses)
   end
 
-  defp filter_by_addresses(query, _, [_ | _] = to_addresses, _) do
-    query |> where([t], t.to_address_hash in ^to_addresses)
+  defp do_filter_by_addresses_inclusion(_, _), do: nil
+
+  defp do_filter_by_addresses_exclusion(field, [_ | _] = addresses) do
+    dynamic([t], field(t, ^field) not in ^addresses)
   end
 
-  defp filter_by_addresses(query, _, _, _), do: query
+  defp do_filter_by_addresses_exclusion(_, _), do: nil
+
+  defp combine_filter_by_addresses(from_addresses_dynamic, to_addresses_dynamic, :or) do
+    dynamic([t], ^from_addresses_dynamic or ^to_addresses_dynamic)
+  end
+
+  defp combine_filter_by_addresses(from_addresses_dynamic, to_addresses_dynamic, _) do
+    dynamic([t], ^from_addresses_dynamic and ^to_addresses_dynamic)
+  end
 
   @eth_decimals 1000_000_000_000_000_000
 

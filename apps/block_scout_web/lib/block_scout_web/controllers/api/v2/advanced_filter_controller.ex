@@ -3,51 +3,18 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   import BlockScoutWeb.Chain, only: [default_paging_options: 0, split_list_by_page: 1, next_page_params: 4]
 
-  alias BlockScoutWeb.API.V2.{AdvancedFilterView, CSVExportController}
+  alias BlockScoutWeb.API.V2.{AdvancedFilterView, CSVExportController, TransactionView}
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.AdvancedFilter
+  alias Explorer.Chain.{AdvancedFilter, ContractMethod, Data, Token, Transaction}
   alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
   alias Plug.Conn
 
-  def list(conn, params) do
-    full_options = params |> extract_filters() |> Keyword.merge(paging_options(params))
+  action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
-    advanced_filters_plus_one = AdvancedFilter.list(full_options)
-
-    {advanced_filters, next_page} = split_list_by_page(advanced_filters_plus_one)
-
-    next_page_params =
-      next_page |> next_page_params(advanced_filters, Map.take(params, ["items_count"]), &paging_params/1)
-
-    render(conn, :advanced_filters, advanced_filters: advanced_filters, next_page_params: next_page_params)
-  end
-
-  def list_csv(conn, params) do
-    full_options =
-      params
-      |> extract_filters()
-      |> Keyword.merge(paging_options(params))
-      |> Keyword.update(:paging_options, %PagingOptions{page_size: CSVHelper.limit()}, fn paging_options ->
-        %PagingOptions{paging_options | page_size: CSVHelper.limit()}
-      end)
-
-    full_options
-    |> AdvancedFilter.list()
-    |> AdvancedFilterView.to_csv_format()
-    |> CSVHelper.dump_to_stream()
-    |> Enum.reduce_while(CSVExportController.put_resp_params(conn), fn chunk, conn ->
-      case Conn.chunk(conn, chunk) do
-        {:ok, conn} ->
-          {:cont, conn}
-
-        {:error, :closed} ->
-          {:halt, conn}
-      end
-    end)
-  end
+  @api_true [api?: true]
 
   @methods [
-    %{method_id: "0xa9059cbb", name: "transfer"},
+    # %{method_id: "0xa9059cbb", name: "transfer"},
     %{method_id: "0xa0712d68", name: "mint"},
     %{method_id: "0x095ea7b3", name: "approve"},
     %{method_id: "0x40993b26", name: "buy"},
@@ -72,8 +39,117 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     %{method_id: "0x0162e2d0", name: "swapETHForExactTokens"}
   ]
 
+  @methods_map Map.new(@methods, fn %{method_id: method_id, name: name} -> {method_id, name} end)
+
+  def list(conn, params) do
+    full_options = params |> extract_filters() |> Keyword.merge(paging_options(params)) |> Keyword.merge(@api_true)
+
+    advanced_filters_plus_one = AdvancedFilter.list(full_options)
+
+    {advanced_filters, next_page} = split_list_by_page(advanced_filters_plus_one)
+
+    {decoded_transactions, _abi_acc, methods_acc} =
+      advanced_filters
+      |> Enum.map(fn af -> %Transaction{to_address: af.to_address, input: af.input, hash: af.hash} end)
+      |> TransactionView.decode_transactions(true)
+
+    next_page_params =
+      next_page |> next_page_params(advanced_filters, Map.take(params, ["items_count"]), &paging_params/1)
+
+    render(conn, :advanced_filters,
+      advanced_filters: advanced_filters,
+      decoded_transactions: decoded_transactions,
+      search_params: %{
+        method_ids: method_id_to_name_from_params(params, methods_acc),
+        tokens: contract_address_hash_to_token_from_params(params)
+      },
+      next_page_params: next_page_params
+    )
+  end
+
+  def list_csv(conn, params) do
+    with {:recaptcha, true} <-
+           {:recaptcha,
+            Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] ||
+              CSVHelper.captcha_helper().recaptcha_passed?(params["recaptcha_response"])} do
+      full_options =
+        params
+        |> extract_filters()
+        |> Keyword.merge(paging_options(params))
+        |> Keyword.update(:paging_options, %PagingOptions{page_size: CSVHelper.limit()}, fn paging_options ->
+          %PagingOptions{paging_options | page_size: CSVHelper.limit()}
+        end)
+
+      full_options
+      |> AdvancedFilter.list()
+      |> AdvancedFilterView.to_csv_format()
+      |> CSVHelper.dump_to_stream()
+      |> Enum.reduce_while(CSVExportController.put_resp_params(conn), fn chunk, conn ->
+        case Conn.chunk(conn, chunk) do
+          {:ok, conn} ->
+            {:cont, conn}
+
+          {:error, :closed} ->
+            {:halt, conn}
+        end
+      end)
+    end
+  end
+
   def list_methods(conn, _params) do
     render(conn, :methods, methods: @methods)
+  end
+
+  defp method_id_to_name_from_params(params, methods_acc) do
+    prepared_method_ids = prepare_methods(params["method_ids"]) || []
+
+    {decoded_method_ids, method_ids_to_find} =
+      Enum.reduce(prepared_method_ids, {%{}, []}, fn method_id, {decoded, to_decode} ->
+        {:ok, method_id_hash} = Data.cast(method_id)
+
+        case {Map.get(@methods_map, method_id),
+              methods_acc
+              |> Map.get(method_id_hash.bytes, [])
+              |> Enum.find(
+                &match?(%ContractMethod{abi: %{"type" => "function", "name" => name}} when is_binary(name), &1)
+              )} do
+          {name, _} when is_binary(name) ->
+            {Map.put(decoded, method_id, name), to_decode}
+
+          {_, %ContractMethod{abi: %{"type" => "function", "name" => name}}} when is_binary(name) ->
+            {Map.put(decoded, method_id, name), to_decode}
+
+          {nil, nil} ->
+            {decoded, [method_id_hash.bytes | to_decode]}
+        end
+      end)
+
+    method_ids_to_find
+    |> ContractMethod.find_contract_methods(@api_true)
+    |> Enum.reduce(%{}, fn contract_method, acc ->
+      case contract_method do
+        %ContractMethod{abi: %{"type" => "function", "name" => name}, identifier: identifier} when is_binary(name) ->
+          Map.put(acc, "0x" <> Base.encode16(identifier, case: :lower), name)
+
+        _ ->
+          acc
+      end
+    end)
+    |> Map.merge(decoded_method_ids)
+  end
+
+  defp contract_address_hash_to_token_from_params(params) do
+    token_contract_address_hashes_to_include =
+      prepare_address_hashes(params["token_contract_address_hashes_to_include"]) || []
+
+    token_contract_address_hashes_to_exclude =
+      prepare_address_hashes(params["token_contract_address_hashes_to_exclude"]) || []
+
+    token_contract_address_hashes_to_include
+    |> Kernel.++(token_contract_address_hashes_to_exclude)
+    |> Enum.uniq()
+    |> Token.get_by_contract_address_hashes(@api_true)
+    |> Map.new(fn token -> {token.contract_address_hash, token} end)
   end
 
   defp extract_filters(params) do
@@ -81,12 +157,20 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       tx_types: prepare_tx_types(params["tx_types"]),
       methods: prepare_methods(params["methods"]),
       age: prepare_age(params["age_from"], params["age_to"]),
-      from_address_hashes: prepare_address_hashes(params["from_address_hashes"]),
-      to_address_hashes: prepare_address_hashes(params["to_address_hashes"]),
+      from_address_hashes:
+        prepare_include_exclude_address_hashes(
+          params["from_address_hashes_to_include"],
+          params["from_address_hashes_to_exclude"]
+        ),
+      to_address_hashes:
+        prepare_include_exclude_address_hashes(
+          params["to_address_hashes_to_include"],
+          params["to_address_hashes_to_exclude"]
+        ),
       address_relation: prepare_address_relation(params["address_relation"]),
       amount: prepare_amount(params["amount_from"], params["amount_to"]),
       token_contract_address_hashes:
-        prepare_token_contract_address_hashes(
+        prepare_include_exclude_address_hashes(
           params["token_contract_address_hashes_to_include"],
           params["token_contract_address_hashes_to_exclude"]
         )
@@ -106,12 +190,17 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp prepare_methods(methods) when not is_nil(methods) do
     methods
+    |> String.downcase()
     |> String.split(",")
-    |> Enum.filter(fn prefixed_method_id ->
-      case prefixed_method_id do
-        "0x" <> method_id when byte_size(method_id) == 8 -> true
-        _ -> false
-      end
+    |> Enum.filter(fn
+      "0x" <> method_id when byte_size(method_id) == 8 ->
+        case Base.decode16(method_id, case: :mixed) do
+          {:ok, _} -> true
+          _ -> false
+        end
+
+      _ ->
+        false
     end)
   end
 
@@ -156,11 +245,9 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     end
   end
 
-  defp prepare_token_contract_address_hashes(include, exclude) when not is_nil(include) or not is_nil(exclude) do
+  defp prepare_include_exclude_address_hashes(include, exclude) do
     [include: prepare_address_hashes(include), exclude: prepare_address_hashes(exclude)]
   end
-
-  defp prepare_token_contract_address_hashes(_, _), do: nil
 
   # Paging
 

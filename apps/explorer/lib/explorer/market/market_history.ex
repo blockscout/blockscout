@@ -5,7 +5,7 @@ defmodule Explorer.Market.MarketHistory do
 
   use Explorer.Schema
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain
 
   @typedoc """
   The recorded values of the configured coin to USD for a single day.
