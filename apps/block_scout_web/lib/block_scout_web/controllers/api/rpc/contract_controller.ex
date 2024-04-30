@@ -230,7 +230,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   defp find_uid_in_queue(uid) do
     SolidityPublisherWorker
-    |> Que.Persistence.all()
+    |> QuePersistence.all()
     |> Enum.any?(fn
       %Que.Job{arguments: {"flattened_api", _, _, ^uid}} ->
         true
