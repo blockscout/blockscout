@@ -278,6 +278,13 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @unverified_smart_contract})
   end
 
+  def call(conn, {:method, _}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @not_found})
+  end
+
   def call(conn, {:is_empty_response, true}) do
     conn
     |> put_status(500)

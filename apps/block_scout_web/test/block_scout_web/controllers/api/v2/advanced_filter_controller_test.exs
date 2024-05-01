@@ -820,6 +820,28 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
     end
   end
 
+  describe "/advanced_filters/methods/search" do
+    test "returns 404 if method does not exist", %{conn: conn} do
+      request = get(conn, "/api/v2/advanced-filters/methods/search", %{"q" => "foo"})
+      assert response = json_response(request, 404)
+      assert response["message"] == "Not found"
+    end
+
+    test "finds method by name", %{conn: conn} do
+      insert(:contract_method)
+      request = get(conn, "/api/v2/advanced-filters/methods/search", %{"q" => "set"})
+      assert response = json_response(request, 200)
+      assert response == [%{"method_id" => "0x60fe47b1", "name" => "set"}]
+    end
+
+    test "finds method by id", %{conn: conn} do
+      insert(:contract_method)
+      request = get(conn, "/api/v2/advanced-filters/methods/search", %{"q" => "0x60fe47b1"})
+      assert response = json_response(request, 200)
+      assert response == [%{"method_id" => "0x60fe47b1", "name" => "set"}]
+    end
+  end
+
   defp check_paginated_response(all_advanced_filters, first_page, second_page) do
     assert all_advanced_filters
            |> Enum.map(&{&1.block_number, &1.transaction_index, &1.internal_transaction_index, &1.token_transfer_index}) ==
