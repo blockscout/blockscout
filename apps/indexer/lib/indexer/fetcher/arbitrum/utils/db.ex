@@ -352,9 +352,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       )
 
     query
-    |> Chain.join_associations(%{
-      :transactions => :optional
-    })
+    # :optional is used since a block may not have any transactions
+    |> Chain.join_associations(%{:transactions => :optional})
     |> Repo.all(timeout: :infinity)
   end
 
@@ -378,7 +377,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
           %{
             id: non_neg_integer(),
             hash: Hash,
-            block: FullBlock.block_number(),
+            block_number: FullBlock.block_number(),
             timestamp: DateTime,
             status: :unfinalized
           }
@@ -442,6 +441,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         nil
 
       batch ->
+        # FIXME: if no commit_transaction it is a serious DB consistency issue, so raise an exception
         case batch.commit_transaction do
           nil -> nil
           %Ecto.Association.NotLoaded{} -> nil
@@ -465,7 +465,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
           %{
             batch_number: non_neg_integer(),
             block_num: FullBlock.block_number(),
-            hash: Hash.t()
+            block_hash: Hash.t()
           }
         ]
   def unconfirmed_rollup_blocks(first_block, last_block)
@@ -741,7 +741,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   defp lifecycle_transaction_to_map(tx) do
-    [:id, :hash, :block, :timestamp, :status]
+    [:id, :hash, :block_number, :timestamp, :status]
     |> db_record_to_map(tx)
   end
 

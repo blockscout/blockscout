@@ -32,7 +32,7 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
     create table(:arbitrum_lifecycle_l1_transactions, primary_key: false) do
       add(:id, :integer, null: false, primary_key: true)
       add(:hash, :bytea, null: false)
-      add(:block, :integer, null: false)
+      add(:block_number, :integer, null: false)
       add(:timestamp, :"timestamp without time zone", null: false)
       add(:status, :l1_tx_status, null: false)
       timestamps(null: false, type: :utc_datetime_usec)
@@ -87,7 +87,7 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
         null: true
       )
 
-      add(:hash, :bytea, null: false, primary_key: true)
+      add(:block_hash, :bytea, null: false, primary_key: true)
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
@@ -105,18 +105,7 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
         null: false
       )
 
-      add(
-        :block_hash,
-        references(:arbitrum_batch_l2_blocks,
-          column: :hash,
-          on_delete: :delete_all,
-          on_update: :update_all,
-          type: :bytea
-        ),
-        null: false
-      )
-
-      add(:hash, :bytea, null: false, primary_key: true)
+      add(:tx_hash, :bytea, null: false, primary_key: true)
       timestamps(null: false, type: :utc_datetime_usec)
     end
 

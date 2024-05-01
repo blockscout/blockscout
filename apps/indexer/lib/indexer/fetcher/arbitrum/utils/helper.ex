@@ -72,7 +72,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
         updated_txs,
         tx_key,
         Map.merge(lifecycle_txs[tx_key], %{
-          timestamp: blocks_to_ts[lifecycle_txs[tx_key].block],
+          timestamp: blocks_to_ts[lifecycle_txs[tx_key].block_number],
           status:
             if track_finalization? do
               :unfinalized

@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.Arbitrum.L1Batches do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Arbitrum.L1Batch.t/0`.
+    Bulk imports of Explorer.Chain.Arbitrum.L1Batch.
   """
 
   require Ecto.Query

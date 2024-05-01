@@ -606,7 +606,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         updated_txs_map =
           Map.put(txs_map, tx_hash, %{
             hash: tx_hash,
-            block: block_num,
+            block_number: block_num,
             timestamp: blocks_to_ts[block_num],
             status:
               if track_finalization? do
@@ -763,15 +763,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       updated_txs_list =
         block.transactions
         |> Enum.reduce(txs_list, fn tx, acc ->
-          [
-            %{hash: tx.hash.bytes, batch_number: batch_num, block_hash: blk_hash}
-            | acc
-          ]
+          [%{tx_hash: tx.hash.bytes, batch_number: batch_num} | acc]
         end)
 
       updated_blocks_map =
         blocks_map
-        |> Map.put(block.number, %{hash: blk_hash, batch_number: batch_num, confirm_id: nil})
+        |> Map.put(block.number, %{block_hash: blk_hash, batch_number: batch_num, confirm_id: nil})
 
       {updated_blocks_map, updated_txs_list}
     end)
@@ -928,7 +925,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         Map.put(
           blocks_map,
           blk_num,
-          %{hash: blk_hash, batch_number: batch_num, confirm_id: nil}
+          %{block_hash: blk_hash, batch_number: batch_num, confirm_id: nil}
         )
 
       updated_txs_list =
@@ -938,10 +935,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
           new_txs ->
             Enum.reduce(new_txs, txs_list, fn l2_tx_hash, txs_list ->
-              [
-                %{hash: l2_tx_hash, batch_number: batch_num, block_hash: blk_hash}
-                | txs_list
-              ]
+              [%{tx_hash: l2_tx_hash, batch_number: batch_num} | txs_list]
             end)
         end
 

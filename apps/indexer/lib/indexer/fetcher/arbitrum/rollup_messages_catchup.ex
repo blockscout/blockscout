@@ -133,7 +133,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   # - `{:noreply, new_state}` where the new indexed block number is stored, or retain
   #   the current state while awaiting new blocks.
   @impl GenServer
-  def handle_info(:wait_for_new_block, %{data: %{time_of_start: _}} = state) do
+  def handle_info(:wait_for_new_block, %{data: _} = state) do
     {time_of_start, interim_data} =
       if is_nil(Map.get(state.data, :time_of_start)) do
         now = DateTime.utc_now()
@@ -188,6 +188,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
     new_data =
       Map.merge(state.data, %{
         duration: 0,
+        progressed: false,
         historical_msg_from_l2_end_block: historical_msg_from_l2_end_block,
         historical_msg_to_l2_end_block: historical_msg_to_l2_end_block
       })
@@ -221,7 +222,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   def handle_info(
         :historical_msg_from_l2,
         %{
-          data: %{duration: _, historical_msg_from_l2_end_block: _}
+          data: %{duration: _, historical_msg_from_l2_end_block: _, progressed: _}
         } = state
       ) do
     end_block = state.data.historical_msg_from_l2_end_block
@@ -231,9 +232,12 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
 
     Process.send(self(), :historical_msg_to_l2, [])
 
+    progressed = state.data.progressed || (not is_nil(start_block) && start_block - 1 < end_block)
+
     new_data =
       Map.merge(state.data, %{
         duration: increase_duration(state.data, handle_duration),
+        progressed: progressed,
         historical_msg_from_l2_end_block: if(is_nil(start_block), do: nil, else: start_block - 1)
       })
 
@@ -267,7 +271,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   def handle_info(
         :historical_msg_to_l2,
         %{
-          data: %{duration: _, historical_msg_to_l2_end_block: _}
+          data: %{duration: _, historical_msg_to_l2_end_block: _, progressed: _}
         } = state
       ) do
     end_block = state.data.historical_msg_to_l2_end_block
@@ -277,9 +281,12 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
 
     Process.send(self(), :plan_next_iteration, [])
 
+    progressed = state.data.progressed || (not is_nil(start_block) && start_block - 1 < end_block)
+
     new_data =
       Map.merge(state.data, %{
         duration: increase_duration(state.data, handle_duration),
+        progressed: progressed,
         historical_msg_to_l2_end_block: if(is_nil(start_block), do: nil, else: start_block - 1)
       })
 
@@ -289,19 +296,22 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   # Schedules the next iteration of historical messages discovery based on the current state and configuration.
   #
   # If the processing of historical messages from L1 to L2 and from L2 to L1 is complete
-  # (indicated by their end blocks being less than or equal to 0), it sets a timeout
-  # based on the `recheck_interval` configuration, adjusting for the time already spent.
-  # Otherwise, it sets a short delay to reduce CPU usage before checking again.
+  # (indicated by their end blocks being less than or equal to 0) or not progressed since
+  # the previous iteration, it sets a timeout based on the `recheck_interval`
+  # configuration, adjusting for the time already spent. Otherwise, it sets a short delay
+  # to reduce CPU usage before checking again.
   #
   # The chosen delay is used to schedule the next iteration of historical messages discovery
   # by sending `:historical_msg_from_l2`.
   #
   # ## Parameters
   # - `:plan_next_iteration`: The message triggering the handler.
-  # - `state`: The current state of the fetcher containing both the fetcher configuration and data needed to determine the next steps.
+  # - `state`: The current state of the fetcher containing both the fetcher configuration
+  #            and data needed to determine the next steps.
   #
   # ## Returns
-  # - `{:noreply, state}` where `state` contains the reset `duration` of the iteration.
+  # - `{:noreply, state}` where `state` contains the reset `duration` of the iteration and
+  #   the flag if the messages discovery process `progressed`.
   @impl GenServer
   def handle_info(
         :plan_next_iteration,
@@ -311,17 +321,21 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
         } = state
       ) do
     next_timeout =
-      if state.data.historical_msg_from_l2_end_block <= 0 and state.data.historical_msg_to_l2_end_block <= 0 do
+      if not state.data.progressed or
+           (state.data.historical_msg_from_l2_end_block <= 0 and state.data.historical_msg_to_l2_end_block <= 0) do
         max(:timer.seconds(state.config.recheck_interval) - div(state.data.duration, 1000), 0)
       else
-        # For the case when historical messages are not received yet
+        # For the case when all historical messages are not received yet
         # make a small delay to release CPU a bit
         :timer.seconds(@release_cpu_delay)
       end
 
     Process.send_after(self(), :historical_msg_from_l2, next_timeout)
 
-    new_data = Map.put(state.data, :duration, 0)
+    new_data =
+      state.data
+      |> Map.put(:duration, 0)
+      |> Map.put(:progressed, false)
 
     {:noreply, %{state | data: new_data}}
   end

@@ -341,7 +341,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
           Map.put(
             lifecycle_txs,
             l1_tx_hash,
-            %{hash: l1_tx_hash, block: l1_blk_num}
+            %{hash: l1_tx_hash, block_number: l1_blk_num}
           )
 
         updated_blocks_requests =

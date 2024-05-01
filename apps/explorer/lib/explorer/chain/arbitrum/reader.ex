@@ -120,10 +120,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     case query
+         # :required is used since the situation when commit transaction is not found is not possible
          |> Chain.join_associations(%{:commit_transaction => :required})
          |> Repo.one() do
       nil -> nil
-      batch -> batch.commit_transaction.block
+      batch -> batch.commit_transaction.block_number
     end
   end
 
@@ -147,10 +148,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     case query
+         # :required is used since the situation when commit transaction is not found is not possible
          |> Chain.join_associations(%{:commit_transaction => :required})
          |> Repo.one() do
       nil -> nil
-      batch -> batch.commit_transaction.block
+      batch -> batch.commit_transaction.block_number
     end
   end
 
@@ -215,9 +217,9 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     query
-    |> Chain.join_associations(%{
-      :execution_transaction => :optional
-    })
+    # :required is used since execution records in the table are created only when
+    # the corresponding execution transaction is indexed
+    |> Chain.join_associations(%{:execution_transaction => :required})
     |> Repo.all(timeout: :infinity)
   end
 
@@ -267,7 +269,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         lt in LifecycleTransaction,
-        where: lt.block <= ^finalized_block and lt.status == :unfinalized
+        where: lt.block_number <= ^finalized_block and lt.status == :unfinalized
       )
 
     Repo.all(query, timeout: :infinity)
@@ -291,13 +293,12 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def rollup_block_hash_to_num(block_hash) when is_binary(block_hash) do
     query =
       from(bl in BatchBlock,
-        where: bl.hash == ^block_hash
+        where: bl.block_hash == ^block_hash
       )
 
     case query
-         |> Chain.join_associations(%{
-           :block => :optional
-         })
+         # :optional here is used because situations when the block is not found are expected
+         |> Chain.join_associations(%{:block => :optional})
          |> Repo.one() do
       nil ->
         # Block with such hash is not found
@@ -357,6 +358,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     query
+    # :required is used since the situation when commit transaction is not found is not possible
     |> Chain.join_associations(%{:commit_transaction => :required})
     |> Repo.one()
   end
@@ -374,7 +376,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       from(
         rb in BatchBlock,
         inner_join: fb in FullBlock,
-        on: rb.hash == fb.hash,
+        on: rb.block_hash == fb.hash,
         select: rb,
         where: not is_nil(rb.confirm_id),
         order_by: [desc: fb.number],
@@ -382,9 +384,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     case query
-         |> Chain.join_associations(%{
-           :confirm_transaction => :optional
-         })
+         # :required is used since existence of the confirmation id is checked above
+         |> Chain.join_associations(%{:confirm_transaction => :required})
          |> Repo.one() do
       nil ->
         nil
@@ -394,7 +395,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
           # `nil` and `%Ecto.Association.NotLoaded{}` indicate DB inconsistency
           nil -> nil
           %Ecto.Association.NotLoaded{} -> nil
-          confirm_transaction -> confirm_transaction.block
+          confirm_transaction -> confirm_transaction.block_number
         end
     end
   end
@@ -411,7 +412,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       from(
         rb in BatchBlock,
         inner_join: fb in FullBlock,
-        on: rb.hash == fb.hash,
+        on: rb.block_hash == fb.hash,
         select: fb.number,
         where: not is_nil(rb.confirm_id),
         order_by: [desc: fb.number],
@@ -435,8 +436,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         tx in LifecycleTransaction,
         inner_join: ex in L1Execution,
         on: tx.id == ex.execution_id,
-        select: tx.block,
-        order_by: [desc: tx.block],
+        select: tx.block_number,
+        order_by: [desc: tx.block_number],
         limit: 1
       )
 
@@ -457,8 +458,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         tx in LifecycleTransaction,
         inner_join: ex in L1Execution,
         on: tx.id == ex.execution_id,
-        select: tx.block,
-        order_by: [asc: tx.block],
+        select: tx.block_number,
+        order_by: [asc: tx.block_number],
         limit: 1
       )
 
@@ -483,7 +484,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       within the range, or if the block fetcher has not indexed them.
   """
   @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [
-          %{batch_number: non_neg_integer, block_num: FullBlock.block_number(), hash: Hash.t()}
+          %{batch_number: non_neg_integer, block_num: FullBlock.block_number(), block_hash: Hash.t()}
         ]
   def unconfirmed_rollup_blocks(first_block, last_block)
       when is_integer(first_block) and first_block >= 0 and
@@ -492,10 +493,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       from(
         rb in BatchBlock,
         inner_join: fb in FullBlock,
-        on: rb.hash == fb.hash,
+        on: rb.block_hash == fb.hash,
         select: %{
           batch_number: rb.batch_number,
-          hash: rb.hash,
+          block_hash: rb.block_hash,
           block_num: fb.number
         },
         where: fb.number >= ^first_block and fb.number <= ^last_block and is_nil(rb.confirm_id),
@@ -578,7 +579,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       from(
         rb in BatchBlock,
         inner_join: fb in FullBlock,
-        on: rb.hash == fb.hash,
+        on: rb.block_hash == fb.hash,
         select: %{
           block_num: fb.number,
           confirm_id: rb.confirm_id
@@ -623,7 +624,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         on: subquery.confirm_id == tx_cur.id,
         left_join: tx_prev in LifecycleTransaction,
         on: subquery.prev_confirm_id == tx_prev.id,
-        select: {tx_prev.block, tx_cur.block},
+        select: {tx_prev.block_number, tx_cur.block_number},
         where: subquery.min_block_num - 1 != subquery.prev_max_number or is_nil(subquery.prev_max_number),
         order_by: [desc: subquery.min_block_num],
         limit: 1

@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.Arbitrum.Messages do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Arbitrum.Message.t/0`.
+    Bulk imports of Explorer.Chain.Arbitrum.Message.
   """
 
   require Ecto.Query

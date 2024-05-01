@@ -1,5 +1,13 @@
 defmodule Explorer.Chain.Arbitrum.L1Batch do
-  @moduledoc "Models an L1 batch for Arbitrum."
+  @moduledoc """
+    Models an L1 batch for Arbitrum.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Arbitrum.L1Batches
+
+    Migrations:
+    - Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables
+  """
 
   use Explorer.Schema
 

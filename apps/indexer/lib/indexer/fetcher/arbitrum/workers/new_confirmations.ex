@@ -409,7 +409,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           Map.put(
             lifecycle_txs,
             l1_tx_hash,
-            %{hash: l1_tx_hash, block: l1_blk_num}
+            %{hash: l1_tx_hash, block_number: l1_blk_num}
           )
 
         updated_blocks_requests =
@@ -744,11 +744,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   #   - The updated cache with the fetched logs.
   defp check_if_batch_confirmed(batch, confirmation_desc, l1_outbox_config, rollup_json_rpc_named_arguments, cache) do
     Logger.info(
-      "Use L1 blocks #{batch.commit_transaction.block}..#{confirmation_desc.l1_block_num - 1} to look for a rollup block confirmation within #{batch.start_block}..#{batch.end_block} of ##{batch.number}"
+      "Use L1 blocks #{batch.commit_transaction.block_number}..#{confirmation_desc.l1_block_num - 1} to look for a rollup block confirmation within #{batch.start_block}..#{batch.end_block} of ##{batch.number}"
     )
 
     l1_blocks_pairs_to_get_logs(
-      batch.commit_transaction.block,
+      batch.commit_transaction.block_number,
       confirmation_desc.l1_block_num - 1,
       l1_outbox_config.logs_block_range
     )
