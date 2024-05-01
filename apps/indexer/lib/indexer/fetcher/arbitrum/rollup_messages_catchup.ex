@@ -293,19 +293,44 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
     {:noreply, %{state | data: new_data}}
   end
 
-  # Schedules the next iteration of historical messages discovery based on the current state and configuration.
+  # Decides whether to stop or continue the fetcher based on the current state of message discovery.
   #
-  # If the processing of historical messages from L1 to L2 and from L2 to L1 is complete
-  # (indicated by their end blocks being less than or equal to 0) or not progressed since
-  # the previous iteration, it sets a timeout based on the `recheck_interval`
-  # configuration, adjusting for the time already spent. Otherwise, it sets a short delay
-  # to reduce CPU usage before checking again.
+  # If both `historical_msg_from_l2_end_block` and `historical_msg_to_l2_end_block` are 0 or less,
+  # indicating that there are no more historical messages to fetch, the task is stopped with a normal
+  # termination.
+  #
+  # ## Parameters
+  # - `:plan_next_iteration`: The message that triggers this function.
+  # - `state`: The current state of the fetcher.
+  #
+  # ## Returns
+  # - `{:stop, :normal, state}`: Ends the fetcher's operation cleanly.
+  @impl GenServer
+  def handle_info(
+        :plan_next_iteration,
+        %{
+          data: %{
+            historical_msg_from_l2_end_block: from_l2_end_block,
+            historical_msg_to_l2_end_block: to_l2_end_block
+          }
+        } = state
+      )
+      when from_l2_end_block <= 0 and to_l2_end_block <= 0 do
+    {:stop, :normal, state}
+  end
+
+  # Plans the next iteration for the historical messages discovery based on the state's `progressed` flag.
+  #
+  # If no progress was made (`progressed` is false), schedules the next check based
+  # on the `recheck_interval`, adjusted by the time already spent. If progress was
+  # made, it imposes a shorter delay to quickly check again, helping to reduce CPU
+  # usage during idle periods.
   #
   # The chosen delay is used to schedule the next iteration of historical messages discovery
   # by sending `:historical_msg_from_l2`.
   #
   # ## Parameters
-  # - `:plan_next_iteration`: The message triggering the handler.
+  # - `:plan_next_iteration`: The message that triggers this function.
   # - `state`: The current state of the fetcher containing both the fetcher configuration
   #            and data needed to determine the next steps.
   #
@@ -315,19 +340,15 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   @impl GenServer
   def handle_info(
         :plan_next_iteration,
-        %{
-          config: %{recheck_interval: _},
-          data: %{duration: _, historical_msg_from_l2_end_block: _, historical_msg_to_l2_end_block: _}
-        } = state
+        %{config: %{recheck_interval: _}, data: %{duration: _, progressed: _}} = state
       ) do
     next_timeout =
-      if not state.data.progressed or
-           (state.data.historical_msg_from_l2_end_block <= 0 and state.data.historical_msg_to_l2_end_block <= 0) do
-        max(:timer.seconds(state.config.recheck_interval) - div(state.data.duration, 1000), 0)
-      else
+      if state.data.progressed do
         # For the case when all historical messages are not received yet
         # make a small delay to release CPU a bit
         :timer.seconds(@release_cpu_delay)
+      else
+        max(:timer.seconds(state.config.recheck_interval) - div(state.data.duration, 1000), 0)
       end
 
     Process.send_after(self(), :historical_msg_from_l2, next_timeout)
