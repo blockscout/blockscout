@@ -151,7 +151,9 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
              "name" => name,
              "address" => %{
                "hash" => Address.checksum(addr),
+               # todo: added for backward compatibility, remove when frontend unbound from these props
                "implementation_name" => nil,
+               "implementation_names" => [],
                "is_contract" => false,
                "is_verified" => false,
                "name" => nil,
@@ -205,7 +207,9 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
              "name" => name,
              "address" => %{
                "hash" => Address.checksum(addr),
+               # todo: added for backward compatibility, remove when frontend unbound from these props
                "implementation_name" => nil,
+               "implementation_names" => [],
                "is_contract" => false,
                "is_verified" => false,
                "name" => nil,

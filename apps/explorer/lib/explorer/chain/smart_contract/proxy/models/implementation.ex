@@ -393,20 +393,20 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   defp db_implementation_data_converter(other), do: to_string(other)
 
   @doc """
-  Returns proxy's implementation name
+  Returns proxy's implementation names
   """
-  @spec name(Address.t() | nil) :: String.t() | nil
-  def name(_proxy_address, options \\ [])
+  @spec names(Address.t() | nil) :: String.t() | [String.t()]
+  def names(_proxy_address, options \\ [])
 
-  def name(proxy_address, options) when not is_nil(proxy_address) do
+  def names(proxy_address, options) when not is_nil(proxy_address) do
     proxy_implementations = get_proxy_implementations(proxy_address.hash, options)
 
     if proxy_implementations && not Enum.empty?(proxy_implementations.names) do
       proxy_implementations.names
     else
-      nil
+      []
     end
   end
 
-  def name(_, _), do: nil
+  def names(_, _), do: []
 end
