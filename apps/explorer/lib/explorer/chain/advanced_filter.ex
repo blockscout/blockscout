@@ -244,8 +244,8 @@ defmodule Explorer.Chain.AdvancedFilter do
         join: to_address in assoc(internal_transaction, :to_address),
         preload: [transaction: transaction, from_address: from_address, to_address: to_address],
         order_by: [
-          desc: internal_transaction.block_number,
-          desc: internal_transaction.transaction_index,
+          desc: transaction.block_number,
+          desc: transaction.index,
           desc: internal_transaction.index
         ]
       )

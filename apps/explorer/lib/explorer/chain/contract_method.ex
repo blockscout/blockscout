@@ -65,7 +65,7 @@ defmodule Explorer.Chain.ContractMethod do
   end
 
   @doc """
-  Finds limited number of contract methods by selector id
+  Query that finds limited number of contract methods by selector id
   """
   @spec find_contract_method_query(binary(), integer()) :: Ecto.Query.t()
   def find_contract_method_query(method_id, limit) do
@@ -77,14 +77,45 @@ defmodule Explorer.Chain.ContractMethod do
   end
 
   @doc """
-  Finds limited number of contract methods by selector id
+  Finds contract method by selector id
+  """
+  @spec find_contract_method_by_selector_id(binary(), [Chain.api?()]) :: __MODULE__.t() | nil
+  def find_contract_method_by_selector_id(method_id, options) do
+    query =
+      from(
+        contract_method in __MODULE__,
+        distinct: true,
+        where: contract_method.abi["type"] == "function",
+        where: contract_method.identifier == ^method_id,
+        limit: 1
+      )
+
+    Chain.select_repo(options).one(query)
+  end
+
+  @spec find_contract_method_by_name(String.t(), [Chain.api?()]) :: __MODULE__.t() | nil
+  def find_contract_method_by_name(name, options) do
+    query =
+      from(
+        contract_method in __MODULE__,
+        where: contract_method.abi["type"] == "function",
+        where: contract_method.abi["name"] == ^name,
+        limit: 1
+      )
+
+    Chain.select_repo(options).one(query)
+  end
+
+  @doc """
+  Finds contract methods by selector id
   """
   @spec find_contract_methods(binary(), [Chain.api?()]) :: [__MODULE__.t()]
   def find_contract_methods(method_ids, options) do
     query =
       from(
         contract_method in __MODULE__,
-        distinct: true,
+        distinct: contract_method.identifier,
+        where: contract_method.abi["type"] == "function",
         where: contract_method.identifier in ^method_ids
       )
 

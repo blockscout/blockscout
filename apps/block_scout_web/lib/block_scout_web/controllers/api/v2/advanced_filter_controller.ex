@@ -39,7 +39,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     %{method_id: "0x0162e2d0", name: "swapETHForExactTokens"}
   ]
 
-  @methods_map Map.new(@methods, fn %{method_id: method_id, name: name} -> {method_id, name} end)
+  @methods_id_to_name_map Map.new(@methods, fn %{method_id: method_id, name: name} -> {method_id, name} end)
+  @methods_name_to_id_map Map.new(@methods, fn %{method_id: method_id, name: name} -> {name, method_id} end)
 
   def list(conn, params) do
     full_options = params |> extract_filters() |> Keyword.merge(paging_options(params)) |> Keyword.merge(@api_true)
@@ -100,6 +101,30 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     render(conn, :methods, methods: @methods)
   end
 
+  def search_methods(conn, %{"q" => query}) do
+    case {@methods_id_to_name_map[query], @methods_name_to_id_map[query]} do
+      {name, _} when is_binary(name) ->
+        render(conn, :methods, methods: [%{method_id: query, name: name}])
+
+      {_, id} when is_binary(id) ->
+        render(conn, :methods, methods: [%{method_id: id, name: query}])
+
+      _ ->
+        mb_contract_method =
+          case Data.cast(query) do
+            {:ok, %Data{bytes: <<_::bytes-size(4)>> = binary_method_id}} ->
+              ContractMethod.find_contract_method_by_selector_id(binary_method_id, @api_true)
+
+            _ ->
+              ContractMethod.find_contract_method_by_name(query, @api_true)
+          end
+
+        with {:method, %ContractMethod{abi: %{"name" => name}, identifier: identifier}} <- {:method, mb_contract_method} do
+          render(conn, :methods, methods: [%{method_id: "0x" <> Base.encode16(identifier, case: :lower), name: name}])
+        end
+    end
+  end
+
   defp method_id_to_name_from_params(params, methods_acc) do
     prepared_method_ids = prepare_methods(params["method_ids"]) || []
 
@@ -107,7 +132,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       Enum.reduce(prepared_method_ids, {%{}, []}, fn method_id, {decoded, to_decode} ->
         {:ok, method_id_hash} = Data.cast(method_id)
 
-        case {Map.get(@methods_map, method_id),
+        case {Map.get(@methods_id_to_name_map, method_id),
               methods_acc
               |> Map.get(method_id_hash.bytes, [])
               |> Enum.find(
@@ -128,7 +153,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     |> ContractMethod.find_contract_methods(@api_true)
     |> Enum.reduce(%{}, fn contract_method, acc ->
       case contract_method do
-        %ContractMethod{abi: %{"type" => "function", "name" => name}, identifier: identifier} when is_binary(name) ->
+        %ContractMethod{abi: %{"name" => name}, identifier: identifier} when is_binary(name) ->
           Map.put(acc, "0x" <> Base.encode16(identifier, case: :lower), name)
 
         _ ->
