@@ -444,9 +444,12 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         case batch.commit_transaction do
           nil ->
             raise "Incorrect state of the DB: commit_transaction is not loaded for the batch with number #{num}"
+
           %Ecto.Association.NotLoaded{} ->
             raise "Incorrect state of the DB: commit_transaction is not loaded for the batch with number #{num}"
-          _ -> batch
+
+          _ ->
+            batch
         end
     end
   end
