@@ -254,7 +254,7 @@ precompiled_config_base_dir =
 
 precompiled_config_default_path =
   case ConfigHelper.chain_type() do
-    "arbitrum" -> "#{precompiled_config_base_dir}config/assets/precompiles-arbitrum.json"
+    :arbitrum -> "#{precompiled_config_base_dir}config/assets/precompiles-arbitrum.json"
     _ -> nil
   end
 
