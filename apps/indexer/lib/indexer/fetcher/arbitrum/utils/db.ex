@@ -441,10 +441,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         nil
 
       batch ->
-        # FIXME: if no commit_transaction it is a serious DB consistency issue, so raise an exception
         case batch.commit_transaction do
-          nil -> nil
-          %Ecto.Association.NotLoaded{} -> nil
+          nil ->
+            raise "Incorrect state of the DB: commit_transaction is not loaded for the batch with number #{num}"
+          %Ecto.Association.NotLoaded{} ->
+            raise "Incorrect state of the DB: commit_transaction is not loaded for the batch with number #{num}"
           _ -> batch
         end
     end
