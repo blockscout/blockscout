@@ -469,6 +469,118 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
   end
 
+  test "get smart-contract implementation for 'Clones with immutable arguments' pattern", %{conn: conn} do
+    implementation_contract =
+      insert(:smart_contract,
+        external_libraries: [],
+        constructor_arguments: "",
+        abi: [
+          %{
+            "type" => "constructor",
+            "inputs" => [
+              %{"type" => "address", "name" => "_proxyStorage"},
+              %{"type" => "address", "name" => "_implementationAddress"}
+            ]
+          },
+          %{
+            "constant" => false,
+            "inputs" => [%{"name" => "x", "type" => "uint256"}],
+            "name" => "set",
+            "outputs" => [],
+            "payable" => false,
+            "stateMutability" => "nonpayable",
+            "type" => "function"
+          },
+          %{
+            "constant" => true,
+            "inputs" => [],
+            "name" => "get",
+            "outputs" => [%{"name" => "", "type" => "uint256"}],
+            "payable" => false,
+            "stateMutability" => "view",
+            "type" => "function"
+          }
+        ],
+        license_type: 9
+      )
+
+    insert(:smart_contract_additional_source,
+      file_name: "test1",
+      contract_source_code: "test2",
+      address_hash: implementation_contract.address_hash
+    )
+
+    implementation_contract_address_hash_string =
+      Base.encode16(implementation_contract.address_hash.bytes, case: :lower)
+
+    proxy_tx_input =
+      "0x684fbe55000000000000000000000000af1caf51d49b0e63d1ff7e5d4ed6ea26d15f3f9d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003"
+
+    proxy_deployed_bytecode =
+      "0x3d3d3d3d363d3d3761003f603736393661003f013d73" <>
+        implementation_contract_address_hash_string <>
+        "5af43d3d93803e603557fd5bf3af1caf51d49b0e63d1ff7e5d4ed6ea26d15f3f9d0000000000000000000000000000000000000000000000000000000000000001000000000000000203003d"
+
+    proxy_address =
+      insert(:contract_address,
+        contract_code: proxy_deployed_bytecode
+      )
+
+    insert(:transaction,
+      created_contract_address_hash: proxy_address.hash,
+      input: proxy_tx_input
+    )
+    |> with_block(status: :ok)
+
+    correct_response = %{
+      "verified_twin_address_hash" => Address.checksum(implementation_contract.address_hash),
+      "is_verified" => false,
+      "is_changed_bytecode" => false,
+      "is_partially_verified" => implementation_contract.partially_verified,
+      "is_fully_verified" => false,
+      "is_verified_via_sourcify" => false,
+      "is_vyper_contract" => implementation_contract.is_vyper_contract,
+      "has_methods_read" => true,
+      "has_methods_write" => true,
+      "has_methods_read_proxy" => true,
+      "has_methods_write_proxy" => true,
+      "has_custom_methods_read" => false,
+      "has_custom_methods_write" => false,
+      "minimal_proxy_address_hash" => Address.checksum(implementation_contract.address_hash),
+      "sourcify_repo_url" => nil,
+      "can_be_visualized_via_sol2uml" => false,
+      "name" => implementation_contract && implementation_contract.name,
+      "compiler_version" => implementation_contract.compiler_version,
+      "optimization_enabled" => implementation_contract.optimization,
+      "optimization_runs" => implementation_contract.optimization_runs,
+      "evm_version" => implementation_contract.evm_version,
+      "verified_at" => implementation_contract.inserted_at |> to_string() |> String.replace(" ", "T"),
+      "source_code" => implementation_contract.contract_source_code,
+      "file_path" => implementation_contract.file_path,
+      "additional_sources" => [
+        %{"file_path" => "test1", "source_code" => "test2"}
+      ],
+      "compiler_settings" => implementation_contract.compiler_settings,
+      "external_libraries" => [],
+      "constructor_args" => nil,
+      "decoded_constructor_args" => nil,
+      "is_self_destructed" => false,
+      "deployed_bytecode" => proxy_deployed_bytecode,
+      "creation_bytecode" => proxy_tx_input,
+      "abi" => implementation_contract.abi,
+      "is_verified_via_eth_bytecode_db" => implementation_contract.verified_via_eth_bytecode_db,
+      "is_verified_via_verifier_alliance" => implementation_contract.verified_via_verifier_alliance,
+      "language" => smart_contract_language(implementation_contract),
+      "license_type" => "bsd_3_clause",
+      "certified" => false
+    }
+
+    request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
+    response = json_response(request, 200)
+
+    assert correct_response == response
+  end
+
   describe "/smart-contracts/{address_hash} <> eth_bytecode_db" do
     setup do
       old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)

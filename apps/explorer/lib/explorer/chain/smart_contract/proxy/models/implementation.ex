@@ -32,15 +32,16 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
     field(:proxy_type, Ecto.Enum,
       values: [
+        :basic_implementation,
+        :basic_get_implementation,
+        :clone_with_immutable_arguments,
+        :comptroller,
         :eip1167,
         :eip1967,
         :eip1822,
         :eip930,
         :eip2535,
         :master_copy,
-        :basic_implementation,
-        :basic_get_implementation,
-        :comptroller,
         :unknown
       ],
       null: true
