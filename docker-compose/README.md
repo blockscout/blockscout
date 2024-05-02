@@ -25,11 +25,12 @@ This command uses `docker-compose.yml` by-default, which builds the backend of t
 - Nginx proxy to bind backend, frontend and microservices.
 - Blockscout explorer at http://localhost.
 
-and 4 containers for microservices (written in Rust):
+and 5 containers for microservices (written in Rust):
 
 - [Stats](https://github.com/blockscout/blockscout-rs/tree/main/stats) service with a separate Postgres 14 DB.
 - [Sol2UML visualizer](https://github.com/blockscout/blockscout-rs/tree/main/visualizer) service.
 - [Sig-provider](https://github.com/blockscout/blockscout-rs/tree/main/sig-provider) service.
+- [User-ops-indexer](https://github.com/blockscout/blockscout-rs/tree/main/user-ops-indexer) service.
 
 **Note for Linux users**: Linux users need to run the local node on http://0.0.0.0/ rather than http://127.0.0.1/
 
@@ -63,6 +64,7 @@ You can adjust BlockScout environment variables:
 - for frontend in `./envs/common-frontend.env`
 - for stats service in `./envs/common-stats.env`
 - for visualizer in `./envs/common-visualizer.env`
+- for user-ops-indexer in `./envs/common-user-ops-indexer.env`
 
 Descriptions of the ENVs are available
 

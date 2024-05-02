@@ -41,6 +41,11 @@ services:
       file: ./services/stats.yml
       service: stats
 
+  user-ops-indexer:
+    extends:
+      file: ./services/user-ops-indexer.yml
+      service: user-ops-indexer
+
   proxy:
     depends_on:
       - visualizer
