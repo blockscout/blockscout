@@ -558,6 +558,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
          rollup_json_rpc_named_arguments,
          cache \\ %{}
        ) do
+    # The following batch fields are required in the further processing:
+    # number, start_block, end_block, commit_transaction.block_number
     with {:ok, batch} <- discover_rollup_blocks__get_batch(rollup_block_num),
          {:ok, unconfirmed_rollup_blocks} when unconfirmed_rollup_blocks != [] <-
            discover_rollup_blocks__get_unconfirmed_rollup_blocks(batch, rollup_block_num),

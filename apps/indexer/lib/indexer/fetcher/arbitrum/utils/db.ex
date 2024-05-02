@@ -52,7 +52,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
     # Get the next index for the first new transaction based
     # on the indices existing in DB
-    l1_tx_next_id = Reader.next_id()
+    l1_tx_next_id = Reader.next_lifecycle_transaction_id()
 
     # Assign new indices for the transactions which are not in
     # the l1 transactions table yet
@@ -430,8 +430,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
     ## Returns
     - The `Explorer.Chain.Arbitrum.L1Batch` associated with the given rollup block number
-      if it exists and its commit transaction is loaded, or `nil` if no such batch exists
-      or if the commit transaction is not loaded.
+      if it exists and its commit transaction is loaded.
   """
   @spec get_batch_by_rollup_block_num(FullBlock.block_number()) :: Explorer.Chain.Arbitrum.L1Batch | nil
   def get_batch_by_rollup_block_num(num)

@@ -229,8 +229,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     ## Returns
     - The next available index. If there are no L1 transactions imported yet, it will return `1`.
   """
-  @spec next_id() :: non_neg_integer
-  def next_id do
+  @spec next_lifecycle_transaction_id() :: non_neg_integer
+  def next_lifecycle_transaction_id do
     query =
       from(lt in LifecycleTransaction,
         select: lt.id,
@@ -410,11 +410,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def highest_confirmed_block do
     query =
       from(
-        rb in BatchBlock,
-        inner_join: fb in FullBlock,
-        on: rb.block_hash == fb.hash,
+        fb in FullBlock,
+        inner_join: rb in BatchBlock,
+        on: rb.block_hash == fb.hash and not is_nil(rb.confirm_id),
         select: fb.number,
-        where: not is_nil(rb.confirm_id),
         order_by: [desc: fb.number],
         limit: 1
       )

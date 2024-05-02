@@ -48,6 +48,6 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
     txn
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
-    |> unique_constraint(:id)
+    |> unique_constraint([:id, :hash])
   end
 end
