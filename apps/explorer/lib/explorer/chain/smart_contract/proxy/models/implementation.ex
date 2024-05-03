@@ -223,9 +223,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   @doc """
   Saves proxy's implementation into the DB
   """
-  @spec save_implementation_data(String.t() | nil, String.t() | nil, Hash.Address.t(), boolean(), Keyword.t()) ::
+  @spec save_implementation_data(String.t() | nil, Hash.Address.t(), boolean(), Keyword.t()) ::
           {nil, nil} | {String.t(), String.t() | nil}
-  def save_implementation_data(nil, _, proxy_address_hash, metadata_from_verified_bytecode_twin, options) do
+  def save_implementation_data(nil, proxy_address_hash, metadata_from_verified_bytecode_twin, options) do
     if is_nil(metadata_from_verified_bytecode_twin) or !metadata_from_verified_bytecode_twin do
       upsert_implementation(proxy_address_hash, nil, nil, options)
     end
@@ -235,7 +235,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   def save_implementation_data(
         empty_implementation_address_hash_string,
-        _,
         proxy_address_hash,
         metadata_from_verified_bytecode_twin,
         options
@@ -250,7 +249,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   def save_implementation_data(
         implementation_address_hash_string,
-        implementation_name,
         proxy_address_hash,
         _,
         options
@@ -276,7 +274,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         smart_contract =
           SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options)
 
-        implementation_name = implementation_name || (smart_contract && smart_contract.name) || nil
+        implementation_name = (smart_contract && smart_contract.name) || nil
 
         upsert_implementation(proxy_address_hash, implementation_address_hash_string, implementation_name, options)
 

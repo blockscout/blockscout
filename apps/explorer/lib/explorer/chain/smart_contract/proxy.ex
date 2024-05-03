@@ -22,7 +22,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       is_burn_signature: 1,
       get_implementation_address_hash: 2,
       get_proxy_implementations: 1,
-      save_implementation_data: 5
+      save_implementation_data: 4
     ]
 
   # supported signatures:
@@ -36,8 +36,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @get_address_signature "21f8a721"
 
   @typep options :: [{:api?, true | false}, {:unverified_proxy_only?, true | false}]
-
-  @api_true [api?: true]
 
   @doc """
   Fetches into DB proxy contract implementation's address and name from different proxy patterns
@@ -53,22 +51,9 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         get_implementation_address_hash_string(proxy_address_hash, proxy_abi)
       end
 
-    implementation_name =
-      if implementation_address_hash_string && implementation_address_hash_string !== :error do
-        {:ok, implementation_address_hash} = string_to_address_hash(implementation_address_hash_string)
-
-        implementation_smart_contract =
-          SmartContract.address_hash_to_smart_contract(implementation_address_hash, @api_true)
-
-        implementation_smart_contract && implementation_smart_contract.name
-      else
-        nil
-      end
-
     if implementation_address_hash_string !== :error do
       save_implementation_data(
         implementation_address_hash_string,
-        implementation_name,
         proxy_address_hash,
         metadata_from_verified_bytecode_twin,
         options
