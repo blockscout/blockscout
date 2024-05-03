@@ -236,7 +236,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   @spec get_additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil, %{
           :verified_contract => any(),
           :additional_sources => SmartContractAdditionalSource.t() | nil
-        }) :: any()
+        }) :: [SmartContractAdditionalSource.t()] | nil
   def get_additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin) do
     cond do
       !is_nil(minimal_proxy_template) ->

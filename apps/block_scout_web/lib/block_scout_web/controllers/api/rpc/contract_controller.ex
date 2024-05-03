@@ -269,7 +269,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       :pass ->
         render(conn, :show, %{
           result:
-            "The proxy's (#{submission.contract_address_hash}) implementation contract is found at #{inspect(Implementation.get_proxy_implementations(submission.contract_address_hash, []).address_hashes)} and it is successfully updated."
+            "The proxy's (#{submission.contract_address_hash}) implementation contracts are found at #{inspect(Implementation.get_proxy_implementations(submission.contract_address_hash, []).address_hashes)} and they've been successfully updated."
         })
 
       :fail ->

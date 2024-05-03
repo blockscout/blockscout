@@ -61,6 +61,7 @@ defmodule Explorer.SmartContract.Helper do
           attrs
           |> Map.put_new(:contract_code_md5, contract_code_md5)
         else
+          attrs
         end
 
       _ ->
