@@ -19,7 +19,9 @@ defmodule Indexer.Fetcher.TokenBalance do
   require Logger
 
   alias Explorer.Chain
+  alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.Hash
+  alias Explorer.Utility.MissingBalanceOfToken
   alias Indexer.{BufferedTask, TokenBalances, Tracer}
   alias Indexer.Fetcher.TokenBalance.Supervisor, as: TokenBalanceSupervisor
 
@@ -97,6 +99,7 @@ defmodule Indexer.Fetcher.TokenBalance do
     result =
       entries
       |> Enum.map(&format_params/1)
+      |> MissingBalanceOfToken.filter_token_balances_params()
       |> increase_retries_count()
       |> fetch_from_blockchain()
       |> import_token_balances()
@@ -130,7 +133,10 @@ defmodule Indexer.Fetcher.TokenBalance do
         if Enum.empty?(failed_token_balances) do
           {:halt, all_token_balances}
         else
-          failed_token_balances = increase_retries_count(failed_token_balances)
+          failed_token_balances =
+            failed_token_balances
+            |> handle_failed_balances()
+            |> increase_retries_count()
 
           token_balances_updated_retries_count =
             all_token_balances
@@ -141,6 +147,22 @@ defmodule Indexer.Fetcher.TokenBalance do
       end)
 
     fetched_token_balances
+  end
+
+  defp handle_failed_balances(failed_token_balances) do
+    {missing_balance_of_balances, other_failed_balances} =
+      Enum.split_with(failed_token_balances, fn failed_token_balance ->
+        failed_token_balance.error =~ "execution reverted"
+      end)
+
+    MissingBalanceOfToken.insert_from_params(missing_balance_of_balances)
+
+    Enum.each(missing_balance_of_balances, fn balance ->
+      TokenBalance.delete_placeholders_below(balance.token_contract_address_hash, balance.block_number)
+      CurrentTokenBalance.delete_placeholders_below(balance.token_contract_address_hash, balance.block_number)
+    end)
+
+    other_failed_balances
   end
 
   defp increase_retries_count(params_list) do

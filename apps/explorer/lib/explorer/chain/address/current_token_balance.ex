@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2, dynamic: 2]
+  import Ecto.Query, only: [from: 2, where: 3, limit: 2, offset: 2, order_by: 3, preload: 2, dynamic: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.{Chain, PagingOptions, Repo}
@@ -320,6 +320,18 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       )
 
     Repo.one!(query, timeout: :infinity)
+  end
+
+  @doc """
+  Deletes all CurrentTokenBalances with given `token_contract_address_hash` and below the given `block_number`.
+  Used for cases when token doesn't implement balanceOf function
+  """
+  def delete_placeholders_below(token_contract_address_hash, block_number) do
+    __MODULE__
+    |> where([ctb], ctb.token_contract_address_hash == ^token_contract_address_hash)
+    |> where([ctb], ctb.block_number <= ^block_number)
+    |> where([ctb], is_nil(ctb.value_fetched_at) or is_nil(ctb.value))
+    |> Repo.delete_all()
   end
 
   @doc """
