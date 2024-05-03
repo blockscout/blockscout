@@ -97,11 +97,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     end
   end
 
-  def list_methods(conn, _params) do
-    render(conn, :methods, methods: @methods)
-  end
-
-  def search_methods(conn, %{"q" => query}) do
+  def list_methods(conn, %{"q" => query}) do
     case {@methods_id_to_name_map[query], @methods_name_to_id_map[query]} do
       {name, _} when is_binary(name) ->
         render(conn, :methods, methods: [%{method_id: query, name: name}])
@@ -125,8 +121,12 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     end
   end
 
+  def list_methods(conn, _params) do
+    render(conn, :methods, methods: @methods)
+  end
+
   defp method_id_to_name_from_params(params, methods_acc) do
-    prepared_method_ids = prepare_methods(params["method_ids"]) || []
+    prepared_method_ids = prepare_methods(params["methods"]) || []
 
     {decoded_method_ids, method_ids_to_find} =
       Enum.reduce(prepared_method_ids, {%{}, []}, fn method_id, {decoded, to_decode} ->
