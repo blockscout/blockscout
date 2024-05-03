@@ -65,6 +65,9 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
   @impl Import.Runner
   def timeout, do: @timeout
 
+  @doc """
+  Filters out changes with empty `value` or `value_fetched_at` for tokens that doesn't implement `balanceOf` function.
+  """
   @spec filter_placeholders([map()]) :: {:ok, [map()]}
   def filter_placeholders(changes_list) do
     {placeholders, filled_balances} =
