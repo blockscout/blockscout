@@ -55,7 +55,7 @@ defmodule Explorer.Factory do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.{MissingBalanceOfToken, MissingBlockRange}
 
   alias Ueberauth.Strategy.Auth0
   alias Ueberauth.Auth.Info
@@ -1087,6 +1087,13 @@ defmodule Explorer.Factory do
     %MissingBlockRange{
       from_number: 1,
       to_number: 0
+    }
+  end
+
+  def missing_balance_of_token_factory do
+    %MissingBalanceOfToken{
+      token_contract_address_hash: insert(:token).contract_address_hash,
+      block_number: block_number()
     }
   end
 
