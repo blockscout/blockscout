@@ -254,7 +254,8 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
       token_id: token_id,
       token_contract_address_hash: token_contract_address_hash,
       metadata: metadata,
-      error: nil
+      error: nil,
+      refetch_after: nil
     }
   end
 
@@ -265,10 +266,18 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     do: token_instance_map_with_error(token_id, token_contract_address_hash, reason)
 
   defp token_instance_map_with_error(token_id, token_contract_address_hash, error) do
+    config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
+
+    coef = config[:exp_timeout_coef]
+    max_refetch_interval = config[:max_refetch_interval]
+
+    timeout = min(coef * 1000, max_refetch_interval)
+
     %{
       token_id: token_id,
       token_contract_address_hash: token_contract_address_hash,
-      error: error
+      error: error,
+      refetch_after: DateTime.add(DateTime.utc_now(), timeout, :millisecond)
     }
   end
 
