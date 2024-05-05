@@ -48,6 +48,8 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
   def parse_transactions(transactions) do
     token_transfers =
       if Application.get_env(:explorer, :chain_type) == :celo do
+        celo_token_address = CeloCoreContracts.get_address(:celo_token)
+
         transactions
         |> Enum.filter(fn tx -> tx.value > 0 end)
         |> Enum.map(fn tx ->
@@ -84,6 +86,8 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
   end
 
   def parse_internal_transactions(internal_transactions, block_number_to_block_hash) do
+    celo_token_address = CeloCoreContracts.get_address(:celo_token)
+
     token_transfers =
       internal_transactions
       |> Enum.filter(fn itx ->
