@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Celo.Helper do
   Common helper functions for Celo.
   """
 
-  @blocks_per_epoch 17280
+  @blocks_per_epoch 17_280
 
   def blocks_per_epoch, do: @blocks_per_epoch
 
