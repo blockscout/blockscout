@@ -62,8 +62,20 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     :epoch_rewards,
     :locked_gold,
     :reserve,
-    :usd_token
+    :usd_token,
+    :validators
   ]
+
+  @atom_to_contract_name %{
+    accounts: "Accounts",
+    celo_token: "GoldToken",
+    election: "Election",
+    epoch_rewards: "EpochRewards",
+    locked_gold: "LockedGold",
+    reserve: "Reserve",
+    usd_token: "StableToken",
+    validators: "Validators"
+  }
 
   def get_address(contract_atom) when contract_atom in @contract_atoms do
     get_contract_addresses()[contract_atom]
@@ -73,35 +85,38 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     case Application.get_env(:explorer, __MODULE__)[:celo_network] do
       "mainnet" ->
         %{
-          accounts: "",
+          accounts: "0x7d21685c17607338b313a7174bab6620bad0aab7",
           celo_token: "0x471ece3750da237f93b8e339c536989b8978a438",
           election: "0x8d6677192144292870907e3fa8a5527fe55a7ff6",
           epoch_rewards: "0x07f007d389883622ef8d4d347b3f78007f28d8b7",
           locked_gold: "0x6cc083aed9e3ebe302a6336dbc7c921c9f03349e",
           reserve: "0x9380fa34fd9e4fd14c06305fd7b6199089ed4eb9",
-          usd_token: "0x765de816845861e75a25fca122bb6898b8b1282a"
+          usd_token: "0x765de816845861e75a25fca122bb6898b8b1282a",
+          validators: "0xaeb865bca93ddc8f47b8e29f40c5399ce34d0c58"
         }
 
       "baklava" ->
         %{
-          accounts: "",
+          accounts: "0x64ff4e6f7e08119d877fd2e26f4c20b537819080",
           celo_token: "0xddc9be57f553fe75752d61606b94cbd7e0264ef8",
           election: "0x7eb2b2f696c60a48afd7632f280c7de91c8e5aa5",
           epoch_rewards: "0xfdc7d3da53ca155ddce793b0de46f4c29230eecd",
           locked_gold: "0xf07406d8040fbd831e9983ca9cc278fbffeb56bf",
           reserve: "0x68dd816611d3de196fdeb87438b74a9c29fd649f",
-          usd_token: "0x62492a644a588fd904270bed06ad52b9abfea1ae"
+          usd_token: "0x62492a644a588fd904270bed06ad52b9abfea1ae",
+          validators: "0xcb3a2f0520edbb4fc37ecb646d06877e339bbc9d"
         }
 
       "alfajores" ->
         %{
-          accounts: "",
+          accounts: "0xed7f51a34b4e71fbe69b3091fcf879cd14bd73a9",
           celo_token: "0xf194afdf50b03e69bd7d057c1aa9e10c9954e4c9",
           election: "0x1c3edf937cfc2f6f51784d20deb1af1f9a8655fa",
           epoch_rewards: "0xb10ee11244526b94879e1956745ba2e35ae2ba20",
           locked_gold: "0x6a4cc5693dc5bfa3799c699f3b941ba2cb00c341",
           reserve: "0xa7ed835288aa4524bb6c73dd23c0bf4315d9fe3e",
-          usd_token: "0x874069fa1eb16d44d622f2e0ca25eea172369bc1"
+          usd_token: "0x874069fa1eb16d44d622f2e0ca25eea172369bc1",
+          validators: "0x9acf2a99914e083ad0d610672e93d14b0736bbcc"
         }
 
       _ ->
@@ -164,7 +179,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   def fetch_core_contract_addresses do
     @contract_atoms
     |> Enum.map(fn atom ->
-      name = to_contract_name(atom)
+      name = Map.get(@atom_to_contract_name, atom)
       {atom, %{name: name, address: fetch_address_for_contract_name(name)}}
     end)
     |> Enum.into(%{})
@@ -187,19 +202,6 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
            ) do
       contract_address
     else
-      _ -> nil
-    end
-  end
-
-  defp to_contract_name(contract) do
-    case contract do
-      :accounts -> "Accounts"
-      :celo_token -> "GoldToken"
-      :election -> "Election"
-      :epoch_rewards -> "EpochRewards"
-      :locked_gold -> "LockedGold"
-      :reserve -> "Reserve"
-      :usd_token -> "StableToken"
       _ -> nil
     end
   end
