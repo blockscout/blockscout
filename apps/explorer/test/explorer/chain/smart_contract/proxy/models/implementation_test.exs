@@ -137,7 +137,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
       expect_address_in_oz_slot_response(string_implementation_address_hash)
 
       assert {^string_implementation_address_hash, "implementation"} =
-              Implementation.get_implementation_address_hash(bytecode_twin)
+               Implementation.get_implementation_address_hash(bytecode_twin)
 
       verify!(EthereumJSONRPC.Mox)
     end
