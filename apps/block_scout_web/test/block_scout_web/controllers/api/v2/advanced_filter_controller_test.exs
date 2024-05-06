@@ -818,25 +818,79 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       assert Enum.count(response["items"]) == 4
     end
+
+    test "filter by token contract address include with native", %{conn: conn} do
+      token_a = insert(:token)
+      token_b = insert(:token)
+      token_c = insert(:token)
+
+      tx = :transaction |> insert() |> with_block()
+
+      for token <- [token_a, token_b, token_c, token_a, token_b, token_c, token_a, token_b, token_c] do
+        insert(:token_transfer,
+          token_contract_address: token.contract_address,
+          transaction: tx,
+          block_number: tx.block_number,
+          log_index: 0
+        )
+      end
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "token_contract_address_hashes_to_include" =>
+            "#{token_b.contract_address_hash},#{token_c.contract_address_hash},native"
+        })
+
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 7
+    end
+
+    test "filter by token contract address exclude with native", %{conn: conn} do
+      token_a = insert(:token)
+      token_b = insert(:token)
+      token_c = insert(:token)
+
+      tx = :transaction |> insert() |> with_block()
+
+      for token <- [token_a, token_b, token_c, token_a, token_b, token_c, token_a, token_b, token_c] do
+        insert(:token_transfer,
+          token_contract_address: token.contract_address,
+          transaction: tx,
+          block_number: tx.block_number,
+          log_index: 0
+        )
+      end
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "token_contract_address_hashes_to_exclude" =>
+            "#{token_b.contract_address_hash},#{token_c.contract_address_hash},native"
+        })
+
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 3
+    end
   end
 
-  describe "/advanced_filters/methods/search" do
+  describe "/advanced_filters/methods?q=" do
     test "returns 404 if method does not exist", %{conn: conn} do
-      request = get(conn, "/api/v2/advanced-filters/methods/search", %{"q" => "foo"})
+      request = get(conn, "/api/v2/advanced-filters/methods", %{"q" => "foo"})
       assert response = json_response(request, 404)
       assert response["message"] == "Not found"
     end
 
     test "finds method by name", %{conn: conn} do
       insert(:contract_method)
-      request = get(conn, "/api/v2/advanced-filters/methods/search", %{"q" => "set"})
+      request = get(conn, "/api/v2/advanced-filters/methods", %{"q" => "set"})
       assert response = json_response(request, 200)
       assert response == [%{"method_id" => "0x60fe47b1", "name" => "set"}]
     end
 
     test "finds method by id", %{conn: conn} do
       insert(:contract_method)
-      request = get(conn, "/api/v2/advanced-filters/methods/search", %{"q" => "0x60fe47b1"})
+      request = get(conn, "/api/v2/advanced-filters/methods", %{"q" => "0x60fe47b1"})
       assert response = json_response(request, 200)
       assert response == [%{"method_id" => "0x60fe47b1", "name" => "set"}]
     end

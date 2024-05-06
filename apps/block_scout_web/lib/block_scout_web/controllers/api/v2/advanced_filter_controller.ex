@@ -204,7 +204,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   @allowed_tx_types ~w(COIN_TRANSFER ERC-20 ERC-404 ERC-721 ERC-1155)
 
-  defp prepare_tx_types(tx_types) when not is_nil(tx_types) do
+  defp prepare_tx_types(tx_types) when is_binary(tx_types) do
     tx_types
     |> String.upcase()
     |> String.split(",")
@@ -213,7 +213,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp prepare_tx_types(_), do: nil
 
-  defp prepare_methods(methods) when not is_nil(methods) do
+  defp prepare_methods(methods) when is_binary(methods) do
     methods
     |> String.downcase()
     |> String.split(",")
@@ -240,18 +240,30 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     end
   end
 
-  defp prepare_address_hashes(from) when not is_nil(from) do
-    from
+  defp prepare_address_hashes(address_hashes, map_filter_function \\ &prepare_address_hash/1)
+
+  defp prepare_address_hashes(address_hashes, map_filter_function)
+       when is_binary(address_hashes) do
+    address_hashes
     |> String.split(",")
-    |> Enum.flat_map(fn maybe_address_hash ->
-      case Chain.string_to_address_hash(maybe_address_hash) do
-        {:ok, address_hash} -> [address_hash]
-        _ -> []
-      end
-    end)
+    |> Enum.flat_map(&map_filter_function.(&1))
   end
 
-  defp prepare_address_hashes(_), do: nil
+  defp prepare_address_hashes(_, _), do: nil
+
+  defp prepare_address_hash(maybe_address_hash) do
+    case Chain.string_to_address_hash(maybe_address_hash) do
+      {:ok, address_hash} -> [address_hash]
+      _ -> []
+    end
+  end
+
+  defp prepare_token_address_hash(token_address_hash) do
+    case String.downcase(token_address_hash) do
+      "native" -> ["native"]
+      _ -> prepare_address_hash(token_address_hash)
+    end
+  end
 
   defp prepare_address_relation(relation) do
     case relation && String.downcase(relation) do
@@ -271,7 +283,10 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   end
 
   defp prepare_include_exclude_address_hashes(include, exclude) do
-    [include: prepare_address_hashes(include), exclude: prepare_address_hashes(exclude)]
+    [
+      include: prepare_address_hashes(include, &prepare_token_address_hash/1),
+      exclude: prepare_address_hashes(exclude, &prepare_token_address_hash/1)
+    ]
   end
 
   # Paging
