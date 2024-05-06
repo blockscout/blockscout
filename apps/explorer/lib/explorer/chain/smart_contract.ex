@@ -928,7 +928,9 @@ defmodule Explorer.Chain.SmartContract do
     with true <- is_nil(current_smart_contract),
          {implementation_address_hash, _} =
            Implementation.get_implementation_address_hash(
-             current_smart_contract,
+             %SmartContract{
+               address_hash: address_hash
+             },
              Keyword.put(options, :unverified_proxy_only?, true)
            ),
          implementation_address = implementation_address_hash |> Proxy.implementation_to_smart_contract(options),
