@@ -65,14 +65,14 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   """
   @spec get_proxy_implementation_updated_at(Hash.Address.t() | nil, Keyword.t()) :: DateTime.t()
   def get_proxy_implementation_updated_at(address_hash, options) do
-    max_updated_at_query =
+    updated_at_query =
       from(
         p in __MODULE__,
         where: p.proxy_address_hash == ^address_hash,
         select: p.updated_at
       )
 
-    max_updated_at_query
+    updated_at_query
     |> select_repo(options).one()
   end
 
@@ -128,9 +128,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         },
         options
       ) do
-    {implementation_address_hash_from_db, implementation_name_from_db} = implementation_from_db(address_hash, options)
+    {implementation_address_hash_from_db, implementation_name_from_db, implementation_updated_at_from_db} =
+      implementation_from_db(address_hash, options)
 
-    implementation_updated_at = implementation_updated_at || get_proxy_implementation_updated_at(address_hash, options)
+    implementation_updated_at = implementation_updated_at || implementation_updated_at_from_db
 
     if implementation_refetch_necessity ||
          check_implementation_refetch_necessity(implementation_updated_at) do
@@ -177,9 +178,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       implementation_address_hash = proxy_implementations.address_hashes |> Enum.at(0)
       implementation_name = proxy_implementations.names |> Enum.at(0)
 
-      {implementation_address_hash, implementation_name}
+      {implementation_address_hash, implementation_name, proxy_implementations.updated_at}
     else
-      {nil, nil}
+      {nil, nil, nil}
     end
   end
 
