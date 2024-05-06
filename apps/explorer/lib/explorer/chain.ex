@@ -1193,12 +1193,15 @@ defmodule Explorer.Chain do
 
             {implementation_address_hash, _} =
               Implementation.get_implementation_address_hash(
-                {:updated,
-                 %SmartContract{
-                   address_hash: hash,
-                   abi: nil,
-                   metadata_from_verified_bytecode_twin: false
-                 }},
+                %{
+                  updated: %SmartContract{
+                    address_hash: hash,
+                    abi: nil,
+                    metadata_from_verified_bytecode_twin: false
+                  },
+                  implementation_updated_at: nil,
+                  implementation_refetch_necessity: false
+                },
                 Keyword.put(options, :unverified_proxy_only?, true)
               )
 
