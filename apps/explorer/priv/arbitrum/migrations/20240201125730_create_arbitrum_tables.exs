@@ -93,7 +93,12 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
         null: true
       )
 
-      add(:block_hash, :bytea, null: false, primary_key: true)
+      # Although it is possible to recover the block number from the block hash,
+      # it is more efficient to store it directly
+      # There could be no DB inconsistencies with `blocks` table caused be re-orgs
+      # because the blocks will appear in the table `arbitrum_batch_l2_blocks`
+      # only when they are included in the batch.
+      add(:block_number, :integer, null: false, primary_key: true)
       timestamps(null: false, type: :utc_datetime_usec)
     end
 

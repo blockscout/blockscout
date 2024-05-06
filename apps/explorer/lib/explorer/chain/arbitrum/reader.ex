@@ -285,33 +285,22 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - `block_hash`: The hash of a block included in the batch.
 
     ## Returns
-    - `{:ok, block_number}` where `block_number` is the number of the rollup block corresponding to the given hash.
-    - `{:ok, nil}` if there is no batch corresponding to the block with the given hash.
-    - `{:error, nil}` if the database inconsistency is identified.
+    - the number of the rollup block corresponding to the given hash or `nil` if the
+      block or batch were not indexed yet.
   """
-  @spec rollup_block_hash_to_num(binary()) :: {:error, nil} | {:ok, FullBlock.block_number() | nil}
+  @spec rollup_block_hash_to_num(binary()) :: FullBlock.block_number() | nil
   def rollup_block_hash_to_num(block_hash) when is_binary(block_hash) do
     query =
-      from(bl in BatchBlock,
-        where: bl.block_hash == ^block_hash
+      from(
+        fb in FullBlock,
+        inner_join: rb in BatchBlock,
+        on: rb.block_number == fb.number,
+        select: fb.number,
+        where: fb.hash == ^block_hash
       )
 
-    case query
-         # :optional here is used because situations when the block is not found are expected
-         |> Chain.join_associations(%{:block => :optional})
-         |> Repo.one() do
-      nil ->
-        # Block with such hash is not found
-        {:ok, nil}
-
-      rollup_block ->
-        case rollup_block.block do
-          # `nil` and `%Ecto.Association.NotLoaded{}` indicate DB inconsistency
-          nil -> {:error, nil}
-          %Ecto.Association.NotLoaded{} -> {:error, nil}
-          associated_block -> {:ok, associated_block.number}
-        end
-    end
+    query
+    |> Repo.one()
   end
 
   @doc """
@@ -375,11 +364,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         rb in BatchBlock,
-        inner_join: fb in FullBlock,
-        on: rb.block_hash == fb.hash,
-        select: rb,
         where: not is_nil(rb.confirm_id),
-        order_by: [desc: fb.number],
+        order_by: [desc: rb.block_number],
         limit: 1
       )
 
@@ -410,11 +396,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def highest_confirmed_block do
     query =
       from(
-        fb in FullBlock,
-        inner_join: rb in BatchBlock,
-        on: rb.block_hash == fb.hash and not is_nil(rb.confirm_id),
-        select: fb.number,
-        order_by: [desc: fb.number],
+        rb in BatchBlock,
+        where: not is_nil(rb.confirm_id),
+        select: rb.block_number,
+        order_by: [desc: rb.block_number],
         limit: 1
       )
 
@@ -482,24 +467,15 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       unconfirmed block within the range. Returns `[]` if no unconfirmed blocks are found
       within the range, or if the block fetcher has not indexed them.
   """
-  @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [
-          %{batch_number: non_neg_integer, block_num: FullBlock.block_number(), block_hash: Hash.t()}
-        ]
+  @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [BatchBlock]
   def unconfirmed_rollup_blocks(first_block, last_block)
       when is_integer(first_block) and first_block >= 0 and
              is_integer(last_block) and first_block <= last_block do
     query =
       from(
         rb in BatchBlock,
-        inner_join: fb in FullBlock,
-        on: rb.block_hash == fb.hash,
-        select: %{
-          batch_number: rb.batch_number,
-          block_hash: rb.block_hash,
-          block_num: fb.number
-        },
-        where: fb.number >= ^first_block and fb.number <= ^last_block and is_nil(rb.confirm_id),
-        order_by: [asc: fb.number]
+        where: rb.block_number >= ^first_block and rb.block_number <= ^last_block and is_nil(rb.confirm_id),
+        order_by: [asc: rb.block_number]
       )
 
     Repo.all(query, timeout: :infinity)
@@ -577,10 +553,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     rollup_blocks_query =
       from(
         rb in BatchBlock,
-        inner_join: fb in FullBlock,
-        on: rb.block_hash == fb.hash,
         select: %{
-          block_num: fb.number,
+          block_number: rb.block_number,
           confirm_id: rb.confirm_id
         },
         where: not is_nil(rb.confirm_id)
@@ -594,8 +568,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         subquery in subquery(rollup_blocks_query),
         select: %{
           confirm_id: subquery.confirm_id,
-          min_block_num: min(subquery.block_num),
-          max_block_num: max(subquery.block_num)
+          min_block_num: min(subquery.block_number),
+          max_block_num: max(subquery.block_number)
         },
         group_by: subquery.confirm_id
       )

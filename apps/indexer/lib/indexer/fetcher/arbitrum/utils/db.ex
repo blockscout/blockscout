@@ -392,33 +392,15 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @doc """
     Retrieves the block number associated with a specific hash of a rollup block.
 
-    If the hash is not associated with a block (indicating potential database inconsistency),
-    it triggers a recovery process defined by the passed function and parameters. Usually,
-    the recovery process is to request the block number by an RPC method.
-
     ## Parameters
     - `hash`: The hash of the rollup block whose number is to be retrieved.
-    - `recover`: A map containing:
-      - `function`: A recovery function to be called in case of an error or when
-                    the block hash is not found in the database.
-      - `params`: Parameters to be passed to the recovery function.
 
     ## Returns
-    - The block number associated with the given rollup block hash, or the result of
-      the recovery function if the block hash is not found or a database inconsistency
-      is discovered.
+    - The block number associated with the given rollup block hash.
   """
-  @spec rollup_block_hash_to_num(binary(), %{function: fun(), params: list()}) :: FullBlock.block_number() | nil
-  def rollup_block_hash_to_num(hash, %{function: func, params: params} = _recover)
-      when is_binary(hash) and is_list(params) and is_function(func, length(params)) do
-    case Reader.rollup_block_hash_to_num(hash) do
-      {:error, _} ->
-        Logger.error("DB inconsistency discovered. No Chain.Block associated with the Arbitrum.BatchBlock")
-        apply(func, params)
-
-      {:ok, value} ->
-        value
-    end
+  @spec rollup_block_hash_to_num(binary()) :: FullBlock.block_number() | nil
+  def rollup_block_hash_to_num(hash) when is_binary(hash) do
+    Reader.rollup_block_hash_to_num(hash)
   end
 
   @doc """
@@ -467,14 +449,16 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [
           %{
             batch_number: non_neg_integer(),
-            block_num: FullBlock.block_number(),
-            block_hash: Hash.t()
+            block_number: FullBlock.block_number(),
+            confirm_id: non_neg_integer() | nil
           }
         ]
   def unconfirmed_rollup_blocks(first_block, last_block)
       when is_integer(first_block) and first_block >= 0 and
              is_integer(last_block) and first_block <= last_block do
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
     Reader.unconfirmed_rollup_blocks(first_block, last_block)
+    |> Enum.map(&rollup_block_to_map/1)
   end
 
   @doc """
@@ -746,6 +730,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   defp lifecycle_transaction_to_map(tx) do
     [:id, :hash, :block_number, :timestamp, :status]
     |> db_record_to_map(tx)
+  end
+
+  defp rollup_block_to_map(block) do
+    [:batch_number, :block_number, :confirm_id]
+    |> db_record_to_map(block)
   end
 
   defp message_to_map(message) do

@@ -768,7 +768,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
       updated_blocks_map =
         blocks_map
-        |> Map.put(block.number, %{block_hash: blk_hash, batch_number: batch_num, confirm_id: nil})
+        |> Map.put(block.number, %{
+          block_number: block.number,
+          batch_number: batch_num,
+          confirm_id: nil
+        })
 
       {updated_blocks_map, updated_txs_list}
     end)
@@ -925,7 +929,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         Map.put(
           blocks_map,
           blk_num,
-          %{block_hash: blk_hash, batch_number: batch_num, confirm_id: nil}
+          %{block_number: blk_num, batch_number: batch_num, confirm_id: nil}
         )
 
       updated_txs_list =
