@@ -88,6 +88,63 @@ defmodule Indexer.TokenBalancesTest do
              } = result
     end
 
+    test "fetches balances of ERC-404 tokens" do
+      address = insert(:address, hash: "0x609991ca0ae39bc4eaf2669976237296d40c2f31")
+
+      address_hash_string = Hash.to_string(address.hash)
+
+      token_contract_address_hash = "0xf7f79032fd395978acb7069c74d21e5a53206559"
+
+      contract_address = insert(:address, hash: token_contract_address_hash)
+
+      token = insert(:token, contract_address: contract_address)
+
+      data = [
+        %{
+          token_contract_address_hash: Hash.to_string(token.contract_address_hash),
+          address_hash: address_hash_string,
+          block_number: 1_000,
+          token_id: nil,
+          value: 10,
+          token_type: "ERC-404"
+        },
+        %{
+          token_contract_address_hash: Hash.to_string(token.contract_address_hash),
+          address_hash: address_hash_string,
+          block_number: 1_000,
+          token_id: 5,
+          token_type: "ERC-404",
+          value: 2
+        }
+      ]
+
+      get_404_ft_balances_from_blockchain()
+      get_404_nft_balances_from_blockchain()
+
+      {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain(data)
+
+      assert %{
+               failed_token_balances: [],
+               fetched_token_balances: [
+                 %{
+                   value: 10,
+                   token_contract_address_hash: ^token_contract_address_hash,
+                   address_hash: ^address_hash_string,
+                   block_number: 1_000,
+                   value_fetched_at: _
+                 },
+                 %{
+                   token_id: 5,
+                   value: 2,
+                   token_contract_address_hash: ^token_contract_address_hash,
+                   address_hash: ^address_hash_string,
+                   block_number: 1_000,
+                   value_fetched_at: _
+                 }
+               ]
+             } = result
+    end
+
     test "fetches multiple balances of tokens" do
       address_1 = insert(:address, hash: "0xecba3c9ea993b0e0594e0b0a0d361a1f9596e310")
       address_2 = insert(:address, hash: "0x609991ca0ae39bc4eaf2669976237296d40c2f31")
@@ -357,6 +414,67 @@ defmodule Indexer.TokenBalancesTest do
              id: id,
              jsonrpc: "2.0",
              result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
+           }
+         ]}
+      end
+    )
+  end
+
+  defp get_404_ft_balances_from_blockchain() do
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: id,
+             method: "eth_call",
+             params: [
+               %{
+                 data: "0x70a08231000000000000000000000000609991ca0ae39bc4eaf2669976237296d40c2f31",
+                 to: "0xf7f79032fd395978acb7069c74d21e5a53206559"
+               },
+               "0x3E8"
+             ]
+           }
+         ],
+         _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             jsonrpc: "2.0",
+             result: "0x000000000000000000000000000000000000000000000000000000000000000a"
+           }
+         ]}
+      end
+    )
+  end
+
+  defp get_404_nft_balances_from_blockchain() do
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [
+           %{
+             id: id,
+             method: "eth_call",
+             params: [
+               %{
+                 data:
+                   "0x00fdd58e000000000000000000000000609991ca0ae39bc4eaf2669976237296d40c2f310000000000000000000000000000000000000000000000000000000000000005",
+                 to: "0xf7f79032fd395978acb7069c74d21e5a53206559"
+               },
+               "0x3E8"
+             ]
+           }
+         ],
+         _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             jsonrpc: "2.0",
+             result: "0x0000000000000000000000000000000000000000000000000000000000000002"
            }
          ]}
       end

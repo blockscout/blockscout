@@ -187,7 +187,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         data:
           "0x1000000000000c520000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
         first_topic: "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62",
-        secon_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
+        second_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
         third_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
         fourth_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
         index: 2,
@@ -228,7 +228,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         data:
           "0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000001388",
         first_topic: "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb",
-        secon_topic: "0x0000000000000000000000006c943470780461b00783ad530a53913bd2c104d3",
+        second_topic: "0x0000000000000000000000006c943470780461b00783ad530a53913bd2c104d3",
         third_topic: "0x0000000000000000000000006c943470780461b00783ad530a53913bd2c104d3",
         fourth_topic: "0x0000000000000000000000006c943470780461b00783ad530a53913bd2c104d3",
         index: 2,
@@ -262,7 +262,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         data:
           "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
         first_topic: "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb",
-        secon_topic: "0x81D0caF80E9bFfD9bF9c641ab964feB9ef69069e",
+        second_topic: "0x81D0caF80E9bFfD9bF9c641ab964feB9ef69069e",
         third_topic: "0x598AF04C88122FA4D1e08C5da3244C39F10D4F14",
         fourth_topic: "0x0000000000000000000000000000000000000000",
         index: 6,
@@ -313,7 +313,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
       }
 
       assert %{
-               token_transfers: [%{token_contract_address_hash: ^contract_address_hash, token_type: "ERC-1155"}],
+               token_transfers: [%{token_contract_address_hash: ^contract_address_hash, token_type: "ERC-20"}],
                tokens: [%{contract_address_hash: ^contract_address_hash, type: "ERC-1155"}]
              } = TokenTransfers.parse([log])
     end
@@ -340,7 +340,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
           data:
             "0x1000000000000c520000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
           first_topic: "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62",
-          secon_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
+          second_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
           third_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
           fourth_topic: "0x0000000000000000000000009c978f4cfa1fe13406bcc05baf26a35716f881dd",
           index: 2,
@@ -352,10 +352,88 @@ defmodule Indexer.Transform.TokenTransfersTest do
       assert %{
                token_transfers: [
                  %{token_contract_address_hash: ^contract_address_hash, token_type: "ERC-1155"},
-                 %{token_contract_address_hash: ^contract_address_hash, token_type: "ERC-1155"}
+                 %{token_contract_address_hash: ^contract_address_hash, token_type: "ERC-20"}
                ],
                tokens: [%{contract_address_hash: ^contract_address_hash, type: "ERC-1155"}]
              } = TokenTransfers.parse(logs)
+    end
+
+    test "parses erc404 token transfer from ERC20Transfer" do
+      log = %{
+        address_hash: "0x03F6CCfCE60273eFbEB9535675C8EFA69D863f37",
+        block_number: 10_561_358,
+        data: "0x00000000000000000000000000000000000000000000003635c9adc5de9ffc48",
+        first_topic: "0xe59fdd36d0d223c0c7d996db7ad796880f45e1936cb0bb7ac102e7082e031487",
+        second_topic: "0x000000000000000000000000c36442b4a4522e871399cd717abdd847ab11fe88",
+        third_topic: "0x00000000000000000000000018336808ed2f2c80795861041f711b299ecd38ca",
+        fourth_topic: nil,
+        index: 34,
+        transaction_hash: "0x6be468f465911ec70103aa83e38c84697848feaf760eee3a181ebcdcab82dc4a",
+        block_hash: "0x7cffabfd975bded1ec397f44b4af3a97618b96ca0e2f92d70a3025ba233815ca"
+      }
+
+      assert TokenTransfers.parse([log]) == %{
+               token_transfers: [
+                 %{
+                   block_hash: "0x7cffabfd975bded1ec397f44b4af3a97618b96ca0e2f92d70a3025ba233815ca",
+                   block_number: 10_561_358,
+                   from_address_hash: "0xc36442b4a4522e871399cd717abdd847ab11fe88",
+                   log_index: 34,
+                   to_address_hash: "0x18336808ed2f2c80795861041f711b299ecd38ca",
+                   token_contract_address_hash: "0x03F6CCfCE60273eFbEB9535675C8EFA69D863f37",
+                   amounts: [
+                     999_999_999_999_999_999_048
+                   ],
+                   token_ids: [],
+                   token_type: "ERC-404",
+                   transaction_hash: "0x6be468f465911ec70103aa83e38c84697848feaf760eee3a181ebcdcab82dc4a"
+                 }
+               ],
+               tokens: [
+                 %{
+                   contract_address_hash: "0x03F6CCfCE60273eFbEB9535675C8EFA69D863f37",
+                   type: "ERC-404"
+                 }
+               ]
+             }
+    end
+
+    test "parses erc404 token transfer from ERC721Transfer" do
+      log = %{
+        address_hash: "0x68995c84aFb019913942E53F27E7ceA47D86Cd9d",
+        block_number: 10_514_498,
+        data: "0x",
+        first_topic: "0xe5f815dc84b8cecdfd4beedfc3f91ab5be7af100eca4e8fb11552b867995394f",
+        second_topic: "0x000000000000000000000000fd7ec4d8b6ba1a72f3895b6ce3846b00d6b83aab",
+        third_topic: "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d",
+        fourth_topic: "0x000000000000000000000000000000000000000000000000000000000000000a",
+        index: 41,
+        transaction_hash: "0xe201aed9c948f46395c6acc54de5e9c3ebe0c41a5c34cc6a507b67ec46057c55",
+        block_hash: "0xea065ff2fc04177bbef27317209a25f2633199aa453b86ee405b619c495b2e77"
+      }
+
+      assert TokenTransfers.parse([log]) == %{
+               token_transfers: [
+                 %{
+                   block_hash: "0xea065ff2fc04177bbef27317209a25f2633199aa453b86ee405b619c495b2e77",
+                   block_number: 10_514_498,
+                   from_address_hash: "0xfd7ec4d8b6ba1a72f3895b6ce3846b00d6b83aab",
+                   log_index: 41,
+                   to_address_hash: "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+                   token_contract_address_hash: "0x68995c84aFb019913942E53F27E7ceA47D86Cd9d",
+                   amounts: [],
+                   token_ids: [10],
+                   token_type: "ERC-404",
+                   transaction_hash: "0xe201aed9c948f46395c6acc54de5e9c3ebe0c41a5c34cc6a507b67ec46057c55"
+                 }
+               ],
+               tokens: [
+                 %{
+                   contract_address_hash: "0x68995c84aFb019913942E53F27E7ceA47D86Cd9d",
+                   type: "ERC-404"
+                 }
+               ]
+             }
     end
   end
 

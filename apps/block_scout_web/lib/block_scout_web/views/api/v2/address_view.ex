@@ -34,7 +34,11 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   end
 
   def render("coin_balances_by_day.json", %{coin_balances_by_day: coin_balances_by_day}) do
-    Enum.map(coin_balances_by_day, &prepare_coin_balance_history_by_day_entry/1)
+    %{
+      :items => Enum.map(coin_balances_by_day, &prepare_coin_balance_history_by_day_entry/1),
+      :days =>
+        Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
+    }
   end
 
   def render("tokens.json", %{tokens: tokens, next_page_params: next_page_params}) do
@@ -139,7 +143,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     })
   end
 
-  def prepare_token_balance(token_balance, fetch_token_instance? \\ false) do
+  @spec prepare_token_balance(Chain.Address.TokenBalance.t(), boolean()) :: map()
+  defp prepare_token_balance(token_balance, fetch_token_instance? \\ false) do
     %{
       "value" => token_balance.value,
       "token" => TokenView.render("token.json", %{token: token_balance.token}),
@@ -221,9 +226,15 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   # TODO think about this approach mb refactor or mark deprecated for example.
   # Suggested solution: batch preload
+  @spec fetch_and_render_token_instance(
+          Decimal.t(),
+          Ecto.Schema.belongs_to(Chain.Token.t()) | nil,
+          Chain.Hash.Address.t(),
+          Chain.Address.TokenBalance.t()
+        ) :: map()
   def fetch_and_render_token_instance(token_id, token, address_hash, token_balance) do
     token_instance =
-      case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(
+      case Chain.nft_instance_from_token_id_and_token_address(
              token_id,
              token.contract_address_hash,
              @api_true
@@ -236,8 +247,9 @@ defmodule BlockScoutWeb.API.V2.AddressView do
           %Instance{
             token_id: token_id,
             metadata: nil,
-            owner: %{hash: address_hash},
-            current_token_balance: token_balance
+            owner: %Address{hash: address_hash},
+            current_token_balance: token_balance,
+            token_contract_address_hash: token.contract_address_hash
           }
           |> Instance.put_is_unique(token, @api_true)
       end

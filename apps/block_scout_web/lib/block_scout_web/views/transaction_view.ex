@@ -148,6 +148,7 @@ defmodule BlockScoutWeb.TransactionView do
       amount: nil,
       amounts: [],
       token_ids: token_transfer.token_ids,
+      token_type: token_transfer.token_type,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
@@ -162,6 +163,7 @@ defmodule BlockScoutWeb.TransactionView do
       amount: nil,
       amounts: amounts,
       token_ids: token_transfer.token_ids,
+      token_type: token_transfer.token_type,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
@@ -175,6 +177,7 @@ defmodule BlockScoutWeb.TransactionView do
       amount: token_transfer.amount,
       amounts: [],
       token_ids: token_transfer.token_ids,
+      token_type: token_transfer.token_type,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
@@ -220,6 +223,7 @@ defmodule BlockScoutWeb.TransactionView do
       :erc20 -> gettext("ERC-20 ")
       :erc721 -> gettext("ERC-721 ")
       :erc1155 -> gettext("ERC-1155 ")
+      :erc404 -> gettext("ERC-404 ")
       _ -> ""
     end
   end
@@ -310,7 +314,7 @@ defmodule BlockScoutWeb.TransactionView do
   def contract_creation?(_), do: false
 
   def fee(%Transaction{} = transaction) do
-    {_, value} = Chain.fee(transaction, :wei)
+    {_, value} = Transaction.fee(transaction, :wei)
     value
   end
 
@@ -320,7 +324,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   def formatted_fee(%Transaction{} = transaction, opts) do
     transaction
-    |> Chain.fee(:wei)
+    |> Transaction.fee(:wei)
     |> fee_to_denomination(opts)
     |> case do
       {:actual, value} -> value
@@ -406,10 +410,24 @@ defmodule BlockScoutWeb.TransactionView do
     format_wei_value(gas_price, unit)
   end
 
+  def l1_gas_price(transaction, unit) when unit in ~w(wei gwei ether)a do
+    case Map.get(transaction, :l1_gas_price) do
+      nil -> nil
+      value -> format_wei_value(value, unit)
+    end
+  end
+
   def gas_used(%Transaction{gas_used: nil}), do: gettext("Pending")
 
   def gas_used(%Transaction{gas_used: gas_used}) do
     Number.to_string!(gas_used)
+  end
+
+  def l1_gas_used(transaction) do
+    case Map.get(transaction, :l1_gas_used) do
+      nil -> gettext("Pending")
+      value -> Number.to_string!(value)
+    end
   end
 
   def gas_used_perc(%Transaction{gas_used: nil}), do: nil

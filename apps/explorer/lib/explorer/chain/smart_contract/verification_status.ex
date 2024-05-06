@@ -12,21 +12,14 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
 
   @typedoc """
   * `address_hash` - address of the contract which was tried to verify
-  * `status` - try status: :pending | :pass | :fail 
+  * `status` - try status: :pending | :pass | :fail
   * `uid` - unique verification try identifier
   """
-
-  @type t :: %__MODULE__{
-          uid: String.t(),
-          address_hash: Hash.Address.t(),
-          status: non_neg_integer()
-        }
-
   @primary_key false
-  schema "contract_verification_status" do
-    field(:uid, :string, primary_key: true)
-    field(:status, :integer)
-    field(:address_hash, Hash.Address)
+  typed_schema "contract_verification_status" do
+    field(:uid, :string, primary_key: true, null: false)
+    field(:status, :integer, null: false)
+    field(:address_hash, Hash.Address, null: false)
 
     timestamps()
   end

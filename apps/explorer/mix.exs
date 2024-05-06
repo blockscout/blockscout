@@ -24,8 +24,8 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.1.0",
-      xref: [exclude: [BlockScoutWeb.WebRouter.Helpers]]
+      version: "6.5.0",
+      xref: [exclude: [BlockScoutWeb.WebRouter.Helpers, Indexer.Helper]]
     ]
   end
 
@@ -113,12 +113,13 @@ defmodule Explorer.Mixfile do
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.8.0"},
+      {:tesla, "~> 1.9.0"},
       {:cbor, "~> 1.0"},
-      {:cloak_ecto, "~> 1.2.0"},
+      {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
       {:hammer_backend_redis, "~> 6.1"},
-      {:logger_json, "~> 5.1"}
+      {:logger_json, "~> 5.1"},
+      {:typed_ecto_schema, "~> 0.4.1", runtime: false}
     ]
   end
 

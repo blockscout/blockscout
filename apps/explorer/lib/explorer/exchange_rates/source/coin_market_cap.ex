@@ -72,6 +72,12 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   end
 
   @impl Source
+  def source_url(:secondary_coin) do
+    coin_id = config(:secondary_coin_id)
+    if coin_id, do: "#{api_quotes_latest_url()}?id=#{coin_id}&CMC_PRO_API_KEY=#{api_key()}", else: nil
+  end
+
+  @impl Source
   def source_url(input) do
     case Chain.Hash.Address.cast(input) do
       {:ok, _} ->
@@ -106,9 +112,9 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   @spec get_token_properties(map()) :: map()
   def get_token_properties(market_data) do
     with token_values_list <- market_data |> Map.values(),
-         true <- Enum.count(token_values_list) > 0,
+         false <- Enum.empty?(token_values_list),
          token_values <- token_values_list |> Enum.at(0),
-         true <- Enum.count(token_values) > 0 do
+         false <- Enum.empty?(token_values) do
       if is_list(token_values) do
         token_values |> Enum.at(0)
       else

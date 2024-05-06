@@ -24,7 +24,7 @@ defmodule Indexer.Transform.Shibarium.Bridge do
 
     items =
       with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:start_block]),
-           false <- System.get_env("CHAIN_TYPE") != "shibarium",
+           false <- Application.get_env(:explorer, :chain_type) != :shibarium,
            child_chain = Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:child_chain],
            weth = Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:weth],
            bone_withdraw = Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:bone_withdraw],
@@ -39,7 +39,7 @@ defmodule Indexer.Transform.Shibarium.Bridge do
         start_block = Enum.min(block_numbers)
         end_block = Enum.max(block_numbers)
 
-        Helper.log_blocks_chunk_handling(start_block, end_block, start_block, end_block, nil, "L2")
+        Helper.log_blocks_chunk_handling(start_block, end_block, start_block, end_block, nil, :L2)
 
         deposit_transaction_hashes =
           transactions_with_receipts
@@ -76,7 +76,7 @@ defmodule Indexer.Transform.Shibarium.Bridge do
           start_block,
           end_block,
           "#{Enum.count(operations)} L2 operation(s)",
-          "L2"
+          :L2
         )
 
         items

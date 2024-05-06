@@ -95,9 +95,49 @@ defmodule Explorer.Chain.BlockTest do
       block =
         build(:block, number: range.from, uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"])
 
-      expected_uncle_reward = Wei.mult(reward, Decimal.from_float(1 / 32))
+      expected_uncle_reward = Wei.div(reward, 32)
 
       assert %{uncle_reward: ^expected_uncle_reward} = Block.block_reward_by_parts(block, [])
+    end
+  end
+
+  describe "next_block_base_fee_per_gas" do
+    test "with no blocks in the database returns nil" do
+      assert Block.next_block_base_fee_per_gas() == nil
+    end
+
+    test "ignores non consensus blocks" do
+      insert(:block, consensus: false, base_fee_per_gas: Wei.from(Decimal.new(1), :wei))
+      assert Block.next_block_base_fee_per_gas() == nil
+    end
+
+    test "returns the next block base fee" do
+      insert(:block,
+        consensus: true,
+        base_fee_per_gas: Wei.from(Decimal.new(1000), :wei),
+        gas_limit: Decimal.new(30_000_000),
+        gas_used: Decimal.new(15_000_000)
+      )
+
+      assert Block.next_block_base_fee_per_gas() == Decimal.new(1000)
+
+      insert(:block,
+        consensus: true,
+        base_fee_per_gas: Wei.from(Decimal.new(1000), :wei),
+        gas_limit: Decimal.new(30_000_000),
+        gas_used: Decimal.new(3_000_000)
+      )
+
+      assert Block.next_block_base_fee_per_gas() == Decimal.new(900)
+
+      insert(:block,
+        consensus: true,
+        base_fee_per_gas: Wei.from(Decimal.new(1000), :wei),
+        gas_limit: Decimal.new(30_000_000),
+        gas_used: Decimal.new(27_000_000)
+      )
+
+      assert Block.next_block_base_fee_per_gas() == Decimal.new(1100)
     end
   end
 end

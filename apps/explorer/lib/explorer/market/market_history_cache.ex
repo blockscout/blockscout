@@ -15,12 +15,15 @@ defmodule Explorer.Market.MarketHistoryCache do
   # 6 hours
   @recent_days 30
 
-  def fetch do
-    if cache_expired?(@last_update_key) do
+  def fetch(secondary_coin? \\ false) do
+    @last_update_key
+    |> cache_expired?()
+    |> if do
       update_cache()
     else
       fetch_from_cache(@history_key)
     end
+    |> Enum.filter(&(&1.secondary_coin == secondary_coin?))
   end
 
   def cache_name, do: @cache_name

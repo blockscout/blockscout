@@ -22,6 +22,7 @@ config :indexer,
       url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL"),
       fallback_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_HTTP_URL"),
       fallback_trace_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_TRACE_URL"),
+      fallback_eth_call_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URL"),
       method_to_url: [
         eth_call: ConfigHelper.eth_call_url(),
         eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),

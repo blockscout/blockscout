@@ -7,14 +7,15 @@ defmodule BlockScoutWeb.Application do
 
   alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
-  alias BlockScoutWeb.{Endpoint, Prometheus}
-  alias BlockScoutWeb.{MainPageRealtimeEventHandler, RealtimeEventHandler, SmartContractRealtimeEventHandler}
+  alias BlockScoutWeb.Prometheus.{Exporter, PhoenixInstrumenter}
+  alias BlockScoutWeb.{Endpoint, MainPageRealtimeEventHandler, RealtimeEventHandler, SmartContractRealtimeEventHandler}
+  alias BlockScoutWeb.Utility.EventHandlersMetrics
 
   def start(_type, _args) do
     import Supervisor
 
-    Prometheus.Instrumenter.setup()
-    Prometheus.Exporter.setup()
+    PhoenixInstrumenter.setup()
+    Exporter.setup()
 
     APILogger.message(
       "Current global API rate limit #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:global_limit])} reqs/sec"
@@ -38,7 +39,8 @@ defmodule BlockScoutWeb.Application do
       {RealtimeEventHandler, name: RealtimeEventHandler},
       {SmartContractRealtimeEventHandler, name: SmartContractRealtimeEventHandler},
       {BlocksIndexedCounter, name: BlocksIndexedCounter},
-      {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter}
+      {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
+      {EventHandlersMetrics, []}
     ]
 
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]

@@ -7,7 +7,6 @@ defmodule Explorer.Chain.Address.CoinBalanceDaily do
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, Hash, Wei}
-  alias Explorer.Chain.Address.CoinBalanceDaily
 
   @optional_fields ~w(value)a
   @required_fields ~w(address_hash day)a
@@ -21,23 +20,14 @@ defmodule Explorer.Chain.Address.CoinBalanceDaily do
    * `updated_at` - When the balance was last updated.
    * `value` - the max balance (`value`) of `address` during the `day`.
   """
-  @type t :: %__MODULE__{
-          address: %Ecto.Association.NotLoaded{} | Address.t(),
-          address_hash: Hash.Address.t(),
-          day: Date.t(),
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t(),
-          value: Wei.t() | nil
-        }
-
   @primary_key false
-  schema "address_coin_balances_daily" do
-    field(:day, :date)
+  typed_schema "address_coin_balances_daily" do
+    field(:day, :date, null: false)
     field(:value, Wei)
 
     timestamps()
 
-    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
+    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address, null: false)
   end
 
   @doc """
@@ -49,7 +39,7 @@ defmodule Explorer.Chain.Address.CoinBalanceDaily do
     days_to_consider =
       Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
 
-    CoinBalanceDaily
+    __MODULE__
     |> where([cbd], cbd.address_hash == ^address_hash)
     |> limit_time_interval(days_to_consider)
     |> select([cbd], %{date: cbd.day, value: cbd.value})
@@ -70,5 +60,18 @@ defmodule Explorer.Chain.Address.CoinBalanceDaily do
     |> cast(params, @allowed_fields)
     |> validate_required(@required_fields)
     |> unique_constraint(:day, name: :address_coin_balances_daily_address_hash_day_index)
+  end
+
+  @doc """
+  Query to get latest balance by day for the given address
+  """
+  @spec latest_by_day_query(Hash.Address.t()) :: Ecto.Query.t()
+  def latest_by_day_query(address_hash) do
+    from(
+      cbd in __MODULE__,
+      where: cbd.address_hash == ^address_hash,
+      order_by: [desc: :day],
+      limit: 1
+    )
   end
 end
