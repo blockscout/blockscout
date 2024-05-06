@@ -97,14 +97,12 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp queries(options, paging_options) do
     transaction_types = options[:tx_types]
-    tokens_to_include = options[:token_contract_address_hashes][:include]
 
     cond do
       transaction_types == ["COIN_TRANSFER"] ->
         [transactions_query(paging_options, options), internal_transactions_query(paging_options, options)]
 
-      (is_list(transaction_types) and length(transaction_types) > 0 and "COIN_TRANSFER" not in transaction_types) or
-          (is_list(tokens_to_include) and length(tokens_to_include) > 0) ->
+      only_token_transfers?(options) ->
         [token_transfers_query(paging_options, options)]
 
       true ->
@@ -114,6 +112,16 @@ defmodule Explorer.Chain.AdvancedFilter do
           token_transfers_query(paging_options, options)
         ]
     end
+  end
+
+  defp only_token_transfers?(options) do
+    transaction_types = options[:tx_types]
+    tokens_to_include = options[:token_contract_address_hashes][:include]
+    tokens_to_exclude = options[:token_contract_address_hashes][:exclude]
+
+    (is_list(transaction_types) and length(transaction_types) > 0 and "COIN_TRANSFER" not in transaction_types) or
+      (is_list(tokens_to_include) and length(tokens_to_include) > 0 and "native" not in tokens_to_include) or
+      (is_list(tokens_to_exclude) and "native" in tokens_to_exclude)
   end
 
   defp to_advanced_filter(%Transaction{} = transaction) do
@@ -498,6 +506,14 @@ defmodule Explorer.Chain.AdvancedFilter do
     query |> where([t], t.value / @eth_decimals >= ^from and t.value / @eth_decimals <= ^to)
   end
 
+  defp filter_transactions_by_amount(query, _from, to) when not is_nil(to) do
+    query |> where([t], t.value / @eth_decimals <= ^to)
+  end
+
+  defp filter_transactions_by_amount(query, from, _to) when not is_nil(from) do
+    query |> where([t], t.value / @eth_decimals >= ^from)
+  end
+
   defp filter_transactions_by_amount(query, _, _), do: query
 
   defp filter_token_transfers_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) do
@@ -509,14 +525,32 @@ defmodule Explorer.Chain.AdvancedFilter do
     )
   end
 
+  defp filter_token_transfers_by_amount(query, _from, to) when not is_nil(to) do
+    query
+    |> where(
+      [token_transfer],
+      token_transfer.amount / fragment("10 ^ ?", as(:token).decimals) <= ^to
+    )
+  end
+
+  defp filter_token_transfers_by_amount(query, from, _to) when not is_nil(from) do
+    query
+    |> where(
+      [token_transfer],
+      token_transfer.amount / fragment("10 ^ ?", as(:token).decimals) >= ^from
+    )
+  end
+
   defp filter_token_transfers_by_amount(query, _, _), do: query
 
   defp filter_by_token(query, [_ | _] = token_contract_address_hashes, :include) do
-    query |> where([token_transfer], token_transfer.token_contract_address_hash in ^token_contract_address_hashes)
+    filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
+    query |> where([token_transfer], token_transfer.token_contract_address_hash in ^filtered)
   end
 
   defp filter_by_token(query, [_ | _] = token_contract_address_hashes, :exclude) do
-    query |> where([token_transfer], token_transfer.token_contract_address_hash not in ^token_contract_address_hashes)
+    filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
+    query |> where([token_transfer], token_transfer.token_contract_address_hash not in ^filtered)
   end
 
   defp filter_by_token(query, _, _), do: query
