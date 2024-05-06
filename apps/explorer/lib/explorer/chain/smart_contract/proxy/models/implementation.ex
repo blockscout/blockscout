@@ -239,18 +239,12 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   """
   @spec save_implementation_data(String.t() | nil, Hash.Address.t(), Keyword.t()) ::
           {nil, nil} | {String.t(), String.t() | nil}
-  def save_implementation_data(nil, proxy_address_hash, options) do
-    upsert_implementation(proxy_address_hash, nil, nil, options)
-
-    {:empty, :empty}
-  end
-
   def save_implementation_data(
-        empty_implementation_address_hash_string,
+        implementation_address_hash_string,
         proxy_address_hash,
         options
       )
-      when is_burn_signature(empty_implementation_address_hash_string) do
+      when is_nil(implementation_address_hash_string) or is_burn_signature(implementation_address_hash_string) do
     upsert_implementation(proxy_address_hash, nil, nil, options)
 
     {:empty, :empty}
@@ -264,8 +258,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       when is_binary(implementation_address_hash_string) do
     with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
          proxy_contract <- SmartContract.address_hash_to_smart_contract(proxy_address_hash, options),
-         {:smart_contract_exists, true, implementation_address_hash} <-
-           {:smart_contract_exists, not is_nil(proxy_contract), implementation_address_hash},
          %{implementation: %SmartContract{name: name}, proxy: _proxy_contract} <- %{
            implementation:
              SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options),
@@ -277,16 +269,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     else
       :error ->
         {:empty, :empty}
-
-      {:smart_contract_exists, false, implementation_address_hash} ->
-        smart_contract =
-          SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options)
-
-        implementation_name = (smart_contract && smart_contract.name) || nil
-
-        upsert_implementation(proxy_address_hash, implementation_address_hash_string, implementation_name, options)
-
-        {implementation_address_hash_string, implementation_name}
 
       %{implementation: _, proxy: proxy_contract} ->
         upsert_implementation(
