@@ -1212,7 +1212,10 @@ defmodule Explorer.Chain do
 
             address_result
             |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
-            |> SmartContract.add_implementation_info_to_contract(implementation_address_hash)
+            |> (&if(is_nil(implementation_address),
+                  do: &1,
+                  else: SmartContract.add_implementation_info_to_contract(&1, implementation_address_hash)
+                )).()
           end
 
         _ ->
