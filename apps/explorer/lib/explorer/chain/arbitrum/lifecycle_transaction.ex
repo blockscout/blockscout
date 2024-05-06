@@ -21,6 +21,7 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
   @required_attrs ~w(id hash block_number timestamp status)a
 
   @type t :: %__MODULE__{
+          id: non_neg_integer(),
           hash: Hash.t(),
           block_number: Block.block_number(),
           timestamp: DateTime.t(),

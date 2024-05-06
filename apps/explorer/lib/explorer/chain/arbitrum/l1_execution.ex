@@ -21,10 +21,8 @@ defmodule Explorer.Chain.Arbitrum.L1Execution do
           execution_transaction: %Ecto.Association.NotLoaded{} | LifecycleTransaction.t() | nil
         }
 
-  @primary_key false
+  @primary_key {:message_id, :integer, autogenerate: false}
   schema "arbitrum_l1_executions" do
-    field(:message_id, :integer, primary_key: true)
-
     belongs_to(:execution_transaction, LifecycleTransaction,
       foreign_key: :execution_id,
       references: :id,
