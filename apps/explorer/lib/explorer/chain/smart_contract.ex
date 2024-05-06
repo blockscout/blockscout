@@ -571,7 +571,7 @@ defmodule Explorer.Chain.SmartContract do
   """
   @spec compose_smart_contract(map(), Hash.t(), any()) :: map()
   def compose_smart_contract(address_result, hash, options) do
-    smart_contract = %SmartContract{
+    smart_contract = %__MODULE__{
       address_hash: hash
     }
 
@@ -928,9 +928,10 @@ defmodule Explorer.Chain.SmartContract do
     with true <- is_nil(current_smart_contract),
          {implementation_address_hash, _} =
            Implementation.get_implementation_address_hash(
-             %SmartContract{
-               address_hash: address_hash
-             },
+             #  %__MODULE__{
+             #    address_hash: address_hash
+             #  },
+             address_hash,
              Keyword.put(options, :unverified_proxy_only?, true)
            ),
          implementation_address = implementation_address_hash |> Proxy.implementation_to_smart_contract(options),
