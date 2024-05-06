@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Address, Block, Hash, Token}
@@ -118,5 +118,28 @@ defmodule Explorer.Chain.Address.TokenBalance do
       limit: ^1,
       order_by: [desc: :block_number]
     )
+  end
+
+  @doc """
+  Deletes all token balances with given `token_contract_address_hash` and below the given `block_number`.
+  Used for cases when token doesn't implement `balanceOf` function
+  """
+  @spec delete_placeholders_below(Hash.Address.t(), Block.block_number()) :: {non_neg_integer(), nil | [term()]}
+  def delete_placeholders_below(token_contract_address_hash, block_number) do
+    delete_token_balance_placeholders_below(__MODULE__, token_contract_address_hash, block_number)
+  end
+
+  @doc """
+  Deletes all token balances or current token balances with given `token_contract_address_hash` and below the given `block_number`.
+  Used for cases when token doesn't implement `balanceOf` function
+  """
+  @spec delete_token_balance_placeholders_below(atom(), Hash.Address.t(), Block.block_number()) ::
+          {non_neg_integer(), nil | [term()]}
+  def delete_token_balance_placeholders_below(module, token_contract_address_hash, block_number) do
+    module
+    |> where([tb], tb.token_contract_address_hash == ^token_contract_address_hash)
+    |> where([tb], tb.block_number <= ^block_number)
+    |> where([tb], is_nil(tb.value_fetched_at) or is_nil(tb.value))
+    |> Repo.delete_all()
   end
 end
