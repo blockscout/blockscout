@@ -258,12 +258,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       )
       when is_binary(implementation_address_hash_string) do
     with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
-         proxy_contract <- SmartContract.address_hash_to_smart_contract(proxy_address_hash, options),
-         %{implementation: %SmartContract{name: name}, proxy: _proxy_contract} <- %{
-           implementation:
-             SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options),
-           proxy: proxy_contract
-         } do
+         {:implementation, %SmartContract{name: name}} <-
+           {:implementation,
+            SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options)} do
       upsert_implementation(proxy_address_hash, implementation_address_hash_string, name, options)
 
       {implementation_address_hash_string, name}
@@ -271,9 +268,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       :error ->
         {:empty, :empty}
 
-      %{implementation: _, proxy: proxy_contract} ->
+      {:implementation, _} ->
         upsert_implementation(
-          proxy_contract.address_hash,
+          proxy_address_hash,
           implementation_address_hash_string,
           nil,
           options

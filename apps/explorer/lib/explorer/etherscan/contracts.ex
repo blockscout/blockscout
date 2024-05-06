@@ -42,7 +42,17 @@ defmodule Explorer.Etherscan.Contracts do
             }
           else
             {implementation_address_hash, _} =
-              Implementation.get_implementation_address_hash(address_hash, unverified_proxy_only?: true)
+              Implementation.get_implementation_address_hash(
+                %{
+                  updated: %SmartContract{
+                    address_hash: address_hash,
+                    abi: nil
+                  },
+                  implementation_updated_at: nil,
+                  implementation_refetch_necessity: false
+                },
+                unverified_proxy_only?: true
+              )
 
             implementation_address =
               implementation_address_hash

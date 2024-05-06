@@ -267,9 +267,20 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         render(conn, :show, %{result: "Verification in progress"})
 
       :pass ->
+        implementation_address_hashes =
+          Implementation.get_proxy_implementations(submission.contract_address_hash, []).address_hashes
+
+        result =
+          if Enum.count(implementation_address_hashes) == 1 do
+            implementation_address_hash = Enum.at(implementation_address_hashes, 0)
+
+            "The proxy's (#{submission.contract_address_hash}) implementation contract is found at #{implementation_address_hash} and is successfully updated."
+          else
+            "The proxy's (#{submission.contract_address_hash}) implementation contracts are found at #{inspect(implementation_address_hashes)} and they've been successfully updated."
+          end
+
         render(conn, :show, %{
-          result:
-            "The proxy's (#{submission.contract_address_hash}) implementation contracts are found at #{inspect(Implementation.get_proxy_implementations(submission.contract_address_hash, []).address_hashes)} and they've been successfully updated."
+          result: result
         })
 
       :fail ->
