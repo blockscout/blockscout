@@ -22,7 +22,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       is_burn_signature: 1,
       get_implementation_address_hash: 2,
       get_proxy_implementations: 1,
-      save_implementation_data: 4
+      save_implementation_data: 3
     ]
 
   # supported signatures:
@@ -40,9 +40,9 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @doc """
   Fetches into DB proxy contract implementation's address and name from different proxy patterns
   """
-  @spec fetch_implementation_address_hash(Hash.Address.t(), list(), boolean() | nil, options) ::
+  @spec fetch_implementation_address_hash(Hash.Address.t(), list(), options) ::
           {String.t() | nil | :empty, String.t() | nil | :empty}
-  def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, metadata_from_verified_bytecode_twin, options)
+  def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, options)
       when not is_nil(proxy_address_hash) do
     implementation_address_hash_string =
       if options[:unverified_proxy_only?] do
@@ -55,7 +55,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       save_implementation_data(
         implementation_address_hash_string,
         proxy_address_hash,
-        metadata_from_verified_bytecode_twin,
         options
       )
     else
@@ -63,7 +62,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end
   end
 
-  def fetch_implementation_address_hash(_, _, _, _) do
+  def fetch_implementation_address_hash(_, _, _) do
     {nil, nil}
   end
 

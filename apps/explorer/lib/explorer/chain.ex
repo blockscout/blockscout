@@ -1196,8 +1196,7 @@ defmodule Explorer.Chain do
                 %{
                   updated: %SmartContract{
                     address_hash: hash,
-                    abi: nil,
-                    metadata_from_verified_bytecode_twin: false
+                    abi: nil
                   },
                   implementation_updated_at: nil,
                   implementation_refetch_necessity: false

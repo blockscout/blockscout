@@ -121,8 +121,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         %{
           updated: %SmartContract{
             address_hash: address_hash,
-            abi: abi,
-            metadata_from_verified_bytecode_twin: metadata_from_verified_bytecode_twin
+            abi: abi
           },
           implementation_updated_at: implementation_updated_at,
           implementation_refetch_necessity: implementation_refetch_necessity
@@ -137,8 +136,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
          check_implementation_refetch_necessity(implementation_updated_at) do
       get_implementation_address_hash_task =
         Task.async(fn ->
-          result =
-            Proxy.fetch_implementation_address_hash(address_hash, abi, metadata_from_verified_bytecode_twin, options)
+          result = Proxy.fetch_implementation_address_hash(address_hash, abi, options)
 
           callback = Keyword.get(options, :callback, nil)
           uid = Keyword.get(options, :uid)
@@ -239,12 +237,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   @doc """
   Saves proxy's implementation into the DB
   """
-  @spec save_implementation_data(String.t() | nil, Hash.Address.t(), boolean(), Keyword.t()) ::
+  @spec save_implementation_data(String.t() | nil, Hash.Address.t(), Keyword.t()) ::
           {nil, nil} | {String.t(), String.t() | nil}
-  def save_implementation_data(nil, proxy_address_hash, metadata_from_verified_bytecode_twin, options) do
-    if is_nil(metadata_from_verified_bytecode_twin) or !metadata_from_verified_bytecode_twin do
-      upsert_implementation(proxy_address_hash, nil, nil, options)
-    end
+  def save_implementation_data(nil, proxy_address_hash, options) do
+    upsert_implementation(proxy_address_hash, nil, nil, options)
 
     {:empty, :empty}
   end
@@ -252,13 +248,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   def save_implementation_data(
         empty_implementation_address_hash_string,
         proxy_address_hash,
-        metadata_from_verified_bytecode_twin,
         options
       )
       when is_burn_signature(empty_implementation_address_hash_string) do
-    if is_nil(metadata_from_verified_bytecode_twin) or !metadata_from_verified_bytecode_twin do
-      upsert_implementation(proxy_address_hash, nil, nil, options)
-    end
+    upsert_implementation(proxy_address_hash, nil, nil, options)
 
     {:empty, :empty}
   end
@@ -266,7 +259,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   def save_implementation_data(
         implementation_address_hash_string,
         proxy_address_hash,
-        _,
         options
       )
       when is_binary(implementation_address_hash_string) do
