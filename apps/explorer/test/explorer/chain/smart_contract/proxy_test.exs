@@ -535,6 +535,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
 
   def assert_implementation_address(address_hash) do
     implementation = Implementation.get_proxy_implementations(address_hash)
+    assert proxy_type
     assert implementation.updated_at
     assert implementation.address_hashes
   end
@@ -546,6 +547,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
 
   def assert_empty_implementation(address_hash) do
     implementation = Implementation.get_proxy_implementations(address_hash)
+    assert proxy_type == :unknown
     assert implementation.updated_at
     assert implementation.names == []
     assert implementation.address_hashes == []

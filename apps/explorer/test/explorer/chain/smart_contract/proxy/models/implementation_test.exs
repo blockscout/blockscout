@@ -259,6 +259,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
   def assert_exact_name_and_address(address_hash, implementation_address_hash, implementation_name) do
     implementation = Implementation.get_proxy_implementations(address_hash)
+    assert implementation.proxy_type
     assert implementation.updated_at
     assert implementation.names == [implementation_name]
 
@@ -268,6 +269,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
   def assert_implementation_name(address_hash) do
     implementation = Implementation.get_proxy_implementations(address_hash)
+    assert implementation.proxy_type
     assert implementation.updated_at
     assert implementation.names
   end
@@ -286,6 +288,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
   def assert_empty_implementation(address_hash) do
     implementation = Implementation.get_proxy_implementations(address_hash)
+    assert implementation.proxy_type == :unknown
     assert implementation.updated_at
     assert implementation.names == []
     assert implementation.address_hashes == []

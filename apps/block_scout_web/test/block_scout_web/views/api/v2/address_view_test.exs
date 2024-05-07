@@ -14,12 +14,15 @@ defmodule BlockScoutWeb.API.V2.AddressViewTest do
         contract_code_md5: "123"
       )
 
-    insert(:proxy_implementation,
-      proxy_address_hash: proxy_address.hash,
-      proxy_type: "eip1967",
-      address_hashes: [implementation_address.hash],
-      names: []
-    )
+    implementation =
+      insert(:proxy_implementation,
+        proxy_address_hash: proxy_address.hash,
+        proxy_type: "eip1967",
+        address_hashes: [implementation_address.hash],
+        names: []
+      )
+
+    assert implementation.proxy_type == :eip1967
 
     TestHelper.get_eip1967_implementation_zero_addresses()
 
