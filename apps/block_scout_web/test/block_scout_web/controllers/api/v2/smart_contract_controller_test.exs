@@ -1398,6 +1398,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     test "return 404 on unverified contract", %{conn: conn} do
       address = insert(:contract_address)
 
+      TestHelper.get_eip1967_implementation_zero_addresses()
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/methods-read")
       assert %{"message" => "Not found"} = json_response(request, 404)
     end
@@ -2475,6 +2476,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     test "return 404 on unverified contract", %{conn: conn} do
       address = insert(:contract_address)
 
+      TestHelper.get_eip1967_implementation_zero_addresses()
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/methods-write")
       assert %{"message" => "Not found"} = json_response(request, 404)
     end

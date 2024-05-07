@@ -237,7 +237,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
          uid <- ProxyVerificationStatus.generate_uid(address_hash) do
       ProxyVerificationStatus.insert_status(uid, :pending, address_hash)
 
-      Implementation.get_implementation_address_hash(smart_contract,
+      Implementation.get_implementation(smart_contract,
         timeout: 0,
         uid: uid,
         callback: &ProxyVerificationStatus.set_proxy_verification_result/2
@@ -599,10 +599,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
     result =
       case SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash) do
-        nil ->
+        {nil, _} ->
           :not_found
 
-        contract ->
+        {contract, _} ->
           {:ok, SmartContract.preload_decompiled_smart_contract(contract)}
       end
 

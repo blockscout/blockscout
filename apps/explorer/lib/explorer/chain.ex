@@ -999,26 +999,11 @@ defmodule Explorer.Chain do
         where: address.hash == ^hash
       )
 
-    address_result =
-      query
-      |> join_associations(necessity_by_association)
-      |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
-      |> select_repo(options).one()
-
-    address_updated_result =
-      case address_result do
-        %{smart_contract: smart_contract} ->
-          if smart_contract do
-            address_result
-          else
-            SmartContract.compose_smart_contract(address_result, hash, options)
-          end
-
-        _ ->
-          address_result
-      end
-
-    address_updated_result
+    query
+    |> join_associations(necessity_by_association)
+    |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
+    |> select_repo(options).one()
+    |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
@@ -1192,29 +1177,29 @@ defmodule Explorer.Chain do
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
 
             {implementation_address_hash, _} =
-              Implementation.get_implementation_address_hash(
+              Implementation.get_implementation(
                 %{
                   updated: %SmartContract{
-                    address_hash: hash,
-                    abi: nil
+                    address_hash: hash
                   },
                   implementation_updated_at: nil,
-                  implementation_refetch_necessity: false
+                  implementation_address_fetched?: false,
+                  refetch_necessity_checked?: false
                 },
                 Keyword.put(options, :unverified_proxy_only?, true)
               )
 
-            implementation_address =
+            implementation_smart_contract =
               implementation_address_hash
               |> Proxy.implementation_to_smart_contract(options)
 
             address_verified_bytecode_twin_contract =
-              implementation_address ||
+              implementation_smart_contract ||
                 SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
 
             address_result
             |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
-            |> (&if(is_nil(implementation_address),
+            |> (&if(is_nil(implementation_smart_contract),
                   do: &1,
                   else: SmartContract.add_implementation_info_to_contract(&1, implementation_address_hash)
                 )).()

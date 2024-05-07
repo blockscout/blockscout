@@ -212,7 +212,7 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def decode_revert_reason(to_address, revert_reason, options \\ []) do
-    smart_contract = SmartContract.address_hash_to_smart_contract_with_bytecode_twin(to_address, options)
+    {smart_contract, _} = SmartContract.address_hash_to_smart_contract_with_bytecode_twin(to_address, options)
 
     Transaction.decoded_revert_reason(
       %Transaction{to_address: %{smart_contract: smart_contract}, hash: to_address},

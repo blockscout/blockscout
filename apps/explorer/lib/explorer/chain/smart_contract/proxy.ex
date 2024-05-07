@@ -20,7 +20,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
     only: [
       is_burn_signature: 1,
-      get_implementation_address_hash: 2,
+      get_implementation: 2,
       get_proxy_implementations: 1,
       save_implementation_data: 3
     ]
@@ -81,8 +81,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       true
     else
       _ ->
-        {implementation_address_hash_string, _implementation_name} =
-          get_implementation_address_hash(smart_contract, options)
+        {implementation_address_hash_string, _implementation_name} = get_implementation(smart_contract, options)
 
         with false <- is_nil(implementation_address_hash_string),
              {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
@@ -124,7 +123,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         options
       )
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    {implementation_address_hash_string, _name} = get_implementation_address_hash(smart_contract, options)
+    {implementation_address_hash_string, _name} = get_implementation(smart_contract, options)
 
     SmartContract.get_smart_contract_abi(implementation_address_hash_string)
   end
