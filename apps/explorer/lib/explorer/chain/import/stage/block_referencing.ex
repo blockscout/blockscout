@@ -67,6 +67,10 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Arbitrum.BatchBlocks,
     Runner.Arbitrum.BatchTransactions
   ]
+  @celo_runners [
+    Runner.Celo.Epoch.ElectionRewards,
+    Runner.Celo.Epoch.Rewards
+  ]
 
   @impl Stage
   def runners do
@@ -92,6 +96,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       :arbitrum ->
         @default_runners ++ @arbitrum_runners
 
+      :celo ->
+        @default_runners ++ @celo_runners
+
       _ ->
         @default_runners
     end
@@ -99,10 +106,17 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def all_runners do
-    @default_runners ++
-      @ethereum_runners ++
-      @optimism_runners ++
-      @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners ++ @zksync_runners ++ @arbitrum_runners
+    Enum.concat([
+      @default_runners,
+      @optimism_runners,
+      @polygon_edge_runners,
+      @polygon_zkevm_runners,
+      @shibarium_runners,
+      @zksync_runners,
+      @ethereum_runners,
+      @arbitrum_runners,
+      @celo_runners
+    ])
   end
 
   @impl Stage
