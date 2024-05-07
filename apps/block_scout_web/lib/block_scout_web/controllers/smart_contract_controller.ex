@@ -25,14 +25,14 @@ defmodule BlockScoutWeb.SmartContractController do
          {:custom_abi, false} <- {:custom_abi, is_custom_abi},
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
-      implementation_address_hash_string =
+      [implementation_address_hash_string] =
         if contract_type == "proxy" do
           address.smart_contract
           |> Implementation.get_implementation()
           |> Tuple.to_list()
-          |> List.first() || burn_address_hash_string()
+          |> List.first() || [burn_address_hash_string()]
         else
-          burn_address_hash_string()
+          [burn_address_hash_string()]
         end
 
       functions =

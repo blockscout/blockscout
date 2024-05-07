@@ -36,6 +36,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         :eip1967,
         :eip1822,
         :eip930,
+        :eip2535,
         :master_copy,
         :basic_implementation,
         :basic_get_implementation,
@@ -202,20 +203,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   defp implementation_from_db(address_hash, options) do
     proxy_implementations = get_proxy_implementations(address_hash, options)
 
-    # todo: process multiple implementations in case of Diamond proxy
     if proxy_implementations do
-      {implementation_address_hash, implementation_name} =
-        if Enum.count(proxy_implementations.address_hashes) == 1 do
-          implementation_address_hash = proxy_implementations.address_hashes |> Enum.at(0)
-          implementation_name = proxy_implementations.names |> Enum.at(0)
-          {implementation_address_hash, implementation_name}
-        else
-          {nil, nil}
-        end
-
-      {implementation_address_hash, implementation_name, proxy_implementations.updated_at}
+      {proxy_implementations.address_hashes, proxy_implementations.names, proxy_implementations.updated_at}
     else
-      {nil, nil, nil}
+      {[], [], nil}
     end
   end
 
@@ -274,7 +265,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   Saves proxy's implementation into the DB
   """
   @spec save_implementation_data(String.t() | nil, Hash.Address.t(), atom() | nil, Keyword.t()) ::
-          {nil, nil} | {String.t(), String.t() | nil}
+          {nil, nil} | {[String.t()], [String.t() | nil]}
   def save_implementation_data(
         implementation_address_hash_string,
         proxy_address_hash,
@@ -288,53 +279,65 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   end
 
   def save_implementation_data(
-        implementation_address_hash_string,
+        implementation_address_hash_strings,
         proxy_address_hash,
         proxy_type,
         options
-      )
-      when is_binary(implementation_address_hash_string) do
-    with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
-         {:implementation, {%SmartContract{name: name}, _}} <-
-           {:implementation,
-            SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options, false)} do
-      upsert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_string, name, options)
+      ) do
+    raw_implementations = implementation_address_hash_strings
 
-      {implementation_address_hash_string, name}
+    {implementation_addresses, implementation_names} =
+      raw_implementations
+      |> Enum.map(fn implementation_address_hash_string ->
+        with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
+             {:implementation, {%SmartContract{name: name}, _}} <- {
+               :implementation,
+               SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options)
+             } do
+          {implementation_address_hash_string, name}
+        else
+          :error ->
+            :error
+
+          {:implementation, _} ->
+            {implementation_address_hash_string, nil}
+        end
+      end)
+      |> Enum.filter(&(&1 !== :error))
+      |> Enum.unzip()
+
+    if Enum.empty?(implementation_addresses) do
+      {:empty, :empty}
     else
-      :error ->
-        {:empty, :empty}
+      upsert_implementation(
+        proxy_address_hash,
+        proxy_type,
+        implementation_addresses,
+        implementation_names,
+        options
+      )
 
-      {:implementation, _} ->
-        upsert_implementation(
-          proxy_address_hash,
-          proxy_type,
-          implementation_address_hash_string,
-          nil,
-          options
-        )
-
-        {implementation_address_hash_string, nil}
+      {implementation_addresses, implementation_names}
     end
   end
 
-  defp upsert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_string, name, options) do
+  defp upsert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_strings, names, options) do
     proxy = get_proxy_implementations(proxy_address_hash, options)
 
     if proxy do
-      update_implementation(proxy, proxy_type, implementation_address_hash_string, name)
+      update_implementation(proxy, proxy_type, implementation_address_hash_strings, names)
     else
-      insert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_string, name)
+      insert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_strings, names)
     end
   end
 
-  defp insert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_string, name)
+  defp insert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_strings, names)
        when not is_nil(proxy_address_hash) do
     changeset = %{
       proxy_address_hash: proxy_address_hash,
       proxy_type: proxy_type,
-      address_hashes: (implementation_address_hash_string && [implementation_address_hash_string]) || [],
-      names: (name && [name]) || []
+      address_hashes: prepare_value(implementation_address_hash_strings),
+      names: prepare_value(names)
     }
 
     %__MODULE__{}
@@ -342,17 +345,29 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     |> Repo.insert()
   end
 
-  defp update_implementation(proxy, proxy_type, implementation_address_hash_string, name) do
+  defp update_implementation(proxy, proxy_type, implementation_address_hash_strings, names) do
     proxy
     |> changeset(%{
       proxy_type: proxy_type,
-      address_hashes: (implementation_address_hash_string && [implementation_address_hash_string]) || [],
-      names: (name && [name]) || []
+      address_hashes: prepare_value(implementation_address_hash_strings),
+      names: prepare_value(names)
     })
     |> Repo.update()
   end
 
+  defp prepare_value(value) when is_list(value) do
+    value
+  end
+
+  defp prepare_value(value) do
+    (value && [value]) || []
+  end
+
   defp db_implementation_data_converter(nil), do: nil
+
+  defp db_implementation_data_converter(list) when is_list(list),
+    do: list |> Enum.map(&db_implementation_data_converter(&1))
+
   defp db_implementation_data_converter(string) when is_binary(string), do: string
   defp db_implementation_data_converter(other), do: to_string(other)
 
@@ -365,9 +380,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   def name(proxy_address, options) when not is_nil(proxy_address) do
     proxy_implementations = get_proxy_implementations(proxy_address.hash, options)
 
-    # todo: process multiple implementations in case of Diamond proxy
     if proxy_implementations && not Enum.empty?(proxy_implementations.names) do
-      proxy_implementations.names |> Enum.at(0)
+      proxy_implementations.names
     else
       nil
     end
