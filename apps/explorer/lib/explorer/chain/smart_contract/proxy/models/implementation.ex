@@ -22,12 +22,29 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   @typedoc """
   * `proxy_address_hash` - proxy `smart_contract` address hash.
+  * `proxy_type` - type of the proxy.
   * `address_hashes` - array of implementation `smart_contract` address hashes. Proxy can contain multiple implementations at once.
   * `names` - array of implementation `smart_contract` names.
   """
   @primary_key false
   typed_schema "proxy_implementations" do
     field(:proxy_address_hash, Hash.Address, primary_key: true, null: false)
+
+    field(:proxy_type, Ecto.Enum,
+      values: [
+        :eip1167,
+        :eip1967,
+        :eip1822,
+        :eip930,
+        :master_copy,
+        :basic_implementation,
+        :basic_get_implementation,
+        :comptroller,
+        :unknown
+      ],
+      null: true
+    )
+
     field(:address_hashes, {:array, Hash.Address}, null: false)
     field(:names, {:array, :string}, null: false)
 
@@ -38,10 +55,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     proxy_implementation
     |> cast(attrs, [
       :proxy_address_hash,
+      :proxy_type,
       :address_hashes,
       :names
     ])
-    |> validate_required([:proxy_address_hash, :address_hashes, :names])
+    |> validate_required([:proxy_address_hash, :proxy_type, :address_hashes, :names])
     |> unique_constraint([:proxy_address_hash])
   end
 
@@ -255,15 +273,16 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   @doc """
   Saves proxy's implementation into the DB
   """
-  @spec save_implementation_data(String.t() | nil, Hash.Address.t(), Keyword.t()) ::
+  @spec save_implementation_data(String.t() | nil, Hash.Address.t(), atom() | nil, Keyword.t()) ::
           {nil, nil} | {String.t(), String.t() | nil}
   def save_implementation_data(
         implementation_address_hash_string,
         proxy_address_hash,
+        proxy_type,
         options
       )
       when is_nil(implementation_address_hash_string) or is_burn_signature(implementation_address_hash_string) do
-    upsert_implementation(proxy_address_hash, nil, nil, options)
+    upsert_implementation(proxy_address_hash, proxy_type, nil, nil, options)
 
     {:empty, :empty}
   end
@@ -271,6 +290,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   def save_implementation_data(
         implementation_address_hash_string,
         proxy_address_hash,
+        proxy_type,
         options
       )
       when is_binary(implementation_address_hash_string) do
@@ -278,7 +298,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
          {:implementation, {%SmartContract{name: name}, _}} <-
            {:implementation,
             SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options, false)} do
-      upsert_implementation(proxy_address_hash, implementation_address_hash_string, name, options)
+      upsert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_string, name, options)
 
       {implementation_address_hash_string, name}
     else
@@ -288,6 +308,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       {:implementation, _} ->
         upsert_implementation(
           proxy_address_hash,
+          proxy_type,
           implementation_address_hash_string,
           nil,
           options
@@ -297,20 +318,21 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     end
   end
 
-  defp upsert_implementation(proxy_address_hash, implementation_address_hash_string, name, options) do
+  defp upsert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_string, name, options) do
     proxy = get_proxy_implementations(proxy_address_hash, options)
 
     if proxy do
-      update_implementation(proxy, implementation_address_hash_string, name)
+      update_implementation(proxy, proxy_type, implementation_address_hash_string, name)
     else
-      insert_implementation(proxy_address_hash, implementation_address_hash_string, name)
+      insert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_string, name)
     end
   end
 
-  defp insert_implementation(proxy_address_hash, implementation_address_hash_string, name)
+  defp insert_implementation(proxy_address_hash, proxy_type, implementation_address_hash_string, name)
        when not is_nil(proxy_address_hash) do
     changeset = %{
       proxy_address_hash: proxy_address_hash,
+      proxy_type: proxy_type,
       address_hashes: (implementation_address_hash_string && [implementation_address_hash_string]) || [],
       names: (name && [name]) || []
     }
@@ -320,9 +342,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     |> Repo.insert()
   end
 
-  defp update_implementation(proxy, implementation_address_hash_string, name) do
+  defp update_implementation(proxy, proxy_type, implementation_address_hash_string, name) do
     proxy
     |> changeset(%{
+      proxy_type: proxy_type,
       address_hashes: (implementation_address_hash_string && [implementation_address_hash_string]) || [],
       names: (name && [name]) || []
     })
