@@ -59,6 +59,11 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Beacon.BlobTransactions
   ]
 
+  @celo_runners [
+    Runner.Celo.Epoch.ElectionRewards,
+    Runner.Celo.Epoch.Rewards
+  ]
+
   @impl Stage
   def runners do
     case Application.get_env(:explorer, :chain_type) do
@@ -80,6 +85,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       :zksync ->
         @default_runners ++ @zksync_runners
 
+      :celo ->
+        @default_runners ++ @celo_runners
+
       _ ->
         @default_runners
     end
@@ -87,8 +95,16 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def all_runners do
-    @default_runners ++
-      @optimism_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners ++ @zksync_runners
+    Enum.concat([
+      @default_runners,
+      @optimism_runners,
+      @polygon_edge_runners,
+      @polygon_zkevm_runners,
+      @shibarium_runners,
+      @zksync_runners,
+      @ethereum_runners,
+      @celo_runners
+    ])
   end
 
   @impl Stage
