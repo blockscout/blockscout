@@ -758,7 +758,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     |> Db.rollup_blocks()
     |> Enum.reduce({%{}, []}, fn block, {blocks_map, txs_list} ->
       batch_num = blocks_to_batches[block.number]
-      blk_hash = block.hash.bytes
 
       updated_txs_list =
         block.transactions
@@ -922,7 +921,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     json_responses
     |> Enum.reduce({rollup_blocks, rollup_txs}, fn resp, {blocks_map, txs_list} ->
       batch_num = resp.id
-      blk_hash = resp.result["hash"]
       blk_num = quantity_to_integer(resp.result["number"])
 
       updated_blocks_map =
