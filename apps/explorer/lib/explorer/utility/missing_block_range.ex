@@ -146,6 +146,10 @@ defmodule Explorer.Utility.MissingBlockRange do
     query =
       from(
         r in __MODULE__,
+        # Note: from_number is higher than to_number, so in fact the range is to_number..from_number
+        # The first case: lower_number..to_number..higher_number
+        # The second case: lower_number..from_number..higher_number
+        # The third case: to_number..lower_number..higher_number..from_number
         where:
           (^lower_number <= r.to_number and ^higher_number >= r.to_number) or
             (^lower_number <= r.from_number and ^higher_number >= r.from_number) or

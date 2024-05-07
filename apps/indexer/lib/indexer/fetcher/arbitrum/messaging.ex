@@ -149,26 +149,32 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   end
 
   @doc """
-    Processes a list of filtered logs representing L2-to-L1 messages, enriching and categorizing them based on their current state.
+    Processes a list of filtered logs representing L2-to-L1 messages, enriching and categorizing them based on their current state and optionally updating their execution status.
 
     This function takes filtered log events, typically representing L2-to-L1 messages, and
-    processes each to construct a comprehensive message structure. Additionally, the function
-    determines the status of each message by comparing its block number against the highest
-    committed and confirmed block numbers retrieved earlier.
+    processes each to construct a comprehensive message structure. It also determines the
+    status of each message by comparing its block number against the highest committed and
+    confirmed block numbers. If a `caller` module is provided, it further updates the
+    messages' execution status.
 
     ## Parameters
-    - `filtered_logs`: A list of log entries, where each log represents an L2-to-L1 message event.
+    - `filtered_logs`: A list of log entries, each representing an L2-to-L1 message event.
+    - `caller`: An optional module that uses as a flaf to determine if the discovered
+      should be checked for execution.
 
     ## Returns
-    - A list of L2-to-L1 messages with detailed information and current status. Compatible with the
-      database import operation.
+    - A list of L2-to-L1 messages with detailed information and current status, ready for
+      database import.
   """
-  @spec handle_filtered_l2_to_l1_messages(maybe_improper_list(min_log, [])) :: [arbitrum_message]
-  def handle_filtered_l2_to_l1_messages([]) do
+  @spec handle_filtered_l2_to_l1_messages([min_log]) :: [arbitrum_message]
+  @spec handle_filtered_l2_to_l1_messages([min_log], module()) :: [arbitrum_message]
+  def handle_filtered_l2_to_l1_messages(filtered_logs, caller \\ nil)
+
+  def handle_filtered_l2_to_l1_messages([], _) do
     []
   end
 
-  def handle_filtered_l2_to_l1_messages(filtered_logs) when is_list(filtered_logs) do
+  def handle_filtered_l2_to_l1_messages(filtered_logs, caller) when is_list(filtered_logs) do
     # Get values before the loop parsing the events to reduce number of DB requests
     highest_committed_block = Db.highest_committed_block(-1)
     highest_confirmed_block = Db.highest_confirmed_block(-1)
@@ -201,10 +207,21 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
     Logger.info("Origins of #{length(Map.values(messages_map))} L2-to-L1 messages will be imported")
 
-    # This is required only for the case when l2-to-l1 messages
-    # are found by block catchup fetcher
-    messages_map
-    |> find_and_update_executed_messages()
+    # The check if messages are executed is required only for the case when l2-to-l1
+    # messages are found by block catchup fetcher
+    updated_messages_map =
+      case caller do
+        nil ->
+          Logger.info("No caller provided for L2-to-L1 messages")
+          messages_map
+
+        _ ->
+          Logger.info("Caller provided for L2-to-L1 messages")
+          messages_map
+          |> find_and_update_executed_messages()
+      end
+
+    updated_messages_map
     |> Map.values()
   end
 
