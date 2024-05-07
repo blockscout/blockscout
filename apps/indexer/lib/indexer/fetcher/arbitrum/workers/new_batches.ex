@@ -25,6 +25,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
+
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
 
   alias Indexer.Helper, as: IndexerHelper
@@ -110,7 +112,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     end_block = min(start_block + l1_rpc_config.logs_block_range - 1, latest_block)
 
     if start_block <= end_block do
-      Logger.info("Block range for new batches discovery: #{start_block}..#{end_block}")
+      log_info("Block range for new batches discovery: #{start_block}..#{end_block}")
 
       discover(
         sequencer_inbox_address,
@@ -195,7 +197,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     if end_block >= l1_rollup_init_block do
       start_block = max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
 
-      Logger.info("Block range for historical batches discovery: #{start_block}..#{end_block}")
+      log_info("Block range for historical batches discovery: #{start_block}..#{end_block}")
 
       discover_historical(
         sequencer_inbox_address,
@@ -380,7 +382,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       )
 
     if length(logs) > 0 do
-      Logger.debug("Found #{length(logs)} SequencerBatchDelivered logs")
+      log_debug("Found #{length(logs)} SequencerBatchDelivered logs")
     end
 
     logs
@@ -530,7 +532,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               BlockByNumber.request(%{id: 0, number: blk_num}, false, true)
             )
 
-          Logger.info("New batch #{batch_num} found in #{tx_hash_raw}")
+          log_info("New batch #{batch_num} found in #{tx_hash_raw}")
 
           {updated_batches, updated_txs_requests, updated_blocks_requests}
         end
@@ -688,7 +690,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     blocks_to_batches = unwrap_rollup_block_ranges(batches)
 
     required_blocks_numbers = Map.keys(blocks_to_batches)
-    Logger.info("Identified #{length(required_blocks_numbers)} rollup blocks")
+    log_info("Identified #{length(required_blocks_numbers)} rollup blocks")
 
     {blocks_to_import_map, txs_to_import_list} =
       get_rollup_blocks_and_txs_from_db(required_blocks_numbers, blocks_to_batches)
@@ -708,7 +710,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         rollup_rpc_config
       )
 
-    Logger.info(
+    log_info(
       "Found #{length(Map.keys(blocks_to_import))} rollup blocks and #{length(txs_to_import)} rollup transactions in DB"
     )
 
@@ -809,7 +811,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     found_blocks_numbers_length = length(found_blocks_numbers)
 
     if found_blocks_numbers_length != required_blocks_amount do
-      Logger.info("Only #{found_blocks_numbers_length} of #{required_blocks_amount} rollup blocks found in DB")
+      log_info("Only #{found_blocks_numbers_length} of #{required_blocks_amount} rollup blocks found in DB")
 
       {recovered_blocks_map, recovered_txs_list, _} =
         recover_rollup_blocks_and_txs_from_rpc(

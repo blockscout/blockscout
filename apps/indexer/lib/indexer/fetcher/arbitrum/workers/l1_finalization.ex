@@ -8,6 +8,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
     marked as 'finalized' within the system's database.
   """
 
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
+
   alias Indexer.Helper, as: IndexerHelper
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
@@ -52,7 +54,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
     lifecycle_txs = Db.lifecycle_unfinalized_transactions(safe_block)
 
     if length(lifecycle_txs) > 0 do
-      Logger.info("Discovered #{length(lifecycle_txs)} lifecycle transaction to be finalized")
+      log_info("Discovered #{length(lifecycle_txs)} lifecycle transaction to be finalized")
 
       updated_lifecycle_txs =
         lifecycle_txs

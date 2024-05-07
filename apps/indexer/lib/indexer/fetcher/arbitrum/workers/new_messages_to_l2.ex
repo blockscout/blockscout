@@ -14,10 +14,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   details.
   """
 
-  import EthereumJSONRPC,
-    only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   import Explorer.Helper, only: [decode_data: 2]
+
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
@@ -97,7 +98,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     end_block = min(start_block + rpc_block_range - 1, latest_block)
 
     if start_block <= end_block do
-      Logger.info("Block range for discovery new messages from L1: #{start_block}..#{end_block}")
+      log_info("Block range for discovery new messages from L1: #{start_block}..#{end_block}")
 
       discover(
         bridge_address,
@@ -167,7 +168,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     if end_block >= l1_rollup_init_block do
       start_block = max(l1_rollup_init_block, end_block - rpc_block_range + 1)
 
-      Logger.info("Block range for discovery historical messages from L1: #{start_block}..#{end_block}")
+      log_info("Block range for discovery historical messages from L1: #{start_block}..#{end_block}")
 
       discover(
         bridge_address,
@@ -212,7 +213,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     messages = get_messages_from_logs(logs, json_rpc_named_argument, chunk_size)
 
     unless messages == [] do
-      Logger.info("Origins of #{length(messages)} L1-to-L2 messages will be imported")
+      log_info("Origins of #{length(messages)} L1-to-L2 messages will be imported")
     end
 
     {:ok, _} =
@@ -235,7 +236,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       )
 
     if length(logs) > 0 do
-      Logger.debug("Found #{length(logs)} MessageDelivered logs")
+      log_debug("Found #{length(logs)} MessageDelivered logs")
     end
 
     logs
@@ -316,7 +317,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
               Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash})
             )
 
-          Logger.debug("L1 to L2 message #{tx_hash} found with the type #{type}")
+          log_debug("L1 to L2 message #{tx_hash} found with the type #{type}")
 
           {updated_messages, updated_txs_requests}
         else

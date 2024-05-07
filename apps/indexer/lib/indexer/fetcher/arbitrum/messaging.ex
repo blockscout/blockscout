@@ -12,6 +12,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   import Explorer.Helper, only: [decode_data: 2]
 
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
+
   alias Indexer.Fetcher.Arbitrum.Utils.Db
 
   require Logger
@@ -88,7 +90,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       |> handle_filtered_l1_to_l2_messages()
 
     if report && not (messages == []) do
-      Logger.info("#{length(messages)} completions of L1-to-L2 messages will be imported")
+      log_info("#{length(messages)} completions of L1-to-L2 messages will be imported")
     end
 
     messages
@@ -141,7 +143,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   def handle_filtered_l1_to_l2_messages(filtered_txs) when is_list(filtered_txs) do
     filtered_txs
     |> Enum.map(fn tx ->
-      Logger.debug("L1 to L2 message #{tx.hash} found with the type #{tx.type}")
+      log_debug("L1 to L2 message #{tx.hash} found with the type #{tx.type}")
 
       %{direction: :to_l2, message_id: tx.request_id, completion_tx_hash: tx.hash, status: :relayed}
       |> complete_to_params()
@@ -159,7 +161,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
     ## Parameters
     - `filtered_logs`: A list of log entries, each representing an L2-to-L1 message event.
-    - `caller`: An optional module that uses as a flaf to determine if the discovered
+    - `caller`: An optional module that uses as a flag to determine if the discovered
       should be checked for execution.
 
     ## Returns
@@ -182,7 +184,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     messages_map =
       filtered_logs
       |> Enum.reduce(%{}, fn event, messages_acc ->
-        Logger.debug("L2 to L1 message #{event.transaction_hash} found")
+        log_debug("L2 to L1 message #{event.transaction_hash} found")
 
         {message_id, caller, blocknum, timestamp} = l2_to_l1_event_parse(event)
 
@@ -205,18 +207,16 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
         )
       end)
 
-    Logger.info("Origins of #{length(Map.values(messages_map))} L2-to-L1 messages will be imported")
+    log_info("Origins of #{length(Map.values(messages_map))} L2-to-L1 messages will be imported")
 
     # The check if messages are executed is required only for the case when l2-to-l1
     # messages are found by block catchup fetcher
     updated_messages_map =
       case caller do
         nil ->
-          Logger.info("No caller provided for L2-to-L1 messages")
           messages_map
 
         _ ->
-          Logger.info("Caller provided for L2-to-L1 messages")
           messages_map
           |> find_and_update_executed_messages()
       end

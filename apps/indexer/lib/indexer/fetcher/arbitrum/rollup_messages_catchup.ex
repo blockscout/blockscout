@@ -53,6 +53,8 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
 
   import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
 
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
+
   alias Indexer.Fetcher.Arbitrum.Utils.Db
   alias Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2
 
@@ -153,7 +155,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
           |> Map.delete(:time_of_start)
 
         {:error, _} ->
-          Logger.warning("No progress of the block fetcher found")
+          log_warning("No progress of the block fetcher found")
           Process.send_after(self(), :wait_for_new_block, :timer.seconds(@wait_for_new_block_delay))
           interim_data
       end

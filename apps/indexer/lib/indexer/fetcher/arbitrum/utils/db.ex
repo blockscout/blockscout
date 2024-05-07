@@ -5,6 +5,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
   import Ecto.Query, only: [from: 2]
 
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Arbitrum.Reader
   alias Explorer.Chain.Block, as: FullBlock
@@ -90,7 +92,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_committed_batch() do
       nil ->
-        Logger.warning("No committed batches found in DB")
+        log_warning("No committed batches found in DB")
         value_if_nil
 
       value ->
@@ -114,7 +116,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_earliest_committed_batch() do
       nil ->
-        Logger.warning("No committed batches found in DB")
+        log_warning("No committed batches found in DB")
         value_if_nil
 
       value ->
@@ -156,7 +158,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_discovered_message_to_l2() do
       nil ->
-        Logger.warning("No messages to L2 found in DB")
+        log_warning("No messages to L2 found in DB")
         value_if_nil
 
       value ->
@@ -180,7 +182,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_earliest_discovered_message_to_l2() do
       nil ->
-        Logger.warning("No messages to L2 found in DB")
+        log_warning("No messages to L2 found in DB")
         value_if_nil
 
       value ->
@@ -204,7 +206,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.rollup_block_of_earliest_discovered_message_from_l2() do
       nil ->
-        Logger.warning("No messages from L2 found in DB")
+        log_warning("No messages from L2 found in DB")
         value_if_nil
 
       value ->
@@ -230,7 +232,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         # In theory it could be a situation when when the earliest message points
         # to a completion transaction which is not indexed yet. In this case, this
         # warning will occur.
-        Logger.warning("No completed messages to L2 found in DB")
+        log_warning("No completed messages to L2 found in DB")
         value_if_nil
 
       value ->
@@ -254,7 +256,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_confirmed_block() do
       nil ->
-        Logger.warning("No confirmed blocks found in DB")
+        log_warning("No confirmed blocks found in DB")
         value_if_nil
 
       value ->
@@ -298,7 +300,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_execution() do
       nil ->
-        Logger.warning("No L1 executions found in DB")
+        log_warning("No L1 executions found in DB")
         value_if_nil
 
       value ->
@@ -323,7 +325,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_earliest_execution() do
       nil ->
-        Logger.warning("No L1 executions found in DB")
+        log_warning("No L1 executions found in DB")
         value_if_nil
 
       value ->
@@ -628,7 +630,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(right_pos_value_if_nil) and right_pos_value_if_nil >= 0) or is_nil(right_pos_value_if_nil) do
     case Reader.l1_blocks_of_confirmations_bounding_first_unconfirmed_rollup_blocks_gap() do
       nil ->
-        Logger.warning("No L1 confirmations found in DB")
+        log_warning("No L1 confirmations found in DB")
         {nil, right_pos_value_if_nil}
 
       {nil, newer_confirmation_l1_block} ->

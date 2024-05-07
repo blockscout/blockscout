@@ -32,6 +32,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1, log_debug: 1]
+
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
   alias Indexer.Helper, as: IndexerHelper
 
@@ -107,7 +109,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     end_block = min(start_block + l1_rpc_config.logs_block_range - 1, latest_block)
 
     if start_block <= end_block do
-      Logger.info("Block range for new rollup confirmations discovery: #{start_block}..#{end_block}")
+      log_info("Block range for new rollup confirmations discovery: #{start_block}..#{end_block}")
 
       retcode =
         discover(
@@ -205,7 +207,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             Enum.max([l1_rollup_init_block, value, end_block - l1_rpc_config.logs_block_range + 1])
         end
 
-      Logger.info("Block range for historical rollup confirmations discovery: #{start_block}..#{end_block}")
+      log_info("Block range for historical rollup confirmations discovery: #{start_block}..#{end_block}")
 
       retcode =
         discover(
@@ -401,7 +403,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             BlockByNumber.request(%{id: 0, number: l1_blk_num}, false, true)
           )
 
-        Logger.info("New confirmation for the rollup block #{rollup_block_hash} found in #{l1_tx_hash_raw}")
+        log_info("New confirmation for the rollup block #{rollup_block_hash} found in #{l1_tx_hash_raw}")
 
         {updated_block_to_txs, updated_lifecycle_txs, updated_blocks_requests}
       end)
@@ -437,7 +439,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         # the block fetcher, it makes sense to skip this block so far
         case rollup_block_num do
           nil ->
-            Logger.warning("The rollup block #{block_hash} did not found. Plan to skip the confirmations")
+            log_warning("The rollup block #{block_hash} did not found. Plan to skip the confirmations")
             transformed
 
           value ->
@@ -453,7 +455,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
       rollup_block_numbers
       |> Enum.reduce([], fn block_num, updated_rollup_blocks ->
-        Logger.info("Attempting to mark all rollup blocks including ##{block_num} and lower as confirmed")
+        log_info("Attempting to mark all rollup blocks including ##{block_num} and lower as confirmed")
 
         {_, confirmed_blocks} =
           discover_rollup_blocks_belonging_to_one_confirmation(
@@ -464,12 +466,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
         # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         if length(confirmed_blocks) > 0 do
-          Logger.info("Found #{length(confirmed_blocks)} confirmed blocks")
+          log_info("Found #{length(confirmed_blocks)} confirmed blocks")
 
           add_confirm_transaction(confirmed_blocks, block_to_l1_txs[block_num].l1_tx_hash) ++
             updated_rollup_blocks
         else
-          Logger.info("Either no unconfirmed blocks found or DB inconsistency error discovered")
+          log_info("Either no unconfirmed blocks found or DB inconsistency error discovered")
           []
         end
       end)
@@ -551,7 +553,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
            ),
          true <- discover_rollup_blocks__check_consecutive_rollup_blocks(unconfirmed_rollup_blocks, batch.number) do
       if List.first(unconfirmed_rollup_blocks).block_number == batch.start_block do
-        Logger.info("End of the batch #{batch.number} discovered, moving to the previous batch")
+        log_info("End of the batch #{batch.number} discovered, moving to the previous batch")
 
         {status, updated_rollup_blocks} =
           discover_rollup_blocks_belonging_to_one_confirmation(
@@ -569,7 +571,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           :ok -> {:ok, unconfirmed_rollup_blocks ++ updated_rollup_blocks}
         end
       else
-        Logger.info("All unconfirmed blocks in the batch ##{batch.number} found")
+        log_info("All unconfirmed blocks in the batch ##{batch.number} found")
         {:ok, unconfirmed_rollup_blocks}
       end
     end
@@ -586,13 +588,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     batch = Db.get_batch_by_rollup_block_num(rollup_block_num)
 
     if batch != nil do
-      Logger.info(
+      log_info(
         "Attempt to identify which blocks of the batch ##{batch.number} within ##{batch.start_block}..##{rollup_block_num} are confirmed"
       )
 
       {:ok, batch}
     else
-      Logger.warning(
+      log_warning(
         "Batch where the block ##{rollup_block_num} was included is not found, skipping this blocks and lower"
       )
 
@@ -610,10 +612,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       # or in case when Chain.Block for block in the batch are not received yet
 
       if Db.count_confirmed_rollup_blocks_in_batch(batch.number) == batch.end_block - batch.start_block + 1 do
-        Logger.info("No unconfirmed blocks in the batch #{batch.number}")
+        log_info("No unconfirmed blocks in the batch #{batch.number}")
         {:ok, []}
       else
-        Logger.warning("Seems that the batch #{batch.number} was not fully synced. Skipping its blocks")
+        log_warning("Seems that the batch #{batch.number} was not fully synced. Skipping its blocks")
         {:error, []}
       end
     else
@@ -667,7 +669,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         {:error, []}
 
       {_, true} ->
-        Logger.info("All the blocks in the batch ##{batch.number} have been already confirmed by another transaction")
+        log_info("All the blocks in the batch ##{batch.number} have been already confirmed by another transaction")
         # Though the response differs from another `:ok` response in the function,
         # it is assumed that this case will be handled by the invoking function.
         {:ok, []}
@@ -679,7 +681,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
               batch.start_block
 
             value ->
-              Logger.info("Blocks up to ##{value} of the batch have been already confirmed by another transaction")
+              log_info("Blocks up to ##{value} of the batch have been already confirmed by another transaction")
               value + 1
           end
 
@@ -691,7 +693,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           # in two batches -- one batch has been already indexed, another one has not been yet.
           # Both cases should be handled in the same way - this confirmation must be postponed
           # until the case resolution.
-          Logger.warning(
+          log_warning(
             "Only #{unconfirmed_rollup_blocks_length} of #{rollup_block_num - first_unconfirmed_block_in_batch + 1} blocks found. Skipping the blocks from the batch #{batch.number}"
           )
 
@@ -726,7 +728,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   #   database.
   #   - `new_cache` contains the updated logs cache despite the error.
   defp check_if_batch_confirmed(batch, confirmation_desc, l1_outbox_config, cache) do
-    Logger.info(
+    log_info(
       "Use L1 blocks #{batch.commit_transaction.block_number}..#{confirmation_desc.l1_block_num - 1} to look for a rollup block confirmation within #{batch.start_block}..#{batch.end_block} of ##{batch.number}"
     )
 
@@ -753,7 +755,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           {:cont, {:ok, nil, new_cache}}
 
         {_, previous_confirmed_rollup_block} ->
-          Logger.info("Confirmed block ##{previous_confirmed_rollup_block} for the batch found")
+          log_info("Confirmed block ##{previous_confirmed_rollup_block} for the batch found")
           {:halt, {:ok, previous_confirmed_rollup_block, new_cache}}
       end
     end)
@@ -822,22 +824,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     {status, latest_block_confirmed} =
       logs
       |> Enum.reduce_while({:ok, nil}, fn event, _acc ->
-        Logger.info("Examining the transaction #{event["transactionHash"]}")
+        log_info("Examining the transaction #{event["transactionHash"]}")
 
         rollup_block_hash = send_root_updated_event_parse(event)
         rollup_block_num = Db.rollup_block_hash_to_num(rollup_block_hash)
 
         case rollup_block_num do
           nil ->
-            Logger.warning("The rollup block ##{rollup_block_hash} not found")
+            log_warning("The rollup block ##{rollup_block_hash} not found")
             {:halt, {:error, nil}}
 
           value when value >= rollup_start_block and value <= rollup_end_block ->
-            Logger.info("The rollup block ##{rollup_block_num} within the range")
+            log_info("The rollup block ##{rollup_block_num} within the range")
             {:halt, {:ok, rollup_block_num}}
 
           _ ->
-            Logger.info("The rollup block ##{rollup_block_num} outside of the range")
+            log_info("The rollup block ##{rollup_block_num} outside of the range")
             {:cont, {:ok, nil}}
         end
       end)
@@ -888,7 +890,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       end
 
     if length(logs) > 0 do
-      Logger.debug("Found #{length(logs)} SendRootUpdated logs")
+      log_debug("Found #{length(logs)} SendRootUpdated logs")
     end
 
     {logs, new_cache}
@@ -911,7 +913,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       # in two batches -- one batch has been already indexed, another one has not been yet.
       # Both cases should be handled in the same way - this confirmation must be postponed
       # until the case resolution.
-      Logger.warning("Skipping the blocks from the batch #{batch_number}")
+      log_warning("Skipping the blocks from the batch #{batch_number}")
       {:error, []}
     end
   end
@@ -929,7 +931,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             if block.block_number - 1 == value do
               {:cont, {block.block_number, true}}
             else
-              Logger.warning("A gap between blocks ##{value} and ##{block.block_number} found")
+              log_warning("A gap between blocks ##{value} and ##{block.block_number} found")
               {:halt, {block.block_number, false}}
             end
         end
