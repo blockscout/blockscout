@@ -604,6 +604,18 @@ defmodule Explorer.Chain.SmartContract do
 
   def compose_address_for_unverified_smart_contract(address_result, _hash, _options), do: address_result
 
+  def single_implementation_smart_contract_from_proxy(proxy_hash, options) do
+    {implementation_address_hashes, _} = Implementation.get_implementation(proxy_hash, options)
+
+    if implementation_address_hashes && Enum.count(implementation_address_hashes) == 1 do
+      implementation_address_hashes
+      |> Enum.at(0)
+      |> Proxy.implementation_to_smart_contract(options)
+    else
+      nil
+    end
+  end
+
   @doc """
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
   which were verified previously, returns a single t:SmartContract.t/0
@@ -934,8 +946,10 @@ defmodule Explorer.Chain.SmartContract do
     with true <- is_nil(current_smart_contract),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          true <- Chain.contract?(address) do
-      {implementation_address, implementation_address_fetched?} =
+      {implementation_smart_contract, implementation_address_fetched?} =
         if fetch_implementation? do
+          # todo:
+          # single_implementation_smart_contract_from_proxy
           {implementation_address_hash, _} =
             Implementation.get_implementation(
               %{
@@ -955,7 +969,7 @@ defmodule Explorer.Chain.SmartContract do
         end
 
       address_verified_bytecode_twin_contract =
-        implementation_address ||
+        implementation_smart_contract ||
           get_address_verified_bytecode_twin_contract(address_hash, options).verified_contract
 
       smart_contract =

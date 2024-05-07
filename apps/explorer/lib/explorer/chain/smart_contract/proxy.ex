@@ -82,12 +82,20 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       true
     else
       _ ->
-        {implementation_address_hash_string, _implementation_name} = get_implementation(smart_contract, options)
+        {implementation_address_hash_strings, _implementation_names} = get_implementation(smart_contract, options)
 
-        with false <- is_nil(implementation_address_hash_string),
-             {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
-             false <- implementation_address_hash.bytes == burn_address_hash.bytes do
-          true
+        with false <- is_nil(implementation_address_hash_strings),
+             false <- Enum.empty?(implementation_address_hash_strings) do
+          implementation_address_hash_strings
+          |> Enum.reduce_while(false, fn implementation_address_hash_string, acc ->
+            with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
+                 false <- implementation_address_hash.bytes == burn_address_hash.bytes do
+              {:halt, true}
+            else
+              _ ->
+                {:cont, acc}
+            end
+          end)
         else
           _ ->
             false
@@ -126,10 +134,14 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
     {implementation_address_hash_strings, _names} = get_implementation(smart_contract, options)
 
-    implementation_address_hash_strings
-    |> Enum.reduce([], fn implementation_address_hash_string, acc ->
-      SmartContract.get_smart_contract_abi(implementation_address_hash_string) ++ acc
-    end)
+    if implementation_address_hash_strings do
+      implementation_address_hash_strings
+      |> Enum.reduce([], fn implementation_address_hash_string, acc ->
+        SmartContract.get_smart_contract_abi(implementation_address_hash_string) ++ acc
+      end)
+    else
+      []
+    end
   end
 
   def get_implementation_abi_from_proxy(_, _), do: []

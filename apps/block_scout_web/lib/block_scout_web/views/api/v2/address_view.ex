@@ -95,17 +95,25 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
     is_proxy = AddressView.smart_contract_is_proxy?(address_with_smart_contract, @api_true)
 
-    {implementation_address, implementation_name} =
+    {implementation_addresses, implementation_names} =
       with true <- is_proxy,
-           {address, name} <-
+           {addresses, names} <-
              Implementation.get_implementation(address_with_smart_contract.smart_contract, @api_true),
-           false <- is_nil(address),
-           {:ok, address_hash} <- Chain.string_to_address_hash(address),
-           checksummed_address <- Address.checksum(address_hash) do
-        {checksummed_address, name}
+           false <- addresses && Enum.empty?(addresses) do
+        addresses
+        |> Enum.zip(names)
+        |> Enum.reduce({[], []}, fn {address, name}, {addresses, names} = acc ->
+          with {:ok, address_hash} <- Chain.string_to_address_hash(address),
+               checksummed_address <- Address.checksum(address_hash) do
+            {checksummed_address, name}
+            {[checksummed_address | addresses], [name | names]}
+          else
+            _ -> acc
+          end
+        end)
       else
         _ ->
-          {nil, nil}
+          {[], []}
       end
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
@@ -124,8 +132,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "token" => token,
       "coin_balance" => balance,
       "exchange_rate" => exchange_rate,
-      "implementation_name" => implementation_name,
-      "implementation_address" => implementation_address,
+      "implementation_name" => implementation_names,
+      "implementation_address" => implementation_addresses,
       "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
       "has_custom_methods_read" => read_custom_abi?,
       "has_custom_methods_write" => write_custom_abi?,

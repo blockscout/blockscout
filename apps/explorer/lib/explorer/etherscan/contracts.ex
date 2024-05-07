@@ -41,23 +41,24 @@ defmodule Explorer.Etherscan.Contracts do
               | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
             }
           else
-            {implementation_address_hash, _} =
-              Implementation.get_implementation(
-                %{
-                  updated: %SmartContract{
-                    address_hash: address_hash,
-                    abi: nil
-                  },
-                  implementation_updated_at: nil,
-                  implementation_address_fetched?: false,
-                  refetch_necessity_checked?: false
-                },
-                unverified_proxy_only?: true
-              )
+            # {implementation_address_hash, _} =
+            #   Implementation.get_implementation(
+            #     %{
+            #       updated: %SmartContract{
+            #         address_hash: address_hash,
+            #         abi: nil
+            #       },
+            #       implementation_updated_at: nil,
+            #       implementation_address_fetched?: false,
+            #       refetch_necessity_checked?: false
+            #     },
+            #     unverified_proxy_only?: true
+            #   )
 
             implementation_smart_contract =
-              implementation_address_hash
-              |> Proxy.implementation_to_smart_contract([])
+              SmartContract.single_implementation_smart_contract_from_proxy(address_hash, [
+                {:unverified_proxy_only?, true}
+              ])
 
             address_verified_bytecode_twin_contract =
               implementation_smart_contract || maybe_fetch_bytecode_twin(twin_needed?, address_hash)
@@ -95,7 +96,7 @@ defmodule Explorer.Etherscan.Contracts do
         smart_contract
         |> Map.put(:is_proxy, true)
         |> Map.put(
-          :implementation_address_hash_string,
+          :implementation_address_hash_strings,
           smart_contract
           |> Implementation.get_implementation()
           |> Tuple.to_list()
