@@ -8,7 +8,7 @@ defmodule Explorer.Repo.Migrations.AddProxyTypeColumn do
     )
 
     alter table(:proxy_implementations) do
-      add(:proxy_type, :proxy_type, null: false)
+      add(:proxy_type, :proxy_type, null: true)
     end
 
     create(index(:proxy_implementations, [:proxy_type]))
