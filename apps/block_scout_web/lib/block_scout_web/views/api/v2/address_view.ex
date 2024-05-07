@@ -7,8 +7,9 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Token.Instance
 
   @api_true [api?: true]
@@ -97,7 +98,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     {implementation_address, implementation_name} =
       with true <- is_proxy,
            {address, name} <-
-             SmartContract.get_implementation_address_hash(address_with_smart_contract.smart_contract, @api_true),
+             Implementation.get_implementation(address_with_smart_contract.smart_contract, @api_true),
            false <- is_nil(address),
            {:ok, address_hash} <- Chain.string_to_address_hash(address),
            checksummed_address <- Address.checksum(address_hash) do

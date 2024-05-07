@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
 
@@ -200,19 +201,14 @@ defmodule BlockScoutWeb.AddressView do
 
   def primary_name(%Address{names: _} = address) do
     with false <- is_nil(address.contract_code),
-         twin <- SmartContract.get_verified_twin_contract(address),
-         false <- is_nil(twin) do
-      twin.name
+         bytecode_twin <- SmartContract.get_verified_bytecode_twin_contract(address),
+         false <- is_nil(bytecode_twin) do
+      bytecode_twin.name
     else
       _ ->
         nil
     end
   end
-
-  def implementation_name(%Address{smart_contract: %{implementation_name: implementation_name}}),
-    do: implementation_name
-
-  def implementation_name(_), do: nil
 
   def primary_validator_metadata(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do
@@ -249,7 +245,7 @@ defmodule BlockScoutWeb.AddressView do
     |> Base.encode64()
   end
 
-  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
 
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
 

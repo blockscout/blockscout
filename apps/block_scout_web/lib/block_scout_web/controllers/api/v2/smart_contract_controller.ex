@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.SmartContract.{Reader, Writer}
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.ThirdPartyIntegrations.SolidityScan
@@ -102,7 +103,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
       implementation_address_hash_string =
         address.smart_contract
-        |> SmartContract.get_implementation_address_hash(@api_true)
+        |> Implementation.get_implementation(@api_true)
         |> Tuple.to_list()
         |> List.first() || burn_address_hash_string()
 
@@ -124,7 +125,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
       implementation_address_hash_string =
         address.smart_contract
-        |> SmartContract.get_implementation_address_hash(@api_true)
+        |> Implementation.get_implementation(@api_true)
         |> Tuple.to_list()
         |> List.first() || burn_address_hash_string()
 
@@ -204,7 +205,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:address, {:ok, address}} <- {:address, Chain.hash_to_address(address_hash)},
          {:is_smart_contract, true} <- {:is_smart_contract, Address.smart_contract?(address)},
-         smart_contract = SmartContract.address_hash_to_smart_contract_without_twin(address_hash, @api_true),
+         smart_contract = SmartContract.address_hash_to_smart_contract(address_hash, @api_true),
          {:is_verified_smart_contract, true} <- {:is_verified_smart_contract, !is_nil(smart_contract)},
          {:is_vyper_contract, false} <- {:is_vyper_contract, smart_contract.is_vyper_contract},
          response = SolidityScan.solidityscan_request(address_hash_string),
@@ -304,8 +305,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   defp validate_smart_contract(params, address_hash_string) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, smart_contract} when not is_nil(smart_contract) <-
-           {:not_found, SmartContract.address_hash_to_smart_contract(address_hash, @api_true)} do
+         {:not_found, {smart_contract, _}} when not is_nil(smart_contract) <-
+           {:not_found, SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, @api_true)} do
       {:ok, address_hash, smart_contract}
     end
   end

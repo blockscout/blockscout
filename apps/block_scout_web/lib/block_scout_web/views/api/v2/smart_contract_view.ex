@@ -11,7 +11,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
-  alias Explorer.Chain.SmartContract.Proxy.EIP1167
   alias Explorer.Visualize.Sol2uml
 
   require Logger
@@ -147,9 +146,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   # credo:disable-for-next-line
   def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address, conn) do
-    minimal_proxy_template = EIP1167.get_implementation_address(address.hash, @api_true)
-    bytecode_twin = SmartContract.get_address_verified_twin_contract(address.hash, @api_true)
-    metadata_for_verification = minimal_proxy_template || bytecode_twin.verified_contract
+    bytecode_twin = SmartContract.get_address_verified_bytecode_twin_contract(address.hash, @api_true)
+    minimal_proxy_address_hash = address.implementation
+    metadata_for_verification = address.implementation || bytecode_twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
     fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
     write_methods? = AddressView.smart_contract_with_write_functions?(address)
@@ -160,7 +159,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
 
     additional_sources =
-      additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin)
+      get_additional_sources(
+        smart_contract,
+        smart_contract_verified,
+        metadata_for_verification,
+        bytecode_twin
+      )
 
     visualize_sol2uml_enabled = Sol2uml.enabled?()
     target_contract = if smart_contract_verified, do: address.smart_contract, else: metadata_for_verification
@@ -183,14 +187,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "has_methods_read_proxy" => is_proxy,
       "has_methods_write_proxy" => is_proxy && write_methods?,
       "minimal_proxy_address_hash" =>
-        minimal_proxy_template && Address.checksum(metadata_for_verification.address_hash),
+        minimal_proxy_address_hash && Address.checksum(minimal_proxy_address_hash.address_hash),
       "sourcify_repo_url" =>
         if(address.smart_contract.verified_via_sourcify && smart_contract_verified,
           do: AddressContractView.sourcify_repo_url(address.hash, address.smart_contract.partially_verified)
         ),
       "can_be_visualized_via_sol2uml" =>
         visualize_sol2uml_enabled && !target_contract.is_vyper_contract && !is_nil(target_contract.abi),
-      "name" => target_contract && target_contract.name,
+      "name" => target_contract.name,
       "compiler_version" => target_contract.compiler_version,
       "optimization_enabled" => target_contract.optimization,
       "optimization_runs" => target_contract.optimization_runs,
@@ -199,7 +203,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "abi" => target_contract.abi,
       "source_code" => target_contract.contract_source_code,
       "file_path" => target_contract.file_path,
-      "additional_sources" => Enum.map(additional_sources, &prepare_additional_source/1),
+      "additional_sources" =>
+        (is_list(additional_sources) && Enum.map(additional_sources, &prepare_additional_source/1)) || [],
       "compiler_settings" => target_contract.compiler_settings,
       "external_libraries" => prepare_external_libraries(target_contract.external_libraries),
       "constructor_args" => if(smart_contract_verified, do: target_contract.constructor_arguments),
@@ -228,11 +233,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   @doc """
   Returns additional sources of the smart-contract or from bytecode twin or from implementation, if it fits minimal proxy pattern (EIP-1167)
   """
-  @spec additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil, %{
+  @spec get_additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil, %{
           :verified_contract => any(),
           :additional_sources => SmartContractAdditionalSource.t() | nil
-        }) :: [SmartContractAdditionalSource.t()]
-  def additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin) do
+        }) :: [SmartContractAdditionalSource.t()] | nil
+  def get_additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin) do
     cond do
       !is_nil(minimal_proxy_template) ->
         minimal_proxy_template.smart_contract_additional_sources

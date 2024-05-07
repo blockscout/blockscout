@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   alias ABI.{TypeDecoder, TypeEncoder}
   alias BlockScoutWeb.Models.UserFromAuth
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Address.Counters
 
   alias Explorer.Chain.{
@@ -122,7 +122,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       tx_hash = to_string(tx.hash)
       address_hash = Address.checksum(smart_contract.address_hash)
 
-      get_eip1967_implementation_non_zero_address()
+      implementation_address = insert(:address)
+      implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
+      TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(smart_contract.address_hash)}")
 
@@ -136,7 +138,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
                "creation_tx_hash" => ^tx_hash,
-               "implementation_address" => "0x0000000000000000000000000000000000000001"
+               "implementation_address" => ^implementation_address_hash_string
              } = json_response(request, 200)
     end
 
@@ -3308,43 +3310,4 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   def check_total(_, _, _), do: true
-
-  def get_eip1967_implementation_non_zero_address do
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                id: 0,
-                                                method: "eth_getStorageAt",
-                                                params: [
-                                                  _,
-                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                  "latest"
-                                                ]
-                                              },
-                                              _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
-    end)
-  end
 end
