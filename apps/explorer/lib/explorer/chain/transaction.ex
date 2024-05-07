@@ -1755,14 +1755,15 @@ defmodule Explorer.Chain.Transaction do
   """
   @spec where_transactions_to_from(Hash.Address.t()) :: any()
   def where_transactions_to_from(address_hash) do
-    {:ok, address} = Chain.hash_to_address(address_hash)
-
-    if Chain.contract?(address),
-      do: dynamic([transaction], transaction.to_address_hash == ^address_hash),
-      else:
+    with {:ok, address} <- Chain.hash_to_address(address_hash),
+         true <- Chain.contract?(address) do
+      dynamic([transaction], transaction.to_address_hash == ^address_hash)
+    else
+      _ ->
         dynamic(
           [transaction],
           transaction.from_address_hash == ^address_hash or transaction.to_address_hash == ^address_hash
         )
+    end
   end
 end
