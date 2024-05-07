@@ -1465,31 +1465,33 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio_blocks() :: Decimal.t()
   def indexed_ratio_blocks do
-    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
-      %{min: min_saved_block_number, max: max_saved_block_number} = BlockNumber.get_all()
+    case last_db_block_status() do
+      {:ok, _number, _timestamp} ->
+        %{min: min_saved_block_number, max: max_saved_block_number} = BlockNumber.get_all()
 
-      min_blockchain_block_number = Application.get_env(:indexer, :first_block)
+        min_blockchain_block_number = Application.get_env(:indexer, :first_block)
 
-      case {min_saved_block_number, max_saved_block_number} do
-        {0, 0} ->
-          Decimal.new(1)
+        case {min_saved_block_number, max_saved_block_number} do
+          {0, 0} ->
+            Decimal.new(1)
 
-        _ ->
-          divisor = max_saved_block_number - min_blockchain_block_number - BlockNumberHelper.null_rounds_count() + 1
+          _ ->
+            divisor = max_saved_block_number - min_blockchain_block_number - BlockNumberHelper.null_rounds_count() + 1
 
-          ratio = get_ratio(BlockCache.estimated_count(), divisor)
+            ratio = get_ratio(BlockCache.estimated_count(), divisor)
 
-          ratio
-          |> (&if(
-                greater_or_equal_0_99(&1) &&
-                  min_saved_block_number <= min_blockchain_block_number,
-                do: Decimal.new(1),
-                else: &1
-              )).()
-          |> format_indexed_ratio()
-      end
-    else
-      Decimal.new(1)
+            ratio
+            |> (&if(
+                  greater_or_equal_0_99(&1) &&
+                    min_saved_block_number <= min_blockchain_block_number,
+                  do: Decimal.new(1),
+                  else: &1
+                )).()
+            |> format_indexed_ratio()
+        end
+
+      _ ->
+        Decimal.new(1)
     end
   end
 

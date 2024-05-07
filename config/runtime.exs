@@ -239,12 +239,7 @@ config :explorer, :proxy,
   fallback_cached_implementation_data_ttl: :timer.seconds(4),
   implementation_data_fetching_timeout: :timer.seconds(2)
 
-config :explorer, Explorer.Chain.Events.Listener,
-  enabled:
-    if(disable_webapp? && disable_indexer?,
-      do: false,
-      else: true
-    )
+config :explorer, Explorer.Chain.Events.Listener, enabled: disable_indexer?
 
 precompiled_config_base_dir =
   case config_env() do

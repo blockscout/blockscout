@@ -67,11 +67,5 @@ defmodule BlockScoutWeb.Router do
 
   if Application.compile_env(:block_scout_web, WebRouter)[:enabled] do
     forward("/", BlockScoutWeb.WebRouter)
-  else
-    scope "/", BlockScoutWeb do
-      pipe_through(:browser)
-
-      forward("/", APIDocsController, :index)
-    end
   end
 end
