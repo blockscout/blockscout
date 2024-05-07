@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       end
 
       second_tx = :transaction |> insert() |> with_block()
-      insert_list(50, :token_transfer, transaction: second_tx)
+      insert_list(50, :token_transfer, transaction: second_tx, block_number: second_tx.block_number)
 
       request = get(conn, "/api/v2/advanced-filters")
       assert response = json_response(request, 200)

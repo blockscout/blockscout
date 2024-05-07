@@ -233,12 +233,10 @@ defmodule Explorer.Chain.AdvancedFilter do
            transaction_index: tx_index
          }
        }) do
-    query
-    |> where(
-      [transaction],
-      transaction.block_number < ^block_number or
-        (transaction.block_number == ^block_number and transaction.index < ^tx_index)
-    )
+    dynamic_condition =
+      dynamic(^page_block_number_dynamic(block_number) or ^page_tx_index_dynamic(block_number, tx_index))
+
+    query |> where(^dynamic_condition)
   end
 
   defp page_transactions(query, _), do: query
@@ -246,6 +244,7 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp internal_transactions_query(paging_options, options) do
     query =
       from(internal_transaction in InternalTransaction,
+        as: :internal_transaction,
         join: transaction in assoc(internal_transaction, :transaction),
         as: :transaction,
         join: from_address in assoc(internal_transaction, :from_address),
@@ -271,12 +270,24 @@ defmodule Explorer.Chain.AdvancedFilter do
            internal_transaction_index: nil
          }
        }) do
-    query
-    |> where(
-      as(:transaction).block_number < ^block_number or
-        (as(:transaction).block_number == ^block_number and as(:transaction).index < ^tx_index) or
-        (as(:transaction).block_number == ^block_number and as(:transaction).index == ^tx_index)
-    )
+    case {block_number, tx_index} do
+      {0, 0} ->
+        query |> where(as(:transaction).block_number == ^block_number and as(:transaction).index == ^tx_index)
+
+      {0, tx_index} ->
+        query
+        |> where(as(:transaction).block_number == ^block_number and as(:transaction).index <= ^tx_index)
+
+      {block_number, 0} ->
+        query |> where(as(:transaction).block_number < ^block_number)
+
+      _ ->
+        query
+        |> where(
+          as(:transaction).block_number < ^block_number or
+            (as(:transaction).block_number == ^block_number and as(:transaction).index <= ^tx_index)
+        )
+    end
   end
 
   defp page_internal_transactions(query, %PagingOptions{
@@ -286,14 +297,14 @@ defmodule Explorer.Chain.AdvancedFilter do
            internal_transaction_index: it_index
          }
        }) do
+    dynamic_condition =
+      dynamic(
+        ^page_block_number_dynamic(block_number) or ^page_tx_index_dynamic(block_number, tx_index) or
+          ^page_it_index_dynamic(block_number, tx_index, it_index)
+      )
+
     query
-    |> where(
-      [internal_transaction],
-      as(:transaction).block_number < ^block_number or
-        (as(:transaction).block_number == ^block_number and as(:transaction).index < ^tx_index) or
-        (as(:transaction).block_number == ^block_number and as(:transaction).index == ^tx_index and
-           internal_transaction.index < ^it_index)
-    )
+    |> where(^dynamic_condition)
   end
 
   defp page_internal_transactions(query, _), do: query
@@ -301,6 +312,7 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp token_transfers_query(paging_options, options) do
     query =
       from(token_transfer in TokenTransfer,
+        as: :token_transfer,
         join: transaction in assoc(token_transfer, :transaction),
         as: :transaction,
         join: token in assoc(token_transfer, :token),
@@ -328,13 +340,25 @@ defmodule Explorer.Chain.AdvancedFilter do
            internal_transaction_index: nil
          }
        }) do
-    query
-    |> where(
-      [token_transfer],
-      token_transfer.block_number < ^block_number or
-        (token_transfer.block_number == ^block_number and as(:transaction).index < ^tx_index) or
-        (token_transfer.block_number == ^block_number and as(:transaction).index == ^tx_index)
-    )
+    case {block_number, tx_index} do
+      {0, 0} ->
+        query |> where(as(:transaction).block_number == ^block_number and as(:transaction).index == ^tx_index)
+
+      {0, tx_index} ->
+        query
+        |> where([token_transfer], token_transfer.block_number == ^block_number and as(:transaction).index < ^tx_index)
+
+      {block_number, 0} ->
+        query |> where([token_transfer], token_transfer.block_number < ^block_number)
+
+      {block_number, tx_index} ->
+        query
+        |> where(
+          [token_transfer],
+          token_transfer.block_number < ^block_number or
+            (token_transfer.block_number == ^block_number and as(:transaction).index <= ^tx_index)
+        )
+    end
   end
 
   defp page_token_transfers(query, %PagingOptions{
@@ -344,12 +368,10 @@ defmodule Explorer.Chain.AdvancedFilter do
            token_transfer_index: nil
          }
        }) do
-    query
-    |> where(
-      [token_transfer],
-      token_transfer.block_number < ^block_number or
-        (token_transfer.block_number == ^block_number and as(:transaction).index < ^tx_index)
-    )
+    dynamic_condition =
+      dynamic(^page_block_number_dynamic(block_number) or ^page_tx_index_dynamic(block_number, tx_index))
+
+    query |> where(^dynamic_condition)
   end
 
   defp page_token_transfers(query, %PagingOptions{
@@ -358,15 +380,52 @@ defmodule Explorer.Chain.AdvancedFilter do
            token_transfer_index: tt_index
          }
        }) do
-    query
-    |> where(
-      [token_transfer],
-      token_transfer.block_number < ^block_number or
-        (token_transfer.block_number == ^block_number and token_transfer.log_index < ^tt_index)
-    )
+    dynamic_condition =
+      dynamic(^page_block_number_dynamic(block_number) or ^page_tt_index_dynamic(block_number, tt_index))
+
+    query |> where(^dynamic_condition)
   end
 
   defp page_token_transfers(query, _), do: query
+
+  defp page_block_number_dynamic(block_number) when block_number > 0 do
+    dynamic([transaction: tx], tx.block_number < ^block_number)
+  end
+
+  defp page_block_number_dynamic(_) do
+    dynamic(false)
+  end
+
+  defp page_tx_index_dynamic(block_number, tx_index) when tx_index > 0 do
+    dynamic([transaction: tx], tx.block_number == ^block_number and tx.index < ^tx_index)
+  end
+
+  defp page_tx_index_dynamic(_, _) do
+    dynamic(false)
+  end
+
+  defp page_it_index_dynamic(block_number, tx_index, it_index) when it_index > 0 do
+    dynamic(
+      [transaction: tx, internal_transaction: it],
+      tx.block_number == ^block_number and tx.index == ^tx_index and
+        it.index < ^it_index
+    )
+  end
+
+  defp page_it_index_dynamic(_, _, _) do
+    dynamic(false)
+  end
+
+  defp page_tt_index_dynamic(block_number, tt_index) when tt_index > 0 do
+    dynamic(
+      [token_transfer: tt],
+      tt.block_number == ^block_number and tt.log_index < ^tt_index
+    )
+  end
+
+  defp page_tt_index_dynamic(_, _) do
+    dynamic(false)
+  end
 
   defp limit_query(query, %PagingOptions{page_size: limit}) when is_integer(limit), do: limit(query, ^limit)
 
@@ -502,7 +561,7 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   @eth_decimals 1000_000_000_000_000_000
 
-  defp filter_transactions_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) do
+  defp filter_transactions_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) and from < to do
     query |> where([t], t.value / @eth_decimals >= ^from and t.value / @eth_decimals <= ^to)
   end
 
@@ -516,7 +575,7 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp filter_transactions_by_amount(query, _, _), do: query
 
-  defp filter_token_transfers_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) do
+  defp filter_token_transfers_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) and from < to do
     query
     |> where(
       [token_transfer],
