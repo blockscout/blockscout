@@ -1816,7 +1816,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         )
       end)
 
-      Bypass.expect_once(bypass, "POST", "api/v1/metadata", fn conn ->
+      Bypass.expect_once(bypass, "GET", "api/v1/metadata", fn conn ->
         Conn.resp(
           conn,
           200,
