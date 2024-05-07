@@ -126,14 +126,21 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
     read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
 
+    # todo: added for backward compatibility, remove when frontend unbound from these props
+    {implementation_address, implementation_name} =
+      single_implementation(implementation_addresses, implementation_names)
+
     Map.merge(base_info, %{
       "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
       "creation_tx_hash" => creation_tx,
       "token" => token,
       "coin_balance" => balance,
       "exchange_rate" => exchange_rate,
-      "implementation_name" => implementation_names,
-      "implementation_address" => implementation_addresses,
+      # todo: added for backward compatibility, remove when frontend unbound from these props
+      "implementation_name" => implementation_name,
+      "implementation_names" => implementation_names,
+      "implementation_address" => implementation_address,
+      "implementation_addresses" => implementation_addresses,
       "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
       "has_custom_methods_read" => read_custom_abi?,
       "has_custom_methods_write" => write_custom_abi?,
@@ -150,6 +157,24 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "watchlist_address_id" => Chain.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
       "has_beacon_chain_withdrawals" => Counters.check_if_withdrawals_at_address(address.hash, @api_true)
     })
+  end
+
+  defp single_implementation(implementation_addresses, implementation_names) do
+    implementation_name =
+      if implementation_names && !Enum.empty?(implementation_names) do
+        implementation_names |> Enum.at(0)
+      else
+        nil
+      end
+
+    implementation_address =
+      if implementation_addresses && !Enum.empty?(implementation_addresses) do
+        implementation_addresses |> Enum.at(0)
+      else
+        nil
+      end
+
+    {implementation_address, implementation_name}
   end
 
   @spec prepare_token_balance(Chain.Address.TokenBalance.t(), boolean()) :: map()

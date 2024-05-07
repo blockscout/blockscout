@@ -948,22 +948,23 @@ defmodule Explorer.Chain.SmartContract do
          true <- Chain.contract?(address) do
       {implementation_smart_contract, implementation_address_fetched?} =
         if fetch_implementation? do
-          # todo:
-          # single_implementation_smart_contract_from_proxy
-          {implementation_address_hash, _} =
-            Implementation.get_implementation(
+          implementation_smart_contract =
+            SmartContract.single_implementation_smart_contract_from_proxy(
               %{
-                updated: %__MODULE__{
-                  address_hash: address_hash
+                updated: %SmartContract{
+                  address_hash: address_hash,
+                  abi: nil
                 },
                 implementation_updated_at: nil,
                 implementation_address_fetched?: false,
                 refetch_necessity_checked?: false
               },
-              Keyword.put(options, :unverified_proxy_only?, true)
+              [
+                {:unverified_proxy_only?, true}
+              ]
             )
 
-          {implementation_address_hash |> Proxy.implementation_to_smart_contract(options), true}
+          {implementation_smart_contract, true}
         else
           {nil, false}
         end

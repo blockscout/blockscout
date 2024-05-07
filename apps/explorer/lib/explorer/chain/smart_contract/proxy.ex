@@ -44,23 +44,19 @@ defmodule Explorer.Chain.SmartContract.Proxy do
           {String.t() | nil | :empty, String.t() | nil | :empty}
   def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, options)
       when not is_nil(proxy_address_hash) do
-    %{implementation_address_hash_strings: [implementation_address_hash_string], proxy_type: proxy_type} =
+    %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: proxy_type} =
       if options[:unverified_proxy_only?] do
         get_implementation_address_hash_string_for_non_verified_proxy(proxy_address_hash)
       else
         get_implementation_address_hash_string(proxy_address_hash, proxy_abi)
       end
 
-    if implementation_address_hash_string !== :error do
-      save_implementation_data(
-        implementation_address_hash_string,
-        proxy_address_hash,
-        proxy_type,
-        options
-      )
-    else
-      {nil, nil}
-    end
+    save_implementation_data(
+      implementation_address_hash_strings,
+      proxy_address_hash,
+      proxy_type,
+      options
+    )
   end
 
   def fetch_implementation_address_hash(_, _, _) do

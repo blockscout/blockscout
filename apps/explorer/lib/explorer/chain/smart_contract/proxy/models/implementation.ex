@@ -178,7 +178,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       case Task.yield(get_implementation_address_hash_task, timeout) ||
              Task.ignore(get_implementation_address_hash_task) do
         {:ok, {:empty, :empty}} ->
-          {nil, nil}
+          {[], []}
 
         {:ok, {address_hash, _name} = result} when not is_nil(address_hash) ->
           result
@@ -193,7 +193,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     end
   end
 
-  def get_implementation(_, _), do: {nil, nil}
+  def get_implementation(_, _), do: {[], []}
 
   defp fetch_implementation?(implementation_address_fetched?, refetch_necessity_checked?, implementation_updated_at) do
     (!implementation_address_fetched? || !refetch_necessity_checked?) &&
@@ -264,15 +264,38 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   @doc """
   Saves proxy's implementation into the DB
   """
-  @spec save_implementation_data(String.t() | nil, Hash.Address.t(), atom() | nil, Keyword.t()) ::
-          {nil, nil} | {[String.t()], [String.t() | nil]}
+  @spec save_implementation_data([String.t()], Hash.Address.t(), atom() | nil, Keyword.t()) ::
+          {:empty, :empty} | {[String.t()], [String.t()]}
+  def save_implementation_data(:error, _proxy_address_hash, _proxy_type, _options) do
+    {:empty, :empty}
+  end
+
+  def save_implementation_data(implementation_address_hash_strings, proxy_address_hash, proxy_type, options)
+      when is_nil(implementation_address_hash_strings) or
+             implementation_address_hash_strings == [] do
+    upsert_implementation(proxy_address_hash, proxy_type, [], [], options)
+
+    {:empty, :empty}
+  end
+
   def save_implementation_data(
-        implementation_address_hash_string,
+        [empty_implementation_address_hash_string],
         proxy_address_hash,
         proxy_type,
         options
       )
-      when is_nil(implementation_address_hash_string) or is_burn_signature(implementation_address_hash_string) do
+      when is_burn_signature(empty_implementation_address_hash_string) do
+    upsert_implementation(proxy_address_hash, proxy_type, nil, nil, options)
+
+    {:empty, :empty}
+  end
+
+  def save_implementation_data(
+        [],
+        proxy_address_hash,
+        proxy_type,
+        options
+      ) do
     upsert_implementation(proxy_address_hash, proxy_type, nil, nil, options)
 
     {:empty, :empty}
@@ -284,10 +307,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         proxy_type,
         options
       ) do
-    raw_implementations = implementation_address_hash_strings
-
     {implementation_addresses, implementation_names} =
-      raw_implementations
+      implementation_address_hash_strings
       |> Enum.map(fn implementation_address_hash_string ->
         with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
              {:implementation, {%SmartContract{name: name}, _}} <- {
@@ -372,20 +393,20 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   defp db_implementation_data_converter(other), do: to_string(other)
 
   @doc """
-  Returns proxy's implementation name
+  Returns proxy's implementation names
   """
-  @spec name(Address.t() | nil) :: String.t() | nil
-  def name(_proxy_address, options \\ [])
+  @spec names(Address.t() | nil) :: String.t() | [String.t()]
+  def names(_proxy_address, options \\ [])
 
-  def name(proxy_address, options) when not is_nil(proxy_address) do
+  def names(proxy_address, options) when not is_nil(proxy_address) do
     proxy_implementations = get_proxy_implementations(proxy_address.hash, options)
 
     if proxy_implementations && not Enum.empty?(proxy_implementations.names) do
       proxy_implementations.names
     else
-      nil
+      []
     end
   end
 
-  def name(_, _), do: nil
+  def names(_, _), do: []
 end
