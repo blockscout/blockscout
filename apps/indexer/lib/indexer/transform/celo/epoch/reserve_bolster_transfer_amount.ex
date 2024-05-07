@@ -1,4 +1,4 @@
-defmodule Indexer.Transform.Celo.Epoch.ReservedBolsterTransferAmount do
+defmodule Indexer.Transform.Celo.Epoch.ReserveBolsterTransferAmount do
   @moduledoc """
   Extracts the amount transfered to `Reserve`.
   """
