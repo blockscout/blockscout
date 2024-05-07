@@ -163,7 +163,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
       {:ok, addr} = Chain.hash_to_address(twin_address.hash)
       bytecode_twin = addr.smart_contract
 
-      implementation_smart_contract = insert(:smart_contract, name: "implementation")
+      _implementation_smart_contract = insert(:smart_contract, name: "implementation")
 
       # fetch nil implementation
       assert {nil, nil} = Implementation.get_implementation(bytecode_twin)
