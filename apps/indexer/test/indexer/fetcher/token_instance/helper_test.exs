@@ -3,6 +3,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.Token.Instance
+  alias Explorer.Repo
   alias EthereumJSONRPC.Encoder
   alias Indexer.Fetcher.TokenInstance.Helper
   alias Plug.Conn
@@ -15,6 +16,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
   setup do
     bypass = Bypass.open()
 
+    on_exit(fn -> Bypass.down(bypass) end)
     {:ok, bypass: bypass}
   end
 
@@ -310,6 +312,73 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
                   }
                 }}
              ] = Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 300_067_000_000_000_000}])
+    end
+
+    test "check that decoding error is stored in error, not in metadata", %{bypass: bypass} do
+      json = """
+      invalid json
+      {
+        "name": "Sérgio Mendonça {id}"
+      }
+      """
+
+      encoded_url =
+        "0x" <>
+          (ABI.TypeEncoder.encode(["http://localhost:#{bypass.port}/api/card/{id}"], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data:
+                                        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             result: encoded_url
+           }
+         ]}
+      end)
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/card/0000000000000000000000000000000000000000000000000000000000000309",
+        fn conn ->
+          Conn.resp(conn, 200, json)
+        end
+      )
+
+      insert(:token,
+        contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+        type: "ERC-1155"
+      )
+
+      Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 777}])
+
+      %Instance{
+        metadata: nil,
+        error: "wrong metadata type"
+      } = 777 |> Instance.token_instance_query("0x5caebd3b32e210e85ce3e9d51638b9c445481567") |> Repo.one()
     end
   end
 end
