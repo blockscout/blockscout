@@ -180,6 +180,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         {:ok, {:empty, :empty}} ->
           {[], []}
 
+        {:ok, {:error, :error}} ->
+          {db_implementation_data_converter(implementation_address_hash_from_db),
+           db_implementation_data_converter(implementation_name_from_db)}
+
         {:ok, {address_hash, _name} = result} when not is_nil(address_hash) ->
           result
 
@@ -265,9 +269,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   Saves proxy's implementation into the DB
   """
   @spec save_implementation_data([String.t()], Hash.Address.t(), atom() | nil, Keyword.t()) ::
-          {:empty, :empty} | {[String.t()], [String.t()]}
+          {[String.t()], [String.t()]} | {:empty, :empty} | {:error, :error}
   def save_implementation_data(:error, _proxy_address_hash, _proxy_type, _options) do
-    {:empty, :empty}
+    {:error, :error}
   end
 
   def save_implementation_data(implementation_address_hash_strings, proxy_address_hash, proxy_type, options)
@@ -285,7 +289,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         options
       )
       when is_burn_signature(empty_implementation_address_hash_string) do
-    upsert_implementation(proxy_address_hash, proxy_type, nil, nil, options)
+    upsert_implementation(proxy_address_hash, proxy_type, [], [], options)
 
     {:empty, :empty}
   end
@@ -296,7 +300,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         proxy_type,
         options
       ) do
-    upsert_implementation(proxy_address_hash, proxy_type, nil, nil, options)
+    upsert_implementation(proxy_address_hash, proxy_type, [], [], options)
 
     {:empty, :empty}
   end
@@ -378,10 +382,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   defp prepare_value(value) when is_list(value) do
     value
-  end
-
-  defp prepare_value(value) do
-    (value && [value]) || []
   end
 
   defp db_implementation_data_converter(nil), do: nil

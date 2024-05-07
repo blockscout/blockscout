@@ -1206,21 +1206,7 @@ defmodule Explorer.Chain do
   end
 
   defp add_implementation_and_bytecode_twin_to_result(address_result, implementation_address_hashes, hash, options) do
-    # implementation_smart_contract =
-    #   implementation_address_hash
-    #   |> Proxy.implementation_to_smart_contract(options)
-
-    # address_verified_bytecode_twin_contract =
-    #   implementation_smart_contract ||
-    #     SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
-
-    # address_result
-    # |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
-    # |> (&if(is_nil(implementation_smart_contract),
-    #       do: &1,
-    #       else: SmartContract.add_implementation_info_to_contract(&1, implementation_address_hash)
-    #     )).()
-
+    # implementation is added only in the case when mapping proxy to implementation is 1:1 (excluding Diamond proxy)
     {implementation_smart_contract, implementation_address_hash} =
       if implementation_address_hashes && Enum.count(implementation_address_hashes) == 1 do
         implementation_address_hash = implementation_address_hashes |> Enum.at(0)

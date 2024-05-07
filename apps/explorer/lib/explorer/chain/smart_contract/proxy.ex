@@ -41,7 +41,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   Fetches into DB proxy contract implementation's address and name from different proxy patterns
   """
   @spec fetch_implementation_address_hash(Hash.Address.t(), list(), options) ::
-          {String.t() | nil | :empty, String.t() | nil | :empty}
+          {[String.t()] | :empty | :error, [String.t()] | :empty | :error}
   def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, options)
       when not is_nil(proxy_address_hash) do
     %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: proxy_type} =
@@ -60,7 +60,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   end
 
   def fetch_implementation_address_hash(_, _, _) do
-    {nil, nil}
+    {:empty, :empty}
   end
 
   @doc """
