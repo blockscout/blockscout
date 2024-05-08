@@ -886,7 +886,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       from(
         fb in FullBlock,
         inner_join: rb in BatchBlock,
-        on: fb.hash == rb.hash,
+        on: fb.number == rb.block_number,
         select: fb,
         where: fb.consensus == true and rb.batch_number == ^batch_number
       )

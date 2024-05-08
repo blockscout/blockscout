@@ -121,7 +121,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                           elem(
                             quote do
                               has_one(:arbitrum_batch_transaction, ArbitrumBatchTransaction,
-                                foreign_key: :hash,
+                                foreign_key: :tx_hash,
                                 references: :hash
                               )
 
@@ -129,8 +129,8 @@ defmodule Explorer.Chain.Transaction.Schema do
                               has_one(:arbitrum_commit_transaction, through: [:arbitrum_batch, :commit_transaction])
 
                               has_one(:arbitrum_batch_block, ArbitrumBatchBlock,
-                                foreign_key: :hash,
-                                references: :block_hash
+                                foreign_key: :block_number,
+                                references: :block_number
                               )
 
                               has_one(:arbitrum_confirm_transaction,

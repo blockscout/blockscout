@@ -246,7 +246,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     transactions_plus_one =
       batch_number
       |> batch_transactions_fun.(@api_true)
-      |> Enum.map(fn tx -> tx.hash end)
+      |> Enum.map(fn tx -> tx.tx_hash end)
       |> Chain.hashes_to_transactions(full_options)
 
     {transactions, next_page} = split_list_by_page(transactions_plus_one)

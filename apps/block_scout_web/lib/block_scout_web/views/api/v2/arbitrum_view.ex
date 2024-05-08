@@ -316,7 +316,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     case associated_l1_tx do
       nil -> nil
       %Ecto.Association.NotLoaded{} -> nil
-      value -> %{hash: value.hash, block: value.block, ts: value.timestamp, status: value.status}
+      value -> %{hash: value.hash, block: value.block_number, ts: value.timestamp, status: value.status}
     end
   end
 

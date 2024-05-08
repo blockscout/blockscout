@@ -43,7 +43,7 @@ defmodule Explorer.Chain.Block.Schema do
                         :arbitrum ->
                           elem(
                             quote do
-                              has_one(:arbitrum_batch_block, ArbitrumBatchBlock, foreign_key: :hash, references: :hash)
+                              has_one(:arbitrum_batch_block, ArbitrumBatchBlock, foreign_key: :block_number, references: :number)
                               has_one(:arbitrum_batch, through: [:arbitrum_batch_block, :batch])
                               has_one(:arbitrum_commit_transaction, through: [:arbitrum_batch, :commit_transaction])
 
