@@ -16,8 +16,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     thereby enriching the lifecycle transaction data.
   """
 
-  import EthereumJSONRPC,
-    only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
 
@@ -93,7 +94,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     end_block = min(start_block + l1_rpc_config.logs_block_range - 1, latest_block)
 
     if start_block <= end_block do
-      Logger.info("Block range for new l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
+      log_info("Block range for new l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
 
       discover(outbox_address, start_block, end_block, l1_rpc_config)
 
@@ -156,7 +157,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     if end_block >= l1_rollup_init_block do
       start_block = max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
 
-      Logger.info("Block range for historical l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
+      log_info("Block range for historical l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
 
       discover(outbox_address, start_block, end_block, l1_rpc_config)
 
@@ -200,7 +201,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     {lifecycle_txs, executions} = get_executions_from_logs(logs, l1_rpc_config)
 
     unless executions == [] do
-      Logger.info("Executions for #{length(executions)} L2 messages will be imported")
+      log_info("Executions for #{length(executions)} L2 messages will be imported")
 
       {:ok, _} =
         Chain.import(%{
@@ -218,7 +219,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     messages = get_relayed_messages(end_block)
 
     unless messages == [] do
-      Logger.info("Marking #{length(messages)} l2-to-l1 messages as completed")
+      log_info("Marking #{length(messages)} l2-to-l1 messages as completed")
 
       {:ok, _} =
         Chain.import(%{
@@ -241,7 +242,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       )
 
     if length(logs) > 0 do
-      Logger.debug("Found #{length(logs)} OutBoxTransactionExecuted logs")
+      log_debug("Found #{length(logs)} OutBoxTransactionExecuted logs")
     end
 
     logs
@@ -341,7 +342,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
           Map.put(
             lifecycle_txs,
             l1_tx_hash,
-            %{hash: l1_tx_hash, block: l1_blk_num}
+            %{hash: l1_tx_hash, block_number: l1_blk_num}
           )
 
         updated_blocks_requests =
@@ -351,7 +352,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
             BlockByNumber.request(%{id: 0, number: l1_blk_num}, false, true)
           )
 
-        Logger.debug("Execution for L2 message ##{msg_id} found in #{l1_tx_hash_raw}")
+        log_debug("Execution for L2 message ##{msg_id} found in #{l1_tx_hash_raw}")
 
         {updated_executions, updated_lifecycle_txs, updated_blocks_requests}
       end)
@@ -390,7 +391,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     if Enum.empty?(confirmed_messages) do
       []
     else
-      Logger.debug("Identified #{length(confirmed_messages)} l2-to-l1 messages already confirmed but not completed")
+      log_debug("Identified #{length(confirmed_messages)} l2-to-l1 messages already confirmed but not completed")
 
       messages_map =
         confirmed_messages

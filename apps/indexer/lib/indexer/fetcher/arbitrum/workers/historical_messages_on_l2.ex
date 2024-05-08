@@ -10,6 +10,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   transactions.
   """
 
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1]
+
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
   alias EthereumJSONRPC.Transaction, as: TransactionByRPC
 
@@ -76,7 +78,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     if Db.indexed_blocks?(start_block, end_block) do
       do_discover_historical_messages_from_l2(start_block, end_block)
     else
-      Logger.warning(
+      log_warning(
         "Not able to discover historical messages from L2, some blocks in #{start_block}..#{end_block} not indexed"
       )
 
@@ -101,14 +103,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   # - `{:ok, start_block}`: A tuple indicating successful processing, returning the initial
   #                         starting block number.
   defp do_discover_historical_messages_from_l2(start_block, end_block) do
-    Logger.info("Block range for discovery historical messages from L2: #{start_block}..#{end_block}")
+    log_info("Block range for discovery historical messages from L2: #{start_block}..#{end_block}")
 
     logs = Db.l2_to_l1_logs(start_block, end_block)
 
     unless logs == [] do
       messages =
         logs
-        |> Messaging.handle_filtered_l2_to_l1_messages()
+        |> Messaging.handle_filtered_l2_to_l1_messages(__MODULE__)
 
       import_to_db(messages)
     end
@@ -176,7 +178,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     if Db.indexed_blocks?(start_block, end_block) do
       do_discover_historical_messages_to_l2(start_block, end_block, config)
     else
-      Logger.warning(
+      log_warning(
         "Not able to discover historical messages to L2, some blocks in #{start_block}..#{end_block} not indexed"
       )
 
@@ -205,7 +207,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
          end_block,
          %{rollup_rpc: %{chunk_size: chunk_size, json_rpc_named_arguments: json_rpc_named_arguments}} = _config
        ) do
-    Logger.info("Block range for discovery historical messages to L2: #{start_block}..#{end_block}")
+    log_info("Block range for discovery historical messages to L2: #{start_block}..#{end_block}")
 
     {messages, _} =
       start_block..end_block
@@ -241,7 +243,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
       end)
 
     unless messages == [] do
-      Logger.info("#{length(messages)} completions of L1-to-L2 messages will be imported")
+      log_info("#{length(messages)} completions of L1-to-L2 messages will be imported")
     end
 
     import_to_db(messages)

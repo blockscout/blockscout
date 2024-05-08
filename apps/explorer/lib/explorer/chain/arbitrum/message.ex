@@ -1,5 +1,13 @@
 defmodule Explorer.Chain.Arbitrum.Message do
-  @moduledoc "Models an L1<->L2 messages on Arbitrum."
+  @moduledoc """
+    Models an L1<->L2 messages on Arbitrum.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Arbitrum.Messages
+
+    Migrations:
+    - Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables
+  """
 
   use Explorer.Schema
 

@@ -199,7 +199,35 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     create_or_update_smart_contract(address_hash, attrs)
   end
 
-  defp create_or_update_smart_contract(address_hash, attrs) do
+  @doc """
+    Creates or updates a smart contract record based on its verification status.
+
+    This function first checks if a smart contract associated with the provided address hash
+    is already verified. If verified, it updates the existing smart contract record with the
+    new attributes provided, such as external libraries and secondary sources. During the update,
+    the contract methods are also updated: existing methods are preserved, and any new methods
+    from the provided ABI are added to ensure the contract's integrity and completeness.
+
+    If the smart contract is not verified, it creates a new record in the database with the
+    provided attributes, setting it up for verification. In this case, all contract methods
+    from the ABI are freshly inserted as part of the new smart contract creation.
+
+    ## Parameters
+    - `address_hash`: The hash of the address for the smart contract.
+    - `attrs`: A map containing attributes such as external libraries and secondary sources.
+
+    ## Returns
+    - `{:ok, Explorer.Chain.SmartContract.t()}`: Successfully created or updated smart
+      contract.
+    - `{:error, data}`: on failure, returning `Ecto.Changeset.t()` or, if any issues
+      happen during setting the address as verified, an error message.
+  """
+  @spec create_or_update_smart_contract(binary() | Explorer.Chain.Hash.t(), %{
+          :external_libraries => list(),
+          :secondary_sources => list(),
+          optional(any()) => any()
+        }) :: {:error, Ecto.Changeset.t() | String.t()} | {:ok, Explorer.Chain.SmartContract.t()}
+  def create_or_update_smart_contract(address_hash, attrs) do
     Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
 
     if SmartContract.verified?(address_hash) do

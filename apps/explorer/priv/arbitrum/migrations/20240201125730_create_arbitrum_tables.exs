@@ -29,16 +29,22 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
+    create(index(:arbitrum_crosslevel_messages, :status))
+    create(index(:arbitrum_crosslevel_messages, :originating_tx_blocknum))
+    create(index(:arbitrum_crosslevel_messages, :completion_tx_hash))
+
     create table(:arbitrum_lifecycle_l1_transactions, primary_key: false) do
       add(:id, :integer, null: false, primary_key: true)
       add(:hash, :bytea, null: false)
-      add(:block, :integer, null: false)
+      add(:block_number, :integer, null: false)
       add(:timestamp, :"timestamp without time zone", null: false)
       add(:status, :l1_tx_status, null: false)
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
     create(unique_index(:arbitrum_lifecycle_l1_transactions, :hash))
+    create(index(:arbitrum_lifecycle_l1_transactions, :block_number))
+    create(index(:arbitrum_lifecycle_l1_transactions, :status))
 
     create table(:arbitrum_l1_executions, primary_key: false) do
       add(:message_id, :integer, null: false, primary_key: true)
@@ -87,11 +93,17 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
         null: true
       )
 
-      add(:hash, :bytea, null: false, primary_key: true)
+      # Although it is possible to recover the block number from the block hash,
+      # it is more efficient to store it directly
+      # There could be no DB inconsistencies with `blocks` table caused be re-orgs
+      # because the blocks will appear in the table `arbitrum_batch_l2_blocks`
+      # only when they are included in the batch.
+      add(:block_number, :integer, null: false, primary_key: true)
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
     create(index(:arbitrum_batch_l2_blocks, :batch_number))
+    create(index(:arbitrum_batch_l2_blocks, :confirm_id))
 
     create table(:arbitrum_batch_l2_transactions, primary_key: false) do
       add(
@@ -105,18 +117,7 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
         null: false
       )
 
-      add(
-        :block_hash,
-        references(:arbitrum_batch_l2_blocks,
-          column: :hash,
-          on_delete: :delete_all,
-          on_update: :update_all,
-          type: :bytea
-        ),
-        null: false
-      )
-
-      add(:hash, :bytea, null: false, primary_key: true)
+      add(:tx_hash, :bytea, null: false, primary_key: true)
       timestamps(null: false, type: :utc_datetime_usec)
     end
 

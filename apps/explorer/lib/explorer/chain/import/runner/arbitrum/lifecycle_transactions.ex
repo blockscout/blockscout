@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.Arbitrum.LifecycleTransactions do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Arbitrum.LifecycleTransaction.t/0`.
+    Bulk imports of Explorer.Chain.Arbitrum.LifecycleTransaction.
   """
 
   require Ecto.Query
@@ -89,7 +89,7 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.LifecycleTransactions do
           # don't update `id` as it is a primary key
           # don't update `hash` as it is a unique index and used for the conflict target
           timestamp: fragment("EXCLUDED.timestamp"),
-          block: fragment("EXCLUDED.block"),
+          block_number: fragment("EXCLUDED.block_number"),
           status: fragment("GREATEST(?, EXCLUDED.status)", tx.status),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tx.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tx.updated_at)
@@ -97,9 +97,9 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.LifecycleTransactions do
       ],
       where:
         fragment(
-          "(EXCLUDED.timestamp, EXCLUDED.block, EXCLUDED.status) IS DISTINCT FROM (?, ?, ?)",
+          "(EXCLUDED.timestamp, EXCLUDED.block_number, EXCLUDED.status) IS DISTINCT FROM (?, ?, ?)",
           tx.timestamp,
-          tx.block,
+          tx.block_number,
           tx.status
         )
     )

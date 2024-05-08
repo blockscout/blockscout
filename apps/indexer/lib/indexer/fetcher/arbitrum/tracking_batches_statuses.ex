@@ -97,7 +97,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
      %{
        config: %{
          l1_rpc: %{
-           json_rpc_named_arguments: IndexerHelper.build_json_rpc_named_arguments(l1_rpc),
+           json_rpc_named_arguments: IndexerHelper.json_rpc_named_arguments(l1_rpc),
            logs_block_range: l1_rpc_block_range,
            chunk_size: l1_rpc_chunk_size,
            track_finalization: track_l1_tx_finalization,

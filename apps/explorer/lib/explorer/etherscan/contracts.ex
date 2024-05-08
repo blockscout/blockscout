@@ -14,7 +14,7 @@ defmodule Explorer.Etherscan.Contracts do
   alias Explorer.Repo
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Chain.SmartContract.Proxy.EIP1167
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @doc """
     Returns address with preloaded SmartContract and proxy info if it exists
@@ -41,12 +41,30 @@ defmodule Explorer.Etherscan.Contracts do
               | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
             }
           else
-            address_verified_twin_contract =
-              EIP1167.get_implementation_address(address_hash) || maybe_fetch_twin(twin_needed?, address_hash)
+            {implementation_address_hash, _} =
+              Implementation.get_implementation(
+                %{
+                  updated: %SmartContract{
+                    address_hash: address_hash,
+                    abi: nil
+                  },
+                  implementation_updated_at: nil,
+                  implementation_address_fetched?: false,
+                  refetch_necessity_checked?: false
+                },
+                unverified_proxy_only?: true
+              )
+
+            implementation_smart_contract =
+              implementation_address_hash
+              |> Proxy.implementation_to_smart_contract([])
+
+            address_verified_bytecode_twin_contract =
+              implementation_smart_contract || maybe_fetch_bytecode_twin(twin_needed?, address_hash)
 
             compose_address_with_smart_contract(
               address_with_smart_contract,
-              address_verified_twin_contract
+              address_verified_bytecode_twin_contract
             )
           end
       end
@@ -55,16 +73,16 @@ defmodule Explorer.Etherscan.Contracts do
     |> append_proxy_info()
   end
 
-  defp maybe_fetch_twin(twin_needed?, address_hash),
-    do: if(twin_needed?, do: SmartContract.get_address_verified_twin_contract(address_hash).verified_contract)
+  defp maybe_fetch_bytecode_twin(twin_needed?, address_hash),
+    do: if(twin_needed?, do: SmartContract.get_address_verified_bytecode_twin_contract(address_hash).verified_contract)
 
-  defp compose_address_with_smart_contract(address_with_smart_contract, address_verified_twin_contract) do
-    if address_verified_twin_contract do
-      formatted_code = format_source_code_output(address_verified_twin_contract)
+  defp compose_address_with_smart_contract(address_with_smart_contract, address_verified_bytecode_twin_contract) do
+    if address_verified_bytecode_twin_contract do
+      formatted_code = format_source_code_output(address_verified_bytecode_twin_contract)
 
       %{
         address_with_smart_contract
-        | smart_contract: %{address_verified_twin_contract | contract_source_code: formatted_code}
+        | smart_contract: %{address_verified_bytecode_twin_contract | contract_source_code: formatted_code}
       }
     else
       address_with_smart_contract
@@ -79,7 +97,7 @@ defmodule Explorer.Etherscan.Contracts do
         |> Map.put(
           :implementation_address_hash_string,
           smart_contract
-          |> SmartContract.get_implementation_address_hash()
+          |> Implementation.get_implementation()
           |> Tuple.to_list()
           |> List.first()
         )

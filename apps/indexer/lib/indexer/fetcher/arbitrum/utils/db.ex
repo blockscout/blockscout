@@ -5,6 +5,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
   import Ecto.Query, only: [from: 2]
 
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Arbitrum.Reader
   alias Explorer.Chain.Block, as: FullBlock
@@ -52,7 +54,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
     # Get the next index for the first new transaction based
     # on the indices existing in DB
-    l1_tx_next_id = Reader.next_id()
+    l1_tx_next_id = Reader.next_lifecycle_transaction_id()
 
     # Assign new indices for the transactions which are not in
     # the l1 transactions table yet
@@ -90,7 +92,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_committed_batch() do
       nil ->
-        Logger.warning("No committed batches found in DB")
+        log_warning("No committed batches found in DB")
         value_if_nil
 
       value ->
@@ -114,7 +116,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_earliest_committed_batch() do
       nil ->
-        Logger.warning("No committed batches found in DB")
+        log_warning("No committed batches found in DB")
         value_if_nil
 
       value ->
@@ -156,7 +158,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_discovered_message_to_l2() do
       nil ->
-        Logger.warning("No messages to L2 found in DB")
+        log_warning("No messages to L2 found in DB")
         value_if_nil
 
       value ->
@@ -180,7 +182,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_earliest_discovered_message_to_l2() do
       nil ->
-        Logger.warning("No messages to L2 found in DB")
+        log_warning("No messages to L2 found in DB")
         value_if_nil
 
       value ->
@@ -204,7 +206,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.rollup_block_of_earliest_discovered_message_from_l2() do
       nil ->
-        Logger.warning("No messages from L2 found in DB")
+        log_warning("No messages from L2 found in DB")
         value_if_nil
 
       value ->
@@ -230,7 +232,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         # In theory it could be a situation when when the earliest message points
         # to a completion transaction which is not indexed yet. In this case, this
         # warning will occur.
-        Logger.warning("No completed messages to L2 found in DB")
+        log_warning("No completed messages to L2 found in DB")
         value_if_nil
 
       value ->
@@ -254,7 +256,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_confirmed_block() do
       nil ->
-        Logger.warning("No confirmed blocks found in DB")
+        log_warning("No confirmed blocks found in DB")
         value_if_nil
 
       value ->
@@ -298,7 +300,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_execution() do
       nil ->
-        Logger.warning("No L1 executions found in DB")
+        log_warning("No L1 executions found in DB")
         value_if_nil
 
       value ->
@@ -323,7 +325,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_earliest_execution() do
       nil ->
-        Logger.warning("No L1 executions found in DB")
+        log_warning("No L1 executions found in DB")
         value_if_nil
 
       value ->
@@ -352,9 +354,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       )
 
     query
-    |> Chain.join_associations(%{
-      :transactions => :optional
-    })
+    # :optional is used since a block may not have any transactions
+    |> Chain.join_associations(%{:transactions => :optional})
     |> Repo.all(timeout: :infinity)
   end
 
@@ -378,48 +379,30 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
           %{
             id: non_neg_integer(),
             hash: Hash,
-            block: FullBlock.block_number(),
+            block_number: FullBlock.block_number(),
             timestamp: DateTime,
             status: :unfinalized
           }
         ]
   def lifecycle_unfinalized_transactions(finalized_block)
       when is_integer(finalized_block) and finalized_block >= 0 do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.lifecycle_unfinalized_transactions(finalized_block)
+    finalized_block
+    |> Reader.lifecycle_unfinalized_transactions()
     |> Enum.map(&lifecycle_transaction_to_map/1)
   end
 
   @doc """
     Retrieves the block number associated with a specific hash of a rollup block.
 
-    If the hash is not associated with a block (indicating potential database inconsistency),
-    it triggers a recovery process defined by the passed function and parameters. Usually,
-    the recovery process is to request the block number by an RPC method.
-
     ## Parameters
     - `hash`: The hash of the rollup block whose number is to be retrieved.
-    - `recover`: A map containing:
-      - `function`: A recovery function to be called in case of an error or when
-                    the block hash is not found in the database.
-      - `params`: Parameters to be passed to the recovery function.
 
     ## Returns
-    - The block number associated with the given rollup block hash, or the result of
-      the recovery function if the block hash is not found or a database inconsistency
-      is discovered.
+    - The block number associated with the given rollup block hash.
   """
-  @spec rollup_block_hash_to_num(binary(), %{function: fun(), params: list()}) :: FullBlock.block_number() | nil
-  def rollup_block_hash_to_num(hash, %{function: func, params: params} = _recover)
-      when is_binary(hash) and is_list(params) and is_function(func, length(params)) do
-    case Reader.rollup_block_hash_to_num(hash) do
-      {:error, _} ->
-        Logger.error("DB inconsistency discovered. No Chain.Block associated with the Arbitrum.BatchBlock")
-        apply(func, params)
-
-      {:ok, value} ->
-        value
-    end
+  @spec rollup_block_hash_to_num(binary()) :: FullBlock.block_number() | nil
+  def rollup_block_hash_to_num(hash) when is_binary(hash) do
+    Reader.rollup_block_hash_to_num(hash)
   end
 
   @doc """
@@ -431,8 +414,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
     ## Returns
     - The `Explorer.Chain.Arbitrum.L1Batch` associated with the given rollup block number
-      if it exists and its commit transaction is loaded, or `nil` if no such batch exists
-      or if the commit transaction is not loaded.
+      if it exists and its commit transaction is loaded.
   """
   @spec get_batch_by_rollup_block_num(FullBlock.block_number()) :: Explorer.Chain.Arbitrum.L1Batch | nil
   def get_batch_by_rollup_block_num(num)
@@ -443,9 +425,14 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
       batch ->
         case batch.commit_transaction do
-          nil -> nil
-          %Ecto.Association.NotLoaded{} -> nil
-          _ -> batch
+          nil ->
+            raise "Incorrect state of the DB: commit_transaction is not loaded for the batch with number #{num}"
+
+          %Ecto.Association.NotLoaded{} ->
+            raise "Incorrect state of the DB: commit_transaction is not loaded for the batch with number #{num}"
+
+          _ ->
+            batch
         end
     end
   end
@@ -464,15 +451,16 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [
           %{
             batch_number: non_neg_integer(),
-            block_num: FullBlock.block_number(),
-            confirm_id: nil,
-            hash: Hash.t()
+            block_number: FullBlock.block_number(),
+            confirm_id: non_neg_integer() | nil
           }
         ]
   def unconfirmed_rollup_blocks(first_block, last_block)
       when is_integer(first_block) and first_block >= 0 and
              is_integer(last_block) and first_block <= last_block do
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
     Reader.unconfirmed_rollup_blocks(first_block, last_block)
+    |> Enum.map(&rollup_block_to_map/1)
   end
 
   @doc """
@@ -642,7 +630,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       when (is_integer(right_pos_value_if_nil) and right_pos_value_if_nil >= 0) or is_nil(right_pos_value_if_nil) do
     case Reader.l1_blocks_of_confirmations_bounding_first_unconfirmed_rollup_blocks_gap() do
       nil ->
-        Logger.warning("No L1 confirmations found in DB")
+        log_warning("No L1 confirmations found in DB")
         {nil, right_pos_value_if_nil}
 
       {nil, newer_confirmation_l1_block} ->
@@ -742,8 +730,13 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   defp lifecycle_transaction_to_map(tx) do
-    [:id, :hash, :block, :timestamp, :status]
+    [:id, :hash, :block_number, :timestamp, :status]
     |> db_record_to_map(tx)
+  end
+
+  defp rollup_block_to_map(block) do
+    [:batch_number, :block_number, :confirm_id]
+    |> db_record_to_map(block)
   end
 
   defp message_to_map(message) do

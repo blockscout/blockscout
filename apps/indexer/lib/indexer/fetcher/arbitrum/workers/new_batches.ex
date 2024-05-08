@@ -25,6 +25,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
+
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
 
   alias Indexer.Helper, as: IndexerHelper
@@ -110,7 +112,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     end_block = min(start_block + l1_rpc_config.logs_block_range - 1, latest_block)
 
     if start_block <= end_block do
-      Logger.info("Block range for new batches discovery: #{start_block}..#{end_block}")
+      log_info("Block range for new batches discovery: #{start_block}..#{end_block}")
 
       discover(
         sequencer_inbox_address,
@@ -195,7 +197,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     if end_block >= l1_rollup_init_block do
       start_block = max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
 
-      Logger.info("Block range for historical batches discovery: #{start_block}..#{end_block}")
+      log_info("Block range for historical batches discovery: #{start_block}..#{end_block}")
 
       discover_historical(
         sequencer_inbox_address,
@@ -380,7 +382,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       )
 
     if length(logs) > 0 do
-      Logger.debug("Found #{length(logs)} SequencerBatchDelivered logs")
+      log_debug("Found #{length(logs)} SequencerBatchDelivered logs")
     end
 
     logs
@@ -530,7 +532,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               BlockByNumber.request(%{id: 0, number: blk_num}, false, true)
             )
 
-          Logger.info("New batch #{batch_num} found in #{tx_hash_raw}")
+          log_info("New batch #{batch_num} found in #{tx_hash_raw}")
 
           {updated_batches, updated_txs_requests, updated_blocks_requests}
         end
@@ -606,7 +608,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         updated_txs_map =
           Map.put(txs_map, tx_hash, %{
             hash: tx_hash,
-            block: block_num,
+            block_number: block_num,
             timestamp: blocks_to_ts[block_num],
             status:
               if track_finalization? do
@@ -688,7 +690,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     blocks_to_batches = unwrap_rollup_block_ranges(batches)
 
     required_blocks_numbers = Map.keys(blocks_to_batches)
-    Logger.info("Identified #{length(required_blocks_numbers)} rollup blocks")
+    log_info("Identified #{length(required_blocks_numbers)} rollup blocks")
 
     {blocks_to_import_map, txs_to_import_list} =
       get_rollup_blocks_and_txs_from_db(required_blocks_numbers, blocks_to_batches)
@@ -708,7 +710,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         rollup_rpc_config
       )
 
-    Logger.info(
+    log_info(
       "Found #{length(Map.keys(blocks_to_import))} rollup blocks and #{length(txs_to_import)} rollup transactions in DB"
     )
 
@@ -758,20 +760,20 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     |> Db.rollup_blocks()
     |> Enum.reduce({%{}, []}, fn block, {blocks_map, txs_list} ->
       batch_num = blocks_to_batches[block.number]
-      blk_hash = block.hash.bytes
 
       updated_txs_list =
         block.transactions
         |> Enum.reduce(txs_list, fn tx, acc ->
-          [
-            %{hash: tx.hash.bytes, batch_number: batch_num, block_hash: blk_hash}
-            | acc
-          ]
+          [%{tx_hash: tx.hash.bytes, batch_number: batch_num} | acc]
         end)
 
       updated_blocks_map =
         blocks_map
-        |> Map.put(block.number, %{hash: blk_hash, batch_number: batch_num, confirm_id: nil})
+        |> Map.put(block.number, %{
+          block_number: block.number,
+          batch_number: batch_num,
+          confirm_id: nil
+        })
 
       {updated_blocks_map, updated_txs_list}
     end)
@@ -809,7 +811,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     found_blocks_numbers_length = length(found_blocks_numbers)
 
     if found_blocks_numbers_length != required_blocks_amount do
-      Logger.info("Only #{found_blocks_numbers_length} of #{required_blocks_amount} rollup blocks found in DB")
+      log_info("Only #{found_blocks_numbers_length} of #{required_blocks_amount} rollup blocks found in DB")
 
       {recovered_blocks_map, recovered_txs_list, _} =
         recover_rollup_blocks_and_txs_from_rpc(
@@ -921,14 +923,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     json_responses
     |> Enum.reduce({rollup_blocks, rollup_txs}, fn resp, {blocks_map, txs_list} ->
       batch_num = resp.id
-      blk_hash = resp.result["hash"]
       blk_num = quantity_to_integer(resp.result["number"])
 
       updated_blocks_map =
         Map.put(
           blocks_map,
           blk_num,
-          %{hash: blk_hash, batch_number: batch_num, confirm_id: nil}
+          %{block_number: blk_num, batch_number: batch_num, confirm_id: nil}
         )
 
       updated_txs_list =
@@ -938,10 +939,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
           new_txs ->
             Enum.reduce(new_txs, txs_list, fn l2_tx_hash, txs_list ->
-              [
-                %{hash: l2_tx_hash, batch_number: batch_num, block_hash: blk_hash}
-                | txs_list
-              ]
+              [%{tx_hash: l2_tx_hash, batch_number: batch_num} | txs_list]
             end)
         end
 
@@ -968,9 +966,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   # Retrieves initiated L2-to-L1 messages up to specified block number and marks them as 'sent'.
   defp get_committed_l2_to_l1_messages(block_number) do
-    Db.initiated_l2_to_l1_messages(block_number)
+    block_number
+    |> Db.initiated_l2_to_l1_messages()
     |> Enum.map(fn tx ->
-      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
       Map.put(tx, :status, :sent)
     end)
   end

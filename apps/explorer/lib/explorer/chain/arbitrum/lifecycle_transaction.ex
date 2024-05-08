@@ -1,5 +1,13 @@
 defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
-  @moduledoc "Models an L1 lifecycle transaction for Arbitrum."
+  @moduledoc """
+    Models an L1 lifecycle transaction for Arbitrum.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Arbitrum.LifecycleTransactions
+
+    Migrations:
+    - Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables
+  """
 
   use Explorer.Schema
 
@@ -10,11 +18,12 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
 
   alias Explorer.Chain.Arbitrum.{BatchBlock, L1Batch}
 
-  @required_attrs ~w(id hash block timestamp status)a
+  @required_attrs ~w(id hash block_number timestamp status)a
 
   @type t :: %__MODULE__{
+          id: non_neg_integer(),
           hash: Hash.t(),
-          block: Block.block_number(),
+          block_number: Block.block_number(),
           timestamp: DateTime.t(),
           status: String.t()
         }
@@ -22,7 +31,7 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
   @primary_key {:id, :integer, autogenerate: false}
   schema "arbitrum_lifecycle_l1_transactions" do
     field(:hash, Hash.Full)
-    field(:block, :integer)
+    field(:block_number, :integer)
     field(:timestamp, :utc_datetime_usec)
     field(:status, Ecto.Enum, values: [:unfinalized, :finalized])
 
@@ -40,6 +49,6 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
     txn
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
-    |> unique_constraint(:id)
+    |> unique_constraint([:id, :hash])
   end
 end

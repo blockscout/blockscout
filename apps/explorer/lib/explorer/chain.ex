@@ -85,7 +85,8 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
-  alias Explorer.Chain.SmartContract.Proxy.EIP1167
+  alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
@@ -998,26 +999,11 @@ defmodule Explorer.Chain do
         where: address.hash == ^hash
       )
 
-    address_result =
-      query
-      |> join_associations(necessity_by_association)
-      |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
-      |> select_repo(options).one()
-
-    address_updated_result =
-      case address_result do
-        %{smart_contract: smart_contract} ->
-          if smart_contract do
-            address_result
-          else
-            SmartContract.compose_smart_contract(address_result, hash, options)
-          end
-
-        _ ->
-          address_result
-      end
-
-    address_updated_result
+    query
+    |> join_associations(necessity_by_association)
+    |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
+    |> select_repo(options).one()
+    |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
@@ -1185,19 +1171,43 @@ defmodule Explorer.Chain do
           if smart_contract do
             CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, smart_contract)
+
             SmartContract.check_and_update_constructor_args(address_result)
           else
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
 
-            address_verified_twin_contract =
-              EIP1167.get_implementation_address(hash, options) ||
-                SmartContract.get_address_verified_twin_contract(hash, options).verified_contract
+            {implementation_address_hash, _} =
+              Implementation.get_implementation(
+                %{
+                  updated: %SmartContract{
+                    address_hash: hash
+                  },
+                  implementation_updated_at: nil,
+                  implementation_address_fetched?: false,
+                  refetch_necessity_checked?: false
+                },
+                Keyword.put(options, :unverified_proxy_only?, true)
+              )
 
-            SmartContract.add_twin_info_to_contract(address_result, address_verified_twin_contract, hash)
+            implementation_smart_contract =
+              implementation_address_hash
+              |> Proxy.implementation_to_smart_contract(options)
+
+            address_verified_bytecode_twin_contract =
+              implementation_smart_contract ||
+                SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
+
+            address_result
+            |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
+            |> (&if(is_nil(implementation_smart_contract),
+                  do: &1,
+                  else: SmartContract.add_implementation_info_to_contract(&1, implementation_address_hash)
+                )).()
           end
 
         _ ->
           LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
+
           address_result
       end
 
@@ -3256,6 +3266,22 @@ defmodule Explorer.Chain do
 
   def limit_showing_transactions, do: @limit_showing_transactions
 
+  @doc """
+    Dynamically joins and preloads associations in a query based on necessity.
+
+    This function adjusts the provided Ecto query to include joins for associations. It supports
+    both optional and required joins. Optional joins use the `preload` function to fetch associations
+    without enforcing their presence. Required joins ensure the association exists.
+
+    ## Parameters
+    - `query`: The initial Ecto query.
+    - `associations`: A single association or a tuple with nested association preloads.
+    - `necessity`: Specifies if the association is `:optional` or `:required`.
+
+    ## Returns
+    - The modified query with the specified associations joined according to the defined necessity.
+  """
+  @spec join_association(atom() | Ecto.Query.t(), [{atom(), atom()}], :optional | :required) :: Ecto.Query.t()
   def join_association(query, [{association, nested_preload}], necessity)
       when is_atom(association) and is_atom(nested_preload) do
     case necessity do
@@ -3273,6 +3299,7 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec join_association(atom() | Ecto.Query.t(), atom(), :optional | :required) :: Ecto.Query.t()
   def join_association(query, association, necessity) do
     case necessity do
       :optional ->
@@ -3283,10 +3310,23 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec join_associations(atom() | Ecto.Query.t(), map) :: Ecto.Query.t()
   @doc """
-    Function to preload entities associated with selected in provided query items
+    Applies dynamic joins to a query based on provided association necessities.
+
+    This function iterates over a map of associations with their required join types, either
+    `:optional` or `:required`, and applies the corresponding joins to the given query.
+
+    More info is available on https://hexdocs.pm/ecto/Ecto.Query.html#preload/3
+
+    ## Parameters
+    - `query`: The base query to which associations will be joined.
+    - `necessity_by_association`: A map specifying each association and its necessity
+      (`:optional` or `:required`).
+
+    ## Returns
+    - The query with all specified associations joined according to their necessity.
   """
+  @spec join_associations(atom() | Ecto.Query.t(), %{any() => :optional | :required}) :: Ecto.Query.t()
   def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)

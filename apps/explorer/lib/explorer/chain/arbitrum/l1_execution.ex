@@ -1,5 +1,13 @@
 defmodule Explorer.Chain.Arbitrum.L1Execution do
-  @moduledoc "Models a list of execution transactions related to a L2 to L1 messages on Arbitrum."
+  @moduledoc """
+    Models a list of execution transactions related to a L2 to L1 messages on Arbitrum.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Arbitrum.L1Executions
+
+    Migrations:
+    - Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables
+  """
 
   use Explorer.Schema
 
@@ -9,14 +17,12 @@ defmodule Explorer.Chain.Arbitrum.L1Execution do
 
   @type t :: %__MODULE__{
           message_id: non_neg_integer(),
-          execution_id: non_neg_integer() | nil,
+          execution_id: non_neg_integer(),
           execution_transaction: %Ecto.Association.NotLoaded{} | LifecycleTransaction.t() | nil
         }
 
-  @primary_key false
+  @primary_key {:message_id, :integer, autogenerate: false}
   schema "arbitrum_l1_executions" do
-    field(:message_id, :integer, primary_key: true)
-
     belongs_to(:execution_transaction, LifecycleTransaction,
       foreign_key: :execution_id,
       references: :id,

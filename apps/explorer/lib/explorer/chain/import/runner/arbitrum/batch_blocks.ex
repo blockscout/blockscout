@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.Arbitrum.BatchBlocks do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Arbitrum.BatchBlock.t/0`.
+    Bulk imports of Explorer.Chain.Arbitrum.BatchBlock.
   """
 
   require Ecto.Query
@@ -64,7 +64,7 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.BatchBlocks do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Arbitrum.BatchBlock ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.block_number)
 
     {:ok, inserted} =
       Import.insert_changes_list(
@@ -74,7 +74,7 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.BatchBlocks do
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: :hash,
+        conflict_target: :block_number,
         on_conflict: on_conflict
       )
 
@@ -86,7 +86,7 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.BatchBlocks do
       tb in BatchBlock,
       update: [
         set: [
-          # don't update `hash` as it is a primary key and used for the conflict target
+          # don't update `block_number` as it is a primary key and used for the conflict target
           batch_number: fragment("EXCLUDED.batch_number"),
           confirm_id: fragment("EXCLUDED.confirm_id"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tb.inserted_at),
