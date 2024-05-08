@@ -7,7 +7,7 @@ defmodule Indexer.BufferedTask do
   Named arguments are required and are passed in the list that is the second element of the tuple.
 
     * `:flush_interval` - The interval in milliseconds to flush the buffer.
-    * `:max_concurrency` - The maximum number of tasks to run concurrently at any give time.
+    * `:max_concurrency` - The maximum number of tasks to run concurrently at any given time.
     * `:poll` - poll for new records when all records are processed
     * `:max_batch_size` - The maximum batch passed to `c:run/2`.
     * `:memory_monitor` - The `Indexer.Memory.Monitor` `t:GenServer.server/0` to register as
@@ -189,7 +189,7 @@ defmodule Indexer.BufferedTask do
   Named arguments are required and are passed in the list that is the second element of the tuple.
 
     * `:flush_interval` - The interval in milliseconds to flush the buffer.
-    * `:max_concurrency` - The maximum number of tasks to run concurrently at any give time.
+    * `:max_concurrency` - The maximum number of tasks to run concurrently at any given time.
     * `:max_batch_size` - The maximum batch passed to `c:run/2`.
     * `:task_supervisor` - The `Task.Supervisor` name to spawn tasks under.
 
