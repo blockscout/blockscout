@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
   import BlockScoutWeb.PagingHelper, only: [mud_records_sorting: 1]
 
-  alias Explorer.Chain.{Data, Hash, Mud, Mud.Schema.FieldSchema}
+  alias Explorer.Chain.{Data, Hash, Mud, Mud.Schema.FieldSchema, Mud.Table}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -163,22 +163,50 @@ defmodule BlockScoutWeb.API.V2.MudController do
   end
 
   defp mud_tables_filter(params) do
+    Enum.reduce(params, [], fn {key, value}, acc ->
+      case key do
+        "filter_namespace" ->
+          Keyword.put(acc, :filter_namespace, parse_namespace_string(value))
+
+        "q" ->
+          Keyword.put(acc, :filter_search, parse_search_string(value))
+
+        _ ->
+          acc
+      end
+    end)
+  end
+
+  defp parse_namespace_string(namespace) do
     filter =
-      case params |> Map.get("filter_namespace") do
+      case namespace do
         nil -> {:ok, nil}
         "0x" <> hex -> Base.decode16(hex, case: :mixed)
         str -> {:ok, str}
       end
 
     case filter do
-      {:ok, nil} ->
-        []
-
       {:ok, ns} when is_binary(ns) and byte_size(ns) <= 14 ->
-        [{:filter_namespace, ns |> String.pad_trailing(14, <<0>>)}]
+        ns |> String.pad_trailing(14, <<0>>)
 
       _ ->
-        []
+        nil
+    end
+  end
+
+  defp parse_search_string(q) do
+    # If the search string looks like hex-encoded table id or table full name,
+    # we try to parse and filter by that table id directly.
+    # Otherwise we do a full-text search of given string inside table id.
+    res =
+      with :error <- Hash.Full.cast(q),
+           :error <- Table.table_full_name_to_table_id(q) do
+        {:ok, q}
+      end
+
+    case res do
+      {:ok, value} -> value
+      _ -> nil
     end
   end
 

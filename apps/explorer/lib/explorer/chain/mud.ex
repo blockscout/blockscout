@@ -98,10 +98,12 @@ defmodule Explorer.Chain.Mud do
   def world_tables(world, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     filter_namespace = Keyword.get(options, :filter_namespace, nil)
+    filter_search = Keyword.get(options, :filter_search, nil)
 
     Mud
     |> where([r], r.address == ^world and r.table_id == ^@store_tables_table_id)
-    |> filter_tables(filter_namespace)
+    |> filter_tables_by_namespace(filter_namespace)
+    |> filter_tables_by_search(filter_search)
     |> page_tables(paging_options)
     |> order_by([r], asc: r.key0)
     |> limit(^paging_options.page_size)
@@ -117,18 +119,30 @@ defmodule Explorer.Chain.Mud do
 
   def world_tables_count(world, options \\ []) do
     filter_namespace = Keyword.get(options, :filter_namespace, nil)
+    filter_search = Keyword.get(options, :filter_search, nil)
 
     Mud
     |> where([r], r.address == ^world and r.table_id == ^@store_tables_table_id)
-    |> filter_tables(filter_namespace)
+    |> filter_tables_by_namespace(filter_namespace)
+    |> filter_tables_by_search(filter_search)
     |> Repo.Mud.aggregate(:count)
   end
 
-  defp filter_tables(query, nil), do: query
+  defp filter_tables_by_namespace(query, nil), do: query
 
-  defp filter_tables(query, namespace) do
+  defp filter_tables_by_namespace(query, namespace) do
     query |> where([tb], fragment("substring(? FROM 3 FOR 14)", tb.key0) == ^namespace)
   end
+
+  defp filter_tables_by_search(query, %Hash{} = table_id) do
+    query |> where([tb], tb.key0 == ^table_id)
+  end
+
+  defp filter_tables_by_search(query, search_string) when is_binary(search_string) do
+    query |> where([tb], ilike(fragment("encode(?, 'escape')", tb.key0), ^"%#{search_string}%"))
+  end
+
+  defp filter_tables_by_search(query, _), do: query
 
   @default_sorting [
     asc: :key_bytes
