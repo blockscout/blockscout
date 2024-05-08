@@ -17,6 +17,7 @@ defmodule Explorer.Chain.Mud do
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
+    Address,
     Block,
     Data,
     Hash,
@@ -369,11 +370,14 @@ defmodule Explorer.Chain.Mud do
         <<int::signed-integer-size(size * 8)>> = raw
         int |> Integer.to_string()
 
-      _ when type < 96 or type == 97 or type == 196 ->
+      _ when type < 96 or type == 196 ->
         "0x" <> Base.encode16(raw, case: :lower)
 
       96 ->
         raw == <<1>>
+
+      97 ->
+        Address.checksum(raw)
 
       _ when type < 196 ->
         raw
