@@ -153,7 +153,7 @@ defmodule Explorer.Chain.Mud do
     sorting = Keyword.get(options, :sorting, [])
 
     Mud
-    |> where([r], r.address == ^world and r.table_id == ^table_id)
+    |> where([r], r.address == ^world and r.table_id == ^table_id and r.is_deleted == false)
     |> filter_records(:key0, Keyword.get(options, :filter_key0))
     |> filter_records(:key1, Keyword.get(options, :filter_key1))
     |> SortingHelper.apply_sorting(sorting, @default_sorting)
@@ -173,7 +173,7 @@ defmodule Explorer.Chain.Mud do
 
   def world_table_records_count(world, table_id, options \\ []) do
     Mud
-    |> where([r], r.address == ^world and r.table_id == ^table_id)
+    |> where([r], r.address == ^world and r.table_id == ^table_id and r.is_deleted == false)
     |> filter_records(:key0, Keyword.get(options, :filter_key0))
     |> filter_records(:key1, Keyword.get(options, :filter_key1))
     |> Repo.Mud.aggregate(:count)
