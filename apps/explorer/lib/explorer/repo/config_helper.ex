@@ -17,7 +17,7 @@ defmodule Explorer.Repo.ConfigHelper do
   ]
 
   def get_db_config(opts) do
-    url_encoded = opts[:url] || System.get_env("DATABASE_URL")
+    url_encoded = opts[:url]
     url = url_encoded && URI.decode(url_encoded)
     env_function = opts[:env_func] || (&System.get_env/1)
 
