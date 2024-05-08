@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
     bypass = Bypass.open()
 
     on_exit(fn -> Bypass.down(bypass) end)
+
     {:ok, bypass: bypass}
   end
 
