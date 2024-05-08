@@ -19,27 +19,26 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   def get_addresses_tags(addresses) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       body = %{
-        addresses: addresses,
-        tags: %{
-          limit: to_string(@tags_per_address_limit)
-        }
+        addresses: Enum.join(addresses, ","),
+        tagsLimit: @tags_per_address_limit,
+        chainId: Application.get_env(:block_scout_web, :chain_id)
       }
 
-      http_post_request(addresses_metadata_url(), body)
+      http_get_request(addresses_metadata_url(), body)
     end
   end
 
-  defp http_post_request(url, body) do
+  defp http_get_request(url, params) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HTTPoison.get(url, headers, params: params, recv_timeout: @post_timeout) do
       {:ok, %Response{body: body, status_code: 200}} ->
         body |> Jason.decode() |> decode_meta()
 
       {_, error} ->
         Logger.error(fn ->
           [
-            "Error while sending request to Metadata microservice url: #{url}, body: #{inspect(body)}: ",
+            "Error while sending request to Metadata microservice url: #{url}, params: #{inspect(params)}: ",
             inspect(error)
           ]
         end)
