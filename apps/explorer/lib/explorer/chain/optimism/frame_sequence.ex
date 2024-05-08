@@ -7,11 +7,12 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
   alias Explorer.Chain.Optimism.TxnBatch
 
   @required_attrs ~w(id l1_transaction_hashes l1_timestamp)a
-  @optional_attrs ~w(celestia_blob_height celestia_blob_namespace celestia_blob_commitment)a
+  @optional_attrs ~w(eip4844_blob_hashes celestia_blob_height celestia_blob_namespace celestia_blob_commitment)a
 
   @type t :: %__MODULE__{
           l1_transaction_hashes: [Hash.t()],
           l1_timestamp: DateTime.t(),
+          eip4844_blob_hashes: [Hash.t()] | nil,
           celestia_blob_height: non_neg_integer() | nil,
           celestia_blob_namespace: Data.t() | nil,
           celestia_blob_commitment: Data.t() | nil,
@@ -22,6 +23,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
   schema "op_frame_sequences" do
     field(:l1_transaction_hashes, {:array, Hash.Full})
     field(:l1_timestamp, :utc_datetime_usec)
+    field(:eip4844_blob_hashes, {:array, Hash.Full})
     field(:celestia_blob_height, :integer)
     field(:celestia_blob_namespace, Data)
     field(:celestia_blob_commitment, Data)

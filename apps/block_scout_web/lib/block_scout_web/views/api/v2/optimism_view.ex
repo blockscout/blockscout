@@ -210,8 +210,37 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   @doc """
-    Extends the json output with a sub-map containing information related
-    zksync: batch number and associated L1 transactions and their timestmaps.
+    Extends the json output for a block with a sub-map containing information related Optimism.
+  """
+  @spec extend_block_json_response(map(), %{
+          :__struct__ => Explorer.Chain.Block,
+          :op_frame_sequence => any(),
+          optional(any()) => any()
+        }) :: map()
+  def extend_block_json_response(out_json, %Block{} = block) do
+    frame_sequence = Map.get(block, :op_frame_sequence)
+
+    if is_nil(frame_sequence) do
+      out_json
+    else
+      eip4844_blob_hash =
+        if not is_nil(frame_sequence.eip4844_blob_hashes) do
+          Enum.join(frame_sequence.eip4844_blob_hashes, ",")
+        end
+
+      Map.put(out_json, "batch", %{
+        "l1_transaction_hash" => Enum.join(frame_sequence.l1_transaction_hashes, ","),
+        "l1_timestamp" => frame_sequence.l1_timestamp,
+        "eip4844_blob_hash" => eip4844_blob_hash,
+        "celestia_blob_height" => frame_sequence.celestia_blob_height,
+        "celestia_blob_namespace" => frame_sequence.celestia_blob_namespace,
+        "celestia_blob_commitment" => frame_sequence.celestia_blob_commitment
+      })
+    end
+  end
+
+  @doc """
+    Extends the json output for a transaction with a sub-map containing information related Optimism.
   """
   @spec extend_transaction_json_response(map(), map()) :: map()
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do

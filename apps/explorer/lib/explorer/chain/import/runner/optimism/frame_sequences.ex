@@ -87,6 +87,7 @@ defmodule Explorer.Chain.Import.Runner.Optimism.FrameSequences do
           # don't update `id` as it is a primary key and used for the conflict target
           l1_transaction_hashes: fragment("EXCLUDED.l1_transaction_hashes"),
           l1_timestamp: fragment("EXCLUDED.l1_timestamp"),
+          eip4844_blob_hashes: fragment("EXCLUDED.eip4844_blob_hashes"),
           celestia_blob_height: fragment("EXCLUDED.celestia_blob_height"),
           celestia_blob_namespace: fragment("EXCLUDED.celestia_blob_namespace"),
           celestia_blob_commitment: fragment("EXCLUDED.celestia_blob_commitment"),
@@ -96,9 +97,10 @@ defmodule Explorer.Chain.Import.Runner.Optimism.FrameSequences do
       ],
       where:
         fragment(
-          "(EXCLUDED.l1_transaction_hashes, EXCLUDED.l1_timestamp, EXCLUDED.celestia_blob_height, EXCLUDED.celestia_blob_namespace, EXCLUDED.celestia_blob_commitment) IS DISTINCT FROM (?, ?, ?, ?, ?)",
+          "(EXCLUDED.l1_transaction_hashes, EXCLUDED.l1_timestamp, EXCLUDED.eip4844_blob_hashes, EXCLUDED.celestia_blob_height, EXCLUDED.celestia_blob_namespace, EXCLUDED.celestia_blob_commitment) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
           fs.l1_transaction_hashes,
           fs.l1_timestamp,
+          fs.eip4844_blob_hashes,
           fs.celestia_blob_height,
           fs.celestia_blob_namespace,
           fs.celestia_blob_commitment

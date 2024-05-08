@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Block.Schema do
   alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
+  alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
@@ -17,6 +18,19 @@ defmodule Explorer.Chain.Block.Schema do
                             quote do
                               field(:blob_gas_used, :decimal)
                               field(:excess_blob_gas, :decimal)
+                            end,
+                            2
+                          )
+
+                        :optimism ->
+                          elem(
+                            quote do
+                              has_one(:op_transaction_batch, OptimismTxnBatch,
+                                foreign_key: :l2_block_number,
+                                references: :number
+                              )
+
+                              has_one(:op_frame_sequence, through: [:op_transaction_batch, :frame_sequence])
                             end,
                             2
                           )
