@@ -85,7 +85,8 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
-  alias Explorer.Chain.SmartContract.Proxy.EIP1167
+  alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
@@ -998,26 +999,11 @@ defmodule Explorer.Chain do
         where: address.hash == ^hash
       )
 
-    address_result =
-      query
-      |> join_associations(necessity_by_association)
-      |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
-      |> select_repo(options).one()
-
-    address_updated_result =
-      case address_result do
-        %{smart_contract: smart_contract} ->
-          if smart_contract do
-            address_result
-          else
-            SmartContract.compose_smart_contract(address_result, hash, options)
-          end
-
-        _ ->
-          address_result
-      end
-
-    address_updated_result
+    query
+    |> join_associations(necessity_by_association)
+    |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
+    |> select_repo(options).one()
+    |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
@@ -1185,19 +1171,43 @@ defmodule Explorer.Chain do
           if smart_contract do
             CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, smart_contract)
+
             SmartContract.check_and_update_constructor_args(address_result)
           else
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
 
-            address_verified_twin_contract =
-              EIP1167.get_implementation_address(hash, options) ||
-                SmartContract.get_address_verified_twin_contract(hash, options).verified_contract
+            {implementation_address_hash, _} =
+              Implementation.get_implementation(
+                %{
+                  updated: %SmartContract{
+                    address_hash: hash
+                  },
+                  implementation_updated_at: nil,
+                  implementation_address_fetched?: false,
+                  refetch_necessity_checked?: false
+                },
+                Keyword.put(options, :unverified_proxy_only?, true)
+              )
 
-            SmartContract.add_twin_info_to_contract(address_result, address_verified_twin_contract, hash)
+            implementation_smart_contract =
+              implementation_address_hash
+              |> Proxy.implementation_to_smart_contract(options)
+
+            address_verified_bytecode_twin_contract =
+              implementation_smart_contract ||
+                SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
+
+            address_result
+            |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
+            |> (&if(is_nil(implementation_smart_contract),
+                  do: &1,
+                  else: SmartContract.add_implementation_info_to_contract(&1, implementation_address_hash)
+                )).()
           end
 
         _ ->
           LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
+
           address_result
       end
 

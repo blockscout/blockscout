@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Address
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Transaction.History.TransactionStats
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -57,7 +58,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => Address.checksum(address),
       "is_contract" => Address.smart_contract?(address),
       "name" => address_name(address),
-      "implementation_name" => implementation_name(address),
+      "implementation_name" => Implementation.name(address),
       "is_verified" => verified?(address),
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
@@ -104,13 +105,8 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   def address_name(_), do: nil
 
-  def implementation_name(%Address{smart_contract: %{implementation_name: implementation_name}}),
-    do: implementation_name
-
-  def implementation_name(_), do: nil
-
   def verified?(%Address{smart_contract: nil}), do: false
-  def verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+  def verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
   def verified?(%Address{smart_contract: %NotLoaded{}}), do: nil
   def verified?(%Address{smart_contract: _}), do: true
 
