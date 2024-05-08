@@ -5,16 +5,23 @@ defmodule Explorer.Chain.Mud.Schema do
 
   defmodule FieldSchema do
     @moduledoc """
-      Represents a MUD framework database record field schema.
+      Represents a MUD framework database record field schema. Describes number of columns and their types.
     """
 
     defstruct [:word]
 
+    @typedoc """
+    The MUD field schema.
+     * `word` - The field schema as 32-byte value.
+    """
     @type t :: %__MODULE__{
             word: <<_::256>>
           }
 
-    @spec from(binary()) :: :error | t()
+    @doc """
+    Decodes field schema type from raw binary or hex-encoded string.
+    """
+    @spec from(binary()) :: t() | :error
     def from(<<bin::binary-size(32)>>), do: %__MODULE__{word: bin}
 
     def from("0x" <> <<hex::binary-size(64)>>) do
@@ -25,11 +32,29 @@ defmodule Explorer.Chain.Mud.Schema do
 
     def from(_), do: :error
 
+    @doc """
+    Tells the type of the field at index `index` in the field schema.
+    """
+    @spec type_of(t(), non_neg_integer()) :: non_neg_integer()
     def type_of(%FieldSchema{word: word}, index), do: :binary.at(word, index + 4)
   end
 
   @enforce_keys [:key_schema, :value_schema, :key_names, :value_names]
   defstruct [:key_schema, :value_schema, :key_names, :value_names]
+
+  @typedoc """
+  The MUD table schema. Describe column types and names for the given MUD table.
+   * `key_schema` - The field schema for the key columns.
+   * `value_schema` - The field schema for the value columns.
+   * `key_names` - The names of the key columns.
+   * `value_names` - The names of the value columns.
+  """
+  @type t :: %__MODULE__{
+          key_schema: FieldSchema.t(),
+          value_schema: FieldSchema.t(),
+          key_names: [String.t()],
+          value_names: [String.t()]
+        }
 
   defimpl Jason.Encoder, for: Explorer.Chain.Mud.Schema do
     alias Explorer.Chain.Mud.Schema
@@ -48,6 +73,10 @@ defmodule Explorer.Chain.Mud.Schema do
     end
   end
 
+  @doc """
+  Tells the number of static fields in the schema and the list of raw type IDs of all fields in the schema.
+  """
+  @spec decode_types(FieldSchema.t()) :: {non_neg_integer(), [non_neg_integer()]}
   def decode_types(layout_schema) do
     static_fields_count = :binary.at(layout_schema.word, 2)
     dynamic_fields_count = :binary.at(layout_schema.word, 3)
@@ -55,6 +84,10 @@ defmodule Explorer.Chain.Mud.Schema do
     {static_fields_count, :binary.bin_to_list(layout_schema.word, 4, static_fields_count + dynamic_fields_count)}
   end
 
+  @doc """
+  Tells the list of decoded type names for all fields in the schema.
+  """
+  @spec decode_type_names(FieldSchema.t()) :: [String.t()]
   def decode_type_names(layout_schema) do
     {_, types} = decode_types(layout_schema)
     types |> Enum.map(&encode_type_name/1)

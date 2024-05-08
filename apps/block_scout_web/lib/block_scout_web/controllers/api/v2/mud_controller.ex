@@ -198,15 +198,11 @@ defmodule BlockScoutWeb.API.V2.MudController do
     # If the search string looks like hex-encoded table id or table full name,
     # we try to parse and filter by that table id directly.
     # Otherwise we do a full-text search of given string inside table id.
-    res =
-      with :error <- Hash.Full.cast(q),
-           :error <- Table.table_full_name_to_table_id(q) do
-        {:ok, q}
-      end
-
-    case res do
-      {:ok, value} -> value
-      _ -> nil
+    with :error <- Hash.Full.cast(q),
+         :error <- Table.table_full_name_to_table_id(q) do
+      q
+    else
+      {:ok, table_id} -> table_id
     end
   end
 
@@ -221,8 +217,6 @@ defmodule BlockScoutWeb.API.V2.MudController do
   end
 
   defp encode_filter(value, schema, field_idx) do
-    type_hint = schema && FieldSchema.type_of(schema.key_schema, field_idx)
-
     case value do
       "false" ->
         <<0::256>>
@@ -230,13 +224,14 @@ defmodule BlockScoutWeb.API.V2.MudController do
       "true" ->
         <<1::256>>
 
-      "0x" <> hex when type_hint == 97 ->
-        bin = Base.decode16!(hex, case: :mixed)
-        <<0::size(256 - byte_size(bin) * 8), bin::binary>>
-
       "0x" <> hex ->
         bin = Base.decode16!(hex, case: :mixed)
-        <<bin::binary, 0::size(256 - byte_size(bin) * 8)>>
+        # addresses are padded to 32 bytes with zeros on the right
+        if FieldSchema.type_of(schema.key_schema, field_idx) == 97 do
+          <<0::size(256 - byte_size(bin) * 8), bin::binary>>
+        else
+          <<bin::binary, 0::size(256 - byte_size(bin) * 8)>>
+        end
 
       dec ->
         num = dec |> Integer.parse() |> elem(0)

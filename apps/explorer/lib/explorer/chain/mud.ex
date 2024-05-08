@@ -58,6 +58,10 @@ defmodule Explorer.Chain.Mud do
     Application.get_env(:explorer, __MODULE__)[:enabled]
   end
 
+  @doc """
+  Returns the paginated list of registered MUD world addresses.
+  """
+  @spec worlds_list(Keyword.t()) :: [Mud.t()]
   def worlds_list(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
@@ -75,6 +79,10 @@ defmodule Explorer.Chain.Mud do
 
   defp page_worlds(query, _), do: query
 
+  @doc """
+  Returns the total number of registered MUD worlds.
+  """
+  @spec worlds_count() :: non_neg_integer()
   def worlds_count do
     Mud
     |> select([r], r.address)
@@ -82,6 +90,10 @@ defmodule Explorer.Chain.Mud do
     |> Repo.Mud.aggregate(:count)
   end
 
+  @doc """
+  Returns the decoded MUD table schema by world address and table ID.
+  """
+  @spec world_table_schema(Hash.Address.t(), Hash.Full.t()) :: {:ok, Schema.t()} | {:error, :not_found}
   def world_table_schema(world, table_id) do
     Mud
     |> where([r], r.address == ^world and r.table_id == ^@store_tables_table_id and r.key0 == ^table_id)
@@ -95,6 +107,11 @@ defmodule Explorer.Chain.Mud do
     end
   end
 
+  @doc """
+  Returns the paginated list of registered MUD tables in the given world, optionally filtered by namespace or table name.
+  Each returned table in the resulting list is represented as a tuple of its ID and decoded schema.
+  """
+  @spec world_tables(Hash.Address.t(), Keyword.t()) :: [{Hash.Full.t(), Schema.t()}]
   def world_tables(world, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     filter_namespace = Keyword.get(options, :filter_namespace, nil)
@@ -117,6 +134,10 @@ defmodule Explorer.Chain.Mud do
 
   defp page_tables(query, _), do: query
 
+  @doc """
+  Returns the number of registered MUD tables in the given world.
+  """
+  @spec world_tables_count(Hash.Address.t(), Keyword.t()) :: non_neg_integer()
   def world_tables_count(world, options \\ []) do
     filter_namespace = Keyword.get(options, :filter_namespace, nil)
     filter_search = Keyword.get(options, :filter_search, nil)
@@ -148,6 +169,11 @@ defmodule Explorer.Chain.Mud do
     asc: :key_bytes
   ]
 
+  @doc """
+  Returns the paginated list of raw MUD records in the given world table.
+  Resulting records can be sorted or filtered by any of the first 2 key columns.
+  """
+  @spec world_table_records(Hash.Address.t(), Hash.Full.t(), Keyword.t()) :: [Mud.t()]
   def world_table_records(world, table_id, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     sorting = Keyword.get(options, :sorting, [])
@@ -161,6 +187,12 @@ defmodule Explorer.Chain.Mud do
     |> Repo.Mud.all()
   end
 
+  @doc """
+  Preloads last modification timestamps for the list of raw MUD records.
+
+  Returns a map of block numbers to timestamps.
+  """
+  @spec preload_records_timestamps([Mud.t()]) :: %{non_neg_integer() => DateTime.t()}
   def preload_records_timestamps(records) do
     block_numbers = records |> Enum.map(&(&1.block_number |> Decimal.to_integer())) |> Enum.uniq()
 
@@ -171,6 +203,10 @@ defmodule Explorer.Chain.Mud do
     |> Enum.into(%{})
   end
 
+  @doc """
+  Returns the number of MUD records in the given world table.
+  """
+  @spec world_table_records_count(Hash.Address.t(), Hash.Full.t(), Keyword.t()) :: non_neg_integer()
   def world_table_records_count(world, table_id, options \\ []) do
     Mud
     |> where([r], r.address == ^world and r.table_id == ^table_id and r.is_deleted == false)
@@ -185,6 +221,10 @@ defmodule Explorer.Chain.Mud do
 
   defp filter_records(query, :key1, key), do: query |> where([r], r.key1 == ^key)
 
+  @doc """
+  Returns the raw MUD record from the given world table by its ID.
+  """
+  @spec world_table_record(Hash.Address.t(), Hash.Full.t(), Data.t()) :: {:ok, Mud.t()} | {:error, :not_found}
   def world_table_record(world, table_id, record_id) do
     Mud
     |> where([r], r.address == ^world and r.table_id == ^table_id and r.key_bytes == ^record_id)
@@ -218,6 +258,12 @@ defmodule Explorer.Chain.Mud do
     |> Enum.at(0)
   end
 
+  @doc """
+  Decodes a given raw MUD record according to table schema.
+
+  Returns a JSON-like map with decoded field names and values.
+  """
+  @spec decode_record(Mud.t() | nil, Schema.t() | nil) :: map() | nil
   def decode_record(nil, _schema), do: nil
 
   def decode_record(_record, nil), do: nil
@@ -241,7 +287,7 @@ defmodule Explorer.Chain.Mud do
     key |> Map.merge(value)
   end
 
-  def decode_key_tuple(key_bytes, fields, layout_schema) do
+  defp decode_key_tuple(key_bytes, fields, layout_schema) do
     {_, types} = Schema.decode_types(layout_schema)
 
     fields
@@ -264,7 +310,7 @@ defmodule Explorer.Chain.Mud do
     |> elem(0)
   end
 
-  def decode_fields(static_data, encoded_lengths, dynamic_data, fields, layout_schema) do
+  defp decode_fields(static_data, encoded_lengths, dynamic_data, fields, layout_schema) do
     {static_fields_count, types} = Schema.decode_types(layout_schema)
 
     {static_types, dynamic_types} = Enum.split(types, static_fields_count)
@@ -304,7 +350,7 @@ defmodule Explorer.Chain.Mud do
     end
   end
 
-  def static_type_size(type) do
+  defp static_type_size(type) do
     case type do
       _ when type < 97 -> rem(type, 32) + 1
       97 -> 20
@@ -313,7 +359,7 @@ defmodule Explorer.Chain.Mud do
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
-  def decode_type(type, raw) do
+  defp decode_type(type, raw) do
     case type do
       _ when type < 32 ->
         raw |> :binary.decode_unsigned() |> Integer.to_string()

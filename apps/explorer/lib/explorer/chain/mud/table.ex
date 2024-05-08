@@ -9,6 +9,26 @@ defmodule Explorer.Chain.Mud.Table do
   @derive Jason.Encoder
   defstruct [:table_id, :table_full_name, :table_type, :table_namespace, :table_name]
 
+  @typedoc """
+  Decoded MUD table name struct.
+   * `table_id` - The 32-bytes raw MUD table ID.
+   * `table_full_name` - The decoded table full name.
+   * `table_type` - The decoded table type: "offchain" or "onchain".
+   * `table_namespace` - The decoded table namespace.
+   * `table_name` - The decoded table name.
+  """
+  @type t :: %__MODULE__{
+          table_id: Hash.Full.t(),
+          table_full_name: String.t(),
+          table_type: String.t(),
+          table_namespace: String.t(),
+          table_name: String.t()
+        }
+
+  @doc """
+  Decodes table type, namespace and name information from raw MUD table ID.
+  """
+  @spec from(Hash.Full.t()) :: t()
   def from(%Hash{byte_count: 32, bytes: raw} = table_id) do
     <<prefix::binary-size(2), namespace::binary-size(14), table_name::binary-size(16)>> = raw
 
@@ -38,6 +58,10 @@ defmodule Explorer.Chain.Mud.Table do
     }
   end
 
+  @doc """
+  Encodes table full name as a raw MUD table ID.
+  """
+  @spec table_full_name_to_table_id(String.t()) :: {:ok, Hash.Full.t()} | :error
   def table_full_name_to_table_id(full_name) do
     parts =
       case String.split(full_name, ".") do
