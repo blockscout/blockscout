@@ -44,6 +44,31 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
+    Function to handle GET requests to `/api/v2/optimism/txn-batch-by-celestia-blob/:commitment/:height` endpoint.
+  """
+  @spec txn_batch_by_celestia_blob(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def txn_batch_by_celestia_blob(conn, %{"commitment" => commitment, "height" => height}) do
+    commitment =
+      if String.starts_with?(String.downcase(commitment), "0x") do
+        commitment
+      else
+        "0x" <> commitment
+      end
+
+    {height, ""} = Integer.parse(height)
+
+    batch = TxnBatch.batch_by_celestia_blob(commitment, height, api?: true)
+
+    if is_nil(batch) do
+      {:error, :not_found}
+    else
+      conn
+      |> put_status(200)
+      |> render(:optimism_txn_batch_by_celestia_blob, %{batch: batch})
+    end
+  end
+
+  @doc """
     Function to handle GET requests to `/api/v2/optimism/output-roots` endpoint.
   """
   @spec output_roots(Plug.Conn.t(), map()) :: Plug.Conn.t()

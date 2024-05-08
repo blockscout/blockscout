@@ -39,8 +39,42 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   end
 
   @doc """
-  Lists `t:Explorer.Chain.Optimism.TxnBatch.t/0`'s' in descending order based on l2_block_number.
+  Finds and returns L1 batch data from the op_frame_sequences DB table by its celestia_blob_commitment and celestia_blob_height.
+  """
+  @spec batch_by_celestia_blob(binary(), non_neg_integer(), list()) :: map() | nil
+  def batch_by_celestia_blob(commitment, height, options \\ []) do
+    repo = select_repo(options)
 
+    query =
+      from(fs in FrameSequence,
+        select: %{id: fs.id, l1_transaction_hashes: fs.l1_transaction_hashes, l1_timestamp: fs.l1_timestamp},
+        where: fs.celestia_blob_commitment == ^commitment and fs.celestia_blob_height == ^height
+      )
+
+    batch = repo.one(query)
+
+    if not is_nil(batch) do
+      l2_block_number_from =
+        __MODULE__
+        |> where(frame_sequence_id: ^batch.id)
+        |> repo.aggregate(:min, :l2_block_number)
+
+      l2_block_number_to =
+        __MODULE__
+        |> where(frame_sequence_id: ^batch.id)
+        |> repo.aggregate(:max, :l2_block_number)
+
+      %{
+        "l1_transaction_hash" => Enum.join(batch.l1_transaction_hashes, ","),
+        "l1_timestamp" => batch.l1_timestamp,
+        "l2_block_number_from" => l2_block_number_from,
+        "l2_block_number_to" => l2_block_number_to
+      }
+    end
+  end
+
+  @doc """
+  Lists `t:Explorer.Chain.Optimism.TxnBatch.t/0`'s' in descending order based on l2_block_number.
   """
   @spec list :: [__MODULE__.t()]
   def list(options \\ []) do

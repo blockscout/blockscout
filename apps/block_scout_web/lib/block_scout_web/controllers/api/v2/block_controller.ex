@@ -34,7 +34,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     :optimism ->
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{
-        # :op_transaction_batch => :optional,
         :op_frame_sequence => :optional
       }
 

@@ -51,6 +51,13 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   @doc """
+    Function to render GET requests to `/api/v2/optimism/txn-batch-by-celestia-blob/:commitment/:height` endpoint.
+  """
+  def render("optimism_txn_batch_by_celestia_blob.json", %{batch: batch}) do
+    batch
+  end
+
+  @doc """
     Function to render GET requests to `/api/v2/optimism/output-roots` endpoint.
   """
   def render("optimism_output_roots.json", %{
