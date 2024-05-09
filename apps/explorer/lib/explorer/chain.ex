@@ -3581,6 +3581,11 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_token_instances_with_error(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    # likely to get valid metadata
+    high_priority = ["request error: 429", ":checkout_timeout", ":econnrefused", ":timeout"]
+    # almost impossible to get valid metadata
+    negative_priority = ["VM execution error", "no uri", "invalid json"]
+
     Instance
     |> where([instance], not is_nil(instance.error))
     |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after > ^DateTime.utc_now())
@@ -3588,7 +3593,11 @@ defmodule Explorer.Chain do
       contract_address_hash: instance.token_contract_address_hash,
       token_id: instance.token_id
     })
-    |> order_by([instance], asc: instance.refetch_after)
+    |> order_by([instance],
+      asc: instance.refetch_after,
+      desc: instance.error in ^high_priority,
+      asc: instance.error in ^negative_priority
+    )
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
@@ -3786,7 +3795,7 @@ defmodule Explorer.Chain do
   defp token_instance_metadata_on_conflict do
     config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
 
-    coef = config[:exp_timeout_coef]
+    coef = config[:exp_timeout_coeff]
     base = config[:exp_timeout_base]
     max_refetch_interval = config[:max_refetch_interval]
 

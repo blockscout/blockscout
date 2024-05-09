@@ -385,7 +385,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
     test "retries count 0 for new instance" do
       config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
 
-      coef = config[:exp_timeout_coef]
+      coef = config[:exp_timeout_coeff]
       base = config[:exp_timeout_base]
       max_refetch_interval = config[:max_refetch_interval]
 
@@ -411,7 +411,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
     test "proper updates retries count and refetch after on retry" do
       config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
 
-      coef = config[:exp_timeout_coef]
+      coef = config[:exp_timeout_coeff]
       base = config[:exp_timeout_base]
       max_refetch_interval = config[:max_refetch_interval]
 
@@ -442,7 +442,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
     test "success insert after retry" do
       config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
 
-      coef = config[:exp_timeout_coef]
+      coef = config[:exp_timeout_coeff]
       base = config[:exp_timeout_base]
       max_refetch_interval = config[:max_refetch_interval]
 

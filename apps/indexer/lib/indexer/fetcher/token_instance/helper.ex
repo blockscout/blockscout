@@ -268,7 +268,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   defp token_instance_map_with_error(token_id, token_contract_address_hash, error) do
     config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
 
-    coef = config[:exp_timeout_coef]
+    coef = config[:exp_timeout_coeff]
     max_refetch_interval = config[:max_refetch_interval]
 
     timeout = min(coef * 1000, max_refetch_interval)

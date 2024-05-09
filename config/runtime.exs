@@ -729,7 +729,7 @@ config :indexer, Indexer.Fetcher.TokenInstance.Retry,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_RETRY_BATCH_SIZE", 10),
   max_refetch_interval: ConfigHelper.parse_time_env_var("INDEXER_TOKEN_INSTANCE_RETRY_MAX_REFETCH_INTERVAL", "168h"),
   exp_timeout_base: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_RETRY_EXPONENTIAL_TIMEOUT_BASE", 2),
-  exp_timeout_coef: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_RETRY_EXPONENTIAL_TIMEOUT_COEF", 100)
+  exp_timeout_coeff: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_RETRY_EXPONENTIAL_TIMEOUT_COEFF", 100)
 
 config :indexer, Indexer.Fetcher.TokenInstance.Realtime,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_REALTIME_CONCURRENCY", 10),
