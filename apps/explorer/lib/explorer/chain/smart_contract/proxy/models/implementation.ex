@@ -296,17 +296,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   end
 
   def save_implementation_data(
-        [],
-        proxy_address_hash,
-        proxy_type,
-        options
-      ) do
-    upsert_implementation(proxy_address_hash, proxy_type, [], [], options)
-
-    {:empty, :empty}
-  end
-
-  def save_implementation_data(
         implementation_address_hash_strings,
         proxy_address_hash,
         proxy_type,
