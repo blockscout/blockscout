@@ -361,8 +361,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     changeset = %{
       proxy_address_hash: proxy_address_hash,
       proxy_type: proxy_type,
-      address_hashes: prepare_value(implementation_address_hash_strings),
-      names: prepare_value(names)
+      address_hashes: implementation_address_hash_strings,
+      names: names
     }
 
     %__MODULE__{}
@@ -374,14 +374,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     proxy
     |> changeset(%{
       proxy_type: proxy_type,
-      address_hashes: prepare_value(implementation_address_hash_strings),
-      names: prepare_value(names)
+      address_hashes: implementation_address_hash_strings,
+      names: names
     })
     |> Repo.update()
-  end
-
-  defp prepare_value(value) when is_list(value) do
-    value
   end
 
   defp db_implementation_data_converter(nil), do: nil
