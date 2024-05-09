@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
   @default_max_batch_size 1
   @default_max_concurrency 10
 
-  @whitelisted_for_retry_errors ["request error: 404", "request error: 500"]
+  @errors_whitelisted_for_retry ["request error: 404", "request error: 500"]
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
@@ -86,7 +86,7 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
     token_instances_to_refetch =
       Enum.flat_map(token_instances, fn
         {:ok, %Instance{metadata: nil, error: error} = instance}
-        when error in @whitelisted_for_retry_errors ->
+        when error in @errors_whitelisted_for_retry ->
           if token_instances_retry_map[{instance.token_contract_address_hash.bytes, instance.token_id}] do
             []
           else
