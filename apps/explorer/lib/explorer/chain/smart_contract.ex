@@ -959,9 +959,7 @@ defmodule Explorer.Chain.SmartContract do
                 implementation_address_fetched?: false,
                 refetch_necessity_checked?: false
               },
-              [
-                {:unverified_proxy_only?, true}
-              ]
+              Keyword.put(options, :unverified_proxy_only?, true)
             )
 
           {implementation_smart_contract, true}
