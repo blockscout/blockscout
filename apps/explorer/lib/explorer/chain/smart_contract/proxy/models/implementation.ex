@@ -154,7 +154,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         },
         options
       ) do
-    {implementation_address_hash_from_db, implementation_name_from_db, implementation_updated_at_from_db} =
+    {implementation_addresses_hash_from_db, implementation_names_from_db, implementation_updated_at_from_db} =
       implementation_from_db(address_hash, options)
 
     implementation_updated_at = implementation_updated_at || implementation_updated_at_from_db
@@ -181,19 +181,19 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
           {[], []}
 
         {:ok, {:error, :error}} ->
-          {db_implementation_data_converter(implementation_address_hash_from_db),
-           db_implementation_data_converter(implementation_name_from_db)}
+          {db_implementation_data_converter(implementation_addresses_hash_from_db),
+           db_implementation_data_converter(implementation_names_from_db)}
 
         {:ok, {address_hash, _name} = result} when not is_nil(address_hash) ->
           result
 
         _ ->
-          {db_implementation_data_converter(implementation_address_hash_from_db),
-           db_implementation_data_converter(implementation_name_from_db)}
+          {db_implementation_data_converter(implementation_addresses_hash_from_db),
+           db_implementation_data_converter(implementation_names_from_db)}
       end
     else
-      {db_implementation_data_converter(implementation_address_hash_from_db),
-       db_implementation_data_converter(implementation_name_from_db)}
+      {db_implementation_data_converter(implementation_addresses_hash_from_db),
+       db_implementation_data_converter(implementation_names_from_db)}
     end
   end
 
