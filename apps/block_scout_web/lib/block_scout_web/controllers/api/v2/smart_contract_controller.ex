@@ -105,7 +105,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
         address.smart_contract
         |> Implementation.get_implementation(@api_true)
         |> Tuple.to_list()
-        |> List.first() || [burn_address_hash_string()]
+        |> List.first()
 
       functions =
         implementation_address_hash_strings
@@ -136,7 +136,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
         address.smart_contract
         |> Implementation.get_implementation(@api_true)
         |> Tuple.to_list()
-        |> List.first() || [burn_address_hash_string()]
+        |> List.first()
 
       functions =
         implementation_address_hash_strings
