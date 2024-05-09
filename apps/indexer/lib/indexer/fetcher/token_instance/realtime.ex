@@ -17,6 +17,8 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
   @default_max_batch_size 1
   @default_max_concurrency 10
 
+  @whitelisted_for_retry_errors ["request error: 404", "request error: 500"]
+
   @doc false
   def child_spec([init_options, gen_server_options]) do
     merged_init_opts =
@@ -36,18 +38,7 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
   def run(token_instances, _) when is_list(token_instances) do
     retry? = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime)[:retry_with_cooldown?]
 
-    token_instances_retry_map =
-      if retry?,
-        do:
-          token_instances
-          |> Enum.flat_map(fn
-            %{contract_address_hash: hash, token_id: token_id, retry?: true} ->
-              [{{hash.bytes, token_id}, true}]
-
-            _ ->
-              []
-          end)
-          |> Enum.into(%{})
+    token_instances_retry_map = token_instance_to_retry_map(retry?, token_instances)
 
     token_instances
     |> Enum.filter(fn %{contract_address_hash: hash, token_id: token_id} = instance ->
@@ -90,11 +81,12 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
     BufferedTask.buffer(__MODULE__, data)
   end
 
+  @spec retry_some_instances([map()], boolean(), map()) :: any()
   defp retry_some_instances(token_instances, true, token_instances_retry_map) do
     token_instances_to_refetch =
       Enum.flat_map(token_instances, fn
         {:ok, %Instance{metadata: nil, error: error} = instance}
-        when error in ["request error: 404", "request error: 500"] ->
+        when error in @whitelisted_for_retry_errors ->
           if token_instances_retry_map[{instance.token_contract_address_hash.bytes, instance.token_id}] do
             []
           else
@@ -118,6 +110,20 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
   end
 
   defp retry_some_instances(_, _, _), do: nil
+
+  defp token_instance_to_retry_map(false, _token_instances), do: nil
+
+  defp token_instance_to_retry_map(true, token_instances) do
+    token_instances
+    |> Enum.flat_map(fn
+      %{contract_address_hash: hash, token_id: token_id, retry?: true} ->
+        [{{hash.bytes, token_id}, true}]
+
+      _ ->
+        []
+    end)
+    |> Enum.into(%{})
+  end
 
   defp defaults do
     [
