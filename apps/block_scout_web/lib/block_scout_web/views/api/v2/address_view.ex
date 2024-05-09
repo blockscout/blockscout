@@ -95,17 +95,24 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
     is_proxy = AddressView.smart_contract_is_proxy?(address_with_smart_contract, @api_true)
 
-    {implementation_address, implementation_name} =
+    {implementation_addresses, implementation_names} =
       with true <- is_proxy,
-           {address, name} <-
+           {addresses, names} <-
              Implementation.get_implementation(address_with_smart_contract.smart_contract, @api_true),
-           false <- is_nil(address),
-           {:ok, address_hash} <- Chain.string_to_address_hash(address),
-           checksummed_address <- Address.checksum(address_hash) do
-        {checksummed_address, name}
+           false <- addresses && Enum.empty?(addresses) do
+        addresses
+        |> Enum.zip(names)
+        |> Enum.reduce({[], []}, fn {address, name}, {addresses, names} = acc ->
+          with {:ok, address_hash} <- Chain.string_to_address_hash(address),
+               checksummed_address <- Address.checksum(address_hash) do
+            {[checksummed_address | addresses], [name | names]}
+          else
+            _ -> acc
+          end
+        end)
       else
         _ ->
-          {nil, nil}
+          {[], []}
       end
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
@@ -118,14 +125,21 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
     read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
 
+    # todo: added for backward compatibility, remove when frontend unbound from these props
+    {implementation_address, implementation_name} =
+      single_implementation(implementation_addresses, implementation_names)
+
     Map.merge(base_info, %{
       "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
       "creation_tx_hash" => creation_tx,
       "token" => token,
       "coin_balance" => balance,
       "exchange_rate" => exchange_rate,
+      # todo: added for backward compatibility, remove when frontend unbound from these props
       "implementation_name" => implementation_name,
+      "implementation_names" => implementation_names,
       "implementation_address" => implementation_address,
+      "implementation_addresses" => implementation_addresses,
       "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
       "has_custom_methods_read" => read_custom_abi?,
       "has_custom_methods_write" => write_custom_abi?,
@@ -142,6 +156,24 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "watchlist_address_id" => Chain.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
       "has_beacon_chain_withdrawals" => Counters.check_if_withdrawals_at_address(address.hash, @api_true)
     })
+  end
+
+  defp single_implementation(implementation_addresses, implementation_names) do
+    implementation_name =
+      if implementation_names && !Enum.empty?(implementation_names) do
+        implementation_names |> Enum.at(0)
+      else
+        nil
+      end
+
+    implementation_address =
+      if implementation_addresses && !Enum.empty?(implementation_addresses) do
+        implementation_addresses |> Enum.at(0)
+      else
+        nil
+      end
+
+    {implementation_address, implementation_name}
   end
 
   @spec prepare_token_balance(Chain.Address.TokenBalance.t(), boolean()) :: map()

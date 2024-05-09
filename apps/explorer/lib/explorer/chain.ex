@@ -1176,7 +1176,7 @@ defmodule Explorer.Chain do
           else
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
 
-            {implementation_address_hash, _} =
+            {implementation_address_hashes, _} =
               Implementation.get_implementation(
                 %{
                   updated: %SmartContract{
@@ -1189,20 +1189,7 @@ defmodule Explorer.Chain do
                 Keyword.put(options, :unverified_proxy_only?, true)
               )
 
-            implementation_smart_contract =
-              implementation_address_hash
-              |> Proxy.implementation_to_smart_contract(options)
-
-            address_verified_bytecode_twin_contract =
-              implementation_smart_contract ||
-                SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
-
-            address_result
-            |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
-            |> (&if(is_nil(implementation_smart_contract),
-                  do: &1,
-                  else: SmartContract.add_implementation_info_to_contract(&1, implementation_address_hash)
-                )).()
+            add_implementation_and_bytecode_twin_to_result(address_result, implementation_address_hashes, hash, options)
           end
 
         _ ->
@@ -1216,6 +1203,33 @@ defmodule Explorer.Chain do
       nil -> {:error, :not_found}
       address -> {:ok, address}
     end
+  end
+
+  defp add_implementation_and_bytecode_twin_to_result(address_result, implementation_address_hashes, hash, options) do
+    # implementation is added only in the case when mapping proxy to implementation is 1:1 (excluding Diamond proxy)
+    {implementation_smart_contract, implementation_address_hash} =
+      if implementation_address_hashes && Enum.count(implementation_address_hashes) == 1 do
+        implementation_address_hash = implementation_address_hashes |> Enum.at(0)
+
+        implementation_smart_contract =
+          implementation_address_hash
+          |> Proxy.implementation_to_smart_contract(options)
+
+        {implementation_smart_contract, implementation_address_hash}
+      else
+        {nil, nil}
+      end
+
+    address_verified_bytecode_twin_contract =
+      implementation_smart_contract ||
+        SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
+
+    address_result
+    |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
+    |> (&if(is_nil(implementation_smart_contract),
+          do: &1,
+          else: SmartContract.add_implementation_info_to_contract(&1, implementation_address_hash)
+        )).()
   end
 
   @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
