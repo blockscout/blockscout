@@ -214,7 +214,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         ),
       "language" => smart_contract_language(smart_contract),
       "license_type" => smart_contract.license_type,
-      "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false)
+      "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false),
+      "is_blueprint" => if(smart_contract.is_blueprint, do: smart_contract.is_blueprint, else: false)
     }
     |> Map.merge(bytecode_info(address))
   end

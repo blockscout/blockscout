@@ -128,7 +128,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
         "language" => smart_contract_language(target_contract),
         "license_type" => "none",
-        "certified" => false
+        "certified" => false,
+        "is_blueprint" => false
       }
 
       implementation_address = insert(:address)
@@ -233,7 +234,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
         "language" => smart_contract_language(target_contract),
         "license_type" => "gnu_agpl_v3",
-        "certified" => false
+        "certified" => false,
+        "is_blueprint" => false
       }
 
       TestHelper.get_eip1967_implementation_error_response()
@@ -338,7 +340,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
         "language" => smart_contract_language(target_contract),
         "license_type" => "none",
-        "certified" => false
+        "certified" => false,
+        "is_blueprint" => false
       }
 
       TestHelper.get_eip1967_implementation_zero_addresses()
@@ -459,7 +462,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_verified_via_verifier_alliance" => implementation_contract.verified_via_verifier_alliance,
         "language" => smart_contract_language(implementation_contract),
         "license_type" => "bsd_3_clause",
-        "certified" => false
+        "certified" => false,
+        "is_blueprint" => false
       }
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
