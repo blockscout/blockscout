@@ -6,7 +6,17 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   alias EthereumJSONRPC.Contract
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Chain.SmartContract.Proxy.{Basic, EIP1167, EIP1822, EIP1967, EIP2535, EIP930, MasterCopy}
+
+  alias Explorer.Chain.SmartContract.Proxy.{
+    Basic,
+    CloneWithImmutableArguments,
+    EIP1167,
+    EIP1822,
+    EIP1967,
+    EIP2535,
+    EIP930,
+    MasterCopy
+  }
 
   import Explorer.Chain,
     only: [
@@ -217,6 +227,28 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     get_implementation_address_hash_string_by_module(
       EIP1167,
       :eip1167,
+      [
+        proxy_address_hash,
+        proxy_abi,
+        go_to_fallback?
+      ],
+      :get_implementation_address_hash_string_clones_with_immutable_arguments
+    )
+  end
+
+  @doc """
+  Returns implementation address by following "Clone with immutable arguments" pattern or tries next proxy pattern
+  """
+  @spec get_implementation_address_hash_string_clones_with_immutable_arguments(Hash.Address.t(), any(), bool()) ::
+          %{implementation_address_hash_strings: [String.t()] | :error | nil, proxy_type: atom() | :unknown}
+  def get_implementation_address_hash_string_clones_with_immutable_arguments(
+        proxy_address_hash,
+        proxy_abi,
+        go_to_fallback? \\ true
+      ) do
+    get_implementation_address_hash_string_by_module(
+      CloneWithImmutableArguments,
+      :clone_with_immutable_arguments,
       [
         proxy_address_hash,
         proxy_abi,
