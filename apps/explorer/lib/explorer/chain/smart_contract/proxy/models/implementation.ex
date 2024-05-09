@@ -30,17 +30,18 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   typed_schema "proxy_implementations" do
     field(:proxy_address_hash, Hash.Address, primary_key: true, null: false)
 
+    # the order matches order of enum values in the DB
     field(:proxy_type, Ecto.Enum,
       values: [
         :eip1167,
         :eip1967,
         :eip1822,
         :eip930,
-        :eip2535,
         :master_copy,
         :basic_implementation,
         :basic_get_implementation,
         :comptroller,
+        :eip2535,
         :unknown
       ],
       null: true
