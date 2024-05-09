@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
   """
   @spec world_tables(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def world_tables(conn, %{"world" => world_param} = params) do
-    with {:ok, world} <- Hash.Address.cast(world_param) do
+    with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)} do
       options = params |> mud_paging_options(["table_id"], [Hash.Full]) |> Keyword.merge(mud_tables_filter(params))
 
       {tables, next_page} =
@@ -76,7 +76,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
   """
   @spec world_tables_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def world_tables_count(conn, %{"world" => world_param} = params) do
-    with {:ok, world} <- Hash.Address.cast(world_param) do
+    with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)} do
       options = params |> mud_tables_filter()
 
       count = Mud.world_tables_count(world, options)
@@ -92,8 +92,8 @@ defmodule BlockScoutWeb.API.V2.MudController do
   """
   @spec world_table_records(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def world_table_records(conn, %{"world" => world_param, "table_id" => table_id_param} = params) do
-    with {:ok, world} <- Hash.Address.cast(world_param),
-         {:ok, table_id} <- Hash.Full.cast(table_id_param),
+    with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)},
+         {:format, {:ok, table_id}} <- {:format, Hash.Full.cast(table_id_param)},
          {:ok, schema} <- Mud.world_table_schema(world, table_id) do
       options =
         params
@@ -128,8 +128,8 @@ defmodule BlockScoutWeb.API.V2.MudController do
   """
   @spec world_table_records_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def world_table_records_count(conn, %{"world" => world_param, "table_id" => table_id_param} = params) do
-    with {:ok, world} <- Hash.Address.cast(world_param),
-         {:ok, table_id} <- Hash.Full.cast(table_id_param),
+    with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)},
+         {:format, {:ok, table_id}} <- {:format, Hash.Full.cast(table_id_param)},
          {:ok, schema} <- Mud.world_table_schema(world, table_id) do
       options = params |> mud_records_filter(schema)
 
@@ -149,9 +149,9 @@ defmodule BlockScoutWeb.API.V2.MudController do
         conn,
         %{"world" => world_param, "table_id" => table_id_param, "record_id" => record_id_param} = _params
       ) do
-    with {:ok, world} <- Hash.Address.cast(world_param),
-         {:ok, table_id} <- Hash.Full.cast(table_id_param),
-         {:ok, record_id} <- Data.cast(record_id_param),
+    with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)},
+         {:format, {:ok, table_id}} <- {:format, Hash.Full.cast(table_id_param)},
+         {:format, {:ok, record_id}} <- {:format, Data.cast(record_id_param)},
          {:ok, schema} <- Mud.world_table_schema(world, table_id),
          {:ok, record} <- Mud.world_table_record(world, table_id, record_id) do
       blocks = Mud.preload_records_timestamps([record])
