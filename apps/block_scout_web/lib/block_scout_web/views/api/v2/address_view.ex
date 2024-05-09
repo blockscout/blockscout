@@ -105,7 +105,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         |> Enum.reduce({[], []}, fn {address, name}, {addresses, names} = acc ->
           with {:ok, address_hash} <- Chain.string_to_address_hash(address),
                checksummed_address <- Address.checksum(address_hash) do
-            {checksummed_address, name}
             {[checksummed_address | addresses], [name | names]}
           else
             _ -> acc
