@@ -1,6 +1,6 @@
 defmodule EthereumJSONRPC.Block.ByNumber do
   @moduledoc """
-  Block format as returned by [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash)
+  Block format as returned by [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbyhash)
   """
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
