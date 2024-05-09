@@ -109,7 +109,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.VerificationStatus do
   @doc """
     Sets proxy verification result
   """
-  @spec set_proxy_verification_result({String.t() | nil | :empty, String.t() | nil | :empty}, String.t()) ::
+  @spec set_proxy_verification_result({[String.t()] | :empty | :error, [String.t()] | :empty | :error}, String.t()) ::
           __MODULE__.t()
   def set_proxy_verification_result({empty_or_nil, _}, uid) when empty_or_nil in [:empty, nil],
     do: update_status(uid, :fail)
