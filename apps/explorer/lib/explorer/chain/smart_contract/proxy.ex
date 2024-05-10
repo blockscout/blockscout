@@ -22,7 +22,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @get_implementation_signature "aaf10f42"
   # bb82aa5e = keccak256(comptrollerImplementation()) Compound protocol proxy pattern
   @comptroller_implementation_signature "bb82aa5e"
-  # aaf10f42 = keccak256(getAddress(bytes32))
+  # 21f8a721 = keccak256(getAddress(bytes32))
   @get_address_signature "21f8a721"
 
   @typep api? :: {:api?, true | false}

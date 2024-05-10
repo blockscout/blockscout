@@ -7,8 +7,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     case {
-      Map.get(transaction, "gas_token_contract_address"),
-      Map.get(transaction, "gas_token")
+      Map.get(transaction, :gas_token_contract_address),
+      Map.get(transaction, :gas_token)
     } do
       {_, %NotLoaded{}} ->
         out_json

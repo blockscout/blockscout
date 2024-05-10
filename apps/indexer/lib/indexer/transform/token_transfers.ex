@@ -59,16 +59,7 @@ defmodule Indexer.Transform.TokenTransfers do
     tokens = sanitize_token_types(rough_tokens, rough_token_transfers)
     token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
 
-    token_transfers
-    |> Enum.filter(fn token_transfer ->
-      token_transfer.to_address_hash == burn_address_hash_string() ||
-        token_transfer.from_address_hash == burn_address_hash_string()
-    end)
-    |> Enum.map(fn token_transfer ->
-      token_transfer.token_contract_address_hash
-    end)
-    |> Enum.uniq()
-    |> TokenTotalSupplyUpdater.add_tokens()
+    TokenTotalSupplyUpdater.add_token_transfers(token_transfers)
 
     tokens_uniq = tokens |> Enum.uniq()
 

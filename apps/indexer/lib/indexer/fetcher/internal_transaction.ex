@@ -12,16 +12,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   import Indexer.Block.Fetcher,
     only: [
-      async_import_coin_balances: 2,
-      async_import_token_balances: 1
+      async_import_coin_balances: 2
     ]
 
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.{Accounts, Blocks}
-  alias Explorer.Chain.{Hash, Hash.Address}
-  alias Explorer.Chain.Import.Runner.Blocks, as: BlocksRunner
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
   alias Indexer.Transform.Addresses
@@ -436,34 +433,36 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   if Application.compile_env(:explorer, :chain_type) == :celo do
-    defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: [token]}) do
+    import Indexer.Block.Fetcher,
+      only: [
+        async_import_token_balances: 1
+      ]
+
+    defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: [celo_token]}) do
+      address_token_balances =
+        %{token_transfers: token_transfers}
+        |> Addresses.extract_addresses()
+        |> Enum.map(fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
+          with {:ok, address_hash} <- Hash.Address.cast(hash),
+               {:ok, token_contract_address_hash} <- Hash.Address.cast(celo_token.contract_address_hash) do
+            %{
+              address_hash: address_hash,
+              token_contract_address_hash: token_contract_address_hash,
+              block_number: block_number,
+              token_type: celo_token.type,
+              token_id: nil
+            }
+          else
+            error -> Logger.error("Failed to cast string to hash: #{inspect(error)}")
+          end
+        end)
+        |> MapSet.new()
+
       async_import_token_balances(%{
-        address_token_balances: to_address_token_balances(token_transfers, token)
+        address_token_balances: address_token_balances
       })
     end
-
-    defp async_import_celo_token_balances(_token_transfers), do: :ok
-
-    defp to_address_token_balances(token_transfers, celo_token) do
-      %{token_transfers: token_transfers}
-      |> Addresses.extract_addresses()
-      |> Enum.map(fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
-        with {:ok, address_hash} <- Hash.Address.cast(hash),
-             {:ok, token_contract_address_hash} <- Hash.Address.cast(celo_token.contract_address_hash) do
-          %{
-            address_hash: address_hash,
-            token_contract_address_hash: token_contract_address_hash,
-            block_number: block_number,
-            token_type: celo_token.type,
-            token_id: nil
-          }
-        else
-          error -> Logger.error("Failed to cast string to hash: #{inspect(error)}")
-        end
-      end)
-      |> MapSet.new()
-    end
-  else
-    defp async_import_celo_token_balances(_token_transfers), do: :ok
   end
+
+  defp async_import_celo_token_balances(_token_transfers), do: :ok
 end

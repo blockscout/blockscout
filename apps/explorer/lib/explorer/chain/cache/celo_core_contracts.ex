@@ -5,10 +5,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
 
   require Logger
 
-  # import Ecto.Query,
-  #   only: [
-  #     from: 2
-  #   ]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.SmartContract.Reader
 
@@ -21,9 +18,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     callback: &async_task_on_deletion(&1)
 
   @registry_proxy_contract_address "0x000000000000000000000000000000000000ce10"
-  @nil_address "0x0000000000000000000000000000000000000000"
 
-  @registry_proxy_abi [
+  @get_implementation_abi [
     %{
       "constant" => true,
       "inputs" => [],
@@ -41,7 +37,10 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     }
   ]
 
-  @registry_abi [
+  # 42404e07 = keccak(_getImplementation())
+  @get_implementation_signature "42404e07"
+
+  @get_address_for_string_abi [
     %{
       "constant" => true,
       "inputs" => [%{"name" => "identifier", "type" => "string"}],
@@ -52,6 +51,9 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
       "type" => "function"
     }
   ]
+
+  # 853db323 = keccak(getAddressForString(string))
+  @get_address_for_string_signature "853db323"
 
   @contract_atoms [
     :celo_token
@@ -86,14 +88,16 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     {:ok, task} =
       Task.start(fn ->
         try do
+          nil_address = burn_address_hash_string()
+
           {failed_contracts, contracts} =
             fetch_core_contract_addresses()
-            |> Enum.split_with(fn {_, %{address: address}} -> address in [nil, @nil_address] end)
+            |> Enum.split_with(fn {_, %{address: address}} -> address in [nil, nil_address] end)
 
           failed_contracts
           |> Enum.each(fn
-            {atom, %{address: @nil_address}} ->
-              Logger.warning("Celo Registry returned address #{@nil_address} for contract #{atom}")
+            {atom, %{address: ^nil_address}} ->
+              Logger.warning("Celo Registry returned address #{nil_address} for contract #{atom}")
 
             {atom, %{address: nil}} ->
               Logger.error("Could not fetch address for contract #{atom}")
@@ -130,20 +134,18 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   end
 
   def fetch_address_for_contract_name(contract_name) do
-    # 42404e07 = keccak(_getImplementation())
-    # 853db323 = keccak(getAddressForString(string))
-    with %{"42404e07" => {:ok, [implementation_address]}} <-
+    with %{@get_implementation_signature => {:ok, [implementation_address]}} <-
            Reader.query_contract(
              @registry_proxy_contract_address,
-             @registry_proxy_abi,
-             %{"42404e07" => []},
+             @get_implementation_abi,
+             %{@get_implementation_signature => []},
              false
            ),
-         %{"853db323" => {:ok, [contract_address]}} <-
+         %{@get_address_for_string_signature => {:ok, [contract_address]}} <-
            Reader.query_contract(
              implementation_address,
-             @registry_abi,
-             %{"853db323" => [contract_name]},
+             @get_address_for_string_abi,
+             %{@get_address_for_string_signature => [contract_name]},
              false
            ) do
       contract_address

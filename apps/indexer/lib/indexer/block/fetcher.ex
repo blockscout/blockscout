@@ -154,17 +154,8 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{token_transfers: celo_native_token_transfers, tokens: celo_tokens} =
-           if(
-             Application.get_env(:explorer, :chain_type) == :celo,
-             do: CeloTransactionTokenTransfers.parse_transactions(transactions_with_receipts),
-             else: %{token_transfers: [], tokens: []}
-           ),
-         celo_gas_tokens =
-           if(
-             Application.get_env(:explorer, :chain_type) == :celo,
-             do: CeloTransactionGasTokens.parse(transactions_with_receipts),
-             else: []
-           ),
+           CeloTransactionTokenTransfers.parse_transactions(transactions_with_receipts),
+         celo_gas_tokens = CeloTransactionGasTokens.parse(transactions_with_receipts),
          token_transfers = token_transfers ++ celo_native_token_transfers,
          tokens = Enum.uniq(tokens ++ celo_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
@@ -209,8 +200,7 @@ defmodule Indexer.Block.Fetcher do
              blocks_params: blocks,
              logs_params: logs,
              transactions_params: transactions_with_receipts,
-             withdrawals: withdrawals_params,
-             celo_token_transfers: token_transfers
+             withdrawals: withdrawals_params
            }
            |> AddressCoinBalances.params_set(),
          beneficiaries_with_gas_payment =
