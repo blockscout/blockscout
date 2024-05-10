@@ -14,7 +14,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
-  alias Que.Persistence, as: QuePersistence
   import BlockScoutWeb.API.V2.AddressController, only: [validate_address: 2, validate_address: 3]
 
   @smth_went_wrong "Something went wrong while publishing the contract"

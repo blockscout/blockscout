@@ -10,6 +10,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   alias Explorer.Chain.Hash
   alias Explorer.{Chain, Repo}
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
+  alias Que.Persistence, as: QuePersistence
 
   @typedoc """
   * `address_hash` - address of the contract which was tried to verify
