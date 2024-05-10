@@ -3,10 +3,12 @@ defmodule BlockScoutWeb.GraphQL.BodyReader do
   This module is responsible for reading the body of a graphql request and counting the number of queries in the body.
   """
 
+  alias Plug.Conn
+
   @max_number_of_queries 1
 
   def read_body(conn, opts) do
-    {:ok, body, conn} = Plug.Conn.read_body(conn, opts)
+    {:ok, body, conn} = Conn.read_body(conn, opts)
     updated_conn = update_in(conn.assigns[:raw_body], &[body | &1 || []])
 
     json_body = Jason.decode!(body)
