@@ -220,27 +220,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         render(conn, :show, %{result: "Fail - Unable to verify"})
 
       :unknown_uid ->
-        if find_uid_in_queue(guid) do
-          render(conn, :show, %{result: "Pending in queue"})
-        else
-          render(conn, :show, %{result: "Unknown UID"})
-        end
+        render(conn, :show, %{result: "Unknown UID"})
     end
-  end
-
-  defp find_uid_in_queue(uid) do
-    SolidityPublisherWorker
-    |> QuePersistence.all()
-    |> Enum.any?(fn
-      %Que.Job{arguments: {"flattened_api", _, _, ^uid}} ->
-        true
-
-      %Que.Job{arguments: {"json_api", _, _, ^uid}} ->
-        true
-
-      _ ->
-        false
-    end)
   end
 
   def verifyproxycontract(conn, %{"address" => address_hash_string} = params) do
