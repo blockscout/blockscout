@@ -122,9 +122,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     creation_tx = creator_hash && AddressView.transaction_hash(address)
     token = address.token && TokenView.render("token.json", %{token: address.token})
 
-    write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
-    read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
-
     # todo: added for backward compatibility, remove when frontend unbound from these props
     {implementation_address, implementation_name} =
       single_implementation(implementation_addresses, implementation_names)
@@ -141,13 +138,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       "implementation_address" => implementation_address,
       "implementation_addresses" => implementation_addresses,
       "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
-      "has_custom_methods_read" => read_custom_abi?,
-      "has_custom_methods_write" => write_custom_abi?,
-      "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address),
-      "has_methods_write" => AddressView.smart_contract_with_write_functions?(address),
-      "has_methods_read_proxy" => is_proxy,
-      "has_methods_write_proxy" =>
-        AddressView.smart_contract_with_write_functions?(address_with_smart_contract) && is_proxy,
       "has_decompiled_code" => AddressView.has_decompiled_code?(address),
       "has_validated_blocks" => Counters.check_if_validated_blocks_at_address(address.hash, @api_true),
       "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
