@@ -94,7 +94,12 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
               chunk_start,
               chunk_end,
               optimism_portal,
-              [@withdrawal_proven_event, @withdrawal_proven_event_blast, @withdrawal_finalized_event, @withdrawal_finalized_event_blast],
+              [
+                @withdrawal_proven_event,
+                @withdrawal_proven_event_blast,
+                @withdrawal_finalized_event,
+                @withdrawal_finalized_event_blast
+              ],
               json_rpc_named_arguments,
               Helper.infinite_retries_number()
             )
