@@ -127,6 +127,13 @@ config :explorer, Explorer.Repo.Stability,
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
+# Configures Mud database
+config :explorer, Explorer.Repo.Mud,
+  url: ExplorerConfigHelper.get_mud_db_url(),
+  pool_size: ConfigHelper.parse_integer_env_var("MUD_POOL_SIZE", 50),
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  queue_target: queue_target
+
 variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "apps/explorer/config/prod")

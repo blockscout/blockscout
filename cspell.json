@@ -391,6 +391,7 @@
         "nowrap",
         "ntoa",
         "nxdomain",
+        "offchain",
         "omni",
         "onclick",
         "onconnect",

@@ -346,6 +346,18 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/batches/:batch_number", V2.ZkSyncController, :batch)
       end
     end
+
+    scope "/mud" do
+      if Application.compile_env(:explorer, Explorer.Chain.Mud)[:enabled] do
+        get("/worlds", V2.MudController, :worlds)
+        get("/worlds/count", V2.MudController, :worlds_count)
+        get("/worlds/:world/tables", V2.MudController, :world_tables)
+        get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
+        get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
+        get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
+        get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
+      end
+    end
   end
 
   scope "/v1/graphql" do
