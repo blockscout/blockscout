@@ -34,20 +34,20 @@ defmodule Indexer.Fetcher.TokenInstance.Retry do
       Chain.stream_token_instances_with_error(
         initial_acc,
         fn data, acc ->
-          reduce_if_que_is_not_full(data, acc, reducer)
+          reduce_if_queue_is_not_full(data, acc, reducer)
         end
       )
 
     acc
   end
 
-  defp reduce_if_que_is_not_full(data, acc, reducer) do
+  defp reduce_if_queue_is_not_full(data, acc, reducer) do
     bound_queue = GenServer.call(__MODULE__, :state).bound_queue
 
     if bound_queue.size >= @max_queue_size or (bound_queue.maximum_size && bound_queue.size >= bound_queue.maximum_size) do
       :timer.sleep(@busy_waiting_timeout)
 
-      reduce_if_que_is_not_full(data, acc, reducer)
+      reduce_if_queue_is_not_full(data, acc, reducer)
     else
       reducer.(data, acc)
     end
