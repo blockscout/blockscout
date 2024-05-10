@@ -53,7 +53,7 @@ defmodule Explorer.Etherscan.Contracts do
                   refetch_necessity_checked?: false
                 },
                 [
-                  {:unverified_proxy_only?, true}
+                  {:proxy_without_abi?, true}
                 ]
               )
 

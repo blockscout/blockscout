@@ -1186,7 +1186,7 @@ defmodule Explorer.Chain do
                   implementation_address_fetched?: false,
                   refetch_necessity_checked?: false
                 },
-                Keyword.put(options, :unverified_proxy_only?, true)
+                Keyword.put(options, :proxy_without_abi?, true)
               )
 
             add_implementation_and_bytecode_twin_to_result(address_result, implementation_address_hashes, hash, options)

@@ -45,7 +45,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   # aaf10f42 = keccak256(getAddress(bytes32))
   @get_address_signature "21f8a721"
 
-  @typep options :: [{:api?, true | false}, {:unverified_proxy_only?, true | false}]
+  @typep options :: [{:api?, true | false}, {:proxy_without_abi?, true | false}]
 
   @doc """
   Fetches into DB proxy contract implementation's address and name from different proxy patterns
@@ -55,7 +55,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, options)
       when not is_nil(proxy_address_hash) do
     %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: proxy_type} =
-      if options[:unverified_proxy_only?] do
+      if options[:proxy_without_abi?] do
         get_implementation_address_hash_string_for_non_verified_proxy(proxy_address_hash)
       else
         get_implementation_address_hash_string(proxy_address_hash, proxy_abi)
