@@ -126,7 +126,6 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     attrs = address_hash |> attributes(params, abi)
 
     create_or_update_smart_contract(address_hash, attrs)
-    # SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
   end
 
   @doc """
