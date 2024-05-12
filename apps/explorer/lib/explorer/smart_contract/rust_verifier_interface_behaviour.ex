@@ -154,16 +154,19 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
 
       def process_verifier_response(other, _), do: {:error, other}
 
-      def solidity_multiple_files_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-multi-part"
+      # Uses url encoded ("%3A") version of ':', as ':' symbol brokes `Bypass` library during tests.
 
-      def vyper_multiple_files_verification_url, do: "#{base_api_url()}" <> "/verifier/vyper/sources:verify-multi-part"
+      def solidity_multiple_files_verification_url,
+        do: "#{base_api_url()}" <> "/verifier/solidity/sources%3Averify-multi-part"
+
+      def vyper_multiple_files_verification_url,
+        do: "#{base_api_url()}" <> "/verifier/vyper/sources%3Averify-multi-part"
 
       def vyper_standard_json_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/vyper/sources:verify-standard-json"
+        do: "#{base_api_url()}" <> "/verifier/vyper/sources%3Averify-standard-json"
 
       def solidity_standard_json_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/solidity/sources:verify-standard-json"
+        do: "#{base_api_url()}" <> "/verifier/solidity/sources%3Averify-standard-json"
 
       def versions_list_url, do: "#{base_api_url()}" <> "/verifier/solidity/versions"
 

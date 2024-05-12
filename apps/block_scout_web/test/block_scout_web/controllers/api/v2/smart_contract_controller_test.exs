@@ -471,6 +471,77 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       assert correct_response == response
     end
+
+    test "get smart-contract which is blueprint", %{conn: conn} do
+      lib_address = build(:address)
+      lib_address_string = to_string(lib_address)
+
+      target_contract =
+        insert(:smart_contract,
+          is_blueprint: true
+        )
+
+      insert(:transaction,
+        created_contract_address_hash: target_contract.address_hash,
+        input:
+          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+      )
+      |> with_block()
+
+      correct_response = %{
+        "verified_twin_address_hash" => nil,
+        "is_verified" => true,
+        "is_changed_bytecode" => false,
+        "is_partially_verified" => target_contract.partially_verified,
+        "is_fully_verified" => true,
+        "is_verified_via_sourcify" => target_contract.verified_via_sourcify,
+        "is_vyper_contract" => target_contract.is_vyper_contract,
+        "has_methods_read" => true,
+        "has_methods_write" => true,
+        "has_methods_read_proxy" => true,
+        "has_methods_write_proxy" => true,
+        "has_custom_methods_read" => false,
+        "has_custom_methods_write" => false,
+        "minimal_proxy_address_hash" => nil,
+        "sourcify_repo_url" =>
+          if(target_contract.verified_via_sourcify,
+            do: AddressContractView.sourcify_repo_url(target_contract.address_hash, target_contract.partially_verified)
+          ),
+        "can_be_visualized_via_sol2uml" => false,
+        "name" => target_contract && target_contract.name,
+        "compiler_version" => target_contract.compiler_version,
+        "optimization_enabled" => target_contract.optimization,
+        "optimization_runs" => target_contract.optimization_runs,
+        "evm_version" => target_contract.evm_version,
+        "verified_at" => target_contract.inserted_at |> to_string() |> String.replace(" ", "T"),
+        "source_code" => target_contract.contract_source_code,
+        "file_path" => target_contract.file_path,
+        "additional_sources" => [],
+        "compiler_settings" => target_contract.compiler_settings,
+        "external_libraries" => target_contract.external_libraries,
+        "constructor_args" => target_contract.constructor_arguments,
+        "decoded_constructor_args" => nil,
+        "is_self_destructed" => false,
+        "deployed_bytecode" =>
+          "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
+        "creation_bytecode" =>
+          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
+        "abi" => target_contract.abi,
+        "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
+        "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
+        "language" => smart_contract_language(target_contract),
+        "license_type" => "none",
+        "certified" => false,
+        "is_blueprint" => true
+      }
+
+      get_eip1967_implementation_non_zero_address()
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
+      response = json_response(request, 200)
+
+      assert correct_response == response
+    end
   end
 
   describe "/smart-contracts/{address_hash} <> eth_bytecode_db" do
