@@ -473,9 +473,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
 
     test "get smart-contract which is blueprint", %{conn: conn} do
-      lib_address = build(:address)
-      lib_address_string = to_string(lib_address)
-
       target_contract =
         insert(:smart_contract,
           is_blueprint: true
@@ -498,8 +495,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_vyper_contract" => target_contract.is_vyper_contract,
         "has_methods_read" => true,
         "has_methods_write" => true,
-        "has_methods_read_proxy" => true,
-        "has_methods_write_proxy" => true,
+        "has_methods_read_proxy" => false,
+        "has_methods_write_proxy" => false,
         "has_custom_methods_read" => false,
         "has_custom_methods_write" => false,
         "minimal_proxy_address_hash" => nil,
@@ -535,7 +532,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_blueprint" => true
       }
 
-      get_eip1967_implementation_non_zero_address()
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
