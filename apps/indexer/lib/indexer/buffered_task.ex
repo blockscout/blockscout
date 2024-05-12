@@ -198,7 +198,7 @@ defmodule Indexer.BufferedTask do
   Options are optional and are passed in the list that is second element of the tuple.
 
     * `:name` - The registered name for the new process.
-    * `:metadata` - `Logger.metadata/1` to det in teh `Indexer.BufferedTask` process and any child processes.
+    * `:metadata` - `Logger.metadata/1` to det in the `Indexer.BufferedTask` process and any child processes.
 
   """
   @spec start_link(
