@@ -154,7 +154,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
 
       def process_verifier_response(other, _), do: {:error, other}
 
-      # Uses url encoded ("%3A") version of ':', as ':' symbol brokes `Bypass` library during tests.
+      # Uses url encoded ("%3A") version of ':', as ':' symbol breaks `Bypass` library during tests.
 
       def solidity_multiple_files_verification_url,
         do: "#{base_api_url()}" <> "/verifier/solidity/sources%3Averify-multi-part"
