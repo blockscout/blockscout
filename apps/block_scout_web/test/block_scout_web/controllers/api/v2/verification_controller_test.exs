@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
   use BlockScoutWeb.ChannelCase, async: false
 
   alias BlockScoutWeb.UserSocketV2
+  alias Explorer.Chain.Address
+  alias Explorer.TestHelper
   alias Tesla.Multipart
   alias Plug.Conn
 
@@ -413,9 +415,12 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
                      :timer.seconds(300)
 
       # Assert that the `is_blueprint=true` is stored in the database after verification
-      query = Explorer.Chain.SmartContract.get_smart_contract_query(contract_address.hash)
-      db_smart_contract = Explorer.Repo.one(query)
-      assert db_smart_contract.is_blueprint == true
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(contract_address.hash)}")
+      response = json_response(request, 200)
+
+      assert response["is_blueprint"] == true
 
       Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
       Bypass.down(bypass)

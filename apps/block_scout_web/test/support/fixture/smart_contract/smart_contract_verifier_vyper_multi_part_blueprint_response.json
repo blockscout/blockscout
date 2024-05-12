@@ -16,6 +16,6 @@
         "compilationArtifacts": "{\"abi\":[{\"inputs\":[{\"name\":\"_value\",\"type\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"initialized\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"value\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"sources\":{\"Test.vy\":{\"id\":0}}}",
         "creationInputArtifacts": "{}",
         "deployedBytecodeArtifacts": "{\"sourceMap\":\"-1:-1:0:-;;;;;;;;;;;;;;;;:::-;:::-;;;;;:::-;;;:::-;;;;;;20:4;;-1:-1;:::-;:::-;;;;;:::-;;;:::-;;;;;;40:7;;-1:-1::-;;;;:::-;;;\"}",
-        "isBlueprint": false
+        "isBlueprint": true
     }
 }
