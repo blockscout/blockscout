@@ -236,7 +236,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
     |> put_if_present(elixir, [
       {"error", :error}
     ])
-    |> put_if_present(elixir |> Map.get("result") || %{}, [
+    |> put_if_present(elixir |> Map.get("result", %{}), [
       {"gasUsed", :gas_used},
       {"output", :output}
     ])
@@ -267,7 +267,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
     |> put_if_present(elixir, [
       {"error", :error}
     ])
-    |> put_if_present(elixir |> Map.get("result") || %{}, [
+    |> put_if_present(elixir |> Map.get("result", %{}), [
       {"gasUsed", :gas_used},
       {"code", :created_contract_code},
       {"address", :created_contract_address_hash}
