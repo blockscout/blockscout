@@ -33,6 +33,7 @@ defmodule Indexer.Block.Fetcher do
   }
 
   alias Indexer.{Prometheus, TokenBalances, Tracer}
+  alias Indexer.Fetcher.Celo.EpochLogs, as: CeloEpochLogs
 
   alias Indexer.Transform.{
     AddressCoinBalances,
@@ -151,8 +152,10 @@ defmodule Indexer.Block.Fetcher do
            }}} <- {:blocks, fetched_blocks},
          blocks = TransformBlocks.transform_blocks(blocks_params),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
-         %{logs: logs, receipts: receipts} = receipt_params,
+         %{logs: receipt_logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
+         celo_epoch_logs = CeloEpochLogs.fetch(blocks, json_rpc_named_arguments),
+         logs = receipt_logs ++ celo_epoch_logs,
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{token_transfers: celo_native_token_transfers, tokens: celo_tokens} =
            CeloTransactionTokenTransfers.parse_transactions(transactions_with_receipts),
