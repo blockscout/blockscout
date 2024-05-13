@@ -2957,7 +2957,7 @@ defmodule Explorer.Chain do
     revert_reason =
       case response do
         {:ok, first_trace_params} ->
-          first_trace_params |> Enum.at(0) |> Map.get(:output)
+          first_trace_params |> Enum.at(0) |> Map.get(:output, %Data{bytes: <<>>}) |> to_string()
 
         {:error, reason} ->
           Logger.error(fn ->
@@ -2972,12 +2972,11 @@ defmodule Explorer.Chain do
 
     if !is_nil(revert_reason) do
       transaction
-      # TODO remove to_string once type in table is bytea
-      |> Changeset.change(%{revert_reason: to_string(revert_reason)})
+      |> Changeset.change(%{revert_reason: revert_reason})
       |> Repo.update()
     end
 
-    revert_reason && to_string(revert_reason)
+    revert_reason
   end
 
   defp fetch_tx_revert_reason_using_call(%Transaction{
@@ -3003,25 +3002,33 @@ defmodule Explorer.Chain do
         Wei.hex_format(value)
       )
 
-    hex_data =
-      case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
-        {:error, %{data: data}} ->
-          data
+    case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
+      {:error, error} ->
+        parse_revert_reason_from_error(error)
 
-        {:error, %{message: message}} ->
-          message |> format_revert_reason_message()
-
-        _ ->
-          ""
-      end
-
-    case Data.cast(hex_data) do
-      {:ok, revert_reason} -> revert_reason
-      _ -> nil
+      _ ->
+        nil
     end
   end
 
-  def format_revert_reason_message(revert_reason) do
+  def parse_revert_reason_from_error(%{data: data}), do: format_revert_data(data)
+
+  def parse_revert_reason_from_error(%{message: message}), do: format_revert_reason_message(message)
+
+  defp format_revert_data(revert_data) do
+    case revert_data do
+      "revert" ->
+        "0x"
+
+      "0x" <> _ ->
+        revert_data
+
+      _ ->
+        nil
+    end
+  end
+
+  defp format_revert_reason_message(revert_reason) do
     case revert_reason do
       @revert_msg_prefix_1 <> rest ->
         rest
@@ -3039,7 +3046,7 @@ defmodule Explorer.Chain do
         rest
 
       _ ->
-        ""
+        nil
     end
   end
 

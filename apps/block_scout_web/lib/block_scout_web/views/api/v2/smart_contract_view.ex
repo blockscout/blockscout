@@ -55,8 +55,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   def prepare_function_response(outputs, names, contract_address_hash) do
     case outputs do
-      {:error, %{code: code, message: message, data: data}} ->
-        revert_reason = Chain.format_revert_reason_message(data)
+      {:error, %{code: code, message: message, data: _data} = error} ->
+        revert_reason = Chain.parse_revert_reason_from_error(error)
 
         case SmartContractView.decode_revert_reason(contract_address_hash, revert_reason, @api_true) do
           {:ok, method_id, text, mapping} ->

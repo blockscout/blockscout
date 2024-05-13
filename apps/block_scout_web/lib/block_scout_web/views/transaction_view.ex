@@ -628,9 +628,9 @@ defmodule BlockScoutWeb.TransactionView do
 
   @spec process_hex_revert_reason(binary()) :: binary()
   defp process_hex_revert_reason(hex_revert_reason) do
-    case Integer.parse(hex_revert_reason, 16) do
-      {number, ""} ->
-        :binary.encode_unsigned(number)
+    case Base.decode16(hex_revert_reason, case: :mixed) do
+      {:ok, revert_reason} ->
+        revert_reason
 
       _ ->
         hex_revert_reason

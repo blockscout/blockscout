@@ -641,10 +641,8 @@ defmodule Explorer.Chain.Transaction do
   ]
 
   defp process_hex_revert_reason(hex_revert_reason, %__MODULE__{to_address: smart_contract, hash: hash}, options) do
-    case Integer.parse(hex_revert_reason, 16) do
-      {number, ""} ->
-        binary_revert_reason = :binary.encode_unsigned(number)
-
+    case Base.decode16(hex_revert_reason, case: :mixed) do
+      {:ok, binary_revert_reason} ->
         case find_and_decode(@default_error_abi, binary_revert_reason, hash) do
           {:ok, {selector, values}} ->
             {:ok, mapping} = selector_mapping(selector, values, hash)
