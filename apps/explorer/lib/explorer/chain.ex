@@ -3602,12 +3602,16 @@ defmodule Explorer.Chain do
 
     Instance
     |> where([instance], not is_nil(instance.error))
+    |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after > ^DateTime.utc_now())
     |> select([instance], %{
       contract_address_hash: instance.token_contract_address_hash,
-      token_id: instance.token_id,
-      updated_at: instance.updated_at
+      token_id: instance.token_id
     })
-    |> order_by([instance], desc: instance.error in ^high_priority, asc: instance.error in ^negative_priority)
+    |> order_by([instance],
+      asc: instance.refetch_after,
+      desc: instance.error in ^high_priority,
+      asc: instance.error in ^negative_priority
+    )
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
@@ -3803,6 +3807,12 @@ defmodule Explorer.Chain do
   end
 
   defp token_instance_metadata_on_conflict do
+    config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
+
+    coef = config[:exp_timeout_coeff]
+    base = config[:exp_timeout_base]
+    max_refetch_interval = config[:max_refetch_interval]
+
     from(
       token_instance in Instance,
       update: [
@@ -3813,7 +3823,22 @@ defmodule Explorer.Chain do
           owner_updated_at_log_index: token_instance.owner_updated_at_log_index,
           owner_address_hash: token_instance.owner_address_hash,
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_instance.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at)
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at),
+          retries_count: token_instance.retries_count + 1,
+          refetch_after:
+            fragment(
+              """
+              CASE WHEN EXCLUDED.metadata IS NULL THEN
+                NOW() AT TIME ZONE 'UTC' + LEAST(interval '1 seconds' * (? * ? ^ (? + 1)), interval '1 milliseconds' * ?)
+              ELSE
+                NULL
+              END
+              """,
+              ^coef,
+              ^base,
+              token_instance.retries_count,
+              ^max_refetch_interval
+            )
         ]
       ],
       where: is_nil(token_instance.metadata)
