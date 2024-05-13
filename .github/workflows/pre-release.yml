@@ -1,8 +1,11 @@
-name: Release for Zetachain
+name: Pre-release
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      number:
+        type: number
+        required: true
 
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
@@ -22,13 +25,15 @@ jobs:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image for Zetachain (indexer + API)
+      - name: Build & Push Core Docker image (indexer + API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zetachain:latest, blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          tags: blockscout/blockscout:master, blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -40,17 +45,23 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=false
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=zetachain
 
-      - name: Build and push Docker image for Zetachain (indexer)
+      - name: Build & Push Core Docker image (indexer)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}-indexer
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -61,27 +72,39 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=false
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=zetachain
 
-      - name: Build and push Docker image for Zetachain (API)
+      - name: Build & Push Core Docker image (API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}-api
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
             DISABLE_INDEXER=true
             DISABLE_WEBAPP=true
+            API_V1_READ_METHODS_DISABLED=false
+            API_V1_WRITE_METHODS_DISABLED=false
             CACHE_EXCHANGE_RATES_PERIOD=
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=false
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=zetachain
