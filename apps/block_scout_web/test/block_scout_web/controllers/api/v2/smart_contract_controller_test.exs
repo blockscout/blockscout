@@ -67,6 +67,33 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                }
     end
 
+    test "get an eip1967 proxy contract", %{conn: conn} do
+      implementation_address = insert(:contract_address)
+      proxy_address = insert(:contract_address)
+
+      _proxy_smart_contract =
+        insert(:smart_contract,
+          address_hash: proxy_address.hash,
+          contract_code_md5: "123"
+        )
+
+      implementation =
+        insert(:proxy_implementation,
+          proxy_address_hash: proxy_address.hash,
+          proxy_type: "eip1967",
+          address_hashes: [implementation_address.hash],
+          names: [nil]
+        )
+
+      assert implementation.proxy_type == :eip1967
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
+      response = json_response(request, 200)
+
+      assert response["has_methods_read_proxy"] == true
+      assert response["has_methods_write_proxy"] == true
+    end
+
     test "get smart-contract", %{conn: conn} do
       lib_address = build(:address)
       lib_address_string = to_string(lib_address)
