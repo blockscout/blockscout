@@ -1,5 +1,10 @@
 defmodule Explorer.Chain.Transaction.Schema do
-  @moduledoc false
+  @moduledoc """
+    Models transactions.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Transactions
+  """
 
   alias Explorer.Chain.{
     Address,
@@ -120,6 +125,8 @@ defmodule Explorer.Chain.Transaction.Schema do
                         :arbitrum ->
                           elem(
                             quote do
+                              field(:gas_used_for_l1, :decimal)
+
                               has_one(:arbitrum_batch_transaction, ArbitrumBatchTransaction,
                                 foreign_key: :tx_hash,
                                 references: :hash
@@ -269,16 +276,32 @@ defmodule Explorer.Chain.Transaction do
 
   alias Explorer.SmartContract.SigProviderInterface
 
-  @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number block_consensus block_timestamp created_contract_address_hash cumulative_gas_used earliest_processing_start
-                     error gas_price gas_used index created_contract_code_indexed_at status
+  @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number
+                     block_consensus block_timestamp created_contract_address_hash
+                     cumulative_gas_used earliest_processing_start error gas_price
+                     gas_used index created_contract_code_indexed_at status
                      to_address_hash revert_reason type has_error_in_internal_txs r s v)a
 
-  @optimism_optional_attrs ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
-  @suave_optional_attrs ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
+  @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
+                                :optimism ->
+                                  ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
+
+                                :suave ->
+                                  ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
+
+                                _ ->
+                                  ~w()a
+                              end)
 
   @required_attrs ~w(from_address_hash gas hash input nonce value)a
 
-  @empty_attrs ~w()a
+  @chain_type_required_attrs (case Application.compile_env(:explorer, :chain_type) do
+                                :arbitrum ->
+                                  ~w(gas_used_for_l1)a
+
+                                _ ->
+                                  ~w()a
+                              end)
 
   @typedoc """
   X coordinate module n in
@@ -596,12 +619,13 @@ defmodule Explorer.Chain.Transaction do
   def changeset(%__MODULE__{} = transaction, attrs \\ %{}) do
     attrs_to_cast =
       @required_attrs ++
+        @chain_type_required_attrs ++
         @optional_attrs ++
-        custom_optional_attrs()
+        @chain_type_optional_attrs
 
     transaction
     |> cast(attrs, attrs_to_cast)
-    |> validate_required(@required_attrs)
+    |> validate_required(@required_attrs ++ @chain_type_required_attrs)
     |> validate_collated()
     |> validate_error()
     |> validate_status()
@@ -610,14 +634,6 @@ defmodule Explorer.Chain.Transaction do
     |> check_status()
     |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:hash)
-  end
-
-  defp custom_optional_attrs do
-    case Application.get_env(:explorer, :chain_type) do
-      :suave -> @suave_optional_attrs
-      :optimism -> @optimism_optional_attrs
-      _ -> @empty_attrs
-    end
   end
 
   @spec block_timestamp(t()) :: DateTime.t()
