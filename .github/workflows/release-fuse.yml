@@ -1,6 +1,7 @@
-name: Release additional
+name: Release for Fuse
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
@@ -22,51 +23,7 @@ jobs:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image for Rootstock
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          tags: blockscout/blockscout-rsk:latest, blockscout/blockscout-rsk:${{ env.RELEASE_VERSION }}
-          platforms: |
-            linux/amd64
-            linux/arm64/v8
-          build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=rsk
-
-      - name: Build and push Docker image for Stability
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          tags: blockscout/blockscout-stability:latest, blockscout/blockscout-stability:${{ env.RELEASE_VERSION }}
-          platforms: |
-            linux/amd64
-            linux/arm64/v8
-          build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=stability
-
-      - name: Build and push Docker image for Fuse
+      - name: Build and push Docker image for Fuse (indexer + API)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -77,35 +34,55 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            BRIDGED_TOKENS_ENABLED=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false
+            API_V1_READ_METHODS_DISABLED=false
             API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_EXCHANGE_RATES_PERIOD=
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            BRIDGED_TOKENS_ENABLED=true
 
-      - name: Build and push Docker image for Polygon Edge
+      - name: Build and push Docker image for Fuse (indexer)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-polygon-edge:latest, blockscout/blockscout-polygon-edge:${{ env.RELEASE_VERSION }}
+          tags: blockscout/blockscout-fuse:${{ env.RELEASE_VERSION }}-indexer
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
+            DISABLE_API=true
+            DISABLE_WEBAPP=true
             CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=polygon_edge
+            BRIDGED_TOKENS_ENABLED=true
+
+      - name: Build and push Docker image for Fuse (API)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-fuse:${{ env.RELEASE_VERSION }}-api
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            DISABLE_INDEXER=true
+            DISABLE_WEBAPP=true
+            CACHE_EXCHANGE_RATES_PERIOD=
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=false
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            BRIDGED_TOKENS_ENABLED=true

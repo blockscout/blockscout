@@ -1,17 +1,17 @@
-name: ETH Goerli Publish Docker image
+name: Redstone Publish Docker image
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - production-eth-goerli
+      - production-redstone
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
-      DOCKER_CHAIN_NAME: eth-goerli
+      DOCKER_CHAIN_NAME: redstone
     steps:
       - uses: actions/checkout@v4
       - name: Setup repo
@@ -27,8 +27,10 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:latest, blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
           build-args: |
-            CHAIN_TYPE=ethereum
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false
@@ -38,3 +40,5 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=optimism
+            MUD_INDEXER_ENABLED=true

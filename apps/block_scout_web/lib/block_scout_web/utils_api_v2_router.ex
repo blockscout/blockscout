@@ -7,6 +7,15 @@ defmodule BlockScoutWeb.UtilsApiV2Router do
   alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
 
   pipeline :api_v2_no_forgery_protect do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 100_000,
+      query_string_length: 5_000,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)

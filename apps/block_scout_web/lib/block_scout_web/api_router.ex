@@ -16,22 +16,52 @@ defmodule BlockScoutWeb.ApiRouter do
   alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router, UtilsApiV2Router}
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2, RateLimit}
 
+  @max_query_string_length 5_000
+
   forward("/v2/smart-contracts", SmartContractsApiV2Router)
   forward("/v2/key", APIKeyV2Router)
   forward("/v2/utils", UtilsApiV2Router)
 
   pipeline :api do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 20_000_000,
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
   end
 
   pipeline :account_api do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 100_000,
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
+    plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(:accepts, ["json"])
     plug(:fetch_session)
     plug(:protect_from_forgery)
     plug(CheckAccountAPI)
   end
 
   pipeline :api_v2 do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
@@ -41,6 +71,14 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   pipeline :api_v2_no_session do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
@@ -48,6 +86,13 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   pipeline :api_v1_graphql do
+    plug(
+      Plug.Parsers,
+      parsers: [:json, Absinthe.Plug.Parser],
+      json_decoder: Poison,
+      body_reader: {BlockScoutWeb.GraphQL.BodyReader, :read_body, []}
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
     plug(RateLimit, graphql?: true)
@@ -57,7 +102,6 @@ defmodule BlockScoutWeb.ApiRouter do
   alias BlockScoutWeb.API.V2
 
   scope "/account/v2", as: :account_v2 do
-    pipe_through(:api)
     pipe_through(:account_api)
 
     get("/authenticate", AuthenticateController, :authenticate_get)
@@ -344,6 +388,18 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/batches", V2.ZkSyncController, :batches)
         get("/batches/count", V2.ZkSyncController, :batches_count)
         get("/batches/:batch_number", V2.ZkSyncController, :batch)
+      end
+    end
+
+    scope "/mud" do
+      if Application.compile_env(:explorer, Explorer.Chain.Mud)[:enabled] do
+        get("/worlds", V2.MudController, :worlds)
+        get("/worlds/count", V2.MudController, :worlds_count)
+        get("/worlds/:world/tables", V2.MudController, :world_tables)
+        get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
+        get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
+        get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
+        get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
       end
     end
   end
