@@ -118,6 +118,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       )
       |> Map.put("compiler_settings", if(standard_json?, do: compiler_settings))
       |> Map.put("license_type", initial_params["license_type"])
+      |> Map.put("is_blueprint", source["isBlueprint"])
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
   end
@@ -186,12 +187,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     constructor_arguments = params["constructor_arguments"]
     compiler_settings = params["compiler_settings"]
 
-    clean_constructor_arguments =
-      if constructor_arguments != nil && constructor_arguments != "" do
-        constructor_arguments
-      else
-        nil
-      end
+    clean_constructor_arguments = clear_constructor_arguments(constructor_arguments)
 
     clean_compiler_settings =
       if compiler_settings in ["", nil, %{}] do
@@ -223,7 +219,16 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       is_vyper_contract: true,
       file_path: params["file_path"],
       compiler_settings: clean_compiler_settings,
-      license_type: prepare_license_type(params["license_type"]) || :none
+      license_type: prepare_license_type(params["license_type"]) || :none,
+      is_blueprint: params["is_blueprint"] || false
     }
+  end
+
+  defp clear_constructor_arguments(constructor_arguments) do
+    if constructor_arguments != nil && constructor_arguments != "" do
+      constructor_arguments
+    else
+      nil
+    end
   end
 end

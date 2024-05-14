@@ -270,6 +270,7 @@ defmodule Explorer.Chain.SmartContract do
   * `autodetect_constructor_args` - field was added for storing user's choice
   * `is_yul` - field was added for storing user's choice
   * `certified` - boolean flag, which can be set for set of smart-contracts via runtime env variable to prioritize those smart-contracts in the search.
+  * `is_blueprint` - boolean flag, determines if contract is ERC-5202 compatible blueprint contract or not.
   """
   typed_schema "smart_contracts" do
     field(:name, :string, null: false)
@@ -296,6 +297,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:metadata_from_verified_bytecode_twin, :boolean, virtual: true)
     field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
     field(:certified, :boolean)
+    field(:is_blueprint, :boolean)
 
     has_many(
       :decompiled_smart_contracts,
@@ -347,7 +349,8 @@ defmodule Explorer.Chain.SmartContract do
       :contract_code_md5,
       :compiler_settings,
       :license_type,
-      :certified
+      :certified,
+      :is_blueprint
     ])
     |> validate_required([
       :name,
@@ -390,7 +393,8 @@ defmodule Explorer.Chain.SmartContract do
         :contract_code_md5,
         :autodetect_constructor_args,
         :license_type,
-        :certified
+        :certified,
+        :is_blueprint
       ])
       |> (&if(verification_with_files?,
             do: &1,
