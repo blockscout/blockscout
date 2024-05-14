@@ -1,6 +1,6 @@
 defmodule EthereumJSONRPC.Uncle do
   @moduledoc """
-  [Uncle](https://github.com/ethereum/wiki/wiki/Glossary#ethereum-blockchain).
+  [Uncle](https://ethereum.org/en/glossary).
 
   An uncle is a block that didn't make the main chain due to them being validated slightly behind what became the main
   chain.

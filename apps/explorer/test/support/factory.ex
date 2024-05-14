@@ -451,6 +451,48 @@ defmodule Explorer.Factory do
     }
   end
 
+  def contract_code_info_vyper do
+    %{
+      bytecode:
+        "0x5f3560e01c60026001821660011b61005b01601e395f51565b63158ef93e81186100535734610057575f5460405260206040f3610053565b633fa4f245811861005357346100575760015460405260206040f35b5f5ffd5b5f80fd00180037",
+      tx_input:
+        "0x3461001c57607b6001555f5f5561005f61002060003961005f6000f35b5f80fd5f3560e01c60026001821660011b61005b01601e395f51565b63158ef93e81186100535734610057575f5460405260206040f3610053565b633fa4f245811861005357346100575760015460405260206040f35b5f5ffd5b5f80fd0018003784185f810400a16576797065728300030a0013",
+      name: "SimpleContract",
+      source_code: """
+      initialized: public(bool)
+      value: public(uint256)
+
+      @external
+      def __init__():
+          self.value = 123
+          self.initialized = False
+      """,
+      abi: [
+        %{
+          "inputs" => [],
+          "outputs" => [],
+          "stateMutability" => "nonpayable",
+          "type" => "constructor"
+        },
+        %{
+          "inputs" => [],
+          "name" => "initialized",
+          "outputs" => [%{"name" => "", "type" => "bool"}],
+          "stateMutability" => "view",
+          "type" => "function"
+        },
+        %{
+          "inputs" => [],
+          "name" => "value",
+          "outputs" => [%{"name" => "", "type" => "uint256"}],
+          "stateMutability" => "view",
+          "type" => "function"
+        }
+      ],
+      version: "v0.3.10"
+    }
+  end
+
   def address_hash do
     {:ok, address_hash} =
       "address_hash"

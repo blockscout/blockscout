@@ -29,9 +29,8 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
-    create(index(:arbitrum_crosslevel_messages, :status))
-    create(index(:arbitrum_crosslevel_messages, :originating_tx_blocknum))
-    create(index(:arbitrum_crosslevel_messages, :completion_tx_hash))
+    create(index(:arbitrum_crosslevel_messages, [:direction, :originating_tx_blocknum, :status]))
+    create(index(:arbitrum_crosslevel_messages, [:direction, :completion_tx_hash]))
 
     create table(:arbitrum_lifecycle_l1_transactions, primary_key: false) do
       add(:id, :integer, null: false, primary_key: true)
@@ -43,8 +42,7 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
     end
 
     create(unique_index(:arbitrum_lifecycle_l1_transactions, :hash))
-    create(index(:arbitrum_lifecycle_l1_transactions, :block_number))
-    create(index(:arbitrum_lifecycle_l1_transactions, :status))
+    create(index(:arbitrum_lifecycle_l1_transactions, [:block_number, :status]))
 
     create table(:arbitrum_l1_executions, primary_key: false) do
       add(:message_id, :integer, null: false, primary_key: true)

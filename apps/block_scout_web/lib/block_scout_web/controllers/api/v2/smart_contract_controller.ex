@@ -6,7 +6,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.PagingHelper,
     only: [current_filter: 1, delete_parameters_from_next_page_params: 1, search_query: 1, smart_contracts_sorting: 1]
 
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
 
   alias BlockScoutWeb.{AccessHelper, AddressView}
@@ -101,16 +100,25 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
          {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
-      implementation_address_hash_string =
+      implementation_address_hash_strings =
         address.smart_contract
         |> Implementation.get_implementation(@api_true)
         |> Tuple.to_list()
-        |> List.first() || burn_address_hash_string()
+        |> List.first()
+
+      functions =
+        implementation_address_hash_strings
+        |> Enum.reduce([], fn implementation_address_hash_string, acc ->
+          functions_from_implementation =
+            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, nil, @api_true)
+
+          acc ++ functions_from_implementation
+        end)
 
       conn
       |> put_status(200)
       |> render(:read_functions, %{
-        functions: Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, nil, @api_true)
+        functions: functions
       })
     end
   end
@@ -123,17 +131,26 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
          {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
-      implementation_address_hash_string =
+      implementation_address_hash_strings =
         address.smart_contract
         |> Implementation.get_implementation(@api_true)
         |> Tuple.to_list()
-        |> List.first() || burn_address_hash_string()
+        |> List.first()
+
+      functions =
+        implementation_address_hash_strings
+        |> Enum.reduce([], fn implementation_address_hash_string, acc ->
+          functions_from_implementation =
+            implementation_address_hash_string
+            |> Writer.write_functions_proxy(@api_true)
+
+          acc ++ functions_from_implementation
+        end)
 
       conn
       |> put_status(200)
       |> json(
-        implementation_address_hash_string
-        |> Writer.write_functions_proxy(@api_true)
+        functions
         |> Reader.get_abi_with_method_id()
       )
     end
