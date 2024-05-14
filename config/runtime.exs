@@ -117,9 +117,6 @@ config :block_scout_web, Api.GraphQL,
       "0x69e3923eef50eada197c3336d546936d0c994211492c9f947a24c02827568f9f"
     ),
   enabled: ConfigHelper.parse_bool_env_var("API_GRAPHQL_ENABLED", "true"),
-  token_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_TOKEN_LIMIT", 1000),
-  # Needs to be 215 to support the schema introspection for graphiql
-  max_complexity: ConfigHelper.parse_integer_env_var("API_GRAPHQL_MAX_COMPLEXITY", 215),
   rate_limit_disabled?: ConfigHelper.parse_bool_env_var("API_GRAPHQL_RATE_LIMIT_DISABLED"),
   global_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT", default_graphql_rate_limit),
   limit_by_key: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_KEY", default_graphql_rate_limit),

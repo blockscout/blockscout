@@ -6,6 +6,15 @@ defmodule BlockScoutWeb.APIKeyV2Router do
   alias BlockScoutWeb.Plug.{CheckApiV2, Logger}
 
   pipeline :api_v2 do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 10_000,
+      query_string_length: 5_000,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
     plug(Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
