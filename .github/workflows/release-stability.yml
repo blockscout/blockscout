@@ -1,6 +1,7 @@
-name: Release for Zetachain
+name: Release for Stability
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
@@ -22,13 +23,13 @@ jobs:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image for Zetachain (indexer + API)
+      - name: Build and push Docker image for Stability (indexer + API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zetachain:latest, blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}
+          tags: blockscout/blockscout-stability:latest, blockscout/blockscout-stability:${{ env.RELEASE_VERSION }}
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -42,15 +43,15 @@ jobs:
             ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=zetachain
+            CHAIN_TYPE=stability
 
-      - name: Build and push Docker image for Zetachain (indexer)
+      - name: Build and push Docker image for Stability (indexer)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}-indexer
+          tags: blockscout/blockscout-stability:${{ env.RELEASE_VERSION }}-indexer
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -63,15 +64,15 @@ jobs:
             ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=zetachain
+            CHAIN_TYPE=stability
 
-      - name: Build and push Docker image for Zetachain (API)
+      - name: Build and push Docker image for Stability (API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}-api
+          tags: blockscout/blockscout-stability:${{ env.RELEASE_VERSION }}-api
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -84,4 +85,4 @@ jobs:
             ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=zetachain
+            CHAIN_TYPE=stability

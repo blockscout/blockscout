@@ -1,8 +1,11 @@
-name: Release for Zetachain
+name: Pre-release for ZkSync
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      number:
+        type: number
+        required: true
 
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
@@ -22,13 +25,13 @@ jobs:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image for Zetachain (indexer + API)
+      - name: Build and push Docker image for ZkSync (indexer + API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zetachain:latest, blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}
+          tags: blockscout/blockscout-zksync:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -40,17 +43,17 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=false
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=zetachain
+            CHAIN_TYPE=zksync
 
-      - name: Build and push Docker image for Zetachain (indexer)
+      - name: Build and push Docker image for ZkSync (indexer)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}-indexer
+          tags: blockscout/blockscout-zksync:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -61,17 +64,17 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=false
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=zetachain
+            CHAIN_TYPE=zksync
 
-      - name: Build and push Docker image for Zetachain (API)
+      - name: Build and push Docker image for ZkSync (API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zetachain:${{ env.RELEASE_VERSION }}-api
+          tags: blockscout/blockscout-zksync:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-api
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -82,6 +85,6 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=false
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=zetachain
+            CHAIN_TYPE=zksync

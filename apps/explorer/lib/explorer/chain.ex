@@ -865,13 +865,7 @@ defmodule Explorer.Chain do
   """
   @spec finished_indexing_internal_transactions?([api?]) :: boolean()
   def finished_indexing_internal_transactions?(options \\ []) do
-    internal_transactions_disabled? =
-      Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] or
-        not Application.get_env(:indexer, Indexer.Supervisor)[:enabled]
-
-    if internal_transactions_disabled? do
-      true
-    else
+    if indexer_running?() and internal_transactions_fetcher_running?() do
       json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
       variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
@@ -880,6 +874,8 @@ defmodule Explorer.Chain do
       else
         check_left_blocks_to_index_internal_transactions(options)
       end
+    else
+      true
     end
   end
 
@@ -930,7 +926,7 @@ defmodule Explorer.Chain do
   """
   @spec finished_indexing?([api?]) :: boolean()
   def finished_indexing?(options \\ []) do
-    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
+    if indexer_running?() do
       indexed_ratio = indexed_ratio_blocks()
 
       case finished_indexing_from_ratio?(indexed_ratio) do
@@ -1489,7 +1485,7 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio_blocks() :: Decimal.t()
   def indexed_ratio_blocks do
-    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
+    if indexer_running?() do
       %{min: min_saved_block_number, max: max_saved_block_number} = BlockNumber.get_all()
 
       min_blockchain_block_number = Application.get_env(:indexer, :first_block)
@@ -1519,8 +1515,7 @@ defmodule Explorer.Chain do
 
   @spec indexed_ratio_internal_transactions() :: Decimal.t()
   def indexed_ratio_internal_transactions do
-    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] &&
-         not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] do
+    if indexer_running?() and internal_transactions_fetcher_running?() do
       %{max: max_saved_block_number} = BlockNumber.get_all()
       pbo_count = PendingBlockOperationCache.estimated_count()
 
@@ -2146,11 +2141,34 @@ defmodule Explorer.Chain do
     select_repo(options).one!(query)
   end
 
+  def indexer_running? do
+    Application.get_env(:indexer, Indexer.Supervisor)[:enabled] or match?({:ok, _, _}, last_db_block_status())
+  end
+
+  def internal_transactions_fetcher_running? do
+    not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] or
+      match?({:ok, _, _}, last_db_internal_transaction_block_status())
+  end
+
   def last_db_block_status do
     query =
       from(block in Block,
         select: {block.number, block.timestamp},
         where: block.consensus == true,
+        order_by: [desc: block.number],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> block_status()
+  end
+
+  def last_db_internal_transaction_block_status do
+    query =
+      from(it in InternalTransaction,
+        join: block in assoc(it, :block),
+        select: {block.number, block.timestamp},
         order_by: [desc: block.number],
         limit: 1
       )

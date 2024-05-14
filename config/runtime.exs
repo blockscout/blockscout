@@ -8,6 +8,8 @@ import Config
 ### BlockScout Web ###
 ######################
 
+disable_api? = ConfigHelper.parse_bool_env_var("DISABLE_API")
+
 config :block_scout_web,
   version: System.get_env("BLOCKSCOUT_VERSION"),
   release_link: System.get_env("RELEASE_LINK"),
@@ -32,7 +34,8 @@ config :block_scout_web,
   display_token_icons: ConfigHelper.parse_bool_env_var("DISPLAY_TOKEN_ICONS"),
   hide_block_miner: ConfigHelper.parse_bool_env_var("HIDE_BLOCK_MINER"),
   show_tenderly_link: ConfigHelper.parse_bool_env_var("SHOW_TENDERLY_LINK"),
-  sensitive_endpoints_api_key: System.get_env("API_SENSITIVE_ENDPOINTS_KEY")
+  sensitive_endpoints_api_key: System.get_env("API_SENSITIVE_ENDPOINTS_KEY"),
+  disable_api?: disable_api?
 
 config :block_scout_web, :recaptcha,
   v2_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY"),
@@ -219,7 +222,7 @@ config :explorer,
   include_uncles_in_average_block_time: ConfigHelper.parse_bool_env_var("UNCLES_IN_AVERAGE_BLOCK_TIME"),
   healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTHY_BLOCKS_PERIOD", "5m"),
   realtime_events_sender:
-    if(disable_webapp?,
+    if(disable_api? or disable_webapp?,
       do: Explorer.Chain.Events.DBSender,
       else: Explorer.Chain.Events.SimpleSender
     ),
@@ -236,12 +239,7 @@ config :explorer, :proxy,
   fallback_cached_implementation_data_ttl: :timer.seconds(4),
   implementation_data_fetching_timeout: :timer.seconds(2)
 
-config :explorer, Explorer.Chain.Events.Listener,
-  enabled:
-    if(disable_webapp? && disable_indexer?,
-      do: false,
-      else: true
-    )
+config :explorer, Explorer.Chain.Events.Listener, enabled: disable_indexer?
 
 precompiled_config_base_dir =
   case config_env() do
@@ -754,7 +752,7 @@ config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", 10),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", 4),
   indexing_finished_threshold:
-    ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_INDEXING_FINISHED_THRESHOLD", 1000)
+    ConfigHelper.parse_integer_env_var("API_INTERNAL_TRANSACTIONS_INDEXING_FINISHED_THRESHOLD", 1000)
 
 coin_balances_batch_size = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 100)
 coin_balances_concurrency = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 4)
