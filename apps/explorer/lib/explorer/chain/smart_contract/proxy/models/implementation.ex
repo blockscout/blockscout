@@ -42,6 +42,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         :basic_get_implementation,
         :comptroller,
         :eip2535,
+        :clone_with_immutable_arguments,
         :unknown
       ],
       null: true

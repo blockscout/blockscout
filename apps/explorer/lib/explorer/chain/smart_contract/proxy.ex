@@ -6,7 +6,17 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   alias EthereumJSONRPC.Contract
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Chain.SmartContract.Proxy.{Basic, EIP1167, EIP1822, EIP1967, EIP2535, EIP930, MasterCopy}
+
+  alias Explorer.Chain.SmartContract.Proxy.{
+    Basic,
+    CloneWithImmutableArguments,
+    EIP1167,
+    EIP1822,
+    EIP1967,
+    EIP2535,
+    EIP930,
+    MasterCopy
+  }
 
   import Explorer.Chain,
     only: [
@@ -35,7 +45,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   # aaf10f42 = keccak256(getAddress(bytes32))
   @get_address_signature "21f8a721"
 
-  @typep options :: [{:api?, true | false}, {:unverified_proxy_only?, true | false}]
+  @typep options :: [{:api?, true | false}, {:proxy_without_abi?, true | false}]
 
   @doc """
   Fetches into DB proxy contract implementation's address and name from different proxy patterns
@@ -45,7 +55,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, options)
       when not is_nil(proxy_address_hash) do
     %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: proxy_type} =
-      if options[:unverified_proxy_only?] do
+      if options[:proxy_without_abi?] do
         get_implementation_address_hash_string_for_non_verified_proxy(proxy_address_hash)
       else
         get_implementation_address_hash_string(proxy_address_hash, proxy_abi)
@@ -217,6 +227,28 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     get_implementation_address_hash_string_by_module(
       EIP1167,
       :eip1167,
+      [
+        proxy_address_hash,
+        proxy_abi,
+        go_to_fallback?
+      ],
+      :get_implementation_address_hash_string_clones_with_immutable_arguments
+    )
+  end
+
+  @doc """
+  Returns implementation address by following "Clone with immutable arguments" pattern or tries next proxy pattern
+  """
+  @spec get_implementation_address_hash_string_clones_with_immutable_arguments(Hash.Address.t(), any(), bool()) ::
+          %{implementation_address_hash_strings: [String.t()] | :error | nil, proxy_type: atom() | :unknown}
+  def get_implementation_address_hash_string_clones_with_immutable_arguments(
+        proxy_address_hash,
+        proxy_abi,
+        go_to_fallback? \\ true
+      ) do
+    get_implementation_address_hash_string_by_module(
+      CloneWithImmutableArguments,
+      :clone_with_immutable_arguments,
       [
         proxy_address_hash,
         proxy_abi,

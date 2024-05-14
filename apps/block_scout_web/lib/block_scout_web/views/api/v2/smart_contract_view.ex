@@ -233,7 +233,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   @doc """
-  Returns additional sources of the smart-contract or from bytecode twin or from implementation, if it fits minimal proxy pattern (EIP-1167)
+  Returns additional sources of the smart-contract or from bytecode twin or from implementation, if it fits minimal proxy pattern (EIP-1167, Clone with immutable arguments)
   """
   @spec get_additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil) ::
           [SmartContractAdditionalSource.t()] | nil
