@@ -286,7 +286,13 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   rescue
     error in Postgrex.Error ->
       if retrying? do
-        Logger.warn(["Failed to upsert token instance: #{inspect(error)}"], fetcher: :token_instances)
+        Logger.warn(
+          [
+            "Failed to upsert token instance: {#{to_string(token_contract_address_hash)}, #{token_id}}, error: #{inspect(error)}"
+          ],
+          fetcher: :token_instances
+        )
+
         nil
       else
         token_id

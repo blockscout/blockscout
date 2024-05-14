@@ -277,6 +277,10 @@ defmodule Indexer.BufferedTask do
     {:noreply, drop_task_and_retry(state, ref)}
   end
 
+  def handle_info({:buffer, entries}, state) do
+    {:noreply, buffer_entries(state, entries)}
+  end
+
   def handle_call({:buffer, entries}, _from, state) do
     {:reply, :ok, buffer_entries(state, entries)}
   end
