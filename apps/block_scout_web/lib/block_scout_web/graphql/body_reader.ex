@@ -20,8 +20,14 @@ defmodule BlockScoutWeb.GraphQL.BodyReader do
         1
       end
 
+    error = %{errors: [%{message: "Max batch size is 1"}]}
+
     if json_body_length > @max_number_of_queries do
-      {:ok, "", updated_conn}
+      {:ok, "",
+       updated_conn
+       |> Conn.put_resp_content_type("application/json")
+       |> Conn.resp(400, Jason.encode!(error))
+       |> Conn.halt()}
     else
       {:ok, body, updated_conn}
     end
