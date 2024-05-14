@@ -167,21 +167,11 @@ defmodule ConfigHelper do
 
   @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap | Source.Mobula
   def exchange_rates_source do
-    coingecko_api_key = System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY")
-
-    default_source =
-      if coingecko_api_key in [nil, ""] do
-        Source.Mobula
-      else
-        Source.CoinGecko
-      end
-
     case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
       "coin_gecko" -> Source.CoinGecko
       "coin_market_cap" -> Source.CoinMarketCap
       "mobula" -> Source.Mobula
-      # If the EXCHANGE_RATES_COINGECKO_API_KEY is set, CoinGecko is used by default otherwise it's Mobula
-      _ -> default_source
+      _ -> Source.CoinGecko
     end
   end
 
