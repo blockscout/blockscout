@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Router do
     plug(
       Plug.Parsers,
       parsers: [:urlencoded, :multipart, :json],
-      length: 20_000_000,
+      length: 100_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
       json_decoder: Poison
@@ -32,6 +32,7 @@ defmodule BlockScoutWeb.Router do
     plug(
       Plug.Parsers,
       parsers: [:urlencoded, :multipart, :json],
+      length: 20_000_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
       json_decoder: Poison

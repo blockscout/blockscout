@@ -7,14 +7,13 @@ defmodule BlockScoutWeb.WebRouter do
 
   alias BlockScoutWeb.Plug.CheckAccountWeb
 
-  @max_length 20_000_000
   @max_query_string_length 5_000
 
   pipeline :browser do
     plug(
       Plug.Parsers,
       parsers: [:urlencoded, :multipart, :json],
-      length: @max_length,
+      length: 20_000_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
       json_decoder: Poison
@@ -33,7 +32,7 @@ defmodule BlockScoutWeb.WebRouter do
     plug(
       Plug.Parsers,
       parsers: [:urlencoded, :multipart, :json],
-      length: @max_length,
+      length: 100_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
       json_decoder: Poison

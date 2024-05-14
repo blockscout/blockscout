@@ -26,6 +26,7 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(
       Plug.Parsers,
       parsers: [:urlencoded, :multipart, :json],
+      length: 20_000_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
       json_decoder: Poison
@@ -36,6 +37,17 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   pipeline :account_api do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 100_000,
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
+    plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(:accepts, ["json"])
     plug(:fetch_session)
     plug(:protect_from_forgery)
     plug(CheckAccountAPI)
@@ -90,7 +102,6 @@ defmodule BlockScoutWeb.ApiRouter do
   alias BlockScoutWeb.API.V2
 
   scope "/account/v2", as: :account_v2 do
-    pipe_through(:api)
     pipe_through(:account_api)
 
     get("/authenticate", AuthenticateController, :authenticate_get)

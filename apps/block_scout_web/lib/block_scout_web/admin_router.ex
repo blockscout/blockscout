@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.AdminRouter do
     plug(
       Plug.Parsers,
       parsers: [:urlencoded, :multipart, :json],
-      length: 20_000_000,
+      length: 10_000,
       query_string_length: 5_000,
       pass: ["*/*"],
       json_decoder: Poison
