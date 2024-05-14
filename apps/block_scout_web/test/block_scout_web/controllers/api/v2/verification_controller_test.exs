@@ -3,7 +3,10 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
   use BlockScoutWeb.ChannelCase, async: false
 
   alias BlockScoutWeb.UserSocketV2
+  alias Explorer.Chain.Address
+  alias Explorer.TestHelper
   alias Tesla.Multipart
+  alias Plug.Conn
 
   @moduletag timeout: :infinity
 
@@ -348,6 +351,79 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
                      :timer.seconds(300)
 
       Application.put_env(:explorer, :solc_bin_api_url, before)
+    end
+
+    test "blueprint contract verification", %{conn: conn} do
+      bypass = Bypass.open()
+
+      sc_verifier_response =
+        File.read!(
+          "./test/support/fixture/smart_contract/smart_contract_verifier_vyper_multi_part_blueprint_response.json"
+        )
+
+      old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+
+      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true,
+        type: "sc_verifier",
+        eth_bytecode_db?: true
+      )
+
+      Bypass.expect_once(bypass, "POST", "/api/v2//verifier/vyper/sources%3Averify-multi-part", fn conn ->
+        Conn.resp(conn, 200, sc_verifier_response)
+      end)
+
+      bytecode =
+        "0xfe7100346100235760206100995f395f516001555f5f5561005f61002760003961005f6000f35b5f80fd5f3560e01c60026001821660011b61005b01601e395f51565b63158ef93e81186100535734610057575f5460405260206040f3610053565b633fa4f245811861005357346100575760015460405260206040f35b5f5ffd5b5f80fd0018003784185f810400a16576797065728300030a0013"
+
+      input =
+        "0x61009c3d81600a3d39f3fe7100346100235760206100995f395f516001555f5f5561005f61002760003961005f6000f35b5f80fd5f3560e01c60026001821660011b61005b01601e395f51565b63158ef93e81186100535734610057575f5460405260206040f3610053565b633fa4f245811861005357346100575760015460405260206040f35b5f5ffd5b5f80fd0018003784185f810400a16576797065728300030a0013"
+
+      contract_address = insert(:contract_address, contract_code: bytecode)
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: input
+      )
+      |> with_block(status: :ok)
+
+      topic = "addresses:#{contract_address.hash}"
+
+      {:ok, _reply, _socket} =
+        BlockScoutWeb.UserSocketV2
+        |> socket("no_id", %{})
+        |> subscribe_and_join(topic)
+
+      # We can actually use any params here, as verification service response is defined in `sc_verifier_response`
+      params = %{
+        "source_code" => "some_valid_source_code",
+        "compiler_version" => "v0.3.10",
+        "contract_name" => "abc"
+      }
+
+      request = post(conn, "/api/v2/smart-contracts/#{contract_address.hash}/verification/via/vyper-code", params)
+
+      assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{status: "success"},
+                       event: "verification_result",
+                       topic: ^topic
+                     },
+                     :timer.seconds(300)
+
+      # Assert that the `is_blueprint=true` is stored in the database after verification
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
+      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(contract_address.hash)}")
+      response = json_response(request, 200)
+
+      assert response["is_blueprint"] == true
+
+      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
+      Bypass.down(bypass)
     end
   end
 

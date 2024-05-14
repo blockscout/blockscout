@@ -216,7 +216,6 @@ defmodule Indexer.BufferedTask do
   def start_link({module, base_init_opts}, genserver_opts \\ []) do
     default_opts = Application.get_all_env(:indexer)
     init_opts = Keyword.merge(default_opts, base_init_opts)
-
     GenServer.start_link(__MODULE__, {module, init_opts}, genserver_opts)
   end
 
@@ -278,6 +277,10 @@ defmodule Indexer.BufferedTask do
     {:noreply, drop_task_and_retry(state, ref)}
   end
 
+  def handle_info({:buffer, entries}, state) do
+    {:noreply, buffer_entries(state, entries)}
+  end
+
   def handle_call({:buffer, entries}, _from, state) do
     {:reply, :ok, buffer_entries(state, entries)}
   end
@@ -295,6 +298,14 @@ defmodule Indexer.BufferedTask do
     count = length(current_buffer) + Enum.count(bound_queue) * max_batch_size
 
     {:reply, %{buffer: count, tasks: Enum.count(task_ref_to_batch)}, state}
+  end
+
+  def handle_call(
+        :state,
+        _from,
+        state
+      ) do
+    {:reply, state, state}
   end
 
   def handle_call({:push_back, entries}, _from, state) when is_list(entries) do

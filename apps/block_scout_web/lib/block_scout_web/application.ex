@@ -12,37 +12,7 @@ defmodule BlockScoutWeb.Application do
   alias BlockScoutWeb.Utility.EventHandlersMetrics
 
   def start(_type, _args) do
-    import Supervisor
-
-    PhoenixInstrumenter.setup()
-    Exporter.setup()
-
-    APILogger.message(
-      "Current global API rate limit #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:global_limit])} reqs/sec"
-    )
-
-    APILogger.message(
-      "Current API rate limit by key #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_key])} reqs/sec"
-    )
-
-    APILogger.message(
-      "Current API rate limit by IP #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_ip])} reqs/sec"
-    )
-
-    # Define workers and child supervisors to be supervised
-    children = [
-      # Start the endpoint when the application starts
-      {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
-      child_spec(Endpoint, []),
-      {Absinthe.Subscription, Endpoint},
-      {MainPageRealtimeEventHandler, name: MainPageRealtimeEventHandler},
-      {RealtimeEventHandler, name: RealtimeEventHandler},
-      {SmartContractRealtimeEventHandler, name: SmartContractRealtimeEventHandler},
-      {BlocksIndexedCounter, name: BlocksIndexedCounter},
-      {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
-      {EventHandlersMetrics, []}
-    ]
-
+    children = setup_and_define_children()
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
     Supervisor.start_link(children, opts)
   end
@@ -52,5 +22,40 @@ defmodule BlockScoutWeb.Application do
   def config_change(changed, _new, removed) do
     Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp setup_and_define_children do
+    if Application.get_env(:block_scout_web, :disable_api?) do
+      []
+    else
+      PhoenixInstrumenter.setup()
+      Exporter.setup()
+
+      APILogger.message(
+        "Current global API rate limit #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:global_limit])} reqs/sec"
+      )
+
+      APILogger.message(
+        "Current API rate limit by key #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_key])} reqs/sec"
+      )
+
+      APILogger.message(
+        "Current API rate limit by IP #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_ip])} reqs/sec"
+      )
+
+      # Define workers and child supervisors to be supervised
+      [
+        # Start the endpoint when the application starts
+        {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
+        Supervisor.child_spec(Endpoint, []),
+        {Absinthe.Subscription, Endpoint},
+        {MainPageRealtimeEventHandler, name: MainPageRealtimeEventHandler},
+        {RealtimeEventHandler, name: RealtimeEventHandler},
+        {SmartContractRealtimeEventHandler, name: SmartContractRealtimeEventHandler},
+        {BlocksIndexedCounter, name: BlocksIndexedCounter},
+        {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
+        {EventHandlersMetrics, []}
+      ]
+    end
   end
 end

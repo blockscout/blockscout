@@ -16,6 +16,8 @@ defmodule Explorer.Chain.Token.Instance do
   * `token_contract_address_hash` - Address hash foreign key
   * `metadata` - Token instance metadata
   * `error` - error fetching token instance
+  * `refetch_after` - when to refetch the token instance
+  * `retries_count` - number of times the token instance has been retried
   """
   @primary_key false
   typed_schema "token_instances" do
@@ -26,6 +28,8 @@ defmodule Explorer.Chain.Token.Instance do
     field(:owner_updated_at_log_index, :integer)
     field(:current_token_balance, :any, virtual: true)
     field(:is_unique, :boolean, virtual: true)
+    field(:refetch_after, :utc_datetime_usec)
+    field(:retries_count, :integer)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -51,7 +55,9 @@ defmodule Explorer.Chain.Token.Instance do
       :error,
       :owner_address_hash,
       :owner_updated_at_block,
-      :owner_updated_at_log_index
+      :owner_updated_at_log_index,
+      :refetch_after,
+      :retries_count
     ])
     |> validate_required([:token_id, :token_contract_address_hash])
     |> foreign_key_constraint(:token_contract_address_hash)
