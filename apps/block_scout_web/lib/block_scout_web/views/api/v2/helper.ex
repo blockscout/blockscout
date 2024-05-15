@@ -54,7 +54,8 @@ defmodule BlockScoutWeb.API.V2.Helper do
   """
   @spec address_with_info(any(), any()) :: nil | %{optional(<<_::32, _::_*8>>) => any()}
   def address_with_info(%Address{} = address, _address_hash) do
-    implementation_names = Implementation.names(address)
+    smart_contract? = Address.smart_contract?(address)
+    implementation_names = if smart_contract?, do: Implementation.names(address), else: []
 
     formatted_implementation_names =
       implementation_names
@@ -71,7 +72,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
     %{
       "hash" => Address.checksum(address),
-      "is_contract" => Address.smart_contract?(address),
+      "is_contract" => smart_contract?,
       "name" => address_name(address),
       # todo: added for backward compatibility, remove when frontend unbound from these props
       "implementation_name" => implementation_name,
