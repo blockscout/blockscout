@@ -1749,4 +1749,22 @@ defmodule Explorer.Chain.Transaction do
         |> Decimal.min(max_fee_per_gas |> Wei.sub(base_fee_per_gas) |> Wei.to(:wei))
         |> Wei.from(:wei)
   end
+
+  @doc """
+  Dynamically adds to/from for `transactions` query based on whether the target address EOA or smart-contract
+  todo: pay attention to [EIP-5003](https://eips.ethereum.org/EIPS/eip-5003): if it will be included, this logic should be rolled back.
+  """
+  @spec where_transactions_to_from(Hash.Address.t()) :: any()
+  def where_transactions_to_from(address_hash) do
+    with {:ok, address} <- Chain.hash_to_address(address_hash),
+         true <- Chain.contract?(address) do
+      dynamic([transaction], transaction.to_address_hash == ^address_hash)
+    else
+      _ ->
+        dynamic(
+          [transaction],
+          transaction.from_address_hash == ^address_hash or transaction.to_address_hash == ^address_hash
+        )
+    end
+  end
 end
