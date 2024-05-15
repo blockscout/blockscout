@@ -82,8 +82,14 @@ ARG SHRINK_INTERNAL_TRANSACTIONS_ENABLED
 ENV SHRINK_INTERNAL_TRANSACTIONS_ENABLED=${SHRINK_INTERNAL_TRANSACTIONS_ENABLED}
 ARG BLOCKSCOUT_VERSION
 ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
+ARG BLOCKSCOUT_USER=blockscout
+ARG BLOCKSCOUT_GROUP=blockscout
+ARG BLOCKSCOUT_UID=10001
+ARG BLOCKSCOUT_GID=10001
 
-RUN apk --no-cache --update add jq curl
+RUN apk --no-cache --update add jq curl && \
+    addgroup --system --gid ${BLOCKSCOUT_GID} ${BLOCKSCOUT_GROUP} && \
+    adduser --system --uid ${BLOCKSCOUT_UID} --ingroup ${BLOCKSCOUT_GROUP} ${BLOCKSCOUT_USER}
 
 WORKDIR /app
 
@@ -92,3 +98,7 @@ COPY --from=builder /app/apps/explorer/node_modules ./node_modules
 COPY --from=builder /app/config/config_helper.exs ./config/config_helper.exs
 COPY --from=builder /app/config/config_helper.exs /app/releases/${RELEASE_VERSION}/config_helper.exs
 COPY --from=builder /app/config/assets/precompiles-arbitrum.json ./config/assets/precompiles-arbitrum.json
+
+RUN chown --recursive ${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app
+
+USER ${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP}
