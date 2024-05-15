@@ -171,6 +171,7 @@ defmodule Explorer.Etherscan.Logs do
       all_transaction_logs_query =
         all_transaction_logs_query_base
         |> where([transaction], ^dynamic)
+
       query_with_blocks =
         from(log_transaction_data in subquery(all_transaction_logs_query),
           join: block in Block,
