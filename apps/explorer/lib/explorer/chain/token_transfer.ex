@@ -70,7 +70,9 @@ defmodule Explorer.Chain.TokenTransfer do
     field(:log_index, :integer, primary_key: true, null: false)
     field(:amounts, {:array, :decimal})
     field(:token_ids, {:array, :decimal})
+    field(:token_id, :decimal, virtual: true)
     field(:index_in_batch, :integer, virtual: true)
+    field(:token_decimals, :decimal, virtual: true)
     field(:token_type, :string)
     field(:block_consensus, :boolean)
 

@@ -408,6 +408,16 @@ defmodule BlockScoutWeb.ApiRouter do
         get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
       end
     end
+
+    scope "/arbitrum" do
+      if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+        get("/messages/:direction", V2.ArbitrumController, :messages)
+        get("/messages/:direction/count", V2.ArbitrumController, :messages_count)
+        get("/batches", V2.ArbitrumController, :batches)
+        get("/batches/count", V2.ArbitrumController, :batches_count)
+        get("/batches/:batch_number", V2.ArbitrumController, :batch)
+      end
+    end
   end
 
   scope "/v1/graphql" do
