@@ -661,6 +661,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       updated_at: timestamps.updated_at
     ]
 
+    # we don't save reverted trace outputs, but if we did, we could also set :revert_reason here
     set =
       default_set
       |> put_status_in_update_set(first_trace, transaction_from_db)

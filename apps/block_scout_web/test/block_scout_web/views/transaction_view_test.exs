@@ -293,6 +293,16 @@ defmodule BlockScoutWeb.TransactionViewTest do
     test "handles transactions with gas_price set to nil" do
       transaction = insert(:transaction, gas_price: nil, error: "execution reverted")
 
+      # fail to trace_replayTransaction
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn _json, [] ->
+          {:error, :econnrefused}
+        end
+      )
+
+      # fallback to eth_call
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn %{
                                 id: 0,
@@ -312,7 +322,11 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
       revert_reason = TransactionView.transaction_revert_reason(transaction, nil)
 
-      assert revert_reason == {:error, :not_a_contract_call}
+      assert revert_reason ==
+               {:ok, "08c379a0", "Error(string reason)",
+                [
+                  {"reason", "string", "UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT"}
+                ]}
     end
   end
 end

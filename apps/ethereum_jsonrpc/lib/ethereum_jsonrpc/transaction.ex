@@ -290,7 +290,7 @@ defmodule EthereumJSONRPC.Transaction do
       max_fee_per_gas: max_fee_per_gas
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp},
       {"r", :r},
@@ -336,7 +336,7 @@ defmodule EthereumJSONRPC.Transaction do
       max_fee_per_gas: max_fee_per_gas
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp},
       {"r", :r},
@@ -378,7 +378,7 @@ defmodule EthereumJSONRPC.Transaction do
       type: type
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp},
       {"r", :r},
@@ -418,7 +418,7 @@ defmodule EthereumJSONRPC.Transaction do
       transaction_index: index
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp},
       {"r", :r},
@@ -459,7 +459,7 @@ defmodule EthereumJSONRPC.Transaction do
       type: type
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp},
       {"r", :r},
@@ -471,14 +471,14 @@ defmodule EthereumJSONRPC.Transaction do
   defp chain_type_fields(params, elixir) do
     case Application.get_env(:explorer, :chain_type) do
       :ethereum ->
-        put_if_present(elixir, params, [
+        put_if_present(params, elixir, [
           {"blobVersionedHashes", :blob_versioned_hashes},
           {"maxFeePerBlobGas", :max_fee_per_blob_gas}
         ])
 
       :optimism ->
         # we need to put blobVersionedHashes for Indexer.Fetcher.Optimism.TxnBatch module
-        put_if_present(elixir, params, [
+        put_if_present(params, elixir, [
           {"l1TxOrigin", :l1_tx_origin},
           {"l1BlockNumber", :l1_block_number},
           {"blobVersionedHashes", :blob_versioned_hashes}
@@ -670,7 +670,7 @@ defmodule EthereumJSONRPC.Transaction do
     {nil, nil}
   end
 
-  defp put_if_present(transaction, result, keys) do
+  def put_if_present(result, transaction, keys) do
     Enum.reduce(keys, result, fn {from_key, to_key}, acc ->
       value = transaction[from_key]
 
