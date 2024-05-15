@@ -1752,6 +1752,7 @@ defmodule Explorer.Chain.Transaction do
 
   @doc """
   Dynamically adds to/from for `transactions` query based on whether the target address EOA or smart-contract
+  todo: pay attention to [EIP-5003](https://eips.ethereum.org/EIPS/eip-5003): if it will be included, this logic should be rolled back.
   """
   @spec where_transactions_to_from(Hash.Address.t()) :: any()
   def where_transactions_to_from(address_hash) do

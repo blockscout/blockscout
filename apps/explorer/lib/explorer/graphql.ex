@@ -5,7 +5,6 @@ defmodule Explorer.GraphQL do
 
   import Ecto.Query,
     only: [
-      dynamic: 1,
       from: 2,
       order_by: 3,
       or_where: 3,
@@ -29,7 +28,7 @@ defmodule Explorer.GraphQL do
   """
   @spec address_to_transactions_query(Hash.Address.t(), :desc | :asc) :: Ecto.Query.t()
   def address_to_transactions_query(address_hash, order) do
-    dynamic = dynamic(^Transaction.where_transactions_to_from(address_hash))
+    dynamic = Transaction.where_transactions_to_from(address_hash)
 
     Transaction
     |> where([transaction], ^dynamic)

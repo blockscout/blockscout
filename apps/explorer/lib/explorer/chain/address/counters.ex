@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Address.Counters do
   @moduledoc """
     Functions related to Explorer.Chain.Address counters
   """
-  import Ecto.Query, only: [dynamic: 1, from: 2, limit: 2, select: 3, union: 2, where: 3]
+  import Ecto.Query, only: [from: 2, limit: 2, select: 3, union: 2, where: 3]
 
   import Explorer.Chain,
     only: [select_repo: 1, wrapped_union_subquery: 1]
@@ -128,7 +128,7 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def address_hash_to_transaction_count_query(address_hash) do
-    dynamic = dynamic(^Transaction.where_transactions_to_from(address_hash))
+    dynamic = Transaction.where_transactions_to_from(address_hash)
 
     Transaction
     |> where([transaction], ^dynamic)
