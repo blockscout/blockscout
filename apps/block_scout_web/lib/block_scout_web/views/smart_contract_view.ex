@@ -221,16 +221,6 @@ defmodule BlockScoutWeb.SmartContractView do
     )
   end
 
-  def decode_hex_revert_reason(hex_revert_reason) do
-    case Base.decode16(hex_revert_reason, case: :mixed) do
-      {:ok, revert_reason} ->
-        revert_reason
-
-      _ ->
-        hex_revert_reason
-    end
-  end
-
   def not_last_element?(length, index), do: length > 1 and index < length - 1
 
   def cut_rpc_url(error) do
