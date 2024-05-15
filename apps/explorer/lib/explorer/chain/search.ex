@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Search do
   import Explorer.Chain, only: [select_repo: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [ens_domain_name_lookup: 1]
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
   alias Explorer.Chain.{
@@ -488,8 +489,8 @@ defmodule Explorer.Chain.Search do
         )
 
       _ ->
-        case Integer.parse(term) do
-          {block_number, ""} ->
+        case ExplorerHelper.safe_parse_non_negative_integer(term) do
+          {:ok, block_number} ->
             from(block in Block,
               where: block.number == ^block_number,
               select: ^block_search_fields

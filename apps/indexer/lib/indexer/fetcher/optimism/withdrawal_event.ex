@@ -24,8 +24,14 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   # 32-byte signature of the event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
   @withdrawal_proven_event "0x67a6208cfcc0801d50f6cbe764733f4fddf66ac0b04442061a8a8c0cb6b63f62"
 
+  # 32-byte signature of the Blast chain event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to, uint256 requestId)
+  @withdrawal_proven_event_blast "0x5d5446905f1f582d57d04ced5b1bed0f1a6847bcee57f7dd9d6f2ec12ab9ec2e"
+
   # 32-byte signature of the event WithdrawalFinalized(bytes32 indexed withdrawalHash, bool success)
   @withdrawal_finalized_event "0xdb5c7652857aa163daadd670e116628fb42e869d8ac4251ef8971d9e5727df1b"
+
+  # 32-byte signature of the Blast chain event WithdrawalFinalized(bytes32 indexed withdrawalHash, uint256 indexed hintId, bool success)
+  @withdrawal_finalized_event_blast "0x36d89e6190aa646d1a48286f8ad05e60a144483f42fd7e0ea08baba79343645b"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -88,7 +94,12 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
               chunk_start,
               chunk_end,
               optimism_portal,
-              [@withdrawal_proven_event, @withdrawal_finalized_event],
+              [
+                @withdrawal_proven_event,
+                @withdrawal_proven_event_blast,
+                @withdrawal_finalized_event,
+                @withdrawal_finalized_event_blast
+              ],
               json_rpc_named_arguments,
               Helper.infinite_retries_number()
             )
@@ -179,7 +190,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     tx_hashes =
       events
       |> Enum.reduce([], fn event, acc ->
-        if Enum.at(event["topics"], 0) == @withdrawal_proven_event do
+        if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
           [event["transactionHash"] | acc]
         else
           acc
@@ -200,7 +211,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
       tx_hash = event["transactionHash"]
 
       {l1_event_type, game_index} =
-        if Enum.at(event["topics"], 0) == @withdrawal_proven_event do
+        if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
           game_index =
             input_by_hash
             |> Map.get(tx_hash)

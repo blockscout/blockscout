@@ -40,7 +40,8 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
     chunk_size = config[:chunk_size]
     recheck_interval = config[:recheck_interval]
 
-    Process.send(self(), :continue, [])
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    Process.send_after(self(), :continue, 2000)
 
     {:ok,
      %{

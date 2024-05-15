@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Address
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Transaction.History.TransactionStats
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -53,11 +54,22 @@ defmodule BlockScoutWeb.API.V2.Helper do
   """
   @spec address_with_info(any(), any()) :: nil | %{optional(<<_::32, _::_*8>>) => any()}
   def address_with_info(%Address{} = address, _address_hash) do
+    implementation_names = Implementation.names(address)
+
+    implementation_name =
+      if Enum.empty?(implementation_names) do
+        nil
+      else
+        implementation_names |> Enum.at(0)
+      end
+
     %{
       "hash" => Address.checksum(address),
       "is_contract" => Address.smart_contract?(address),
       "name" => address_name(address),
-      "implementation_name" => implementation_name(address),
+      # todo: added for backward compatibility, remove when frontend unbound from these props
+      "implementation_name" => implementation_name,
+      "implementation_names" => implementation_names,
       "is_verified" => verified?(address),
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
@@ -84,7 +96,9 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => Address.checksum(address_hash),
       "is_contract" => false,
       "name" => nil,
+      # todo: added for backward compatibility, remove when frontend unbound from these props
       "implementation_name" => nil,
+      "implementation_names" => [],
       "is_verified" => nil,
       "ens_domain_name" => nil,
       "metadata" => nil
@@ -104,13 +118,8 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   def address_name(_), do: nil
 
-  def implementation_name(%Address{smart_contract: %{implementation_name: implementation_name}}),
-    do: implementation_name
-
-  def implementation_name(_), do: nil
-
   def verified?(%Address{smart_contract: nil}), do: false
-  def verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+  def verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
   def verified?(%Address{smart_contract: %NotLoaded{}}), do: nil
   def verified?(%Address{smart_contract: _}), do: true
 

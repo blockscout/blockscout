@@ -55,10 +55,14 @@ defmodule Explorer.SmartContract.Helper do
   def add_contract_code_md5(%{address_hash: address_hash} = attrs) do
     case Chain.hash_to_address(address_hash) do
       {:ok, address} ->
-        contract_code_md5 = contract_code_md5(address.contract_code.bytes)
+        if address.contract_code do
+          contract_code_md5 = contract_code_md5(address.contract_code.bytes)
 
-        attrs
-        |> Map.put_new(:contract_code_md5, contract_code_md5)
+          attrs
+          |> Map.put_new(:contract_code_md5, contract_code_md5)
+        else
+          attrs
+        end
 
       _ ->
         attrs

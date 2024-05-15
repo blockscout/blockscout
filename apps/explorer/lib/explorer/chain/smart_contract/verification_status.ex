@@ -9,6 +9,8 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
 
   alias Explorer.Chain.Hash
   alias Explorer.{Chain, Repo}
+  alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
+  alias Que.Persistence, as: QuePersistence
 
   @typedoc """
   * `address_hash` - address of the contract which was tried to verify
@@ -90,6 +92,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
         |> Repo.get_by(uid: valid_uid)
         |> (&if(is_nil(&1), do: 3, else: Map.get(&1, :status))).()
         |> decode_status()
+        |> mb_find_uid_in_queue(uid)
 
       _ ->
         :unknown_uid
@@ -123,4 +126,21 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   end
 
   def validate_uid(_), do: :error
+
+  defp mb_find_uid_in_queue(:unknown_uid, uid) do
+    SolidityPublisherWorker
+    |> QuePersistence.all()
+    |> Enum.any?(fn
+      %Que.Job{arguments: {"flattened_api", _, _, ^uid}} ->
+        :pending
+
+      %Que.Job{arguments: {"json_api", _, _, ^uid}} ->
+        :pending
+
+      _ ->
+        :unknown_uid
+    end)
+  end
+
+  defp mb_find_uid_in_queue(other_status, _), do: other_status
 end

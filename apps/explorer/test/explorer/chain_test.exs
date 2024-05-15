@@ -26,7 +26,7 @@ defmodule Explorer.ChainTest do
     Wei
   }
 
-  alias Explorer.{Chain, Etherscan}
+  alias Explorer.{Chain, Etherscan, TestHelper}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
@@ -2602,6 +2602,8 @@ defmodule Explorer.ChainTest do
         }
       ]
 
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       response = Chain.find_contract_address(address.hash, options, true)
 
       assert response == {:ok, address}
@@ -4215,8 +4217,12 @@ defmodule Explorer.ChainTest do
 
   describe "transaction_to_revert_reason/1" do
     test "returns correct revert_reason from DB" do
-      transaction = insert(:transaction, revert_reason: "No credit of that type")
-      assert Chain.transaction_to_revert_reason(transaction) == "No credit of that type"
+      # Error("No credit of that type")
+      hex_reason =
+        "0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000164e6f20637265646974206f662074686174207479706500000000000000000000"
+
+      transaction = insert(:transaction, revert_reason: hex_reason)
+      assert Chain.transaction_to_revert_reason(transaction) == hex_reason
     end
 
     test "returns correct revert_reason from the archive node" do
@@ -4229,15 +4235,57 @@ defmodule Explorer.ChainTest do
         )
         |> with_block(insert(:block, number: 1))
 
+      # Error("No credit of that type")
+      hex_reason =
+        "0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000164e6f20637265646974206f662074686174207479706500000000000000000000"
+
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
         fn _json, [] ->
-          {:error, %{code: -32015, message: "VM execution error.", data: "revert: No credit of that type"}}
+          {:ok,
+           [
+             %{
+               id: 0,
+               result: %{
+                 "output" => "0x",
+                 "stateDiff" => nil,
+                 "trace" => [
+                   %{
+                     "action" => %{
+                       "callType" => "call",
+                       "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                       "gas" => "0x5208",
+                       "input" => "0x01",
+                       "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                       "value" => "0x86b3"
+                     },
+                     "error" => "Reverted",
+                     "result" => %{
+                       "gasUsed" => "0x5208",
+                       "output" => hex_reason
+                     },
+                     "subtraces" => 0,
+                     "traceAddress" => [],
+                     "type" => "call"
+                   }
+                 ],
+                 "transactionHash" => "0xdf5574290913659a1ac404ccf2d216c40587f819400a52405b081dda728ac120",
+                 "vmTrace" => nil
+               }
+             }
+           ]}
         end
       )
 
-      assert Chain.transaction_to_revert_reason(transaction) == "No credit of that type"
+      assert Chain.transaction_to_revert_reason(transaction) == hex_reason
+
+      assert Transaction.decoded_revert_reason(transaction, hex_reason) == {
+               :ok,
+               "08c379a0",
+               "Error(string reason)",
+               [{"reason", "string", "No credit of that type"}]
+             }
     end
   end
 end

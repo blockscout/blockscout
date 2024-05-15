@@ -179,7 +179,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
   end
 
   defp fetch_json_from_uri({:ok, [json]}, _ipfs?, _token_id, hex_token_id, _from_base_uri?) do
-    json = ExplorerHelper.decode_json(json)
+    json = ExplorerHelper.decode_json(json, true)
 
     check_type(json, hex_token_id)
   rescue
@@ -289,7 +289,7 @@ defmodule Indexer.Fetcher.TokenInstance.MetadataRetriever do
 
       check_type(json, nil)
     else
-      json = ExplorerHelper.decode_json(body)
+      json = ExplorerHelper.decode_json(body, true)
 
       check_type(json, hex_token_id)
     end
