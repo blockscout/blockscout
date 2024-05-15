@@ -84,7 +84,6 @@ defmodule Explorer.Chain.ContractMethod do
     query =
       from(
         contract_method in __MODULE__,
-        distinct: true,
         where: contract_method.abi["type"] == "function",
         where: contract_method.identifier == ^method_id,
         limit: 1

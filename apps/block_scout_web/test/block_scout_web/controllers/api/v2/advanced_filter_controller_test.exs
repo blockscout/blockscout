@@ -59,6 +59,37 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       check_paginated_response(AdvancedFilter.list(), response["items"], response_2nd_page["items"])
     end
 
+    test "get and paginate advanced filter (batch token transfers split between pages)", %{conn: conn} do
+      first_tx = :transaction |> insert() |> with_block()
+      insert_list(3, :token_transfer, transaction: first_tx)
+
+      for i <- 0..2 do
+        insert(:internal_transaction,
+          transaction: first_tx,
+          block_hash: first_tx.block_hash,
+          index: i,
+          block_index: i
+        )
+      end
+
+      second_tx = :transaction |> insert() |> with_block()
+
+      insert_list(5, :token_transfer,
+        transaction: second_tx,
+        block_number: second_tx.block_number,
+        token_type: "ERC-1155",
+        token_ids: 0..10 |> Enum.to_list(),
+        amounts: 10..20 |> Enum.to_list()
+      )
+
+      request = get(conn, "/api/v2/advanced-filters")
+      assert response = json_response(request, 200)
+      request_2nd_page = get(conn, "/api/v2/advanced-filters", response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(AdvancedFilter.list(), response["items"], response_2nd_page["items"])
+    end
+
     test "get and paginate advanced filter (internal transactions split between pages)", %{conn: conn} do
       first_tx = :transaction |> insert() |> with_block()
       insert_list(3, :token_transfer, transaction: first_tx)
@@ -898,11 +929,14 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
   defp check_paginated_response(all_advanced_filters, first_page, second_page) do
     assert all_advanced_filters
-           |> Enum.map(&{&1.block_number, &1.transaction_index, &1.internal_transaction_index, &1.token_transfer_index}) ==
+           |> Enum.map(
+             &{&1.block_number, &1.transaction_index, &1.internal_transaction_index, &1.token_transfer_index,
+              &1.token_transfer_batch_index}
+           ) ==
              Enum.map(
                first_page ++ second_page,
                &{&1["block_number"], &1["transaction_index"], &1["internal_transaction_index"],
-                &1["token_transfer_index"]}
+                &1["token_transfer_index"], &1["token_transfer_batch_index"]}
              )
   end
 end

@@ -295,12 +295,14 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
          "block_number" => block_number_string,
          "transaction_index" => tx_index_string,
          "internal_transaction_index" => internal_tx_index_string,
-         "token_transfer_index" => token_transfer_index_string
+         "token_transfer_index" => token_transfer_index_string,
+         "token_transfer_batch_index" => token_transfer_batch_index_string
        }) do
     with {block_number, ""} <- block_number_string && Integer.parse(block_number_string),
          {tx_index, ""} <- tx_index_string && Integer.parse(tx_index_string),
          {:ok, internal_tx_index} <- parse_nullable_integer_paging_parameter(internal_tx_index_string),
-         {:ok, token_transfer_index} <- parse_nullable_integer_paging_parameter(token_transfer_index_string) do
+         {:ok, token_transfer_index} <- parse_nullable_integer_paging_parameter(token_transfer_index_string),
+         {:ok, token_transfer_batch_index} <- parse_nullable_integer_paging_parameter(token_transfer_batch_index_string) do
       [
         paging_options: %{
           default_paging_options()
@@ -308,7 +310,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
               block_number: block_number,
               transaction_index: tx_index,
               internal_transaction_index: internal_tx_index,
-              token_transfer_index: token_transfer_index
+              token_transfer_index: token_transfer_index,
+              token_transfer_batch_index: token_transfer_batch_index
             }
         }
       ]
@@ -334,13 +337,15 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
          block_number: block_number,
          transaction_index: tx_index,
          internal_transaction_index: internal_tx_index,
-         token_transfer_index: token_transfer_index
+         token_transfer_index: token_transfer_index,
+         token_transfer_batch_index: token_transfer_batch_index
        }) do
     %{
       block_number: block_number,
       transaction_index: tx_index,
       internal_transaction_index: internal_tx_index,
-      token_transfer_index: token_transfer_index
+      token_transfer_index: token_transfer_index,
+      token_transfer_batch_index: token_transfer_batch_index
     }
   end
 end

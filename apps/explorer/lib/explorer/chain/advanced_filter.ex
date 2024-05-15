@@ -41,8 +41,9 @@ defmodule Explorer.Chain.AdvancedFilter do
 
     field(:block_number, :integer)
     field(:transaction_index, :integer)
-    field(:internal_transaction_index, :integer)
-    field(:token_transfer_index, :integer)
+    field(:internal_transaction_index, :integer, null: true)
+    field(:token_transfer_index, :integer, null: true)
+    field(:token_transfer_batch_index, :integer, null: true)
   end
 
   @typep tx_types :: {:tx_types, [String.t()] | nil}
@@ -74,7 +75,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     tasks =
       options
       |> queries(paging_options)
-      |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query) end) end)
+      |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query, in_parallel: true) end) end)
 
     tasks
     |> Task.yield_many(:timer.seconds(60))
@@ -96,10 +97,8 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp queries(options, paging_options) do
-    transaction_types = options[:tx_types]
-
     cond do
-      transaction_types == ["COIN_TRANSFER"] ->
+      only_transactions?(options) ->
         [transactions_query(paging_options, options), internal_transactions_query(paging_options, options)]
 
       only_token_transfers?(options) ->
@@ -112,6 +111,13 @@ defmodule Explorer.Chain.AdvancedFilter do
           token_transfers_query(paging_options, options)
         ]
     end
+  end
+
+  defp only_transactions?(options) do
+    transaction_types = options[:tx_types]
+    tokens_to_include = options[:token_contract_address_hashes][:include]
+
+    transaction_types == ["COIN_TRANSFER"] or tokens_to_include == ["native"]
   end
 
   defp only_token_transfers?(options) do
@@ -168,10 +174,15 @@ defmodule Explorer.Chain.AdvancedFilter do
       fee:
         token_transfer.transaction.gas_price &&
           Decimal.mult(token_transfer.transaction.gas_price.value, token_transfer.transaction.gas_used),
-      token_transfer: token_transfer,
+      token_transfer: %TokenTransfer{
+        token_transfer
+        | amounts: [token_transfer.amount],
+          token_ids: token_transfer.token_id && [token_transfer.token_id]
+      },
       block_number: token_transfer.block_number,
       transaction_index: token_transfer.transaction.index,
-      token_transfer_index: token_transfer.log_index
+      token_transfer_index: token_transfer.log_index,
+      token_transfer_batch_index: token_transfer.index_in_batch
     }
   end
 
@@ -180,21 +191,29 @@ defmodule Explorer.Chain.AdvancedFilter do
       Helper.compare(a.block_number, b.block_number),
       Helper.compare(a.transaction_index, b.transaction_index),
       Helper.compare(a.token_transfer_index, b.token_transfer_index),
+      Helper.compare(a.token_transfer_batch_index, b.token_transfer_batch_index),
       Helper.compare(a.internal_transaction_index, b.internal_transaction_index)
     } do
-      {:lt, _, _, _} ->
+      {:lt, _, _, _, _} ->
         false
 
-      {:eq, :lt, _, _} ->
+      {:eq, :lt, _, _, _} ->
         false
 
-      {:eq, :eq, _, _} ->
-        case {a.token_transfer_index, a.internal_transaction_index, b.token_transfer_index,
-              b.internal_transaction_index} do
-          {nil, nil, _, _} -> true
-          {a_tt_index, nil, b_tt_index, _} when not is_nil(b_tt_index) -> a_tt_index > b_tt_index
-          {nil, a_it_index, _, b_it_index} -> a_it_index > b_it_index
-          {_, _, _, _} -> false
+      {:eq, :eq, _, _, _} ->
+        case {a.token_transfer_index, a.token_transfer_batch_index, a.internal_transaction_index,
+              b.token_transfer_index, b.token_transfer_batch_index, b.internal_transaction_index} do
+          {nil, _, nil, _, _, _} ->
+            true
+
+          {a_tt_index, a_tt_batch_index, nil, b_tt_index, b_tt_batch_index, _} when not is_nil(b_tt_index) ->
+            {a_tt_index, a_tt_batch_index} > {b_tt_index, b_tt_batch_index}
+
+          {nil, _, a_it_index, _, _, b_it_index} ->
+            a_it_index > b_it_index
+
+          {_, _, _, _, _, _} ->
+            false
         end
 
       _ ->
@@ -212,9 +231,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     query =
       from(transaction in Transaction,
         as: :transaction,
-        join: from_address in assoc(transaction, :from_address),
-        join: to_address in assoc(transaction, :to_address),
-        preload: [from_address: from_address, to_address: to_address],
+        preload: [:from_address, :to_address],
         order_by: [
           desc: transaction.block_number,
           desc: transaction.index
@@ -234,7 +251,7 @@ defmodule Explorer.Chain.AdvancedFilter do
          }
        }) do
     dynamic_condition =
-      dynamic(^page_block_number_dynamic(block_number) or ^page_tx_index_dynamic(block_number, tx_index))
+      dynamic(^page_block_number_dynamic(:transaction, block_number) or ^page_tx_index_dynamic(block_number, tx_index))
 
     query |> where(^dynamic_condition)
   end
@@ -247,9 +264,7 @@ defmodule Explorer.Chain.AdvancedFilter do
         as: :internal_transaction,
         join: transaction in assoc(internal_transaction, :transaction),
         as: :transaction,
-        join: from_address in assoc(internal_transaction, :from_address),
-        join: to_address in assoc(internal_transaction, :to_address),
-        preload: [transaction: transaction, from_address: from_address, to_address: to_address],
+        preload: [:from_address, :to_address, transaction: transaction],
         order_by: [
           desc: transaction.block_number,
           desc: transaction.index,
@@ -299,7 +314,7 @@ defmodule Explorer.Chain.AdvancedFilter do
        }) do
     dynamic_condition =
       dynamic(
-        ^page_block_number_dynamic(block_number) or ^page_tx_index_dynamic(block_number, tx_index) or
+        ^page_block_number_dynamic(:transaction, block_number) or ^page_tx_index_dynamic(block_number, tx_index) or
           ^page_it_index_dynamic(block_number, tx_index, it_index)
       )
 
@@ -310,26 +325,33 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp page_internal_transactions(query, _), do: query
 
   defp token_transfers_query(paging_options, options) do
-    query =
+    token_transfer_query =
       from(token_transfer in TokenTransfer,
         as: :token_transfer,
         join: transaction in assoc(token_transfer, :transaction),
         as: :transaction,
         join: token in assoc(token_transfer, :token),
         as: :token,
-        join: from_address in assoc(token_transfer, :from_address),
-        join: to_address in assoc(token_transfer, :to_address),
-        preload: [transaction: transaction, token: token, from_address: from_address, to_address: to_address],
+        select: %TokenTransfer{
+          token_transfer
+          | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
+            amount:
+              fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
+            index_in_batch: fragment("GENERATE_SERIES(1, COALESCE(ARRAY_LENGTH(?, 1), 1))", token_transfer.amounts),
+            token_decimals: token.decimals
+        },
         order_by: [
           desc: token_transfer.block_number,
           desc: token_transfer.log_index
         ]
       )
 
-    query
-    |> page_token_transfers(paging_options)
-    |> limit_query(paging_options)
+    token_transfer_query
     |> apply_token_transfers_filters(options)
+    |> page_token_transfers(paging_options)
+    |> filter_token_transfers_by_amount(options[:amount][:from], options[:amount][:to])
+    |> make_token_transfer_query_unnested()
+    |> limit_query(paging_options)
   end
 
   defp page_token_transfers(query, %PagingOptions{
@@ -369,7 +391,9 @@ defmodule Explorer.Chain.AdvancedFilter do
          }
        }) do
     dynamic_condition =
-      dynamic(^page_block_number_dynamic(block_number) or ^page_tx_index_dynamic(block_number, tx_index))
+      dynamic(
+        ^page_block_number_dynamic(:token_transfer, block_number) or ^page_tx_index_dynamic(block_number, tx_index)
+      )
 
     query |> where(^dynamic_condition)
   end
@@ -377,22 +401,36 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp page_token_transfers(query, %PagingOptions{
          key: %{
            block_number: block_number,
-           token_transfer_index: tt_index
+           token_transfer_index: tt_index,
+           token_transfer_batch_index: tt_batch_index
          }
        }) do
     dynamic_condition =
-      dynamic(^page_block_number_dynamic(block_number) or ^page_tt_index_dynamic(block_number, tt_index))
+      dynamic(
+        ^page_block_number_dynamic(:token_transfer, block_number) or
+          ^page_tt_index_dynamic(:token_transfer, block_number, tt_index, tt_batch_index)
+      )
 
-    query |> where(^dynamic_condition)
+    paged_query = query |> where(^dynamic_condition)
+
+    paged_query
+    |> make_token_transfer_query_unnested()
+    |> where(
+      ^page_tt_batch_index_dynamic(
+        block_number,
+        tt_index,
+        tt_batch_index
+      )
+    )
   end
 
   defp page_token_transfers(query, _), do: query
 
-  defp page_block_number_dynamic(block_number) when block_number > 0 do
-    dynamic([transaction: tx], tx.block_number < ^block_number)
+  defp page_block_number_dynamic(binding, block_number) when block_number > 0 do
+    dynamic(as(^binding).block_number < ^block_number)
   end
 
-  defp page_block_number_dynamic(_) do
+  defp page_block_number_dynamic(_, _) do
     dynamic(false)
   end
 
@@ -416,15 +454,35 @@ defmodule Explorer.Chain.AdvancedFilter do
     dynamic(false)
   end
 
-  defp page_tt_index_dynamic(block_number, tt_index) when tt_index > 0 do
+  defp page_tt_index_dynamic(binding, block_number, tt_index, tt_batch_index)
+       when tt_index > 0 and tt_batch_index > 1 do
+    dynamic(as(^binding).block_number == ^block_number and as(^binding).log_index <= ^tt_index)
+  end
+
+  defp page_tt_index_dynamic(binding, block_number, tt_index, _tt_batch_index) when tt_index > 0 do
+    dynamic(as(^binding).block_number == ^block_number and as(^binding).log_index < ^tt_index)
+  end
+
+  defp page_tt_index_dynamic(_, _, _, _) do
+    dynamic(false)
+  end
+
+  defp page_tt_batch_index_dynamic(block_number, tt_index, tt_batch_index) when tt_batch_index > 1 do
     dynamic(
-      [token_transfer: tt],
-      tt.block_number == ^block_number and tt.log_index < ^tt_index
+      [unnested_token_transfer: tt],
+      ^page_block_number_dynamic(:unnested_token_transfer, block_number) or
+        ^page_tt_index_dynamic(
+          :unnested_token_transfer,
+          block_number,
+          tt_index,
+          0
+        ) or
+        (tt.block_number == ^block_number and tt.log_index == ^tt_index and tt.index_in_batch < ^tt_batch_index)
     )
   end
 
-  defp page_tt_index_dynamic(_, _) do
-    dynamic(false)
+  defp page_tt_batch_index_dynamic(_, _, _) do
+    dynamic(true)
   end
 
   defp limit_query(query, %PagingOptions{page_size: limit}) when is_integer(limit), do: limit(query, ^limit)
@@ -437,7 +495,6 @@ defmodule Explorer.Chain.AdvancedFilter do
     |> filter_token_transfers_by_methods(options[:methods])
     |> filter_by_token(options[:token_contract_address_hashes][:include], :include)
     |> filter_by_token(options[:token_contract_address_hashes][:exclude], :exclude)
-    |> filter_token_transfers_by_amount(options[:amount][:from], options[:amount][:to])
     |> apply_common_filters(options)
   end
 
@@ -576,31 +633,57 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp filter_transactions_by_amount(query, _, _), do: query
 
   defp filter_token_transfers_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) and from < to do
-    query
+    unnested_query = make_token_transfer_query_unnested(query)
+
+    unnested_query
     |> where(
-      [token_transfer],
-      token_transfer.amount / fragment("10 ^ ?", as(:token).decimals) >= ^from and
-        token_transfer.amount / fragment("10 ^ ?", as(:token).decimals) <= ^to
+      [unnested_token_transfer: tt],
+      tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) >= ^from and
+        tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) <= ^to
     )
   end
 
   defp filter_token_transfers_by_amount(query, _from, to) when not is_nil(to) do
-    query
+    unnested_query = make_token_transfer_query_unnested(query)
+
+    unnested_query
     |> where(
-      [token_transfer],
-      token_transfer.amount / fragment("10 ^ ?", as(:token).decimals) <= ^to
+      [unnested_token_transfer: tt],
+      tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) <= ^to
     )
   end
 
   defp filter_token_transfers_by_amount(query, from, _to) when not is_nil(from) do
-    query
+    unnested_query = make_token_transfer_query_unnested(query)
+
+    unnested_query
     |> where(
-      [token_transfer],
-      token_transfer.amount / fragment("10 ^ ?", as(:token).decimals) >= ^from
+      [unnested_token_transfer: tt],
+      tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) >= ^from
     )
   end
 
   defp filter_token_transfers_by_amount(query, _, _), do: query
+
+  defp make_token_transfer_query_unnested(query) do
+    if has_named_binding?(query, :unnested_token_transfer) do
+      query
+    else
+      from(token_transfer in subquery(query),
+        as: :unnested_token_transfer,
+        preload: [:transaction, :token, :from_address, :to_address],
+        order_by: [
+          desc: token_transfer.block_number,
+          desc: token_transfer.log_index,
+          desc: token_transfer.index_in_batch
+        ],
+        select_merge: %{
+          token_ids: [token_transfer.token_id],
+          amounts: [token_transfer.amount]
+        }
+      )
+    end
+  end
 
   defp filter_by_token(query, [_ | _] = token_contract_address_hashes, :include) do
     filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
