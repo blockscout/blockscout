@@ -5,7 +5,7 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [dynamic: 2, from: 2, limit: 2, where: 3, or_where: 3, subquery: 1, order_by: 3, union: 2]
+  import Ecto.Query, only: [dynamic: 2, from: 2, limit: 2, where: 3, subquery: 1, order_by: 3, union: 2]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, DenormalizationHelper, InternalTransaction, Log, Transaction}
