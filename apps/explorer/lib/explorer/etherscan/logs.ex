@@ -164,16 +164,13 @@ defmodule Explorer.Etherscan.Logs do
       dynamic =
         dynamic(
           [transaction],
-          ^Transaction.where_transactions_to_from(address_hash) and
-            transaction.block_number >= ^prepared_filter.from_block and
-            transaction.block_number <= ^prepared_filter.to_block
+          ^Transaction.where_transactions_to_from(address_hash) or
+            transaction.created_contract_address_hash == ^address_hash
         )
 
       all_transaction_logs_query =
         all_transaction_logs_query_base
-        |> where([transaction], transaction.created_contract_address_hash == ^address_hash)
-        |> or_where([transaction], ^dynamic)
-
+        |> where([transaction], ^dynamic)
       query_with_blocks =
         from(log_transaction_data in subquery(all_transaction_logs_query),
           join: block in Block,
