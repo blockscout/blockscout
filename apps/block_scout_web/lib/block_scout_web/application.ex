@@ -24,10 +24,10 @@ defmodule BlockScoutWeb.Application do
     :ok
   end
 
-  defp setup_and_define_children do
-    if Application.get_env(:block_scout_web, :disable_api?) do
-      []
-    else
+  if Application.compile_env(:block_scout_web, :disable_api?) do
+    defp setup_and_define_children, do: [Supervisor.child_spec(Endpoint, [])]
+  else
+    defp setup_and_define_children do
       PhoenixInstrumenter.setup()
       Exporter.setup()
 

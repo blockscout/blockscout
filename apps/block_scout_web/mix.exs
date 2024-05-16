@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Mixfile do
         ignore_warnings: "../../.dialyzer-ignore"
       ],
       elixir: "~> 1.13",
-      elixirc_paths: elixirc_paths(Mix.env()),
+      elixirc_paths: elixirc_paths(Mix.env(), true),
       lockfile: "../../mix.lock",
       package: package(),
       preferred_cli_env: [
@@ -48,6 +48,19 @@ defmodule BlockScoutWeb.Mixfile do
   end
 
   # Specifies which paths to compile per environment.
+  defp elixirc_paths(_, true),
+    do: [
+      "lib/block_scout_web.ex",
+      "lib/phoenix",
+      "lib/block_scout_web/health_router.ex",
+      "lib/block_scout_web/controllers/api/v1/health_controller.ex",
+      "lib/block_scout_web/controller.ex",
+      "lib/block_scout_web/views/error_helper.ex",
+      "lib/block_scout_web/plug/logger.ex",
+      "lib/block_scout_web/application.ex",
+      "lib/block_scout_web/endpoint.ex"
+    ]
+
   defp elixirc_paths(:test), do: ["test/support", "test/block_scout_web/features/pages"] ++ elixirc_paths()
   defp elixirc_paths(_), do: elixirc_paths()
   defp elixirc_paths, do: ["lib"]

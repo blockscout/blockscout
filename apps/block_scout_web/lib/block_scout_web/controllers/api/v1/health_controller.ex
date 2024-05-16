@@ -1,5 +1,14 @@
 defmodule BlockScoutWeb.API.V1.HealthController do
-  use BlockScoutWeb, :controller
+  use Phoenix.Controller, namespace: BlockScoutWeb
+
+  import BlockScoutWeb.Controller
+  # import BlockScoutWeb.Router.Helpers
+  # import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
+  # import BlockScoutWeb.Gettext
+  import BlockScoutWeb.ErrorHelper
+  import Plug.Conn
+
+  # alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
 
   alias Explorer.Chain
   alias Timex.Duration
