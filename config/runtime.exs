@@ -991,6 +991,11 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,
     ConfigHelper.chain_type() == :polygon_zkevm &&
       ConfigHelper.parse_bool_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED")
 
+config :indexer, Indexer.Fetcher.Celo.EpochRewards.Supervisor,
+  enabled:
+    ConfigHelper.chain_type() == :celo and
+      not ConfigHelper.parse_bool_env_var("INDEXER_CELO_EPOCH_FETCHER_DISABLED")
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
