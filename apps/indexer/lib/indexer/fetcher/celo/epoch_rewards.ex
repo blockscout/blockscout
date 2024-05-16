@@ -1,23 +1,17 @@
 defmodule Indexer.Fetcher.Celo.EpochRewards do
-  import EthereumJSONRPC,
-    only: [
-      integer_to_quantity: 1,
-      json_rpc: 2
-    ]
-
   import Ecto.Query, only: [from: 2]
 
   alias ABI.FunctionSelector
 
-  alias EthereumJSONRPC.Logs
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
+  alias Explorer.Chain
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Chain.Celo.PendingEpochBlockOperation
-  alias Explorer.Chain.{Block, Log}
+  alias Explorer.Chain.{Block, Hash, Log, TokenTransfer}
+
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
-
-  # import Explorer.Helper, only: [decode_data: 2]
 
   import Explorer.Chain.Celo.Helper,
     only: [
@@ -25,14 +19,10 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
       epoch_block?: 1
     ]
 
-  alias Indexer.{BufferedTask, Helper, Tracer}
-
-  alias Indexer.Transform.Celo.Epoch.{
-    PaymentDelegationTransfers,
-    ValidatorEpochPaymentDistributions,
-    ReserveBolsterTransferAmount
-  }
-
+  alias Indexer.Helper
+  alias Indexer.{BufferedTask, Tracer}
+  alias Indexer.Transform.Addresses
+  alias Indexer.Transform.Celo.ValidatorEpochPaymentDistributions
   # todo: would be better to define this func somewhere else or use another one
   # similar
   import Indexer.Transform.TransactionActions, only: [read_contracts_with_retries: 3]
@@ -50,82 +40,6 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
   @default_max_concurrency 1
 
   @repeated_request_max_retries 3
-
-  # @epoch_rewards_abi [
-  #   %{
-  #     "constant" => true,
-  #     "inputs" => [],
-  #     "name" => "getTargetGoldTotalSupply",
-  #     "outputs" => [
-  #       %{"type" => "uint256"}
-  #     ],
-  #     "payable" => false,
-  #     "stateMutability" => "view",
-  #     "type" => "function"
-  #   },
-  #   %{
-  #     "constant" => true,
-  #     "inputs" => [],
-  #     "name" => "getRewardsMultiplier",
-  #     "outputs" => [
-  #       %{"type" => "uint256"}
-  #     ],
-  #     "payable" => false,
-  #     "stateMutability" => "view",
-  #     "type" => "function"
-  #   },
-  #   %{
-  #     "constant" => true,
-  #     "inputs" => [],
-  #     "name" => "getRewardsMultiplierParameters",
-  #     "outputs" => [
-  #       %{"type" => "uint256"},
-  #       %{"type" => "uint256"},
-  #       %{"type" => "uint256"}
-  #     ],
-  #     "payable" => false,
-  #     "stateMutability" => "view",
-  #     "type" => "function"
-  #   },
-  #   %{
-  #     "constant" => true,
-  #     "inputs" => [],
-  #     "name" => "getTargetVotingYieldParameters",
-  #     "outputs" => [
-  #       %{"type" => "uint256"},
-  #       %{"type" => "uint256"},
-  #       %{"type" => "uint256"}
-  #     ],
-  #     "payable" => false,
-  #     "stateMutability" => "view",
-  #     "type" => "function"
-  #   },
-  #   %{
-  #     "constant" => true,
-  #     "inputs" => [],
-  #     "name" => "getTargetVotingGoldFraction",
-  #     "outputs" => [
-  #       %{"type" => "uint256"}
-  #     ],
-  #     "payable" => false,
-  #     "stateMutability" => "view",
-  #     "type" => "function"
-  #   },
-  #   %{
-  #     "constant" => true,
-  #     "inputs" => [],
-  #     "name" => "getVotingGoldFraction",
-  #     "outputs" => [
-  #       %{"type" => "uint256"}
-  #     ],
-  #     "payable" => false,
-  #     "stateMutability" => "view",
-  #     "type" => "function"
-  #   }
-  # ]
-
-  # @epoch_rewards_abi_with_method_id @epoch_rewards_abi
-  #                                   |> Reader.get_abi_with_method_id()
 
   @calculate_target_epoch_rewards_abi [
     %{
@@ -279,22 +193,41 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
               service: :indexer,
               tracer: Tracer
             )
-  def run(entries, json_rpc_named_arguments) do
+  def run(entries, _json_rpc_named_arguments) do
     [entry] = entries
-    fetch_epoch(entry, json_rpc_named_arguments)
-    |> dbg()
-    :ok
+
+    fetch_epoch(entry)
+    |> case do
+      {:ok, _imported} ->
+        Logger.info("Fetched epoch rewards for block number: #{entry.block_number}")
+        :ok
+
+      error ->
+        Logger.error(fn ->
+          [
+            "Could not fetch epoch rewards for block number: #{entry.block_number}",
+            "block hash: #{entry.block_hash}",
+            inspect(error)
+          ]
+        end)
+
+        :retry
+    end
+
+    # todo: remove entry from pending epoch operations
   end
 
-  def fetch_epoch(%{block_number: block_number, block_hash: _} = entry, json_rpc_named_arguments) do
-    with {:ok, logs} <- fetch_logs(block_number, json_rpc_named_arguments),
-         epoch_payment_distributions = ValidatorEpochPaymentDistributions.parse(logs),
-         {:ok, voter_rewards} <- fetch_voter_rewards(entry),
+  def fetch_epoch(%{block_number: _, block_hash: block_hash} = entry) do
+    epoch_payment_distributions = fetch_epoch_payment_distributions(block_hash)
+
+    with {:ok, voter_rewards} <- fetch_voter_rewards(entry),
+         {:ok, epoch_rewards} <- fetch_epoch_rewards(entry),
+         # todo: replace `_ignore` with pattern matching on `:ok`
+         _ignore <- valid_voter_rewards?(voter_rewards, epoch_rewards),
          {:ok, delegated_payments} <-
            epoch_payment_distributions
            |> Enum.map(& &1.validator_address)
-           |> fetch_payment_delegations(logs, entry),
-         {:ok, epoch_rewards} <- fetch_epoch_rewards(logs, entry) do
+           |> fetch_payment_delegations(entry) do
       validator_and_group_rewards =
         payment_distributions_to_validator_and_group_rewards(
           epoch_payment_distributions,
@@ -309,35 +242,53 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
         ])
         |> Enum.filter(&(&1.amount > 0))
 
-      %{
+      addresses_params =
+        Addresses.extract_addresses(%{
+          celo_epoch_election_rewards: election_rewards
+        })
+
+      Chain.import(%{
+        addresses: %{params: addresses_params},
         celo_epoch_election_rewards: %{params: election_rewards},
         celo_epoch_rewards: %{params: [epoch_rewards]}
-      }
+      })
     end
   end
 
-  def fetch_logs(block_number, json_rpc_named_arguments) do
-    requests = [
-      Logs.request(
-        0,
-        %{
-          :fromBlock => integer_to_quantity(block_number),
-          :toBlock => integer_to_quantity(block_number)
-        }
-      )
-    ]
+  def valid_voter_rewards?(voter_rewards, epoch_rewards) do
+    manual_voters_total = voter_rewards |> Enum.map(& &1.amount) |> Enum.sum()
 
-    error_message = "Could not fetch epoch logs"
+    if manual_voters_total ==
+         epoch_rewards.voters_total do
+      :ok
+    else
+      Logger.error(fn ->
+        [
+          "Total voter rewards do not match.",
+          "Amount calculated manually: #{manual_voters_total}",
+          "Amount returned by `calculateTargetEpochRewards`: #{epoch_rewards.voters_total}"
+        ]
+      end)
 
-    with {:ok, responses} <-
-           Helper.repeated_call(
-             &json_rpc/2,
-             [requests, json_rpc_named_arguments],
-             error_message,
-             @repeated_request_max_retries
-           ) do
-      Logs.from_responses(responses)
+      {:error, :total_voter_rewards_do_not_match}
     end
+  end
+
+  def fetch_epoch_payment_distributions(block_hash) do
+    epoch_payment_distributions_signature = ValidatorEpochPaymentDistributions.signature()
+    validators_contract_address = CeloCoreContracts.get_address(:validators)
+
+    from(
+      log in Log,
+      where:
+        log.block_hash == ^block_hash and
+          log.address_hash == ^validators_contract_address and
+          log.first_topic == ^epoch_payment_distributions_signature and
+          is_nil(log.transaction_hash),
+      select: log
+    )
+    |> Repo.all()
+    |> ValidatorEpochPaymentDistributions.parse()
   end
 
   defp event_to_account_and_group(event) do
@@ -365,7 +316,6 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
   # In other words, `fetch_payment_delegations` always returned empty list.
   def fetch_payment_delegations(
         validator_addresses,
-        logs,
         %{block_number: block_number, block_hash: block_hash}
       ) do
     accounts_contract_address = CeloCoreContracts.get_address(:accounts)
@@ -384,6 +334,26 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
           block_number: block_number
         }
       end)
+
+    usd_token_address_hash = CeloCoreContracts.get_address(:usd_token)
+    mint_address = burn_address_hash_string()
+
+    beneficiary_address_to_amount =
+      from(
+        tt in TokenTransfer.only_consensus_transfers_query(),
+        where:
+          tt.block_hash == ^block_hash and
+            tt.token_contract_address_hash == ^usd_token_address_hash and
+            tt.from_address_hash == ^mint_address and
+            is_nil(tt.transaction_hash),
+        select: {tt.to_address_hash, tt.amount}
+      )
+      |> Repo.all()
+      |> Map.new(fn {address, amount} ->
+        {Hash.to_string(address), amount}
+      end)
+
+    dbg(beneficiary_address_to_amount)
 
     with {responses, []} <-
            requests
@@ -409,7 +379,7 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
              _, _ ->
                {:error, :could_not_fetch_payment_delegations}
            end) do
-      beneficiary_address_to_amount = PaymentDelegationTransfers.parse(logs)
+      dbg(payment_delegations)
 
       rewards =
         validator_addresses
@@ -420,12 +390,14 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
             validator_address,
             {beneficiary_address, _}
           } ->
+            amount =
+              beneficiary_address_to_amount
+              |> Map.get(beneficiary_address, 0)
+
             %{
               block_hash: block_hash,
               account_hash: beneficiary_address,
-              amount:
-                beneficiary_address_to_amount
-                |> Map.get(beneficiary_address, 0),
+              amount: amount,
               associated_account_hash: validator_address,
               type: :delegated_payment
             }
@@ -450,6 +422,8 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
     query |> Repo.all() |> Enum.map(&event_to_account_and_group/1)
   end
 
+  # todo: seems like it could be calculated easier
+  # https://github.com/celo-org/epochs/blob/main/totalVoterRewards.ts#L11
   def fetch_voter_rewards(%{block_number: block_number, block_hash: block_hash}) do
     election_contract_address = CeloCoreContracts.get_address(:election)
 
@@ -565,8 +539,23 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
     |> List.flatten()
   end
 
-  defp fetch_epoch_rewards(logs, %{block_number: block_number, block_hash: block_hash} = _entry) do
-    reserve_bolster = ReserveBolsterTransferAmount.parse(logs)
+  defp fetch_epoch_rewards(%{block_number: block_number, block_hash: block_hash} = _entry) do
+    celo_token_contract_address_hash = CeloCoreContracts.get_address(:celo_token)
+    mint_address_hash = burn_address_hash_string()
+    reserve_contract_address_hash = CeloCoreContracts.get_address(:reserve)
+
+    reserve_bolster =
+      from(
+        tt in TokenTransfer.only_consensus_transfers_query(),
+        where:
+          tt.block_hash == ^block_hash and
+            tt.token_contract_address_hash == ^celo_token_contract_address_hash and
+            tt.from_address_hash == ^mint_address_hash and
+            tt.to_address_hash == ^reserve_contract_address_hash and
+            is_nil(tt.transaction_hash),
+        select: tt.amount
+      )
+      |> Repo.one() || 0
 
     # For some reason, the `calculateTargetEpochRewards` method is not available
     # till epoch 10 on mainnet... Thus we introduce the defaults
@@ -641,72 +630,15 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
            carbon_offsetting_total: carbon_offsetting_total
          }}
 
-      _ ->
+      error ->
+        Logger.error(fn ->
+          [
+            "Could not fetch target epoch rewards:",
+            inspect(error)
+          ]
+        end)
+
         {:error, :could_not_fetch_target_epoch_rewards}
     end
   end
-
-  # defp fetch_epoch_rewards(block_number) do
-  #   block_number
-  #   |> fetch_epoch_rewards_inner(
-  #     @epoch_rewards_abi_with_method_id ++
-  #       @calculate_target_epoch_rewards_abi_with_method_id,
-  #     @epoch_rewards_abi ++
-  #       @calculate_target_epoch_rewards_abi
-  #   )
-  #   |> case do
-  #     a -> a
-  #   end
-  # end
-
-  # defp fetch_epoch_rewards(block_number) do
-  #   block_number
-  #   |> fetch_epoch_rewards_inner(
-  #     @epoch_rewards_abi_with_method_id,
-  #     @epoch_rewards_abi
-  #   )
-  #   |> case do
-  #     {[
-  #        # getTargetGoldTotalSupply
-  #        ok: [target_celo_total_supply],
-  #        # getRewardsMultiplier
-  #        ok: [rewards_multiplier],
-  #        # getRewardsMultiplierParameters
-  #        ok: [
-  #          rewards_multiplier_max,
-  #          rewards_multiplier_under,
-  #          rewards_multiplier_over
-  #        ],
-  #        # getTargetVotingYieldParameters
-  #        ok: [
-  #          target_voting_yield,
-  #          target_voting_yield_max,
-  #          target_voting_yield_adjustment_factor
-  #        ],
-  #        # getTargetVotingGoldFraction
-  #        ok: [target_voting_celo_fraction],
-  #        # getVotingGoldFraction
-  #        ok: [voting_celo_fraction]
-  #      ], []} = a ->
-  #       a
-  #   end
-  # end
-
-  # defp fetch_epoch_rewards_inner(block_number, abi_with_method_id, abi) do
-  #   # epoch_reward_contract_address = "0xb10ee11244526b94879e1956745ba2e35ae2ba20"
-  #   epoch_reward_contract_address = "0x07f007d389883622ef8d4d347b3f78007f28d8b7"
-
-  #   requests =
-  #     abi_with_method_id
-  #     |> Enum.map(fn %{"method_id" => method_id} ->
-  #       %{
-  #         contract_address: epoch_reward_contract_address,
-  #         method_id: method_id,
-  #         args: [],
-  #         block_number: block_number
-  #       }
-  #     end)
-
-  #   read_contracts_with_retries(requests, abi, @repeated_request_max_retries)
-  # end
 end

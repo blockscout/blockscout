@@ -976,7 +976,7 @@ defmodule Indexer.Transform.TransactionActions do
     |> Enum.group_by(& &1.transaction_hash)
   end
 
-  defp read_contracts_with_retries(requests, abi, retries_left) when retries_left > 0 do
+  def read_contracts_with_retries(requests, abi, retries_left) when retries_left > 0 do
     responses = Reader.query_contracts(requests, abi)
 
     error_messages =
