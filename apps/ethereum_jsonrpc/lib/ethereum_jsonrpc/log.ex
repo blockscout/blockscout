@@ -163,7 +163,7 @@ defmodule EthereumJSONRPC.Log do
   end
 
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(address blockHash data removed topics transactionHash timestamp),
+       when key in ~w(address blockHash data removed topics transactionHash blockTimestamp timestamp),
        do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(blockNumber logIndex transactionIndex transactionLogIndex) do
