@@ -1730,6 +1730,20 @@ defmodule Explorer.Chain do
     |> Enum.into(%{})
   end
 
+  @doc """
+    Retrieves the total row count for a given table.
+
+    This function estimates the row count using system catalogs. If the estimate
+    is unavailable, it performs an exact count using an aggregate query.
+
+    ## Parameters
+    - `module`: The module representing the table schema.
+    - `options`: An optional keyword list of options, such as selecting a specific repository.
+
+    ## Returns
+    - The total row count as a non-negative integer.
+  """
+  @spec get_table_rows_total_count(atom(), keyword()) :: non_neg_integer()
   def get_table_rows_total_count(module, options) do
     table_name = module.__schema__(:source)
 

@@ -731,16 +731,18 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @doc """
     Retrieves the total count of rollup batches indexed up to the current moment.
 
+    This function uses an estimated count from system catalogs if available.
+    If the estimate is unavailable, it performs an exact count using an aggregate query.
+
     ## Parameters
     - `options`: A keyword list specifying options, including whether to use a replica database.
 
     ## Returns
-    - The count of indexed batches as an integer.
+    - The count of indexed batches.
   """
-  @spec batches_count(api?: boolean()) :: any()
+  @spec batches_count(api?: boolean()) :: non_neg_integer()
   def batches_count(options) do
-    L1Batch
-    |> select_repo(options).aggregate(:count, timeout: :infinity)
+    Chain.get_table_rows_total_count(L1Batch, options)
   end
 
   @doc """
