@@ -141,7 +141,7 @@ defmodule EthereumJSONRPC.Transaction do
         }
 
   @doc """
-  Geth `elixir` can be converted to `params`.  Geth does not supply `"publicKey"` or `"standardV"`, unlike Nethermind.
+  Geth `elixir` can be converted to `params`. Geth does not supply `"publicKey"` or `"standardV"`, unlike Nethermind.
 
       iex> EthereumJSONRPC.Transaction.elixir_to_params(
       ...>   %{
@@ -524,7 +524,7 @@ defmodule EthereumJSONRPC.Transaction do
         end
 
       :celo ->
-        put_if_present(elixir, params, [
+        put_if_present(params, elixir, [
           {"feeCurrency", :gas_token_contract_address_hash},
           {"gatewayFee", :gateway_fee},
           {"gatewayFeeRecipient", :gas_fee_recipient_address_hash}
