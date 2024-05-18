@@ -1,11 +1,11 @@
 defmodule EthereumJSONRPC.Transaction do
   @moduledoc """
   Transaction format included in the return of
-  [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash)
-  and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber) and returned by
-  [`eth_getTransactionByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyhash),
-  [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblockhashandindex),
-  and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblocknumberandindex)
+  [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbyhash)
+  and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbynumber) and returned by
+  [`eth_getTransactionByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyhash),
+  [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblockhashandindex),
+  and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblocknumberandindex)
   """
   import EthereumJSONRPC, only: [quantity_to_integer: 1, integer_to_quantity: 1, request: 1]
 
@@ -304,7 +304,7 @@ defmodule EthereumJSONRPC.Transaction do
       max_fee_per_gas: max_fee_per_gas
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp},
       {"r", :r},
@@ -350,7 +350,7 @@ defmodule EthereumJSONRPC.Transaction do
       max_fee_per_gas: max_fee_per_gas
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp},
       {"r", :r},
@@ -392,7 +392,7 @@ defmodule EthereumJSONRPC.Transaction do
       type: type
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp},
       {"r", :r},
@@ -432,7 +432,7 @@ defmodule EthereumJSONRPC.Transaction do
       transaction_index: index
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp},
       {"r", :r},
@@ -473,7 +473,7 @@ defmodule EthereumJSONRPC.Transaction do
       type: type
     }
 
-    put_if_present(transaction, result, [
+    put_if_present(result, transaction, [
       {"creates", :created_contract_address_hash},
       {"block_timestamp", :block_timestamp},
       {"r", :r},
@@ -485,14 +485,14 @@ defmodule EthereumJSONRPC.Transaction do
   defp chain_type_fields(params, elixir) do
     case Application.get_env(:explorer, :chain_type) do
       :ethereum ->
-        put_if_present(elixir, params, [
+        put_if_present(params, elixir, [
           {"blobVersionedHashes", :blob_versioned_hashes},
           {"maxFeePerBlobGas", :max_fee_per_blob_gas}
         ])
 
       :optimism ->
         # we need to put blobVersionedHashes for Indexer.Fetcher.Optimism.TxnBatch module
-        put_if_present(elixir, params, [
+        put_if_present(params, elixir, [
           {"l1TxOrigin", :l1_tx_origin},
           {"l1BlockNumber", :l1_block_number},
           {"blobVersionedHashes", :blob_versioned_hashes}
@@ -701,7 +701,7 @@ defmodule EthereumJSONRPC.Transaction do
     {nil, nil}
   end
 
-  defp put_if_present(transaction, result, keys) do
+  def put_if_present(result, transaction, keys) do
     Enum.reduce(keys, result, fn {from_key, to_key}, acc ->
       value = transaction[from_key]
 

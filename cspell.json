@@ -18,6 +18,7 @@
         "Asfpp",
         "Autodetection",
         "Autonity",
+        "Averify",
         "bitmask",
         "Blockchair",
         "CALLCODE",
@@ -175,6 +176,7 @@
         "clickover",
         "codeformat",
         "coef",
+        "coeff",
         "coinprice",
         "coinsupply",
         "coinzilla",
@@ -343,6 +345,7 @@
         "malihu",
         "mallowance",
         "maxlength",
+        "mbot",
         "mcap",
         "mconst",
         "mdef",
@@ -396,6 +399,7 @@
         "nowrap",
         "ntoa",
         "nxdomain",
+        "offchain",
         "omni",
         "onclick",
         "onconnect",
@@ -640,7 +644,10 @@
         "zksync",
         "filecoin",
         "Filecoin",
-        "permissionless"
+        "permissionless",
+        "feelin",
+        "KnxbUejwY",
+        "Btvk"
     ],
     "enableFiletypes": [
         "dotenv",

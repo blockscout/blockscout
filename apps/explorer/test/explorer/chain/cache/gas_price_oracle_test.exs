@@ -460,5 +460,76 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
                 }
               }, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
     end
+
+    test "does not take into account old transaction even if there is no new ones" do
+      gas_price_oracle_old_env = Application.get_env(:explorer, GasPriceOracle)
+
+      Application.put_env(:explorer, GasPriceOracle, num_of_blocks: 3)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, GasPriceOracle, gas_price_oracle_old_env)
+      end)
+
+      block1 = insert(:block, number: 1)
+      block2 = insert(:block, number: 2)
+      block3 = insert(:block, number: 3)
+      block4 = insert(:block, number: 4)
+      block5 = insert(:block, number: 5)
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 1_000_000_000,
+        max_priority_fee_per_gas: 1_000_000_000,
+        max_fee_per_gas: 1_000_000_000
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 1_000_000_000,
+        max_priority_fee_per_gas: 1_000_000_000,
+        max_fee_per_gas: 1_000_000_000
+      )
+
+      :transaction
+      |> build(
+        status: :ok,
+        block_hash: block3.hash,
+        block_number: block3.number,
+        gas_price: 0,
+        cumulative_gas_used: 884_322
+      )
+
+      :transaction
+      |> build(
+        status: :ok,
+        block_hash: block4.hash,
+        block_number: block4.number,
+        gas_price: 0,
+        cumulative_gas_used: 884_322
+      )
+
+      :transaction
+      |> build(
+        status: :ok,
+        block_hash: block5.hash,
+        block_number: block5.number,
+        gas_price: 0,
+        cumulative_gas_used: 884_322
+      )
+
+      assert {{:ok, %{average: nil, fast: nil, slow: nil}}, _} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
+    end
   end
 end

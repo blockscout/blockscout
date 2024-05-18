@@ -17,7 +17,7 @@ defmodule Explorer.Repo.ConfigHelper do
   ]
 
   def get_db_config(opts) do
-    url_encoded = opts[:url] || System.get_env("DATABASE_URL")
+    url_encoded = opts[:url]
     url = url_encoded && URI.decode(url_encoded)
     env_function = opts[:env_func] || (&System.get_env/1)
 
@@ -31,6 +31,8 @@ defmodule Explorer.Repo.ConfigHelper do
   def get_suave_db_url, do: System.get_env("SUAVE_DATABASE_URL") || System.get_env("DATABASE_URL")
 
   def get_api_db_url, do: System.get_env("DATABASE_READ_ONLY_API_URL") || System.get_env("DATABASE_URL")
+
+  def get_mud_db_url, do: System.get_env("MUD_DATABASE_URL") || System.get_env("DATABASE_URL")
 
   def init_repo_module(module, opts) do
     db_url = Application.get_env(:explorer, module)[:url]

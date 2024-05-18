@@ -25,11 +25,15 @@ defmodule ConfigHelper do
         _ -> base_repos
       end
 
-    if System.get_env("BRIDGED_TOKENS_ENABLED") do
-      repos ++ [Explorer.Repo.BridgedTokens]
-    else
-      repos
-    end
+    ext_repos =
+      [
+        {parse_bool_env_var("BRIDGED_TOKENS_ENABLED"), Explorer.Repo.BridgedTokens},
+        {parse_bool_env_var("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud}
+      ]
+      |> Enum.filter(&elem(&1, 0))
+      |> Enum.map(&elem(&1, 1))
+
+    repos ++ ext_repos
   end
 
   @spec hackney_options() :: any()

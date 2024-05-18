@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.Account.CustomABIControllerTest do
   use BlockScoutWeb.ConnCase
 
+  alias Explorer.TestHelper
   alias BlockScoutWeb.Models.UserFromAuth
 
   @custom_abi "[{\"type\":\"function\",\"outputs\":[{\"type\":\"string\",\"name\":\"\"}],\"name\":\"name\",\"inputs\":[],\"constant\":true}]"
@@ -163,6 +164,8 @@ defmodule BlockScoutWeb.Account.CustomABIControllerTest do
         "abi" =>
           "[{\"type\":\"function\",\"outputs\":[{\"type\":\"string\",\"name\":\"\"}],\"name\":\"name\",\"inputs\":[],\"constant\":true},{\"type\":\"function\",\"outputs\":[{\"type\":\"bool\",\"name\":\"success\"}],\"name\":\"approve\",\"inputs\":[{\"type\":\"address\",\"name\":\"_spender\"},{\"type\":\"uint256\",\"name\":\"_value\"}],\"constant\":false}]"
       }
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       result_conn =
         conn

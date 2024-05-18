@@ -16,11 +16,20 @@
       <%= nil %>
   <% end %>
 
+  <% implementation_names = Implementation.names(@log.address) %>
+  <% implementation_name =
+        if Enum.empty?(implementation_names) do
+          nil
+        else
+          implementation_names |> Enum.at(0)
+        end
+  %>
+
   <dl class="row">
     <dt class="col-lg-2"> <%= gettext "Address" %> </dt>
     <dd class="col-lg-10">
       <h3 class="logs-hash">
-        <% name = implementation_name(@log.address) || primary_name(@log.address)%>
+        <% name = implementation_name || primary_name(@log.address)%>
         <%= link(
             (if name, do: name <> " | "<> to_string(@log.address), else: @log.address),
             to: address_path(@conn, :show, @log.address),

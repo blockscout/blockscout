@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.SmartContractController do
   alias BlockScoutWeb.AddressView
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.SmartContract.{Reader, Writer}
 
   import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
@@ -27,8 +28,9 @@ defmodule BlockScoutWeb.SmartContractController do
       implementation_address_hash_string =
         if contract_type == "proxy" do
           address.smart_contract
-          |> SmartContract.get_implementation_address_hash()
+          |> Implementation.get_implementation()
           |> Tuple.to_list()
+          |> List.first()
           |> List.first() || burn_address_hash_string()
         else
           burn_address_hash_string()

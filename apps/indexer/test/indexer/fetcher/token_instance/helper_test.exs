@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.Token.Instance
-  alias EthereumJSONRPC.Encoder
+  alias Explorer.Repo
   alias Indexer.Fetcher.TokenInstance.Helper
   alias Plug.Conn
 
@@ -14,6 +14,8 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
 
   setup do
     bypass = Bypass.open()
+
+    on_exit(fn -> Bypass.down(bypass) end)
 
     {:ok, bypass: bypass}
   end
@@ -310,6 +312,213 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
                   }
                 }}
              ] = Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 300_067_000_000_000_000}])
+    end
+
+    test "check that decoding error is stored in error, not in metadata", %{bypass: bypass} do
+      json = """
+      invalid json
+      {
+        "name": "Sérgio Mendonça {id}"
+      }
+      """
+
+      encoded_url =
+        "0x" <>
+          (ABI.TypeEncoder.encode(["http://localhost:#{bypass.port}/api/card/{id}"], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data:
+                                        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             result: encoded_url
+           }
+         ]}
+      end)
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/card/0000000000000000000000000000000000000000000000000000000000000309",
+        fn conn ->
+          Conn.resp(conn, 200, json)
+        end
+      )
+
+      insert(:token,
+        contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+        type: "ERC-1155"
+      )
+
+      Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 777}])
+
+      %Instance{
+        metadata: nil,
+        error: "wrong metadata type"
+      } = 777 |> Instance.token_instance_query("0x5caebd3b32e210e85ce3e9d51638b9c445481567") |> Repo.one()
+    end
+  end
+
+  describe "check retries count and refetch after" do
+    test "retries count 0 for new instance" do
+      config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
+
+      coef = config[:exp_timeout_coeff]
+      base = config[:exp_timeout_base]
+      max_refetch_interval = config[:max_refetch_interval]
+
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      token_instance = build(:token_instance, token_contract_address_hash: erc_721_token.contract_address_hash)
+
+      Helper.batch_fetch_instances([
+        %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+      ])
+
+      now = DateTime.utc_now()
+      timeout = min(coef * base ** 0 * 1000, max_refetch_interval)
+      refetch_after = DateTime.add(now, timeout, :millisecond)
+
+      [instance] = Repo.all(Instance)
+
+      assert instance.retries_count == 0
+      assert DateTime.diff(refetch_after, instance.refetch_after) < 1
+      assert !is_nil(instance.error)
+    end
+
+    test "proper updates retries count and refetch after on retry" do
+      config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
+
+      coef = config[:exp_timeout_coeff]
+      base = config[:exp_timeout_base]
+      max_refetch_interval = config[:max_refetch_interval]
+
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      token_instance =
+        insert(:token_instance,
+          token_contract_address_hash: erc_721_token.contract_address_hash,
+          error: "error",
+          metadata: nil
+        )
+
+      Helper.batch_fetch_instances([
+        %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+      ])
+
+      now = DateTime.utc_now()
+      timeout = min(coef * base ** 1 * 1000, max_refetch_interval)
+      refetch_after = DateTime.add(now, timeout, :millisecond)
+
+      [instance] = Repo.all(Instance)
+
+      assert instance.retries_count == 1
+      assert DateTime.diff(refetch_after, instance.refetch_after) < 1
+      assert !is_nil(instance.error)
+    end
+
+    test "success insert after retry" do
+      config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
+
+      coef = config[:exp_timeout_coeff]
+      base = config[:exp_timeout_base]
+      max_refetch_interval = config[:max_refetch_interval]
+
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      token_instance = build(:token_instance, token_contract_address_hash: erc_721_token.contract_address_hash)
+
+      Helper.batch_fetch_instances([
+        %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+      ])
+
+      Helper.batch_fetch_instances([
+        %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+      ])
+
+      now = DateTime.utc_now()
+      timeout = min(coef * base ** 1 * 1000, max_refetch_interval)
+      refetch_after = DateTime.add(now, timeout, :millisecond)
+
+      [instance] = Repo.all(Instance)
+
+      assert instance.retries_count == 1
+      assert DateTime.diff(refetch_after, instance.refetch_after) < 1
+      assert !is_nil(instance.error)
+
+      token_address = to_string(erc_721_token.contract_address_hash)
+
+      data =
+        "0xc87b56dd" <>
+          (ABI.TypeEncoder.encode([token_instance.token_id], [{:uint, 256}]) |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data: ^data,
+                                      to: ^token_address
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             result:
+               "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000115646174613a6170706c69636174696f6e2f6a736f6e3b757466382c7b226e616d65223a20224f4d4e493430342023333030303637303030303030303030303030222c226465736372697074696f6e223a225468652066726f6e74696572206f66207065726d697373696f6e6c657373206173736574732e222c2265787465726e616c5f75726c223a2268747470733a2f2f747769747465722e636f6d2f6f6d6e69636861696e343034222c22696d616765223a2268747470733a2f2f697066732e696f2f697066732f516d55364447586369535a5854483166554b6b45716a3734503846655850524b7853546a675273564b55516139352f626173652f3330303036373030303030303030303030302e4a5047227d0000000000000000000000"
+           }
+         ]}
+      end)
+
+      Helper.batch_fetch_instances([
+        %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+      ])
+
+      [instance] = Repo.all(Instance)
+
+      assert instance.retries_count == 2
+      assert is_nil(instance.refetch_after)
+      assert is_nil(instance.error)
+
+      assert instance.metadata == %{
+               "name" => "OMNI404 #300067000000000000",
+               "description" => "The frontier of permissionless assets.",
+               "external_url" => "https://twitter.com/omnichain404",
+               "image" =>
+                 "https://ipfs.io/ipfs/QmU6DGXciSZXTH1fUKkEqj74P8FeXPRKxSTjgRsVKUQa95/base/300067000000000000.JPG"
+             }
     end
   end
 end

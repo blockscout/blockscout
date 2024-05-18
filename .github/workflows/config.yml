@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - master
+      - production-arbitrum
       - production-core
-      - production-eth-experimental
-      - production-eth-goerli
       - production-eth-sepolia
+      - production-filecoin
       - production-fuse
       - production-optimism
       - production-immutable
@@ -29,8 +29,6 @@ on:
     types: [opened, synchronize, reopened, labeled]
     branches:
       - master
-      - production-optimism
-      - production-zksync
 
 env:
   MIX_ENV: test

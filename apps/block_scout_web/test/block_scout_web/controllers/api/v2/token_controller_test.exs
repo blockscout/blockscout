@@ -1063,6 +1063,27 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
                "token" => %{"address" => ^token_address, "name" => ^token_name, "type" => ^token_type}
              } = json_response(request, 200)
     end
+
+    # https://github.com/blockscout/blockscout/issues/9906
+    test "regression for #9906", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      instance =
+        insert(:token_instance,
+          token_id: 0,
+          token_contract_address_hash: token.contract_address_hash,
+          metadata: %{
+            "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
+          }
+        )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
+
+      assert %{
+               "image_url" =>
+                 "https://ipfs.io/ipfs/QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
+             } = json_response(request, 200)
+    end
   end
 
   describe "/tokens/{address_hash}/instances/{token_id}/transfers" do

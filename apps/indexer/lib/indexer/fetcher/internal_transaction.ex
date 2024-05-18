@@ -122,7 +122,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
       {:error, reason} ->
         Logger.error(
           fn ->
-            ["failed to fetch internal transactions for blocks: ", Exception.format(:error, reason)]
+            [
+              "failed to fetch internal transactions for blocks #{inspect(filtered_unique_numbers)}: ",
+              Exception.format(:error, reason)
+            ]
           end,
           error_count: filtered_unique_numbers_count
         )
@@ -135,7 +138,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
       {:error, reason, stacktrace} ->
         Logger.error(
           fn ->
-            ["failed to fetch internal transactions for blocks: ", Exception.format(:error, reason, stacktrace)]
+            [
+              "failed to fetch internal transactions for blocks #{inspect(filtered_unique_numbers)}: ",
+              Exception.format(:error, reason, stacktrace)
+            ]
           end,
           error_count: filtered_unique_numbers_count
         )

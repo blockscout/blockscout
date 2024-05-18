@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Mixfile do
         ignore_warnings: "../../.dialyzer-ignore"
       ],
       elixir: "~> 1.13",
-      elixirc_paths: elixirc_paths(Mix.env()),
+      elixirc_paths: elixirc_paths(Mix.env(), Application.get_env(:block_scout_web, :disable_api?)),
       lockfile: "../../mix.lock",
       package: package(),
       preferred_cli_env: [
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.5.0",
+      version: "6.6.0",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
@@ -48,8 +48,19 @@ defmodule BlockScoutWeb.Mixfile do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["test/support", "test/block_scout_web/features/pages"] ++ elixirc_paths()
-  defp elixirc_paths(_), do: elixirc_paths()
+  defp elixirc_paths(:test, _), do: ["test/support", "test/block_scout_web/features/pages"] ++ elixirc_paths()
+
+  defp elixirc_paths(_, true),
+    do: [
+      "lib/phoenix",
+      "lib/block_scout_web.ex",
+      "lib/block_scout_web/application.ex",
+      "lib/block_scout_web/endpoint.ex",
+      "lib/block_scout_web/health_router.ex",
+      "lib/block_scout_web/controllers/api/v1/health_controller.ex"
+    ]
+
+  defp elixirc_paths(_, _), do: elixirc_paths()
   defp elixirc_paths, do: ["lib"]
 
   defp extra_applications,
@@ -82,9 +93,9 @@ defmodule BlockScoutWeb.Mixfile do
       # Need until https://github.com/absinthe-graphql/absinthe_relay/pull/125 is released, then can be removed
       # The current `absinthe_relay` is compatible though as shown from that PR
       {:ecto, "~> 3.3", override: true},
-      {:ex_cldr, "~> 2.7"},
-      {:ex_cldr_numbers, "~> 2.6"},
-      {:ex_cldr_units, "~> 3.13"},
+      {:ex_cldr, "~> 2.38"},
+      {:ex_cldr_numbers, "~> 2.33"},
+      {:ex_cldr_units, "~> 3.17"},
       {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       {:explorer, in_umbrella: true},

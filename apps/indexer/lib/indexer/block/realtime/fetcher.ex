@@ -222,6 +222,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       options
       |> Map.drop(@import_options)
       |> put_in([:blocks, :params, Access.all(), :consensus], true)
+      |> put_in([:blocks, :params, Access.all(), :refetch_needed], false)
       |> put_in([:block_rewards], chain_import_block_rewards)
 
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do

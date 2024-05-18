@@ -124,7 +124,7 @@
           <% end %>
           <!-- Implementation -->
           <%= if @is_proxy do %>
-            <% {implementation_address_, name} = SmartContract.get_implementation_address_hash(@address.smart_contract) %>
+            <% {implementation_address_, name} = Implementation.get_implementation(@address.smart_contract) %>
             <% implementation_address = implementation_address_ || "0x0000000000000000000000000000000000000000" %>
             <dl class="row">
               <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
