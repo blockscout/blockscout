@@ -9,7 +9,15 @@ defmodule Indexer.Block.Realtime.FetcherTest do
   alias Indexer.Block.Catchup.Sequence
   alias Indexer.Block.Realtime
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
-  alias Indexer.Fetcher.{ContractCode, InternalTransaction, ReplacedTransaction, Token, TokenBalance, UncleBlock}
+
+  alias Indexer.Fetcher.{
+    ContractCode,
+    InternalTransaction,
+    ReplacedTransaction,
+    Token,
+    TokenBalance,
+    UncleBlock
+  }
 
   @moduletag capture_log: true
 
@@ -62,6 +70,13 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       )
 
       ReplacedTransaction.Supervisor.Case.start_supervised!()
+
+      # In CELO network, there is a token duality feature where CELO can be used
+      # as both a native chain currency and as an ERC-20 token. Transactions
+      # that transfer CELO are also counted as token transfers, and the
+      # TokenInstance fetcher is called. However, for simplicity, we disable it
+      # in this test.
+      Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor, disabled?: true)
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
@@ -478,12 +493,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       assert {:ok,
               %{
                 inserted: %{
-                  addresses: [
-                    %Address{hash: first_address_hash},
-                    %Address{hash: second_address_hash},
-                    %Address{hash: third_address_hash},
-                    %Address{hash: fourth_address_hash}
-                  ],
+                  addresses: addresses,
                   address_coin_balances: [
                     %{
                       address_hash: first_address_hash,
@@ -507,6 +517,23 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 },
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
+
+      unless Application.get_env(:explorer, :chain_type) == :celo do
+        assert [
+                 %Address{hash: ^first_address_hash},
+                 %Address{hash: ^second_address_hash},
+                 %Address{hash: ^third_address_hash},
+                 %Address{hash: ^fourth_address_hash}
+               ] = addresses
+      else
+        assert [
+                 %Address{hash: ^first_address_hash},
+                 %Address{hash: _celo_token_address_hash},
+                 %Address{hash: ^second_address_hash},
+                 %Address{hash: ^third_address_hash},
+                 %Address{hash: ^fourth_address_hash}
+               ] = addresses
+      end
     end
 
     @tag :no_geth
@@ -530,6 +557,13 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       )
 
       ReplacedTransaction.Supervisor.Case.start_supervised!()
+
+      # In CELO network, there is a token duality feature where CELO can be used
+      # as both a native chain currency and as an ERC-20 token. Transactions
+      # that transfer CELO are also counted as token transfers, and the
+      # TokenInstance fetcher is called. However, for simplicity, we disable it
+      # in this test.
+      Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor, disabled?: true)
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
@@ -683,12 +717,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       assert {:ok,
               %{
                 inserted: %{
-                  addresses: [
-                    %Address{hash: first_address_hash},
-                    %Address{hash: second_address_hash},
-                    %Address{hash: third_address_hash},
-                    %Address{hash: fourth_address_hash}
-                  ],
+                  addresses: addresses,
                   address_coin_balances: [
                     %{
                       address_hash: first_address_hash,
@@ -724,6 +753,23 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 },
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
+
+      unless Application.get_env(:explorer, :chain_type) == :celo do
+        assert [
+                 %Address{hash: ^first_address_hash},
+                 %Address{hash: ^second_address_hash},
+                 %Address{hash: ^third_address_hash},
+                 %Address{hash: ^fourth_address_hash}
+               ] = addresses
+      else
+        assert [
+                 %Address{hash: ^first_address_hash},
+                 %Address{hash: _celo_token_address_hash},
+                 %Address{hash: ^second_address_hash},
+                 %Address{hash: ^third_address_hash},
+                 %Address{hash: ^fourth_address_hash}
+               ] = addresses
+      end
 
       Application.put_env(:indexer, :fetch_rewards_way, nil)
     end
