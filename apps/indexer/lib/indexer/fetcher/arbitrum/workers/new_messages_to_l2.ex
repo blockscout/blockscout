@@ -267,7 +267,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
 
     Enum.map(messages, fn msg ->
       Map.merge(msg, %{
-        originator_address: txs_to_from[msg.originating_tx_hash],
+        originator_address: txs_to_from[msg.originating_transaction_hash],
         status: :initiated
       })
     end)
@@ -303,9 +303,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
             %{
               direction: :to_l2,
               message_id: msg_id,
-              originating_tx_hash: tx_hash,
+              originating_transaction_hash: tx_hash,
               origination_timestamp: ts,
-              originating_tx_blocknum: blk_num
+              originating_transaction_block_number: blk_num
             }
             | messages
           ]

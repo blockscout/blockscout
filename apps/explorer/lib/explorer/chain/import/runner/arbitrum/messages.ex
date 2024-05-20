@@ -87,11 +87,16 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.Messages do
           # Don't update `direction` as it is part of the composite primary key and used for the conflict target
           # Don't update `message_id` as it is part of the composite primary key and used for the conflict target
           originator_address: fragment("COALESCE(EXCLUDED.originator_address, ?)", op.originator_address),
-          originating_tx_hash: fragment("COALESCE(EXCLUDED.originating_tx_hash, ?)", op.originating_tx_hash),
+          originating_transaction_hash:
+            fragment("COALESCE(EXCLUDED.originating_transaction_hash, ?)", op.originating_transaction_hash),
           origination_timestamp: fragment("COALESCE(EXCLUDED.origination_timestamp, ?)", op.origination_timestamp),
-          originating_tx_blocknum:
-            fragment("COALESCE(EXCLUDED.originating_tx_blocknum, ?)", op.originating_tx_blocknum),
-          completion_tx_hash: fragment("COALESCE(EXCLUDED.completion_tx_hash, ?)", op.completion_tx_hash),
+          originating_transaction_block_number:
+            fragment(
+              "COALESCE(EXCLUDED.originating_transaction_block_number, ?)",
+              op.originating_transaction_block_number
+            ),
+          completion_transaction_hash:
+            fragment("COALESCE(EXCLUDED.completion_transaction_hash, ?)", op.completion_transaction_hash),
           status: fragment("GREATEST(?, EXCLUDED.status)", op.status),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", op.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", op.updated_at)
@@ -99,12 +104,12 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.Messages do
       ],
       where:
         fragment(
-          "(EXCLUDED.originator_address, EXCLUDED.originating_tx_hash, EXCLUDED.origination_timestamp, EXCLUDED.originating_tx_blocknum, EXCLUDED.completion_tx_hash, EXCLUDED.status) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.originator_address, EXCLUDED.originating_transaction_hash, EXCLUDED.origination_timestamp, EXCLUDED.originating_transaction_block_number, EXCLUDED.completion_transaction_hash, EXCLUDED.status) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
           op.originator_address,
-          op.originating_tx_hash,
+          op.originating_transaction_hash,
           op.origination_timestamp,
-          op.originating_tx_blocknum,
-          op.completion_tx_hash,
+          op.originating_transaction_block_number,
+          op.completion_transaction_hash,
           op.status
         )
     )

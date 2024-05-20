@@ -327,7 +327,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
         msg_id = outbox_transaction_executed_event_parse(event)
 
         l1_tx_hash_raw = event["transactionHash"]
-        l1_tx_hash = Rpc.strhash_to_byteshash(l1_tx_hash_raw)
+        l1_tx_hash = Rpc.string_hash_to_bytes_hash(l1_tx_hash_raw)
         l1_blk_num = quantity_to_integer(event["blockNumber"])
 
         updated_executions = [
@@ -405,7 +405,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       |> Enum.map(fn execution ->
         messages_map
         |> Map.get(execution.message_id)
-        |> Map.put(:completion_tx_hash, execution.execution_transaction.hash.bytes)
+        |> Map.put(:completion_transaction_hash, execution.execution_transaction.hash.bytes)
         |> Map.put(:status, :relayed)
       end)
     end

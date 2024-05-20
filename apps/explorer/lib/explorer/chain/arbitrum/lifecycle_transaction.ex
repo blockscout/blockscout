@@ -35,8 +35,8 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
     field(:timestamp, :utc_datetime_usec)
     field(:status, Ecto.Enum, values: [:unfinalized, :finalized])
 
-    has_many(:committed_batches, L1Batch, foreign_key: :commit_id)
-    has_many(:confirmed_blocks, BatchBlock, foreign_key: :confirm_id)
+    has_many(:committed_batches, L1Batch, foreign_key: :commitment_id)
+    has_many(:confirmed_blocks, BatchBlock, foreign_key: :confirmation_id)
 
     timestamps()
   end

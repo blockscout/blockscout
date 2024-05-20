@@ -379,7 +379,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         rollup_block_hash = send_root_updated_event_parse(event)
 
         l1_tx_hash_raw = event["transactionHash"]
-        l1_tx_hash = Rpc.strhash_to_byteshash(l1_tx_hash_raw)
+        l1_tx_hash = Rpc.string_hash_to_bytes_hash(l1_tx_hash_raw)
         l1_blk_num = quantity_to_integer(event["blockNumber"])
 
         updated_block_to_txs =
@@ -468,7 +468,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         if length(confirmed_blocks) > 0 do
           log_info("Found #{length(confirmed_blocks)} confirmed blocks")
 
-          add_confirm_transaction(confirmed_blocks, block_to_l1_txs[block_num].l1_tx_hash) ++
+          add_confirmation_transaction(confirmed_blocks, block_to_l1_txs[block_num].l1_tx_hash) ++
             updated_rollup_blocks
         else
           log_info("Either no unconfirmed blocks found or DB inconsistency error discovered")
@@ -585,7 +585,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     #   because the method can be called for guessed block number rather than received from
     #   the batch description or from blocks list received after a batch handling. In this case
     #   the confirmation must be postponed until the corresponding batch is handled.
-    batch = Db.get_batch_by_rollup_block_num(rollup_block_num)
+    batch = Db.get_batch_by_rollup_block_number(rollup_block_num)
 
     if batch != nil do
       log_info(
@@ -941,12 +941,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   end
 
   # Adds the confirmation transaction hash to each rollup block description in the list.
-  defp add_confirm_transaction(block_descriptions_list, confirm_tx_hash) do
+  defp add_confirmation_transaction(block_descriptions_list, confirm_tx_hash) do
     block_descriptions_list
     |> Enum.reduce([], fn block_descr, updated ->
       new_block_descr =
         block_descr
-        |> Map.put(:confirm_transaction, confirm_tx_hash)
+        |> Map.put(:confirmation_transaction, confirm_tx_hash)
 
       [new_block_descr | updated]
     end)
@@ -956,7 +956,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   defp take_lifecycle_txs_for_confirmed_blocks(confirmed_rollup_blocks, lifecycle_txs) do
     confirmed_rollup_blocks
     |> Enum.reduce(%{}, fn block_descr, updated_txs ->
-      confirmation_tx_hash = block_descr.confirm_transaction
+      confirmation_tx_hash = block_descr.confirmation_transaction
 
       Map.put_new(updated_txs, confirmation_tx_hash, lifecycle_txs[confirmation_tx_hash])
     end)
@@ -1010,8 +1010,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
         updated_block =
           block
-          |> Map.put(:confirm_id, lifecycle_txs[block.confirm_transaction].id)
-          |> Map.drop([:confirm_transaction])
+          |> Map.put(:confirmation_id, lifecycle_txs[block.confirmation_transaction].id)
+          |> Map.drop([:confirmation_transaction])
 
         {[updated_block | updated_list], chosen_highest_confirmed}
       end)

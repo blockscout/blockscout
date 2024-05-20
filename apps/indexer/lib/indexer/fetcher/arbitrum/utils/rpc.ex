@@ -360,14 +360,14 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     ## Returns
     - The binary representation of the hash. If the input is `nil`, returns the binary form of the default zero hash.
   """
-  @spec strhash_to_byteshash(EthereumJSONRPC.hash() | nil) :: binary()
-  def strhash_to_byteshash(hash) do
+  @spec string_hash_to_bytes_hash(EthereumJSONRPC.hash() | nil) :: binary()
+  def string_hash_to_bytes_hash(hash) do
     hash
-    |> json_txid_to_hash()
+    |> json_tx_id_to_hash()
     |> Base.decode16!(case: :mixed)
   end
 
-  defp json_txid_to_hash(hash) do
+  defp json_tx_id_to_hash(hash) do
     case hash do
       "0x" <> tx_hash -> tx_hash
       nil -> @zero_hash
