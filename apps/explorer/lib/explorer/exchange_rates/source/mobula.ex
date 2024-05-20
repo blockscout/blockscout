@@ -93,10 +93,6 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
     date_days_ago = DateTime.add(now, -previous_days, :day)
     timestamp_ms = DateTime.to_unix(date_days_ago) * 1000
 
-    Logger.info(
-      "Fetching price history from Mobula: #{history_source_url()} for the last #{previous_days} days. Timestamp: #{timestamp_ms} ms. Now: #{DateTime.to_unix(now)} ms. Date days ago: #{DateTime.to_unix(date_days_ago)} ms."
-    )
-
     "#{history_source_url()}&from=#{timestamp_ms}"
   end
 
