@@ -208,11 +208,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
         state
       ])
 
-    Process.send_after(
-      self(),
-      :check_new_msgs_to_rollup,
-      max(:timer.seconds(state.config.recheck_interval) - div(increase_duration(state.data, handle_duration), 1000), 0)
-    )
+    next_timeout = max(state.config.recheck_interval - div(increase_duration(state.data, handle_duration), 1000), 0)
+
+    Process.send_after(self(), :check_new_msgs_to_rollup, next_timeout)
 
     new_data =
       Map.merge(state.data, %{
