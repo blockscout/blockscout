@@ -85,20 +85,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     api?: true
   ]
 
-  @block_params [
-    necessity_by_association:
-      %{
-        [miner: :names] => :optional,
-        :uncles => :optional,
-        :nephews => :optional,
-        :rewards => :optional,
-        :transactions => :optional,
-        :withdrawals => :optional
-      }
-      |> Map.merge(@chain_type_block_necessity_by_association),
-    api?: true
-  ]
-
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
