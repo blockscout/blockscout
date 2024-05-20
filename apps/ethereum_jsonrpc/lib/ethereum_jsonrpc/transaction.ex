@@ -517,7 +517,7 @@ defmodule EthereumJSONRPC.Transaction do
         end
 
       :arbitrum ->
-        put_if_present(elixir, params, [
+        put_if_present(params, elixir, [
           {"requestId", :request_id}
         ])
 

@@ -31,10 +31,10 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
           direction: :to_l2 | :from_l2,
           message_id: non_neg_integer(),
           originator_address: binary(),
-          originating_tx_hash: binary(),
+          originating_transaction_hash: binary(),
           origination_timestamp: DateTime.t(),
-          originating_tx_blocknum: non_neg_integer(),
-          completion_tx_hash: binary(),
+          originating_transaction_block_number: non_neg_integer(),
+          completion_transaction_hash: binary(),
           status: :initiated | :sent | :confirmed | :relayed
         }
 
@@ -145,7 +145,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     |> Enum.map(fn tx ->
       log_debug("L1 to L2 message #{tx.hash} found with the type #{tx.type}")
 
-      %{direction: :to_l2, message_id: tx.request_id, completion_tx_hash: tx.hash, status: :relayed}
+      %{direction: :to_l2, message_id: tx.request_id, completion_transaction_hash: tx.hash, status: :relayed}
       |> complete_to_params()
     end)
   end
@@ -193,9 +193,9 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
             direction: :from_l2,
             message_id: message_id,
             originator_address: caller,
-            originating_tx_hash: event.transaction_hash,
+            originating_transaction_hash: event.transaction_hash,
             origination_timestamp: timestamp,
-            originating_tx_blocknum: blocknum,
+            originating_transaction_block_number: blocknum,
             status: status_l2_to_l1_message(blocknum, highest_committed_block, highest_confirmed_block)
           }
           |> complete_to_params()
@@ -231,10 +231,10 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       :direction,
       :message_id,
       :originator_address,
-      :originating_tx_hash,
+      :originating_transaction_hash,
       :origination_timestamp,
-      :originating_tx_blocknum,
-      :completion_tx_hash,
+      :originating_transaction_block_number,
+      :completion_transaction_hash,
       :status
     ]
     |> Enum.reduce(%{}, fn key, out ->
@@ -270,13 +270,13 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   # Finds and updates the status of L2-to-L1 messages that have been executed on L1.
   # This function iterates over the given messages, identifies those with corresponding L1 executions,
-  # and updates their `completion_tx_hash` and `status` accordingly.
+  # and updates their `completion_transaction_hash` and `status` accordingly.
   #
   # ## Parameters
   # - `messages`: A map where each key is a message ID, and each value is the message's details.
   #
   # ## Returns
-  # - The updated map of messages with the `completion_tx_hash` and `status` fields updated
+  # - The updated map of messages with the `completion_transaction_hash` and `status` fields updated
   #   for messages that have been executed.
   defp find_and_update_executed_messages(messages) do
     messages
@@ -286,7 +286,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       message =
         messages_acc
         |> Map.get(execution.message_id)
-        |> Map.put(:completion_tx_hash, execution.execution_transaction.hash.bytes)
+        |> Map.put(:completion_transaction_hash, execution.execution_transaction.hash.bytes)
         |> Map.put(:status, :relayed)
 
       Map.put(messages_acc, execution.message_id, message)

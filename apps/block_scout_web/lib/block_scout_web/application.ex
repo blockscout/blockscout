@@ -5,16 +5,14 @@ defmodule BlockScoutWeb.Application do
 
   use Application
 
-  alias BlockScoutWeb.API.APILogger
-  alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
-  alias BlockScoutWeb.Prometheus.{Exporter, PhoenixInstrumenter}
-  alias BlockScoutWeb.{Endpoint, MainPageRealtimeEventHandler, RealtimeEventHandler, SmartContractRealtimeEventHandler}
-  alias BlockScoutWeb.Utility.EventHandlersMetrics
+  alias BlockScoutWeb.Endpoint
 
   def start(_type, _args) do
-    children = setup_and_define_children()
+    base_children = [Supervisor.child_spec(Endpoint, [])]
+    api_children = setup_and_define_children()
+    all_children = base_children ++ api_children
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(all_children, opts)
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -24,10 +22,16 @@ defmodule BlockScoutWeb.Application do
     :ok
   end
 
-  defp setup_and_define_children do
-    if Application.get_env(:block_scout_web, :disable_api?) do
-      []
-    else
+  if Application.compile_env(:block_scout_web, :disable_api?) do
+    defp setup_and_define_children, do: []
+  else
+    defp setup_and_define_children do
+      alias BlockScoutWeb.API.APILogger
+      alias BlockScoutWeb.Counters.{BlocksIndexedCounter, InternalTransactionsIndexedCounter}
+      alias BlockScoutWeb.Prometheus.{Exporter, PhoenixInstrumenter}
+      alias BlockScoutWeb.{MainPageRealtimeEventHandler, RealtimeEventHandler, SmartContractRealtimeEventHandler}
+      alias BlockScoutWeb.Utility.EventHandlersMetrics
+
       PhoenixInstrumenter.setup()
       Exporter.setup()
 
@@ -47,7 +51,6 @@ defmodule BlockScoutWeb.Application do
       [
         # Start the endpoint when the application starts
         {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
-        Supervisor.child_spec(Endpoint, []),
         {Absinthe.Subscription, Endpoint},
         {MainPageRealtimeEventHandler, name: MainPageRealtimeEventHandler},
         {RealtimeEventHandler, name: RealtimeEventHandler},

@@ -88,16 +88,16 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.BatchBlocks do
         set: [
           # don't update `block_number` as it is a primary key and used for the conflict target
           batch_number: fragment("EXCLUDED.batch_number"),
-          confirm_id: fragment("EXCLUDED.confirm_id"),
+          confirmation_id: fragment("EXCLUDED.confirmation_id"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tb.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tb.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.batch_number, EXCLUDED.confirm_id) IS DISTINCT FROM (?, ?)",
+          "(EXCLUDED.batch_number, EXCLUDED.confirmation_id) IS DISTINCT FROM (?, ?)",
           tb.batch_number,
-          tb.confirm_id
+          tb.confirmation_id
         )
     )
   end

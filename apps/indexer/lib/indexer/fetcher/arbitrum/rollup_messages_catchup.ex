@@ -350,7 +350,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
         # make a small delay to release CPU a bit
         :timer.seconds(@release_cpu_delay)
       else
-        max(:timer.seconds(state.config.recheck_interval) - div(state.data.duration, 1000), 0)
+        max(state.config.recheck_interval - div(state.data.duration, 1000), 0)
       end
 
     Process.send_after(self(), :historical_msg_from_l2, next_timeout)

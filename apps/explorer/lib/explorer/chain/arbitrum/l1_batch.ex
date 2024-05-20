@@ -18,29 +18,29 @@ defmodule Explorer.Chain.Arbitrum.L1Batch do
 
   alias Explorer.Chain.Arbitrum.LifecycleTransaction
 
-  @required_attrs ~w(number tx_count start_block end_block before_acc after_acc commit_id)a
+  @required_attrs ~w(number transactions_count start_block end_block before_acc after_acc commitment_id)a
 
   @type t :: %__MODULE__{
           number: non_neg_integer(),
-          tx_count: non_neg_integer(),
+          transactions_count: non_neg_integer(),
           start_block: Block.block_number(),
           end_block: Block.block_number(),
           before_acc: Hash.t(),
           after_acc: Hash.t(),
-          commit_id: non_neg_integer(),
+          commitment_id: non_neg_integer(),
           commit_transaction: %Ecto.Association.NotLoaded{} | LifecycleTransaction.t() | nil
         }
 
   @primary_key {:number, :integer, autogenerate: false}
   schema "arbitrum_l1_batches" do
-    field(:tx_count, :integer)
+    field(:transactions_count, :integer)
     field(:start_block, :integer)
     field(:end_block, :integer)
     field(:before_acc, Hash.Full)
     field(:after_acc, Hash.Full)
 
     belongs_to(:commit_transaction, LifecycleTransaction,
-      foreign_key: :commit_id,
+      foreign_key: :commitment_id,
       references: :id,
       type: :integer
     )
@@ -56,7 +56,7 @@ defmodule Explorer.Chain.Arbitrum.L1Batch do
     batches
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
-    |> foreign_key_constraint(:commit_id)
+    |> foreign_key_constraint(:commitment_id)
     |> unique_constraint(:number)
   end
 end

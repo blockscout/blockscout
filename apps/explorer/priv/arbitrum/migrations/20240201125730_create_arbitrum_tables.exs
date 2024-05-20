@@ -21,16 +21,16 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
       add(:direction, :arbitrum_messages_op_type, null: false, primary_key: true)
       add(:message_id, :integer, null: false, primary_key: true)
       add(:originator_address, :bytea, null: true)
-      add(:originating_tx_hash, :bytea, null: true)
+      add(:originating_transaction_hash, :bytea, null: true)
       add(:origination_timestamp, :"timestamp without time zone", null: true)
-      add(:originating_tx_blocknum, :bigint, null: true)
-      add(:completion_tx_hash, :bytea, null: true)
+      add(:originating_transaction_block_number, :bigint, null: true)
+      add(:completion_transaction_hash, :bytea, null: true)
       add(:status, :arbitrum_messages_status, null: false)
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
-    create(index(:arbitrum_crosslevel_messages, [:direction, :originating_tx_blocknum, :status]))
-    create(index(:arbitrum_crosslevel_messages, [:direction, :completion_tx_hash]))
+    create(index(:arbitrum_crosslevel_messages, [:direction, :originating_transaction_block_number, :status]))
+    create(index(:arbitrum_crosslevel_messages, [:direction, :completion_transaction_hash]))
 
     create table(:arbitrum_lifecycle_l1_transactions, primary_key: false) do
       add(:id, :integer, null: false, primary_key: true)
@@ -58,14 +58,14 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
 
     create table(:arbitrum_l1_batches, primary_key: false) do
       add(:number, :integer, null: false, primary_key: true)
-      add(:tx_count, :integer, null: false)
+      add(:transactions_count, :integer, null: false)
       add(:start_block, :integer, null: false)
       add(:end_block, :integer, null: false)
       add(:before_acc, :bytea, null: false)
       add(:after_acc, :bytea, null: false)
 
       add(
-        :commit_id,
+        :commitment_id,
         references(:arbitrum_lifecycle_l1_transactions, on_delete: :restrict, on_update: :update_all, type: :integer),
         null: false
       )
@@ -86,7 +86,7 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
       )
 
       add(
-        :confirm_id,
+        :confirmation_id,
         references(:arbitrum_lifecycle_l1_transactions, on_delete: :restrict, on_update: :update_all, type: :integer),
         null: true
       )
@@ -101,7 +101,7 @@ defmodule Explorer.Repo.Arbitrum.Migrations.CreateArbitrumTables do
     end
 
     create(index(:arbitrum_batch_l2_blocks, :batch_number))
-    create(index(:arbitrum_batch_l2_blocks, :confirm_id))
+    create(index(:arbitrum_batch_l2_blocks, :confirmation_id))
 
     create table(:arbitrum_batch_l2_transactions, primary_key: false) do
       add(

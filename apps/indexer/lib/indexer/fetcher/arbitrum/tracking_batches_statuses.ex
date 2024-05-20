@@ -445,11 +445,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         {0, nil}
       end
 
-    Process.send_after(
-      self(),
-      :check_new_batches,
-      max(:timer.seconds(state.config.recheck_interval) - div(increase_duration(state.data, handle_duration), 1000), 0)
-    )
+    next_timeout = max(state.config.recheck_interval - div(increase_duration(state.data, handle_duration), 1000), 0)
+
+    Process.send_after(self(), :check_new_batches, next_timeout)
 
     new_data =
       Map.merge(state.data, %{

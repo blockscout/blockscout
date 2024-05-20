@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Arbitrum.Message do
 
   alias Explorer.Chain.{Block, Hash}
 
-  @optional_attrs ~w(originator_address originating_tx_hash origination_timestamp originating_tx_blocknum completion_tx_hash)a
+  @optional_attrs ~w(originator_address originating_transaction_hash origination_timestamp originating_transaction_block_number completion_transaction_hash)a
 
   @required_attrs ~w(direction message_id status)a
 
@@ -23,10 +23,10 @@ defmodule Explorer.Chain.Arbitrum.Message do
           direction: String.t(),
           message_id: non_neg_integer(),
           originator_address: Hash.Address.t() | nil,
-          originating_tx_hash: Hash.t() | nil,
+          originating_transaction_hash: Hash.t() | nil,
           origination_timestamp: DateTime.t() | nil,
-          originating_tx_blocknum: Block.block_number() | nil,
-          completion_tx_hash: Hash.t() | nil,
+          originating_transaction_block_number: Block.block_number() | nil,
+          completion_transaction_hash: Hash.t() | nil,
           status: String.t()
         }
 
@@ -35,10 +35,10 @@ defmodule Explorer.Chain.Arbitrum.Message do
     field(:direction, Ecto.Enum, values: [:to_l2, :from_l2], primary_key: true)
     field(:message_id, :integer, primary_key: true)
     field(:originator_address, Hash.Address)
-    field(:originating_tx_hash, Hash.Full)
+    field(:originating_transaction_hash, Hash.Full)
     field(:origination_timestamp, :utc_datetime_usec)
-    field(:originating_tx_blocknum, :integer)
-    field(:completion_tx_hash, Hash.Full)
+    field(:originating_transaction_block_number, :integer)
+    field(:completion_transaction_hash, Hash.Full)
     field(:status, Ecto.Enum, values: [:initiated, :sent, :confirmed, :relayed])
 
     timestamps()
