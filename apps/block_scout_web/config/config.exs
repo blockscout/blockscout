@@ -22,6 +22,9 @@ config :block_scout_web,
 config :block_scout_web,
   admin_panel_enabled: ConfigHelper.parse_bool_env_var("ADMIN_PANEL_ENABLED")
 
+config :block_scout_web,
+  disable_api?: ConfigHelper.parse_bool_env_var("DISABLE_API")
+
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 config :block_scout_web, BlockScoutWeb.Counters.InternalTransactionsIndexedCounter, enabled: true
