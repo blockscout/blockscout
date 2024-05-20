@@ -19,6 +19,9 @@
 
 ### 🐛 Bug Fixes
 
+- Fix certified flag in the search API v2 endpoint ([#10094](https://github.com/blockscout/blockscout/issues/10094))
+- Update Vyper inner compilers list to support all compilers ([#10091](https://github.com/blockscout/blockscout/issues/10091))
+- Add healthcheck endpoints for indexer-only setup ([#10076](https://github.com/blockscout/blockscout/issues/10076))
 - Rework revert_reason ([#9212](https://github.com/blockscout/blockscout/issues/9212))
 - Eliminate from_address_hash == #{address_hash} clause for transactions query in case of smart-contracts ([#9469](https://github.com/blockscout/blockscout/issues/9469))
 - Separate indexer setup ([#10032](https://github.com/blockscout/blockscout/issues/10032))
@@ -27,12 +30,9 @@
 - Fix Unknown UID bug at smart-contract verification ([#9986](https://github.com/blockscout/blockscout/issues/9986))
 - Search for long integers ([#9651](https://github.com/blockscout/blockscout/issues/9651))
 - Don't put error to NFT metadata ([#9940](https://github.com/blockscout/blockscout/issues/9940))
-- Fix typo
-
 - Handle DB unavailability by PolygonZkevm.TransactionBatch fetcher ([#10031](https://github.com/blockscout/blockscout/issues/10031))
 - Fix WebSocketClient reconnect ([#9937](https://github.com/blockscout/blockscout/issues/9937))
 - Fix incorrect image_url parsing from NFT meta ([#9956](https://github.com/blockscout/blockscout/issues/9956))
-- Fix CI workflow name
 
 ### 🚜 Refactor
 
