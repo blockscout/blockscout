@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
+  alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
 
   import BlockScoutWeb.Chain,
@@ -185,29 +186,13 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  def instance(conn, %{"address_hash_param" => address_hash_string, "token_id" => token_id_str} = params) do
+  def instance(conn, %{"address_hash_param" => address_hash_string, "token_id" => token_id_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
-         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_str)} do
-      token_instance =
-        case Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
-          {:ok, token_instance} ->
-            token_instance
-            |> Chain.select_repo(@api_true).preload(:owner)
-            |> Chain.put_owner_to_token_instance(token, @api_true)
-
-          {:error, :not_found} ->
-            %Instance{
-              token_id: Decimal.new(token_id),
-              metadata: nil,
-              owner: nil,
-              token_contract_address_hash: address_hash
-            }
-            |> Instance.put_is_unique(token, @api_true)
-            |> Chain.put_owner_to_token_instance(token, @api_true)
-        end
+         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)} do
+      token_instance = token_instance_from_token_id_and_token_address(token_id, address_hash, token)
 
       conn
       |> put_status(200)
@@ -218,12 +203,15 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  def transfers_by_instance(conn, %{"address_hash_param" => address_hash_string, "token_id" => token_id_str} = params) do
+  def transfers_by_instance(
+        conn,
+        %{"address_hash_param" => address_hash_string, "token_id" => token_id_string} = params
+      ) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
-         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_str)} do
+         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)} do
       paging_options = paging_options(params)
 
       results =
@@ -248,12 +236,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  def holders_by_instance(conn, %{"address_hash_param" => address_hash_string, "token_id" => token_id_str} = params) do
+  def holders_by_instance(conn, %{"address_hash_param" => address_hash_string, "token_id" => token_id_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
-         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_str)} do
+         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)} do
       paging_options = paging_options(params)
 
       results =
@@ -281,13 +269,13 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   def transfers_count_by_instance(
         conn,
-        %{"address_hash_param" => address_hash_string, "token_id" => token_id_str} = params
+        %{"address_hash_param" => address_hash_string, "token_id" => token_id_string} = params
       ) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
-         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_str)} do
+         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)} do
       conn
       |> put_status(200)
       |> json(%{
@@ -340,6 +328,47 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     |> render(:bridged_tokens, %{tokens: tokens, next_page_params: next_page_params})
   end
 
+  def refetch_metadata(
+        conn,
+        params
+      ) do
+    address_hash_string = params["address_hash_param"]
+    token_id_string = params["token_id"]
+
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
+         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)} do
+      token_instance = token_instance_from_token_id_and_token_address(token_id, address_hash, token)
+      TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance)
+
+      conn
+      |> put_status(200)
+      |> json(%{message: "OK"})
+    end
+  end
+
   defp put_owner(token_instances, holder_address),
     do: Enum.map(token_instances, fn token_instance -> %Instance{token_instance | owner: holder_address} end)
+
+  defp token_instance_from_token_id_and_token_address(token_id, address_hash, token) do
+    case Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
+      {:ok, token_instance} ->
+        token_instance
+        |> Chain.select_repo(@api_true).preload([:owner, :token])
+        |> Chain.put_owner_to_token_instance(token, @api_true)
+
+      {:error, :not_found} ->
+        %Instance{
+          token_id: Decimal.new(token_id),
+          metadata: nil,
+          owner: nil,
+          token: nil,
+          token_contract_address_hash: address_hash
+        }
+        |> Instance.put_is_unique(token, @api_true)
+        |> Chain.put_owner_to_token_instance(token, @api_true)
+    end
+  end
 end

@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.Plug.Admin.RequireAdminRole do
 
   import Phoenix.Controller, only: [redirect: 2]
 
-  alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
+  alias BlockScoutWeb.Routers.AdminRouter.Helpers, as: AdminRoutes
   alias Explorer.Admin
 
   def init(opts), do: opts

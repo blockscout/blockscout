@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
 
   import Mox
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [transaction_token_transfer_path: 3]
+  import BlockScoutWeb.Routers.WebRouter.Helpers, only: [transaction_token_transfer_path: 3]
 
   alias Explorer.ExchangeRates.Token
   alias Explorer.TestHelper
