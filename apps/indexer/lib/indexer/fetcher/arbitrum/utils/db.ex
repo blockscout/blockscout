@@ -416,20 +416,20 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     - The `Explorer.Chain.Arbitrum.L1Batch` associated with the given rollup block number
       if it exists and its commit transaction is loaded.
   """
-  @spec get_batch_by_rollup_block_num(FullBlock.block_number()) :: Explorer.Chain.Arbitrum.L1Batch | nil
-  def get_batch_by_rollup_block_num(num)
+  @spec get_batch_by_rollup_block_number(FullBlock.block_number()) :: Explorer.Chain.Arbitrum.L1Batch | nil
+  def get_batch_by_rollup_block_number(num)
       when is_integer(num) and num >= 0 do
-    case Reader.get_batch_by_rollup_block_num(num) do
+    case Reader.get_batch_by_rollup_block_number(num) do
       nil ->
         nil
 
       batch ->
-        case batch.commit_transaction do
+        case batch.commitment_transaction do
           nil ->
-            raise "Incorrect state of the DB: commit_transaction is not loaded for the batch with number #{num}"
+            raise "Incorrect state of the DB: commitment_transaction is not loaded for the batch with number #{num}"
 
           %Ecto.Association.NotLoaded{} ->
-            raise "Incorrect state of the DB: commit_transaction is not loaded for the batch with number #{num}"
+            raise "Incorrect state of the DB: commitment_transaction is not loaded for the batch with number #{num}"
 
           _ ->
             batch
@@ -452,7 +452,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
           %{
             batch_number: non_neg_integer(),
             block_number: FullBlock.block_number(),
-            confirm_id: non_neg_integer() | nil
+            confirmation_id: non_neg_integer() | nil
           }
         ]
   def unconfirmed_rollup_blocks(first_block, last_block)
@@ -497,9 +497,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
             direction: :from_l2,
             message_id: non_neg_integer(),
             originator_address: binary(),
-            originating_tx_hash: binary(),
-            originating_tx_blocknum: FullBlock.block_number(),
-            completion_tx_hash: nil,
+            originating_transaction_hash: binary(),
+            originating_transaction_block_number: FullBlock.block_number(),
+            completion_transaction_hash: nil,
             status: :initiated
           }
         ]
@@ -530,9 +530,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
             direction: :from_l2,
             message_id: non_neg_integer(),
             originator_address: binary(),
-            originating_tx_hash: binary(),
-            originating_tx_blocknum: FullBlock.block_number(),
-            completion_tx_hash: nil,
+            originating_transaction_hash: binary(),
+            originating_transaction_block_number: FullBlock.block_number(),
+            completion_transaction_hash: nil,
             status: :sent
           }
         ]
@@ -563,9 +563,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
             direction: :from_l2,
             message_id: non_neg_integer(),
             originator_address: binary(),
-            originating_tx_hash: binary(),
-            originating_tx_blocknum: FullBlock.block_number(),
-            completion_tx_hash: nil,
+            originating_transaction_hash: binary(),
+            originating_transaction_block_number: FullBlock.block_number(),
+            completion_transaction_hash: nil,
             status: :confirmed
           }
         ]
@@ -735,7 +735,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   defp rollup_block_to_map(block) do
-    [:batch_number, :block_number, :confirm_id]
+    [:batch_number, :block_number, :confirmation_id]
     |> db_record_to_map(block)
   end
 
@@ -744,9 +744,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       :direction,
       :message_id,
       :originator_address,
-      :originating_tx_hash,
-      :originating_tx_blocknum,
-      :completion_tx_hash,
+      :originating_transaction_hash,
+      :originating_transaction_block_number,
+      :completion_transaction_hash,
       :status
     ]
     |> db_record_to_map(message)

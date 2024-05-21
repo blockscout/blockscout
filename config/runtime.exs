@@ -866,13 +866,13 @@ config :indexer, Indexer.Fetcher.Arbitrum,
   rollup_chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_ROLLUP_CHUNK_SIZE", 20)
 
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1,
-  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_TRACKING_MESSAGES_ON_L1_RECHECK_INTERVAL", 20)
+  recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_TRACKING_MESSAGES_ON_L1_RECHECK_INTERVAL", "20s")
 
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BRIDGE_MESSAGES_TRACKING_ENABLED")
 
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses,
-  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_RECHECK_INTERVAL", 20),
+  recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_RECHECK_INTERVAL", "20s"),
   track_l1_tx_finalization:
     ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_L1_FINALIZATION_CHECK_ENABLED", "false"),
   messages_to_blocks_shift:
@@ -884,7 +884,7 @@ config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_ENABLED")
 
 config :indexer, Indexer.Fetcher.Arbitrum.RollupMessagesCatchup,
-  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_RECHECK_INTERVAL", 3600),
+  recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_RECHECK_INTERVAL", "1h"),
   messages_to_l2_blocks_depth:
     ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_TO_L2_BLOCK_DEPTH", 50),
   messages_to_l1_blocks_depth:

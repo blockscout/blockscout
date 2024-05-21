@@ -23,8 +23,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def l1_block_of_latest_discovered_message_to_l2 do
     query =
       from(msg in Message,
-        select: msg.originating_tx_blocknum,
-        where: msg.direction == :to_l2 and not is_nil(msg.originating_tx_blocknum),
+        select: msg.originating_transaction_block_number,
+        where: msg.direction == :to_l2 and not is_nil(msg.originating_transaction_block_number),
         order_by: [desc: msg.message_id],
         limit: 1
       )
@@ -43,8 +43,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def l1_block_of_earliest_discovered_message_to_l2 do
     query =
       from(msg in Message,
-        select: msg.originating_tx_blocknum,
-        where: msg.direction == :to_l2 and not is_nil(msg.originating_tx_blocknum),
+        select: msg.originating_transaction_block_number,
+        where: msg.direction == :to_l2 and not is_nil(msg.originating_transaction_block_number),
         order_by: [asc: msg.message_id],
         limit: 1
       )
@@ -63,9 +63,9 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def rollup_block_of_earliest_discovered_message_from_l2 do
     query =
       from(msg in Message,
-        select: msg.originating_tx_blocknum,
-        where: msg.direction == :from_l2 and not is_nil(msg.originating_tx_blocknum),
-        order_by: [asc: msg.originating_tx_blocknum],
+        select: msg.originating_transaction_block_number,
+        where: msg.direction == :from_l2 and not is_nil(msg.originating_transaction_block_number),
+        order_by: [asc: msg.originating_transaction_block_number],
         limit: 1
       )
 
@@ -84,8 +84,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def rollup_block_of_earliest_discovered_message_to_l2 do
     completion_tx_subquery =
       from(msg in Message,
-        select: msg.completion_tx_hash,
-        where: msg.direction == :to_l2 and not is_nil(msg.completion_tx_hash),
+        select: msg.completion_transaction_hash,
+        where: msg.direction == :to_l2 and not is_nil(msg.completion_transaction_hash),
         order_by: [asc: msg.message_id],
         limit: 1
       )
@@ -122,10 +122,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     case query
          # :required is used since the situation when commit transaction is not found is not possible
-         |> Chain.join_associations(%{:commit_transaction => :required})
+         |> Chain.join_associations(%{:commitment_transaction => :required})
          |> Repo.one() do
       nil -> nil
-      batch -> batch.commit_transaction.block_number
+      batch -> batch.commitment_transaction.block_number
     end
   end
 
@@ -150,10 +150,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     case query
          # :required is used since the situation when commit transaction is not found is not possible
-         |> Chain.join_associations(%{:commit_transaction => :required})
+         |> Chain.join_associations(%{:commitment_transaction => :required})
          |> Repo.one() do
       nil -> nil
-      batch -> batch.commit_transaction.block_number
+      batch -> batch.commitment_transaction.block_number
     end
   end
 
@@ -338,8 +338,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - An instance of `Explorer.Chain.Arbitrum.L1Batch` representing the batch containing
       the specified rollup block number, or `nil` if no corresponding batch is found.
   """
-  @spec get_batch_by_rollup_block_num(FullBlock.block_number()) :: L1Batch | nil
-  def get_batch_by_rollup_block_num(number)
+  @spec get_batch_by_rollup_block_number(FullBlock.block_number()) :: L1Batch | nil
+  def get_batch_by_rollup_block_number(number)
       when is_integer(number) and number >= 0 do
     query =
       from(batch in L1Batch,
@@ -349,7 +349,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     query
     # :required is used since the situation when commit transaction is not found is not possible
-    |> Chain.join_associations(%{:commit_transaction => :required})
+    |> Chain.join_associations(%{:commitment_transaction => :required})
     |> Repo.one()
   end
 
@@ -365,24 +365,24 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         rb in BatchBlock,
-        where: not is_nil(rb.confirm_id),
+        where: not is_nil(rb.confirmation_id),
         order_by: [desc: rb.block_number],
         limit: 1
       )
 
     case query
          # :required is used since existence of the confirmation id is checked above
-         |> Chain.join_associations(%{:confirm_transaction => :required})
+         |> Chain.join_associations(%{:confirmation_transaction => :required})
          |> Repo.one() do
       nil ->
         nil
 
       block ->
-        case block.confirm_transaction do
+        case block.confirmation_transaction do
           # `nil` and `%Ecto.Association.NotLoaded{}` indicate DB inconsistency
           nil -> nil
           %Ecto.Association.NotLoaded{} -> nil
-          confirm_transaction -> confirm_transaction.block_number
+          confirmation_transaction -> confirmation_transaction.block_number
         end
     end
   end
@@ -398,7 +398,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         rb in BatchBlock,
-        where: not is_nil(rb.confirm_id),
+        where: not is_nil(rb.confirmation_id),
         select: rb.block_number,
         order_by: [desc: rb.block_number],
         limit: 1
@@ -475,7 +475,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         rb in BatchBlock,
-        where: rb.block_number >= ^first_block and rb.block_number <= ^last_block and is_nil(rb.confirm_id),
+        where: rb.block_number >= ^first_block and rb.block_number <= ^last_block and is_nil(rb.confirmation_id),
         order_by: [asc: rb.block_number]
       )
 
@@ -497,7 +497,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     query =
       from(
         rb in BatchBlock,
-        where: rb.batch_number == ^batch_number and not is_nil(rb.confirm_id)
+        where: rb.batch_number == ^batch_number and not is_nil(rb.confirmation_id)
       )
 
     Repo.aggregate(query, :count, timeout: :infinity)
@@ -523,7 +523,9 @@ defmodule Explorer.Chain.Arbitrum.Reader do
              block_number >= 0 do
     query =
       from(msg in Message,
-        where: msg.direction == :from_l2 and msg.originating_tx_blocknum <= ^block_number and msg.status == ^status,
+        where:
+          msg.direction == :from_l2 and msg.originating_transaction_block_number <= ^block_number and
+            msg.status == ^status,
         order_by: [desc: msg.message_id]
       )
 
@@ -556,9 +558,9 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         rb in BatchBlock,
         select: %{
           block_number: rb.block_number,
-          confirm_id: rb.confirm_id
+          confirmation_id: rb.confirmation_id
         },
-        where: not is_nil(rb.confirm_id)
+        where: not is_nil(rb.confirmation_id)
       )
 
     # The second subquery builds on the first one, grouping block numbers by their
@@ -568,11 +570,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       from(
         subquery in subquery(rollup_blocks_query),
         select: %{
-          confirm_id: subquery.confirm_id,
+          confirmation_id: subquery.confirmation_id,
           min_block_num: min(subquery.block_number),
           max_block_num: max(subquery.block_number)
         },
-        group_by: subquery.confirm_id
+        group_by: subquery.confirmation_id
       )
 
     # The third subquery utilizes the window function LAG to associate each confirmation
@@ -581,11 +583,12 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       from(
         subquery in subquery(confirmed_ranges_query),
         select: %{
-          confirm_id: subquery.confirm_id,
+          confirmation_id: subquery.confirmation_id,
           min_block_num: subquery.min_block_num,
           max_block_num: subquery.max_block_num,
           prev_max_number: fragment("LAG(?, 1) OVER (ORDER BY ?)", subquery.max_block_num, subquery.min_block_num),
-          prev_confirm_id: fragment("LAG(?, 1) OVER (ORDER BY ?)", subquery.confirm_id, subquery.min_block_num)
+          prev_confirmation_id:
+            fragment("LAG(?, 1) OVER (ORDER BY ?)", subquery.confirmation_id, subquery.min_block_num)
         }
       )
 
@@ -595,9 +598,9 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       from(
         subquery in subquery(confirmed_combined_ranges_query),
         inner_join: tx_cur in LifecycleTransaction,
-        on: subquery.confirm_id == tx_cur.id,
+        on: subquery.confirmation_id == tx_cur.id,
         left_join: tx_prev in LifecycleTransaction,
-        on: subquery.prev_confirm_id == tx_prev.id,
+        on: subquery.prev_confirmation_id == tx_prev.id,
         select: {tx_prev.block_number, tx_cur.block_number},
         where: subquery.min_block_num - 1 != subquery.prev_max_number or is_nil(subquery.prev_max_number),
         order_by: [desc: subquery.min_block_num],
@@ -720,7 +723,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     query =
       from(msg in Message,
-        where: msg.direction == :to_l2 and not is_nil(msg.completion_tx_hash),
+        where: msg.direction == :to_l2 and not is_nil(msg.completion_transaction_hash),
         order_by: [desc: msg.message_id],
         limit: ^paging_options.page_size
       )
@@ -731,16 +734,18 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @doc """
     Retrieves the total count of rollup batches indexed up to the current moment.
 
+    This function uses an estimated count from system catalogs if available.
+    If the estimate is unavailable, it performs an exact count using an aggregate query.
+
     ## Parameters
     - `options`: A keyword list specifying options, including whether to use a replica database.
 
     ## Returns
-    - The count of indexed batches as an integer.
+    - The count of indexed batches.
   """
-  @spec batches_count(api?: boolean()) :: any()
+  @spec batches_count(api?: boolean()) :: non_neg_integer()
   def batches_count(options) do
-    L1Batch
-    |> select_repo(options).aggregate(:count, timeout: :infinity)
+    Chain.get_table_rows_total_count(L1Batch, options)
   end
 
   @doc """
@@ -821,7 +826,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       if Keyword.get(options, :committed?, false) do
         base_query
         |> Chain.join_associations(necessity_by_association)
-        |> where([batch], not is_nil(batch.commit_id) and batch.commit_id > 0)
+        |> where([batch], not is_nil(batch.commitment_id) and batch.commitment_id > 0)
         |> limit(10)
       else
         paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())

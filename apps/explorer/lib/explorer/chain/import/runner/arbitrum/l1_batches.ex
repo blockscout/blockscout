@@ -87,25 +87,25 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.L1Batches do
       update: [
         set: [
           # don't update `number` as it is a primary key and used for the conflict target
-          tx_count: fragment("EXCLUDED.tx_count"),
+          transactions_count: fragment("EXCLUDED.transactions_count"),
           start_block: fragment("EXCLUDED.start_block"),
           end_block: fragment("EXCLUDED.end_block"),
           before_acc: fragment("EXCLUDED.before_acc"),
           after_acc: fragment("EXCLUDED.after_acc"),
-          commit_id: fragment("EXCLUDED.commit_id"),
+          commitment_id: fragment("EXCLUDED.commitment_id"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tb.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tb.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.tx_count, EXCLUDED.start_block, EXCLUDED.end_block, EXCLUDED.before_acc, EXCLUDED.after_acc, EXCLUDED.commit_id) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
-          tb.tx_count,
+          "(EXCLUDED.transactions_count, EXCLUDED.start_block, EXCLUDED.end_block, EXCLUDED.before_acc, EXCLUDED.after_acc, EXCLUDED.commitment_id) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+          tb.transactions_count,
           tb.start_block,
           tb.end_block,
           tb.before_acc,
           tb.after_acc,
-          tb.commit_id
+          tb.commitment_id
         )
     )
   end

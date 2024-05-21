@@ -28,9 +28,10 @@ defmodule Explorer.GraphQL do
   """
   @spec address_to_transactions_query(Hash.Address.t(), :desc | :asc) :: Ecto.Query.t()
   def address_to_transactions_query(address_hash, order) do
+    dynamic = Transaction.where_transactions_to_from(address_hash)
+
     Transaction
-    |> where([transaction], transaction.to_address_hash == ^address_hash)
-    |> or_where([transaction], transaction.from_address_hash == ^address_hash)
+    |> where([transaction], ^dynamic)
     |> or_where([transaction], transaction.created_contract_address_hash == ^address_hash)
     |> order_by([transaction], [{^order, transaction.block_number}, {^order, transaction.index}])
   end

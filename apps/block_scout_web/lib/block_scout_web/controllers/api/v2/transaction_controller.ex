@@ -118,8 +118,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         :arbitrum ->
           necessity_by_association_with_actions
           |> Map.put(:arbitrum_batch, :optional)
-          |> Map.put(:arbitrum_commit_transaction, :optional)
-          |> Map.put(:arbitrum_confirm_transaction, :optional)
+          |> Map.put(:arbitrum_commitment_transaction, :optional)
+          |> Map.put(:arbitrum_confirmation_transaction, :optional)
           |> Map.put(:arbitrum_message_to_l2, :optional)
           |> Map.put(:arbitrum_message_from_l2, :optional)
 

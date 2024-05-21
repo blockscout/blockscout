@@ -444,9 +444,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       |> Enum.reduce([], fn batch, updated_batches_list ->
         [
           batch
-          |> Map.put(:commit_id, get_l1_tx_id_by_hash(lifecycle_txs, batch.tx_hash))
+          |> Map.put(:commitment_id, get_l1_tx_id_by_hash(lifecycle_txs, batch.tx_hash))
           |> Map.put(
-            :tx_count,
+            :transactions_count,
             case tx_counts_per_batch[batch.number] do
               nil -> 0
               value -> value
@@ -502,7 +502,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         {batch_num, before_acc, after_acc} = sequencer_batch_delivered_event_parse(event)
 
         tx_hash_raw = event["transactionHash"]
-        tx_hash = Rpc.strhash_to_byteshash(tx_hash_raw)
+        tx_hash = Rpc.string_hash_to_bytes_hash(tx_hash_raw)
         blk_num = quantity_to_integer(event["blockNumber"])
 
         if batch_num in existing_batches do
@@ -585,7 +585,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
       |> Enum.reduce({l1_txs, updated_batches}, fn resp, {txs_map, batches_map} ->
         block_num = quantity_to_integer(resp["blockNumber"])
-        tx_hash = Rpc.strhash_to_byteshash(resp["hash"])
+        tx_hash = Rpc.string_hash_to_bytes_hash(resp["hash"])
 
         # Although they are called messages in the functions' ABI, in fact they are
         # rollup blocks
@@ -772,7 +772,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         |> Map.put(block.number, %{
           block_number: block.number,
           batch_number: batch_num,
-          confirm_id: nil
+          confirmation_id: nil
         })
 
       {updated_blocks_map, updated_txs_list}
@@ -929,7 +929,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         Map.put(
           blocks_map,
           blk_num,
-          %{block_number: blk_num, batch_number: batch_num, confirm_id: nil}
+          %{block_number: blk_num, batch_number: batch_num, confirmation_id: nil}
         )
 
       updated_txs_list =
