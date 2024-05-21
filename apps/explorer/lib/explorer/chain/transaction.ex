@@ -133,7 +133,10 @@ defmodule Explorer.Chain.Transaction.Schema do
                               )
 
                               has_one(:arbitrum_batch, through: [:arbitrum_batch_transaction, :batch])
-                              has_one(:arbitrum_commitment_transaction, through: [:arbitrum_batch, :commitment_transaction])
+
+                              has_one(:arbitrum_commitment_transaction,
+                                through: [:arbitrum_batch, :commitment_transaction]
+                              )
 
                               has_one(:arbitrum_batch_block, ArbitrumBatchBlock,
                                 foreign_key: :block_number,
