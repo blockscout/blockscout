@@ -3,8 +3,10 @@ defmodule BlockScoutWeb.Plug.GraphQL do
   Default query for GraphiQL interface.
   """
 
+  alias Explorer.Application.Constants
+
   def default_query do
-    transaction_hash = Application.get_env(:block_scout_web, Api.GraphQL)[:default_transaction_hash]
+    transaction_hash = Constants.get_default_transaction_hash() || Application.get_env(:block_scout_web, Api.GraphQL)[:default_transaction_hash]
 
     "{transaction(hash: \"#{transaction_hash}\") { hash, blockNumber, value, gasUsed }}"
   end

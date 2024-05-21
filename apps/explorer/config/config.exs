@@ -19,6 +19,8 @@ config :explorer,
 
 config :explorer, Explorer.ChainSpec.GenesisData, enabled: true
 
+config :explorer, Explorer.Init.DefaultTransaction, enabled: true
+
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
 config :explorer, Explorer.Chain.Cache.AddressSum,

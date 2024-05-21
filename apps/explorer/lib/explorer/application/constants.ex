@@ -7,6 +7,7 @@ defmodule Explorer.Application.Constants do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Hash
 
+  @default_transaction_hash_key "default_transaction_hash"
   @keys_manager_contract_address_key "keys_manager_contract_address"
   @last_processed_erc_721_token "token_instance_sanitizer_last_processed_erc_721_token"
 
@@ -85,6 +86,14 @@ defmodule Explorer.Application.Constants do
   @spec get_keys_manager_contract_address(list()) :: %__MODULE__{} | nil
   def get_keys_manager_contract_address(options \\ []) do
     get_constant_by_key(@keys_manager_contract_address_key, options)
+  end
+
+  @doc """
+    For usage in Explorer.Init.DefaultTransaction and BlockScoutWeb.Plug.GraphQL
+  """
+  @spec get_default_transaction_hash(list()) :: %__MODULE__{} | nil
+  def get_default_transaction_hash(options \\ []) do
+    get_constant_value(@default_transaction_hash_key, options)
   end
 
   @doc """

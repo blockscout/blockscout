@@ -97,6 +97,7 @@ defmodule Explorer.Application do
         configure(Explorer.ExchangeRates),
         configure(Explorer.ExchangeRates.TokenExchangeRates),
         configure(Explorer.ChainSpec.GenesisData),
+        configure(Explorer.Init.DefaultTransaction),
         configure(Explorer.Market.History.Cataloger),
         configure(Explorer.Chain.Cache.ContractsCounter),
         configure(Explorer.Chain.Cache.NewContractsCounter),
