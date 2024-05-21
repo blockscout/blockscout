@@ -49,7 +49,10 @@ defmodule Explorer.Chain.Block.Schema do
                               )
 
                               has_one(:arbitrum_batch, through: [:arbitrum_batch_block, :batch])
-                              has_one(:arbitrum_commitment_transaction, through: [:arbitrum_batch, :commitment_transaction])
+
+                              has_one(:arbitrum_commitment_transaction,
+                                through: [:arbitrum_batch, :commitment_transaction]
+                              )
 
                               has_one(:arbitrum_confirmation_transaction,
                                 through: [:arbitrum_batch_block, :confirmation_transaction]
