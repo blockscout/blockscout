@@ -121,10 +121,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     case query
          # :required is used since the situation when commit transaction is not found is not possible
-         |> Chain.join_associations(%{:commit_transaction => :required})
+         |> Chain.join_associations(%{:commitment_transaction => :required})
          |> Repo.one() do
       nil -> nil
-      batch -> batch.commit_transaction.block_number
+      batch -> batch.commitment_transaction.block_number
     end
   end
 
@@ -149,10 +149,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     case query
          # :required is used since the situation when commit transaction is not found is not possible
-         |> Chain.join_associations(%{:commit_transaction => :required})
+         |> Chain.join_associations(%{:commitment_transaction => :required})
          |> Repo.one() do
       nil -> nil
-      batch -> batch.commit_transaction.block_number
+      batch -> batch.commitment_transaction.block_number
     end
   end
 
@@ -348,7 +348,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     query
     # :required is used since the situation when commit transaction is not found is not possible
-    |> Chain.join_associations(%{:commit_transaction => :required})
+    |> Chain.join_associations(%{:commitment_transaction => :required})
     |> Repo.one()
   end
 

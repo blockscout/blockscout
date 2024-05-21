@@ -28,7 +28,7 @@ defmodule Explorer.Chain.Arbitrum.L1Batch do
           before_acc: Hash.t(),
           after_acc: Hash.t(),
           commitment_id: non_neg_integer(),
-          commit_transaction: %Ecto.Association.NotLoaded{} | LifecycleTransaction.t() | nil
+          commitment_transaction: %Ecto.Association.NotLoaded{} | LifecycleTransaction.t() | nil
         }
 
   @primary_key {:number, :integer, autogenerate: false}
@@ -39,7 +39,7 @@ defmodule Explorer.Chain.Arbitrum.L1Batch do
     field(:before_acc, Hash.Full)
     field(:after_acc, Hash.Full)
 
-    belongs_to(:commit_transaction, LifecycleTransaction,
+    belongs_to(:commitment_transaction, LifecycleTransaction,
       foreign_key: :commitment_id,
       references: :id,
       type: :integer

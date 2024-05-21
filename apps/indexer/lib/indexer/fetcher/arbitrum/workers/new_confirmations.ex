@@ -532,7 +532,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
          cache \\ %{}
        ) do
     # The following batch fields are required in the further processing:
-    # number, start_block, end_block, commit_transaction.block_number
+    # number, start_block, end_block, commitment_transaction.block_number
     with {:ok, batch} <- discover_rollup_blocks__get_batch(rollup_block_num),
          {:ok, unconfirmed_rollup_blocks} when unconfirmed_rollup_blocks != [] <-
            discover_rollup_blocks__get_unconfirmed_rollup_blocks(batch, rollup_block_num),
@@ -729,11 +729,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   #   - `new_cache` contains the updated logs cache despite the error.
   defp check_if_batch_confirmed(batch, confirmation_desc, l1_outbox_config, cache) do
     log_info(
-      "Use L1 blocks #{batch.commit_transaction.block_number}..#{confirmation_desc.l1_block_num - 1} to look for a rollup block confirmation within #{batch.start_block}..#{batch.end_block} of ##{batch.number}"
+      "Use L1 blocks #{batch.commitment_transaction.block_number}..#{confirmation_desc.l1_block_num - 1} to look for a rollup block confirmation within #{batch.start_block}..#{batch.end_block} of ##{batch.number}"
     )
 
     l1_blocks_pairs_to_get_logs(
-      batch.commit_transaction.block_number,
+      batch.commitment_transaction.block_number,
       confirmation_desc.l1_block_num - 1,
       l1_outbox_config.logs_block_range
     )
