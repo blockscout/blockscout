@@ -44,8 +44,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{
         :arbitrum_batch => :optional,
-        :arbitrum_commit_transaction => :optional,
-        :arbitrum_confirm_transaction => :optional
+        :arbitrum_commitment_transaction => :optional,
+        :arbitrum_confirmation_transaction => :optional
       }
 
     _ ->

@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
-  @batch_necessity_by_association %{:commit_transaction => :optional}
+  @batch_necessity_by_association %{:commitment_transaction => :optional}
 
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.

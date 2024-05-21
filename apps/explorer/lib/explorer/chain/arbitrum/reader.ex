@@ -723,7 +723,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     query =
       from(msg in Message,
-        where: msg.direction == :to_l2 and not is_nil(msg.completion_tx_hash),
+        where: msg.direction == :to_l2 and not is_nil(msg.completion_transaction_hash),
         order_by: [desc: msg.message_id],
         limit: ^paging_options.page_size
       )
@@ -826,7 +826,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       if Keyword.get(options, :committed?, false) do
         base_query
         |> Chain.join_associations(necessity_by_association)
-        |> where([batch], not is_nil(batch.commit_id) and batch.commit_id > 0)
+        |> where([batch], not is_nil(batch.commitment_id) and batch.commitment_id > 0)
         |> limit(10)
       else
         paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())

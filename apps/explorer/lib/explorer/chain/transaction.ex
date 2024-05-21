@@ -126,24 +126,24 @@ defmodule Explorer.Chain.Transaction.Schema do
                               )
 
                               has_one(:arbitrum_batch, through: [:arbitrum_batch_transaction, :batch])
-                              has_one(:arbitrum_commit_transaction, through: [:arbitrum_batch, :commit_transaction])
+                              has_one(:arbitrum_commitment_transaction, through: [:arbitrum_batch, :commitment_transaction])
 
                               has_one(:arbitrum_batch_block, ArbitrumBatchBlock,
                                 foreign_key: :block_number,
                                 references: :block_number
                               )
 
-                              has_one(:arbitrum_confirm_transaction,
-                                through: [:arbitrum_batch_block, :confirm_transaction]
+                              has_one(:arbitrum_confirmation_transaction,
+                                through: [:arbitrum_batch_block, :confirmation_transaction]
                               )
 
                               has_one(:arbitrum_message_to_l2, ArbitrumMessage,
-                                foreign_key: :completion_tx_hash,
+                                foreign_key: :completion_transaction_hash,
                                 references: :hash
                               )
 
                               has_one(:arbitrum_message_from_l2, ArbitrumMessage,
-                                foreign_key: :originating_tx_hash,
+                                foreign_key: :originating_transaction_hash,
                                 references: :hash
                               )
                             end,
