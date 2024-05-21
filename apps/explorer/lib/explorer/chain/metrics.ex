@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Metrics do
   alias Explorer.Prometheus.Instrumenter
 
   @interval :timer.hours(1)
-  @options [timeout: :infinity]
+  @options [timeout: :infinity, api?: true]
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do

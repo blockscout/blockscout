@@ -129,7 +129,7 @@ defmodule Explorer.Chain.Metrics.Queries do
   end
 
   @doc """
-  Retrieves the query for the number of active EOA addresses in the current week.
+  Retrieves the query for the number of active EOA and smart-contract addresses in the current week.
   """
   @spec weekly_active_addresses_number_query() :: Ecto.Query.t()
   def weekly_active_addresses_number_query do
@@ -153,10 +153,7 @@ defmodule Explorer.Chain.Metrics.Queries do
 
     from(
       q in subquery(transactions_query),
-      inner_join: a in Address,
-      on: a.hash == q.address_hash,
-      where: is_nil(a.contract_code),
-      select: fragment("COUNT(*)")
+      select: fragment("COUNT(DISTINCT address_hash)")
     )
   end
 end
