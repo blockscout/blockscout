@@ -50,3 +50,5 @@ services:
       - STATS__CREATE_DATABASE=${STATS__CREATE_DATABASE:-true}
       - STATS__RUN_MIGRATIONS=${STATS__RUN_MIGRATIONS:-true}
       - STATS__CHARTS_CONFIG=${STATS__CHARTS_CONFIG:-/config/charts.toml}
+    volumes:
+      - ../config/charts.toml:/config/charts.toml
