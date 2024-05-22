@@ -488,6 +488,7 @@ defmodule EthereumJSONRPC.Block do
   case Application.compile_env(:explorer, :chain_type) do
     :rsk ->
       defp chain_type_fields(params, elixir) do
+        IO.inspect(:rsk)
         params
         |> Map.merge(%{
           minimum_gas_price: Map.get(elixir, "minimumGasPrice"),
@@ -500,6 +501,7 @@ defmodule EthereumJSONRPC.Block do
 
     :ethereum ->
       defp chain_type_fields(params, elixir) do
+        IO.inspect(:ethereum)
         params
         |> Map.merge(%{
           withdrawals_root:
@@ -511,6 +513,7 @@ defmodule EthereumJSONRPC.Block do
 
     :arbitrum ->
       defp chain_type_fields(params, elixir) do
+        IO.inspect(:arbitrum)
         params
         |> Map.merge(%{
           send_count: Map.get(elixir, "sendCount"),
