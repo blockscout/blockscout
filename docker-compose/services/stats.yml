@@ -49,3 +49,4 @@ services:
       - STATS__BLOCKSCOUT_DB_URL=${STATS__BLOCKSCOUT_DB_URL:-postgresql://blockscout:Vuongdev123@db:5432/blockscout_db}
       - STATS__CREATE_DATABASE=${STATS__CREATE_DATABASE:-true}
       - STATS__RUN_MIGRATIONS=${STATS__RUN_MIGRATIONS:-true}
+      - STATS__CHARTS_CONFIG=${STATS__CHARTS_CONFIG:-/config/charts.toml}

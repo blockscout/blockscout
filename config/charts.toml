@@ -1,0 +1,228 @@
+[[counters]]
+id = "totalBlocks"
+title = "Total blocks"
+update_schedule = "0 0 */3 * * * *"
+
+[[counters]]
+id = "averageBlockTime"
+title = "Average block time"
+units = "s"
+update_schedule = "0 0 15 * * * *"
+
+[[counters]]
+id = "completedTxns"
+title = "Completed txns"
+update_schedule = "0 5 */3 * * * *"
+
+[[counters]]
+id = "totalAccounts"
+title = "Total accounts"
+update_schedule = "0 0 16 * * * *"
+
+# [[counters]]
+# id = "totalNativeCoinHolders"
+# title = "Total Native Coin Holders"
+# update_schedule = "0 0 17 * * * *"
+
+[[counters]]
+id = "totalNativeCoinTransfers"
+title = "Total native coin transfers"
+update_schedule = "0 0 13 * * * *"
+
+[[counters]]
+id = "totalTokens"
+title = "Total tokens"
+update_schedule = "0 0 18 * * * *"
+
+[[counters]]
+id = "totalTxns"
+title = "Total txns"
+update_schedule = "0 10 */3 * * * *"
+
+[[counters]]
+id = "lastNewContracts"
+title = "Number of deployed contracts today"
+update_schedule = "0 15 */3 * * * *"
+
+[[counters]]
+id = "totalContracts"
+title = "Total contracts"
+update_schedule = "0 20 */3 * * * *"
+
+[[counters]]
+id = "lastNewVerifiedContracts"
+title = "Number of verified contracts today"
+update_schedule = "0 25 */3 * * * *"
+
+[[counters]]
+id = "totalVerifiedContracts"
+title = "Total verified contracts"
+update_schedule = "0 30 */3 * * * *"
+
+
+[[lines.sections]]
+id = "accounts"
+title = "Accounts"
+
+[[lines.sections.charts]]
+id = "activeAccounts"
+title = "Active accounts"
+description = "Active accounts number per period"
+update_schedule = "0 0 4 * * * *"
+
+[[lines.sections.charts]]
+id = "accountsGrowth"
+title = "Accounts growth"
+description = "Cumulative accounts number per period"
+update_schedule = "0 0 5 * * * *"
+
+[[lines.sections.charts]]
+id = "newAccounts"
+title = "New accounts"
+description = "New accounts number per day"
+update_schedule = "0 0 21 * * * *"
+
+
+[[lines.sections]]
+id = "transactions"
+title = "Transactions"
+
+[[lines.sections.charts]]
+id = "averageTxnFee"
+title = "Average transaction fee"
+description = "The average amount in WON spent per transaction"
+units = "WON"
+update_schedule = "0 0 6 * * * *"
+
+[[lines.sections.charts]]
+id = "txnsFee"
+title = "Transactions fees"
+description = "Amount of tokens paid as fees"
+units = "WON"
+update_schedule = "0 0 7 * * * *"
+
+[[lines.sections.charts]]
+id = "newTxns"
+title = "New transactions"
+description = "New transactions number"
+update_schedule = "0 0 1 * * * *"
+
+[[lines.sections.charts]]
+id = "txnsGrowth"
+title = "Transactions growth"
+description = "Cumulative transactions number"
+update_schedule = "0 0 2 * * * *"
+
+[[lines.sections.charts]]
+id = "txnsSuccessRate"
+title = "Transactions success rate"
+description = "Successful transactions rate per day"
+update_schedule = "0 0 19 * * * *"
+
+
+[[lines.sections]]
+id = "blocks"
+title = "Blocks"
+
+[[lines.sections.charts]]
+id = "newBlocks"
+title = "New blocks"
+description = "New blocks number"
+update_schedule = "0 0 8 * * * *"
+
+[[lines.sections.charts]]
+id = "averageBlockSize"
+title = "Average block size"
+description = "Average size of blocks in bytes"
+units = "Bytes"
+update_schedule = "0 0 9 * * * *"
+
+[[lines.sections.charts]]
+id = "averageBlockRewards"
+title = "Average block rewards"
+description = "Average amount of distributed reward in tokens per day"
+units = "WON"
+update_schedule = "0 0 20 * * * *"
+
+
+[[lines.sections]]
+id = "tokens"
+title = "Tokens"
+
+# [[lines.sections.charts]]
+# id = "nativeCoinHoldersGrowth"
+# title = "Native coin holders growth"
+# description = "Cumulative token holders number for the period"
+# update_schedule = "0 0 10 * * * *"
+
+# [[lines.sections.charts]]
+# id = "newNativeCoinHolders"
+# title = "New native coin holders"
+# description = "New token holders number per day"
+# update_schedule = "0 0 22 * * * *"
+
+[[lines.sections.charts]]
+id = "newNativeCoinTransfers"
+title = "New native coins transfers"
+description = "New token transfers number for the period"
+update_schedule = "0 0 3 * * * *"
+
+# [[lines.sections.charts]]
+# id = "nativeCoinSupply"
+# title = "Native coin circulating supply"
+# description = "Amount of token circulating supply for the period"
+# units = "WON"
+# update_schedule = "0 0 11 * * * *"
+
+
+[[lines.sections]]
+id = "gas"
+title = "Gas"
+
+[[lines.sections.charts]]
+id = "averageGasLimit"
+title = "Average gas limit"
+description = "Average gas limit per block for the period"
+update_schedule = "0 0 12 * * * *"
+
+[[lines.sections.charts]]
+id = "gasUsedGrowth"
+title = "Gas used growth"
+description = "Cumulative gas used for the period"
+update_schedule = "0 0 13 * * * *"
+
+[[lines.sections.charts]]
+id = "averageGasPrice"
+title = "Average gas price"
+description = "Average gas price for the period (Gwei)"
+units = "Gwei"
+update_schedule = "0 0 14 * * * *"
+
+
+[[lines.sections]]
+id = "contracts"
+title = "Contracts"
+
+[[lines.sections.charts]]
+id = "newVerifiedContracts"
+title = "New verified contracts"
+description = "New verified contracts number for the period"
+update_schedule = "0 0 15 * * * *"
+
+[[lines.sections.charts]]
+id = "verifiedContractsGrowth"
+title = "Verified contracts growth"
+description = "Cumulative number verified contracts for the period"
+update_schedule = "0 0 7 * * * *"
+
+[[lines.sections.charts]]
+id = "newContracts"
+title = "New contracts"
+description = "New contracts number for the period"
+update_schedule = "0 0 16 * * * *"
+
+[[lines.sections.charts]]
+id = "contractsGrowth"
+title = "Contracts growth"
+description = "Cumulative number of contracts for the period"
+update_schedule = "0 0 8 * * * *"
