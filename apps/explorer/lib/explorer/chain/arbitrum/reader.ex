@@ -3,11 +3,12 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   Contains read functions for Arbitrum modules.
   """
 
-  import Ecto.Query, only: [from: 2, subquery: 1]
+  import Ecto.Query, only: [from: 2, limit: 2, order_by: 2, subquery: 1, where: 2, where: 3]
+  import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Arbitrum.{BatchBlock, L1Batch, L1Execution, LifecycleTransaction, Message}
+  alias Explorer.Chain.Arbitrum.{BatchBlock, BatchTransaction, L1Batch, L1Execution, LifecycleTransaction, Message}
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, PagingOptions, Repo}
 
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Chain.{Hash, Transaction}
@@ -185,7 +186,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - A list of `Explorer.Chain.Arbitrum.LifecycleTransaction` corresponding to the hashes from
       the input list. The output list may be smaller than the input list.
   """
-  @spec lifecycle_transactions(maybe_improper_list(Hash, [])) :: [LifecycleTransaction]
+  @spec lifecycle_transactions(maybe_improper_list(Hash.t(), [])) :: [LifecycleTransaction]
   def lifecycle_transactions(l1_tx_hashes) when is_list(l1_tx_hashes) do
     query =
       from(
@@ -608,5 +609,305 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     main_query
     |> Repo.one()
+  end
+
+  @doc """
+    Retrieves the count of cross-chain messages either sent to or from the rollup.
+
+    ## Parameters
+    - `direction`: A string that specifies the message direction; can be "from-rollup" or "to-rollup".
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - The total count of cross-chain messages.
+  """
+  @spec messages_count(binary(), api?: boolean()) :: non_neg_integer()
+  def messages_count(direction, options) when direction == "from-rollup" and is_list(options) do
+    do_messages_count(:from_l2, options)
+  end
+
+  def messages_count(direction, options) when direction == "to-rollup" and is_list(options) do
+    do_messages_count(:to_l2, options)
+  end
+
+  # Counts the number of cross-chain messages based on the specified direction.
+  @spec do_messages_count(:from_l2 | :to_l2, api?: boolean()) :: non_neg_integer()
+  defp do_messages_count(direction, options) do
+    Message
+    |> where([msg], msg.direction == ^direction)
+    |> select_repo(options).aggregate(:count, timeout: :infinity)
+  end
+
+  @doc """
+    Retrieves cross-chain messages based on the specified direction.
+
+    This function constructs and executes a query to retrieve messages either sent
+    to or from the rollup layer, applying pagination options. These options dictate
+    not only the number of items to retrieve but also how many items to skip from
+    the top.
+
+    ## Parameters
+    - `direction`: A string that can be "from-rollup" or "to-rollup", translated internally to `:from_l2` or `:to_l2`.
+    - `options`: A keyword list specifying pagination details and database preferences.
+
+    ## Returns
+    - A list of `Explorer.Chain.Arbitrum.Message` entries.
+  """
+  @spec messages(binary(),
+          paging_options: PagingOptions.t(),
+          api?: boolean()
+        ) :: [Message]
+  def messages(direction, options) when direction == "from-rollup" do
+    do_messages(:from_l2, options)
+  end
+
+  def messages(direction, options) when direction == "to-rollup" do
+    do_messages(:to_l2, options)
+  end
+
+  # Executes the query to fetch cross-chain messages based on the specified direction.
+  #
+  # This function constructs and executes a query to retrieve messages either sent
+  # to or from the rollup layer, applying pagination options. These options dictate
+  # not only the number of items to retrieve but also how many items to skip from
+  # the top.
+  #
+  # ## Parameters
+  # - `direction`: Can be either `:from_l2` or `:to_l2`, indicating the direction of the messages.
+  # - `options`: A keyword list of options specifying pagination details and whether to use a replica database.
+  #
+  # ## Returns
+  # - A list of `Explorer.Chain.Arbitrum.Message` entries matching the specified direction.
+  @spec do_messages(:from_l2 | :to_l2,
+          paging_options: PagingOptions.t(),
+          api?: boolean()
+        ) :: [Message]
+  defp do_messages(direction, options) do
+    base_query =
+      from(msg in Message,
+        where: msg.direction == ^direction,
+        order_by: [desc: msg.message_id]
+      )
+
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    query =
+      base_query
+      |> page_messages(paging_options)
+      |> limit(^paging_options.page_size)
+
+    select_repo(options).all(query)
+  end
+
+  defp page_messages(query, %PagingOptions{key: nil}), do: query
+
+  defp page_messages(query, %PagingOptions{key: {id}}) do
+    from(msg in query, where: msg.message_id < ^id)
+  end
+
+  @doc """
+    Retrieves a list of relayed L1 to L2 messages that have been completed.
+
+    ## Parameters
+    - `options`: A keyword list of options specifying whether to use a replica database and how pagination should be handled.
+
+    ## Returns
+    - A list of `Explorer.Chain.Arbitrum.Message` representing relayed messages from L1 to L2 that have been completed.
+  """
+  @spec relayed_l1_to_l2_messages(
+          paging_options: PagingOptions.t(),
+          api?: boolean()
+        ) :: [Message]
+  def relayed_l1_to_l2_messages(options) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    query =
+      from(msg in Message,
+        where: msg.direction == :to_l2 and not is_nil(msg.completion_transaction_hash),
+        order_by: [desc: msg.message_id],
+        limit: ^paging_options.page_size
+      )
+
+    select_repo(options).all(query)
+  end
+
+  @doc """
+    Retrieves the total count of rollup batches indexed up to the current moment.
+
+    This function uses an estimated count from system catalogs if available.
+    If the estimate is unavailable, it performs an exact count using an aggregate query.
+
+    ## Parameters
+    - `options`: A keyword list specifying options, including whether to use a replica database.
+
+    ## Returns
+    - The count of indexed batches.
+  """
+  @spec batches_count(api?: boolean()) :: non_neg_integer()
+  def batches_count(options) do
+    Chain.get_table_rows_total_count(L1Batch, options)
+  end
+
+  @doc """
+    Retrieves a specific batch by its number or fetches the latest batch if `:latest` is specified.
+
+    ## Parameters
+    - `number`: Can be either the specific batch number or `:latest` to retrieve
+                the most recent batch in the database.
+    - `options`: A keyword list specifying the necessity for joining associations
+                 and whether to use a replica database.
+
+    ## Returns
+    - `{:ok, Explorer.Chain.Arbitrum.L1Batch}` if the batch is found.
+    - `{:error, :not_found}` if no batch with the specified number exists.
+  """
+  def batch(number, options)
+
+  @spec batch(:latest, api?: boolean()) :: {:error, :not_found} | {:ok, L1Batch}
+  def batch(:latest, options) do
+    L1Batch
+    |> order_by(desc: :number)
+    |> limit(1)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      batch -> {:ok, batch}
+    end
+  end
+
+  @spec batch(binary() | non_neg_integer(),
+          necessity_by_association: %{atom() => :optional | :required},
+          api?: boolean()
+        ) :: {:error, :not_found} | {:ok, L1Batch}
+  def batch(number, options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    L1Batch
+    |> where(number: ^number)
+    |> Chain.join_associations(necessity_by_association)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      batch -> {:ok, batch}
+    end
+  end
+
+  @doc """
+    Retrieves a list of batches from the database.
+
+    This function constructs and executes a query to retrieve batches based on provided
+    pagination options. These options dictate not only the number of items to retrieve
+    but also how many items to skip from the top. If the `committed?` option is set to true,
+    it returns the ten most recent committed batches; otherwise, it fetches batches as
+    dictated by other pagination parameters.
+
+    ## Parameters
+    - `options`: A keyword list of options specifying pagination, necessity for joining associations,
+      and whether to use a replica database.
+
+    ## Returns
+    - A list of `Explorer.Chain.Arbitrum.L1Batch` entries, filtered and ordered according to the provided options.
+  """
+  @spec batches(
+          necessity_by_association: %{atom() => :optional | :required},
+          committed?: boolean(),
+          paging_options: PagingOptions.t(),
+          api?: boolean()
+        ) :: [L1Batch]
+  def batches(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    base_query =
+      from(batch in L1Batch,
+        order_by: [desc: batch.number]
+      )
+
+    query =
+      if Keyword.get(options, :committed?, false) do
+        base_query
+        |> Chain.join_associations(necessity_by_association)
+        |> where([batch], not is_nil(batch.commitment_id) and batch.commitment_id > 0)
+        |> limit(10)
+      else
+        paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+        base_query
+        |> Chain.join_associations(necessity_by_association)
+        |> page_batches(paging_options)
+        |> limit(^paging_options.page_size)
+      end
+
+    select_repo(options).all(query)
+  end
+
+  defp page_batches(query, %PagingOptions{key: nil}), do: query
+
+  defp page_batches(query, %PagingOptions{key: {number}}) do
+    from(batch in query, where: batch.number < ^number)
+  end
+
+  @doc """
+    Retrieves a list of rollup transactions included in a specific batch.
+
+    ## Parameters
+    - `batch_number`: The batch number whose transactions were included in L1.
+    - `options`: A keyword list specifying options, including whether to use a replica database.
+
+    ## Returns
+    - A list of `Explorer.Chain.Arbitrum.BatchTransaction` entries belonging to the specified batch.
+  """
+  @spec batch_transactions(non_neg_integer() | binary(), api?: boolean()) :: [BatchTransaction]
+  def batch_transactions(batch_number, options) do
+    query = from(tx in BatchTransaction, where: tx.batch_number == ^batch_number)
+
+    select_repo(options).all(query)
+  end
+
+  @doc """
+    Retrieves a list of rollup blocks included in a specific batch.
+
+    This function constructs and executes a database query to retrieve a list of rollup blocks,
+    considering pagination options specified in the `options` parameter. These options dictate
+    the number of items to retrieve and how many items to skip from the top.
+
+    ## Parameters
+    - `batch_number`: The batch number whose transactions are included on L1.
+    - `options`: A keyword list of options specifying pagination, association necessity, and
+      whether to use a replica database.
+
+    ## Returns
+    - A list of `Explorer.Chain.Block` entries belonging to the specified batch.
+  """
+  @spec batch_blocks(non_neg_integer() | binary(),
+          necessity_by_association: %{atom() => :optional | :required},
+          api?: boolean(),
+          paging_options: PagingOptions.t()
+        ) :: [FullBlock]
+  def batch_blocks(batch_number, options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    query =
+      from(
+        fb in FullBlock,
+        inner_join: rb in BatchBlock,
+        on: fb.number == rb.block_number,
+        select: fb,
+        where: fb.consensus == true and rb.batch_number == ^batch_number
+      )
+
+    query
+    |> FullBlock.block_type_filter("Block")
+    |> page_blocks(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by(desc: :number)
+    |> Chain.join_associations(necessity_by_association)
+    |> select_repo(options).all()
+  end
+
+  defp page_blocks(query, %PagingOptions{key: nil}), do: query
+
+  defp page_blocks(query, %PagingOptions{key: {block_number}}) do
+    where(query, [block], block.number < ^block_number)
   end
 end

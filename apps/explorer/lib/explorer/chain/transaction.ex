@@ -14,6 +14,9 @@ defmodule Explorer.Chain.Transaction.Schema do
     Wei
   }
 
+  alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
+  alias Explorer.Chain.Arbitrum.BatchTransaction, as: ArbitrumBatchTransaction
+  alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
   alias Explorer.Chain.PolygonZkevm.BatchTransaction, as: ZkevmBatchTransaction
   alias Explorer.Chain.Transaction.{Fork, Status}
   alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
@@ -110,6 +113,42 @@ defmodule Explorer.Chain.Transaction.Schema do
                               has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
                               has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
                               has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
+                            end,
+                            2
+                          )
+
+                        :arbitrum ->
+                          elem(
+                            quote do
+                              has_one(:arbitrum_batch_transaction, ArbitrumBatchTransaction,
+                                foreign_key: :tx_hash,
+                                references: :hash
+                              )
+
+                              has_one(:arbitrum_batch, through: [:arbitrum_batch_transaction, :batch])
+
+                              has_one(:arbitrum_commitment_transaction,
+                                through: [:arbitrum_batch, :commitment_transaction]
+                              )
+
+                              has_one(:arbitrum_batch_block, ArbitrumBatchBlock,
+                                foreign_key: :block_number,
+                                references: :block_number
+                              )
+
+                              has_one(:arbitrum_confirmation_transaction,
+                                through: [:arbitrum_batch_block, :confirmation_transaction]
+                              )
+
+                              has_one(:arbitrum_message_to_l2, ArbitrumMessage,
+                                foreign_key: :completion_transaction_hash,
+                                references: :hash
+                              )
+
+                              has_one(:arbitrum_message_from_l2, ArbitrumMessage,
+                                foreign_key: :originating_transaction_hash,
+                                references: :hash
+                              )
                             end,
                             2
                           )
