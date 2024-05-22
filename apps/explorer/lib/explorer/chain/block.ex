@@ -4,6 +4,8 @@ defmodule Explorer.Chain.Block.Schema do
   alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
+  alias Explorer.Chain.Celo.Epoch.Reward, as: CeloEpochReward
+  alias Explorer.Chain.Celo.Epoch.ElectionReward, as: CeloEpochElectionReward
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
                         :ethereum ->
@@ -38,6 +40,17 @@ defmodule Explorer.Chain.Block.Schema do
                             end,
                             2
                           )
+
+                        :celo ->
+                          quote do
+                            has_one(:celo_epoch_reward, CeloEpochReward, foreign_key: :block_hash, references: :hash)
+
+                            has_many(:celo_epoch_election_rewards, CeloEpochReward,
+                              foreign_key: :block_hash,
+                              references: :hash
+                            )
+                          end
+                          |> elem(2)
 
                         _ ->
                           []

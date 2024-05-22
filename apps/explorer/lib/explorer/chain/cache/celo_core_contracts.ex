@@ -55,17 +55,6 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   # 853db323 = keccak(getAddressForString(string))
   @get_address_for_string_signature "853db323"
 
-  @contract_atoms [
-    :accounts,
-    :celo_token,
-    :election,
-    :epoch_rewards,
-    :locked_gold,
-    :reserve,
-    :usd_token,
-    :validators
-  ]
-
   @atom_to_contract_name %{
     accounts: "Accounts",
     celo_token: "GoldToken",
@@ -74,8 +63,11 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     locked_gold: "LockedGold",
     reserve: "Reserve",
     usd_token: "StableToken",
-    validators: "Validators"
+    validators: "Validators",
+    governance: "Governance"
   }
+
+  @contract_atoms @atom_to_contract_name |> Map.keys()
 
   def get_address(contract_atom) when contract_atom in @contract_atoms do
     get_contract_addresses()[contract_atom]
@@ -92,7 +84,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
           locked_gold: "0x6cc083aed9e3ebe302a6336dbc7c921c9f03349e",
           reserve: "0x9380fa34fd9e4fd14c06305fd7b6199089ed4eb9",
           usd_token: "0x765de816845861e75a25fca122bb6898b8b1282a",
-          validators: "0xaeb865bca93ddc8f47b8e29f40c5399ce34d0c58"
+          validators: "0xaeb865bca93ddc8f47b8e29f40c5399ce34d0c58",
+          governance: "0xd533ca259b330c7a88f74e000a3faea2d63b7972",
         }
 
       "baklava" ->
@@ -104,7 +97,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
           locked_gold: "0xf07406d8040fbd831e9983ca9cc278fbffeb56bf",
           reserve: "0x68dd816611d3de196fdeb87438b74a9c29fd649f",
           usd_token: "0x62492a644a588fd904270bed06ad52b9abfea1ae",
-          validators: "0xcb3a2f0520edbb4fc37ecb646d06877e339bbc9d"
+          validators: "0xcb3a2f0520edbb4fc37ecb646d06877e339bbc9d",
+          governance: "0x28443b1d87db521320a6517a4f1b6ead77f8c811",
         }
 
       "alfajores" ->
@@ -116,7 +110,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
           locked_gold: "0x6a4cc5693dc5bfa3799c699f3b941ba2cb00c341",
           reserve: "0xa7ed835288aa4524bb6c73dd23c0bf4315d9fe3e",
           usd_token: "0x874069fa1eb16d44d622f2e0ca25eea172369bc1",
-          validators: "0x9acf2a99914e083ad0d610672e93d14b0736bbcc"
+          validators: "0x9acf2a99914e083ad0d610672e93d14b0736bbcc",
+          governance: "0xaa963fc97281d9632d96700ab62a4d1340f9a28a",
         }
 
       _ ->
