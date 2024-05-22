@@ -293,19 +293,14 @@ defmodule Explorer.Chain.Transaction do
                                 :suave ->
                                   ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
 
-                                _ ->
-                                  ~w()a
-                              end)
-
-  @required_attrs ~w(from_address_hash gas hash input nonce value)a
-
-  @chain_type_required_attrs (case Application.compile_env(:explorer, :chain_type) do
                                 :arbitrum ->
                                   ~w(gas_used_for_l1)a
 
                                 _ ->
                                   ~w()a
                               end)
+
+  @required_attrs ~w(from_address_hash gas hash input nonce value)a
 
   @typedoc """
   X coordinate module n in
@@ -623,13 +618,12 @@ defmodule Explorer.Chain.Transaction do
   def changeset(%__MODULE__{} = transaction, attrs \\ %{}) do
     attrs_to_cast =
       @required_attrs ++
-        @chain_type_required_attrs ++
         @optional_attrs ++
         @chain_type_optional_attrs
 
     transaction
     |> cast(attrs, attrs_to_cast)
-    |> validate_required(@required_attrs ++ @chain_type_required_attrs)
+    |> validate_required(@required_attrs)
     |> validate_collated()
     |> validate_error()
     |> validate_status()
