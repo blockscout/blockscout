@@ -7,14 +7,22 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     volumes:
+      # - "./proxy/default.conf.template:/etc/nginx/templates"
       - "../proxy:/etc/nginx/templates"
+      - "/etc/nginx/ssl:/etc/nginx/ssl"  # Ánh xạ thư mục chứa chứng chỉ từ máy host tới container
+
     environment:
       BACK_PROXY_PASS: ${BACK_PROXY_PASS:-http://backend:4000}
       FRONT_PROXY_PASS: ${FRONT_PROXY_PASS:-http://frontend:3000}
+      # BACK_PROXY_PASS: ${BACK_PROXY_PASS:-http://wonhost.zapto.org:4000}
+      # FRONT_PROXY_PASS: ${FRONT_PROXY_PASS:-http://wonhost.zapto.org:3000}
     ports:
       - target: 80
-        published: 80
+        published: 81
       - target: 8080
         published: 8080
       - target: 8081
         published: 8081
+      - target: 443
+        published: 444
+    

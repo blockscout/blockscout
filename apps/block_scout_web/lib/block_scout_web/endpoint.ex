@@ -69,7 +69,14 @@ defmodule BlockScoutWeb.Endpoint do
     plug(BlockScoutWeb.Prometheus.Exporter)
 
     # 'x-apollo-tracing' header for https://www.graphqlbin.com to work with our GraphQL endpoint
-    plug(CORSPlug, headers: ["x-apollo-tracing" | CORSPlug.defaults()[:headers]])
+    plug(CORSPlug,
+    origin: ["*"],
+    methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
+    headers: ["x-apollo-tracing" | CORSPlug.defaults()[:headers]],
+    expose: ["Authorization", "Content-Type"],
+    credentials: true,
+    max_age: 86400
+     )
 
     plug(BlockScoutWeb.Router)
   end

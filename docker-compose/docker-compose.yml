@@ -18,6 +18,10 @@ services:
     extends:
       file: ./services/db.yml
       service: db
+    environment:
+      POSTGRES_USER: blockscout
+      POSTGRES_PASSWORD: Vuongdev123
+      POSTGRES_DB: blockscout_db
 
   backend:
     depends_on:
@@ -41,10 +45,10 @@ services:
     links:
       - db:database
     environment:
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
-        CHAIN_ID: '1337'
+        ETHEREUM_JSONRPC_HTTP_URL: http://137.184.178.112:6868/
+        ETHEREUM_JSONRPC_TRACE_URL: http://137.184.178.112:6868/
+        ETHEREUM_JSONRPC_WS_URL: ws://137.184.178.112:6969/
+        CHAIN_ID: '686868'
 
   visualizer:
     extends:
