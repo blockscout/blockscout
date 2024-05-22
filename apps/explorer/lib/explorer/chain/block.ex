@@ -1,5 +1,10 @@
 defmodule Explorer.Chain.Block.Schema do
-  @moduledoc false
+  @moduledoc """
+    Models blocks.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Blocks
+  """
 
   alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
@@ -43,6 +48,10 @@ defmodule Explorer.Chain.Block.Schema do
                         :arbitrum ->
                           elem(
                             quote do
+                              field(:send_count, :integer)
+                              field(:send_root, Hash.Full)
+                              field(:l1_block_number, :integer)
+
                               has_one(:arbitrum_batch_block, ArbitrumBatchBlock,
                                 foreign_key: :block_number,
                                 references: :number
@@ -127,20 +136,27 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Utility.MissingRangesManipulator
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
-                  |> (&(case Application.compile_env(:explorer, :chain_type) do
-                          :rsk ->
-                            &1 ++
-                              ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
-                          :ethereum ->
-                            &1 ++
-                              ~w(blob_gas_used excess_blob_gas)a
+  @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
+                                :rsk ->
+                                  ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
-                          _ ->
-                            &1
-                        end)).()
+                                :ethereum ->
+                                  ~w(blob_gas_used excess_blob_gas)a
+
+                                _ ->
+                                  ~w()a
+                              end)
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
+
+  @chain_type_required_attrs (case Application.compile_env(:explorer, :chain_type) do
+                                :arbitrum ->
+                                  ~w(send_count send_root l1_block_number)a
+
+                                _ ->
+                                  ~w()a
+                              end)
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -195,15 +211,15 @@ defmodule Explorer.Chain.Block do
 
   def changeset(%__MODULE__{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs ++ @optional_attrs)
-    |> validate_required(@required_attrs)
+    |> cast(attrs, @required_attrs ++ @chain_type_required_attrs ++ @optional_attrs ++ @chain_type_optional_attrs)
+    |> validate_required(@required_attrs ++ @chain_type_required_attrs)
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
 
   def number_only_changeset(%__MODULE__{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> cast(attrs, @required_attrs ++ @chain_type_required_attrs ++ @optional_attrs ++ @chain_type_optional_attrs)
     |> validate_required([:number])
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)

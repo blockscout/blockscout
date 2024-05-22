@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.{Block, Transaction, Wei, Hash}
   alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction}
 
   @doc """
@@ -132,10 +132,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   @doc """
-    Extends the json output with a sub-map containing information related
-    Arbitrum: batch number, associated L1 transactions, including their
-    timestmaps and finalization status, and the direction if the transaction
-    is a cross-chain message.
+    Extends the json output with a sub-map containing information related Arbitrum.
 
     ## Parameters
     - `out_json`: a map defining output json which will be extended
@@ -151,18 +148,23 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           :arbitrum_confirmation_transaction => any(),
           :arbitrum_message_to_l2 => any(),
           :arbitrum_message_from_l2 => any(),
+          :gas_used_for_l1 => Decimal.t(),
+          :gas_used => Decimal.t(),
+          :gas_price => Wei.t(),
           optional(any()) => any()
         }) :: map()
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
-    base_output = do_add_arbitrum_info(out_json, transaction)
+    arbitrum_info =
+      %{}
+      |> extend_with_settlement_info(transaction)
+      |> extend_if_message(transaction)
+      |> extend_with_transaction_info(transaction)
 
-    Map.put(base_output, "arbitrum", extend_if_message(base_output["arbitrum"], transaction))
+    Map.put(out_json, "arbitrum", arbitrum_info)
   end
 
   @doc """
-    Extends the json output with a sub-map containing information related
-    Arbitrum: batch number and associated L1 transactions, their timestmaps
-    and finalization status.
+    Extends the json output with a sub-map containing information related Arbitrum.
 
     ## Parameters
     - `out_json`: a map defining output json which will be extended
@@ -176,31 +178,37 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           :arbitrum_batch => any(),
           :arbitrum_commitment_transaction => any(),
           :arbitrum_confirmation_transaction => any(),
+          :nonce => Hash.Nonce.t(),
+          :send_count => non_neg_integer(),
+          :send_root => Hash.Full.t(),
+          :l1_block_number => non_neg_integer(),
           optional(any()) => any()
         }) :: map()
   def extend_block_json_response(out_json, %Block{} = block) do
-    do_add_arbitrum_info(out_json, block)
+    arbitrum_info =
+      %{}
+      |> extend_with_settlement_info(block)
+      |> extend_with_block_info(block)
+
+    Map.put(out_json, "arbitrum", arbitrum_info)
   end
 
-  # Adds Arbitrum-related information such as batch number and L1 transaction details to JSON.
-  @spec do_add_arbitrum_info(map(), %{
+  # Augments an output JSON with settlement-related information such as batch number and L1 transaction details to JSON.
+  @spec extend_with_settlement_info(map(), %{
           :__struct__ => Block | Transaction,
           :arbitrum_batch => any(),
           :arbitrum_commitment_transaction => any(),
           :arbitrum_confirmation_transaction => any(),
           optional(any()) => any()
         }) :: map()
-  defp do_add_arbitrum_info(out_json, arbitrum_entity) do
-    res =
-      %{}
-      |> add_l1_txs_info_and_status(%{
-        batch_number: get_batch_number(arbitrum_entity),
-        commitment_transaction: arbitrum_entity.arbitrum_commitment_transaction,
-        confirmation_transaction: arbitrum_entity.arbitrum_confirmation_transaction
-      })
-      |> Map.put("batch_number", get_batch_number(arbitrum_entity))
-
-    Map.put(out_json, "arbitrum", res)
+  defp extend_with_settlement_info(out_json, arbitrum_entity) do
+    out_json
+    |> add_l1_txs_info_and_status(%{
+      batch_number: get_batch_number(arbitrum_entity),
+      commitment_transaction: arbitrum_entity.arbitrum_commitment_transaction,
+      confirmation_transaction: arbitrum_entity.arbitrum_confirmation_transaction
+    })
+    |> Map.put("batch_number", get_batch_number(arbitrum_entity))
   end
 
   # Retrieves the batch number from an Arbitrum block or transaction if the batch
@@ -366,5 +374,52 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
       end
 
     Map.put(arbitrum_json, "contains_message", message_type)
+  end
+
+  # Extends the output JSON with information from Arbitrum-specific fields of the transaction.
+  @spec extend_with_transaction_info(map(), %{
+          :__struct__ => Transaction,
+          :gas_used_for_l1 => Decimal.t(),
+          :gas_used => Decimal.t(),
+          :gas_price => Wei.t(),
+          optional(any()) => any()
+        }) :: map()
+  defp extend_with_transaction_info(out_json, %Transaction{} = arbitrum_tx) do
+    gas_used_for_l2 =
+      arbitrum_tx.gas_used
+      |> Decimal.sub(arbitrum_tx.gas_used_for_l1)
+
+    poster_fee =
+      arbitrum_tx.gas_price
+      |> Wei.to(:wei)
+      |> Decimal.mult(arbitrum_tx.gas_used_for_l1)
+
+    network_fee =
+      arbitrum_tx.gas_price
+      |> Wei.to(:wei)
+      |> Decimal.mult(gas_used_for_l2)
+
+    out_json
+    |> Map.put("gas_used_for_l1", arbitrum_tx.gas_used_for_l1)
+    |> Map.put("gas_used_for_l2", gas_used_for_l2)
+    |> Map.put("poster_fee", poster_fee)
+    |> Map.put("network_fee", network_fee)
+  end
+
+  # Extends the output JSON with information from the Arbitrum-specific fields of the block.
+  @spec extend_with_block_info(map(), %{
+          :__struct__ => Block,
+          :nonce => Hash.Nonce.t(),
+          :send_count => non_neg_integer(),
+          :send_root => Hash.Full.t(),
+          :l1_block_number => non_neg_integer(),
+          optional(any()) => any()
+        }) :: map()
+  defp extend_with_block_info(out_json, %Block{} = arbitrum_block) do
+    out_json
+    |> Map.put("delayed_messages", Hash.to_integer(arbitrum_block.nonce))
+    |> Map.put("l1_block_height", arbitrum_block.l1_block_number)
+    |> Map.put("send_count", arbitrum_block.send_count)
+    |> Map.put("send_root", arbitrum_block.send_root)
   end
 end
