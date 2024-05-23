@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "name" => nil,
       # todo: added for backward compatibility, remove when frontend unbound from these props
       "implementation_name" => nil,
-      "implementation_names" => [],
+      "implementations" => [],
       "is_verified" => nil,
       "ens_domain_name" => nil,
       "metadata" => nil
