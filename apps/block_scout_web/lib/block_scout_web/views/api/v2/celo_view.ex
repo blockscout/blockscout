@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
         Map.get(transaction, :gas_token_contract_address),
         Map.get(transaction, :gas_token)
       } do
+        # todo: this clause is redundant, consider removing it
         {_, %NotLoaded{}} ->
           nil
 
@@ -21,8 +22,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           if is_nil(gas_token) do
             Logger.error(fn ->
               [
-                "Transaction #{transaction.hash} has a gas token contract address ",
-                "'#{gas_token_contract_address}' ",
+                "Transaction #{transaction.hash} has a ",
+                "gas token contract address #{gas_token_contract_address} ",
                 "but no associated token found in the database"
               ]
             end)

@@ -39,6 +39,12 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :zksync_execute_transaction => :optional
       }
 
+    :celo ->
+      @chain_type_transaction_necessity_by_association %{
+        :gas_token => :optional
+      }
+      @chain_type_block_necessity_by_association %{}
+
     _ ->
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{}
@@ -70,20 +76,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   ]
 
   @api_true [api?: true]
-
-  @block_params [
-    necessity_by_association:
-      %{
-        [miner: :names] => :optional,
-        :uncles => :optional,
-        :nephews => :optional,
-        :rewards => :optional,
-        :transactions => :optional,
-        :withdrawals => :optional
-      }
-      |> Map.merge(@chain_type_block_necessity_by_association),
-    api?: true
-  ]
 
   @block_params [
     necessity_by_association:

@@ -34,16 +34,28 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
+  case Application.compile_env(:explorer, :chain_type) do
+    :celo ->
+      @chain_type_transaction_necessity_by_association %{
+        :gas_token => :optional
+      }
+
+    _ ->
+      @chain_type_transaction_necessity_by_association %{}
+  end
+
   @transaction_necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      :block => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional
-    },
+    necessity_by_association:
+      %{
+        [created_contract_address: :names] => :optional,
+        [from_address: :names] => :optional,
+        [to_address: :names] => :optional,
+        :block => :optional,
+        [created_contract_address: :smart_contract] => :optional,
+        [from_address: :smart_contract] => :optional,
+        [to_address: :smart_contract] => :optional
+      }
+      |> Map.merge(@chain_type_transaction_necessity_by_association),
     api?: true
   ]
 
