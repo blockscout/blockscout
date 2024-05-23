@@ -74,9 +74,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "exchange_rate" => nil,
         # todo: added for backward compatibility, remove when frontend unbound from these props
         "implementation_name" => nil,
-        "implementation_names" => [],
         "implementation_address" => nil,
-        "implementation_addresses" => [],
+        "implementations" => [],
         "block_number_balance_updated_at" => nil,
         "has_decompiled_code" => false,
         "has_validated_blocks" => false,
@@ -136,7 +135,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "creator_address_hash" => ^from,
                "creation_tx_hash" => ^tx_hash,
                "implementation_address" => ^implementation_address_hash_string,
-               "implementation_addresses" => [^implementation_address_hash_string]
+               "implementations" => [%{"address" => ^implementation_address_hash_string, "name" => nil}]
              } = json_response(request, 200)
     end
 

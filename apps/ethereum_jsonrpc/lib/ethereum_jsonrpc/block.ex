@@ -181,6 +181,11 @@ defmodule EthereumJSONRPC.Block do
           "blobGasUsed" => 262144,\
           "excessBlobGas" => 79429632,\
       """
+    :arbitrum -> """
+          "sendRoot" => "0xc71ee2cf4201f65590aa6c052270dc41e926e628f213e268a58d9a8d8f739f82",\
+          "sendCount" => 91,\
+          "l1BlockNumber" => 19828534,\
+      """
     _ -> ""
   end}
       ...>     "uncles" => []
@@ -217,6 +222,11 @@ defmodule EthereumJSONRPC.Block do
             withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
             blob_gas_used: 262144,\
             excess_blob_gas: 79429632,\
+      """
+    :arbitrum -> """
+            send_root: "0xc71ee2cf4201f65590aa6c052270dc41e926e628f213e268a58d9a8d8f739f82",\
+            send_count: 91,\
+            l1_block_number: 19828534,\
       """
     _ -> ""
   end}
@@ -280,6 +290,11 @@ defmodule EthereumJSONRPC.Block do
             withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
             blob_gas_used: 0,\
             excess_blob_gas: 0,\
+      """
+    :arbitrum -> """
+            send_root: nil,\
+            send_count: nil,\
+            l1_block_number: nil,\
       """
     _ -> ""
   end}

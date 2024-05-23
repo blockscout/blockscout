@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
-  alias Explorer.Chain.{Block, Transaction, Wei, Hash}
+  alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction}
 
   @doc """

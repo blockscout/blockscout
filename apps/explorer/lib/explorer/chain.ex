@@ -118,6 +118,7 @@ defmodule Explorer.Chain do
   @revert_msg_prefix_4 "Reverted "
   # Geth-like node
   @revert_msg_prefix_5 "execution reverted: "
+  @revert_msg_prefix_6_empty "execution reverted"
 
   @limit_showing_transactions 10_000
   @default_page_size 50
@@ -3058,14 +3059,22 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Parses the revert reason from an error returned by JSON RPC node during eth_call.
+  Returns the formatted revert reason as a hex or utf8 string.
+  Returns `nil` if the revert reason cannot be parsed or error format is unknown.
+  """
+  @spec parse_revert_reason_from_error(any()) :: String.t() | nil
   def parse_revert_reason_from_error(%{data: data}), do: format_revert_data(data)
 
   def parse_revert_reason_from_error(%{message: message}), do: format_revert_reason_message(message)
 
+  def parse_revert_reason_from_error(_), do: nil
+
   defp format_revert_data(revert_data) do
     case revert_data do
       "revert" ->
-        "0x"
+        ""
 
       "0x" <> _ ->
         revert_data
@@ -3091,6 +3100,9 @@ defmodule Explorer.Chain do
 
       @revert_msg_prefix_5 <> rest ->
         rest
+
+      @revert_msg_prefix_6_empty ->
+        ""
 
       _ ->
         nil

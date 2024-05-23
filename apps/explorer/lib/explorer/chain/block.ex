@@ -144,19 +144,14 @@ defmodule Explorer.Chain.Block do
                                 :ethereum ->
                                   ~w(blob_gas_used excess_blob_gas)a
 
-                                _ ->
-                                  ~w()a
-                              end)
-
-  @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
-
-  @chain_type_required_attrs (case Application.compile_env(:explorer, :chain_type) do
                                 :arbitrum ->
                                   ~w(send_count send_root l1_block_number)a
 
                                 _ ->
                                   ~w()a
                               end)
+
+  @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -211,15 +206,15 @@ defmodule Explorer.Chain.Block do
 
   def changeset(%__MODULE__{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs ++ @chain_type_required_attrs ++ @optional_attrs ++ @chain_type_optional_attrs)
-    |> validate_required(@required_attrs ++ @chain_type_required_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs ++ @chain_type_optional_attrs)
+    |> validate_required(@required_attrs)
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
 
   def number_only_changeset(%__MODULE__{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs ++ @chain_type_required_attrs ++ @optional_attrs ++ @chain_type_optional_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs ++ @chain_type_optional_attrs)
     |> validate_required([:number])
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
