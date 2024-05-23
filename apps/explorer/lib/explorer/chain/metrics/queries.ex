@@ -33,15 +33,17 @@ defmodule Explorer.Chain.Metrics.Queries do
   def weekly_success_transactions_number_query do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       Transaction
-      |> where([transaction], transaction.block_timestamp >= ago(7, "day"))
-      |> where([transaction], transaction.status == ^1)
-      |> select([transaction], count(transaction.hash))
+      |> where([tx], tx.block_timestamp >= ago(7, "day"))
+      |> where([tx], tx.block_consensus == true)
+      |> where([tx], tx.status == ^1)
+      |> select([tx], count(tx.hash))
     else
       Transaction
-      |> join(:inner, [transaction], block in assoc(transaction, :block))
-      |> where([transaction, block], block.timestamp >= ago(7, "day"))
-      |> where([transaction, block], transaction.status == ^1)
-      |> select([transaction, block], count(transaction.hash))
+      |> join(:inner, [tx], block in assoc(tx, :block))
+      |> where([tx, block], block.timestamp >= ago(7, "day"))
+      |> where([tx, block], block.consensus == true)
+      |> where([tx, block], tx.status == ^1)
+      |> select([tx, block], count(tx.hash))
     end
   end
 
@@ -53,26 +55,29 @@ defmodule Explorer.Chain.Metrics.Queries do
     transactions_query =
       if DenormalizationHelper.transactions_denormalization_finished?() do
         Transaction
-        |> where([t], not is_nil(t.created_contract_address_hash))
-        |> where([t], t.block_timestamp >= ago(7, "day"))
-        |> where([t], t.status == ^1)
-        |> select([t], t.created_contract_address_hash)
+        |> where([tx], not is_nil(tx.created_contract_address_hash))
+        |> where([tx], tx.block_timestamp >= ago(7, "day"))
+        |> where([tx], tx.block_consensus == true)
+        |> where([tx], tx.status == ^1)
+        |> select([tx], tx.created_contract_address_hash)
       else
         Transaction
-        |> join(:inner, [t], block in assoc(t, :block))
-        |> where([t], not is_nil(t.created_contract_address_hash))
-        |> where([t, block], block.timestamp >= ago(7, "day"))
-        |> where([t, block], t.status == ^1)
-        |> select([t, block], t.created_contract_address_hash)
+        |> join(:inner, [tx], block in assoc(tx, :block))
+        |> where([tx], not is_nil(tx.created_contract_address_hash))
+        |> where([tx, block], block.consensus == true)
+        |> where([tx, block], block.timestamp >= ago(7, "day"))
+        |> where([tx, block], tx.status == ^1)
+        |> select([tx, block], tx.created_contract_address_hash)
       end
 
     internal_transactions_query =
       InternalTransaction
       |> join(:inner, [it], transaction in assoc(it, :transaction))
-      |> where([it, t], not is_nil(it.created_contract_address_hash))
-      |> where([it, t], t.block_timestamp >= ago(7, "day"))
-      |> where([it, t], t.status == ^1)
-      |> select([it, t], it.created_contract_address_hash)
+      |> where([it, tx], not is_nil(it.created_contract_address_hash))
+      |> where([it, tx], tx.block_timestamp >= ago(7, "day"))
+      |> where([it, tx], tx.block_consensus == true)
+      |> where([it, tx], tx.status == ^1)
+      |> select([it, tx], it.created_contract_address_hash)
       |> wrapped_union_subquery()
 
     query =
@@ -97,10 +102,10 @@ defmodule Explorer.Chain.Metrics.Queries do
   end
 
   @doc """
-  Retrieves the query for the number of new wallet addresses in the current week.
+  Retrieves the query for the number of new addresses in the current week.
   """
-  @spec weekly_new_wallet_addresses_number_query() :: Ecto.Query.t()
-  def weekly_new_wallet_addresses_number_query do
+  @spec weekly_new_addresses_number_query() :: Ecto.Query.t()
+  def weekly_new_addresses_number_query do
     Address
     |> where([a], a.inserted_at >= ago(7, "day"))
     |> select([a], count(a.hash))
@@ -136,24 +141,106 @@ defmodule Explorer.Chain.Metrics.Queries do
     transactions_query =
       if DenormalizationHelper.transactions_denormalization_finished?() do
         Transaction
-        |> where([t], t.block_timestamp >= ago(7, "day"))
+        |> where([tx], tx.block_timestamp >= ago(7, "day"))
+        |> where([tx], tx.block_consensus == true)
         |> distinct(true)
-        |> select([t], %{
-          address_hash: fragment("UNNEST(ARRAY[?, ?])", t.from_address_hash, t.to_address_hash)
+        |> select([tx], %{
+          address_hash:
+            fragment(
+              "UNNEST(ARRAY[?, ?, ?])",
+              tx.from_address_hash,
+              tx.to_address_hash,
+              tx.created_contract_address_hash
+            )
         })
       else
         Transaction
-        |> join(:inner, [t], block in assoc(t, :block))
-        |> where([t, block], block.timestamp >= ago(7, "day"))
+        |> join(:inner, [tx], block in assoc(tx, :block))
+        |> where([tx, block], block.timestamp >= ago(7, "day"))
+        |> where([tx, block], block.consensus == true)
         |> distinct(true)
-        |> select([t, block], %{
-          address_hash: fragment("UNNEST(ARRAY[?, ?])", t.from_address_hash, t.to_address_hash)
+        |> select([tx, block], %{
+          address_hash:
+            fragment(
+              "UNNEST(ARRAY[?, ?, ?])",
+              tx.from_address_hash,
+              tx.to_address_hash,
+              tx.created_contract_address_hash
+            )
         })
       end
 
+    internal_transactions_query =
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        InternalTransaction
+        |> join(:inner, [it], transaction in assoc(it, :transaction))
+        |> where([it, tx], tx.block_timestamp >= ago(7, "day"))
+        |> where([it, tx], tx.block_consensus == true)
+        |> where([it, tx], tx.status == ^1)
+        |> select([it, tx], %{
+          address_hash:
+            fragment(
+              "UNNEST(ARRAY[?, ?, ?])",
+              it.from_address_hash,
+              it.to_address_hash,
+              it.created_contract_address_hash
+            )
+        })
+        |> wrapped_union_subquery()
+      else
+        InternalTransaction
+        |> join(:inner, [it], transaction in assoc(it, :transaction))
+        |> join(:inner, [tx], block in assoc(tx, :block))
+        |> where([it, tx, block], tx.block_timestamp >= ago(7, "day"))
+        |> where([it, tx, block], block.consensus == true)
+        |> where([it, tx, block], tx.status == ^1)
+        |> select([it, tx, block], %{
+          address_hash:
+            fragment(
+              "UNNEST(ARRAY[?, ?, ?])",
+              it.from_address_hash,
+              it.to_address_hash,
+              it.created_contract_address_hash
+            )
+        })
+        |> wrapped_union_subquery()
+      end
+
+    token_transfers_query =
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        TokenTransfer
+        |> join(:inner, [tt], transaction in assoc(tt, :transaction))
+        |> where([tt, tx], tx.block_timestamp >= ago(7, "day"))
+        |> where([tt, tx], tx.block_consensus == true)
+        |> where([tt, tx], tx.status == ^1)
+        |> select([tt, tx], %{
+          address_hash:
+            fragment("UNNEST(ARRAY[?, ?, ?])", tt.from_address_hash, tt.to_address_hash, tt.token_contract_address_hash)
+        })
+        |> wrapped_union_subquery()
+      else
+        TokenTransfer
+        |> join(:inner, [tt], transaction in assoc(tt, :transaction))
+        |> join(:inner, [tx], block in assoc(tx, :block))
+        |> where([tt, tx, block], tx.block_timestamp >= ago(7, "day"))
+        |> where([tt, tx, block], block.consensus == true)
+        |> where([tt, tx, block], tx.status == ^1)
+        |> select([tt, tx, block], %{
+          address_hash:
+            fragment("UNNEST(ARRAY[?, ?, ?])", tt.from_address_hash, tt.to_address_hash, tt.token_contract_address_hash)
+        })
+        |> wrapped_union_subquery()
+      end
+
+    query =
+      transactions_query
+      |> wrapped_union_subquery()
+      |> union(^internal_transactions_query)
+      |> union(^token_transfers_query)
+
     from(
-      q in subquery(transactions_query),
-      select: fragment("COUNT(DISTINCT address_hash)")
+      q in subquery(query),
+      select: fragment("COUNT(DISTINCT ?)", q.address_hash)
     )
   end
 end

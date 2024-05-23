@@ -29,7 +29,7 @@ defmodule Explorer.Prometheus.Instrumenter do
   ]
 
   @gauge [
-    name: :weekly_new_wallet_addresses_number,
+    name: :weekly_new_addresses_number,
     help: "Number of new wallet addresses in the last 7 days"
   ]
 
@@ -68,8 +68,8 @@ defmodule Explorer.Prometheus.Instrumenter do
     Gauge.set([name: :weekly_verified_smart_contracts_number], number)
   end
 
-  def weekly_new_wallet_addresses_number(number) do
-    Gauge.set([name: :weekly_new_wallet_addresses_number], number)
+  def weekly_new_addresses_number(number) do
+    Gauge.set([name: :weekly_new_addresses_number], number)
   end
 
   def weekly_new_tokens_number(number) do

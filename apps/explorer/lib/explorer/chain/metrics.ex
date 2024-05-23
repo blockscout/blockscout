@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Metrics do
     set_handler_metric(:weekly_success_transactions_number)
     set_handler_metric(:weekly_deployed_smart_contracts_number)
     set_handler_metric(:weekly_verified_smart_contracts_number)
-    set_handler_metric(:weekly_new_wallet_addresses_number)
+    set_handler_metric(:weekly_new_addresses_number)
     set_handler_metric(:weekly_new_tokens_number)
     set_handler_metric(:weekly_new_token_transfers_number)
     set_handler_metric(:weekly_active_addresses_number)
