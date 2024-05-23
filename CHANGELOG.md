@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Implement fetch_first_trace for Geth ([#10087](https://github.com/blockscout/blockscout/issues/10087))
 - Add optional retry of NFT metadata fetch in Indexer.Fetcher.Tok… ([#10036](https://github.com/blockscout/blockscout/issues/10036))
 - Blueprint contracts support ([#10058](https://github.com/blockscout/blockscout/issues/10058))
 - Clone with immutable arguments proxy pattern ([#10039](https://github.com/blockscout/blockscout/issues/10039))
@@ -36,6 +37,7 @@
 
 ### 🚜 Refactor
 
+- Improve response of address API to return multiple implementations for Diamond proxy ([#10113](https://github.com/blockscout/blockscout/pull/10113))
 - Refactor get_additional_sources/4 -> get_additional_sources/3 ([#10046](https://github.com/blockscout/blockscout/issues/10046))
 - Test database config ([#9662](https://github.com/blockscout/blockscout/issues/9662))
 
@@ -49,8 +51,6 @@
 - Add support of Blast-specific L1 OP withdrawal events ([#10049](https://github.com/blockscout/blockscout/issues/10049))
 - Update outdated links to ETH JSON RPC Specification in docstrings ([#10041](https://github.com/blockscout/blockscout/issues/10041))
 - Migrate to GET variant of {{metadata_url}}/api/v1/metadata ([#9994](https://github.com/blockscout/blockscout/issues/9994))
-- CI for Arbitrum on-demand Docker images
-
 - Bump ex_cldr_numbers from 2.32.4 to 2.33.1 ([#9978](https://github.com/blockscout/blockscout/issues/9978))
 - Bump ex_cldr from 2.38.0 to 2.38.1 ([#10009](https://github.com/blockscout/blockscout/issues/10009))
 - Bump ex_cldr_units from 3.16.5 to 3.17.0 ([#9931](https://github.com/blockscout/blockscout/issues/9931))

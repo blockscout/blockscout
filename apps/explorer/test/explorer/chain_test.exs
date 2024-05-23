@@ -4242,39 +4242,66 @@ defmodule Explorer.ChainTest do
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn _json, [] ->
-          {:ok,
-           [
-             %{
-               id: 0,
-               result: %{
-                 "output" => "0x",
-                 "stateDiff" => nil,
-                 "trace" => [
-                   %{
-                     "action" => %{
-                       "callType" => "call",
-                       "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
-                       "gas" => "0x5208",
-                       "input" => "0x01",
-                       "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
-                       "value" => "0x86b3"
-                     },
-                     "error" => "Reverted",
-                     "result" => %{
-                       "gasUsed" => "0x5208",
-                       "output" => hex_reason
-                     },
-                     "subtraces" => 0,
-                     "traceAddress" => [],
-                     "type" => "call"
-                   }
-                 ],
-                 "transactionHash" => "0xdf5574290913659a1ac404ccf2d216c40587f819400a52405b081dda728ac120",
-                 "vmTrace" => nil
+        fn
+          [%{method: "debug_traceTransaction"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 result: %{
+                   "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                   "gas" => "0x5208",
+                   "gasUsed" => "0x5208",
+                   "input" => "0x01",
+                   "output" => hex_reason,
+                   "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                   "type" => "CALL",
+                   "value" => "0x86b3"
+                 }
                }
-             }
-           ]}
+             ]}
+
+          [%{method: "trace_replayTransaction"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 result: %{
+                   "output" => "0x",
+                   "stateDiff" => nil,
+                   "trace" => [
+                     %{
+                       "action" => %{
+                         "callType" => "call",
+                         "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                         "gas" => "0x5208",
+                         "input" => "0x01",
+                         "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                         "value" => "0x86b3"
+                       },
+                       "error" => "Reverted",
+                       "result" => %{
+                         "gasUsed" => "0x5208",
+                         "output" => hex_reason
+                       },
+                       "subtraces" => 0,
+                       "traceAddress" => [],
+                       "type" => "call"
+                     }
+                   ],
+                   "transactionHash" => "0xdf5574290913659a1ac404ccf2d216c40587f819400a52405b081dda728ac120",
+                   "vmTrace" => nil
+                 }
+               }
+             ]}
+
+          %{method: "eth_call"}, _options ->
+            {:error,
+             %{
+               code: 3,
+               data: hex_reason,
+               message: "execution reverted"
+             }}
         end
       )
 
