@@ -37,6 +37,7 @@
 
 ### 🚜 Refactor
 
+- Improve response of address API to return multiple implementations for Diamond proxy ([#10113](https://github.com/blockscout/blockscout/pull/10113))
 - Refactor get_additional_sources/4 -> get_additional_sources/3 ([#10046](https://github.com/blockscout/blockscout/issues/10046))
 - Test database config ([#9662](https://github.com/blockscout/blockscout/issues/9662))
 
