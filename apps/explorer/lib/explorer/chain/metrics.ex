@@ -12,6 +12,15 @@ defmodule Explorer.Chain.Metrics do
 
   @interval :timer.hours(1)
   @options [timeout: :infinity, api?: true]
+  @metrics_list [
+    :weekly_success_transactions_number,
+    :weekly_deployed_smart_contracts_number,
+    :weekly_verified_smart_contracts_number,
+    :weekly_new_addresses_number,
+    :weekly_new_tokens_number,
+    :weekly_new_token_transfers_number,
+    :weekly_active_addresses_number
+  ]
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -25,20 +34,20 @@ defmodule Explorer.Chain.Metrics do
   end
 
   def handle_info(:set_metrics, state) do
-    set_metrics()
     schedule_next_run()
+    set_metrics()
 
     {:noreply, state}
   end
 
   defp set_metrics do
-    set_handler_metric(:weekly_success_transactions_number)
-    set_handler_metric(:weekly_deployed_smart_contracts_number)
-    set_handler_metric(:weekly_verified_smart_contracts_number)
-    set_handler_metric(:weekly_new_addresses_number)
-    set_handler_metric(:weekly_new_tokens_number)
-    set_handler_metric(:weekly_new_token_transfers_number)
-    set_handler_metric(:weekly_active_addresses_number)
+    @metrics_list
+    |> Enum.map(fn metric ->
+      Task.async(fn ->
+        set_handler_metric(metric)
+      end)
+    end)
+    |> Task.yield_many(:timer.hours(1))
   end
 
   # sobelow_skip ["DOS.StringToAtom"]
