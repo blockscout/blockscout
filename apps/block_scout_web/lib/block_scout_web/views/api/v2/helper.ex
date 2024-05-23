@@ -56,6 +56,12 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def address_with_info(%Address{} = address, _address_hash) do
     implementation_names = Implementation.names(address)
 
+    formatted_implementation_names =
+      implementation_names
+      |> Enum.map(fn name ->
+        %{"name" => name}
+      end)
+
     implementation_name =
       if Enum.empty?(implementation_names) do
         nil
@@ -69,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "name" => address_name(address),
       # todo: added for backward compatibility, remove when frontend unbound from these props
       "implementation_name" => implementation_name,
-      "implementation_names" => implementation_names,
+      "implementations" => formatted_implementation_names,
       "is_verified" => verified?(address),
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
