@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
   import Explorer.Helper, only: [parse_integer: 1]
 
   import Indexer.Fetcher.PolygonZkevm.Bridge,
-    only: [get_logs_all: 3, import_operations: 1, prepare_operations: 3]
+    only: [get_logs_all: 3, import_operations: 1, prepare_operations: 7]
 
   alias Explorer.Chain.PolygonZkevm.{Bridge, Reader}
   alias Explorer.Repo
@@ -53,11 +53,18 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
   @impl GenServer
   def handle_info(:init_with_delay, _state) do
     env = Application.get_all_env(:indexer)[__MODULE__]
+    env_l2 = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonZkevm.BridgeL2]
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
          {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
+         {:rollup_network_id_l1_is_valid, true} <-
+           {:rollup_network_id_l1_is_valid, !is_nil(env[:rollup_network_id_l1]) and env[:rollup_network_id_l1] >= 0},
+         {:rollup_network_id_l2_is_valid, true} <-
+           {:rollup_network_id_l2_is_valid,
+            !is_nil(env_l2[:rollup_network_id_l2]) and env_l2[:rollup_network_id_l2] > 0},
+         {:rollup_index_l2_undefined, false} <- {:rollup_index_l2_undefined, is_nil(env_l2[:rollup_index_l2])},
          {:bridge_contract_address_is_valid, true} <-
            {:bridge_contract_address_is_valid, Helper.address_correct?(env[:bridge_contract])},
          start_block = parse_integer(env[:start_block]),
@@ -80,7 +87,11 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
          bridge_contract: env[:bridge_contract],
          json_rpc_named_arguments: json_rpc_named_arguments,
          end_block: safe_block,
-         start_block: max(start_block, last_l1_block_number)
+         start_block: max(start_block, last_l1_block_number),
+         rollup_network_id_l1: env[:rollup_network_id_l1],
+         rollup_network_id_l2: env_l2[:rollup_network_id_l2],
+         rollup_index_l1: env[:rollup_index_l1],
+         rollup_index_l2: env_l2[:rollup_index_l2]
        }}
     else
       {:start_block_undefined, true} ->
@@ -93,6 +104,27 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
 
       {:rpc_undefined, true} ->
         Logger.error("L1 RPC URL is not defined.")
+        {:stop, :normal, %{}}
+
+      {:rollup_network_id_l1_is_valid, false} ->
+        Logger.error(
+          "Invalid network ID for L1. Please, check INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NETWORK_ID env variable."
+        )
+
+        {:stop, :normal, %{}}
+
+      {:rollup_network_id_l2_is_valid, false} ->
+        Logger.error(
+          "Invalid network ID for L2. Please, check INDEXER_POLYGON_ZKEVM_L2_BRIDGE_NETWORK_ID env variable."
+        )
+
+        {:stop, :normal, %{}}
+
+      {:rollup_index_l2_undefined, true} ->
+        Logger.error(
+          "Rollup index is undefined for L2. Please, check INDEXER_POLYGON_ZKEVM_L2_BRIDGE_ROLLUP_INDEX env variable."
+        )
+
         {:stop, :normal, %{}}
 
       {:bridge_contract_address_is_valid, false} ->
@@ -133,7 +165,11 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
           block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          rollup_network_id_l1: rollup_network_id_l1,
+          rollup_network_id_l2: rollup_network_id_l2,
+          rollup_index_l1: rollup_index_l1,
+          rollup_index_l2: rollup_index_l2
         } = state
       ) do
     time_before = Timex.now()
@@ -151,7 +187,14 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
           operations =
             {chunk_start, chunk_end}
             |> get_logs_all(bridge_contract, json_rpc_named_arguments)
-            |> prepare_operations(json_rpc_named_arguments, json_rpc_named_arguments)
+            |> prepare_operations(
+              rollup_network_id_l1,
+              rollup_network_id_l2,
+              rollup_index_l1,
+              rollup_index_l2,
+              json_rpc_named_arguments,
+              json_rpc_named_arguments
+            )
 
           import_operations(operations)
 

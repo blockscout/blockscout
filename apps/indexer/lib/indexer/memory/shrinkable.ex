@@ -22,4 +22,12 @@ defmodule Indexer.Memory.Shrinkable do
   def shrunk?(pid) when is_pid(pid) do
     GenServer.call(pid, :shrunk?)
   end
+
+  @doc """
+  Asks `pid` to expand its size
+  """
+  @spec expand(pid()) :: :ok
+  def expand(pid) when is_pid(pid) do
+    GenServer.call(pid, :expand)
+  end
 end

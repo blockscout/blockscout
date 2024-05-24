@@ -7,7 +7,9 @@ defmodule Explorer.AccessHelper do
     restricted_list_var = Application.get_env(:explorer, :restricted_list)
     restricted_list = (restricted_list_var && String.split(restricted_list_var, ",")) || []
 
-    if Enum.count(restricted_list) > 0 do
+    if Enum.empty?(restricted_list) do
+      {:ok, false}
+    else
       formatted_restricted_list =
         restricted_list
         |> Enum.map(fn addr ->
@@ -24,8 +26,6 @@ defmodule Explorer.AccessHelper do
       correct_key = key && key == Application.get_env(:explorer, :restricted_list_key)
 
       if address_restricted && !correct_key, do: {:restricted_access, true}, else: {:ok, false}
-    else
-      {:ok, false}
     end
   end
 end

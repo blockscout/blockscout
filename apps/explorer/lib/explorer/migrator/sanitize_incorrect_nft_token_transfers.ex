@@ -11,8 +11,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
 
   require Logger
 
-  alias Explorer.Chain.Import.Runner.Blocks
-  alias Explorer.Chain.{Log, TokenTransfer}
+  alias Explorer.Chain.{Block, Log, TokenTransfer}
   alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
 
@@ -95,6 +94,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
       join: b in assoc(tt, :block),
       where: t.type == ^"ERC-721" and is_nil(tt.token_ids),
       where: b.consensus == true,
+      where: b.refetch_needed == false,
       select: tt.block_number,
       distinct: tt.block_number
     )
@@ -109,7 +109,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
   end
 
   defp handle_batch(block_numbers, :refetch) do
-    Blocks.invalidate_consensus_blocks(block_numbers)
+    Block.set_refetch_needed(block_numbers)
   end
 
   defp schedule_batch_migration do
@@ -130,27 +130,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
     """
     DELETE
     FROM token_transfers tt
-    WHERE (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{encode_token_transfer_ids(token_transfer_ids)}
+    WHERE (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{TokenTransfer.encode_token_transfer_ids(token_transfer_ids)}
     """
-  end
-
-  defp encode_token_transfer_ids(ids) do
-    encoded_values =
-      ids
-      |> Enum.reduce("", fn {t_hash, b_hash, log_index}, acc ->
-        acc <> "('#{hash_to_query_string(t_hash)}', '#{hash_to_query_string(b_hash)}', #{log_index}),"
-      end)
-      |> String.trim_trailing(",")
-
-    "(#{encoded_values})"
-  end
-
-  defp hash_to_query_string(hash) do
-    s_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0")
-
-    "\\#{s_hash}"
   end
 end

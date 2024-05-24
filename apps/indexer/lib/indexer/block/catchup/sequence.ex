@@ -229,6 +229,10 @@ defmodule Indexer.Block.Catchup.Sequence do
     {:reply, BoundQueue.shrunk?(bound_queue), state}
   end
 
+  def handle_call(:expand, _from, %__MODULE__{bound_queue: bound_queue} = state) do
+    {:reply, :ok, %{state | bound_queue: BoundQueue.expand(bound_queue)}}
+  end
+
   @spec push_chunked_range(BoundQueue.t(Range.t()), step, Range.t(), edge()) ::
           {:ok, BoundQueue.t(Range.t())} | {:error, reason :: String.t()}
   defp push_chunked_range(bound_queue, step, _.._ = range, edge \\ :back)

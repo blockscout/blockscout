@@ -1,7 +1,7 @@
 defmodule EthereumJSONRPC.Receipt do
   @moduledoc """
   Receipts format as returned by
-  [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionreceipt).
+  [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionreceipt).
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
@@ -76,11 +76,11 @@ defmodule EthereumJSONRPC.Receipt do
         transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
         transaction_index: 0,\
   #{case Application.compile_env(:explorer, :chain_type) do
-    "ethereum" -> """
+    :ethereum -> """
             blob_gas_price: 0,\
             blob_gas_used: 0\
       """
-    "optimism" -> """
+    :optimism -> """
           l1_fee: 0,\
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
@@ -122,11 +122,11 @@ defmodule EthereumJSONRPC.Receipt do
         transaction_hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
         transaction_index: 0,\
   #{case Application.compile_env(:explorer, :chain_type) do
-    "ethereum" -> """
+    :ethereum -> """
             blob_gas_price: 0,\
             blob_gas_used: 0\
       """
-    "optimism" -> """
+    :optimism -> """
           l1_fee: 0,\
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
@@ -138,6 +138,7 @@ defmodule EthereumJSONRPC.Receipt do
 
   """
   @spec elixir_to_params(elixir) :: %{
+          optional(:gas_price) => non_neg_integer(),
           cumulative_gas_used: non_neg_integer,
           gas_used: non_neg_integer,
           created_contract_address_hash: String.t() | nil,
@@ -170,18 +171,29 @@ defmodule EthereumJSONRPC.Receipt do
       transaction_hash: transaction_hash,
       transaction_index: transaction_index
     }
+    |> maybe_append_gas_price(elixir)
   end
+
+  defp maybe_append_gas_price(params, %{"effectiveGasPrice" => effective_gas_price}) do
+    if is_nil(effective_gas_price) do
+      params
+    else
+      Map.put(params, :gas_price, effective_gas_price)
+    end
+  end
+
+  defp maybe_append_gas_price(params, _), do: params
 
   defp chain_type_fields(params, elixir) do
     case Application.get_env(:explorer, :chain_type) do
-      "ethereum" ->
+      :ethereum ->
         params
         |> Map.merge(%{
           blob_gas_price: Map.get(elixir, "blobGasPrice", 0),
           blob_gas_used: Map.get(elixir, "blobGasUsed", 0)
         })
 
-      "optimism" ->
+      :optimism ->
         params
         |> Map.merge(%{
           l1_fee: Map.get(elixir, "l1Fee", 0),
@@ -308,11 +320,11 @@ defmodule EthereumJSONRPC.Receipt do
   # hash format
   # gas is passed in from the `t:EthereumJSONRPC.Transaction.params/0` to allow pre-Byzantium status to be derived
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash revertReason type effectiveGasPrice l1FeeScalar),
+       when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash revertReason type l1FeeScalar),
        do: {:ok, entry}
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex blobGasUsed blobGasPrice l1Fee l1GasPrice l1GasUsed) do
+       when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex blobGasUsed blobGasPrice l1Fee l1GasPrice l1GasUsed effectiveGasPrice) do
     result =
       if is_nil(quantity) do
         nil
@@ -371,6 +383,12 @@ defmodule EthereumJSONRPC.Receipt do
 
   # Optimism specific transaction receipt fields
   defp entry_to_elixir({key, _}) when key in ~w(depositNonce depositReceiptVersion) do
+    :ignore
+  end
+
+  # zkSync specific transaction receipt fields
+  defp entry_to_elixir({key, _})
+       when key in ~w(l1BatchNumber l1BatchTxIndex l2ToL1Logs) do
     :ignore
   end
 

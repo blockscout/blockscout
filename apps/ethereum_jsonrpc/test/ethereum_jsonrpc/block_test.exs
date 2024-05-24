@@ -55,7 +55,7 @@ defmodule EthereumJSONRPC.BlockTest do
                  transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
                  uncles: []
                }
-               |> (&if(Application.get_env(:explorer, :chain_type) == "rsk",
+               |> (&if(Application.get_env(:explorer, :chain_type) == :rsk,
                      do:
                        Map.merge(
                          &1,
@@ -69,7 +69,7 @@ defmodule EthereumJSONRPC.BlockTest do
                        ),
                      else: &1
                    )).()
-               |> (&if(Application.get_env(:explorer, :chain_type) == "ethereum",
+               |> (&if(Application.get_env(:explorer, :chain_type) == :ethereum,
                      do:
                        Map.merge(
                          &1,

@@ -20,5 +20,6 @@ defmodule Explorer.Market.MarketHistory do
     field(:opening_price, :decimal)
     field(:market_cap, :decimal)
     field(:tvl, :decimal)
+    field(:secondary_coin, :boolean)
   end
 end

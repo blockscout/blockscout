@@ -113,6 +113,13 @@ defmodule Indexer.BoundQueue do
   end
 
   @doc """
+  Set queue maximum_size to nil
+  """
+  def expand(bound_queue) do
+    %{bound_queue | maximum_size: nil}
+  end
+
+  @doc """
   Whether the queue was shrunk.
   """
   def shrunk?(%__MODULE__{maximum_size: nil}), do: false

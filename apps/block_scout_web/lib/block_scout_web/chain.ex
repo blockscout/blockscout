@@ -11,8 +11,7 @@ defmodule BlockScoutWeb.Chain do
       number_to_block: 1,
       string_to_address_hash: 1,
       string_to_block_hash: 1,
-      string_to_transaction_hash: 1,
-      token_contract_address_from_token_name: 1
+      string_to_transaction_hash: 1
     ]
 
   import Explorer.Helper, only: [parse_integer: 1]
@@ -33,6 +32,7 @@ defmodule BlockScoutWeb.Chain do
     Hash,
     InternalTransaction,
     Log,
+    Search,
     SmartContract,
     Token,
     Token.Instance,
@@ -106,7 +106,7 @@ defmodule BlockScoutWeb.Chain do
   def from_param(string) when is_binary(string) do
     case param_to_block_number(string) do
       {:ok, number} -> number_to_block(number)
-      _ -> token_address_from_name(string)
+      _ -> search_ens_domain(string)
     end
   end
 
@@ -480,6 +480,22 @@ defmodule BlockScoutWeb.Chain do
     ]
   end
 
+  # Clause for InternalTransaction by block:
+  #   returned by `BlockScoutWeb.API.V2.BlockController.internal_transactions/2` (`/api/v2/blocks/:block_hash_or_number/internal-transactions`)
+  def paging_options(%{"block_index" => index_string}) when is_binary(index_string) do
+    case Integer.parse(index_string) do
+      {index, ""} ->
+        [paging_options: %{@default_paging_options | key: %{block_index: index}}]
+
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"block_index" => index}) when is_integer(index) do
+    [paging_options: %{@default_paging_options | key: %{block_index: index}}]
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def put_key_value_to_paging_options([paging_options: paging_options], key, value) do
@@ -555,10 +571,13 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  defp token_address_from_name(name) do
-    case token_contract_address_from_token_name(name) do
-      {:ok, hash} -> find_or_insert_address_from_hash(hash)
-      _ -> {:error, :not_found}
+  defp search_ens_domain(search_query) do
+    case Search.search_ens_name_in_bens(search_query) do
+      nil ->
+        {:error, :not_found}
+
+      result ->
+        {:ok, result}
     end
   end
 
@@ -766,7 +785,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp hash_to_blob(hash) do
-    if Application.get_env(:explorer, :chain_type) == "ethereum" do
+    if Application.get_env(:explorer, :chain_type) == :ethereum do
       BeaconReader.blob(hash, false)
     else
       {:error, :not_found}

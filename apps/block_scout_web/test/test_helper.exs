@@ -35,8 +35,9 @@ Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Beacon, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Stability, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.BridgedTokens, :manual)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Filecoin, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Mud, :manual)
 
-Absinthe.Test.prime(BlockScoutWeb.Schema)
+Absinthe.Test.prime(BlockScoutWeb.GraphQL.Schema)
 
 Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
 

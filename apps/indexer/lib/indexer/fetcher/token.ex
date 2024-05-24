@@ -51,9 +51,7 @@ defmodule Indexer.Fetcher.Token do
   @impl BufferedTask
   @decorate trace(name: "fetch", resource: "Indexer.Fetcher.Token.run/2", service: :indexer, tracer: Tracer)
   def run([token_contract_address], _json_rpc_named_arguments) do
-    options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
-
-    case Chain.token_from_address_hash(token_contract_address, options) do
+    case Chain.token_from_address_hash(token_contract_address) do
       {:ok, %Token{} = token} ->
         catalog_token(token)
     end

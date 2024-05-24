@@ -54,6 +54,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   @impl GenServer
   def init(named_arguments) do
     Logger.metadata(fetcher: :block_catchup)
+    Process.flag(:trap_exit, true)
 
     state = new(named_arguments)
 
@@ -180,7 +181,13 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   @impl GenServer
   def handle_info(:catchup_index, %__MODULE__{fetcher: %Catchup.Fetcher{} = catchup} = state) do
     {:noreply,
-     %__MODULE__{state | task: Task.Supervisor.async_nolink(Catchup.TaskSupervisor, Catchup.Fetcher, :task, [catchup])}}
+     %__MODULE__{
+       state
+       | task:
+           Task.Supervisor.async_nolink(Catchup.TaskSupervisor, Catchup.Fetcher, :task, [catchup],
+             shutdown: Application.get_env(:indexer, :graceful_shutdown_period)
+           )
+     }}
   end
 
   def handle_info(

@@ -219,7 +219,10 @@ defmodule Explorer.Chain.Log do
   @spec find_and_decode([map()], __MODULE__.t(), Hash.t()) ::
           {:error, any} | {:ok, ABI.FunctionSelector.t(), any}
   def find_and_decode(abi, log, transaction_hash) do
-    with {%FunctionSelector{} = selector, mapping} <-
+    # For events, the method_id (signature) is 32 bytes, whereas for methods and
+    # errors it is 4 bytes. To avoid complications with different sizes, we
+    # always take only the first 4 bytes of the hash.
+    with {%FunctionSelector{method_id: <<first_four_bytes::binary-size(4), _::binary>>} = selector, mapping} <-
            abi
            |> ABI.parse_specification(include_events?: true)
            |> Event.find_and_decode(
@@ -228,7 +231,8 @@ defmodule Explorer.Chain.Log do
              log.third_topic && log.third_topic.bytes,
              log.fourth_topic && log.fourth_topic.bytes,
              log.data.bytes
-           ) do
+           ),
+         selector <- %{selector | method_id: first_four_bytes} do
       {:ok, selector, mapping}
     end
   rescue
@@ -309,5 +313,22 @@ defmodule Explorer.Chain.Log do
     |> where([l], l.transaction_hash == ^tx_hash and l.first_topic == ^first_topic)
     |> limit(1)
     |> Chain.select_repo(options).one()
+  end
+
+  @doc """
+  Fetches logs by user operation.
+  """
+  @spec user_op_to_logs(map(), Keyword.t()) :: [t()]
+  def user_op_to_logs(user_op, options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    limit = Keyword.get(options, :limit, 50)
+
+    __MODULE__
+    |> where([log], log.block_hash == ^user_op["block_hash"] and log.transaction_hash == ^user_op["transaction_hash"])
+    |> where([log], log.index >= ^user_op["user_logs_start_index"])
+    |> order_by([log], asc: log.index)
+    |> limit(^min(user_op["user_logs_count"], limit))
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
   end
 end

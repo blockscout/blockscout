@@ -212,23 +212,13 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def decode_revert_reason(to_address, revert_reason, options \\ []) do
-    smart_contract = SmartContract.address_hash_to_smart_contract(to_address, options)
+    {smart_contract, _} = SmartContract.address_hash_to_smart_contract_with_bytecode_twin(to_address, options)
 
     Transaction.decoded_revert_reason(
       %Transaction{to_address: %{smart_contract: smart_contract}, hash: to_address},
       revert_reason,
       options
     )
-  end
-
-  def decode_hex_revert_reason(hex_revert_reason) do
-    case Integer.parse(hex_revert_reason, 16) do
-      {number, ""} ->
-        :binary.encode_unsigned(number)
-
-      _ ->
-        hex_revert_reason
-    end
   end
 
   def not_last_element?(length, index), do: length > 1 and index < length - 1

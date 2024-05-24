@@ -62,7 +62,7 @@ defmodule Indexer.Fetcher.CoinBalance.Catchup do
               tracer: Tracer
             )
   def run(entries, json_rpc_named_arguments) do
-    Helper.run(entries, json_rpc_named_arguments, true)
+    Helper.run(entries, json_rpc_named_arguments, :catchup)
   end
 
   defp defaults do

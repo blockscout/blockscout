@@ -3,9 +3,10 @@ defmodule Explorer.Chain.Block.Schema do
 
   alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
+  alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
-                        "ethereum" ->
+                        :ethereum ->
                           elem(
                             quote do
                               field(:blob_gas_used, :decimal)
@@ -14,7 +15,7 @@ defmodule Explorer.Chain.Block.Schema do
                             2
                           )
 
-                        "rsk" ->
+                        :rsk ->
                           elem(
                             quote do
                               field(:bitcoin_merged_mining_header, :binary)
@@ -22,6 +23,18 @@ defmodule Explorer.Chain.Block.Schema do
                               field(:bitcoin_merged_mining_merkle_proof, :binary)
                               field(:hash_for_merged_mining, :binary)
                               field(:minimum_gas_price, :decimal)
+                            end,
+                            2
+                          )
+
+                        :zksync ->
+                          elem(
+                            quote do
+                              has_one(:zksync_batch_block, ZkSyncBatchBlock, foreign_key: :hash, references: :hash)
+                              has_one(:zksync_batch, through: [:zksync_batch_block, :batch])
+                              has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
+                              has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
+                              has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
                             end,
                             2
                           )
@@ -89,14 +102,15 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Block.{EmissionReward, Reward}
   alias Explorer.Repo
+  alias Explorer.Utility.MissingRangesManipulator
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
                   |> (&(case Application.compile_env(:explorer, :chain_type) do
-                          "rsk" ->
+                          :rsk ->
                             &1 ++
                               ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
-                          "ethereum" ->
+                          :ethereum ->
                             &1 ++
                               ~w(blob_gas_used excess_blob_gas)a
 
@@ -137,17 +151,18 @@ defmodule Explorer.Chain.Block do
    * `size` - The size of the block in bytes.
    * `timestamp` - When the block was collated
    * `total_difficulty` - the total `difficulty` of the chain until this block.
+   * `refetch_needed` - `true` if block has missing data and has to be refetched.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `base_fee_per_gas` - Minimum fee required per unit of gas. Fee adjusts based on network congestion.
   #{case Application.compile_env(:explorer, :chain_type) do
-    "rsk" -> """
+    :rsk -> """
        * `bitcoin_merged_mining_header` - Bitcoin merged mining header on Rootstock chains.
        * `bitcoin_merged_mining_coinbase_transaction` - Bitcoin merged mining coinbase transaction on Rootstock chains.
        * `bitcoin_merged_mining_merkle_proof` - Bitcoin merged mining merkle proof on Rootstock chains.
        * `hash_for_merged_mining` - Hash for merged mining on Rootstock chains.
        * `minimum_gas_price` - Minimum block gas price on Rootstock chains.
       """
-    "ethereum" -> """
+    :ethereum -> """
        * `blob_gas_used` - The total amount of blob gas consumed by the transactions within the block.
        * `excess_blob_gas` - The running total of blob gas consumed in excess of the target, prior to the block.
       """
@@ -407,4 +422,25 @@ defmodule Explorer.Chain.Block do
       |> Decimal.div(base_fee_max_change_denominator)
       |> Decimal.add(base_fee_per_gas_decimal)
   end
+
+  @spec set_refetch_needed(integer | [integer]) :: :ok
+  def set_refetch_needed(block_numbers) when is_list(block_numbers) do
+    query =
+      from(block in Block,
+        where: block.number in ^block_numbers,
+        # Enforce Block ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: block.hash],
+        lock: "FOR NO KEY UPDATE"
+      )
+
+    {_count, updated_numbers} =
+      Repo.update_all(
+        from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
+        set: [refetch_needed: true]
+      )
+
+    MissingRangesManipulator.add_ranges_by_block_numbers(updated_numbers)
+  end
+
+  def set_refetch_needed(block_number), do: set_refetch_needed([block_number])
 end

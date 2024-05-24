@@ -9,6 +9,15 @@ defmodule BlockScoutWeb.AdminRouter do
   alias BlockScoutWeb.Plug.Admin.{CheckOwnerRegistered, RequireAdminRole}
 
   pipeline :browser do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 10_000,
+      query_string_length: 5_000,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)

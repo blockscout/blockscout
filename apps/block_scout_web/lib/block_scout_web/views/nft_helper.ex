@@ -54,6 +54,7 @@ defmodule BlockScoutWeb.NFTHelper do
 
   def retrieve_image(image_url) do
     image_url
+    |> URI.decode()
     |> URI.encode()
     |> compose_ipfs_url()
   end

@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   @transactions_options [
     necessity_by_association: %{
@@ -34,7 +35,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     conn
     |> put_status(200)
     |> put_view(BlockView)
-    |> render(:blocks, %{blocks: blocks |> maybe_preload_ens()})
+    |> render(:blocks, %{blocks: blocks |> maybe_preload_ens() |> maybe_preload_metadata()})
   end
 
   def optimism_deposits(conn, _params) do
@@ -56,7 +57,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     conn
     |> put_status(200)
     |> put_view(TransactionView)
-    |> render(:transactions, %{transactions: recent_transactions |> maybe_preload_ens()})
+    |> render(:transactions, %{transactions: recent_transactions |> maybe_preload_ens() |> maybe_preload_metadata()})
   end
 
   def watchlist_transactions(conn, _params) do
@@ -67,7 +68,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:transactions_watchlist, %{
-        transactions: transactions |> maybe_preload_ens(),
+        transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
         watchlist_names: watchlist_names
       })
     end

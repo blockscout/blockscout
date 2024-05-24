@@ -118,7 +118,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   @decorate span(tracer: Tracer)
-  @spec fetch_and_import_range(t, Range.t()) ::
+  @spec fetch_and_import_range(t, Range.t(), map) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
              {step :: atom(), reason :: [Ecto.Changeset.t()] | term()}
@@ -129,7 +129,8 @@ defmodule Indexer.Block.Fetcher do
           callback_module: callback_module,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state,
-        _.._ = range
+        _.._ = range,
+        additional_options \\ %{}
       )
       when callback_module != nil do
     {fetch_time, fetched_blocks} =
@@ -196,7 +197,9 @@ defmodule Indexer.Block.Fetcher do
            |> AddressCoinBalances.params_set(),
          beneficiaries_with_gas_payment =
            beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
-         address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         token_transfers_with_token = token_transfers_merge_token(token_transfers, tokens),
+         address_token_balances =
+           AddressTokenBalances.params_set(%{token_transfers_params: token_transfers_with_token}),
          transaction_actions =
            Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
          token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers}),
@@ -228,7 +231,7 @@ defmodule Indexer.Block.Fetcher do
          {:ok, inserted} <-
            __MODULE__.import(
              state,
-             import_options(basic_import_options, chain_type_import_options)
+             basic_import_options |> Map.merge(additional_options) |> import_options(chain_type_import_options)
            ),
          {:tx_actions, {:ok, inserted_tx_actions}} <-
            {:tx_actions,
@@ -260,26 +263,26 @@ defmodule Indexer.Block.Fetcher do
          shibarium_bridge_operations: shibarium_bridge_operations
        }) do
     case Application.get_env(:explorer, :chain_type) do
-      "ethereum" ->
+      :ethereum ->
         basic_import_options
         |> Map.put_new(:beacon_blob_transactions, %{
           params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
         })
 
-      "optimism" ->
+      :optimism ->
         basic_import_options
         |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
 
-      "polygon_edge" ->
+      :polygon_edge ->
         basic_import_options
         |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
         |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
 
-      "polygon_zkevm" ->
+      :polygon_zkevm ->
         basic_import_options
         |> Map.put_new(:polygon_zkevm_bridge_operations, %{params: polygon_zkevm_bridge_operations})
 
-      "shibarium" ->
+      :shibarium ->
         basic_import_options
         |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
 
@@ -359,7 +362,7 @@ defmodule Indexer.Block.Fetcher do
       |> Enum.filter(fn block -> block |> Map.get(:blob_gas_used, 0) > 0 end)
       |> Enum.map(&Map.get(&1, :timestamp))
 
-    if !Enum.empty?(timestamps) do
+    if not Enum.empty?(timestamps) do
       Blob.async_fetch(timestamps)
     end
   end
@@ -672,5 +675,16 @@ defmodule Indexer.Block.Fetcher do
        ) do
     {{String.downcase(hash), fetched_coin_balance_block_number},
      Map.delete(address_params, :fetched_coin_balance_block_number)}
+  end
+
+  defp token_transfers_merge_token(token_transfers, tokens) do
+    Enum.map(token_transfers, fn token_transfer ->
+      token =
+        Enum.find(tokens, fn token ->
+          token.contract_address_hash == token_transfer.token_contract_address_hash
+        end)
+
+      Map.put(token_transfer, :token, token)
+    end)
   end
 end

@@ -403,6 +403,19 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       path = address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash))
 
+      empty_page_response =
+        conn
+        |> get(path, %{
+          "block_number" => Integer.to_string(0),
+          "transaction_index" => Integer.to_string(0),
+          "index" => "0",
+          "type" => "JSON"
+        })
+        |> json_response(200)
+        |> Map.get("items")
+
+      assert Enum.count(empty_page_response) == 0
+
       first_page_response =
         conn
         |> get(path, %{"type" => "JSON"})

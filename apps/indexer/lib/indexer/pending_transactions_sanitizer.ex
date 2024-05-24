@@ -13,8 +13,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Import.Runner.Blocks
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Block, Transaction}
 
   @interval :timer.hours(3)
 
@@ -155,7 +154,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
   defp invalidate_block(block, pending_tx, tx) do
     if block.consensus do
-      Blocks.invalidate_consensus_blocks([block.number])
+      Block.set_refetch_needed(block.number)
     else
       tx_info = to_elixir(tx)
 

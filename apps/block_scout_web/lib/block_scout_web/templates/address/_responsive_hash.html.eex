@@ -1,5 +1,13 @@
+<% implementation_names = Implementation.names(@address) %>
+<% implementation_name =
+      if Enum.empty?(implementation_names) do
+        nil
+      else
+        implementation_names |> Enum.at(0)
+      end
+%>
 <span class="<%= if @contract do %>contract-address<% end %>" data-address-hash="<%= @address %>">
-  <%= if name = if assigns[:ignore_implementation_name], do: primary_name(@address), else: implementation_name(@address) || primary_name(@address) do %>
+  <%= if name = if assigns[:ignore_implementation_name], do: primary_name(@address), else: implementation_name || primary_name(@address) do %>
     <%= if assigns[:no_tooltip] do %>
       <%= if @use_custom_tooltip == true do %>
         <span><%= name %> (<%= short_hash(@address) %>...)</span>

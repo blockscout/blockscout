@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Beacon.BlobTest do
   setup :verify_on_exit!
   setup :set_mox_global
 
-  if Application.compile_env(:explorer, :chain_type) == "ethereum" do
+  if Application.compile_env(:explorer, :chain_type) == :ethereum do
     describe "init/1" do
       setup do
         initial_env = Application.get_env(:indexer, BlobSupervisor)

@@ -30,6 +30,7 @@ defmodule Explorer.Chain.Token.Schema do
         field(:circulating_market_cap, :decimal)
         field(:icon_url, :string)
         field(:is_verified_via_admin_panel, :boolean)
+        field(:volume_24h, :decimal)
 
         belongs_to(
           :contract_address,
@@ -60,6 +61,7 @@ defmodule Explorer.Chain.Token do
   * ERC-20
   * ERC-721
   * ERC-1155
+  * ERC-404
 
   ## Token Specifications
 
@@ -67,6 +69,7 @@ defmodule Explorer.Chain.Token do
   * [ERC-721](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-721.md)
   * [ERC-777](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-777.md)
   * [ERC-1155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md)
+  * [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
   """
 
   use Explorer.Schema
@@ -78,7 +81,11 @@ defmodule Explorer.Chain.Token do
   alias Ecto.Changeset
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{BridgedToken, Hash, Search, Token}
+  alias Explorer.Repo
   alias Explorer.SmartContract.Helper
+
+  # milliseconds
+  @timeout 60_000
 
   @default_sorting [
     desc_nulls_last: :circulating_market_cap,
@@ -123,7 +130,7 @@ defmodule Explorer.Chain.Token do
   Explorer.Chain.Token.Schema.generate()
 
   @required_attrs ~w(contract_address_hash type)a
-  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel)a
+  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel volume_24h)a
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
@@ -245,5 +252,23 @@ defmodule Explorer.Chain.Token do
       |> select([token], token.contract_address_hash)
 
     (last_address_hash && where(query, [token], token.contract_address_hash > ^last_address_hash)) || query
+  end
+
+  @doc """
+    Updates token_holder_count for a given contract_address_hash.
+    It used by Explorer.Counters.TokenHoldersCounter module.
+  """
+  @spec update_token_holder_count(Hash.Address.t(), integer()) :: {non_neg_integer(), nil}
+  def update_token_holder_count(contract_address_hash, holder_count) when not is_nil(holder_count) do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(t in __MODULE__,
+        where: t.contract_address_hash == ^contract_address_hash,
+        update: [set: [holder_count: ^holder_count, updated_at: ^now]]
+      ),
+      [],
+      timeout: @timeout
+    )
   end
 end

@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain.PolygonZkevm.Reader
+  alias Explorer.Chain.Transaction
+
   @doc """
     Function to render GET requests to `/api/v2/zkevm/batches/:batch_number` endpoint.
   """
@@ -85,8 +88,8 @@ defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
 
           decimals =
             cond do
-              not is_nil(Map.get(l1_token, :decimals)) -> Map.get(l1_token, :decimals)
-              not is_nil(Map.get(l2_token, :decimals)) -> Map.get(l2_token, :decimals)
+              not is_nil(Map.get(l1_token, :decimals)) -> Reader.sanitize_decimals(Map.get(l1_token, :decimals))
+              not is_nil(Map.get(l2_token, :decimals)) -> Reader.sanitize_decimals(Map.get(l2_token, :decimals))
               true -> env[:native_decimals]
             end
 
@@ -157,5 +160,31 @@ defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
         "verify_tx_hash" => verify_tx_hash
       }
     end)
+  end
+
+  def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
+    extended_result =
+      out_json
+      |> add_optional_transaction_field(transaction, "zkevm_batch_number", :zkevm_batch, :number)
+      |> add_optional_transaction_field(transaction, "zkevm_sequence_hash", :zkevm_sequence_transaction, :hash)
+      |> add_optional_transaction_field(transaction, "zkevm_verify_hash", :zkevm_verify_transaction, :hash)
+
+    Map.put(extended_result, "zkevm_status", zkevm_status(extended_result))
+  end
+
+  defp zkevm_status(result_map) do
+    if is_nil(Map.get(result_map, "zkevm_sequence_hash")) do
+      "Confirmed by Sequencer"
+    else
+      "L1 Confirmed"
+    end
+  end
+
+  defp add_optional_transaction_field(out_json, transaction, out_field, association, association_field) do
+    case Map.get(transaction, association) do
+      nil -> out_json
+      %Ecto.Association.NotLoaded{} -> out_json
+      item -> Map.put(out_json, out_field, Map.get(item, association_field))
+    end
   end
 end

@@ -212,7 +212,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
     # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
     import_options =
-      if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
+      if Application.get_env(:explorer, :chain_type) == :polygon_edge do
         %{
           polygon_edge_withdrawals: %{params: withdrawals},
           timeout: :infinity

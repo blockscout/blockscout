@@ -53,6 +53,42 @@ defmodule BlockScoutWeb.AccessHelper do
     |> Conn.halt()
   end
 
+  def check_rate_limit(conn, graphql?: true) do
+    rate_limit_config = Application.get_env(:block_scout_web, Api.GraphQL)
+
+    if rate_limit_config[:rate_limit_disabled?] do
+      :ok
+    else
+      check_graphql_rate_limit_inner(conn, rate_limit_config)
+    end
+  end
+
+  defp check_graphql_rate_limit_inner(conn, rate_limit_config) do
+    global_limit = rate_limit_config[:global_limit]
+    limit_by_key = rate_limit_config[:limit_by_key]
+    time_interval_limit = rate_limit_config[:time_interval_limit]
+    static_api_key = rate_limit_config[:static_api_key]
+    limit_by_ip = rate_limit_config[:limit_by_ip]
+    time_interval_by_ip = rate_limit_config[:time_interval_limit_by_ip]
+
+    ip_string = conn_to_ip_string(conn)
+    plan = get_plan(conn.query_params)
+
+    cond do
+      check_api_key(conn) && get_api_key(conn) == static_api_key ->
+        rate_limit(static_api_key, limit_by_key, time_interval_limit)
+
+      check_api_key(conn) && !is_nil(plan) ->
+        conn
+        |> get_api_key()
+        |> rate_limit(min(plan.max_req_per_second, limit_by_key), time_interval_limit)
+
+      true ->
+        rate_limit("graphql_#{ip_string}", limit_by_ip, time_interval_by_ip) == :ok &&
+          rate_limit("graphql", global_limit, time_interval_limit) == :ok
+    end
+  end
+
   def check_rate_limit(conn) do
     rate_limit_config = Application.get_env(:block_scout_web, :api_rate_limit)
 

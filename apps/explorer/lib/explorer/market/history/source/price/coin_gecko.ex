@@ -11,14 +11,14 @@ defmodule Explorer.Market.History.Source.Price.CoinGecko do
   @behaviour SourcePrice
 
   @impl SourcePrice
-  def fetch_price_history(previous_days) do
-    url = ExchangeRatesSourceCoinGecko.history_url(previous_days)
+  def fetch_price_history(previous_days, secondary_coin? \\ false) do
+    url = ExchangeRatesSourceCoinGecko.history_url(previous_days, secondary_coin?)
 
     case Source.http_request(url, ExchangeRatesSourceCoinGecko.headers()) do
       {:ok, data} ->
         result =
           data
-          |> format_data()
+          |> format_data(secondary_coin?)
 
         {:ok, result}
 
@@ -27,10 +27,10 @@ defmodule Explorer.Market.History.Source.Price.CoinGecko do
     end
   end
 
-  @spec format_data(term()) :: SourcePrice.record() | nil
-  defp format_data(nil), do: nil
+  @spec format_data(term(), boolean()) :: SourcePrice.record() | nil
+  defp format_data(nil, _), do: nil
 
-  defp format_data(data) do
+  defp format_data(data, secondary_coin?) do
     prices = data["prices"]
 
     for [date, price] <- prices do
@@ -39,7 +39,8 @@ defmodule Explorer.Market.History.Source.Price.CoinGecko do
       %{
         closing_price: Decimal.new(to_string(price)),
         date: CryptoCompare.date(date),
-        opening_price: Decimal.new(to_string(price))
+        opening_price: Decimal.new(to_string(price)),
+        secondary_coin: secondary_coin?
       }
     end
   end

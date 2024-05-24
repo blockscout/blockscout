@@ -17,10 +17,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       delete_parameters_from_next_page_params: 1,
       token_transfers_types_options: 1,
       address_transactions_sorting: 1,
-      nft_token_types_options: 1
+      nft_types_options: 1
     ]
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{BlockView, TransactionView, WithdrawalView}
@@ -28,7 +29,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.Chain.{Address, Hash, Transaction}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
-  alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
+
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
   @transaction_necessity_by_association [
     necessity_by_association: %{
@@ -45,10 +49,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @token_transfer_necessity_by_association [
     necessity_by_association: %{
-      :to_address => :optional,
-      :from_address => :optional,
+      [to_address: :smart_contract] => :optional,
+      [from_address: :smart_contract] => :optional,
+      [to_address: :names] => :optional,
+      [from_address: :names] => :optional,
       :block => :optional,
-      :transaction => :optional
+      :transaction => :optional,
+      :token => :optional
     },
     api?: true
   ]
@@ -82,6 +89,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
          fully_preloaded_address <-
            Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true) do
       CoinBalanceOnDemand.trigger_fetch(fully_preloaded_address)
+
+      ContractCodeOnDemand.trigger_fetch(address)
 
       conn
       |> put_status(200)
@@ -144,7 +153,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:transactions, %{transactions: transactions |> maybe_preload_ens(), next_page_params: next_page_params})
+      |> render(:transactions, %{
+        transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -159,8 +171,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       options =
         [
           necessity_by_association: %{
-            :to_address => :optional,
-            :from_address => :optional,
+            [to_address: :smart_contract] => :optional,
+            [from_address: :smart_contract] => :optional,
+            [to_address: :names] => :optional,
+            [from_address: :names] => :optional,
             :block => :optional,
             :token => :optional,
             :transaction => :optional
@@ -188,7 +202,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:token_transfers, %{
-        token_transfers: token_transfers |> maybe_preload_ens(),
+        token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -220,7 +234,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:token_transfers, %{
-        token_transfers: token_transfers |> maybe_preload_ens(),
+        token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -253,7 +267,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:internal_transactions, %{
-        internal_transactions: internal_transactions |> maybe_preload_ens(),
+        internal_transactions: internal_transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -276,7 +290,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:logs, %{logs: logs |> maybe_preload_ens(), next_page_params: next_page_params})
+      |> render(:logs, %{
+        logs: logs |> maybe_preload_ens() |> maybe_preload_metadata(),
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -293,7 +310,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(TransactionView)
-      |> render(:logs, %{logs: logs |> maybe_preload_ens(), next_page_params: next_page_params})
+      |> render(:logs, %{
+        logs: logs |> maybe_preload_ens() |> maybe_preload_metadata(),
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -395,7 +415,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> put_view(WithdrawalView)
-      |> render(:withdrawals, %{withdrawals: withdrawals |> maybe_preload_ens(), next_page_params: next_page_params})
+      |> render(:withdrawals, %{
+        withdrawals: withdrawals |> maybe_preload_ens() |> maybe_preload_metadata(),
+        next_page_params: next_page_params
+      })
     end
   end
 
@@ -415,7 +438,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     conn
     |> put_status(200)
     |> render(:addresses, %{
-      addresses: addresses |> maybe_preload_ens(),
+      addresses: addresses |> maybe_preload_ens() |> maybe_preload_metadata(),
       next_page_params: next_page_params,
       exchange_rate: exchange_rate,
       total_supply: total_supply
@@ -448,7 +471,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           address_hash,
           params
           |> paging_options()
-          |> Keyword.merge(nft_token_types_options(params))
+          |> Keyword.merge(nft_types_options(params))
           |> Keyword.merge(@api_true)
           |> Keyword.merge(@nft_necessity_by_association)
         )
@@ -476,7 +499,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           address_hash,
           params
           |> paging_options()
-          |> Keyword.merge(nft_token_types_options(params))
+          |> Keyword.merge(nft_types_options(params))
           |> Keyword.merge(@api_true)
           |> Keyword.merge(@nft_necessity_by_association)
         )
