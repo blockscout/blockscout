@@ -68,7 +68,7 @@ services:
     extends:
       file: ./services/frontend.yml
       service: frontend
-  sc-verifier:
+  smart-contract-verifier:
     extends:
       file: ./services/smart-contract-verifier.yml
       service: smart-contract-verifier
