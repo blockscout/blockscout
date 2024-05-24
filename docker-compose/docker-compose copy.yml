@@ -59,8 +59,6 @@ services:
     extends:
       file: ./services/sig-provider.yml
       service: sig-provider
-    ports:
-      - 8083:8050
 
   frontend:
     depends_on:
