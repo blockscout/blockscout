@@ -23,6 +23,10 @@ services:
         published: 8080
       - target: 8081
         published: 8081
+      - target: 8082
+        published: 8082
+      - target: 8083
+        published: 8083
       - target: 443
         published: 444
     
