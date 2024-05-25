@@ -8,6 +8,7 @@ defmodule Explorer.Helper do
   alias Explorer.Chain.Data
 
   import Ecto.Query, only: [where: 3]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   @max_safe_integer round(:math.pow(2, 63)) - 1
 
@@ -30,6 +31,14 @@ defmodule Explorer.Helper do
     encoded_data
     |> Base.decode16!(case: :mixed)
     |> TypeDecoder.decode_raw(types)
+  end
+
+  def truncate_address_hash(address_hash)
+
+  def truncate_address_hash(nil), do: burn_address_hash_string()
+
+  def truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
+    "0x#{truncated_hash}"
   end
 
   def parse_integer(integer_string) when is_binary(integer_string) do

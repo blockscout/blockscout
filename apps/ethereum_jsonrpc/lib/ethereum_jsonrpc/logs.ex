@@ -28,7 +28,7 @@ defmodule EthereumJSONRPC.Logs do
     })
   end
 
-  def from_responses(responses) do
+  def from_responses(responses) when is_list(responses) do
     responses
     |> reduce_responses()
     |> case do
