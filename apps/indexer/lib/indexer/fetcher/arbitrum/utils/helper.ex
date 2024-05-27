@@ -83,4 +83,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
       )
     end)
   end
+
+  def bytes_to_hex_str(data) do
+    "0x" <> Base.encode16(data, case: :lower)
+  end
 end

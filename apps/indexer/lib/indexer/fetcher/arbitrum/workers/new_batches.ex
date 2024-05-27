@@ -30,6 +30,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
 
   alias Indexer.Helper, as: IndexerHelper
+  alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
 
   alias Explorer.Chain
@@ -337,11 +338,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     logs
     |> Enum.chunk_every(new_batches_limit)
     |> Enum.each(fn chunked_logs ->
-      {batches, lifecycle_txs, rollup_blocks, rollup_txs, committed_txs} =
+      {batches, lifecycle_txs, rollup_blocks, rollup_txs, committed_txs, _} =
         handle_batches_from_logs(
           chunked_logs,
           messages_to_blocks_shift,
           l1_rpc_config,
+          sequencer_inbox_address,
           rollup_rpc_config
         )
 
@@ -416,6 +418,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
            json_rpc_named_arguments: json_rpc_named_arguments,
            chunk_size: chunk_size
          } = l1_rpc_config,
+         sequencer_inbox_address,
          rollup_rpc_config
        ) do
     existing_batches =
@@ -427,7 +430,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
     blocks_to_ts = Rpc.execute_blocks_requests_and_get_ts(blocks_requests, json_rpc_named_arguments, chunk_size)
 
-    {lifecycle_txs_wo_indices, batches_to_import} =
+    {lifecycle_txs_wo_indices, batches_to_import, da_info} =
       execute_tx_requests_parse_txs_calldata(txs_requests, msg_to_block_shift, blocks_to_ts, batches, l1_rpc_config)
 
     {blocks_to_import, rollup_txs_to_import} = get_rollup_blocks_and_transactions(batches_to_import, rollup_rpc_config)
@@ -457,6 +460,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         ]
       end)
 
+    da_info_to_import =
+      DataAvailabilityInfo.prepare_for_import(da_info, %{
+        sequencer_inbox_address: sequencer_inbox_address,
+        json_rpc_named_arguments: l1_rpc_config.json_rpc_named_arguments
+      })
+
+    IO.inspect(da_info_to_import)
+
     committed_txs =
       blocks_to_import
       |> Map.keys()
@@ -464,7 +475,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       |> get_committed_l2_to_l1_messages()
 
     {batches_list_to_import, Map.values(lifecycle_txs), Map.values(blocks_to_import), rollup_txs_to_import,
-     committed_txs}
+     committed_txs, da_info_to_import}
   end
 
   # Extracts batch numbers from logs of SequencerBatchDelivered events.
@@ -571,6 +582,34 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #     database import and require further processing.
   #   - An updated map of batch descriptions, also requiring further processing
   #     before database import.
+  @spec execute_tx_requests_parse_txs_calldata(
+          [EthereumJSONRPC.Transport.request()],
+          non_neg_integer(),
+          %{EthereumJSONRPC.block_number() => DateTime.t()},
+          %{non_neg_integer() => map()},
+          %{
+            :chunk_size => non_neg_integer(),
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :track_finalization => boolean(),
+            optional(any()) => any()
+          }
+        ) ::
+          {%{
+             binary() => %{
+               :hash => binary(),
+               :block_number => non_neg_integer(),
+               :timestamp => DateTime.t(),
+               :status => :unfinalized | :finalized
+             }
+           },
+           %{
+             non_neg_integer() => %{
+               :start_block => non_neg_integer(),
+               :end_block => non_neg_integer(),
+               :data_available => atom() | nil,
+               optional(any()) => any()
+             }
+           }, [map()]}
   defp execute_tx_requests_parse_txs_calldata(txs_requests, msg_to_block_shift, blocks_to_ts, batches, %{
          json_rpc_named_arguments: json_rpc_named_arguments,
          track_finalization: track_finalization?,
@@ -578,19 +617,25 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
        }) do
     txs_requests
     |> Enum.chunk_every(chunk_size)
-    |> Enum.reduce({%{}, batches}, fn chunk, {l1_txs, updated_batches} ->
+    |> Enum.reduce({%{}, batches, []}, fn chunk, {l1_txs, updated_batches, da_info} ->
       chunk
       # each eth_getTransactionByHash will take time since it returns entire batch
       # in `input` which is heavy because contains dozens of rollup blocks
       |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
-      |> Enum.reduce({l1_txs, updated_batches}, fn resp, {txs_map, batches_map} ->
+      |> Enum.reduce({l1_txs, updated_batches, da_info}, fn resp, {txs_map, batches_map, da_info_list} ->
         block_num = quantity_to_integer(resp["blockNumber"])
         tx_hash = Rpc.string_hash_to_bytes_hash(resp["hash"])
 
         # Although they are called messages in the functions' ABI, in fact they are
         # rollup blocks
-        {batch_num, prev_message_count, new_message_count} =
+        {batch_num, prev_message_count, new_message_count, extra_data} =
           add_sequencer_l2_batch_from_origin_calldata_parse(resp["input"])
+
+        {da_type, da_data} =
+          case DataAvailabilityInfo.examine_batch_accompanying_data(batch_num, extra_data) do
+            {:ok, t, d} -> {t, d}
+            {:error, _, _} -> {nil, nil}
+          end
 
         # In some cases extracted numbers for messages does not linked directly
         # with rollup blocks, for this, the numbers are shifted by a value specific
@@ -601,7 +646,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             batch_num,
             Map.merge(batches_map[batch_num], %{
               start_block: prev_message_count + msg_to_block_shift,
-              end_block: new_message_count + msg_to_block_shift - 1
+              end_block: new_message_count + msg_to_block_shift - 1,
+              data_available: da_type
             })
           )
 
@@ -618,18 +664,27 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               end
           })
 
-        {updated_txs_map, updated_batches_map}
+        updated_da_info_list =
+          if DataAvailabilityInfo.required_import?(da_type) do
+            [da_data | da_info_list]
+          else
+            da_info_list
+          end
+
+        {updated_txs_map, updated_batches_map, updated_da_info_list}
       end)
     end)
   end
 
   # Parses calldata of `addSequencerL2BatchFromOrigin` or `addSequencerL2BatchFromBlobs`
   # functions to extract batch information.
+  @spec add_sequencer_l2_batch_from_origin_calldata_parse(binary()) ::
+          {non_neg_integer(), non_neg_integer(), non_neg_integer(), binary() | nil}
   defp add_sequencer_l2_batch_from_origin_calldata_parse(calldata) do
     case calldata do
       "0x8f111f3c" <> encoded_params ->
         # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
-        [sequence_number, _data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
+        [sequence_number, data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
           TypeDecoder.decode(
             Base.decode16!(encoded_params, case: :lower),
             %FunctionSelector{
@@ -645,7 +700,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             }
           )
 
-        {sequence_number, prev_message_count, new_message_count}
+        {sequence_number, prev_message_count, new_message_count, data}
 
       "0x3e5aa082" <> encoded_params ->
         # addSequencerL2BatchFromBlobs(uint256 sequenceNumber, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
@@ -664,7 +719,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             }
           )
 
-        {sequence_number, prev_message_count, new_message_count}
+        {sequence_number, prev_message_count, new_message_count, nil}
     end
   end
 

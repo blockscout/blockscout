@@ -56,6 +56,16 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       "type" => "function"
     }
   ]
+  @selector_get_keyset_creation_block "258f0495"
+  @selector_sequencer_inbox_contract_abi [
+    %{
+      "inputs" => [%{"internalType" => "bytes32", "name" => "ksHash", "type" => "bytes32"}],
+      "name" => "getKeysetCreationBlock",
+      "outputs" => [%{"internalType" => "uint256", "name" => "", "type" => "uint256"}],
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
 
   @doc """
     Constructs a JSON RPC request to retrieve a transaction by its hash.
@@ -112,6 +122,24 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       [@selector_sequencer_inbox, @selector_outbox],
       json_rpc_named_arguments
     )
+  end
+
+  @spec get_block_number_for_keyset(
+          EthereumJSONRPC.address(),
+          EthereumJSONRPC.hash(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: non_neg_integer()
+  def get_block_number_for_keyset(sequencer_inbox_address, keyset_hash, json_rpc_named_arguments) do
+    [%{
+      contract_address: sequencer_inbox_address,
+      method_id: @selector_get_keyset_creation_block,
+      args: [keyset_hash]
+    }]
+    |> IndexerHelper.read_contracts_with_retries(@selector_sequencer_inbox_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
+    |> Kernel.elem(0)
+    |> List.first()
+    |> Kernel.elem(1)
+    |> List.first()
   end
 
   # Calls getter functions on a rollup contract and collects their return values.

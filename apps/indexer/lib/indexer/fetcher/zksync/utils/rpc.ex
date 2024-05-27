@@ -6,6 +6,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_error: 1]
 
+  alias Indexer.Helper, as: IndexerHelper
+
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
   @zero_hash_binary <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
 
@@ -50,28 +52,10 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     end)
   end
 
-  defp from_ts_to_datetime(time_ts) do
-    {_, unix_epoch_starts} = DateTime.from_unix(0)
-
-    case is_nil(time_ts) or time_ts == 0 do
-      true ->
-        unix_epoch_starts
-
-      false ->
-        case DateTime.from_unix(time_ts) do
-          {:ok, datetime} ->
-            datetime
-
-          {:error, _} ->
-            unix_epoch_starts
-        end
-    end
-  end
-
   defp from_iso8601_to_datetime(time_string) do
     case is_nil(time_string) do
       true ->
-        from_ts_to_datetime(0)
+        IndexerHelper.timestamp_to_datetime(0)
 
       false ->
         case DateTime.from_iso8601(time_string) do
@@ -79,7 +63,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
             datetime
 
           {:error, _} ->
-            from_ts_to_datetime(0)
+            IndexerHelper.timestamp_to_datetime(0)
         end
     end
   end
@@ -138,7 +122,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
         key_atom,
         case transform_type do
           :iso8601_to_datetime -> from_iso8601_to_datetime(value_in_json_response)
-          :ts_to_datetime -> from_ts_to_datetime(value_in_json_response)
+          :ts_to_datetime -> IndexerHelper.timestamp_to_datetime(value_in_json_response)
           :str_to_txhash -> json_tx_id_to_hash(value_in_json_response)
           :str_to_byteshash -> string_hash_to_bytes_hash(value_in_json_response)
           _ -> value_in_json_response

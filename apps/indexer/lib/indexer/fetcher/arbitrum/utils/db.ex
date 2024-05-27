@@ -729,6 +729,14 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Chain.timestamp_to_block_number(timestamp, :after, false)
   end
 
+  def keyset_exists?("0x" <> keyset_hash) do
+    keyset_exists?(Chain.string_to_block_hash(keyset_hash) |> Kernel.elem(1) |> Map.get(:bytes))
+  end
+
+  def keyset_exists?(_keyset_hash) do
+    false
+  end
+
   defp lifecycle_transaction_to_map(tx) do
     [:id, :hash, :block_number, :timestamp, :status]
     |> db_record_to_map(tx)
