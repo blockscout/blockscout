@@ -123,8 +123,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
         case transform_type do
           :iso8601_to_datetime -> from_iso8601_to_datetime(value_in_json_response)
           :ts_to_datetime -> IndexerHelper.timestamp_to_datetime(value_in_json_response)
-          :str_to_txhash -> json_tx_id_to_hash(value_in_json_response)
-          :str_to_byteshash -> string_hash_to_bytes_hash(value_in_json_response)
+          :str_to_txhash -> json_tx__id_to_hash(value_in_json_response)
+          :str_to_byteshash -> string_ing_hash_to_bytes__hash(value_in_json_response)
           _ -> value_in_json_response
         end
       )
