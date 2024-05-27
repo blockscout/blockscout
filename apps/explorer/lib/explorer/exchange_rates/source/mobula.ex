@@ -96,6 +96,15 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
     "#{history_source_url()}&from=#{timestamp_ms}"
   end
 
+  @spec market_cap_history_url(non_neg_integer()) :: String.t()
+  def market_cap_history_url(previous_days) do
+    now = DateTime.utc_now()
+    date_days_ago = DateTime.add(now, -previous_days, :day)
+    timestamp_ms = DateTime.to_unix(date_days_ago) * 1000
+
+    "#{history_source_url()}&from=#{timestamp_ms}&period=5"
+  end
+
   @impl Source
   def headers do
     if api_key() do
@@ -149,7 +158,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
     |> case do
       {:ok, %{"price" => current_price}} ->
         {:ok, current_price}
-    
+
       resp ->
         resp
     end

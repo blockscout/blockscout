@@ -175,11 +175,12 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec exchange_rates_market_cap_source() :: MarketCap.CoinGecko | MarketCap.CoinMarketCap
+  @spec exchange_rates_market_cap_source() :: MarketCap.CoinGecko | MarketCap.CoinMarketCap | MarketCap.Mobula
   def exchange_rates_market_cap_source do
     case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
       "coin_gecko" -> MarketCap.CoinGecko
       "coin_market_cap" -> MarketCap.CoinMarketCap
+      "mobula" -> MarketCap.Mobula
       _ -> MarketCap.CoinGecko
     end
   end
