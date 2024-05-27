@@ -234,9 +234,9 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         game_index: game_index
       }
     end)
-    |> Enum.sort(fn e1, e2 -> e1.game_index < e2.game_index end)
+    |> Enum.sort(fn e1, e2 -> e1.game_index > e2.game_index end)
     |> Enum.reduce(%{}, fn e, acc ->
-      Map.put(acc, {e.withdrawal_hash, e.l1_event_type}, e)
+      Map.put_new(acc, {e.withdrawal_hash, e.l1_event_type}, e)
     end)
     |> Map.values()
   end
