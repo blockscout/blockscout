@@ -338,7 +338,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     logs
     |> Enum.chunk_every(new_batches_limit)
     |> Enum.each(fn chunked_logs ->
-      {batches, lifecycle_txs, rollup_blocks, rollup_txs, committed_txs, _} =
+      {batches, lifecycle_txs, rollup_blocks, rollup_txs, committed_txs, da_records} =
         handle_batches_from_logs(
           chunked_logs,
           messages_to_blocks_shift,
@@ -354,6 +354,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           arbitrum_batch_blocks: %{params: rollup_blocks},
           arbitrum_batch_transactions: %{params: rollup_txs},
           arbitrum_messages: %{params: committed_txs},
+          arbitrum_da_multi_purpose_records: %{params: da_records},
           timeout: :infinity
         })
     end)
@@ -460,13 +461,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         ]
       end)
 
-    da_info_to_import =
+    da_records =
       DataAvailabilityInfo.prepare_for_import(da_info, %{
         sequencer_inbox_address: sequencer_inbox_address,
         json_rpc_named_arguments: l1_rpc_config.json_rpc_named_arguments
       })
-
-    IO.inspect(da_info_to_import)
 
     committed_txs =
       blocks_to_import
@@ -475,7 +474,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       |> get_committed_l2_to_l1_messages()
 
     {batches_list_to_import, Map.values(lifecycle_txs), Map.values(blocks_to_import), rollup_txs_to_import,
-     committed_txs, da_info_to_import}
+     committed_txs, da_records}
   end
 
   # Extracts batch numbers from logs of SequencerBatchDelivered events.
@@ -647,7 +646,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             Map.merge(batches_map[batch_num], %{
               start_block: prev_message_count + msg_to_block_shift,
               end_block: new_message_count + msg_to_block_shift - 1,
-              data_available: da_type
+              batch_container: da_type
             })
           )
 

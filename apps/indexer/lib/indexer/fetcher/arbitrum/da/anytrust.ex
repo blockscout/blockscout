@@ -147,8 +147,9 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
 
   defp check_if_new_keyset(keyset_hash, l1_connection_config, cache) do
     updated_cache = Map.put_new(cache, keyset_hash, true)
-    case Db.keyset_exists?(keyset_hash) do
+    case Db.anytrust_keyset_exists?(keyset_hash) do
       true ->
+        log_info("Keyset #{keyset_hash} already exists in the database")
         {:existing_keyset, nil, updated_cache}
 
       false ->

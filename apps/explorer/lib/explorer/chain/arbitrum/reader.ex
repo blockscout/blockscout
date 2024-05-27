@@ -6,7 +6,15 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   import Ecto.Query, only: [from: 2, limit: 2, order_by: 2, subquery: 1, where: 2, where: 3]
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Arbitrum.{BatchBlock, BatchTransaction, L1Batch, L1Execution, LifecycleTransaction, Message}
+  alias Explorer.Chain.Arbitrum.{
+    BatchBlock,
+    BatchTransaction,
+    L1Batch,
+    L1Execution,
+    LifecycleTransaction,
+    Message,
+    DaMultiPurposeRecord
+  }
 
   alias Explorer.{Chain, PagingOptions, Repo}
 
@@ -909,5 +917,16 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
     where(query, [block], block.number < ^block_number)
+  end
+
+  def get_anytrust_keyset(keyset_hash) do
+    query =
+      from(
+        da_records in DaMultiPurposeRecord,
+        where: da_records.data_key == ^keyset_hash and da_records.data_type == 1
+      )
+
+    query
+    |> Repo.one()
   end
 end

@@ -729,12 +729,12 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Chain.timestamp_to_block_number(timestamp, :after, false)
   end
 
-  def keyset_exists?("0x" <> keyset_hash) do
-    keyset_exists?(Chain.string_to_block_hash(keyset_hash) |> Kernel.elem(1) |> Map.get(:bytes))
+  def anytrust_keyset_exists?("0x" <> keyset_hash) do
+    anytrust_keyset_exists?(Chain.string_to_block_hash(keyset_hash) |> Kernel.elem(1) |> Map.get(:bytes))
   end
 
-  def keyset_exists?(_keyset_hash) do
-    false
+  def anytrust_keyset_exists?(keyset_hash) do
+    not is_nil(Reader.get_anytrust_keyset(keyset_hash))
   end
 
   defp lifecycle_transaction_to_map(tx) do

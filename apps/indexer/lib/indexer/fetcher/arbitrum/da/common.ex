@@ -56,14 +56,6 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
     end
   end
 
-  # Try to keep everything in one table with the format:
-  # type, key-hash, value
-  # type: 0/da-info, 1/keyset-info
-  # key-hash: datahash for da-info, hash(keysethash, index) for keyset-info
-  # value: data availability info for da-info, validator info info for keyset-info
-  #
-  # in order to get all signers of the data blob for :in-anytrust it is necessary to
-  # request prepare hash of keyset and the validator index and then request the validator info
   @spec prepare_for_import([Celestia.t() | Anytrust.t() | map()], %{
           :sequencer_inbox_address => String.t(),
           :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
