@@ -43,6 +43,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   """
   @spec batch_by_celestia_blob(binary(), non_neg_integer(), list()) :: map() | nil
   def batch_by_celestia_blob(commitment, height, options \\ []) do
+    nil
     # repo = select_repo(options)
 
     # query =

@@ -744,24 +744,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     seq = %{
       id: frame_sequence_id,
       l1_transaction_hashes: Enum.uniq(Enum.reverse(l1_transaction_hashes)),
-      l1_timestamp: channel.l1_timestamp,
-      # eip4844_blob_hashes:
-      #   if Enum.empty?(eip4844_blob_hashes) do
-      #     nil
-      #   else
-      #     Enum.uniq(Enum.reverse(eip4844_blob_hashes))
-      #   end
+      l1_timestamp: channel.l1_timestamp
     }
-
-    # sequence =
-    #   if is_nil(celestia_blob_metadata) do
-    #     seq
-    #   else
-    #     seq
-    #     |> Map.put(:celestia_blob_height, celestia_blob_metadata.height)
-    #     |> Map.put(:celestia_blob_namespace, celestia_blob_metadata.namespace)
-    #     |> Map.put(:celestia_blob_commitment, celestia_blob_metadata.commitment)
-    #   end
 
     new_incomplete_channels_acc =
       incomplete_channels_acc
