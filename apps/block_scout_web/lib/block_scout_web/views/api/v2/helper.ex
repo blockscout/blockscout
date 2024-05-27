@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
   @spec address_with_info(any(), any()) :: nil | %{optional(<<_::32, _::_*8>>) => any()}
   def address_with_info(%Address{} = address, _address_hash) do
     smart_contract? = Address.smart_contract?(address)
-
+    
     {implementation_address_hashes, implementation_names, implementation_address, implementation_name,
      proxy_implementations} =
       if smart_contract? do
@@ -86,6 +86,16 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
     }
+  end
+
+  defp minimal_proxy_pattern?(proxy) do
+    proxy.proxy_type == :eip1167
+  end
+
+  defp verified_minimal_proxy?(nil), do: false
+
+  defp verified_minimal_proxy?(proxy) do
+    minimal_proxy_pattern?(proxy) && Enum.any?(proxy.names, fn name -> !is_nil(name) end)
   end
 
   def address_with_info(%NotLoaded{}, address_hash) do
