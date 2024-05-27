@@ -366,8 +366,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
         }) :: map()
   defp extend_if_message(arbitrum_json, %Transaction{} = arbitrum_tx) do
     message_type =
-      case {APIV2Helper.specified?(arbitrum_tx.arbitrum_message_to_l2),
-            APIV2Helper.specified?(arbitrum_tx.arbitrum_message_from_l2)} do
+      case {APIV2Helper.specified?(Map.get(arbitrum_tx, :arbitrum_message_to_l2)),
+            APIV2Helper.specified?(Map.get(arbitrum_tx, :arbitrum_message_from_l2))} do
         {true, false} -> "incoming"
         {false, true} -> "outcoming"
         _ -> nil
@@ -385,22 +385,28 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           optional(any()) => any()
         }) :: map()
   defp extend_with_transaction_info(out_json, %Transaction{} = arbitrum_tx) do
+    # These checks are only needed for the case when the module is compiled with
+    # chain_type different from "arbitrum"
+    gas_used_for_l1 = Map.get(arbitrum_tx, :gas_used_for_l1, 0)
+    gas_used = Map.get(arbitrum_tx, :gas_used, 0)
+    gas_price = Map.get(arbitrum_tx, :gas_price, 0)
+
     gas_used_for_l2 =
-      arbitrum_tx.gas_used
-      |> Decimal.sub(arbitrum_tx.gas_used_for_l1)
+      gas_used
+      |> Decimal.sub(gas_used_for_l1)
 
     poster_fee =
-      arbitrum_tx.gas_price
+      gas_price
       |> Wei.to(:wei)
-      |> Decimal.mult(arbitrum_tx.gas_used_for_l1)
+      |> Decimal.mult(gas_used_for_l1)
 
     network_fee =
-      arbitrum_tx.gas_price
+      gas_price
       |> Wei.to(:wei)
       |> Decimal.mult(gas_used_for_l2)
 
     out_json
-    |> Map.put("gas_used_for_l1", arbitrum_tx.gas_used_for_l1)
+    |> Map.put("gas_used_for_l1", gas_used_for_l1)
     |> Map.put("gas_used_for_l2", gas_used_for_l2)
     |> Map.put("poster_fee", poster_fee)
     |> Map.put("network_fee", network_fee)
@@ -418,8 +424,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   defp extend_with_block_info(out_json, %Block{} = arbitrum_block) do
     out_json
     |> Map.put("delayed_messages", Hash.to_integer(arbitrum_block.nonce))
-    |> Map.put("l1_block_height", arbitrum_block.l1_block_number)
-    |> Map.put("send_count", arbitrum_block.send_count)
-    |> Map.put("send_root", arbitrum_block.send_root)
+    |> Map.put("l1_block_height", Map.get(arbitrum_block, :l1_block_number))
+    |> Map.put("send_count", Map.get(arbitrum_block, :send_count))
+    |> Map.put("send_root", Map.get(arbitrum_block, :send_root))
   end
 end
