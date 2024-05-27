@@ -207,7 +207,8 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         Map.put(acc, block_number, timestamp)
       end)
 
-    Enum.map(events, fn event ->
+    events
+    |> Enum.map(fn event ->
       tx_hash = event["transactionHash"]
 
       {l1_event_type, game_index} =
@@ -233,6 +234,11 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         game_index: game_index
       }
     end)
+    |> Enum.sort(fn e1, e2 -> e1.game_index < e2.game_index end)
+    |> Enum.reduce(%{}, fn e, acc ->
+      Map.put(acc, {e.withdrawal_hash, e.l1_event_type}, e)
+    end)
+    |> Map.values()
   end
 
   def get_last_l1_item do
