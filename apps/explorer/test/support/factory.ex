@@ -522,6 +522,21 @@ defmodule Explorer.Factory do
       timestamp: DateTime.utc_now(),
       refetch_needed: false
     }
+    |> Map.merge(block_factory_chain_type_fields())
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :arbitrum ->
+      defp block_factory_chain_type_fields() do
+        %{
+          send_count: Enum.random(1..100_000),
+          send_root: block_hash(),
+          l1_block_number: Enum.random(1..100_000)
+        }
+      end
+
+    _ ->
+      defp block_factory_chain_type_fields(), do: %{}
   end
 
   def contract_method_factory() do
@@ -871,6 +886,19 @@ defmodule Explorer.Factory do
       value: Enum.random(1..100_000),
       block_timestamp: DateTime.utc_now()
     }
+    |> Map.merge(transaction_factory_chain_type_fields())
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :arbitrum ->
+      defp transaction_factory_chain_type_fields() do
+        %{
+          gas_used_for_l1: Enum.random(1..100_000)
+        }
+      end
+
+    _ ->
+      defp transaction_factory_chain_type_fields(), do: %{}
   end
 
   def transaction_to_verified_contract_factory do

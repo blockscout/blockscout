@@ -121,6 +121,14 @@ config :explorer, Explorer.Repo.Filecoin,
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
+# Configures Arbitrum database
+config :explorer, Explorer.Repo.Arbitrum,
+  url: System.get_env("DATABASE_URL"),
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1,
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
 # Configures Stability database
 config :explorer, Explorer.Repo.Stability,
   url: System.get_env("DATABASE_URL"),
