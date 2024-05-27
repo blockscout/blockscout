@@ -43,34 +43,34 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   """
   @spec batch_by_celestia_blob(binary(), non_neg_integer(), list()) :: map() | nil
   def batch_by_celestia_blob(commitment, height, options \\ []) do
-    repo = select_repo(options)
+    # repo = select_repo(options)
 
-    query =
-      from(fs in FrameSequence,
-        select: %{id: fs.id, l1_transaction_hashes: fs.l1_transaction_hashes, l1_timestamp: fs.l1_timestamp},
-        where: fs.celestia_blob_commitment == ^commitment and fs.celestia_blob_height == ^height
-      )
+    # query =
+    #   from(fs in FrameSequence,
+    #     select: %{id: fs.id, l1_transaction_hashes: fs.l1_transaction_hashes, l1_timestamp: fs.l1_timestamp},
+    #     where: fs.celestia_blob_commitment == ^commitment and fs.celestia_blob_height == ^height
+    #   )
 
-    batch = repo.one(query)
+    # batch = repo.one(query)
 
-    if not is_nil(batch) do
-      l2_block_number_from =
-        __MODULE__
-        |> where(frame_sequence_id: ^batch.id)
-        |> repo.aggregate(:min, :l2_block_number)
+    # if not is_nil(batch) do
+    #   l2_block_number_from =
+    #     __MODULE__
+    #     |> where(frame_sequence_id: ^batch.id)
+    #     |> repo.aggregate(:min, :l2_block_number)
 
-      l2_block_number_to =
-        __MODULE__
-        |> where(frame_sequence_id: ^batch.id)
-        |> repo.aggregate(:max, :l2_block_number)
+    #   l2_block_number_to =
+    #     __MODULE__
+    #     |> where(frame_sequence_id: ^batch.id)
+    #     |> repo.aggregate(:max, :l2_block_number)
 
-      %{
-        "l1_transaction_hash" => Enum.join(batch.l1_transaction_hashes, ","),
-        "l1_timestamp" => batch.l1_timestamp,
-        "l2_block_number_from" => l2_block_number_from,
-        "l2_block_number_to" => l2_block_number_to
-      }
-    end
+    #   %{
+    #     "l1_transaction_hash" => Enum.join(batch.l1_transaction_hashes, ","),
+    #     "l1_timestamp" => batch.l1_timestamp,
+    #     "l2_block_number_from" => l2_block_number_from,
+    #     "l2_block_number_to" => l2_block_number_to
+    #   }
+    # end
   end
 
   @doc """
@@ -85,10 +85,20 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
         []
 
       _ ->
+        l2_block_range_start = Keyword.get(options, :l2_block_range_start)
+        l2_block_range_end = Keyword.get(options, :l2_block_range_end)
+
         base_query =
-          from(tb in __MODULE__,
-            order_by: [desc: tb.l2_block_number]
-          )
+          if is_nil(l2_block_range_start) or is_nil(l2_block_range_end) do
+            from(tb in __MODULE__,
+              order_by: [desc: tb.l2_block_number]
+            )
+          else
+            from(tb in __MODULE__,
+              order_by: [desc: tb.l2_block_number],
+              where: tb.l2_block_number >= ^l2_block_range_start and tb.l2_block_number <= ^l2_block_range_end
+            )
+          end
 
         base_query
         |> join_association(:frame_sequence, :required)

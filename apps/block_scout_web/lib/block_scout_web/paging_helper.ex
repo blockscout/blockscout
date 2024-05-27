@@ -202,7 +202,9 @@ defmodule BlockScoutWeb.PagingHelper do
       "q",
       "sort",
       "order",
-      "state_filter"
+      "state_filter",
+      "l2_block_range_start",
+      "l2_block_range_end"
     ])
   end
 

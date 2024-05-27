@@ -8,13 +8,19 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       split_list_by_page: 1
     ]
 
+  import BlockScoutWeb.PagingHelper,
+    only: [
+      delete_parameters_from_next_page_params: 1
+    ]
+
   alias Explorer.Chain
   alias Explorer.Chain.Optimism.{Deposit, DisputeGame, OutputRoot, TxnBatch, Withdrawal}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/txn-batches` endpoint.
+    Function to handle GET requests to `/api/v2/optimism/txn-batches`
+    and `/api/v2/optimism/txn-batches/:l2_block_range_start/:l2_block_range_end` endpoints.
   """
   @spec txn_batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def txn_batches(conn, params) do
@@ -22,10 +28,12 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
+      |> Keyword.put(:l2_block_range_start, Map.get(params, "l2_block_range_start"))
+      |> Keyword.put(:l2_block_range_end, Map.get(params, "l2_block_range_end"))
       |> TxnBatch.list()
       |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, batches, params)
+    next_page_params = next_page_params(next_page, batches, delete_parameters_from_next_page_params(params))
 
     conn
     |> put_status(200)

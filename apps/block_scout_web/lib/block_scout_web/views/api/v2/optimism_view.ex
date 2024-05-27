@@ -230,19 +230,20 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     if is_nil(frame_sequence) do
       out_json
     else
-      eip4844_blob_hash =
-        if not is_nil(frame_sequence.eip4844_blob_hashes) do
-          Enum.join(frame_sequence.eip4844_blob_hashes, ",")
-        end
+      # eip4844_blob_hash =
+      #   if not is_nil(frame_sequence.eip4844_blob_hashes) do
+      #     Enum.join(frame_sequence.eip4844_blob_hashes, ",")
+      #   end
 
-      Map.put(out_json, "batch", %{
-        "l1_transaction_hash" => Enum.join(frame_sequence.l1_transaction_hashes, ","),
-        "l1_timestamp" => frame_sequence.l1_timestamp,
-        "eip4844_blob_hash" => eip4844_blob_hash,
-        "celestia_blob_height" => frame_sequence.celestia_blob_height,
-        "celestia_blob_namespace" => frame_sequence.celestia_blob_namespace,
-        "celestia_blob_commitment" => frame_sequence.celestia_blob_commitment
-      })
+      # Map.put(out_json, "batch", %{
+      #   "l1_transaction_hash" => Enum.join(frame_sequence.l1_transaction_hashes, ","),
+      #   "l1_timestamp" => frame_sequence.l1_timestamp,
+      #   "eip4844_blob_hash" => eip4844_blob_hash,
+      #   "celestia_blob_height" => frame_sequence.celestia_blob_height,
+      #   "celestia_blob_namespace" => frame_sequence.celestia_blob_namespace,
+      #   "celestia_blob_commitment" => frame_sequence.celestia_blob_commitment
+      # })
+      out_json
     end
   end
 
