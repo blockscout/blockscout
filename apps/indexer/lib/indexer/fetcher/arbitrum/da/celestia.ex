@@ -11,11 +11,11 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
   defstruct @enforce_keys
 
   @typedoc """
-  Celectia Blob pointer struct:
+  Celestia Blob pointer struct:
     * `batch_number` - The batch number in Arbitrum rollup associated with the Celestia data.
     * `height` - The height of the block in Celestia.
     * `tx_commitment` - Data commitment in Celestia.
-    * `raw` - unparsed blob pointer data contaning data root, the proof etc.
+    * `raw` - unparsed blob pointer data containing data root, the proof etc.
   """
   @type t :: %__MODULE__{
           batch_number: non_neg_integer(),

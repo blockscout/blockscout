@@ -730,7 +730,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   def anytrust_keyset_exists?("0x" <> keyset_hash) do
-    anytrust_keyset_exists?(Chain.string_to_block_hash(keyset_hash) |> Kernel.elem(1) |> Map.get(:bytes))
+    anytrust_keyset_exists?(keyset_hash |> Chain.string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes))
   end
 
   def anytrust_keyset_exists?(keyset_hash) do

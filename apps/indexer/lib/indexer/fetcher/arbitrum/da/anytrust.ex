@@ -28,7 +28,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     * `data_hash` - Hash of the data.
     * `timeout` - Timeout for the data.
     * `signers_mask` - Mask of signers.
-    * `bls_signature` - Agregated BLS signature.
+    * `bls_signature` - Aggregated BLS signature.
   """
   @type t :: %__MODULE__{
           batch_number: non_neg_integer(),
@@ -147,6 +147,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
 
   defp check_if_new_keyset(keyset_hash, l1_connection_config, cache) do
     updated_cache = Map.put_new(cache, keyset_hash, true)
+
     case Db.anytrust_keyset_exists?(keyset_hash) do
       true ->
         log_info("Keyset #{keyset_hash} already exists in the database")

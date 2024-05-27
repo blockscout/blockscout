@@ -130,12 +130,18 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: non_neg_integer()
   def get_block_number_for_keyset(sequencer_inbox_address, keyset_hash, json_rpc_named_arguments) do
-    [%{
-      contract_address: sequencer_inbox_address,
-      method_id: @selector_get_keyset_creation_block,
-      args: [keyset_hash]
-    }]
-    |> IndexerHelper.read_contracts_with_retries(@selector_sequencer_inbox_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
+    [
+      %{
+        contract_address: sequencer_inbox_address,
+        method_id: @selector_get_keyset_creation_block,
+        args: [keyset_hash]
+      }
+    ]
+    |> IndexerHelper.read_contracts_with_retries(
+      @selector_sequencer_inbox_contract_abi,
+      json_rpc_named_arguments,
+      @rpc_resend_attempts
+    )
     |> Kernel.elem(0)
     |> List.first()
     |> Kernel.elem(1)

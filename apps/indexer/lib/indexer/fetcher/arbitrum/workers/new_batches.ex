@@ -29,9 +29,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
 
-  alias Indexer.Helper, as: IndexerHelper
   alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
+  alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
 
@@ -663,7 +663,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               end
           })
 
-        updated_da_info_list =
+      # credo:disable-for-lines:6 Credo.Check.Refactor.Nesting
+      updated_da_info_list =
           if DataAvailabilityInfo.required_import?(da_type) do
             [da_data | da_info_list]
           else

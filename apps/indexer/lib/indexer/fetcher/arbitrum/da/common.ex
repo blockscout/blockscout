@@ -59,7 +59,14 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   @spec prepare_for_import([Celestia.t() | Anytrust.t() | map()], %{
           :sequencer_inbox_address => String.t(),
           :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
-        }) :: [%{:data_type => non_neg_integer(), :data_key => binary(), :data => map(), :batch_number => non_neg_integer() | nil}]
+        }) :: [
+          %{
+            :data_type => non_neg_integer(),
+            :data_key => binary(),
+            :data => map(),
+            :batch_number => non_neg_integer() | nil
+          }
+        ]
   def prepare_for_import([], _), do: []
 
   def prepare_for_import(da_info, l1_connection_config) do

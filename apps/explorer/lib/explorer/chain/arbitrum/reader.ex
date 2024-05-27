@@ -9,11 +9,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
     BatchTransaction,
+    DaMultiPurposeRecord,
     L1Batch,
     L1Execution,
     LifecycleTransaction,
-    Message,
-    DaMultiPurposeRecord
+    Message
   }
 
   alias Explorer.{Chain, PagingOptions, Repo}
