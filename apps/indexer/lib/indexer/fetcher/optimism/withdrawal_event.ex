@@ -236,8 +236,9 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end)
     |> Enum.reduce(%{}, fn e, acc ->
       key = {e.withdrawal_hash, e.l1_event_type}
+      prev_game_index = Map.get(acc, key, %{game_index: 0}).game_index
 
-      if Map.get(acc, key, %{game_index: 0}).game_index < e.game_index do
+      if prev_game_index < e.game_index or is_nil(prev_game_index) do
         Map.put(acc, key, e)
       else
         acc
