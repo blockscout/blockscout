@@ -182,7 +182,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       block_number: token_transfer.block_number,
       transaction_index: token_transfer.transaction.index,
       token_transfer_index: token_transfer.log_index,
-      token_transfer_batch_index: token_transfer.index_in_batch
+      token_transfer_batch_index: token_transfer.reverse_index_in_batch
     }
   end
 
@@ -337,7 +337,8 @@ defmodule Explorer.Chain.AdvancedFilter do
           | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
             amount:
               fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
-            index_in_batch: fragment("GENERATE_SERIES(1, COALESCE(ARRAY_LENGTH(?, 1), 1))", token_transfer.amounts),
+            reverse_index_in_batch:
+              fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
             token_decimals: token.decimals
         },
         order_by: [
@@ -477,7 +478,7 @@ defmodule Explorer.Chain.AdvancedFilter do
           tt_index,
           0
         ) or
-        (tt.block_number == ^block_number and tt.log_index == ^tt_index and tt.index_in_batch < ^tt_batch_index)
+        (tt.block_number == ^block_number and tt.log_index == ^tt_index and tt.reverse_index_in_batch < ^tt_batch_index)
     )
   end
 
@@ -672,11 +673,6 @@ defmodule Explorer.Chain.AdvancedFilter do
       from(token_transfer in subquery(query),
         as: :unnested_token_transfer,
         preload: [:transaction, :token, :from_address, :to_address],
-        order_by: [
-          desc: token_transfer.block_number,
-          desc: token_transfer.log_index,
-          desc: token_transfer.index_in_batch
-        ],
         select_merge: %{
           token_ids: [token_transfer.token_id],
           amounts: [token_transfer.amount]
