@@ -100,3 +100,9 @@ services:
     extends:
       file: ./services/nginx.yml
       service: proxy
+
+volumes:
+  stats-db-data:
+  blockscout-db-data:
+  redis-data:
+  logs:
