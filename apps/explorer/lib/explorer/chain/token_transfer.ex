@@ -61,6 +61,9 @@ defmodule Explorer.Chain.TokenTransfer do
   * `:log_index` - Index of the corresponding `t:Explorer.Chain.Log.t/0` in the block.
   * `:amounts` - Tokens transferred amounts in case of batched transfer in ERC-1155
   * `:token_ids` - IDs of the tokens (applicable to ERC-1155 tokens)
+  * `:token_id` - virtual field, ID of token, used to unnest ERC-1155 batch transfers
+  * `:index_in_batch` - Index of the token transfer in the ERC-1155 batch transfer
+  * `:reverse_index_in_batch` - Reverse index of the token transfer in the ERC-1155 batch transfer, last element index is 1
   * `:block_consensus` - Consensus of the block that the transfer took place
   """
   @primary_key false
@@ -72,6 +75,7 @@ defmodule Explorer.Chain.TokenTransfer do
     field(:token_ids, {:array, :decimal})
     field(:token_id, :decimal, virtual: true)
     field(:index_in_batch, :integer, virtual: true)
+    field(:reverse_index_in_batch, :integer, virtual: true)
     field(:token_decimals, :decimal, virtual: true)
     field(:token_type, :string)
     field(:block_consensus, :boolean)
