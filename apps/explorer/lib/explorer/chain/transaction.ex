@@ -654,16 +654,16 @@ defmodule Explorer.Chain.Transaction do
   end
 
   def decoded_revert_reason(transaction, revert_reason, options \\ []) do
-    hex =
-      case revert_reason do
-        "0x" <> hex_part ->
-          hex_part
+    case revert_reason do
+      nil ->
+        nil
 
-        hex ->
-          hex
-      end
+      "0x" <> hex_part ->
+        process_hex_revert_reason(hex_part, transaction, options)
 
-    process_hex_revert_reason(hex, transaction, options)
+      hex ->
+        process_hex_revert_reason(hex, transaction, options)
+    end
   end
 
   @default_error_abi [
