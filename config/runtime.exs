@@ -575,6 +575,9 @@ config :explorer, Explorer.Chain.BridgedToken,
   amb_bridge_mediators: System.get_env("BRIDGED_TOKENS_AMB_BRIDGE_MEDIATORS"),
   foreign_json_rpc: System.get_env("BRIDGED_TOKENS_FOREIGN_JSON_RPC", "")
 
+config :explorer, Explorer.Utility.MissingBalanceOfToken,
+  window_size: ConfigHelper.parse_integer_env_var("MISSING_BALANCE_OF_TOKENS_WINDOW_SIZE", 100)
+
 ###############
 ### Indexer ###
 ###############

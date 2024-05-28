@@ -75,7 +75,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
         is_nil(Map.get(balance_params, :value_fetched_at)) or is_nil(Map.get(balance_params, :value))
       end)
 
-    {:ok, filled_balances ++ MissingBalanceOfToken.filter_token_balances_params(placeholders)}
+    {:ok, filled_balances ++ MissingBalanceOfToken.filter_token_balances_params(placeholders, false)}
   end
 
   @spec insert(Repo.t(), [map()], %{
