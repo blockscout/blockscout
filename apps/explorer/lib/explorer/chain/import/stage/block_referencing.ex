@@ -21,6 +21,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @optimism_runners [
     Runner.Optimism.FrameSequences,
+    Runner.Optimism.FrameSequenceBlobs,
     Runner.Optimism.TxnBatches,
     Runner.Optimism.OutputRoots,
     Runner.Optimism.DisputeGames,

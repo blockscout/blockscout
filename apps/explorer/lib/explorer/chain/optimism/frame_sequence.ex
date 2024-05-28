@@ -3,8 +3,8 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Data, Hash}
-  alias Explorer.Chain.Optimism.TxnBatch
+  alias Explorer.Chain.Hash
+  alias Explorer.Chain.Optimism.{FrameSequenceBlob, TxnBatch}
 
   @required_attrs ~w(id)a
   @optional_attrs ~w(l1_transaction_hashes l1_timestamp)a
@@ -12,23 +12,17 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
   @type t :: %__MODULE__{
           l1_transaction_hashes: [Hash.t()] | nil,
           l1_timestamp: DateTime.t() | nil,
-          # eip4844_blob_hashes: [Hash.t()] | nil,
-          # celestia_blob_height: non_neg_integer() | nil,
-          # celestia_blob_namespace: binary() | nil,
-          # celestia_blob_commitment: binary() | nil,
-          transaction_batches: %Ecto.Association.NotLoaded{} | [TxnBatch.t()]
+          transaction_batches: %Ecto.Association.NotLoaded{} | [TxnBatch.t()],
+          blobs: %Ecto.Association.NotLoaded{} | [FrameSequenceBlob.t()]
         }
 
   @primary_key {:id, :integer, autogenerate: false}
   schema "op_frame_sequences" do
     field(:l1_transaction_hashes, {:array, Hash.Full})
     field(:l1_timestamp, :utc_datetime_usec)
-    # field(:eip4844_blob_hashes, {:array, Hash.Full})
-    # field(:celestia_blob_height, :integer)
-    # field(:celestia_blob_namespace, :binary)
-    # field(:celestia_blob_commitment, :binary)
 
     has_many(:transaction_batches, TxnBatch, foreign_key: :frame_sequence_id)
+    has_many(:blobs, FrameSequenceBlob, foreign_key: :frame_sequence_id)
 
     timestamps()
   end

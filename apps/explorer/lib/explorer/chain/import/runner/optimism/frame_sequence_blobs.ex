@@ -1,13 +1,13 @@
-defmodule Explorer.Chain.Import.Runner.Optimism.FrameSequences do
+defmodule Explorer.Chain.Import.Runner.Optimism.FrameSequenceBlobs do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Optimism.FrameSequence.t/0`.
+  Bulk imports `t:Explorer.Chain.Optimism.FrameSequenceBlob.t/0`.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Import
-  alias Explorer.Chain.Optimism.FrameSequence
+  alias Explorer.Chain.Optimism.FrameSequenceBlob
   alias Explorer.Prometheus.Instrumenter
 
   import Ecto.Query, only: [from: 2]
@@ -17,13 +17,13 @@ defmodule Explorer.Chain.Import.Runner.Optimism.FrameSequences do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [FrameSequence.t()]
+  @type imported :: [FrameSequenceBlob.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: FrameSequence
+  def ecto_schema_module, do: FrameSequenceBlob
 
   @impl Import.Runner
-  def option_key, do: :optimism_frame_sequences
+  def option_key, do: :optimism_frame_sequence_blobs
 
   @impl Import.Runner
   def imported_table_row do
@@ -42,12 +42,12 @@ defmodule Explorer.Chain.Import.Runner.Optimism.FrameSequences do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_frame_sequences, fn repo, _ ->
+    Multi.run(multi, :insert_frame_sequence_blobs, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :optimism_frame_sequences,
-        :optimism_frame_sequences
+        :optimism_frame_sequence_blobs,
+        :optimism_frame_sequence_blobs
       )
     end)
   end
@@ -56,23 +56,23 @@ defmodule Explorer.Chain.Import.Runner.Optimism.FrameSequences do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [FrameSequence.t()]}
+          {:ok, [FrameSequenceBlob.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce FrameSequence ShareLocks order (see docs: sharelock.md)
+    # Enforce FrameSequenceBlob ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.id)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: FrameSequence,
+        for: FrameSequenceBlob,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: :id,
+        conflict_target: [:key, :type],
         on_conflict: on_conflict
       )
 
@@ -81,21 +81,28 @@ defmodule Explorer.Chain.Import.Runner.Optimism.FrameSequences do
 
   defp default_on_conflict do
     from(
-      fs in FrameSequence,
+      fsb in FrameSequenceBlob,
       update: [
         set: [
-          # don't update `id` as it is a primary key and used for the conflict target
-          l1_transaction_hashes: fragment("EXCLUDED.l1_transaction_hashes"),
+          # don't update `key` as it is a part of the composite primary key and used for the conflict target
+          # don't update `type` as it is a part of the composite primary key and used for the conflict target
+          id: fragment("EXCLUDED.id"),
+          metadata: fragment("EXCLUDED.metadata"),
+          l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
           l1_timestamp: fragment("EXCLUDED.l1_timestamp"),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", fs.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", fs.updated_at)
+          frame_sequence_id: fragment("EXCLUDED.frame_sequence_id"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", fsb.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", fsb.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.l1_transaction_hashes, EXCLUDED.l1_timestamp) IS DISTINCT FROM (?, ?)",
-          fs.l1_transaction_hashes,
-          fs.l1_timestamp
+          "(EXCLUDED.id, EXCLUDED.metadata, EXCLUDED.l1_transaction_hash, EXCLUDED.l1_timestamp, EXCLUDED.frame_sequence_id) IS DISTINCT FROM (?, ?, ?, ?, ?)",
+          fsb.id,
+          fsb.metadata,
+          fsb.l1_transaction_hash,
+          fsb.l1_timestamp,
+          fsb.frame_sequence_id
         )
     )
   end

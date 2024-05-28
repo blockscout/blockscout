@@ -325,31 +325,45 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
   end
 
   defp get_last_l1_item(json_rpc_named_arguments) do
-    l1_transaction_hashes =
+    last_item =
       Repo.one(
         from(
           tb in OptimismTxnBatch,
           inner_join: fs in FrameSequence,
           on: fs.id == tb.frame_sequence_id,
-          select: fs.l1_transaction_hashes,
+          select: {fs.l1_transaction_hashes, fs.id},
           order_by: [desc: tb.l2_block_number],
           limit: 1
         )
       )
 
-    last_l1_transaction_hash =
-      if is_nil(l1_transaction_hashes) do
-        nil
-      else
-        List.last(l1_transaction_hashes)
-      end
-
-    if is_nil(last_l1_transaction_hash) do
+    if is_nil(last_item) do
       {0, nil, nil}
     else
-      {:ok, last_l1_tx} = Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments)
-      last_l1_block_number = quantity_to_integer(Map.get(last_l1_tx || %{}, "blockNumber", 0))
-      {last_l1_block_number, last_l1_transaction_hash, last_l1_tx}
+      {l1_transaction_hashes, id} = last_item
+
+      last_l1_transaction_hash =
+        if is_nil(l1_transaction_hashes) do
+          Repo.one(
+            from(
+              fsb in FrameSequenceBlob,
+              where: fsb.frame_sequence_id == ^id,
+              select: fsb.l1_transaction_hash,
+              order_by: [desc: fsb.id],
+              limit: 1
+            )
+          )
+        else
+          List.last(l1_transaction_hashes)
+        end
+
+      if is_nil(last_l1_transaction_hash) do
+        {0, nil, nil}
+      else
+        {:ok, last_l1_tx} = Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments)
+        last_l1_block_number = quantity_to_integer(Map.get(last_l1_tx || %{}, "blockNumber", 0))
+        {last_l1_block_number, last_l1_transaction_hash, last_l1_tx}
+      end
     end
   end
 
@@ -514,7 +528,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     |> celestia_blob_to_input(tx_hash, blobs_api_url)
   end
 
-  defp celestia_blob_to_input(tx_input, tx_hash, blobs_api_url)
+  defp celestia_blob_to_input(tx_input, _tx_hash, blobs_api_url)
        when byte_size(tx_input) == 1 + 8 + 32 and blobs_api_url != "" do
     # the first byte encodes Celestia sign 0xCE
 
@@ -524,8 +538,9 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
 
     # the next 32 bytes contain the commitment
     commitment = binary_part(tx_input, 1 + 8, 32)
+    commitment_string = Base.encode16(commitment, case: :lower)
 
-    url = blobs_api_url <> "?height=#{height}&commitment=" <> Base.encode16(commitment, case: :lower)
+    url = blobs_api_url <> "?height=#{height}&commitment=" <> commitment_string
 
     with {:ok, response} <- http_get_request(url),
          namespace = Map.get(response, "namespace"),
@@ -539,8 +554,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
           celestia_blob_metadata: %{
             height: height,
             height_raw: height_raw,
-            namespace: Base.decode16!(namespace, case: :mixed),
-            commitment: commitment
+            namespace: "0x" <> namespace,
+            commitment: "0x" <> commitment_string
           }
         }
       ]
@@ -699,27 +714,27 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
           cond do
             !is_nil(Map.get(frame, :eip4844_blob_hash)) ->
               new_blobs_acc ++
-                %{
+                [%{
                   id: next_blob_id,
+                  key: Base.decode16!(String.trim_leading(frame.eip4844_blob_hash, "0x"), case: :lower),
                   type: :eip4844,
                   metadata: %{hash: frame.eip4844_blob_hash},
-                  key: frame.eip4844_blob_hash,
                   l1_transaction_hash: frame.tx_hash,
                   l1_timestamp: frame.block_timestamp,
                   frame_sequence_id: frame_sequence_id
-                }
+                }]
 
             !is_nil(Map.get(frame, :celestia_blob_metadata)) ->
               new_blobs_acc ++
-                %{
+                [%{
                   id: next_blob_id,
+                  key: :crypto.hash(:sha256, frame.celestia_blob_metadata.height_raw <> frame.celestia_blob_metadata.commitment),
                   type: :celestia,
-                  metadata: frame.celestia_blob_metadata,
-                  key: sha256_hash(frame.celestia_blob_metadata.height_raw <> frame.celestia_blob_metadata.commitment),
+                  metadata: Map.delete(frame.celestia_blob_metadata, :height_raw),
                   l1_transaction_hash: frame.tx_hash,
                   l1_timestamp: frame.block_timestamp,
                   frame_sequence_id: frame_sequence_id
-                }
+                }]
 
             true ->
               new_blobs_acc
@@ -741,11 +756,18 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
       Logger.error("Cannot parse frame sequence from these L1 transaction(s): #{inspect(l1_transaction_hashes)}")
     end
 
-    seq = %{
-      id: frame_sequence_id,
-      l1_transaction_hashes: Enum.uniq(Enum.reverse(l1_transaction_hashes)),
-      l1_timestamp: channel.l1_timestamp
-    }
+    sequence =
+      if Enum.count(new_blobs_acc) == Enum.count(blobs_acc) do
+        %{
+          id: frame_sequence_id,
+          l1_transaction_hashes: Enum.uniq(Enum.reverse(l1_transaction_hashes)),
+          l1_timestamp: channel.l1_timestamp
+        }
+      else
+        %{
+          id: frame_sequence_id
+        }
+      end
 
     new_incomplete_channels_acc =
       incomplete_channels_acc
@@ -1150,13 +1172,6 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
 
   defp first_byte(_tx_input) do
     nil
-  end
-
-  defp sha256_hash(data) do
-    raw_hash = :crypto.hash(:sha256, data)
-    <<_::size(8), rest::binary>> = raw_hash
-    {:ok, hash} = Hash.Full.cast(<<1>> <> rest)
-    hash
   end
 
   defp trim_url(url) do
