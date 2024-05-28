@@ -30,7 +30,7 @@ services:
       - db:database
     environment:
         ETHEREUM_JSONRPC_VARIANT: 'ganache'
-        # ETHEREUM_JSONRPC_WS_URL: ws://34.159.113.206:8545/
+        # ETHEREUM_JSONRPC_WS_URL: ws://34.141.88.80:8545/
         INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
         INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
         CHAIN_ID: '9496'
