@@ -1,19 +1,8 @@
 version: '3.9'
 
 services:
-  db-init:
-    image: postgres:15
-    volumes:
-      - blockscout-db-data:/var/lib/postgresql/data
-    entrypoint:
-      - sh
-      - -c
-      - |
-        chown -R 2000:2000 /var/lib/postgresql/data
-
   db:
     image: postgres:15
-    user: 2000:2000
     shm_size: 256m
     restart: always
     container_name: 'db'
@@ -26,10 +15,13 @@ services:
       - target: 5432
         published: 7432
     volumes:
-      - blockscout-db-data:/var/lib/postgresql/data:z
+      - blockscout-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U blockscout -d blockscout"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+
+volumes:
+  blockscout-db-data:

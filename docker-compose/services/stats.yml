@@ -1,19 +1,8 @@
 version: '3.9'
 
 services:
-  stats-db-init:
-    image: postgres:15
-    volumes:
-      - stats-db-data:/var/lib/postgresql/data
-    entrypoint:
-      - sh
-      - -c
-      - |
-        chown -R 2000:2000 /var/lib/postgresql/data
-
   stats-db:
     image: postgres:15
-    user: 2000:2000
     shm_size: 256m
     restart: always
     container_name: 'stats-db'

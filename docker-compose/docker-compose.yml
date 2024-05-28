@@ -6,15 +6,15 @@ services:
       file: ./services/redis.yml
       service: redis-db
 
-  db-init:
-    extends:
-      file: ./services/db.yml
-      service: db-init
+  # db-init:
+  #   extends:
+  #     file: ./services/db.yml
+  #     service: db-init
 
   db:
-    depends_on:
-      db-init:
-        condition: service_completed_successfully
+    # depends_on:
+    #   db-init:
+    #     condition: service_completed_successfully
     extends:
       file: ./services/db.yml
       service: db
@@ -63,15 +63,15 @@ services:
       file: ./services/frontend.yml
       service: frontend
 
-  stats-db-init:
-    extends:
-      file: ./services/stats.yml
-      service: stats-db-init
+  # stats-db-init:
+  #   extends:
+  #     file: ./services/stats.yml
+  #     service: stats-db-init
 
   stats-db:
-    depends_on:
-      stats-db-init:
-        condition: service_completed_successfully
+    # depends_on:
+    #   stats-db-init:
+    #     condition: service_completed_successfully
     extends:
       file: ./services/stats.yml
       service: stats-db
