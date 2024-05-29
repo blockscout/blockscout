@@ -26,7 +26,7 @@ jobs:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
           docker-remote-multi-platform: true
-          docker-arm-host: 3.145.97.144
+          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build and push Docker image for Ethereum (indexer + API)
