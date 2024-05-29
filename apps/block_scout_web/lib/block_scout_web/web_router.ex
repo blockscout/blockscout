@@ -52,15 +52,6 @@ defmodule BlockScoutWeb.WebRouter do
     forward("/sent_emails", Bamboo.SentEmailViewerPlug)
   end
 
-  scope "/auth", BlockScoutWeb do
-    pipe_through(:account)
-
-    get("/profile", Account.AuthController, :profile)
-    get("/logout", Account.AuthController, :logout)
-    get("/:provider", Account.AuthController, :request)
-    get("/:provider/callback", Account.AuthController, :callback)
-  end
-
   scope "/account", BlockScoutWeb do
     pipe_through(:account)
 
