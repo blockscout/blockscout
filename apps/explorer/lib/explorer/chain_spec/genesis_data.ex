@@ -90,7 +90,9 @@ defmodule Explorer.ChainSpec.GenesisData do
     Logger.info(fn -> "Fetching precompiled config path: #{inspect(precompiled_config_path)}." end)
 
     if is_nil(chain_spec_path) and is_nil(precompiled_config_path) do
-      Logger.warning(fn -> "Genesis data is not fetched. Neither chain spec path or precompiles config path are set." end)
+      Logger.warning(fn ->
+        "Genesis data is not fetched. Neither chain spec path or precompiles config path are set."
+      end)
     else
       json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
       variant = Keyword.fetch!(json_rpc_named_arguments, :variant)

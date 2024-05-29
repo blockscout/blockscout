@@ -165,6 +165,7 @@ defmodule Explorer.Chain.Stability.Validator do
         case format_missing_blocks_result(response) do
           {:error, message} ->
             Logger.warning(fn -> ["Error on getValidatorMissingBlocks for #{validators_address_hashes}: #{message}"] end)
+
             nil
 
           amount ->
