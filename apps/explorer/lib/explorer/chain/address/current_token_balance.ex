@@ -85,7 +85,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   def token_holders_ordered_by_value(token_contract_address_hash, options \\ []) do
     token_contract_address_hash
     |> token_holders_ordered_by_value_query_without_address_preload(options)
-    |> preload(:address)
+    |> preload(address: :smart_contract)
   end
 
   @doc """
