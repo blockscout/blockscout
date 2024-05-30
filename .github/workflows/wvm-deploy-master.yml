@@ -1,0 +1,23 @@
+name: Remote update execution
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: executing remote ssh commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        key: ${{ secrets.SERVER_KEY }}
+        script: |
+            cd /home/blockexplorer/code/wvm-blockscout/docker-compose/prod
+            git checkout master
+            git pull origin master
+            docker compose up --build -d
