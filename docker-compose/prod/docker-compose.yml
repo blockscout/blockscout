@@ -27,7 +27,7 @@ services:
       file: ./services/backend.yml
       service: backend
     build:
-      context: ../..
+      context: ./..
       dockerfile: ./../docker/Dockerfile
       args:
         CACHE_EXCHANGE_RATES_PERIOD: ""
