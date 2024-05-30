@@ -440,7 +440,9 @@ config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
-config :explorer, Explorer.Chain.Cache.CeloCoreContracts, celo_network: System.get_env("CELO_NETWORK") || "mainnet"
+config :explorer, Explorer.Chain.Cache.CeloCoreContracts,
+  # Default is "nil" to raise invalid JSON error if the env var is not set
+  contracts: ConfigHelper.parse_json_env_var("CELO_CORE_CONTRACTS", nil)
 
 config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   server_url: System.get_env("SOURCIFY_SERVER_URL") || "https://sourcify.dev/server",

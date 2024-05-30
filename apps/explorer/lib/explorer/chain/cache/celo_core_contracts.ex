@@ -5,167 +5,156 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
 
   require Logger
 
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  @atom_to_contract_name %{
+    accounts: "Accounts",
+    celo_token: "GoldToken",
+    election: "Election",
+    epoch_rewards: "EpochRewards",
+    locked_gold: "LockedGold",
+    reserve: "Reserve",
+    usd_token: "StableToken",
+    validators: "Validators",
+    governance: "Governance",
+    fee_handler: "FeeHandler"
+  }
 
-  alias Explorer.SmartContract.Reader
-
-  use Explorer.Chain.MapCache,
-    name: :celo_core_contracts,
-    key: :contract_addresses,
-    key: :async_task,
-    global_ttl: :timer.minutes(60),
-    ttl_check_interval: :timer.seconds(1),
-    callback: &async_task_on_deletion(&1)
-
-  @registry_proxy_contract_address "0x000000000000000000000000000000000000ce10"
-
-  @get_implementation_abi [
-    %{
-      "constant" => true,
-      "inputs" => [],
-      "name" => "_getImplementation",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "implementation",
-          "type" => "address"
-        }
-      ],
-      "payable" => false,
-      "stateMutability" => "view",
-      "type" => "function"
+  @atom_to_contract_event_names %{
+    fee_handler: %{
+      fee_beneficiary_set: "FeeBeneficiarySet",
+      burn_fraction_set: "BurnFractionSet"
+    },
+    epoch_rewards: %{
+      carbon_offsetting_fund_set: "CarbonOffsettingFundSet"
     }
-  ]
+  }
 
-  # 42404e07 = keccak(_getImplementation())
-  @get_implementation_signature "42404e07"
+  def atom_to_contract_name(), do: @atom_to_contract_name
+  def atom_to_contract_event_names(), do: @atom_to_contract_event_names
 
-  @get_address_for_string_abi [
-    %{
-      "constant" => true,
-      "inputs" => [%{"name" => "identifier", "type" => "string"}],
-      "name" => "getAddressForString",
-      "outputs" => [%{"name" => "", "type" => "address"}],
-      "payable" => false,
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
+  def get_event(contract_atom, event_atom, block_number) do
+    core_contracts = Application.get_env(:explorer, __MODULE__)[:contracts]
 
-  # 853db323 = keccak(getAddressForString(string))
-  @get_address_for_string_signature "853db323"
+    with {:ok, address} when not is_nil(address) <- get_address(contract_atom, block_number),
+         {:contract_atom, {:ok, contract_name}} <-
+           {:contract_atom, Map.fetch(@atom_to_contract_name, contract_atom)},
+         {:event_atom, {:ok, event_name}} <-
+           {
+             :event_atom,
+             @atom_to_contract_event_names
+             |> Map.get(contract_atom, %{})
+             |> Map.fetch(event_atom)
+           },
+         {:events, {:ok, contract_name_to_addresses}} <-
+           {:events, Map.fetch(core_contracts, "events")},
+         {:contract_name, {:ok, contract_addresses}} <-
+           {:contract_name, Map.fetch(contract_name_to_addresses, contract_name)},
+         {:contract_address, {:ok, contract_events}} <-
+           {:contract_address, Map.fetch(contract_addresses, address)},
+         {:event_name, {:ok, event_updates}} <-
+           {:event_name, Map.fetch(contract_events, event_name)} do
+      current_event =
+        event_updates
+        |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
+        |> Enum.take(-1)
+        |> List.first()
 
-  @contract_atoms [
-    :celo_token
-  ]
+      {:ok, current_event}
+    else
+      nil ->
+        {:ok, nil}
 
-  def get_celo_token_address do
-    get_contract_addresses()[:celo_token]
-  end
+      {:contract_atom, :error} ->
+        Logger.error("Unknown contract atom: #{inspect(contract_atom)}")
+        {:error, :contract_atom_not_found}
 
-  defp default_addresses do
-    case Application.get_env(:explorer, __MODULE__)[:celo_network] do
-      "mainnet" -> %{celo_token: "0x471ece3750da237f93b8e339c536989b8978a438"}
-      "baklava" -> %{celo_token: "0xddc9be57f553fe75752d61606b94cbd7e0264ef8"}
-      "alfajores" -> %{celo_token: "0xf194afdf50b03e69bd7d057c1aa9e10c9954e4c9"}
-      _ -> nil
+      {:event_atom, :error} ->
+        Logger.error("Unknown event atom: #{inspect(event_atom)}")
+        {:error, :event_atom_not_found}
+
+      {:events, :error} ->
+        raise "Missing `events` key in CELO core contracts JSON"
+
+      {:contract_name, :error} ->
+        Logger.error(fn ->
+          [
+            "Unknown name for contract atom: #{contract_atom}, ",
+            "ensure `CELO_CORE_CONTRACTS` env var is set ",
+            "and the provided JSON contains required key"
+          ]
+        end)
+
+        {:error, :contract_name_not_found}
+
+      {:event_name, :error} ->
+        Logger.error(fn ->
+          [
+            "Unknown name for event atom: #{event_atom}, ",
+            "ensure `CELO_CORE_CONTRACTS` env var is set ",
+            "and the provided JSON contains required key"
+          ]
+        end)
+
+        {:error, :event_name_not_found}
+
+      {:contract_address, :error} ->
+        Logger.error(fn ->
+          [
+            "Unknown address for contract atom: #{contract_atom}, ",
+            "ensure `CELO_CORE_CONTRACTS` env var is set ",
+            "and the provided JSON contains required key"
+          ]
+        end)
+
+        {:error, :contract_address_not_found}
+
+      error ->
+        error
     end
   end
 
-  defp handle_fallback(:contract_addresses) do
-    # This will get the task PID if one exists and launch a new task if not
-    # See next `handle_fallback` definition
+  def get_address(
+        contract_atom,
+        block_number
+      ) do
+    core_contracts = Application.get_env(:explorer, __MODULE__)[:contracts]
 
-    # warn: uncomment
-    # get_async_task()
+    with {:atom, {:ok, contract_name}} <-
+           {:atom, Map.fetch(@atom_to_contract_name, contract_atom)},
+         {:addresses, {:ok, contract_name_to_addresses}} <-
+           {:addresses, Map.fetch(core_contracts, "addresses")},
+         {:name, {:ok, address_updates}} <-
+           {:name, Map.fetch(contract_name_to_addresses, contract_name)} do
+      current_address =
+        address_updates
+        |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
+        |> Enum.take(-1)
+        |> case do
+          [%{"address" => address}] ->
+            address
 
-    {:return, default_addresses()}
-  end
-
-  defp handle_fallback(:async_task) do
-    # If this gets called it means an async task was requested, but none exists
-    # so a new one needs to be launched
-    {:ok, task} =
-      Task.start(fn ->
-        try do
-          nil_address = burn_address_hash_string()
-
-          {failed_contracts, contracts} =
-            fetch_core_contract_addresses()
-            |> Enum.split_with(fn {_, %{address: address}} -> address in [nil, nil_address] end)
-
-          failed_contracts
-          |> Enum.each(fn
-            {atom, %{address: ^nil_address}} ->
-              Logger.warning("Celo Registry returned address #{nil_address} for contract #{atom}")
-
-            {atom, %{address: nil}} ->
-              Logger.error("Could not fetch address for contract #{atom}")
-          end)
-
-          contracts
-          |> Enum.map(fn
-            {atom, %{address: address}} ->
-              {atom, address}
-          end)
-          |> Enum.into(get_contract_addresses())
-          |> set_contract_addresses()
-        rescue
-          e ->
-            Logger.error([
-              "Could not update Celo core contract addresses",
-              Exception.format(:error, e, __STACKTRACE__)
-            ])
+          _ ->
+            nil
         end
 
-        set_async_task(nil)
-      end)
-
-    {:update, task}
-  end
-
-  def fetch_core_contract_addresses do
-    @contract_atoms
-    |> Enum.map(fn atom ->
-      name = to_contract_name(atom)
-      {atom, %{name: name, address: fetch_address_for_contract_name(name)}}
-    end)
-    |> Enum.into(%{})
-  end
-
-  def fetch_address_for_contract_name(contract_name) do
-    with %{@get_implementation_signature => {:ok, [implementation_address]}} <-
-           Reader.query_contract(
-             @registry_proxy_contract_address,
-             @get_implementation_abi,
-             %{@get_implementation_signature => []},
-             false
-           ),
-         %{@get_address_for_string_signature => {:ok, [contract_address]}} <-
-           Reader.query_contract(
-             implementation_address,
-             @get_address_for_string_abi,
-             %{@get_address_for_string_signature => [contract_name]},
-             false
-           ) do
-      contract_address
+      {:ok, current_address}
     else
-      _ -> nil
+      {:atom, :error} ->
+        Logger.error("Unknown contract atom: #{inspect(contract_atom)}")
+        {:error, :contract_atom_not_found}
+
+      {:addresses, :error} ->
+        raise "Missing `addresses` key in CELO core contracts JSON"
+
+      {:name, :error} ->
+        Logger.error(fn ->
+          [
+            "Unknown name for contract atom: #{contract_atom}, ",
+            "ensure `CELO_CORE_CONTRACTS` env var is set ",
+            "and the provided JSON contains required key"
+          ]
+        end)
+
+        {:error, :contract_name_not_found}
     end
   end
-
-  defp to_contract_name(contract) do
-    case contract do
-      :celo_token -> "GoldToken"
-      _ -> nil
-    end
-  end
-
-  # By setting this as a `callback` an async task will be started each time the
-  # `gas_prices` expires (unless there is one already running)
-  defp async_task_on_deletion({:delete, _, :contract_addresses}) do
-    get_async_task()
-  end
-
-  defp async_task_on_deletion(_data), do: nil
 end

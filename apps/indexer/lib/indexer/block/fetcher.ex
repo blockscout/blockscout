@@ -699,7 +699,7 @@ defmodule Indexer.Block.Fetcher do
      Map.delete(address_params, :fetched_coin_balance_block_number)}
   end
 
-  defp token_transfers_merge_token(token_transfers, tokens) do
+  def token_transfers_merge_token(token_transfers, tokens) do
     Enum.map(token_transfers, fn token_transfer ->
       token =
         Enum.find(tokens, fn token ->
