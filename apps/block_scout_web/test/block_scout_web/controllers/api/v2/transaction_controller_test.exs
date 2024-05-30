@@ -987,11 +987,13 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "items" => [
                    %{
-                     "gas_token" => %{
-                       "address" => ^token_address_hash,
-                       "name" => ^token_name,
-                       "symbol" => ^token_symbol,
-                       "type" => ^token_type
+                     "celo" => %{
+                       "gas_token" => %{
+                         "address" => ^token_address_hash,
+                         "name" => ^token_name,
+                         "symbol" => ^token_symbol,
+                         "type" => ^token_type
+                       }
                      }
                    }
                  ]
@@ -1000,11 +1002,13 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
 
         assert %{
-                 "gas_token" => %{
-                   "address" => ^token_address_hash,
-                   "name" => ^token_name,
-                   "symbol" => ^token_symbol,
-                   "type" => ^token_type
+                 "celo" => %{
+                   "gas_token" => %{
+                     "address" => ^token_address_hash,
+                     "name" => ^token_name,
+                     "symbol" => ^token_symbol,
+                     "type" => ^token_type
+                   }
                  }
                } = json_response(request, 200)
 
@@ -1013,11 +1017,13 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "items" => [
                    %{
-                     "gas_token" => %{
-                       "address" => ^token_address_hash,
-                       "name" => ^token_name,
-                       "symbol" => ^token_symbol,
-                       "type" => ^token_type
+                     "celo" => %{
+                       "gas_token" => %{
+                         "address" => ^token_address_hash,
+                         "name" => ^token_name,
+                         "symbol" => ^token_symbol,
+                         "type" => ^token_type
+                       }
                      }
                    }
                  ]
@@ -1027,11 +1033,13 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         assert [
                  %{
-                   "gas_token" => %{
-                     "address" => ^token_address_hash,
-                     "name" => ^token_name,
-                     "symbol" => ^token_symbol,
-                     "type" => ^token_type
+                   "celo" => %{
+                     "gas_token" => %{
+                       "address" => ^token_address_hash,
+                       "name" => ^token_name,
+                       "symbol" => ^token_symbol,
+                       "type" => ^token_type
+                     }
                    }
                  }
                ] = json_response(request, 200)
@@ -1052,8 +1060,10 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "items" => [
                    %{
-                     "gas_token" => %{
-                       "address" => ^unknown_token_address_hash
+                     "celo" => %{
+                       "gas_token" => %{
+                         "address" => ^unknown_token_address_hash
+                       }
                      }
                    }
                  ]
@@ -1062,8 +1072,10 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
 
         assert %{
-                 "gas_token" => %{
-                   "address" => ^unknown_token_address_hash
+                 "celo" => %{
+                   "gas_token" => %{
+                     "address" => ^unknown_token_address_hash
+                   }
                  }
                } = json_response(request, 200)
 
@@ -1072,8 +1084,10 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "items" => [
                    %{
-                     "gas_token" => %{
-                       "address" => ^unknown_token_address_hash
+                     "celo" => %{
+                       "gas_token" => %{
+                         "address" => ^unknown_token_address_hash
+                       }
                      }
                    }
                  ]
@@ -1083,8 +1097,10 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         assert [
                  %{
-                   "gas_token" => %{
-                     "address" => ^unknown_token_address_hash
+                   "celo" => %{
+                     "gas_token" => %{
+                       "address" => ^unknown_token_address_hash
+                     }
                    }
                  }
                ] = json_response(request, 200)
@@ -1098,7 +1114,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "items" => [
                    %{
-                     "gas_token" => nil
+                     "celo" => %{"gas_token" => nil}
                    }
                  ]
                } = json_response(request, 200)
@@ -1106,7 +1122,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
 
         assert %{
-                 "gas_token" => nil
+                 "celo" => %{"gas_token" => nil}
                } = json_response(request, 200)
 
         request = get(conn, "/api/v2/addresses/#{to_string(tx.from_address_hash)}/transactions")
@@ -1114,7 +1130,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{
                  "items" => [
                    %{
-                     "gas_token" => nil
+                     "celo" => %{"gas_token" => nil}
                    }
                  ]
                } = json_response(request, 200)
@@ -1123,7 +1139,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         assert [
                  %{
-                   "gas_token" => nil
+                   "celo" => %{"gas_token" => nil}
                  }
                ] = json_response(request, 200)
       end

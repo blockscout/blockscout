@@ -35,6 +35,6 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           })
       end
 
-    Map.put(out_json, "gas_token", token_json)
+    Map.put(out_json, "celo", %{"gas_token" => token_json})
   end
 end
