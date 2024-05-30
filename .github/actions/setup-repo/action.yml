@@ -37,11 +37,16 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Get one of the builders
+      if: ${{ inputs.docker-remote-multi-platform }}
+      shell: bash
+      run: export BUILDER_IP=$(dig +short A {{ inputs.docker-arm-host }} | tail -n1) # return one random builder from multiline A record
+
     - name: Set up SSH
       if: ${{ inputs.docker-remote-multi-platform }}
       uses: MrSquaare/ssh-setup-action@523473d91581ccbf89565e12b40faba93f2708bd # v1.1.0
       with:
-        host: ${{ inputs.docker-arm-host }}
+        host: ${{ env.BUILDER_IP }}
         private-key: ${{ inputs.docker-arm-host-key }}
 
     - name: Set up Docker Buildx
@@ -58,7 +63,7 @@ runs:
       with:
         platforms: linux/amd64
         append: |
-          - endpoint: ssh://ubuntu@${{ inputs.docker-arm-host }}
+          - endpoint: ssh://ubuntu@${{ env.BUILDER_IP }}
             platforms: linux/arm64/v8
 
     - name: Log in to Docker Hub
