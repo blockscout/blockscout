@@ -441,8 +441,7 @@ config :explorer, Explorer.Chain.Cache.Uncles,
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
 config :explorer, Explorer.Chain.Cache.CeloCoreContracts,
-  # Default is "nil" to raise invalid JSON error if the env var is not set
-  contracts: ConfigHelper.parse_json_env_var("CELO_CORE_CONTRACTS", nil)
+  contracts: ConfigHelper.parse_json_env_var("CELO_CORE_CONTRACTS")
 
 config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   server_url: System.get_env("SOURCIFY_SERVER_URL") || "https://sourcify.dev/server",

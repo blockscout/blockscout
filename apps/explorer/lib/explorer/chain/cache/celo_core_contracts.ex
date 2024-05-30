@@ -2,6 +2,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   @moduledoc """
   Cache for Celo core contract addresses.
   """
+  @dialyzer :no_match
 
   require Logger
 
@@ -28,8 +29,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     }
   }
 
-  def atom_to_contract_name(), do: @atom_to_contract_name
-  def atom_to_contract_event_names(), do: @atom_to_contract_event_names
+  def atom_to_contract_name, do: @atom_to_contract_name
+  def atom_to_contract_event_names, do: @atom_to_contract_event_names
 
   def get_event(contract_atom, event_atom, block_number) do
     core_contracts = Application.get_env(:explorer, __MODULE__)[:contracts]

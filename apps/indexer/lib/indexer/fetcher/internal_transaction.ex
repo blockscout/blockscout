@@ -467,7 +467,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         address_token_balances: address_token_balances
       })
     end
+  else
+    defp async_import_celo_token_balances(_token_transfers), do: :ok
   end
-
-  defp async_import_celo_token_balances(_token_transfers), do: :ok
 end
