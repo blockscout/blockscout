@@ -48,6 +48,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
+  alias Indexer.Transform.Arbitrum.Messaging, as: ArbitrumMessaging
   alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
 
   alias Indexer.Transform.Blocks, as: TransformBlocks
@@ -179,6 +180,7 @@ defmodule Indexer.Block.Fetcher do
              do: PolygonZkevmBridge.parse(blocks, logs),
              else: []
            ),
+         arbitrum_xlevel_messages = ArbitrumMessaging.parse(transactions_with_receipts, logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
          addresses =
@@ -235,7 +237,8 @@ defmodule Indexer.Block.Fetcher do
            polygon_edge_deposit_executes: polygon_edge_deposit_executes,
            polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
            shibarium_bridge_operations: shibarium_bridge_operations,
-           celo_gas_tokens: celo_gas_tokens
+           celo_gas_tokens: celo_gas_tokens,
+           arbitrum_messages: arbitrum_xlevel_messages
          },
          {:ok, inserted} <-
            __MODULE__.import(
@@ -270,7 +273,8 @@ defmodule Indexer.Block.Fetcher do
          polygon_edge_deposit_executes: polygon_edge_deposit_executes,
          polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
          shibarium_bridge_operations: shibarium_bridge_operations,
-         celo_gas_tokens: celo_gas_tokens
+         celo_gas_tokens: celo_gas_tokens,
+         arbitrum_messages: arbitrum_xlevel_messages
        }) do
     case Application.get_env(:explorer, :chain_type) do
       :ethereum ->
@@ -307,6 +311,10 @@ defmodule Indexer.Block.Fetcher do
           :tokens,
           %{params: (tokens ++ celo_gas_tokens) |> Enum.uniq()}
         )
+
+      :arbitrum ->
+        basic_import_options
+        |> Map.put_new(:arbitrum_messages, %{params: arbitrum_xlevel_messages})
 
       _ ->
         basic_import_options

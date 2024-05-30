@@ -4,7 +4,7 @@ defmodule Explorer.Utility.MissingBlockRange do
   """
   use Explorer.Schema
 
-  alias Explorer.Chain.BlockNumberHelper
+  alias Explorer.Chain.{Block, BlockNumberHelper}
   alias Explorer.Repo
 
   @default_returning_batch_size 10
@@ -127,6 +127,38 @@ defmodule Explorer.Utility.MissingBlockRange do
     batch
     |> List.wrap()
     |> Enum.map(&save_range/1)
+  end
+
+  @doc """
+    Finds the first range in the table where the set, consisting of numbers from `lower_number` to `higher_number`, intersects.
+
+    ## Parameters
+    - `lower_number`: The lower bound of the range to check.
+    - `higher_number`: The upper bound of the range to check.
+
+    ## Returns
+    - Returns `nil` if no intersecting ranges are found, or an `Explorer.Utility.MissingBlockRange` instance of the first intersecting range otherwise.
+  """
+  @spec intersects_with_range(Block.block_number(), Block.block_number()) :: nil | Explorer.Utility.MissingBlockRange
+  def intersects_with_range(lower_number, higher_number)
+      when is_integer(lower_number) and lower_number >= 0 and
+             is_integer(higher_number) and lower_number <= higher_number do
+    query =
+      from(
+        r in __MODULE__,
+        # Note: from_number is higher than to_number, so in fact the range is to_number..from_number
+        # The first case: lower_number..to_number..higher_number
+        # The second case: lower_number..from_number..higher_number
+        # The third case: to_number..lower_number..higher_number..from_number
+        where:
+          (^lower_number <= r.to_number and ^higher_number >= r.to_number) or
+            (^lower_number <= r.from_number and ^higher_number >= r.from_number) or
+            (^lower_number >= r.to_number and ^higher_number <= r.from_number),
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
   end
 
   defp insert_range(params) do

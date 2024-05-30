@@ -516,6 +516,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
           non_neg_integer()
         ) :: {:ok, list()} | {:error, term()}
   def get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries) do
+    # TODO: use the function from the Indexer.Helper module
     processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
     processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
 

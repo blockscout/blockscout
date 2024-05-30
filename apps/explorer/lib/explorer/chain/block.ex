@@ -1,7 +1,13 @@
 defmodule Explorer.Chain.Block.Schema do
-  @moduledoc false
+  @moduledoc """
+    Models blocks.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Blocks
+  """
 
   alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
+  alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
@@ -35,6 +41,31 @@ defmodule Explorer.Chain.Block.Schema do
                               has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
                               has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
                               has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
+                            end,
+                            2
+                          )
+
+                        :arbitrum ->
+                          elem(
+                            quote do
+                              field(:send_count, :integer)
+                              field(:send_root, Hash.Full)
+                              field(:l1_block_number, :integer)
+
+                              has_one(:arbitrum_batch_block, ArbitrumBatchBlock,
+                                foreign_key: :block_number,
+                                references: :number
+                              )
+
+                              has_one(:arbitrum_batch, through: [:arbitrum_batch_block, :batch])
+
+                              has_one(:arbitrum_commitment_transaction,
+                                through: [:arbitrum_batch, :commitment_transaction]
+                              )
+
+                              has_one(:arbitrum_confirmation_transaction,
+                                through: [:arbitrum_batch_block, :confirmation_transaction]
+                              )
                             end,
                             2
                           )
@@ -105,18 +136,20 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Utility.MissingRangesManipulator
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
-                  |> (&(case Application.compile_env(:explorer, :chain_type) do
-                          :rsk ->
-                            &1 ++
-                              ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
-                          :ethereum ->
-                            &1 ++
-                              ~w(blob_gas_used excess_blob_gas)a
+  @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
+                                :rsk ->
+                                  ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
-                          _ ->
-                            &1
-                        end)).()
+                                :ethereum ->
+                                  ~w(blob_gas_used excess_blob_gas)a
+
+                                :arbitrum ->
+                                  ~w(send_count send_root l1_block_number)a
+
+                                _ ->
+                                  ~w()a
+                              end)
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
@@ -173,7 +206,7 @@ defmodule Explorer.Chain.Block do
 
   def changeset(%__MODULE__{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs ++ @chain_type_optional_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
@@ -181,7 +214,7 @@ defmodule Explorer.Chain.Block do
 
   def number_only_changeset(%__MODULE__{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs ++ @chain_type_optional_attrs)
     |> validate_required([:number])
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)

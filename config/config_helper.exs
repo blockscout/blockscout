@@ -22,6 +22,7 @@ defmodule ConfigHelper do
         :stability -> base_repos ++ [Explorer.Repo.Stability]
         :zksync -> base_repos ++ [Explorer.Repo.ZkSync]
         :celo -> base_repos ++ [Explorer.Repo.Celo]
+        :arbitrum -> base_repos ++ [Explorer.Repo.Arbitrum]
         _ -> base_repos
       end
 

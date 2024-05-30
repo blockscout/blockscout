@@ -163,11 +163,34 @@ defmodule EthereumJSONRPC.HTTP do
     {:error, resp}
   end
 
-  # restrict response to only those fields supported by the JSON-RPC 2.0 standard, which means that level of keys is
-  # validated, so we can indicate that with switch to atom keys.
-  def standardize_response(%{"jsonrpc" => "2.0" = jsonrpc, "id" => id} = unstandardized) do
+  @doc """
+    Standardizes responses to adhere to the JSON-RPC 2.0 standard.
+
+    This function adjusts responses to conform to JSON-RPC 2.0, ensuring the keys are atom-based
+    and that 'id', 'jsonrpc', 'result', and 'error' fields meet the protocol's requirements.
+    It also validates the mutual exclusivity of 'result' and 'error' fields within a response.
+
+    ## Parameters
+    - `unstandardized`: A map representing the response with string keys.
+
+    ## Returns
+    - A standardized map with atom keys and fields aligned with the JSON-RPC 2.0 standard, including
+      handling of possible mutual exclusivity errors between 'result' and 'error' fields.
+  """
+  @spec standardize_response(map()) :: %{
+          :id => nil | non_neg_integer(),
+          :jsonrpc => binary(),
+          optional(:error) => %{:code => integer(), :message => binary(), optional(:data) => any()},
+          optional(:result) => any()
+        }
+  def standardize_response(%{"jsonrpc" => "2.0" = jsonrpc} = unstandardized) do
+    # Avoid extracting `id` directly in the function declaration. Some endpoints
+    # do not adhere to standards and may omit the `id` in responses related to
+    # error scenarios. Consequently, the function call would fail during input
+    # argument matching.
+
     # Nethermind return string ids
-    id = quantity_to_integer(id)
+    id = quantity_to_integer(unstandardized["id"])
 
     standardized = %{jsonrpc: jsonrpc, id: id}
 
@@ -187,8 +210,21 @@ defmodule EthereumJSONRPC.HTTP do
     end
   end
 
-  # restrict error to only those fields supported by the JSON-RPC 2.0 standard, which means that level of keys is
-  # validated, so we can indicate that with switch to atom keys.
+  @doc """
+    Standardizes error responses to adhere to the JSON-RPC 2.0 standard.
+
+    This function converts a map containing error information into a format compliant
+    with the JSON-RPC 2.0 specification. It ensures the keys are atom-based and checks
+    for the presence of optional 'data' field, incorporating it if available.
+
+    ## Parameters
+    - `unstandardized`: A map representing the error with string keys: "code", "message"
+                        and "data" (optional).
+
+    ## Returns
+    - A standardized map with keys as atoms and fields aligned with the JSON-RPC 2.0 standard.
+  """
+  @spec standardize_error(map()) :: %{:code => integer(), :message => binary(), optional(:data) => any()}
   def standardize_error(%{"code" => code, "message" => message} = unstandardized)
       when is_integer(code) and is_binary(message) do
     standardized = %{code: code, message: message}
