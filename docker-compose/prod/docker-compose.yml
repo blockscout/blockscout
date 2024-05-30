@@ -28,7 +28,7 @@ services:
       service: backend
     build:
       context: ..
-      dockerfile: ./docker/Dockerfile
+      dockerfile: ./../docker/Dockerfile
       args:
         CACHE_EXCHANGE_RATES_PERIOD: ""
         API_V1_READ_METHODS_DISABLED: "false"
