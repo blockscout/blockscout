@@ -21,4 +21,4 @@ jobs:
             cd /home/blockexplorer/code/wvm-blockscout/docker-compose/prod
             git checkout master
             git pull origin master
-            docker compose up --build -d
+            docker compose up --build -d --force-recreate
