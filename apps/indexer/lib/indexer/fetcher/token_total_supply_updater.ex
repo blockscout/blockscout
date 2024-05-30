@@ -25,19 +25,6 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
     {:ok, []}
   end
 
-  def add_token_transfers(token_transfers) do
-    token_transfers
-    |> Enum.filter(fn token_transfer ->
-      token_transfer.to_address_hash == burn_address_hash_string() ||
-        token_transfer.from_address_hash == burn_address_hash_string()
-    end)
-    |> Enum.map(fn token_transfer ->
-      token_transfer.token_contract_address_hash
-    end)
-    |> Enum.uniq()
-    |> add_tokens()
-  end
-
   def add_tokens(contract_address_hashes) do
     GenServer.cast(__MODULE__, {:add_tokens, contract_address_hashes})
   end

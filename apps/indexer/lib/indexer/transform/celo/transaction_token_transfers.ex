@@ -11,6 +11,11 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
   """
   require Logger
 
+  import Indexer.Transform.TokenTransfers,
+    only: [
+      filter_tokens_for_supply_update: 1
+    ]
+
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Chain.Hash
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
@@ -68,7 +73,9 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
         []
       end
 
-    TokenTotalSupplyUpdater.add_token_transfers(token_transfers)
+    token_transfers
+    |> filter_tokens_for_supply_update()
+    |> TokenTotalSupplyUpdater.add_tokens()
 
     %{
       token_transfers: token_transfers,
@@ -106,7 +113,9 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
 
     Logger.debug("Found #{length(token_transfers)} Celo token transfers from internal transactions.")
 
-    TokenTotalSupplyUpdater.add_token_transfers(token_transfers)
+    token_transfers
+    |> filter_tokens_for_supply_update()
+    |> TokenTotalSupplyUpdater.add_tokens()
 
     %{
       token_transfers: token_transfers,
