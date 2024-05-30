@@ -81,19 +81,27 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
     "#{base_url()}/market/data&asset=#{symbol}"
   end
 
-  def history_source_url do
+  @spec secondary_history_source_url() :: String.t()
+  def secondary_history_source_url do
     id = config(:secondary_coin_id)
 
-    if id, do: "#{base_url()}/market/history?asset=#{id}", else: "#{base_url()}/market/history?asset=#{Explorer.coin()}"
+    if id, do: "#{base_url()}/market/history?asset=#{id}", else: nil
   end
 
-  @spec history_url(non_neg_integer()) :: String.t()
-  def history_url(previous_days) do
+  @spec history_source_url() :: String.t()
+  def history_source_url do
+    "#{base_url()}/market/history?asset=#{Explorer.coin()}"
+  end
+
+  @spec history_url(non_neg_integer(), boolean()) :: String.t()
+  def history_url(previous_days, secondary_coin?) do
     now = DateTime.utc_now()
     date_days_ago = DateTime.add(now, -previous_days, :day)
     timestamp_ms = DateTime.to_unix(date_days_ago) * 1000
 
-    "#{history_source_url()}&from=#{timestamp_ms}"
+    source_url = if secondary_coin?, do: secondary_history_source_url(), else: history_source_url()
+
+    "#{source_url}&from=#{timestamp_ms}"
   end
 
   @spec market_cap_history_url(non_neg_integer()) :: String.t()

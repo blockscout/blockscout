@@ -13,7 +13,7 @@ defmodule Explorer.Market.History.Source.Price.Mobula do
 
   @impl SourcePrice
   def fetch_price_history(previous_days, secondary_coin? \\ false) do
-    url = ExchangeRatesSourceMobula.history_url(previous_days)
+    url = ExchangeRatesSourceMobula.history_url(previous_days, secondary_coin?)
 
     case Source.http_request(url, ExchangeRatesSourceMobula.headers()) do
       {:ok, data} ->
