@@ -40,7 +40,7 @@ runs:
     - name: Get one of the builders
       if: ${{ inputs.docker-remote-multi-platform }}
       shell: bash
-      run: export BUILDER_IP=$(dig +short A {{ inputs.docker-arm-host }} | tail -n1) # return one random builder from multiline A record
+      run: echo "BUILDER_IP=$(dig +short A ${{ inputs.docker-arm-host }} | tail -n1)" >> $GITHUB_ENV # return one random builder from multiline A record
 
     - name: Set up SSH
       if: ${{ inputs.docker-remote-multi-platform }}
