@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
-  alias Explorer.Chain.Optimism.Withdrawal
+  alias Explorer.Chain.Optimism.{FrameSequenceBlob, Withdrawal}
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
@@ -230,20 +230,49 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     if is_nil(frame_sequence) do
       out_json
     else
-      # eip4844_blob_hash =
-      #   if not is_nil(frame_sequence.eip4844_blob_hashes) do
-      #     Enum.join(frame_sequence.eip4844_blob_hashes, ",")
-      #   end
+      blobs = FrameSequenceBlob.list(frame_sequence.id, api?: true)
 
-      # Map.put(out_json, "batch", %{
-      #   "l1_transaction_hash" => Enum.join(frame_sequence.l1_transaction_hashes, ","),
-      #   "l1_timestamp" => frame_sequence.l1_timestamp,
-      #   "eip4844_blob_hash" => eip4844_blob_hash,
-      #   "celestia_blob_height" => frame_sequence.celestia_blob_height,
-      #   "celestia_blob_namespace" => frame_sequence.celestia_blob_namespace,
-      #   "celestia_blob_commitment" => frame_sequence.celestia_blob_commitment
-      # })
-      out_json
+      eip4844_blobs =
+        blobs
+        |> Enum.filter(fn b -> b.type == :eip4844 end)
+        |> Enum.map(fn b ->
+          %{
+            "hash" => b.metadata["hash"],
+            "l1_transaction_hash" => b.l1_transaction_hash,
+            "l1_timestamp" => b.l1_timestamp
+          }
+        end)
+
+      celestia_blobs =
+        blobs
+        |> Enum.filter(fn b -> b.type == :celestia end)
+        |> Enum.map(fn b ->
+          %{
+            "height" => b.metadata["height"],
+            "namespace" => b.metadata["namespace"],
+            "commitment" => b.metadata["commitment"],
+            "l1_transaction_hash" => b.l1_transaction_hash,
+            "l1_timestamp" => b.l1_timestamp
+          }
+        end)
+
+      batch_info =
+        %{
+          "l1_transaction_hash" => Enum.join(frame_sequence.l1_transaction_hashes, ","),
+          "l1_timestamp" => frame_sequence.l1_timestamp
+        }
+        |> extend_batch_info_by_blobs(eip4844_blobs, "eip4844_blobs")
+        |> extend_batch_info_by_blobs(celestia_blobs, "celestia_blobs")
+
+      Map.put(out_json, "l1_batch", batch_info)
+    end
+  end
+
+  defp extend_batch_info_by_blobs(batch_info, blobs, field_name) do
+    if Enum.empty?(blobs) do
+      batch_info
+    else
+      Map.put(batch_info, field_name, blobs)
     end
   end
 

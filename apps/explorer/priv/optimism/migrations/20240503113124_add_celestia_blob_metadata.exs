@@ -2,11 +2,6 @@ defmodule Explorer.Repo.Optimism.Migrations.AddCelestiaBlobMetadata do
   use Ecto.Migration
 
   def change do
-    alter table(:op_frame_sequences) do
-      modify(:l1_transaction_hashes, {:array, :bytea}, null: true)
-      modify(:l1_timestamp, :"timestamp without time zone", null: true)
-    end
-
     execute(
       "CREATE TYPE op_frame_sequence_blob_type AS ENUM ('celestia', 'eip4844')",
       "DROP TYPE op_frame_sequence_blob_type"
@@ -29,5 +24,6 @@ defmodule Explorer.Repo.Optimism.Migrations.AddCelestiaBlobMetadata do
     end
 
     create(unique_index(:op_frame_sequence_blobs, :id))
+    create(index(:op_frame_sequence_blobs, :frame_sequence_id))
   end
 end

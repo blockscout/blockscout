@@ -202,7 +202,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
                 Helper.infinite_retries_number()
               )
 
-            {batches, sequences} = remove_duplicates(batches, sequences)
+            {batches, sequences, blobs} = remove_duplicates(batches, sequences, blobs)
 
             {:ok, _} =
               Chain.import(%{
@@ -757,17 +757,11 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     end
 
     sequence =
-      if Enum.count(new_blobs_acc) == Enum.count(blobs_acc) do
-        %{
-          id: frame_sequence_id,
-          l1_transaction_hashes: Enum.uniq(Enum.reverse(l1_transaction_hashes)),
-          l1_timestamp: channel.l1_timestamp
-        }
-      else
-        %{
-          id: frame_sequence_id
-        }
-      end
+      %{
+        id: frame_sequence_id,
+        l1_transaction_hashes: Enum.uniq(Enum.reverse(l1_transaction_hashes)),
+        l1_timestamp: channel.l1_timestamp
+      }
 
     new_incomplete_channels_acc =
       incomplete_channels_acc
@@ -1116,7 +1110,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     end
   end
 
-  defp remove_duplicates(batches, sequences) do
+  defp remove_duplicates(batches, sequences, blobs) do
     unique_batches =
       batches
       |> Enum.sort(fn b1, b2 ->
@@ -1139,7 +1133,20 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
         end)
       end
 
-    {unique_batches, unique_sequences}
+    unique_blobs =
+      blobs
+      |> Enum.reduce(%{}, fn b, acc ->
+        prev_id = Map.get(acc, b.key, %{id: 0}).id
+
+        if prev_id < b.id do
+          Map.put(acc, b.key, b)
+        else
+          acc
+        end
+      end)
+      |> Map.values()
+
+    {unique_batches, unique_sequences, unique_blobs}
   end
 
   defp txs_filter(transactions_params, batch_submitter, batch_inbox) do

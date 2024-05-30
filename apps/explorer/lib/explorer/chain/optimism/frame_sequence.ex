@@ -6,12 +6,11 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Optimism.{FrameSequenceBlob, TxnBatch}
 
-  @required_attrs ~w(id)a
-  @optional_attrs ~w(l1_transaction_hashes l1_timestamp)a
+  @required_attrs ~w(id l1_transaction_hashes l1_timestamp)a
 
   @type t :: %__MODULE__{
-          l1_transaction_hashes: [Hash.t()] | nil,
-          l1_timestamp: DateTime.t() | nil,
+          l1_transaction_hashes: [Hash.t()],
+          l1_timestamp: DateTime.t(),
           transaction_batches: %Ecto.Association.NotLoaded{} | [TxnBatch.t()],
           blobs: %Ecto.Association.NotLoaded{} | [FrameSequenceBlob.t()]
         }
@@ -29,7 +28,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
 
   def changeset(%__MODULE__{} = sequences, attrs \\ %{}) do
     sequences
-    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> unique_constraint(:id)
   end
