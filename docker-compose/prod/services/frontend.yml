@@ -2,8 +2,8 @@ version: '3.9'
 
 services:
   frontend:
-    image: ghcr.io/blockscout/frontend:${FRONTEND_DOCKER_TAG:-latest}
-    pull_policy: always
+    image: frontend:local # ghcr.io/blockscout/frontend:${FRONTEND_DOCKER_TAG:-latest}
+    pull_policy: never
     platform: linux/amd64
     restart: always
     container_name: 'frontend'
