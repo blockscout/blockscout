@@ -16,6 +16,7 @@ jobs:
         host: ${{ secrets.SERVER_IP }}
         username: ${{ secrets.SERVER_USERNAME }}
         key: ${{ secrets.SERVER_KEY }}
+        passphrase: ${{ secrets.SERVER_PASSPHRASE }}
         script: |
             cd /home/blockexplorer/code/wvm-blockscout/docker-compose/prod
             git checkout master
