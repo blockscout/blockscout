@@ -17,6 +17,7 @@ defmodule Explorer.Chain.Events.Listener do
     {:ok, pid} =
       :explorer
       |> Application.get_env(Explorer.Repo)
+      |> Keyword.put(:url, listener_db_url())
       |> Notifications.start_link()
 
     ref = Notifications.listen!(pid, channel)
@@ -80,5 +81,9 @@ defmodule Explorer.Chain.Events.Listener do
 
         data
     end
+  end
+
+  defp listener_db_url do
+    Application.get_env(:explorer, Repo)[:listener_url] || Application.get_env(:explorer, Repo)[:url]
   end
 end
