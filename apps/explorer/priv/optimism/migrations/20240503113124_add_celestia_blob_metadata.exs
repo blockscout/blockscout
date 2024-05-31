@@ -14,6 +14,7 @@ defmodule Explorer.Repo.Optimism.Migrations.AddCelestiaBlobMetadata do
       add(:metadata, :map, default: %{}, null: false)
       add(:l1_transaction_hash, :bytea, null: false)
       add(:l1_timestamp, :"timestamp without time zone", null: false)
+
       add(
         :frame_sequence_id,
         references(:op_frame_sequences, on_delete: :delete_all, on_update: :update_all, type: :bigint),
@@ -25,5 +26,6 @@ defmodule Explorer.Repo.Optimism.Migrations.AddCelestiaBlobMetadata do
 
     create(unique_index(:op_frame_sequence_blobs, :id))
     create(index(:op_frame_sequence_blobs, :frame_sequence_id))
+    create(index(:op_transaction_batches, :frame_sequence_id))
   end
 end

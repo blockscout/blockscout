@@ -325,45 +325,26 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
   end
 
   defp get_last_l1_item(json_rpc_named_arguments) do
-    last_item =
+    l1_transaction_hashes =
       Repo.one(
         from(
           tb in OptimismTxnBatch,
           inner_join: fs in FrameSequence,
           on: fs.id == tb.frame_sequence_id,
-          select: {fs.l1_transaction_hashes, fs.id},
+          select: fs.l1_transaction_hashes,
           order_by: [desc: tb.l2_block_number],
           limit: 1
         )
       )
 
-    if is_nil(last_item) do
+    if is_nil(l1_transaction_hashes) do
       {0, nil, nil}
     else
-      {l1_transaction_hashes, id} = last_item
+      last_l1_transaction_hash = List.last(l1_transaction_hashes)
 
-      last_l1_transaction_hash =
-        if is_nil(l1_transaction_hashes) do
-          Repo.one(
-            from(
-              fsb in FrameSequenceBlob,
-              where: fsb.frame_sequence_id == ^id,
-              select: fsb.l1_transaction_hash,
-              order_by: [desc: fsb.id],
-              limit: 1
-            )
-          )
-        else
-          List.last(l1_transaction_hashes)
-        end
-
-      if is_nil(last_l1_transaction_hash) do
-        {0, nil, nil}
-      else
-        {:ok, last_l1_tx} = Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments)
-        last_l1_block_number = quantity_to_integer(Map.get(last_l1_tx || %{}, "blockNumber", 0))
-        {last_l1_block_number, last_l1_transaction_hash, last_l1_tx}
-      end
+      {:ok, last_l1_tx} = Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments)
+      last_l1_block_number = quantity_to_integer(Map.get(last_l1_tx || %{}, "blockNumber", 0))
+      {last_l1_block_number, last_l1_transaction_hash, last_l1_tx}
     end
   end
 
@@ -533,8 +514,10 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     # the first byte encodes Celestia sign 0xCE
 
     # the next 8 bytes encode little-endian Celestia blob height
-    height_raw = binary_part(tx_input, 1, 8)
-    height = :binary.decode_unsigned(height_raw, :little)
+    height =
+      tx_input
+      |> binary_part(1, 8)
+      |> :binary.decode_unsigned(:little)
 
     # the next 32 bytes contain the commitment
     commitment = binary_part(tx_input, 1 + 8, 32)
@@ -553,7 +536,6 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
           bytes: data_decoded,
           celestia_blob_metadata: %{
             height: height,
-            height_raw: height_raw,
             namespace: "0x" <> namespace,
             commitment: "0x" <> commitment_string
           }
@@ -593,7 +575,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
        ) do
     transactions_filtered
     |> Enum.reduce({:ok, incomplete_channels, [], [], []}, fn tx,
-                                                          {_, incomplete_channels_acc, batches_acc, sequences_acc, blobs_acc} ->
+                                                              {_, incomplete_channels_acc, batches_acc, sequences_acc,
+                                                               blobs_acc} ->
       inputs =
         cond do
           tx.type == 3 ->
@@ -611,11 +594,11 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
         end
 
       Enum.reduce(inputs, {:ok, incomplete_channels_acc, batches_acc, sequences_acc, blobs_acc}, fn input,
-                                                                                         {_,
-                                                                                          new_incomplete_channels_acc,
-                                                                                          new_batches_acc,
-                                                                                          new_sequences_acc,
-                                                                                          new_blobs_acc} ->
+                                                                                                    {_,
+                                                                                                     new_incomplete_channels_acc,
+                                                                                                     new_batches_acc,
+                                                                                                     new_sequences_acc,
+                                                                                                     new_blobs_acc} ->
         handle_input(
           input,
           tx,
@@ -713,28 +696,39 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
         new_blobs_acc =
           cond do
             !is_nil(Map.get(frame, :eip4844_blob_hash)) ->
+              # credo:disable-for-next-line /Credo.Check.Refactor.AppendSingleItem/
               new_blobs_acc ++
-                [%{
-                  id: next_blob_id,
-                  key: Base.decode16!(String.trim_leading(frame.eip4844_blob_hash, "0x"), case: :lower),
-                  type: :eip4844,
-                  metadata: %{hash: frame.eip4844_blob_hash},
-                  l1_transaction_hash: frame.tx_hash,
-                  l1_timestamp: frame.block_timestamp,
-                  frame_sequence_id: frame_sequence_id
-                }]
+                [
+                  %{
+                    id: next_blob_id,
+                    key: Base.decode16!(String.trim_leading(frame.eip4844_blob_hash, "0x"), case: :mixed),
+                    type: :eip4844,
+                    metadata: %{hash: frame.eip4844_blob_hash},
+                    l1_transaction_hash: frame.tx_hash,
+                    l1_timestamp: frame.block_timestamp,
+                    frame_sequence_id: frame_sequence_id
+                  }
+                ]
 
             !is_nil(Map.get(frame, :celestia_blob_metadata)) ->
+              height = :binary.encode_unsigned(frame.celestia_blob_metadata.height)
+
+              commitment =
+                Base.decode16!(String.trim_leading(frame.celestia_blob_metadata.commitment, "0x"), case: :mixed)
+
+              # credo:disable-for-next-line /Credo.Check.Refactor.AppendSingleItem/
               new_blobs_acc ++
-                [%{
-                  id: next_blob_id,
-                  key: :crypto.hash(:sha256, frame.celestia_blob_metadata.height_raw <> frame.celestia_blob_metadata.commitment),
-                  type: :celestia,
-                  metadata: Map.delete(frame.celestia_blob_metadata, :height_raw),
-                  l1_transaction_hash: frame.tx_hash,
-                  l1_timestamp: frame.block_timestamp,
-                  frame_sequence_id: frame_sequence_id
-                }]
+                [
+                  %{
+                    id: next_blob_id,
+                    key: :crypto.hash(:sha256, height <> commitment),
+                    type: :celestia,
+                    metadata: frame.celestia_blob_metadata,
+                    l1_transaction_hash: frame.tx_hash,
+                    l1_timestamp: frame.block_timestamp,
+                    frame_sequence_id: frame_sequence_id
+                  }
+                ]
 
             true ->
               new_blobs_acc
@@ -756,12 +750,11 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
       Logger.error("Cannot parse frame sequence from these L1 transaction(s): #{inspect(l1_transaction_hashes)}")
     end
 
-    sequence =
-      %{
-        id: frame_sequence_id,
-        l1_transaction_hashes: Enum.uniq(Enum.reverse(l1_transaction_hashes)),
-        l1_timestamp: channel.l1_timestamp
-      }
+    sequence = %{
+      id: frame_sequence_id,
+      l1_transaction_hashes: Enum.uniq(Enum.reverse(l1_transaction_hashes)),
+      l1_timestamp: channel.l1_timestamp
+    }
 
     new_incomplete_channels_acc =
       incomplete_channels_acc

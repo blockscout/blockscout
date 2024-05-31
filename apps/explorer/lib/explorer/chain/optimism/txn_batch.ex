@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
 
   import Explorer.Chain, only: [join_association: 3, select_repo: 1]
 
-  alias Explorer.Chain.Optimism.FrameSequence
+  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
   alias Explorer.PagingOptions
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -39,39 +39,74 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   end
 
   @doc """
-  Finds and returns L1 batch data from the op_frame_sequences DB table by its celestia_blob_commitment and celestia_blob_height.
+  Finds and returns L1 batch data from the op_frame_sequences and
+  op_frame_sequence_blobs DB tables by blob's commitment and height.
   """
   @spec batch_by_celestia_blob(binary(), non_neg_integer(), list()) :: map() | nil
   def batch_by_celestia_blob(commitment, height, options \\ []) do
-    nil
-    # repo = select_repo(options)
+    repo = select_repo(options)
 
-    # query =
-    #   from(fs in FrameSequence,
-    #     select: %{id: fs.id, l1_transaction_hashes: fs.l1_transaction_hashes, l1_timestamp: fs.l1_timestamp},
-    #     where: fs.celestia_blob_commitment == ^commitment and fs.celestia_blob_height == ^height
-    #   )
+    commitment = Base.decode16!(String.trim_leading(commitment, "0x"), case: :mixed)
+    height = :binary.encode_unsigned(height)
+    key = :crypto.hash(:sha256, height <> commitment)
 
-    # batch = repo.one(query)
+    query =
+      from(fsb in FrameSequenceBlob,
+        select: fsb.frame_sequence_id,
+        where: fsb.key == ^key and fsb.type == :celestia
+      )
 
-    # if not is_nil(batch) do
-    #   l2_block_number_from =
-    #     __MODULE__
-    #     |> where(frame_sequence_id: ^batch.id)
-    #     |> repo.aggregate(:min, :l2_block_number)
+    frame_sequence_id = repo.one(query)
 
-    #   l2_block_number_to =
-    #     __MODULE__
-    #     |> where(frame_sequence_id: ^batch.id)
-    #     |> repo.aggregate(:max, :l2_block_number)
+    if not is_nil(frame_sequence_id) do
+      query =
+        from(fsb in FrameSequenceBlob,
+          select: %{
+            l1_transaction_hash: fsb.l1_transaction_hash,
+            l1_timestamp: fsb.l1_timestamp,
+            metadata: fsb.metadata
+          },
+          where: fsb.frame_sequence_id == ^frame_sequence_id,
+          order_by: [asc: fsb.id]
+        )
 
-    #   %{
-    #     "l1_transaction_hash" => Enum.join(batch.l1_transaction_hashes, ","),
-    #     "l1_timestamp" => batch.l1_timestamp,
-    #     "l2_block_number_from" => l2_block_number_from,
-    #     "l2_block_number_to" => l2_block_number_to
-    #   }
-    # end
+      bound_blobs = repo.all(query)
+
+      l1_transaction_hashes =
+        bound_blobs
+        |> Enum.map(& &1.l1_transaction_hash)
+        |> Enum.uniq()
+
+      l1_timestamp = List.last(bound_blobs).l1_timestamp
+
+      l2_block_number_from =
+        __MODULE__
+        |> where(frame_sequence_id: ^frame_sequence_id)
+        |> repo.aggregate(:min, :l2_block_number)
+
+      l2_block_number_to =
+        __MODULE__
+        |> where(frame_sequence_id: ^frame_sequence_id)
+        |> repo.aggregate(:max, :l2_block_number)
+
+      l1_transactions =
+        Enum.map(bound_blobs, fn blob ->
+          %{
+            "blob_height" => Map.get(blob.metadata, "height"),
+            "blob_commitment" => Map.get(blob.metadata, "commitment"),
+            "l1_transaction_hash" => blob.l1_transaction_hash,
+            "l1_timestamp" => blob.l1_timestamp
+          }
+        end)
+
+      %{
+        "l1_transaction_hash" => Enum.join(l1_transaction_hashes, ","),
+        "l1_timestamp" => l1_timestamp,
+        "l2_block_number_from" => l2_block_number_from,
+        "l2_block_number_to" => l2_block_number_to,
+        "l1_transactions" => l1_transactions
+      }
+    end
   end
 
   @doc """
