@@ -13,7 +13,9 @@ defmodule Explorer.Chain.TokenTest do
       token = insert(:token, cataloged: true, updated_at: hours_ago_date)
       insert(:token, cataloged: false)
 
-      assert Repo.all(Token.cataloged_tokens()) == [token.contract_address_hash]
+      [token_from_db] = Repo.all(Token.cataloged_tokens())
+
+      assert token_from_db.contract_address_hash == token.contract_address_hash
     end
 
     test "filter tokens by updated_at field" do
@@ -23,7 +25,9 @@ defmodule Explorer.Chain.TokenTest do
       token = insert(:token, cataloged: true, updated_at: hours_ago_date)
       insert(:token, cataloged: true)
 
-      assert Repo.all(Token.cataloged_tokens()) == [token.contract_address_hash]
+      [token_from_db] = Repo.all(Token.cataloged_tokens())
+
+      assert token_from_db.contract_address_hash == token.contract_address_hash
     end
   end
 end
