@@ -207,6 +207,11 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
             {:ok, _} =
               Chain.import(%{
                 optimism_frame_sequences: %{params: sequences},
+                timeout: :infinity
+              })
+
+            {:ok, _} =
+              Chain.import(%{
                 optimism_frame_sequence_blobs: %{params: blobs},
                 optimism_txn_batches: %{params: batches},
                 timeout: :infinity
@@ -1116,15 +1121,11 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
       |> Map.values()
 
     unique_sequences =
-      if Enum.empty?(sequences) do
-        []
-      else
-        sequences
-        |> Enum.reverse()
-        |> Enum.filter(fn seq ->
-          Enum.any?(unique_batches, fn batch -> batch.frame_sequence_id == seq.id end)
-        end)
-      end
+      sequences
+      |> Enum.reverse()
+      |> Enum.filter(fn seq ->
+        Enum.any?(unique_batches, fn batch -> batch.frame_sequence_id == seq.id end)
+      end)
 
     unique_blobs =
       blobs
@@ -1138,6 +1139,9 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
         end
       end)
       |> Map.values()
+      |> Enum.filter(fn b ->
+        Enum.any?(unique_sequences, fn sec -> sec.id == b.frame_sequence_id end)
+      end)
 
     {unique_batches, unique_sequences, unique_blobs}
   end
