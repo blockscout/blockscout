@@ -372,7 +372,7 @@ config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
   secondary_coin_id: cg_secondary_coin_id
 
 config :explorer, Explorer.ExchangeRates.Source.Mobula,
-  platform: System.get_env("EXCHANGE_RATES_MOBULA_PLATFORM_ID"),
+  platform: System.get_env("EXCHANGE_RATES_MOBULA_CHAIN_ID"),
   base_url: System.get_env("EXCHANGE_RATES_MOBULA_BASE_URL"),
   api_key: System.get_env("EXCHANGE_RATES_MOBULA_API_KEY"),
   coin_id: System.get_env("EXCHANGE_RATES_MOBULA_COIN_ID"),
