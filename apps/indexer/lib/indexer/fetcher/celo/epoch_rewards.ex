@@ -19,14 +19,10 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
       epoch_block?: 1
     ]
 
-  alias Indexer.Helper
+  alias Indexer.Helper, as: IndexerHelper
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Transform.Addresses
   alias Indexer.Transform.Celo.ValidatorEpochPaymentDistributions
-  # todo: would be better to define this func somewhere else or use another one
-  # similar
-  import Indexer.Transform.TransactionActions, only: [read_contracts_with_retries: 3]
-
   require Logger
 
   use Indexer.Fetcher, restart: :permanent
@@ -131,7 +127,7 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
 
   def json_rpc_named_arguments do
     rpc_url = "https://archive.alfajores.celo-testnet.org"
-    Helper.json_rpc_named_arguments(rpc_url)
+    IndexerHelper.json_rpc_named_arguments(rpc_url)
   end
 
   @doc false
@@ -193,10 +189,10 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
               service: :indexer,
               tracer: Tracer
             )
-  def run(entries, _json_rpc_named_arguments) do
+  def run(entries, json_rpc_named_arguments) do
     [entry] = entries
 
-    fetch_epoch(entry)
+    fetch_epoch(entry, json_rpc_named_arguments)
     |> case do
       {:ok, _imported} ->
         Logger.info("Fetched epoch rewards for block number: #{entry.block_number}")
@@ -217,41 +213,39 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
     # todo: remove entry from pending epoch operations
   end
 
-  def fetch_epoch(%{block_number: _, block_hash: block_hash} = entry) do
-    epoch_payment_distributions = fetch_epoch_payment_distributions(block_hash)
-
-    with {:ok, voter_rewards} <- fetch_voter_rewards(entry),
-         {:ok, epoch_rewards} <- fetch_epoch_rewards(entry),
+  def fetch_epoch(entry, json_rpc_named_arguments) do
+    with {:ok, voter_rewards} <- fetch_voter_rewards(entry, json_rpc_named_arguments),
+         {:ok, epoch_rewards} <- fetch_epoch_rewards(entry, json_rpc_named_arguments),
          # todo: replace `_ignore` with pattern matching on `:ok`
          _ignore <- valid_voter_rewards?(voter_rewards, epoch_rewards),
+         epoch_payment_distributions = fetch_epoch_payment_distributions(entry),
          {:ok, delegated_payments} <-
            epoch_payment_distributions
            |> Enum.map(& &1.validator_address)
-           |> fetch_payment_delegations(entry) do
-      validator_and_group_rewards =
-        payment_distributions_to_validator_and_group_rewards(
-          epoch_payment_distributions,
-          entry
-        )
-
-      election_rewards =
-        Enum.concat([
-          validator_and_group_rewards,
-          voter_rewards,
-          delegated_payments
-        ])
-        |> Enum.filter(&(&1.amount > 0))
-
-      addresses_params =
-        Addresses.extract_addresses(%{
-          celo_epoch_election_rewards: election_rewards
-        })
-
-      Chain.import(%{
-        addresses: %{params: addresses_params},
-        celo_epoch_election_rewards: %{params: election_rewards},
-        celo_epoch_rewards: %{params: [epoch_rewards]}
-      })
+           |> fetch_payment_delegations(entry, json_rpc_named_arguments),
+         validator_and_group_rewards =
+           payment_distributions_to_validator_and_group_rewards(
+             epoch_payment_distributions,
+             entry
+           ),
+         election_rewards =
+           Enum.concat([
+             validator_and_group_rewards,
+             voter_rewards,
+             delegated_payments
+           ])
+           |> Enum.filter(&(&1.amount > 0)),
+         addresses_params =
+           Addresses.extract_addresses(%{
+             celo_epoch_election_rewards: election_rewards
+           }),
+         {:ok, imported} <-
+           Chain.import(%{
+             addresses: %{params: addresses_params},
+             celo_epoch_election_rewards: %{params: election_rewards},
+             celo_epoch_rewards: %{params: [epoch_rewards]}
+           }) do
+      {:ok, imported}
     end
   end
 
@@ -264,9 +258,9 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
     else
       Logger.error(fn ->
         [
-          "Total voter rewards do not match.",
-          "Amount calculated manually: #{manual_voters_total}",
-          "Amount returned by `calculateTargetEpochRewards`: #{epoch_rewards.voters_total}"
+          "Total voter rewards do not match. ",
+          "Amount calculated manually: #{manual_voters_total}. ",
+          "Amount returned by `calculateTargetEpochRewards`: #{epoch_rewards.voters_total}."
         ]
       end)
 
@@ -274,9 +268,9 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
     end
   end
 
-  def fetch_epoch_payment_distributions(block_hash) do
+  def fetch_epoch_payment_distributions(%{block_number: block_number, block_hash: block_hash}) do
     epoch_payment_distributions_signature = ValidatorEpochPaymentDistributions.signature()
-    validators_contract_address = CeloCoreContracts.get_address(:validators)
+    {:ok, validators_contract_address} = CeloCoreContracts.get_address(:validators, block_number)
 
     from(
       log in Log,
@@ -316,9 +310,10 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
   # In other words, `fetch_payment_delegations` always returned empty list.
   def fetch_payment_delegations(
         validator_addresses,
-        %{block_number: block_number, block_hash: block_hash}
+        %{block_number: block_number, block_hash: block_hash},
+        json_rpc_named_arguments
       ) do
-    accounts_contract_address = CeloCoreContracts.get_address(:accounts)
+    {:ok, accounts_contract_address} = CeloCoreContracts.get_address(:accounts, block_number)
 
     [%{"method_id" => method_id}] =
       @get_payment_delegation_abi
@@ -335,7 +330,7 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
         }
       end)
 
-    usd_token_address_hash = CeloCoreContracts.get_address(:usd_token)
+    {:ok, usd_token_address_hash} = CeloCoreContracts.get_address(:usd_token, block_number)
     mint_address = burn_address_hash_string()
 
     beneficiary_address_to_amount =
@@ -357,8 +352,9 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
 
     with {responses, []} <-
            requests
-           |> read_contracts_with_retries(
+           |> IndexerHelper.read_contracts_with_retries(
              @get_payment_delegation_abi,
+             json_rpc_named_arguments,
              @repeated_request_max_retries
            ),
          {:ok, payment_delegations} <-
@@ -424,8 +420,12 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
 
   # todo: seems like it could be calculated easier
   # https://github.com/celo-org/epochs/blob/main/totalVoterRewards.ts#L11
-  def fetch_voter_rewards(%{block_number: block_number, block_hash: block_hash}) do
-    election_contract_address = CeloCoreContracts.get_address(:election)
+
+  def fetch_voter_rewards(
+        %{block_number: block_number, block_hash: block_hash},
+        json_rpc_named_arguments
+      ) do
+    {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, block_number)
 
     [%{"method_id" => method_id}] =
       @get_active_votes_for_group_by_account_abi
@@ -452,12 +452,13 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
           }
         end)
       end)
-      |> List.flatten()
+      |> Enum.concat()
 
     with {responses, []} <-
-           read_contracts_with_retries(
+           IndexerHelper.read_contracts_with_retries(
              requests,
              @get_active_votes_for_group_by_account_abi,
+             json_rpc_named_arguments,
              @repeated_request_max_retries
            ),
          {:ok, diffs} <-
@@ -536,13 +537,13 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
         }
       ]
     end)
-    |> List.flatten()
+    |> Enum.concat()
   end
 
-  defp fetch_epoch_rewards(%{block_number: block_number, block_hash: block_hash} = _entry) do
-    celo_token_contract_address_hash = CeloCoreContracts.get_address(:celo_token)
+  defp fetch_epoch_rewards(%{block_number: block_number, block_hash: block_hash} = _entry, json_rpc_named_arguments) do
+    {:ok, celo_token_contract_address_hash} = CeloCoreContracts.get_address(:celo_token, block_number)
     mint_address_hash = burn_address_hash_string()
-    reserve_contract_address_hash = CeloCoreContracts.get_address(:reserve)
+    {:ok, reserve_contract_address_hash} = CeloCoreContracts.get_address(:reserve, block_number)
 
     reserve_bolster =
       from(
@@ -569,7 +570,7 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
          carbon_offsetting_total: 0
        }}
     else
-      do_fetch_target_epoch_rewards(block_number)
+      do_fetch_target_epoch_rewards(block_number, json_rpc_named_arguments)
     end
     |> case do
       {:ok, target_epoch_rewards} ->
@@ -589,8 +590,8 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
     end
   end
 
-  defp do_fetch_target_epoch_rewards(block_number) do
-    epoch_reward_contract_address = CeloCoreContracts.get_address(:epoch_rewards)
+  defp do_fetch_target_epoch_rewards(block_number, json_rpc_named_arguments) do
+    {:ok, epoch_reward_contract_address} = CeloCoreContracts.get_address(:epoch_rewards, block_number)
 
     [%{"method_id" => method_id}] =
       @calculate_target_epoch_rewards_abi
@@ -606,8 +607,9 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
     ]
 
     requests
-    |> read_contracts_with_retries(
+    |> IndexerHelper.read_contracts_with_retries(
       @calculate_target_epoch_rewards_abi,
+      json_rpc_named_arguments,
       @repeated_request_max_retries
     )
     |> case do
