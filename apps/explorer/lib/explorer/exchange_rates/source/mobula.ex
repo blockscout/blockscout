@@ -162,8 +162,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   defp get_btc_price do
     url = "#{base_url()}/market/data?asset=Bitcoin"
 
-    Source.http_request(url, headers())
-    |> case do
+    case Source.http_request(url, headers()) do
       {:ok, %{"price" => current_price}} ->
         {:ok, current_price}
 
