@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Router do
 
   alias BlockScoutWeb.Plug.{GraphQL, RateLimit}
   alias BlockScoutWeb.{ApiRouter, WebRouter}
+  alias BlockScoutWeb.Routers.AccountRouter
 
   @max_query_string_length 5_000
 
@@ -54,6 +55,8 @@ defmodule BlockScoutWeb.Router do
     plug(:accepts, ["json"])
     plug(RateLimit, graphql?: true)
   end
+
+  match(:*, "/auth/*path", AccountRouter, [])
 
   forward("/api", ApiRouter)
 
