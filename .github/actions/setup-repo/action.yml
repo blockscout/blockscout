@@ -37,11 +37,16 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Get one of the builders
+    - name: Set up SSH key
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ inputs.docker-arm-host-key }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa  
+    - name: Find builder
       if: ${{ inputs.docker-remote-multi-platform }}
       shell: bash
-      run: echo "BUILDER_IP=$(dig +short A ${{ inputs.docker-arm-host }} | tail -n1)" >> $GITHUB_ENV # return one random builder from multiline A record
-
+      run: echo "BUILDER_IP=$(./.github/scripts/select-builder.sh ${{ inputs.docker-arm-host }} ubuntu ~/.ssh/id_rsa)" >> $GITHUB_ENV
     - name: Set up SSH
       if: ${{ inputs.docker-remote-multi-platform }}
       uses: MrSquaare/ssh-setup-action@523473d91581ccbf89565e12b40faba93f2708bd # v1.1.0
