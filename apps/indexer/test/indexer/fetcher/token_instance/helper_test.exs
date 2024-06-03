@@ -520,5 +520,36 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
                  "https://ipfs.io/ipfs/QmU6DGXciSZXTH1fUKkEqj74P8FeXPRKxSTjgRsVKUQa95/base/300067000000000000.JPG"
              }
     end
+
+    test "Don't fail on high retries count" do
+      config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
+
+      coef = config[:exp_timeout_coeff]
+      base = config[:exp_timeout_base]
+      max_refetch_interval = config[:max_refetch_interval]
+
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      token_instance =
+        insert(:token_instance,
+          token_contract_address_hash: erc_721_token.contract_address_hash,
+          error: "error",
+          metadata: nil,
+          retries_count: 50
+        )
+
+      Helper.batch_fetch_instances([
+        %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+      ])
+
+      now = DateTime.utc_now()
+      refetch_after = DateTime.add(now, max_refetch_interval, :millisecond)
+
+      [instance] = Repo.all(Instance)
+
+      assert instance.retries_count == 51
+      assert DateTime.diff(refetch_after, instance.refetch_after) < 1
+      assert !is_nil(instance.error)
+    end
   end
 end

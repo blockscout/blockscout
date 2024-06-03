@@ -3707,7 +3707,7 @@ defmodule Explorer.Chain do
 
     Instance
     |> where([instance], not is_nil(instance.error))
-    |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after > ^DateTime.utc_now())
+    |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after < ^DateTime.utc_now())
     |> select([instance], %{
       contract_address_hash: instance.token_contract_address_hash,
       token_id: instance.token_id
@@ -3918,6 +3918,8 @@ defmodule Explorer.Chain do
     base = config[:exp_timeout_base]
     max_refetch_interval = config[:max_refetch_interval]
 
+    max_retry_count = :math.log(max_refetch_interval / 1000 / coef) / :math.log(base)
+
     from(
       token_instance in Instance,
       update: [
@@ -3934,7 +3936,7 @@ defmodule Explorer.Chain do
             fragment(
               """
               CASE WHEN EXCLUDED.metadata IS NULL THEN
-                NOW() AT TIME ZONE 'UTC' + LEAST(interval '1 seconds' * (? * ? ^ (? + 1)), interval '1 milliseconds' * ?)
+                NOW() AT TIME ZONE 'UTC' + interval '1 seconds' * (? * ? ^ LEAST(? + 1.0, ?))
               ELSE
                 NULL
               END
@@ -3942,7 +3944,7 @@ defmodule Explorer.Chain do
               ^coef,
               ^base,
               token_instance.retries_count,
-              ^max_refetch_interval
+              ^max_retry_count
             )
         ]
       ],
