@@ -62,6 +62,7 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}-indexer
+          labels: ${{ steps.setup.outputs.docker-labels }}
           build-args: |
             DISABLE_API=true
             DISABLE_WEBAPP=true
@@ -84,6 +85,7 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}-api
+          labels: ${{ steps.setup.outputs.docker-labels }}
           build-args: |
             DISABLE_INDEXER=true
             DISABLE_WEBAPP=true

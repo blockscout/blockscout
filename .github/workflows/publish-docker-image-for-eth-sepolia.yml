@@ -48,6 +48,7 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-indexer
+          labels: ${{ steps.setup.outputs.docker-labels }}
           build-args: |
             CHAIN_TYPE=ethereum
             CACHE_EXCHANGE_RATES_PERIOD=
@@ -66,6 +67,7 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-api
+          labels: ${{ steps.setup.outputs.docker-labels }}
           build-args: |
             CHAIN_TYPE=ethereum
             CACHE_EXCHANGE_RATES_PERIOD=
