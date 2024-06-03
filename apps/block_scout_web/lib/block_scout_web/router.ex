@@ -1,8 +1,9 @@
 defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
-  alias BlockScoutWeb.Plug.{CheckAccountAPI, GraphQL, RateLimit}
+  alias BlockScoutWeb.Plug.{GraphQL, RateLimit}
   alias BlockScoutWeb.{ApiRouter, WebRouter}
+  alias BlockScoutWeb.Routers.AccountRouter
 
   @max_query_string_length 5_000
 
@@ -55,31 +56,7 @@ defmodule BlockScoutWeb.Router do
     plug(RateLimit, graphql?: true)
   end
 
-  pipeline :account_auth do
-    plug(
-      Plug.Parsers,
-      parsers: [:urlencoded, :multipart, :json],
-      length: 100_000,
-      query_string_length: @max_query_string_length,
-      pass: ["*/*"],
-      json_decoder: Poison
-    )
-
-    plug(BlockScoutWeb.Plug.Logger, application: :api)
-    plug(:fetch_session)
-    plug(:fetch_flash)
-    plug(:protect_from_forgery)
-    plug(CheckAccountAPI)
-  end
-
-  scope "/auth", BlockScoutWeb do
-    pipe_through(:account_auth)
-
-    get("/profile", Account.AuthController, :profile)
-    get("/logout", Account.AuthController, :logout)
-    get("/:provider", Account.AuthController, :request)
-    get("/:provider/callback", Account.AuthController, :callback)
-  end
+  match(:*, "/auth/*path", AccountRouter, [])
 
   forward("/api", ApiRouter)
 

@@ -14,7 +14,8 @@ defmodule BlockScoutWeb.ApiRouter do
   """
   use BlockScoutWeb, :router
   alias BlockScoutWeb.{AddressTransactionController, APIKeyV2Router, SmartContractsApiV2Router, UtilsApiV2Router}
-  alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckApiV2, RateLimit}
+  alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
+  alias BlockScoutWeb.Routers.AccountRouter
 
   @max_query_string_length 5_000
 
@@ -34,23 +35,6 @@ defmodule BlockScoutWeb.ApiRouter do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
-  end
-
-  pipeline :account_api do
-    plug(
-      Plug.Parsers,
-      parsers: [:urlencoded, :multipart, :json],
-      length: 100_000,
-      query_string_length: @max_query_string_length,
-      pass: ["*/*"],
-      json_decoder: Poison
-    )
-
-    plug(BlockScoutWeb.Plug.Logger, application: :api)
-    plug(:accepts, ["json"])
-    plug(:fetch_session)
-    plug(:protect_from_forgery)
-    plug(CheckAccountAPI)
   end
 
   pipeline :api_v2 do
@@ -98,70 +82,9 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(RateLimit, graphql?: true)
   end
 
-  alias BlockScoutWeb.Account.Api.V2.{AuthenticateController, EmailController, TagsController, UserController}
   alias BlockScoutWeb.API.V2
 
-  scope "/account/v2", as: :account_v2 do
-    pipe_through(:account_api)
-
-    get("/authenticate", AuthenticateController, :authenticate_get)
-    post("/authenticate", AuthenticateController, :authenticate_post)
-
-    get("/get_csrf", UserController, :get_csrf)
-
-    scope "/email" do
-      get("/resend", EmailController, :resend_email)
-    end
-
-    scope "/user" do
-      get("/info", UserController, :info)
-
-      get("/watchlist", UserController, :watchlist)
-      delete("/watchlist/:id", UserController, :delete_watchlist)
-      post("/watchlist", UserController, :create_watchlist)
-      put("/watchlist/:id", UserController, :update_watchlist)
-
-      get("/api_keys", UserController, :api_keys)
-      delete("/api_keys/:api_key", UserController, :delete_api_key)
-      post("/api_keys", UserController, :create_api_key)
-      put("/api_keys/:api_key", UserController, :update_api_key)
-
-      get("/custom_abis", UserController, :custom_abis)
-      delete("/custom_abis/:id", UserController, :delete_custom_abi)
-      post("/custom_abis", UserController, :create_custom_abi)
-      put("/custom_abis/:id", UserController, :update_custom_abi)
-
-      get("/public_tags", UserController, :public_tags_requests)
-      delete("/public_tags/:id", UserController, :delete_public_tags_request)
-      post("/public_tags", UserController, :create_public_tags_request)
-      put("/public_tags/:id", UserController, :update_public_tags_request)
-
-      scope "/tags" do
-        get("/address/", UserController, :tags_address)
-        get("/address/:id", UserController, :tags_address)
-        delete("/address/:id", UserController, :delete_tag_address)
-        post("/address/", UserController, :create_tag_address)
-        put("/address/:id", UserController, :update_tag_address)
-
-        get("/transaction/", UserController, :tags_transaction)
-        get("/transaction/:id", UserController, :tags_transaction)
-        delete("/transaction/:id", UserController, :delete_tag_transaction)
-        post("/transaction/", UserController, :create_tag_transaction)
-        put("/transaction/:id", UserController, :update_tag_transaction)
-      end
-    end
-  end
-
-  scope "/account/v2" do
-    pipe_through(:api)
-    pipe_through(:account_api)
-
-    scope "/tags" do
-      get("/address/:address_hash", TagsController, :tags_address)
-
-      get("/transaction/:transaction_hash", TagsController, :tags_transaction)
-    end
-  end
+  forward("/account", AccountRouter)
 
   scope "/v2/import" do
     pipe_through(:api_v2_no_session)
