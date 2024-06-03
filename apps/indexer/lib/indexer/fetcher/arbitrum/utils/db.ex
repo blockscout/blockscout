@@ -8,6 +8,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Arbitrum
   alias Explorer.Chain.Arbitrum.Reader
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Chain.{Data, Hash, Log}
@@ -33,7 +34,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       the key `:id`, representing the index of the L1 transaction in the
       `arbitrum_lifecycle_l1_transactions` table.
   """
-  @spec get_indices_for_l1_transactions(map()) :: map()
+  @spec get_indices_for_l1_transactions(%{binary() => map()}) :: %{
+          binary() => Arbitrum.LifecycleTransaction.to_import()
+        }
   # TODO: consider a way to remove duplicate with ZkSync.Utils.Db
   # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
   def get_indices_for_l1_transactions(new_l1_txs)
@@ -344,7 +347,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     - A list of `Explorer.Chain.Block` instances containing detailed information for each
       block number in the input list. Returns an empty list if no blocks are found for the given numbers.
   """
-  @spec rollup_blocks(maybe_improper_list(FullBlock.block_number(), [])) :: [FullBlock]
+  @spec rollup_blocks(maybe_improper_list(FullBlock.block_number(), [])) :: [FullBlock.t()]
   def rollup_blocks(list_of_block_numbers)
       when is_list(list_of_block_numbers) do
     query =
@@ -375,15 +378,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     - A list of maps representing unfinalized L1 transactions and compatible with the
       database import operation.
   """
-  @spec lifecycle_unfinalized_transactions(FullBlock.block_number()) :: [
-          %{
-            id: non_neg_integer(),
-            hash: Hash,
-            block_number: FullBlock.block_number(),
-            timestamp: DateTime,
-            status: :unfinalized
-          }
-        ]
+  @spec lifecycle_unfinalized_transactions(FullBlock.block_number()) :: [Arbitrum.LifecycleTransaction.to_import()]
   def lifecycle_unfinalized_transactions(finalized_block)
       when is_integer(finalized_block) and finalized_block >= 0 do
     finalized_block
@@ -416,7 +411,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     - The `Explorer.Chain.Arbitrum.L1Batch` associated with the given rollup block number
       if it exists and its commit transaction is loaded.
   """
-  @spec get_batch_by_rollup_block_number(FullBlock.block_number()) :: Explorer.Chain.Arbitrum.L1Batch | nil
+  @spec get_batch_by_rollup_block_number(FullBlock.block_number()) :: Arbitrum.L1Batch.t() | nil
   def get_batch_by_rollup_block_number(num)
       when is_integer(num) and num >= 0 do
     case Reader.get_batch_by_rollup_block_number(num) do
@@ -449,11 +444,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       If no unconfirmed blocks are found within the range, an empty list is returned.
   """
   @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [
-          %{
-            batch_number: non_neg_integer(),
-            block_number: FullBlock.block_number(),
-            confirmation_id: non_neg_integer() | nil
-          }
+          Arbitrum.BatchBlock.to_import()
         ]
   def unconfirmed_rollup_blocks(first_block, last_block)
       when is_integer(first_block) and first_block >= 0 and
@@ -492,17 +483,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       database import operation. If no initiated messages are found up to the specified
       block number, an empty list is returned.
   """
-  @spec initiated_l2_to_l1_messages(FullBlock.block_number()) :: [
-          %{
-            direction: :from_l2,
-            message_id: non_neg_integer(),
-            originator_address: binary(),
-            originating_transaction_hash: binary(),
-            originating_transaction_block_number: FullBlock.block_number(),
-            completion_transaction_hash: nil,
-            status: :initiated
-          }
-        ]
+  @spec initiated_l2_to_l1_messages(FullBlock.block_number()) :: [Arbitrum.Message.to_import()]
   def initiated_l2_to_l1_messages(block_number)
       when is_integer(block_number) and block_number >= 0 do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
@@ -525,17 +506,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       database import operation. If no messages with the 'sent' status are found by
       the specified block number, an empty list is returned.
   """
-  @spec sent_l2_to_l1_messages(FullBlock.block_number()) :: [
-          %{
-            direction: :from_l2,
-            message_id: non_neg_integer(),
-            originator_address: binary(),
-            originating_transaction_hash: binary(),
-            originating_transaction_block_number: FullBlock.block_number(),
-            completion_transaction_hash: nil,
-            status: :sent
-          }
-        ]
+  @spec sent_l2_to_l1_messages(FullBlock.block_number()) :: [Arbitrum.Message.to_import()]
   def sent_l2_to_l1_messages(block_number)
       when is_integer(block_number) and block_number >= 0 do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
@@ -558,17 +529,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       database import operation. If no messages with the 'confirmed' status are found by
       the specified block number, an empty list is returned.
   """
-  @spec confirmed_l2_to_l1_messages(FullBlock.block_number()) :: [
-          %{
-            direction: :from_l2,
-            message_id: non_neg_integer(),
-            originator_address: binary(),
-            originating_transaction_hash: binary(),
-            originating_transaction_block_number: FullBlock.block_number(),
-            completion_transaction_hash: nil,
-            status: :confirmed
-          }
-        ]
+  @spec confirmed_l2_to_l1_messages(FullBlock.block_number()) :: [Arbitrum.Message.to_import()]
   def confirmed_l2_to_l1_messages(block_number)
       when is_integer(block_number) and block_number >= 0 do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
@@ -603,7 +564,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       the input list. The output list may be smaller than the input list if some IDs do not
       correspond to any existing transactions.
   """
-  @spec l1_executions([non_neg_integer()]) :: [Explorer.Chain.Arbitrum.L1Execution]
+  @spec l1_executions([non_neg_integer()]) :: [Arbitrum.L1Execution.t()]
   def l1_executions(message_ids) when is_list(message_ids) do
     Reader.l1_executions(message_ids)
   end
@@ -729,6 +690,16 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Chain.timestamp_to_block_number(timestamp, :after, false)
   end
 
+  @doc """
+    Checks if an AnyTrust keyset exists in the database using the provided keyset hash.
+
+    ## Parameters
+    - `keyset_hash`: The hash of the keyset to be checked.
+
+    ## Returns
+    - `true` if the keyset exists, `false` otherwise.
+  """
+  @spec anytrust_keyset_exists?(binary()) :: boolean()
   def anytrust_keyset_exists?("0x" <> keyset_hash) do
     anytrust_keyset_exists?(keyset_hash |> Chain.string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes))
   end
@@ -737,22 +708,26 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     not is_nil(Reader.get_anytrust_keyset(keyset_hash))
   end
 
+  @spec lifecycle_transaction_to_map(Arbitrum.LifecycleTransaction.t()) :: Arbitrum.LifecycleTransaction.to_import()
   defp lifecycle_transaction_to_map(tx) do
     [:id, :hash, :block_number, :timestamp, :status]
     |> db_record_to_map(tx)
   end
 
+  @spec rollup_block_to_map(Arbitrum.BatchBlock.t()) :: Arbitrum.BatchBlock.to_import()
   defp rollup_block_to_map(block) do
     [:batch_number, :block_number, :confirmation_id]
     |> db_record_to_map(block)
   end
 
+  @spec message_to_map(Arbitrum.Message.t()) :: Arbitrum.Message.to_import()
   defp message_to_map(message) do
     [
       :direction,
       :message_id,
       :originator_address,
       :originating_transaction_hash,
+      :origination_timestamp,
       :originating_transaction_block_number,
       :completion_transaction_hash,
       :status

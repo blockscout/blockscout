@@ -194,7 +194,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - A list of `Explorer.Chain.Arbitrum.LifecycleTransaction` corresponding to the hashes from
       the input list. The output list may be smaller than the input list.
   """
-  @spec lifecycle_transactions(maybe_improper_list(Hash.t(), [])) :: [LifecycleTransaction]
+  @spec lifecycle_transactions(maybe_improper_list(Hash.t(), [])) :: [{Hash.t(), non_neg_integer()}]
   def lifecycle_transactions(l1_tx_hashes) when is_list(l1_tx_hashes) do
     query =
       from(
@@ -217,7 +217,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       the input list. The output list may be smaller than the input list if some IDs do not
       correspond to any existing transactions.
   """
-  @spec l1_executions(maybe_improper_list(non_neg_integer(), [])) :: [L1Execution]
+  @spec l1_executions(maybe_improper_list(non_neg_integer(), [])) :: [L1Execution.t()]
   def l1_executions(message_ids) when is_list(message_ids) do
     query =
       from(
@@ -272,7 +272,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - A list of `Explorer.Chain.Arbitrum.LifecycleTransaction` representing unfinalized transactions,
       or `[]` if no unfinalized transactions are found.
   """
-  @spec lifecycle_unfinalized_transactions(FullBlock.block_number()) :: [LifecycleTransaction]
+  @spec lifecycle_unfinalized_transactions(FullBlock.block_number()) :: [LifecycleTransaction.t()]
   def lifecycle_unfinalized_transactions(finalized_block)
       when is_integer(finalized_block) and finalized_block >= 0 do
     query =
@@ -346,7 +346,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - An instance of `Explorer.Chain.Arbitrum.L1Batch` representing the batch containing
       the specified rollup block number, or `nil` if no corresponding batch is found.
   """
-  @spec get_batch_by_rollup_block_number(FullBlock.block_number()) :: L1Batch | nil
+  @spec get_batch_by_rollup_block_number(FullBlock.block_number()) :: L1Batch.t() | nil
   def get_batch_by_rollup_block_number(number)
       when is_integer(number) and number >= 0 do
     query =
@@ -476,7 +476,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       unconfirmed block within the range. Returns `[]` if no unconfirmed blocks are found
       within the range, or if the block fetcher has not indexed them.
   """
-  @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [BatchBlock]
+  @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [BatchBlock.t()]
   def unconfirmed_rollup_blocks(first_block, last_block)
       when is_integer(first_block) and first_block >= 0 and
              is_integer(last_block) and first_block <= last_block do
@@ -522,9 +522,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - Instances of `Explorer.Chain.Arbitrum.Message` corresponding to the criteria, or `[]` if no messages
       with the given status are found in the rollup blocks up to the specified number.
   """
-  @spec l2_to_l1_messages(:confirmed | :initiated | :relayed | :sent, FullBlock.block_number()) :: [
-          Message
-        ]
+  @spec l2_to_l1_messages(:confirmed | :initiated | :relayed | :sent, FullBlock.block_number()) :: [Message.t()]
   def l2_to_l1_messages(status, block_number)
       when status in [:initiated, :sent, :confirmed, :relayed] and
              is_integer(block_number) and
@@ -664,7 +662,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @spec messages(binary(),
           paging_options: PagingOptions.t(),
           api?: boolean()
-        ) :: [Message]
+        ) :: [Message.t()]
   def messages(direction, options) when direction == "from-rollup" do
     do_messages(:from_l2, options)
   end
@@ -689,7 +687,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @spec do_messages(:from_l2 | :to_l2,
           paging_options: PagingOptions.t(),
           api?: boolean()
-        ) :: [Message]
+        ) :: [Message.t()]
   defp do_messages(direction, options) do
     base_query =
       from(msg in Message,
@@ -725,7 +723,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @spec relayed_l1_to_l2_messages(
           paging_options: PagingOptions.t(),
           api?: boolean()
-        ) :: [Message]
+        ) :: [Message.t()]
   def relayed_l1_to_l2_messages(options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
@@ -771,7 +769,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   """
   def batch(number, options)
 
-  @spec batch(:latest, api?: boolean()) :: {:error, :not_found} | {:ok, L1Batch}
+  @spec batch(:latest, api?: boolean()) :: {:error, :not_found} | {:ok, L1Batch.t()}
   def batch(:latest, options) do
     L1Batch
     |> order_by(desc: :number)
@@ -786,7 +784,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @spec batch(binary() | non_neg_integer(),
           necessity_by_association: %{atom() => :optional | :required},
           api?: boolean()
-        ) :: {:error, :not_found} | {:ok, L1Batch}
+        ) :: {:error, :not_found} | {:ok, L1Batch.t()}
   def batch(number, options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -821,7 +819,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
           committed?: boolean(),
           paging_options: PagingOptions.t(),
           api?: boolean()
-        ) :: [L1Batch]
+        ) :: [L1Batch.t()]
   def batches(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -864,7 +862,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     ## Returns
     - A list of `Explorer.Chain.Arbitrum.BatchTransaction` entries belonging to the specified batch.
   """
-  @spec batch_transactions(non_neg_integer() | binary(), api?: boolean()) :: [BatchTransaction]
+  @spec batch_transactions(non_neg_integer() | binary(), api?: boolean()) :: [BatchTransaction.t()]
   def batch_transactions(batch_number, options) do
     query = from(tx in BatchTransaction, where: tx.batch_number == ^batch_number)
 
@@ -890,7 +888,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
           necessity_by_association: %{atom() => :optional | :required},
           api?: boolean(),
           paging_options: PagingOptions.t()
-        ) :: [FullBlock]
+        ) :: [FullBlock.t()]
   def batch_blocks(batch_number, options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
@@ -919,6 +917,16 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     where(query, [block], block.number < ^block_number)
   end
 
+  @doc """
+    Retrieves an AnyTrust keyset from the database using the provided keyset hash.
+
+    ## Parameters
+    - `keyset_hash`: A binary representing the hash of the keyset to be retrieved.
+
+    ## Returns
+    - A record containing the AnyTrust keyset, otherwise `nil`.
+  """
+  @spec get_anytrust_keyset(binary()) :: DaMultiPurposeRecord.t() | nil
   def get_anytrust_keyset(keyset_hash) do
     query =
       from(

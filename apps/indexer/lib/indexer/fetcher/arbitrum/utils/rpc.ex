@@ -124,6 +124,20 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     )
   end
 
+  @doc """
+    Retrieves the block number associated with a specific keyset from the Sequencer Inbox contract.
+
+    This function performs an `eth_call` to the Sequencer Inbox contract to get the block number
+    when a keyset was created.
+
+    ## Parameters
+    - `sequencer_inbox_address`: The address of the Sequencer Inbox contract.
+    - `keyset_hash`: The hash of the keyset for which the block number is to be retrieved.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - The block number.
+  """
   @spec get_block_number_for_keyset(
           EthereumJSONRPC.address(),
           EthereumJSONRPC.hash(),

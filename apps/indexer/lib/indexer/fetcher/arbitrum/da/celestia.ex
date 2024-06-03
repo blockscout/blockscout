@@ -1,21 +1,25 @@
 defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
   @moduledoc """
-    TBD
+    Provides functionality for parsing and preparing Celestia data availability
+    information associated with Arbitrum rollup batches.
   """
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1]
 
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
 
+  alias Explorer.Chain.Arbitrum
+
   @enforce_keys [:batch_number, :height, :tx_commitment, :raw]
   defstruct @enforce_keys
 
   @typedoc """
-  Celestia Blob pointer struct:
-    * `batch_number` - The batch number in Arbitrum rollup associated with the Celestia data.
+  Celestia Blob Pointer struct:
+    * `batch_number` - The batch number in Arbitrum rollup associated with the
+                       Celestia data.
     * `height` - The height of the block in Celestia.
     * `tx_commitment` - Data commitment in Celestia.
-    * `raw` - unparsed blob pointer data containing data root, the proof etc.
+    * `raw` - Unparsed blob pointer data containing data root, proof, etc.
   """
   @type t :: %__MODULE__{
           batch_number: non_neg_integer(),
@@ -24,17 +28,35 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
           raw: binary()
         }
 
-  # Parses Celestia data from a given binary input, representing information required
-  # to address a data blob and prove data availability.
-  #
-  # ## Parameters
-  # - `batch_number`: The batch number in Arbitrum rollup associated with the Celestia data.
-  # - A binary input representing the Celestia data blob information.
-  #
-  # ## Returns
-  # - `{:ok, :in_celestia, celestia_da_info}` on successful parsing.
-  # - `{:error, nil, nil}` if the input cannot be parsed.
-  @spec parse_batch_accompanying_data(non_neg_integer(), binary()) :: {:ok, :in_celestia, t()} | {:error, nil, nil}
+  @typedoc """
+  Celestia Blob Descriptor struct:
+    * `height` - The height of the block in Celestia.
+    * `tx_commitment` - Data commitment in Celestia.
+    * `raw` - Unparsed blob pointer data containing data root, proof, etc.
+  """
+  @type blob_descriptor :: %{
+          :height => non_neg_integer(),
+          :tx_commitment => String.t(),
+          :raw => String.t()
+        }
+
+  @doc """
+    Parses the batch accompanying data for Celestia.
+
+    This function extracts Celestia blob descriptor information, representing
+    information required to address a data blob and prove data availability,
+    from a binary input associated with a given batch number.
+
+    ## Parameters
+    - `batch_number`: The batch number in the Arbitrum rollup associated with the Celestia data.
+    - `binary`: A binary input containing the Celestia blob descriptor data.
+
+    ## Returns
+    - `{:ok, :in_celestia, da_info}` if the data is successfully parsed.
+    - `{:error, nil, nil}` if the data cannot be parsed.
+  """
+  @spec parse_batch_accompanying_data(non_neg_integer(), binary()) ::
+          {:ok, :in_celestia, __MODULE__.t()} | {:error, nil, nil}
   def parse_batch_accompanying_data(
         batch_number,
         <<
@@ -59,14 +81,17 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
     {:error, nil, nil}
   end
 
-  @spec prepare_for_import(list(), t()) :: [
-          %{
-            :data_type => non_neg_integer(),
-            :data_key => binary(),
-            :data => %{:height => non_neg_integer(), :tx_commitment => String.t(), :raw => String.t()},
-            :batch_number => non_neg_integer()
-          }
-        ]
+  @doc """
+    Prepares Celestia Blob data for import.
+
+    ## Parameters
+    - `source`: The initial list of data to be imported.
+    - `da_info`: The Celestia blob descriptor struct containing details about the data blob.
+
+    ## Returns
+    - An updated list of data structures ready for import, including the Celestia blob descriptor.
+  """
+  @spec prepare_for_import(list(), __MODULE__.t()) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
   def prepare_for_import(source, %__MODULE__{} = da_info) do
     key = :crypto.hash(:sha256, :binary.encode_unsigned(da_info.height) <> da_info.tx_commitment)
 

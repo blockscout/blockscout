@@ -1,13 +1,31 @@
 defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   @moduledoc """
-    TBD
+    This module provides common functionalities for handling data availability (DA)
+    information in the Arbitrum rollup.
   """
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1]
 
   alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
 
-  # Distinguishes between different types of data availability information and parses it.
+  alias Explorer.Chain.Arbitrum
+
+  @doc """
+    Examines the batch accompanying data to determine its type and parse it accordingly.
+
+    This function examines the batch accompanying data to identify its type and then
+    parses it based on the identified type if necessary.
+
+    ## Parameters
+    - `batch_number`: The batch number in the Arbitrum rollup.
+    - `batch_accompanying_data`: The binary data accompanying the batch.
+
+    ## Returns
+    - `{status, da_type, da_info}` where `da_type` is one of `:in_blob4844`,
+      `:in_calldata`, `:in_celestia`, `:in_anytrust`, or `nil` if the accompanying
+      data cannot be parsed or is of an unsupported type. `da_info` contains the DA
+      info descriptor for Celestia or Anytrust.
+  """
   @spec examine_batch_accompanying_data(non_neg_integer(), binary()) ::
           {:ok, :in_blob4844, nil}
           | {:ok, :in_calldata, nil}
@@ -21,7 +39,69 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
     end
   end
 
-  # Parses data availability information from a given binary input based on the header flag.
+  @doc """
+    Prepares data availability (DA) information for import.
+
+    This function processes a list of DA information, either from Celestia or Anytrust,
+    preparing it for database import.
+
+    ## Parameters
+    - `da_info`: A list of DA information structs.
+    - `l1_connection_config`: A map containing the address of the Sequencer Inbox contract
+      and configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A list of data structures ready for import, each containing:
+      - `:data_key`: A binary key identifying the data.
+      - `:data_type`: An integer indicating the type of data, which can be `0`
+        for data blob descriptors and `1` for Anytrust keyset descriptors.
+      - `:data`: A map containing the DA information.
+      - `:batch_number`: The batch number associated with the data, or `nil`.
+  """
+  @spec prepare_for_import([Celestia.t() | Anytrust.t() | map()], %{
+          :sequencer_inbox_address => String.t(),
+          :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
+        }) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
+  def prepare_for_import([], _), do: []
+
+  def prepare_for_import(da_info, l1_connection_config) do
+    da_info
+    |> Enum.reduce({[], %{}}, fn info, {acc, cache} ->
+      case info do
+        %Celestia{} ->
+          {Celestia.prepare_for_import(acc, info), cache}
+
+        %Anytrust{} ->
+          Anytrust.prepare_for_import(acc, info, l1_connection_config, cache)
+
+        _ ->
+          {acc, cache}
+      end
+    end)
+    |> Kernel.elem(0)
+  end
+
+  @doc """
+    Determines if data availability information requires import.
+
+    This function checks the type of data availability (DA) and returns whether
+    the data should be imported based on its type.
+
+    ## Parameters
+    - `da_type`: The type of data availability, which can be `:in_blob4844`, `:in_calldata`,
+      `:in_celestia`, `:in_anytrust`, or `nil`.
+
+    ## Returns
+    - `true` if the DA type is `:in_celestia` or `:in_anytrust`, indicating that the data
+      requires import.
+    - `false` for all other DA types, indicating that the data does not require import.
+  """
+  @spec required_import?(:in_blob4844 | :in_calldata | :in_celestia | :in_anytrust | nil) :: boolean()
+  def required_import?(da_type) do
+    da_type in [:in_celestia, :in_anytrust]
+  end
+
+  # Parses data availability information based on the header flag.
   @spec parse_data_availability_info(non_neg_integer(), binary()) ::
           {:ok, :in_calldata, nil}
           | {:ok, :in_celestia, Celestia.t()}
@@ -54,40 +134,5 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
         log_error("Unknown header flag found during an attempt to parse DA data: #{header_flag}")
         {:error, nil, nil}
     end
-  end
-
-  @spec prepare_for_import([Celestia.t() | Anytrust.t() | map()], %{
-          :sequencer_inbox_address => String.t(),
-          :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
-        }) :: [
-          %{
-            :data_type => non_neg_integer(),
-            :data_key => binary(),
-            :data => map(),
-            :batch_number => non_neg_integer() | nil
-          }
-        ]
-  def prepare_for_import([], _), do: []
-
-  def prepare_for_import(da_info, l1_connection_config) do
-    da_info
-    |> Enum.reduce({[], %{}}, fn info, {acc, cache} ->
-      case info do
-        %Celestia{} ->
-          {Celestia.prepare_for_import(acc, info), cache}
-
-        %Anytrust{} ->
-          Anytrust.prepare_for_import(acc, info, l1_connection_config, cache)
-
-        _ ->
-          {acc, cache}
-      end
-    end)
-    |> Kernel.elem(0)
-  end
-
-  @spec required_import?(:in_blob4844 | :in_calldata | :in_celestia | :in_anytrust | nil) :: boolean()
-  def required_import?(da_type) do
-    da_type in [:in_celestia, :in_anytrust]
   end
 end

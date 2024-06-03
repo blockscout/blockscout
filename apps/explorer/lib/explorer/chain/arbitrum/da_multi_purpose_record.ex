@@ -21,16 +21,31 @@ defmodule Explorer.Chain.Arbitrum.DaMultiPurposeRecord do
 
   @allowed_attrs @optional_attrs ++ @required_attrs
 
-  @type t :: %__MODULE__{
-          data_key: Hash.t(),
+  @typedoc """
+  Descriptor of the a multi purpose record related to Data Availability for Arbitrum rollups:
+    * `data_key` - The hash of the data key.
+    * `data_type` - The type of the data.
+    * `data` - The data
+    * `batch_number` - The number of the Arbitrum batch associated with the data for the
+                       records where applicable.
+  """
+  @type to_import :: %{
+          data_key: binary(),
           data_type: non_neg_integer(),
           data: map(),
-          batch_number: non_neg_integer(),
-          batch: %Ecto.Association.NotLoaded{} | L1Batch.t() | nil
+          batch_number: non_neg_integer() | nil
         }
 
+  @typedoc """
+    * `data_key` - The hash of the data key.
+    * `data_type` - The type of the data.
+    * `data` - The data to be stored as a json in the database.
+    * `batch_number` - The number of the Arbitrum batch associated with the data for the
+                       records where applicable.
+    * `batch` - An instance of `Explorer.Chain.Arbitrum.L1Batch` referenced by `batch_number`.
+  """
   @primary_key false
-  schema "arbitrum_da_multi_purpose" do
+  typed_schema "arbitrum_da_multi_purpose" do
     field(:data_key, Hash.Full)
     field(:data_type, :integer)
     field(:data, :map)

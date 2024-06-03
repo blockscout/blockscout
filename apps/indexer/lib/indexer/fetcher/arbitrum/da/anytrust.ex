@@ -1,6 +1,7 @@
 defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
   @moduledoc """
-    TBD
+    Provides functionality for handling AnyTrust data availability information
+    within the Arbitrum rollup context.
   """
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1, log_info: 1, log_debug: 1]
@@ -10,6 +11,8 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Helper, as: IndexerHelper
+
+  alias Explorer.Chain.Arbitrum
 
   @enforce_keys [
     :batch_number,
@@ -23,12 +26,14 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
 
   @typedoc """
   AnyTrust DA info struct:
-    * `batch_number` - The batch number in Arbitrum rollup associated with the Celestia data.
-    * `keyset_hash` - Hash of the keyset used to sign the data.
-    * `data_hash` - Hash of the data.
-    * `timeout` - Timeout for the data.
-    * `signers_mask` - Mask of signers.
-    * `bls_signature` - Aggregated BLS signature.
+    * `batch_number` - The batch number in the Arbitrum rollup associated with the
+                       AnyTrust data blob.
+    * `keyset_hash` - The hash identifying a keyset that defines the rules (threshold
+                      and committee members) to issue the DA certificate.
+    * `data_hash` - The hash of the data blob stored by the AnyTrust committee.
+    * `timeout` - Expiration timeout for the data blob.
+    * `signers_mask` - Mask identifying committee members who guaranteed data availability.
+    * `bls_signature` - Aggregated BLS signature of the committee members.
   """
   @type t :: %__MODULE__{
           batch_number: non_neg_integer(),
@@ -39,20 +44,66 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
           bls_signature: binary()
         }
 
+  @typedoc """
+  AnyTrust DA certificate struct:
+    * `keyset_hash` - The hash identifying a keyset that defines the rules (threshold
+                      and committee members) to issue the DA certificate.
+    * `data_hash` - The hash of the data blob stored by the AnyTrust committee.
+    * `timeout` - Expiration timeout for the data blob.
+    * `signers_mask` - Mask identifying committee members who guaranteed data availability.
+    * `bls_signature` - Aggregated BLS signature of the committee members.
+  """
+  @type certificate :: %{
+          :keyset_hash => String.t(),
+          :data_hash => String.t(),
+          :timeout => DateTime.t(),
+          :signers_mask => non_neg_integer(),
+          :bls_signature => String.t()
+        }
+
+  @typedoc """
+  AnyTrust committee member public key struct:
+    * `trusted` - A boolean indicating whether the member is trusted.
+    * `key` - The public key of the member.
+    * `proof` - The proof of the member's public key.
+  """
+  @type signer :: %{
+          :trusted => boolean(),
+          :key => String.t(),
+          optional(:proof) => String.t()
+        }
+
+  @typedoc """
+  AnyTrust committee struct:
+    * `threshold` - The threshold of honest members for the keyset.
+    * `pubkeys` - A list of public keys of the committee members.
+  """
+  @type keyset :: %{
+          :threshold => non_neg_integer(),
+          :pubkeys => [signer()]
+        }
+
   # keccak256("SetValidKeyset(bytes32,bytes)")
   @set_valid_keyset_event "0xabca9b7986bc22ad0160eb0cb88ae75411eacfba4052af0b457a9335ef655722"
   @set_valid_keyset_event_unindexed_params [:bytes]
 
-  # Parses Anytrust data from a given binary input, representing a data availability certificate.
-  #
-  # ## Parameters
-  # - `batch_number`: The batch number in Arbitrum rollup associated with the Celestia data.
-  # - A binary input representing the data availability certificate.
-  #
-  # ## Returns
-  # - `{:ok, :in_anytrust, anytrust_da_info}` on successful parsing.
-  # - `{:error, nil, nil}` if the input cannot be parsed.
-  @spec parse_batch_accompanying_data(non_neg_integer(), binary()) :: {:ok, :in_anytrust, t()} | {:error, nil, nil}
+  @doc """
+    Parses batch accompanying data to extract AnyTrust data availability information.
+
+    This function decodes the provided binary data to extract information related to
+    AnyTrust data availability.
+
+    ## Parameters
+    - `batch_number`: The batch number associated with the AnyTrust data.
+    - `binary_data`: The binary data to be parsed, containing AnyTrust data fields.
+
+    ## Returns
+    - `{:ok, :in_anytrust, da_info}` if the parsing is successful, where `da_info` is
+      the AnyTrust data availability information struct.
+    - `{:error, nil, nil}` if the parsing fails.
+  """
+  @spec parse_batch_accompanying_data(non_neg_integer(), binary()) ::
+          {:ok, :in_anytrust, __MODULE__.t()} | {:error, nil, nil}
   def parse_batch_accompanying_data(batch_number, <<
         keyset_hash::binary-size(32),
         data_hash::binary-size(32),
@@ -78,29 +129,40 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     {:error, nil, nil}
   end
 
+  @doc """
+    Prepares AnyTrust data availability information for import.
+
+    This function prepares a list of data structures for import into the database,
+    ensuring that AnyTrust DA information and related keysets are included. It
+    verifies if the keyset associated with the AnyTrust DA certificate is already
+    known or needs to be fetched from L1.
+
+    To avoid fetching the same keyset multiple times, the function uses a cache.
+
+    ## Parameters
+    - `source`: The initial list of data to be imported.
+    - `da_info`: The AnyTrust DA info struct containing details about the data blob.
+    - `l1_connection_config`: A map containing the address of the Sequencer Inbox contract
+      and configuration parameters for the JSON RPC connection.
+    - `cache`: A map used to cache the checked keysets.
+
+    ## Returns
+    - A tuple containing:
+      - An updated list of data structures ready for import, including the DA
+        certificate (`data_type` is `0`) and potentially a new keyset (`data_type`
+        is `1`) if required.
+      - The updated cache with the checked keysets.
+  """
   @spec prepare_for_import(
           list(),
-          t(),
+          __MODULE__.t(),
           %{
             :sequencer_inbox_address => String.t(),
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
           },
           %{binary() => boolean()}
         ) ::
-          {[
-             %{
-               :data_type => non_neg_integer(),
-               :data_key => binary(),
-               :data => %{
-                 :keyset_hash => String.t(),
-                 :data_hash => String.t(),
-                 :timeout => DateTime.t(),
-                 :signers_mask => non_neg_integer(),
-                 :bls_signature => String.t()
-               },
-               :batch_number => non_neg_integer() | nil
-             }
-           ], %{binary() => boolean()}}
+          {[Arbitrum.DaMultiPurposeRecord.to_import()], %{binary() => boolean()}}
   def prepare_for_import(source, %__MODULE__{} = da_info, l1_connection_config, cache) do
     data = %{
       keyset_hash: ArbitrumHelper.bytes_to_hex_str(da_info.keyset_hash),
@@ -141,6 +203,30 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     {updated_res ++ source, updated_cache}
   end
 
+  # Verifies the existence of an AnyTrust committee keyset in the database and fetches it from L1 if not found.
+  #
+  # To avoid fetching the same keyset multiple times, the function uses a cache.
+  #
+  # ## Parameters
+  # - `keyset_hash`: A binary representing the hash of the keyset.
+  # - `l1_connection_config`: A map containing the address of the Sequencer Inbox
+  #                           contract and configuration parameters for the JSON RPC
+  #                           connection.
+  # - `cache`: A map used to cache the checked keysets.
+  #
+  # ## Returns
+  # - `{:new_keyset, keyset_info, updated_cache}` if the keyset is not found and fetched from L1.
+  # - `{:existing_keyset, nil, cache}` if the keyset is found in the cache or database.
+  @spec check_if_new_keyset(
+          binary(),
+          %{
+            :sequencer_inbox_address => binary(),
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
+          },
+          %{binary() => boolean()}
+        ) ::
+          {:new_keyset, __MODULE__.keyset(), %{binary() => boolean()}}
+          | {:existing_keyset, nil, %{binary() => boolean()}}
   defp check_if_new_keyset(keyset_hash, _, cache) when is_map_key(cache, keyset_hash) do
     {:existing_keyset, nil, cache}
   end
@@ -150,7 +236,6 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
 
     case Db.anytrust_keyset_exists?(keyset_hash) do
       true ->
-        log_info("Keyset #{keyset_hash} already exists in the database")
         {:existing_keyset, nil, updated_cache}
 
       false ->
@@ -158,6 +243,27 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     end
   end
 
+  # Retrieves and decodes AnyTrust committee keyset information from L1 using the provided keyset hash.
+  #
+  # This function fetches the block number when the keyset was applied, retrieves
+  # the raw keyset data from L1, and decodes it to extract the threshold and public
+  # keys information.
+  #
+  # ## Parameters
+  # - `keyset_hash`: The hash of the keyset to be retrieved.
+  # - A map containing:
+  #   - `:sequencer_inbox_address`: The address of the Sequencer Inbox contract.
+  #   - `:json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - A map describing an AnyTrust committee.
+  @spec get_keyset_info_from_l1(
+          binary(),
+          %{
+            :sequencer_inbox_address => binary(),
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
+          }
+        ) :: __MODULE__.keyset()
   defp get_keyset_info_from_l1(keyset_hash, %{
          sequencer_inbox_address: sequencer_inbox_address,
          json_rpc_named_arguments: json_rpc_named_arguments
@@ -171,10 +277,27 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
       get_keyset_raw_data(keyset_hash, keyset_applied_block_number, sequencer_inbox_address, json_rpc_named_arguments)
 
     decode_keyset(raw_keyset_data)
-
-    # %{block_number: keyset_applied_block_number}
   end
 
+  # Retrieves the raw data of a keyset by querying logs for the `SetValidKeyset` event.
+  #
+  # This function fetches logs for the `SetValidKeyset` event within a specific block
+  # emitted by the Sequencer Inbox contract and extracts the keyset data if available.
+  #
+  # ## Parameters
+  # - `keyset_hash`: The hash of the keyset to retrieve.
+  # - `block_number`: The block number to search for the logs.
+  # - `sequencer_inbox_address`: The address of the Sequencer Inbox contract.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - The raw data of the keyset if found, otherwise `nil`.
+  @spec get_keyset_raw_data(
+          binary(),
+          non_neg_integer(),
+          binary(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: binary() | nil
   defp get_keyset_raw_data(keyset_hash, block_number, sequencer_inbox_address, json_rpc_named_arguments) do
     {:ok, logs} =
       IndexerHelper.get_logs(
@@ -201,9 +324,23 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     keyset_data
   end
 
-  # https://github.com/OffchainLabs/nitro/blob/ad9ab00723e13cf98307b9b65774ad455594ef7b/arbstate/das_reader.go#L217-L248
+  # Decodes an AnyTrust committee keyset from a binary input.
+  #
+  # This function extracts the threshold of committee members configured for the
+  # keyset and the number of member public keys from the binary input, then decodes
+  # the specified number of public keys.
+  #
+  # Implemented as per: https://github.com/OffchainLabs/nitro/blob/ad9ab00723e13cf98307b9b65774ad455594ef7b/arbstate/das_reader.go#L217-L248
+  #
+  # ## Parameters
+  # - A binary input containing the threshold value, the number of public keys,
+  #   and the public keys themselves.
+  #
+  # ## Returns
+  # - A map describing an AnyTrust committee.
+  @spec decode_keyset(binary()) :: __MODULE__.keyset()
   defp decode_keyset(<<
-         assumed_honest::big-unsigned-integer-size(64),
+         threshold::big-unsigned-integer-size(64),
          num_keys::big-unsigned-integer-size(64),
          rest::binary
        >>)
@@ -211,11 +348,30 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     {pubkeys, _} = decode_pubkeys(rest, num_keys, [])
 
     %{
-      assumed_honest: assumed_honest,
+      threshold: threshold,
       pubkeys: pubkeys
     }
   end
 
+  # Decodes a list of AnyTrust committee member public keys from a binary input.
+  #
+  # This function recursively processes a binary input to extract a specified number
+  # of public keys.
+  #
+  # ## Parameters
+  # - `data`: The binary input containing the public keys.
+  # - `num_keys`: The number of public keys to decode.
+  # - `acc`: An accumulator list to collect the decoded public keys.
+  #
+  # ## Returns
+  # - A tuple containing:
+  #   - `{:error, "Insufficient data to decode public keys"}` if the input is insufficient
+  #     to decode the specified number of keys.
+  #   - A list of decoded AnyTrust committee member public keys and a binary entity
+  #     of zero length, if successful.
+  @spec decode_pubkeys(binary(), non_neg_integer(), [
+          signer()
+        ]) :: {:error, String.t()} | {[signer()], binary()}
   defp decode_pubkeys(<<>>, 0, acc), do: {Enum.reverse(acc), <<>>}
   defp decode_pubkeys(<<>>, _num_keys, _acc), do: {:error, "Insufficient data to decode public keys"}
 
@@ -228,7 +384,19 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     decode_pubkeys(remaining, num_keys - 1, [pubkey | acc])
   end
 
-  # https://github.com/OffchainLabs/nitro/blob/35bd2aa59611702e6403051af581fddda7c17f74/blsSignatures/blsSignatures.go#L206C6-L242
+  # Parses a public key of an AnyTrust AnyTrust committee member from a binary input.
+  #
+  # This function extracts either the public key (for trusted sources) or the proof
+  # bytes and key bytes (for untrusted sources).
+  #
+  # Implemented as per: https://github.com/OffchainLabs/nitro/blob/35bd2aa59611702e6403051af581fddda7c17f74/blsSignatures/blsSignatures.go#L206C6-L242
+  #
+  # ## Parameters
+  # - A binary input containing the proof length and the rest of the data.
+  #
+  # ## Returns
+  # - A map describing an AnyTrust committee member public key.
+  @spec parse_pubkey(binary()) :: signer()
   defp parse_pubkey(<<proof_len::size(8), rest::binary>>) do
     if proof_len == 0 do
       # Trusted source, no proof bytes, the rest is the key
