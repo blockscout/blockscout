@@ -217,7 +217,16 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   @doc """
-    Extends the json output for a block with a sub-map containing information related Optimism.
+    Extends the json output for a block using Optimism frame sequence (bound
+    with the provided L2 block) - adds info about L1 batch to the output.
+
+    ## Parameters
+    - `out_json`: A map defining output json which will be extended.
+    - `block`: block structure containing frame sequence info related to the block.
+
+    ## Returns
+    An extended map containing `l1_batch` item with the Optimism batch info
+    (L1 transaction hashes, timestamp, related blobs).
   """
   @spec extend_block_json_response(map(), %{
           :__struct__ => Explorer.Chain.Block,
@@ -277,9 +286,19 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   @doc """
-    Extends the json output for a transaction with a sub-map containing information related Optimism.
+    Extends the json output for a transaction adding Optimism-related info to the output.
+
+    ## Parameters
+    - `out_json`: A map defining output json which will be extended.
+    - `transaction`: transaction structure containing extra Optimism-related info.
+
+    ## Returns
+    An extended map containing `l1_*` and `op_withdrawals` items related to Optimism.
   """
-  @spec extend_transaction_json_response(map(), map()) :: map()
+  @spec extend_transaction_json_response(map(), %{
+          :__struct__ => Explorer.Chain.Transaction,
+          optional(any()) => any()
+        }) :: map()
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     out_json
     |> add_optional_transaction_field(transaction, :l1_fee)

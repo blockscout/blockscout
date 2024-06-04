@@ -1,5 +1,13 @@
 defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
-  @moduledoc "Models a frame sequence blob for Optimism."
+  @moduledoc """
+    Models a blob related to Optimism frame sequence.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Optimism.FrameSequenceBlobs
+
+    Migrations:
+    - Explorer.Repo.Optimism.Migrations.AddCelestiaBlobMetadata
+  """
 
   use Explorer.Schema
 
@@ -31,6 +39,9 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
     timestamps()
   end
 
+  @doc """
+    Validates that the attributes are valid.
+  """
   def changeset(%__MODULE__{} = blobs, attrs \\ %{}) do
     blobs
     |> cast(attrs, @required_attrs)
@@ -41,8 +52,15 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
   end
 
   @doc """
-  Lists `t:Explorer.Chain.Optimism.FrameSequenceBlob.t/0`'s' related to the specified frame sequence
-  in ascending order based on id.
+    Lists `t:Explorer.Chain.Optimism.FrameSequenceBlob.t/0`'s' related to the
+    specified frame sequence in ascending order based on an entity id.
+
+    ## Parameters
+    - `frame_sequence_id`: A frame sequence identifier.
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - Blobs related to the specified frame sequence id sorted by an entity id.
   """
   @spec list(non_neg_integer(), list()) :: [__MODULE__.t()]
   def list(frame_sequence_id, options \\ []) do

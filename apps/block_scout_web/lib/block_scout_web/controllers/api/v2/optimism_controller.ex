@@ -19,8 +19,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/txn-batches`
-    and `/api/v2/optimism/txn-batches/:l2_block_range_start/:l2_block_range_end` endpoints.
+    Function to handle GET requests to `/api/v2/optimism/txn-batches` and
+    `/api/v2/optimism/txn-batches/:l2_block_range_start/:l2_block_range_end` endpoints.
   """
   @spec txn_batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def txn_batches(conn, params) do

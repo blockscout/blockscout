@@ -1,5 +1,17 @@
 defmodule Explorer.Chain.Optimism.TxnBatch do
-  @moduledoc "Models a batch of transactions for Optimism."
+  @moduledoc """
+    Models a batch of transactions for Optimism.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Optimism.TxnBatches
+
+    Migrations:
+    - Explorer.Repo.Migrations.AddOpTransactionBatchesTable
+    - Explorer.Repo.Migrations.RenameFields
+    - Explorer.Repo.Migrations.AddOpFrameSequencesTable
+    - Explorer.Repo.Migrations.RemoveOpEpochNumberField
+    - Explorer.Repo.Optimism.Migrations.AddCelestiaBlobMetadata
+  """
 
   use Explorer.Schema
 
@@ -31,6 +43,9 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
     timestamps()
   end
 
+  @doc """
+    Validates that the attributes are valid.
+  """
   def changeset(%__MODULE__{} = batches, attrs \\ %{}) do
     batches
     |> cast(attrs, @required_attrs)
@@ -39,8 +54,17 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   end
 
   @doc """
-  Finds and returns L1 batch data from the op_frame_sequences and
-  op_frame_sequence_blobs DB tables by blob's commitment and height.
+    Finds and returns L1 batch data from the op_frame_sequences and
+    op_frame_sequence_blobs DB tables by Celestia blob's commitment and height.
+
+    ## Parameters
+    - `commitment`: Blob's commitment in the form of hex string beginning with 0x prefix.
+    - `height`: Blob's height.
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - A map with info about L1 batch bound to the specified Celestia blob.
+    - nil if the blob is not found.
   """
   @spec batch_by_celestia_blob(binary(), non_neg_integer(), list()) :: map() | nil
   def batch_by_celestia_blob(commitment, height, options \\ []) do
@@ -110,7 +134,14 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   end
 
   @doc """
-  Lists `t:Explorer.Chain.Optimism.TxnBatch.t/0`'s' in descending order based on l2_block_number.
+    Lists `t:Explorer.Chain.Optimism.TxnBatch.t/0`'s' in descending order based on l2_block_number.
+
+    ## Parameters
+    - `options`: A keyword list of options that may include whether to use a replica database,
+      paging options, and optional L2 block range for which to make the list of items.
+
+    ## Returns
+    - A list of found entities sorted by `l2_block_number` in descending order.
   """
   @spec list :: [__MODULE__.t()]
   def list(options \\ []) do
@@ -145,7 +176,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   end
 
   @doc """
-  Decodes EIP-4844 blob to the raw data. Returns `nil` if the blob is invalid.
+    Decodes EIP-4844 blob to the raw data. Returns `nil` if the blob is invalid.
   """
   @spec decode_eip4844_blob(binary()) :: binary() | nil
   def decode_eip4844_blob(b) do

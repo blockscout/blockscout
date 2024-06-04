@@ -1,5 +1,13 @@
 defmodule Explorer.Chain.Optimism.FrameSequence do
-  @moduledoc "Models a frame sequence for Optimism."
+  @moduledoc """
+    Models a frame sequence for Optimism.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Optimism.FrameSequences
+
+    Migrations:
+    - Explorer.Repo.Migrations.AddOpFrameSequencesTable
+  """
 
   use Explorer.Schema
 
@@ -26,6 +34,9 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
     timestamps()
   end
 
+  @doc """
+    Validates that the attributes are valid.
+  """
   def changeset(%__MODULE__{} = sequences, attrs \\ %{}) do
     sequences
     |> cast(attrs, @required_attrs)
