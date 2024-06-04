@@ -168,6 +168,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(proxy_address.hash)}")
 
+      implementation_contract_address_hash_string = Address.checksum(implementation_contract.address_hash)
+
       assert %{
                "hash" => ^address_hash,
                "is_contract" => true,
@@ -177,9 +179,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
                "creation_tx_hash" => ^tx_hash,
-               "implementation_address" => "0x" <> ^implementation_contract_address_hash_string,
+               "implementation_address" => ^implementation_contract_address_hash_string,
                "implementations" => [
-                 %{"address" => "0x" <> ^implementation_contract_address_hash_string, "name" => ^name}
+                 %{"address" => ^implementation_contract_address_hash_string, "name" => ^name}
                ]
              } = json_response(request, 200)
     end

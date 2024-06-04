@@ -6,7 +6,6 @@ defmodule BlockScoutWeb.API.V2.Helper do
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Transaction.History.TransactionStats
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -53,33 +52,35 @@ defmodule BlockScoutWeb.API.V2.Helper do
   @doc """
   Gets address with the additional info for api v2
   """
-  @spec address_with_info(any(), any()) :: nil | %{optional(<<_::32, _::_*8>>) => any()}
+  @spec address_with_info(any(), any()) :: nil | %{optional(String.t()) => any()}
+  def address_with_info(
+        %Address{proxy_implementations: %NotLoaded{}, contract_code: contract_code} = _address,
+        _address_hash
+      )
+      when not is_nil(contract_code) do
+    raise "proxy_implementations is not loaded for address"
+  end
+
   def address_with_info(%Address{} = address, _address_hash) do
     smart_contract? = Address.smart_contract?(address)
 
-    {implementation_address_hashes, implementation_names, implementation_address, implementation_name,
-     proxy_implementations} =
-      if smart_contract? do
-        proxy_implementations = Implementation.get_proxy_implementations(address.hash)
-
-        implementation_address_hashes = (proxy_implementations && proxy_implementations.address_hashes) || []
-        implementation_names = (proxy_implementations && proxy_implementations.names) || []
-
-        implementation_address = implementation_address_hashes |> Enum.at(0)
-        implementation_name = implementation_names |> Enum.at(0)
-
-        {implementation_address_hashes, implementation_names, implementation_address, implementation_name,
-         proxy_implementations}
-      else
-        {[], [], nil, nil, nil}
+    proxy_implementations =
+      case address.proxy_implementations do
+        %NotLoaded{} -> nil
+        proxy_implementations -> proxy_implementations
       end
+
+    implementation_address_hashes = (proxy_implementations && proxy_implementations.address_hashes) || []
+    implementation_names = (proxy_implementations && proxy_implementations.names) || []
+    implementation_address = implementation_address_hashes |> Enum.at(0)
+    implementation_name = implementation_names |> Enum.at(0)
 
     %{
       "hash" => Address.checksum(address),
       "is_contract" => smart_contract?,
       "name" => address_name(address),
       # todo: added for backward compatibility, remove when frontend unbound from these props
-      "implementation_address" => implementation_address,
+      "implementation_address" => implementation_address && Address.checksum(implementation_address),
       "implementation_name" => implementation_name,
       "implementations" => proxy_object_info(implementation_address_hashes, implementation_names),
       "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
