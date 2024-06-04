@@ -7,7 +7,13 @@ defmodule EthereumJSONRPC.Transaction do
   [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblockhashandindex),
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblocknumberandindex)
   """
-  import EthereumJSONRPC, only: [quantity_to_integer: 1, integer_to_quantity: 1, request: 1]
+  import EthereumJSONRPC,
+    only: [
+      quantity_to_integer: 1,
+      integer_to_quantity: 1,
+      request: 1,
+      put_if_present: 3
+    ]
 
   alias EthereumJSONRPC
 
@@ -711,17 +717,5 @@ defmodule EthereumJSONRPC.Transaction do
 
   defp entry_to_elixir(_) do
     {nil, nil}
-  end
-
-  def put_if_present(result, transaction, keys) do
-    Enum.reduce(keys, result, fn {from_key, to_key}, acc ->
-      value = transaction[from_key]
-
-      if value do
-        Map.put(acc, to_key, value)
-      else
-        acc
-      end
-    end)
   end
 end

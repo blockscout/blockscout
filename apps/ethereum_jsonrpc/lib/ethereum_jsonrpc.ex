@@ -579,4 +579,16 @@ defmodule EthereumJSONRPC do
 
   defp chunk_requests(requests, nil), do: requests
   defp chunk_requests(requests, chunk_size), do: Enum.chunk_every(requests, chunk_size)
+
+  def put_if_present(result, map, keys) do
+    Enum.reduce(keys, result, fn {from_key, to_key}, acc ->
+      value = map[from_key]
+
+      if value do
+        Map.put(acc, to_key, value)
+      else
+        acc
+      end
+    end)
+  end
 end

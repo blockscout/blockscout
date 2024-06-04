@@ -95,7 +95,7 @@ defmodule Explorer.Chain.Log do
                             &1
 
                           _ ->
-                              [:transaction_hash | &1]
+                            [:transaction_hash | &1]
                         end)).()
 
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic block_number)a

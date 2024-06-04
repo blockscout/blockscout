@@ -944,7 +944,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   defp celo_pending_epoch_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
     ordered_epoch_blocks =
       inserted_blocks
-      |> Enum.filter(fn block -> CeloHelper.epoch_block?(block.number) && block.consensus end)
+      |> Enum.filter(fn block -> CeloHelper.epoch_block_number?(block.number) && block.consensus end)
       |> Enum.map(&%{block_hash: &1.hash})
       |> Enum.sort_by(& &1.block_hash)
       |> Enum.dedup_by(& &1.block_hash)

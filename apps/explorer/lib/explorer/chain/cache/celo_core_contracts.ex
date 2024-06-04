@@ -30,7 +30,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     usd_token: "StableToken",
     validators: "Validators",
     governance: "Governance",
-    fee_handler: "FeeHandler"
+    fee_handler: "FeeHandler",
+    gas_price_minimum: "GasPriceMinimum"
   }
 
   @atom_to_contract_event_names %{

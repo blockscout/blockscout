@@ -6,12 +6,6 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
 
   use Mix.Task
 
-  import EthereumJSONRPC,
-    only: [
-      integer_to_quantity: 1,
-      json_rpc: 2
-    ]
-
   import Explorer.Helper,
     only: [
       decode_data: 2,
@@ -19,16 +13,19 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
     ]
 
   alias Mix.Task
+
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain.Cache.CeloCoreContracts
-  alias Indexer.Helper
+  alias Indexer.Helper, as: IndexerHelper
 
   @registry_proxy_contract_address "0x000000000000000000000000000000000000ce10"
   @registry_updated_event_signature "0x4166d073a7a5e704ce0db7113320f88da2457f872d46dc020c805c562c1582a0"
   @carbon_offsetting_fund_set_event_signature "0xe296227209b47bb8f4a76768ebd564dcde1c44be325a5d262f27c1fd4fd4538b"
   @fee_beneficiary_set_event_signature "0xf7015098f8d6fa48f0560725ffd5f81bf687ee5ac45153b590bdcb04648bbdd3"
   @burn_fraction_set_event_signature "0x41c679f4bcdc2c95f79a3647e2237162d9763d86685ef6c667781230c8ba9157"
+
   @chunk_size 200_000
+  @max_request_retries 3
 
   def run(_) do
     Task.run("app.start")
@@ -46,8 +43,8 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
             Logs.request(
               0,
               %{
-                fromBlock: integer_to_quantity(chunk_start),
-                toBlock: integer_to_quantity(chunk_end),
+                from_block: chunk_start,
+                to_block: chunk_end,
                 address: @registry_proxy_contract_address,
                 topics: [@registry_updated_event_signature]
               }
@@ -70,16 +67,19 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
           |> Map.update(
             contract_name,
             [entry],
-            &(&1 ++ [entry])
+            &[entry | &1]
           )
         else
           acc
         end
       end)
+      |> Map.new(fn {contract_name, entries} ->
+        {contract_name, Enum.reverse(entries)}
+      end)
 
     epoch_rewards_events =
-      fetch_events_for_contract(
-        [@carbon_offsetting_fund_set_event_signature],
+      [@carbon_offsetting_fund_set_event_signature]
+      |> fetch_events_for_contract(
         :epoch_rewards,
         core_contract_addresses,
         latest_block_number,
@@ -100,11 +100,11 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
       end)
 
     fee_handler_events =
-      fetch_events_for_contract(
-        [
-          @fee_beneficiary_set_event_signature,
-          @burn_fraction_set_event_signature
-        ],
+      [
+        @fee_beneficiary_set_event_signature,
+        @burn_fraction_set_event_signature
+      ]
+      |> fetch_events_for_contract(
         :fee_handler,
         core_contract_addresses,
         latest_block_number,
@@ -164,16 +164,16 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
       chunk_start = from_block + @chunk_size * current_chunk
       chunk_end = min(chunk_start + @chunk_size - 1, to_block)
 
-      Helper.log_blocks_chunk_handling(chunk_start, chunk_end, 0, to_block, nil, :L1)
+      IndexerHelper.log_blocks_chunk_handling(chunk_start, chunk_end, 0, to_block, nil, :L1)
 
       requests = requests_func.(chunk_start, chunk_end)
 
       {:ok, responses} =
-        Helper.repeated_call(
-          &json_rpc/2,
-          [requests, json_rpc_named_arguments],
+        IndexerHelper.repeated_batch_rpc_call(
+          requests,
+          json_rpc_named_arguments,
           fn message -> "Could not fetch logs: #{message}" end,
-          3
+          @max_request_retries
         )
 
       {:ok, logs} = Logs.from_responses(responses)
@@ -194,7 +194,7 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
       |> Map.get(contract_atom)
 
     core_contract_addresses
-    |> Map.get(contract_name)
+    |> Map.get(contract_name, [])
     |> Enum.chunk_every(2, 1)
     |> Enum.map(fn
       [entry, %{updated_at_block_number: to_block}] ->
@@ -205,27 +205,36 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
     end)
     |> Enum.map(fn {%{address: address}, to_block} ->
       logs =
-        fetch_logs_by_chunks(
+        fetch_events_for_address(
           0..to_block,
-          fn chunk_start, chunk_end ->
-            event_signatures
-            |> Enum.with_index()
-            |> Enum.map(fn {signature, index} ->
-              Logs.request(
-                index,
-                %{
-                  fromBlock: integer_to_quantity(chunk_start),
-                  toBlock: integer_to_quantity(chunk_end),
-                  address: address,
-                  topics: [signature]
-                }
-              )
-            end)
-          end,
+          event_signatures,
+          address,
           json_rpc_named_arguments
         )
 
       {address, logs}
     end)
+  end
+
+  defp fetch_events_for_address(chunk_range, event_signatures, address, json_rpc_named_arguments) do
+    fetch_logs_by_chunks(
+      chunk_range,
+      fn chunk_start, chunk_end ->
+        event_signatures
+        |> Enum.with_index()
+        |> Enum.map(fn {signature, index} ->
+          Logs.request(
+            index,
+            %{
+              from_block: chunk_start,
+              to_block: chunk_end,
+              address: address,
+              topics: [signature]
+            }
+          )
+        end)
+      end,
+      json_rpc_named_arguments
+    )
   end
 end
