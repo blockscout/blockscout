@@ -134,7 +134,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {:ok, holder_address_hash}} <- {:format, Chain.string_to_address_hash(holder_address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(holder_address_hash_string, params) do
-      holder_address = Repo.get_by(Address, hash: holder_address_hash)
+      holder_address = %Address{Repo.get_by(Address, hash: holder_address_hash) | proxy_implementations: nil}
 
       results_plus_one =
         Instance.token_instances_by_holder_address_hash(
