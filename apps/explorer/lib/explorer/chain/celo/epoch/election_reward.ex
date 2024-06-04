@@ -1,4 +1,7 @@
 defmodule Explorer.Chain.Celo.Epoch.ElectionReward do
+  @moduledoc """
+  Represents the rewards distributed in an epoch election.
+  """
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, Block, Hash, Wei}

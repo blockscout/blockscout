@@ -1,40 +1,47 @@
 defmodule Explorer.Chain.TokenTransfer.Schema do
+  @moduledoc """
+    Models token trasfers.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.TokenTransfers
+  """
+
   alias Explorer.Chain.{
     Address,
     Block,
     Hash,
     Transaction
   }
-  alias Explorer.Chain.Token.Instance
 
+  alias Explorer.Chain.Token.Instance
 
   # Remove `transaction_hash` from primary key for `:celo` chain type. See
   # `Explorer.Chain.Log.Schema` for more details.
   @transaction_field (case Application.compile_env(:explorer, :chain_type) do
-    :celo ->
-      quote do
-        [
-          belongs_to(:transaction, Transaction,
-            foreign_key: :transaction_hash,
-            references: :hash,
-            type: Hash.Full
-          )
-        ]
-      end
+                        :celo ->
+                          quote do
+                            [
+                              belongs_to(:transaction, Transaction,
+                                foreign_key: :transaction_hash,
+                                references: :hash,
+                                type: Hash.Full
+                              )
+                            ]
+                          end
 
-    _ ->
-      quote do
-        [
-          belongs_to(:transaction, Transaction,
-            foreign_key: :transaction_hash,
-            primary_key: true,
-            references: :hash,
-            type: Hash.Full,
-            null: false
-          )
-        ]
-      end
-  end)
+                        _ ->
+                          quote do
+                            [
+                              belongs_to(:transaction, Transaction,
+                                foreign_key: :transaction_hash,
+                                primary_key: true,
+                                references: :hash,
+                                type: Hash.Full,
+                                null: false
+                              )
+                            ]
+                          end
+                      end)
 
   defmacro generate do
     quote do
@@ -57,7 +64,10 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
         )
 
         belongs_to(:to_address, Address,
-        foreign_key: :to_address_hash, references: :hash, type: Hash.Address, null: false
+          foreign_key: :to_address_hash,
+          references: :hash,
+          type: Hash.Address,
+          null: false
         )
 
         belongs_to(
@@ -162,23 +172,22 @@ defmodule Explorer.Chain.TokenTransfer do
   """
   Explorer.Chain.TokenTransfer.Schema.generate()
 
-
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash block_hash token_type)a
-  |> (&(case Application.compile_env(:explorer, :chain_type) do
-    :celo ->
-      &1
+                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                          :celo ->
+                            &1
 
-    _ ->
-        [:transaction_hash | &1]
-  end)).()
+                          _ ->
+                            [:transaction_hash | &1]
+                        end)).()
   @optional_attrs ~w(amount amounts token_ids block_consensus)a
-  |> (&(case Application.compile_env(:explorer, :chain_type) do
-    :celo ->
-      [:transaction_hash | &1]
+                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                          :celo ->
+                            [:transaction_hash | &1]
 
-    _ ->
-      &1
-  end)).()
+                          _ ->
+                            &1
+                        end)).()
 
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do

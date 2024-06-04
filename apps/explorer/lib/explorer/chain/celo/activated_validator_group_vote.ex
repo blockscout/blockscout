@@ -5,8 +5,7 @@ defmodule Explorer.Chain.Celo.ActivatedValidatorGroupVote do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Block, Hash, Wei}
-  alias Explorer.PagingOptions
+  alias Explorer.Chain.{Address, Block, Hash}
 
   @required_attrs ~w(account_address_hash validator_group_address_hash)a
 
@@ -16,7 +15,7 @@ defmodule Explorer.Chain.Celo.ActivatedValidatorGroupVote do
      was voted for.
   * `block_hash` - the hash of the block where the vote was included.
   """
-  schema "celo_activated_validator_group_votes" do
+  typed_schema "celo_activated_validator_group_votes" do
     belongs_to(
       :account_address,
       Address,
@@ -48,7 +47,7 @@ defmodule Explorer.Chain.Celo.ActivatedValidatorGroupVote do
   end
 
   @spec changeset(
-          Explorer.Chain.ActivatedValidatorGroupVote.t(),
+          Explorer.Chain.Celo.ActivatedValidatorGroupVote.t(),
           :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any}
         ) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = vote, attrs \\ %{}) do

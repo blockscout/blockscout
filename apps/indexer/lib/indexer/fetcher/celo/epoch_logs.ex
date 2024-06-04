@@ -48,7 +48,6 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
 
   if Application.compile_env(:explorer, :chain_type) == :celo do
     def fetch(blocks, json_rpc_named_arguments) do
-
       requests =
         blocks
         |> Enum.reduce({[], 0}, fn %{number: number}, {acc, start_request_id} ->

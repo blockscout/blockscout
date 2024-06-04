@@ -14,6 +14,7 @@ defmodule Explorer.Repo.Celo.Migrations.RemoveTransactionHashFromPrimaryKeyInLog
       ADD PRIMARY KEY (transaction_hash, block_hash, index);
       """
     )
+
     execute(
       "ALTER TABLE logs ALTER COLUMN transaction_hash DROP NOT NULL",
       "ALTER TABLE logs ALTER COLUMN transaction_hash SET NOT NULL"
@@ -21,6 +22,5 @@ defmodule Explorer.Repo.Celo.Migrations.RemoveTransactionHashFromPrimaryKeyInLog
 
     drop(unique_index(:logs, [:transaction_hash, :index]))
     create_if_not_exists(index(:logs, [:transaction_hash, :index]))
-
   end
 end

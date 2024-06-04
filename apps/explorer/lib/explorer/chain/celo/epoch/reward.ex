@@ -1,4 +1,6 @@
 defmodule Explorer.Chain.Celo.Epoch.Reward do
+  # todo: write doc
+  @moduledoc false
   use Explorer.Schema
 
   alias Explorer.Chain.{Block, Hash, Wei}
