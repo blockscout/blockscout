@@ -1,6 +1,20 @@
 defmodule Indexer.Fetcher.Optimism.TxnBatch do
   @moduledoc """
-  Fills op_transaction_batches DB table.
+    Fills op_transaction_batches, op_frame_sequence, and op_frame_sequence_blobs DB tables.
+
+    This module parses L1 batch transactions, handles them to retrieve L2 block batches info
+    and save it to the database.
+
+    If an L1 transaction is a blob transaction (either EIP-4844, Celestia, etc.), the blob
+    is read from the corresponding server by its API URL and parsed to get raw data. Blob
+    metadata is saved to op_frame_sequence_blobs DB table.
+
+    According to EIP-4844, an L1 transaction can have more than one blob. Each EIP-4844 blob
+    contains a separate frame (part of a frame sequence that encodes a batch), so usually
+    L1 EIP-4844 transaction represents a frame sequence.
+
+    Celestia L1 transaction can have only one blob. A batch can be split into several Celestia blobs
+    related to different L1 transactions (usually following each other).
   """
 
   use GenServer
@@ -157,6 +171,30 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     end
   end
 
+  # The main handler filtering L1 transactions and parsing them to retrieve
+  # batches of L2 blocks.
+  #
+  # The work is split into chunks (L1 block subranges) of the specified block range.
+  # The chunk size is configurable through INDEXER_OPTIMISM_L1_BATCH_BLOCKS_CHUNK_SIZE
+  # env variable.
+  #
+  # When the last block of the range is reached, the handler switches to `(last+1)..latest`
+  # block range and then handles the new blocks in realtime. The latest block number is checked
+  # every `block_check_interval` milliseconds which is calculated in the init function.
+  #
+  # ## Parameters (in the `state` param)
+  # - `batch_inbox`: L1 address which accepts L1 batch transactions
+  # - `batch_submitter`: L1 address which sends L1 batch transactions to the `batch_inbox`
+  # - `eip4844_blobs_api_url`: URL of Blockscout Blobs API to get EIP-4844 blobs
+  # - `celestia_blobs_api_url`: URL of the server where Celestia blobs can be read from
+  # - `block_check_interval`: time interval for checking latest block number
+  # - `start_block`: start block number of the block range
+  # - `end_block`: end block number of the block range
+  # - `chunk_size`: max number of L1 blocks in one chunk
+  # - `incomplete_channels`: intermediate map of channels (incomplete frame sequences) in memory
+  # - `genesis_block_l2`: Optimism BedRock upgrade L2 block number (used when parsing span batches)
+  # - `json_rpc_named_arguments`: data to connect to L1 RPC server
+  # - `json_rpc_named_arguments_l2`: data to connect to L2 RPC server
   @impl GenServer
   def handle_info(
         :continue,
