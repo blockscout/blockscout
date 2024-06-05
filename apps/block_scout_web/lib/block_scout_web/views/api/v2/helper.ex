@@ -4,7 +4,8 @@ defmodule BlockScoutWeb.API.V2.Helper do
   """
 
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.Address
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Transaction.History.TransactionStats
 
@@ -55,19 +56,22 @@ defmodule BlockScoutWeb.API.V2.Helper do
   @spec address_with_info(any(), any()) :: nil | %{optional(<<_::32, _::_*8>>) => any()}
   def address_with_info(%Address{} = address, _address_hash) do
     smart_contract? = Address.smart_contract?(address)
-    implementation_names = if smart_contract?, do: Implementation.names(address), else: []
 
-    formatted_implementation_names =
-      implementation_names
-      |> Enum.map(fn name ->
-        %{"name" => name}
-      end)
+    {implementation_address_hashes, implementation_names, implementation_address, implementation_name,
+     proxy_implementations} =
+      if smart_contract? do
+        proxy_implementations = Implementation.get_proxy_implementations(address.hash)
 
-    implementation_name =
-      if Enum.empty?(implementation_names) do
-        nil
+        implementation_address_hashes = (proxy_implementations && proxy_implementations.address_hashes) || []
+        implementation_names = (proxy_implementations && proxy_implementations.names) || []
+
+        implementation_address = implementation_address_hashes |> Enum.at(0)
+        implementation_name = implementation_names |> Enum.at(0)
+
+        {implementation_address_hashes, implementation_names, implementation_address, implementation_name,
+         proxy_implementations}
       else
-        implementation_names |> Enum.at(0)
+        {[], [], nil, nil, nil}
       end
 
     %{
@@ -75,9 +79,10 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "is_contract" => smart_contract?,
       "name" => address_name(address),
       # todo: added for backward compatibility, remove when frontend unbound from these props
+      "implementation_address" => implementation_address,
       "implementation_name" => implementation_name,
-      "implementations" => formatted_implementation_names,
-      "is_verified" => verified?(address),
+      "implementations" => proxy_object_info(implementation_address_hashes, implementation_names),
+      "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
     }
@@ -104,12 +109,59 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "is_contract" => false,
       "name" => nil,
       # todo: added for backward compatibility, remove when frontend unbound from these props
+      "implementation_address" => nil,
       "implementation_name" => nil,
       "implementations" => [],
       "is_verified" => nil,
       "ens_domain_name" => nil,
       "metadata" => nil
     }
+  end
+
+  @doc """
+  Retrieves formatted proxy object based on its implementation addresses and names.
+
+  ## Parameters
+
+    * `implementation_addresses` - A list of implementation addresses for the proxy object.
+    * `implementation_names` - A list of implementation names for the proxy object.
+
+  ## Returns
+
+  A list of maps containing information about the proxy object.
+
+  """
+  @spec proxy_object_info([String.t() | Hash.Address.t()], [String.t() | nil]) :: [map()]
+  def proxy_object_info([], []), do: []
+
+  def proxy_object_info(implementation_addresses, implementation_names) do
+    implementation_addresses
+    |> Enum.zip(implementation_names)
+    |> Enum.reduce([], fn {address, name}, acc ->
+      case address do
+        %Hash{} = address_hash ->
+          [%{"address" => Address.checksum(address_hash), "name" => name} | acc]
+
+        _ ->
+          with {:ok, address_hash} <- Chain.string_to_address_hash(address),
+               checksummed_address <- Address.checksum(address_hash) do
+            [%{"address" => checksummed_address, "name" => name} | acc]
+          else
+            _ -> acc
+          end
+      end
+    end)
+  end
+
+  defp minimal_proxy_pattern?(proxy_implementations) do
+    proxy_implementations.proxy_type == :eip1167
+  end
+
+  defp verified_minimal_proxy?(nil), do: false
+
+  defp verified_minimal_proxy?(proxy_implementations) do
+    (minimal_proxy_pattern?(proxy_implementations) &&
+       Enum.any?(proxy_implementations.names, fn name -> !is_nil(name) end)) || false
   end
 
   def address_name(%Address{names: [_ | _] = address_names}) do
