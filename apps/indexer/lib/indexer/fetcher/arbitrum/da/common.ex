@@ -135,4 +135,9 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
         {:error, nil, nil}
     end
   end
+
+  defp parse_data_availability_info(_, _) do
+    log_error("Failed to parse data availability information.")
+    {:error, nil, nil}
+  end
 end
