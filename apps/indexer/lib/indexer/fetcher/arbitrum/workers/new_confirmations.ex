@@ -52,7 +52,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   @type cached_logs :: %{{non_neg_integer(), non_neg_integer()} => [%{String.t() => any()}]}
 
   @logs_per_report 10
-  @zero_counters %{pairs_counter: 1, capped_logs_counter: 0, report?: true}
+  @zero_counters %{pairs_counter: 1, capped_logs_counter: 0, report?: false}
 
   # keccak256("SendRootUpdated(bytes32,bytes32)")
   @send_root_updated_event "0xb4df3847300f076a369cd76d2314b470a1194d9e8a6bb97f1860aee88a5f6748"
@@ -755,10 +755,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       block_pairs
       |> Enum.reduce_while({:ok, nil, cache, @zero_counters}, fn {log_start, log_end},
                                                                  {_, _, updated_cache, counters} ->
-        if counters.report? do
-          log_info("Examining #{counters.pairs_counter} of #{block_pairs_length} L1 block ranges")
-        end
-
         {status, latest_block_confirmed, new_cache, logs_amount} =
           do_check_if_batch_confirmed(
             {batch.start_block, batch.end_block},
@@ -772,7 +768,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             {:halt, {:error, nil, new_cache, @zero_counters}}
 
           {_, nil} ->
-            {:cont, {:ok, nil, new_cache, next_counters(counters, logs_amount)}}
+            next_counters = next_counters(counters, logs_amount)
+
+            # credo:disable-for-lines:3 Credo.Check.Refactor.Nesting
+            if next_counters.report? and block_pairs_length != next_counters.pairs_counter do
+              log_info("Examined #{next_counters.pairs_counter - 1} of #{block_pairs_length} L1 block ranges")
+            end
+
+            {:cont, {:ok, nil, new_cache, next_counters}}
 
           {_, previous_confirmed_rollup_block} ->
             log_info("Confirmed block ##{previous_confirmed_rollup_block} for the batch found")
@@ -891,14 +894,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           non_neg_integer()
         ) :: %{
           :pairs_counter => non_neg_integer(),
-          :capped_log_counter => non_neg_integer(),
+          :capped_logs_counter => non_neg_integer(),
           :report? => boolean()
         }
   defp next_counters(%{pairs_counter: pairs_counter, capped_logs_counter: capped_logs_counter}, logs_amount) do
     %{
       pairs_counter: pairs_counter + 1,
-      capped_log_counter: rem(capped_logs_counter + logs_amount, @logs_per_report),
-      report?: div(capped_logs_counter + logs_amount, @logs_per_report) == 1
+      capped_logs_counter: rem(capped_logs_counter + logs_amount, @logs_per_report),
+      report?: div(capped_logs_counter + logs_amount, @logs_per_report) > 0
     }
   end
 
