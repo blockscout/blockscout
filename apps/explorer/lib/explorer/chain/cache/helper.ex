@@ -53,15 +53,12 @@ defmodule Explorer.Chain.Cache.Helper do
     blocks_amount = max_block_number - min_blockchain_block_number
     global_ttl_from_var = Application.get_env(:explorer, module)[:global_ttl]
 
-    if System.get_env(management_variable) do
-      global_ttl_from_var
-    else
-      cond do
-        blocks_amount < @block_number_threshold_1 -> :timer.seconds(10)
-        blocks_amount >= @block_number_threshold_1 and blocks_amount < @block_number_threshold_2 -> :timer.seconds(30)
-        blocks_amount >= @block_number_threshold_2 and blocks_amount < @block_number_threshold_3 -> :timer.minutes(2)
-        true -> global_ttl_from_var
-      end
+    cond do
+      System.get_env(management_variable) not in ["", nil] -> global_ttl_from_var
+      blocks_amount < @block_number_threshold_1 -> :timer.seconds(10)
+      blocks_amount >= @block_number_threshold_1 and blocks_amount < @block_number_threshold_2 -> :timer.seconds(30)
+      blocks_amount >= @block_number_threshold_2 and blocks_amount < @block_number_threshold_3 -> :timer.minutes(2)
+      true -> global_ttl_from_var
     end
   end
 end
