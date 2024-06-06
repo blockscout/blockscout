@@ -266,6 +266,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
+    Block,
     Block.Reward,
     ContractMethod,
     Data,
