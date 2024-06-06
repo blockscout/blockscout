@@ -26,7 +26,7 @@ defmodule Explorer.Utility.TokenInstanceMetadataRefetchAttempt do
   @doc """
   Gets retries number and updated_at for given token contract Explorer.Chain.Address and token_id
   """
-  @spec get_retries_number(Hash.Address.t(), non_neg_integer()) :: {non_neg_integer(), DateTime.t()}
+  @spec get_retries_number(Hash.Address.t(), non_neg_integer()) :: {non_neg_integer(), DateTime.t()} | nil
   def get_retries_number(token_contract_address_hash, token_id) do
     __MODULE__
     |> where(
