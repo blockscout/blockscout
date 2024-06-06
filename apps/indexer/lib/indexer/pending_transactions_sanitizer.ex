@@ -8,7 +8,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
   require Logger
 
-  import EthereumJSONRPC, only: [json_rpc: 2, request: 1]
+  import EthereumJSONRPC, only: [json_rpc: 2, request: 1, id_to_params: 1]
   import EthereumJSONRPC.Receipt, only: [to_elixir: 1]
 
   alias Ecto.Changeset
@@ -64,33 +64,44 @@ defmodule Indexer.PendingTransactionsSanitizer do
   end
 
   defp sanitize_pending_transactions(json_rpc_named_arguments) do
+    receipts_batch_size = Application.get_env(:indexer, :receipts_batch_size)
     pending_transactions_list_from_db = Chain.pending_transactions_list()
+    id_to_params = id_to_params(pending_transactions_list_from_db)
 
-    pending_transactions_list_from_db
-    |> Enum.with_index()
-    |> Enum.each(fn {pending_tx, ind} ->
-      pending_tx_hash_str = "0x" <> Base.encode16(pending_tx.hash.bytes, case: :lower)
+    with {:ok, responses} <-
+           id_to_params
+           |> get_transaction_receipt_requests()
+           |> Enum.chunk_every(receipts_batch_size)
+           |> json_rpc(json_rpc_named_arguments) do
+      Enum.each(responses, fn
+        %{id: id, result: result} ->
+          pending_tx = Map.fetch!(id_to_params, id)
 
-      with {:ok, result} <-
-             %{id: ind, method: "eth_getTransactionReceipt", params: [pending_tx_hash_str]}
-             |> request()
-             |> json_rpc(json_rpc_named_arguments) do
-        if result do
-          fetch_block_and_invalidate_wrapper(pending_tx, pending_tx_hash_str, result)
-        else
-          Logger.debug(
-            "Transaction with hash #{pending_tx_hash_str} doesn't exist in the node anymore. We should remove it from Blockscout DB.",
-            fetcher: :pending_transactions_to_refetch
-          )
+          if result do
+            fetch_block_and_invalidate_wrapper(pending_tx, to_string(pending_tx.hash), result)
+          else
+            Logger.debug(
+              "Transaction with hash #{pending_tx.hash} doesn't exist in the node anymore. We should remove it from Blockscout DB.",
+              fetcher: :pending_transactions_to_refetch
+            )
 
-          fetch_pending_transaction_and_delete(pending_tx)
-        end
-      end
-    end)
+            fetch_pending_transaction_and_delete(pending_tx)
+          end
+
+        error ->
+          Logger.error("Error while fetching pending transaction receipt: #{inspect(error)}")
+      end)
+    end
 
     Logger.debug("Pending transactions are sanitized",
       fetcher: :pending_transactions_to_refetch
     )
+  end
+
+  defp get_transaction_receipt_requests(id_to_params) do
+    Enum.map(id_to_params, fn {id, transaction} ->
+      request(%{id: id, method: "eth_getTransactionReceipt", params: [to_string(transaction.hash)]})
+    end)
   end
 
   defp fetch_block_and_invalidate_wrapper(pending_tx, pending_tx_hash_str, result) do
