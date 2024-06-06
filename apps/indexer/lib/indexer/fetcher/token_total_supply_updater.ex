@@ -5,8 +5,6 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
 
   use GenServer
 
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Token
   alias Explorer.Counters.AverageBlockTime

@@ -21,7 +21,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
-  alias Indexer.Transform.{Addresses, AddressTokenBalances}
+  alias Indexer.Transform.Addresses
   alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
 
   @behaviour BufferedTask
@@ -445,6 +445,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
         token_transfers_merge_token: 2,
         async_import_token_balances: 1
       ]
+
+    # credo:disable-for-next-line Credo.Check.Consistency.MultiAliasImportRequireUse
+    alias Indexer.Transform.AddressTokenBalances
 
     defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: tokens}) do
       token_transfers_with_token = token_transfers_merge_token(token_transfers, tokens)
