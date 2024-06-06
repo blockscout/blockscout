@@ -65,7 +65,12 @@ defmodule BlockScoutWeb.API.V2.Helper do
         implementation_address_hashes = (proxy_implementations && proxy_implementations.address_hashes) || []
         implementation_names = (proxy_implementations && proxy_implementations.names) || []
 
-        implementation_address = implementation_address_hashes |> Enum.at(0)
+        implementation_address =
+          (Enum.count(implementation_address_hashes) > 0 &&
+             implementation_address_hashes
+             |> Enum.at(0)
+             |> Address.checksum()) || nil
+
         implementation_name = implementation_names |> Enum.at(0)
 
         {implementation_address_hashes, implementation_names, implementation_address, implementation_name,
