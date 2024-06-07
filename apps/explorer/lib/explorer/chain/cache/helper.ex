@@ -4,6 +4,10 @@ defmodule Explorer.Chain.Cache.Helper do
   """
   alias Explorer.Chain
 
+  @block_number_threshold_1 10_000
+  @block_number_threshold_2 50_000
+  @block_number_threshold_3 150_000
+
   @doc """
     Estimates the row count of a given table using PostgreSQL system catalogs.
 
@@ -27,5 +31,34 @@ defmodule Explorer.Chain.Cache.Helper do
       )
 
     count
+  end
+
+  @doc """
+    Calculates the time-to-live (TTL) for a given module in the cache.
+
+    ## Parameters
+
+      * `module` - The module for which to calculate the TTL.
+      * `management_variable` - The management environment variable.
+
+    ## Returns
+
+    The TTL for the module.
+
+  """
+  @spec ttl(atom, String.t()) :: non_neg_integer()
+  def ttl(module, management_variable) do
+    min_blockchain_block_number = Application.get_env(:indexer, :first_block)
+    max_block_number = Chain.fetch_max_block_number()
+    blocks_amount = max_block_number - min_blockchain_block_number
+    global_ttl_from_var = Application.get_env(:explorer, module)[:global_ttl]
+
+    cond do
+      System.get_env(management_variable) not in ["", nil] -> global_ttl_from_var
+      blocks_amount < @block_number_threshold_1 -> :timer.seconds(10)
+      blocks_amount >= @block_number_threshold_1 and blocks_amount < @block_number_threshold_2 -> :timer.seconds(30)
+      blocks_amount >= @block_number_threshold_2 and blocks_amount < @block_number_threshold_3 -> :timer.minutes(2)
+      true -> global_ttl_from_var
+    end
   end
 end

@@ -186,6 +186,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   block_traceable?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_GETH_TRACE_BY_BLOCK"),
+  allow_empty_traces?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_GETH_ALLOW_EMPTY_TRACES"),
   debug_trace_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
   tracer:
     if(ConfigHelper.chain_type() == :polygon_edge,
@@ -568,6 +569,10 @@ config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
   batch_size: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_NFT_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_NFT_CONCURRENCY", 1)
 
+config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
+  batch_size: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_WETH_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_WETH_CONCURRENCY", 1)
+
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
@@ -577,6 +582,9 @@ config :explorer, Explorer.Chain.BridgedToken,
 
 config :explorer, Explorer.Utility.MissingBalanceOfToken,
   window_size: ConfigHelper.parse_integer_env_var("MISSING_BALANCE_OF_TOKENS_WINDOW_SIZE", 100)
+
+config :explorer, Explorer.Chain.TokenTransfer,
+  whitelisted_weth_contracts: ConfigHelper.parse_list_env_var("WHITELISTED_WETH_CONTRACTS", "")
 
 ###############
 ### Indexer ###

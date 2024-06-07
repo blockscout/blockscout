@@ -528,4 +528,16 @@ defmodule Explorer.Chain.TokenTransfer do
   defp logs_to_token_transfers_query(query, []) do
     query
   end
+
+  @doc """
+    Checks if `WHITELISTED_WETH_CONTRACTS` env contains provided address hash.
+    WHITELISTED_WETH_CONTRACTS env is the list of whitelisted WETH contracts addresses.
+  """
+  @spec whitelisted_weth_contract?(any()) :: boolean()
+  def whitelisted_weth_contract?(contract_address_hash),
+    do:
+      (contract_address_hash |> to_string() |> String.downcase()) in Application.get_env(
+        :explorer,
+        Explorer.Chain.TokenTransfer
+      )[:whitelisted_weth_contracts]
 end
