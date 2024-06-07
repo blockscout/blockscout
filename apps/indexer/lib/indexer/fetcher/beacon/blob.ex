@@ -25,11 +25,11 @@ defmodule Indexer.Fetcher.Beacon.Blob do
   @doc """
   Asynchronously fetches blobs for given `block_timestamp`.
   """
-  def async_fetch(block_timestamps) do
+  def async_fetch(block_timestamps, realtime?) do
     if BlobSupervisor.disabled?() do
       :ok
     else
-      BufferedTask.buffer(__MODULE__, block_timestamps |> Enum.map(&entry/1))
+      BufferedTask.buffer(__MODULE__, Enum.map(block_timestamps, &entry/1), realtime?)
     end
   end
 

@@ -60,9 +60,9 @@ defmodule Indexer.Fetcher.Token do
   @doc """
   Fetches token data asynchronously given a list of `t:Explorer.Chain.Token.t/0`s.
   """
-  @spec async_fetch([Address.t()]) :: :ok
-  def async_fetch(token_contract_addresses) do
-    BufferedTask.buffer(__MODULE__, token_contract_addresses)
+  @spec async_fetch([Address.t()], boolean()) :: :ok
+  def async_fetch(token_contract_addresses, realtime?) do
+    BufferedTask.buffer(__MODULE__, token_contract_addresses, realtime?)
   end
 
   defp catalog_token(%Token{contract_address_hash: contract_address_hash} = token) do
