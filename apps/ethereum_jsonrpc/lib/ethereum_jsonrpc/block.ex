@@ -29,6 +29,15 @@ defmodule EthereumJSONRPC.Block do
                            ]
                          )
 
+    :arbitrum ->
+      @chain_type_fields quote(
+                           do: [
+                             send_count: non_neg_integer(),
+                             send_root: EthereumJSONRPC.hash(),
+                             l1_block_number: non_neg_integer()
+                           ]
+                         )
+
     _ ->
       @chain_type_fields quote(do: [])
   end
@@ -172,6 +181,11 @@ defmodule EthereumJSONRPC.Block do
           "blobGasUsed" => 262144,\
           "excessBlobGas" => 79429632,\
       """
+    :arbitrum -> """
+          "sendRoot" => "0xc71ee2cf4201f65590aa6c052270dc41e926e628f213e268a58d9a8d8f739f82",\
+          "sendCount" => 91,\
+          "l1BlockNumber" => 19828534,\
+      """
     _ -> ""
   end}
       ...>     "uncles" => []
@@ -208,6 +222,11 @@ defmodule EthereumJSONRPC.Block do
             withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
             blob_gas_used: 262144,\
             excess_blob_gas: 79429632,\
+      """
+    :arbitrum -> """
+            send_root: "0xc71ee2cf4201f65590aa6c052270dc41e926e628f213e268a58d9a8d8f739f82",\
+            send_count: 91,\
+            l1_block_number: 19828534,\
       """
     _ -> ""
   end}
@@ -271,6 +290,11 @@ defmodule EthereumJSONRPC.Block do
             withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
             blob_gas_used: 0,\
             excess_blob_gas: 0,\
+      """
+    :arbitrum -> """
+            send_root: nil,\
+            send_count: nil,\
+            l1_block_number: nil,\
       """
     _ -> ""
   end}
@@ -461,9 +485,9 @@ defmodule EthereumJSONRPC.Block do
     }
   end
 
-  defp chain_type_fields(params, elixir) do
-    case Application.get_env(:explorer, :chain_type) do
-      :rsk ->
+  case Application.compile_env(:explorer, :chain_type) do
+    :rsk ->
+      defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
           minimum_gas_price: Map.get(elixir, "minimumGasPrice"),
@@ -472,8 +496,10 @@ defmodule EthereumJSONRPC.Block do
           bitcoin_merged_mining_merkle_proof: Map.get(elixir, "bitcoinMergedMiningMerkleProof"),
           hash_for_merged_mining: Map.get(elixir, "hashForMergedMining")
         })
+      end
 
-      :ethereum ->
+    :ethereum ->
+      defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
           withdrawals_root:
@@ -481,10 +507,20 @@ defmodule EthereumJSONRPC.Block do
           blob_gas_used: Map.get(elixir, "blobGasUsed", 0),
           excess_blob_gas: Map.get(elixir, "excessBlobGas", 0)
         })
+      end
 
-      _ ->
+    :arbitrum ->
+      defp chain_type_fields(params, elixir) do
         params
-    end
+        |> Map.merge(%{
+          send_count: Map.get(elixir, "sendCount"),
+          send_root: Map.get(elixir, "sendRoot"),
+          l1_block_number: Map.get(elixir, "l1BlockNumber")
+        })
+      end
+
+    _ ->
+      defp chain_type_fields(params, _), do: params
   end
 
   @doc """
@@ -790,7 +826,9 @@ defmodule EthereumJSONRPC.Block do
   end
 
   defp entry_to_elixir({key, quantity}, _block)
-       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number size cumulativeDifficulty totalDifficulty paidFees minimumGasPrice blobGasUsed excessBlobGas) and
+       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number size
+                      cumulativeDifficulty totalDifficulty paidFees minimumGasPrice blobGasUsed
+                      excessBlobGas l1BlockNumber sendCount) and
               not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
   end
@@ -804,8 +842,10 @@ defmodule EthereumJSONRPC.Block do
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
   defp entry_to_elixir({key, _} = entry, _block)
-       when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot sealFields sha3Uncles
-                     signature stateRoot step transactionsRoot uncles withdrawalsRoot bitcoinMergedMiningHeader bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningMerkleProof hashForMergedMining),
+       when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot
+                      sealFields sha3Uncles signature stateRoot step transactionsRoot uncles
+                      withdrawalsRoot bitcoinMergedMiningHeader bitcoinMergedMiningCoinbaseTransaction
+                      bitcoinMergedMiningMerkleProof hashForMergedMining sendRoot),
        do: entry
 
   defp entry_to_elixir({"timestamp" = key, timestamp}, _block) do
@@ -823,11 +863,6 @@ defmodule EthereumJSONRPC.Block do
   defp entry_to_elixir({"withdrawals" = key, withdrawals}, %{"hash" => block_hash, "number" => block_number})
        when not is_nil(block_number) do
     {key, Withdrawals.to_elixir(withdrawals, block_hash, quantity_to_integer(block_number))}
-  end
-
-  # Arbitrum fields
-  defp entry_to_elixir({"l1BlockNumber", _}, _block) do
-    {:ignore, :ignore}
   end
 
   # bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningHeader bitcoinMergedMiningMerkleProof hashForMergedMining - RSK https://github.com/blockscout/blockscout/pull/2934

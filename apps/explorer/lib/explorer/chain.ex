@@ -1731,6 +1731,20 @@ defmodule Explorer.Chain do
     |> Enum.into(%{})
   end
 
+  @doc """
+    Retrieves the total row count for a given table.
+
+    This function estimates the row count using system catalogs. If the estimate
+    is unavailable, it performs an exact count using an aggregate query.
+
+    ## Parameters
+    - `module`: The module representing the table schema.
+    - `options`: An optional keyword list of options, such as selecting a specific repository.
+
+    ## Returns
+    - The total row count as a non-negative integer.
+  """
+  @spec get_table_rows_total_count(atom(), keyword()) :: non_neg_integer()
   def get_table_rows_total_count(module, options) do
     table_name = module.__schema__(:source)
 
@@ -2468,6 +2482,21 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+    Finds the block number closest to a given timestamp, with a one-minute buffer, optionally
+    adjusting based on whether the block should be before or after the timestamp.
+
+    ## Parameters
+    - `given_timestamp`: The timestamp for which the closest block number is being sought.
+    - `closest`: A direction indicator (`:before` or `:after`) specifying whether the block number
+                returned should be before or after the given timestamp.
+    - `from_api`: A boolean flag indicating whether to use the replica database or the primary one
+                  for the query.
+
+    ## Returns
+    - `{:ok, block_number}` where `block_number` is the block number closest to the specified timestamp.
+    - `{:error, :not_found}` if no block is found within the specified criteria.
+  """
   @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
           {:ok, Block.block_number()} | {:error, :not_found}
   def timestamp_to_block_number(given_timestamp, closest, from_api) do
@@ -3311,6 +3340,22 @@ defmodule Explorer.Chain do
 
   def limit_showing_transactions, do: @limit_showing_transactions
 
+  @doc """
+    Dynamically joins and preloads associations in a query based on necessity.
+
+    This function adjusts the provided Ecto query to include joins for associations. It supports
+    both optional and required joins. Optional joins use the `preload` function to fetch associations
+    without enforcing their presence. Required joins ensure the association exists.
+
+    ## Parameters
+    - `query`: The initial Ecto query.
+    - `associations`: A single association or a tuple with nested association preloads.
+    - `necessity`: Specifies if the association is `:optional` or `:required`.
+
+    ## Returns
+    - The modified query with the specified associations joined according to the defined necessity.
+  """
+  @spec join_association(atom() | Ecto.Query.t(), [{atom(), atom()}], :optional | :required) :: Ecto.Query.t()
   def join_association(query, [{association, nested_preload}], necessity)
       when is_atom(association) and is_atom(nested_preload) do
     case necessity do
@@ -3328,6 +3373,7 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec join_association(atom() | Ecto.Query.t(), atom(), :optional | :required) :: Ecto.Query.t()
   def join_association(query, association, necessity) do
     case necessity do
       :optional ->
@@ -3338,10 +3384,23 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec join_associations(atom() | Ecto.Query.t(), map) :: Ecto.Query.t()
   @doc """
-    Function to preload entities associated with selected in provided query items
+    Applies dynamic joins to a query based on provided association necessities.
+
+    This function iterates over a map of associations with their required join types, either
+    `:optional` or `:required`, and applies the corresponding joins to the given query.
+
+    More info is available on https://hexdocs.pm/ecto/Ecto.Query.html#preload/3
+
+    ## Parameters
+    - `query`: The base query to which associations will be joined.
+    - `necessity_by_association`: A map specifying each association and its necessity
+      (`:optional` or `:required`).
+
+    ## Returns
+    - The query with all specified associations joined according to their necessity.
   """
+  @spec join_associations(atom() | Ecto.Query.t(), %{any() => :optional | :required}) :: Ecto.Query.t()
   def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
@@ -3648,7 +3707,7 @@ defmodule Explorer.Chain do
 
     Instance
     |> where([instance], not is_nil(instance.error))
-    |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after > ^DateTime.utc_now())
+    |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after < ^DateTime.utc_now())
     |> select([instance], %{
       contract_address_hash: instance.token_contract_address_hash,
       token_id: instance.token_id
@@ -3663,16 +3722,16 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Streams a list of token contract addresses that have been cataloged.
+  Streams a list of tokens that have been cataloged.
   """
-  @spec stream_cataloged_token_contract_address_hashes(
+  @spec stream_cataloged_tokens(
           initial :: accumulator,
-          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator),
+          reducer :: (entry :: Token.t(), accumulator -> accumulator),
           some_time_ago_updated :: integer(),
           limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_cataloged_token_contract_address_hashes(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
+  def stream_cataloged_tokens(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
       when is_function(reducer, 2) do
     some_time_ago_updated
     |> Token.cataloged_tokens()
@@ -3859,6 +3918,8 @@ defmodule Explorer.Chain do
     base = config[:exp_timeout_base]
     max_refetch_interval = config[:max_refetch_interval]
 
+    max_retry_count = :math.log(max_refetch_interval / 1000 / coef) / :math.log(base)
+
     from(
       token_instance in Instance,
       update: [
@@ -3875,7 +3936,7 @@ defmodule Explorer.Chain do
             fragment(
               """
               CASE WHEN EXCLUDED.metadata IS NULL THEN
-                NOW() AT TIME ZONE 'UTC' + LEAST(interval '1 seconds' * (? * ? ^ (? + 1)), interval '1 milliseconds' * ?)
+                NOW() AT TIME ZONE 'UTC' + interval '1 seconds' * (? * ? ^ LEAST(? + 1.0, ?))
               ELSE
                 NULL
               END
@@ -3883,7 +3944,7 @@ defmodule Explorer.Chain do
               ^coef,
               ^base,
               token_instance.retries_count,
-              ^max_refetch_interval
+              ^max_retry_count
             )
         ]
       ],

@@ -48,6 +48,13 @@ defmodule EthereumJSONRPC.Transaction do
                            ]
                          )
 
+    :arbitrum ->
+      @chain_type_fields quote(
+                           do: [
+                             request_id: non_neg_integer()
+                           ]
+                         )
+
     _ ->
       @chain_type_fields quote(do: [])
   end
@@ -509,6 +516,11 @@ defmodule EthereumJSONRPC.Transaction do
           })
         end
 
+      :arbitrum ->
+        put_if_present(params, elixir, [
+          {"requestId", :request_id}
+        ])
+
       _ ->
         params
     end
@@ -631,7 +643,7 @@ defmodule EthereumJSONRPC.Transaction do
     do: {"input", value}
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas maxFeePerBlobGas) and
+       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas maxFeePerBlobGas requestId) and
               quantity != nil do
     {key, quantity_to_integer(quantity)}
   end

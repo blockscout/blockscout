@@ -84,16 +84,16 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     end
   end
 
-  defp json_txid_to_hash(hash) do
+  defp json_tx_id_to_hash(hash) do
     case hash do
       "0x" <> tx_hash -> tx_hash
       nil -> @zero_hash
     end
   end
 
-  defp strhash_to_byteshash(hash) do
+  defp string_hash_to_bytes_hash(hash) do
     hash
-    |> json_txid_to_hash()
+    |> json_tx_id_to_hash()
     |> Base.decode16!(case: :mixed)
   end
 
@@ -139,8 +139,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
         case transform_type do
           :iso8601_to_datetime -> from_iso8601_to_datetime(value_in_json_response)
           :ts_to_datetime -> from_ts_to_datetime(value_in_json_response)
-          :str_to_txhash -> json_txid_to_hash(value_in_json_response)
-          :str_to_byteshash -> strhash_to_byteshash(value_in_json_response)
+          :str_to_txhash -> json_tx_id_to_hash(value_in_json_response)
+          :str_to_byteshash -> string_hash_to_bytes_hash(value_in_json_response)
           _ -> value_in_json_response
         end
       )

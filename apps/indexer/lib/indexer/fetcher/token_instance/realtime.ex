@@ -74,11 +74,11 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
       |> List.flatten()
       |> Enum.uniq()
 
-    BufferedTask.buffer(__MODULE__, data)
+    BufferedTask.buffer(__MODULE__, data, true)
   end
 
   def async_fetch(data, _disabled?) do
-    BufferedTask.buffer(__MODULE__, data)
+    BufferedTask.buffer(__MODULE__, data, true)
   end
 
   @spec retry_some_instances([map()], boolean(), map()) :: any()
@@ -105,7 +105,7 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
 
     if token_instances_to_refetch != [] do
       timeout = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime)[:retry_timeout]
-      Process.send_after(__MODULE__, {:buffer, token_instances_to_refetch}, timeout)
+      Process.send_after(__MODULE__, {:buffer, token_instances_to_refetch, false}, timeout)
     end
   end
 

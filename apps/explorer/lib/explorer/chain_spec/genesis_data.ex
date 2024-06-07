@@ -87,6 +87,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   def fetch_genesis_data do
     chain_spec_path = get_path(:chain_spec_path)
     precompiled_config_path = get_path(:precompiled_config_path)
+    Logger.info(fn -> "Fetching precompiled config path: #{inspect(precompiled_config_path)}." end)
 
     if is_nil(chain_spec_path) and is_nil(precompiled_config_path) do
       Logger.warn(fn -> "Genesis data is not fetched. Neither chain spec path or precompiles config path are set." end)
