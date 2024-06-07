@@ -371,14 +371,12 @@ config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
   coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
   secondary_coin_id: cg_secondary_coin_id
 
-mobula_secondary_coin_id = System.get_env("EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID")
-
 config :explorer, Explorer.ExchangeRates.Source.Mobula,
   platform: System.get_env("EXCHANGE_RATES_MOBULA_CHAIN_ID"),
   base_url: System.get_env("EXCHANGE_RATES_MOBULA_BASE_URL"),
   api_key: System.get_env("EXCHANGE_RATES_MOBULA_API_KEY"),
   coin_id: System.get_env("EXCHANGE_RATES_MOBULA_COIN_ID"),
-  secondary_coin_id: mobula_secondary_coin_id
+  secondary_coin_id: System.get_env("EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID")
 
 config :explorer, Explorer.ExchangeRates.Source.DefiLlama, coin_id: System.get_env("EXCHANGE_RATES_DEFILLAMA_COIN_ID")
 
