@@ -291,7 +291,7 @@ defmodule Explorer.SmartContract.Reader do
 
     abi_with_method_id
     |> Enum.filter(&Helper.queriable_method?(&1))
-    |> fetch_current_value_from_blockchain(abi_with_method_id, contract_address_hash, false, options, from)
+    |> fetch_current_values_from_blockchain(abi_with_method_id, contract_address_hash, false, options, from)
   end
 
   def read_only_functions_from_abi_with_sender(_, _, _, _), do: []
@@ -354,7 +354,7 @@ defmodule Explorer.SmartContract.Reader do
     "tuple[#{tuple_types}]"
   end
 
-  @spec fetch_current_value_from_blockchain(
+  @spec fetch_current_values_from_blockchain(
           any(),
           [%{optional(binary()) => any()}],
           Explorer.Chain.Hash.t(),
@@ -362,7 +362,7 @@ defmodule Explorer.SmartContract.Reader do
           keyword(),
           nil | binary()
         ) :: [SmartContract.function_description()]
-  def fetch_current_value_from_blockchain(
+  def fetch_current_values_from_blockchain(
         functions,
         abi,
         contract_address_hash,
@@ -373,40 +373,41 @@ defmodule Explorer.SmartContract.Reader do
     initial_methods_id_order = Enum.map(functions, &Map.get(&1, "method_id"))
 
     %{to_be_fetched: to_be_fetched, method_id_to_outputs: method_id_to_outputs, unchanged: unchanged} =
-      Enum.reduce(functions, %{to_be_fetched: %{}, method_id_to_outputs: %{}, unchanged: %{}}, fn function,
-                                                                                                  %{
-                                                                                                    to_be_fetched:
-                                                                                                      to_be_fetched,
-                                                                                                    unchanged:
-                                                                                                      unchanged,
-                                                                                                    method_id_to_outputs:
-                                                                                                      method_id_to_outputs
-                                                                                                  } ->
-        case function do
-          %{"inputs" => []} ->
-            [%ABI.FunctionSelector{returns: returns, method_id: _method_id}] = ABI.parse_specification([function])
+      Enum.reduce(
+        functions,
+        %{to_be_fetched: %{}, method_id_to_outputs: %{}, unchanged: %{}},
+        fn function,
+           %{
+             to_be_fetched: to_be_fetched,
+             unchanged: unchanged,
+             method_id_to_outputs: method_id_to_outputs
+           } ->
+          case function do
+            %{"inputs" => []} ->
+              [%ABI.FunctionSelector{returns: returns, method_id: _method_id}] = ABI.parse_specification([function])
 
-            outputs = extract_outputs(returns)
+              outputs = extract_outputs(returns)
 
-            %{
-              to_be_fetched: Map.put(to_be_fetched, function["method_id"], function),
-              unchanged: unchanged,
-              method_id_to_outputs: Map.put(method_id_to_outputs, function["method_id"], {outputs, function})
-            }
+              %{
+                to_be_fetched: Map.put(to_be_fetched, function["method_id"], function),
+                unchanged: unchanged,
+                method_id_to_outputs: Map.put(method_id_to_outputs, function["method_id"], {outputs, function})
+              }
 
-          _ ->
-            %{
-              to_be_fetched: to_be_fetched,
-              unchanged:
-                Map.put(
-                  unchanged,
-                  function["method_id"],
-                  Map.put(function, "abi_outputs", Map.get(function, "outputs", []))
-                ),
-              method_id_to_outputs: method_id_to_outputs
-            }
+            _ ->
+              %{
+                to_be_fetched: to_be_fetched,
+                unchanged:
+                  Map.put(
+                    unchanged,
+                    function["method_id"],
+                    Map.put(function, "abi_outputs", Map.get(function, "outputs", []))
+                  ),
+                method_id_to_outputs: method_id_to_outputs
+              }
+          end
         end
-      end)
+      )
 
     methods = to_be_fetched |> Enum.map(fn {method_id, _function} -> {method_id, []} end) |> Enum.into(%{})
 
