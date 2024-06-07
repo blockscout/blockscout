@@ -115,15 +115,11 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @impl Source
   def headers do
-    if api_key() do
-      [{"Authorization", "#{api_key()}"}]
+    if config(:api_key) do
+      [{"Authorization", "#{config(:api_key)}"}]
     else
       []
     end
-  end
-
-  defp api_key do
-    config(:api_key) || nil
   end
 
   defp get_current_price(market_data) do
@@ -152,11 +148,11 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   end
 
   defp chain do
-    config(:chain_id) || "ethereum"
+    config(:platform) || "ethereum"
   end
 
   defp base_url do
-    config(:base_url) || "https://api.mobula.io/api/1"
+    config(:base_url)
   end
 
   defp get_btc_price do
