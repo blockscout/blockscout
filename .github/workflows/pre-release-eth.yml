@@ -25,6 +25,9 @@ jobs:
         with:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          docker-remote-multi-platform: true
+          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build and push Docker image for Ethereum (indexer + API)
         uses: docker/build-push-action@v5
@@ -36,6 +39,7 @@ jobs:
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
+            linux/arm64/v8
           build-args: |
             DISABLE_WEBAPP=false
             API_V1_READ_METHODS_DISABLED=false
@@ -58,6 +62,7 @@ jobs:
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
+            linux/arm64/v8
           build-args: |
             DISABLE_API=true
             DISABLE_WEBAPP=true
@@ -79,6 +84,7 @@ jobs:
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
+            linux/arm64/v8
           build-args: |
             DISABLE_INDEXER=true
             DISABLE_WEBAPP=true
