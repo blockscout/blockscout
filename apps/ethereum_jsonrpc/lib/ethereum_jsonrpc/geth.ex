@@ -389,6 +389,7 @@ defmodule EthereumJSONRPC.Geth do
     [Map.put(last, "error", "execution stopped") | acc]
   end
 
+  # credo:disable-for-next-line /Complexity/
   defp parse_call_tracer_calls({%{"type" => upcase_type, "from" => from} = call, index}, acc, trace_address, inner?) do
     case String.downcase(upcase_type) do
       type when type in ~w(call callcode delegatecall staticcall create create2 selfdestruct revert stop invalid) ->
@@ -427,8 +428,12 @@ defmodule EthereumJSONRPC.Geth do
           if(inner?, do: new_trace_address, else: [])
         )
 
+      "" ->
+        unless allow_empty_traces?(), do: log_unknown_type(call)
+        acc
+
       _unknown_type ->
-        Logger.warning("Call from a callTracer with an unknown type: #{inspect(call)}")
+        log_unknown_type(call)
         acc
     end
   end
@@ -437,6 +442,10 @@ defmodule EthereumJSONRPC.Geth do
     calls
     |> Stream.with_index()
     |> Enum.reduce(acc, &parse_call_tracer_calls(&1, &2, trace_address))
+  end
+
+  defp log_unknown_type(call) do
+    Logger.warning("Call from a callTracer with an unknown type: #{inspect(call)}")
   end
 
   @spec reduce_internal_transactions_params(list()) :: {:ok, list()} | {:error, list()}
@@ -474,5 +483,9 @@ defmodule EthereumJSONRPC.Geth do
 
   defp tracer_type do
     Application.get_env(:ethereum_jsonrpc, __MODULE__)[:tracer]
+  end
+
+  defp allow_empty_traces? do
+    Application.get_env(:ethereum_jsonrpc, __MODULE__)[:allow_empty_traces?]
   end
 end

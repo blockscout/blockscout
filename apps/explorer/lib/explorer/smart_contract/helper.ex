@@ -5,6 +5,7 @@ defmodule Explorer.SmartContract.Helper do
 
   alias Explorer.{Chain, Helper}
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.SmartContract.Writer
   alias Phoenix.HTML
 
   def queriable_method?(method) do
@@ -25,7 +26,7 @@ defmodule Explorer.SmartContract.Helper do
   def read_with_wallet_method?(function),
     do:
       !error?(function) && !event?(function) && !constructor?(function) &&
-        !empty_outputs?(function)
+        !empty_outputs?(function) && !Writer.write_function?(function)
 
   def empty_outputs?(function), do: is_nil(function["outputs"]) || function["outputs"] == []
 

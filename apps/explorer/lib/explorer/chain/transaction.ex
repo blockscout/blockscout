@@ -266,6 +266,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
+    Block,
     Block.Reward,
     ContractMethod,
     Data,
@@ -1795,17 +1796,23 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-    Calculates effective gas price for transaction with type 2 (EIP-1559)
-
-    `effective_gas_price = priority_fee_per_gas + block.base_fee_per_gas`
+  Wrapper around `effective_gas_price/2`
   """
   @spec effective_gas_price(Transaction.t()) :: Wei.t() | nil
+  def effective_gas_price(%Transaction{} = transaction), do: effective_gas_price(transaction, transaction.block)
 
-  def effective_gas_price(%Transaction{block: nil}), do: nil
-  def effective_gas_price(%Transaction{block: %NotLoaded{}}), do: nil
+  @doc """
+  Calculates effective gas price for transaction with type 2 (EIP-1559)
 
-  def effective_gas_price(%Transaction{} = transaction) do
-    base_fee_per_gas = transaction.block.base_fee_per_gas
+  `effective_gas_price = priority_fee_per_gas + block.base_fee_per_gas`
+  """
+  @spec effective_gas_price(Transaction.t(), Block.t()) :: Wei.t() | nil
+
+  def effective_gas_price(%Transaction{}, %NotLoaded{}), do: nil
+  def effective_gas_price(%Transaction{}, nil), do: nil
+
+  def effective_gas_price(%Transaction{} = transaction, block) do
+    base_fee_per_gas = block.base_fee_per_gas
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
 

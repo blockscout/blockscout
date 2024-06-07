@@ -235,7 +235,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   def smart_contracts_list(conn, params) do
     full_options =
-      [necessity_by_association: %{[address: :token] => :optional, [address: :names] => :optional, address: :required}]
+      [
+        necessity_by_association: %{
+          [address: [:token, :names, :proxy_implementations]] => :optional,
+          address: :required
+        }
+      ]
       |> Keyword.merge(paging_options(params))
       |> Keyword.merge(current_filter(params))
       |> Keyword.merge(search_query(params))

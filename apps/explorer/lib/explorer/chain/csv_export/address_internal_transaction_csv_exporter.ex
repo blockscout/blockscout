@@ -4,7 +4,7 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
   """
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.{Address, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
 
   @paging_options %PagingOptions{page_size: Helper.limit()}
@@ -34,6 +34,9 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
+      |> Keyword.put(:necessity_by_association, %{
+        :transaction => :optional
+      })
       |> (&if(Helper.valid_filter?(filter_type, filter_value, "internal_transactions"),
             do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
             else: &1
@@ -61,12 +64,18 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
       "Value",
       "Input",
       "Output",
-      "ErrCode"
+      "ErrCode",
+      "Fee"
     ]
 
     internal_transaction_lists =
       internal_transactions
       |> Stream.map(fn internal_transaction ->
+        gas_price =
+          internal_transaction.transaction &&
+            (internal_transaction.transaction.gas_price ||
+               Transaction.effective_gas_price(internal_transaction.transaction, internal_transaction.block))
+
         [
           to_string(internal_transaction.transaction_hash),
           internal_transaction.index,
@@ -85,7 +94,8 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
           Wei.to(internal_transaction.value, :wei),
           internal_transaction.input,
           internal_transaction.output,
-          internal_transaction.error
+          internal_transaction.error,
+          gas_price && gas_price |> Wei.mult(internal_transaction.gas_used) |> Wei.to(:wei)
         ]
       end)
 
