@@ -114,16 +114,15 @@ defmodule Explorer.Token.MetadataRetriever do
     }
   ]
 
-  # 18160ddd = keccak256(totalSupply())
-  @total_supply_signature "18160ddd"
   # 313ce567 = keccak256(decimals())
   @decimals_signature "313ce567"
   # 06fdde03 = keccak256(name())
   @name_signature "06fdde03"
   # 95d89b41 = keccak256(symbol())
   @symbol_signature "95d89b41"
+  # 18160ddd = keccak256(totalSupply())
+  @total_supply_signature "18160ddd"
   @contract_functions %{
-    @name_signature => [],
     @decimals_signature => [],
     @name_signature => [],
     @symbol_signature => [],
