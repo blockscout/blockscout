@@ -327,7 +327,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: contract.address, input: "0x" <> input_data)
         |> Repo.preload(to_address: :smart_contract)
 
-      request_zero_implementations()
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       assert {{:ok, "60fe47b1", "set(uint256 arg0)", [{"arg0", "uint256", 10}]}, _, _} =
                Transaction.decoded_input_data(transaction, [])
