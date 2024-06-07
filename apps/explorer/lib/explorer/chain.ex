@@ -3722,11 +3722,11 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Streams a list of token contract addresses that have been cataloged.
+  Streams a list of tokens that have been cataloged.
   """
   @spec stream_cataloged_tokens(
           initial :: accumulator,
-          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator),
+          reducer :: (entry :: Token.t(), accumulator -> accumulator),
           some_time_ago_updated :: integer(),
           limited? :: boolean()
         ) :: {:ok, accumulator}
