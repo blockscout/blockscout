@@ -414,14 +414,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   """
   @spec state_changes(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def state_changes(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
-    with {:ok, transaction, _transaction_hash} <-
-           validate_transaction(transaction_hash_string, params,
-             necessity_by_association:
-               Map.merge(@transaction_necessity_by_association, %{
-                 [block: [miner: [:names, :smart_contract, :proxy_implementations]]] => :optional
-               }),
-             api?: true
-           ) do
+    with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params, api?: true) do
       state_changes_plus_next_page =
         transaction |> TransactionStateHelper.state_changes(params |> paging_options() |> Keyword.merge(api?: true))
 

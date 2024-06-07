@@ -4,14 +4,14 @@ defmodule Explorer.Chain.Transaction.StateChange do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Hash, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Transaction.StateChange
 
   defstruct [:coin_or_token_transfers, :address, :token_id, :balance_before, :balance_after, :balance_diff, :miner?]
 
   @type t :: %__MODULE__{
           coin_or_token_transfers: :coin | [TokenTransfer.t()],
-          address: Hash.Address.t(),
+          address: Address.t(),
           token_id: nil | non_neg_integer(),
           balance_before: Wei.t() | Decimal.t(),
           balance_after: Wei.t() | Decimal.t(),
@@ -19,35 +19,77 @@ defmodule Explorer.Chain.Transaction.StateChange do
           miner?: boolean()
         }
 
-  def coin_balances_before(tx, block_txs, from_before, to_before, miner_before) do
+  @type coin_balances_map :: %{Hash.Address.t() => {Address.t(), Wei.t()}}
+
+  @zero_wei %Wei{value: Decimal.new(0)}
+
+  @spec coin_balances_before(Transaction.t(), [Transaction.t()], coin_balances_map()) :: coin_balances_map()
+  def coin_balances_before(tx, block_txs, coin_balances_before_block) do
     block = tx.block
 
     block_txs
     |> Enum.reduce_while(
-      {from_before, to_before, miner_before},
-      fn block_tx, {block_from, block_to, block_miner} = state ->
+      coin_balances_before_block,
+      fn block_tx, acc ->
         if block_tx.index < tx.index do
-          {:cont,
-           {update_coin_balance_from_tx(tx.from_address_hash, block_tx, block_from, block),
-            update_coin_balance_from_tx(tx.to_address_hash, block_tx, block_to, block),
-            update_coin_balance_from_tx(tx.block.miner_hash, block_tx, block_miner, block)}}
+          {:cont, update_coin_balances_from_tx(acc, block_tx, block)}
         else
           # txs ordered by index ascending, so we can halt after facing index greater or equal than index of our tx
-          {:halt, state}
+          {:halt, acc}
         end
       end
     )
   end
 
-  def update_coin_balance_from_tx(address_hash, tx, balance, block) do
-    from = tx.from_address_hash
-    to = tx.to_address_hash
-    miner = block.miner_hash
+  @spec update_coin_balances_from_tx(coin_balances_map(), Transaction.t(), Block.t()) :: coin_balances_map()
+  def update_coin_balances_from_tx(coin_balances, tx, block) do
+    coin_balances =
+      coin_balances
+      |> (&if(Map.has_key?(coin_balances, tx.from_address_hash),
+            do:
+              Map.update(&1, tx.from_address_hash, @zero_wei, fn {address, balance} ->
+                {address, Wei.sub(balance, from_loss(tx))}
+              end),
+            else: &1
+          )).()
+      |> (&if(tx.to_address_hash && Map.has_key?(coin_balances, tx.to_address_hash),
+            do:
+              Map.update(&1, tx.to_address_hash, @zero_wei, fn {address, balance} ->
+                {address, Wei.sum(balance, to_profit(tx))}
+              end),
+            else: &1
+          )).()
+      |> (&if(Map.has_key?(coin_balances, block.miner_hash),
+            do:
+              Map.update(&1, block.miner_hash, @zero_wei, fn {address, balance} ->
+                {address, Wei.sum(balance, miner_profit(tx, block))}
+              end),
+            else: &1
+          )).()
 
-    balance
-    |> (&if(address_hash == from, do: Wei.sub(&1, from_loss(tx)), else: &1)).()
-    |> (&if(address_hash == to, do: Wei.sum(&1, to_profit(tx)), else: &1)).()
-    |> (&if(address_hash == miner, do: Wei.sum(&1, miner_profit(tx, block)), else: &1)).()
+    if error?(tx) do
+      coin_balances
+    else
+      tx.internal_transactions |> Enum.reduce(coin_balances, &update_coin_balances_from_internal_tx(&1, &2))
+    end
+  end
+
+  defp update_coin_balances_from_internal_tx(internal_tx, coin_balances) do
+    coin_balances
+    |> (&if(Map.has_key?(coin_balances, internal_tx.from_address_hash),
+          do:
+            Map.update(&1, internal_tx.from_address_hash, @zero_wei, fn {address, balance} ->
+              {address, Wei.sub(balance, from_loss(internal_tx))}
+            end),
+          else: &1
+        )).()
+    |> (&if(internal_tx.to_address_hash && Map.has_key?(coin_balances, internal_tx.to_address_hash),
+          do:
+            Map.update(&1, internal_tx.to_address_hash, @zero_wei, fn {address, balance} ->
+              {address, Wei.sum(balance, to_profit(internal_tx))}
+            end),
+          else: &1
+        )).()
   end
 
   def token_balances_before(balances_before, tx, block_txs) do
@@ -65,11 +107,11 @@ defmodule Explorer.Chain.Transaction.StateChange do
     )
   end
 
-  def do_update_token_balances_from_token_transfers(
-        token_transfers,
-        balances_map,
-        include_transfers \\ :no
-      ) do
+  defp do_update_token_balances_from_token_transfers(
+         token_transfers,
+         balances_map,
+         include_transfers \\ :no
+       ) do
     Enum.reduce(
       token_transfers,
       balances_map,
@@ -139,7 +181,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
     end)
   end
 
-  def from_loss(tx) do
+  def from_loss(%Transaction{} = tx) do
     {_, fee} = Transaction.fee(tx, :wei)
 
     if error?(tx) do
@@ -149,12 +191,20 @@ defmodule Explorer.Chain.Transaction.StateChange do
     end
   end
 
-  def to_profit(tx) do
+  def from_loss(%InternalTransaction{} = tx) do
+    tx.value
+  end
+
+  def to_profit(%Transaction{} = tx) do
     if error?(tx) do
       %Wei{value: 0}
     else
       tx.value
     end
+  end
+
+  def to_profit(%InternalTransaction{} = tx) do
+    tx.value
   end
 
   defp miner_profit(tx, block) do
@@ -196,35 +246,25 @@ defmodule Explorer.Chain.Transaction.StateChange do
     }
   end
 
-  def native_coin_entries(transaction, from_before_tx, to_before_tx, miner_before_tx) do
+  def native_coin_entries(transaction, coin_balances_before_tx) do
     block = transaction.block
 
-    from_hash = transaction.from_address_hash
-    to_hash = transaction.to_address_hash
-    miner_hash = block.miner_hash
+    coin_balances_after_tx = update_coin_balances_from_tx(coin_balances_before_tx, transaction, block)
 
-    from_coin_entry =
-      if from_hash not in [to_hash, miner_hash] do
-        from = transaction.from_address
-        from_after_tx = update_coin_balance_from_tx(from_hash, transaction, from_before_tx, block)
-        coin_entry(from, from_before_tx, from_after_tx)
+    coin_balances_before_tx
+    |> Enum.reduce([], fn {address_hash, {address, coin_balance_before}}, acc ->
+      {_, coin_balance_after} = coin_balances_after_tx[address_hash]
+      coin_entry = coin_entry(address, coin_balance_before, coin_balance_after, address_hash == block.miner_hash)
+
+      if coin_entry do
+        [coin_entry | acc]
+      else
+        acc
       end
-
-    to_coin_entry =
-      if not is_nil(to_hash) and to_hash != miner_hash do
-        to = transaction.to_address
-        to_after = update_coin_balance_from_tx(to_hash, transaction, to_before_tx, block)
-        coin_entry(to, to_before_tx, to_after)
-      end
-
-    miner = block.miner
-    miner_after = update_coin_balance_from_tx(miner_hash, transaction, miner_before_tx, block)
-    miner_entry = coin_entry(miner, miner_before_tx, miner_after, true)
-
-    [from_coin_entry, to_coin_entry, miner_entry] |> Enum.reject(&is_nil/1)
+    end)
   end
 
-  defp coin_entry(address, balance_before, balance_after, miner? \\ false) do
+  defp coin_entry(address, balance_before, balance_after, miner?) do
     diff = Wei.sub(balance_after, balance_before)
 
     if has_diff?(diff) do
