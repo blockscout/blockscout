@@ -162,7 +162,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       {:ok, implementation_contract_address_hash} =
         Chain.string_to_address_hash("0x" <> implementation_contract_address_hash_string)
 
-      checksummed_implementation_contract_address_hash = Address.checksum(implementation_contract_address_hash)
+      checksummed_implementation_contract_address_hash =
+        implementation_contract_address_hash && Address.checksum(implementation_contract_address_hash)
 
       insert(:proxy_implementation,
         proxy_address_hash: proxy_address.hash,
