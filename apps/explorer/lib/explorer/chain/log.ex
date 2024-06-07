@@ -272,7 +272,7 @@ defmodule Explorer.Chain.Log do
     %FunctionSelector{selector | input_names: names}
   end
 
-  defp alter_mapping_names(mapping) do
+  defp alter_mapping_names(mapping) when is_list(mapping) do
     mapping
     |> Enum.with_index()
     |> Enum.map(fn {{name, type, indexed?, value}, index} ->
@@ -280,6 +280,8 @@ defmodule Explorer.Chain.Log do
       {name, type, indexed?, value}
     end)
   end
+
+  defp alter_mapping_names(mapping), do: mapping
 
   defp decode_event_via_sig_provider(
          log,
