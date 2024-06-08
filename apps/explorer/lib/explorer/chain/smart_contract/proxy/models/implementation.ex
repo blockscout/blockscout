@@ -51,6 +51,14 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     field(:address_hashes, {:array, Hash.Address}, null: false)
     field(:names, {:array, :string}, null: false)
 
+    belongs_to(
+      :address,
+      Address,
+      foreign_key: :proxy_address_hash,
+      references: :hash,
+      define_field: false
+    )
+
     timestamps()
   end
 

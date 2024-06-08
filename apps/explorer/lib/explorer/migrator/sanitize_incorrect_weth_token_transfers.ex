@@ -31,25 +31,37 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
       _ ->
         MigrationStatus.set_status(@migration_name, "started")
         schedule_batch_migration()
-        {:ok, %{step: :delete_not_whitelisted_weth_transfers}}
+        {:ok, %{step: :delete_duplicates}}
     end
   end
 
   @impl true
   def handle_info(:migrate_batch, %{step: step} = state) do
+    if step == :delete_not_whitelisted_weth_transfers and
+         !Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:weth_token_transfers_filtering_enabled] do
+      {:stop, :normal, state}
+    else
+      process_batch(state)
+    end
+  end
+
+  defp process_batch(%{step: step} = state) do
     case last_unprocessed_identifiers(step) do
       [] ->
         case step do
-          :delete_not_whitelisted_weth_transfers ->
+          :delete_duplicates ->
             Logger.info(
-              "SanitizeIncorrectWETHTokenTransfers deletion of not whitelisted weth transfers finished, continuing with duplicates deletion"
+              "SanitizeIncorrectWETHTokenTransfers deletion of duplicates finished, continuing with deletion of not whitelisted weth transfers"
             )
 
             schedule_batch_migration()
-            {:noreply, %{step: :delete_duplicates}}
+            {:noreply, %{step: :delete_not_whitelisted_weth_transfers}}
 
-          :delete_duplicates ->
-            Logger.info("SanitizeIncorrectWETHTokenTransfers migration finished")
+          :delete_not_whitelisted_weth_transfers ->
+            Logger.info(
+              "SanitizeIncorrectWETHTokenTransfers deletion of not whitelisted weth transfers finished. Sanitizing is completed."
+            )
+
             MigrationStatus.set_status(@migration_name, "completed")
             {:stop, :normal, state}
         end

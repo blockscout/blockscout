@@ -4,7 +4,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   """
   alias Explorer.Chain
   alias Explorer.SmartContract.Reader
-  alias Indexer.Fetcher.TokenInstance.MetadataRetriever
+  alias Explorer.Token.MetadataRetriever
 
   require Logger
 

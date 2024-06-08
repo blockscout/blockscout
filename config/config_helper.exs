@@ -170,20 +170,22 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap
+  @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap | Source.Mobula
   def exchange_rates_source do
     case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
       "coin_gecko" -> Source.CoinGecko
       "coin_market_cap" -> Source.CoinMarketCap
+      "mobula" -> Source.Mobula
       _ -> Source.CoinGecko
     end
   end
 
-  @spec exchange_rates_market_cap_source() :: MarketCap.CoinGecko | MarketCap.CoinMarketCap
+  @spec exchange_rates_market_cap_source() :: MarketCap.CoinGecko | MarketCap.CoinMarketCap | MarketCap.Mobula
   def exchange_rates_market_cap_source do
     case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
       "coin_gecko" -> MarketCap.CoinGecko
       "coin_market_cap" -> MarketCap.CoinMarketCap
+      "mobula" -> MarketCap.Mobula
       _ -> MarketCap.CoinGecko
     end
   end
@@ -196,26 +198,30 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec exchange_rates_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare
+  @spec exchange_rates_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare | Price.Mobula
   def exchange_rates_price_source do
     case System.get_env("EXCHANGE_RATES_PRICE_SOURCE") do
       "coin_gecko" -> Price.CoinGecko
       "coin_market_cap" -> Price.CoinMarketCap
       "crypto_compare" -> Price.CryptoCompare
+      "mobula" -> Price.Mobula
       _ -> Price.CryptoCompare
     end
   end
 
-  @spec exchange_rates_secondary_coin_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare
+  @spec exchange_rates_secondary_coin_price_source() ::
+          Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare | Price.Mobula
   def exchange_rates_secondary_coin_price_source do
     cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
     cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_ID")
     cc_secondary_coin_symbol = System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL")
+    mobula_secondary_coin_id = System.get_env("EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID")
 
     cond do
       cg_secondary_coin_id && cg_secondary_coin_id !== "" -> Price.CoinGecko
       cmc_secondary_coin_id && cmc_secondary_coin_id !== "" -> Price.CoinMarketCap
       cc_secondary_coin_symbol && cc_secondary_coin_symbol !== "" -> Price.CryptoCompare
+      mobula_secondary_coin_id && mobula_secondary_coin_id !== "" -> Price.Mobula
       true -> Price.CryptoCompare
     end
   end
