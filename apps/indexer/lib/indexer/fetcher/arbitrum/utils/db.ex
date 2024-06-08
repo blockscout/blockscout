@@ -700,12 +700,13 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     - `true` if the keyset exists, `false` otherwise.
   """
   @spec anytrust_keyset_exists?(binary()) :: boolean()
-  def anytrust_keyset_exists?("0x" <> keyset_hash) do
-    anytrust_keyset_exists?(keyset_hash |> Chain.string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes))
+  def anytrust_keyset_exists?(keyset_hash) do
+    not Enum.empty?(Reader.get_anytrust_keyset(keyset_hash))
   end
 
-  def anytrust_keyset_exists?(keyset_hash) do
-    not is_nil(Reader.get_anytrust_keyset(keyset_hash))
+  @spec get_da_info_by_batch_number(non_neg_integer()) :: map() | nil
+  def get_da_info_by_batch_number(batch_number) do
+    Reader.get_da_info_by_batch_number(batch_number)
   end
 
   @spec lifecycle_transaction_to_map(Arbitrum.LifecycleTransaction.t()) :: Arbitrum.LifecycleTransaction.to_import()

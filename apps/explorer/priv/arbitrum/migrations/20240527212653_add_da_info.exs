@@ -18,5 +18,8 @@ defmodule Explorer.Repo.Arbitrum.Migrations.AddDaInfo do
       add(:batch_number, :integer)
       timestamps(null: false, type: :utc_datetime_usec)
     end
+
+    create(index(:arbitrum_da_multi_purpose, [:data_type, :data_key]))
+    create(index(:arbitrum_da_multi_purpose, [:data_type, :batch_number]))
   end
 end

@@ -924,9 +924,13 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - `keyset_hash`: A binary representing the hash of the keyset to be retrieved.
 
     ## Returns
-    - A record containing the AnyTrust keyset, otherwise `nil`.
+    - A map containing information about the AnyTrust keyset, otherwise an empty map.
   """
-  @spec get_anytrust_keyset(binary()) :: DaMultiPurposeRecord.t() | nil
+  @spec get_anytrust_keyset(binary()) :: map() | nil
+  def get_anytrust_keyset("0x" <> _ = keyset_hash) do
+    get_anytrust_keyset(keyset_hash |> Chain.string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes))
+  end
+
   def get_anytrust_keyset(keyset_hash) do
     query =
       from(
@@ -934,7 +938,65 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         where: da_records.data_key == ^keyset_hash and da_records.data_type == 1
       )
 
-    query
-    |> Repo.one()
+    case Repo.one(query) do
+      nil -> %{}
+      keyset -> keyset.data
+    end
+  end
+
+  @doc """
+    Retrieves Data Availability (DA) information from the database using the provided
+    batch number.
+
+    ## Parameters
+    - `batch_number`: The batch number to be used for retrieval.
+
+    ## Returns
+    - A map containing the DA information if found, otherwise an empty map.
+  """
+  @spec get_da_info_by_batch_number(non_neg_integer()) :: map()
+  def get_da_info_by_batch_number(batch_number) do
+    query =
+      from(
+        da_records in DaMultiPurposeRecord,
+        where: da_records.batch_number == ^batch_number and da_records.data_type == 0
+      )
+
+    case Repo.one(query) do
+      nil -> %{}
+      keyset -> keyset.data
+    end
+  end
+
+  @doc """
+    Retrieves a Data Availability (DA) record from the database using the provided
+    data key.
+
+    ## Parameters
+    - `data_key`: The key of the data to be retrieved.
+
+    ## Returns
+    - `{:ok, {batch_number, da_info}}`, where
+      - `batch_number` is the number of the batch associated with the DA record
+      - `da_info` is a map containing the DA record.
+    - `{:error, :not_found}` if no record with the specified `data_key` exists.
+  """
+  @spec get_da_record_by_data_key(binary(), api?: boolean()) :: {:ok, {non_neg_integer(), map()}} | {:error, :not_found}
+  def get_da_record_by_data_key("0x" <> _ = data_key, options) do
+    data_key_bytes = data_key |> Chain.string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes)
+    get_da_record_by_data_key(data_key_bytes, options)
+  end
+
+  def get_da_record_by_data_key(data_key, options) do
+    query =
+      from(
+        da_records in DaMultiPurposeRecord,
+        where: da_records.data_key == ^data_key and da_records.data_type == 0
+      )
+
+    case select_repo(options).one(query) do
+      nil -> {:error, :not_found}
+      keyset -> {:ok, {keyset.batch_number, keyset.data}}
+    end
   end
 end
