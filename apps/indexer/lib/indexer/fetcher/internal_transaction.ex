@@ -443,7 +443,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     import Indexer.Block.Fetcher,
       only: [
         token_transfers_merge_token: 2,
-        async_import_token_balances: 1
+        async_import_token_balances: 2
       ]
 
     # credo:disable-for-next-line Credo.Check.Consistency.MultiAliasImportRequireUse
@@ -466,9 +466,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
           end
         end)
 
-      async_import_token_balances(%{
-        address_token_balances: address_token_balances
-      })
+      async_import_token_balances(%{address_token_balances: address_token_balances}, false)
     end
   else
     defp async_import_celo_token_balances(_token_transfers), do: :ok

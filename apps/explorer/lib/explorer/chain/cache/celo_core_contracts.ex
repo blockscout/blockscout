@@ -8,10 +8,6 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   block. Additionally, it provides a function to obtain the state of a specific
   contract by fetching the latest event for the contract at a given block.
 
-  The CELO network includes several core contracts that are central to its
-  operation. These core contracts manage various aspects of the Celo network,
-  including its stablecoins, governance, identity, and more.
-
   For details on the structure of the `CELO_CORE_CONTRACTS` environment
   variable, see `app/explorer/lib/fetch_celo_core_contracts.ex`.
   """
@@ -19,8 +15,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
 
   require Logger
 
-  alias Explorer.Chain.Block
   alias EthereumJSONRPC
+  alias Explorer.Chain.Block
 
   @type contract_name :: String.t()
 
