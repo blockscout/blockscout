@@ -177,7 +177,6 @@ defmodule Explorer.Chain.Token do
 
     from(
       token in __MODULE__,
-      select: token.contract_address_hash,
       where: token.cataloged == true and token.updated_at <= ^some_time_ago_date
     )
   end

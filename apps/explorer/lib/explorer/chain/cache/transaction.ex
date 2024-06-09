@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Cache.Transaction do
     name: :transaction_count,
     key: :count,
     key: :async_task,
-    global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
+    global_ttl: :infinity,
     ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
 
@@ -51,7 +51,7 @@ defmodule Explorer.Chain.Cache.Transaction do
         try do
           result = Repo.aggregate(Transaction, :count, :hash, timeout: :infinity)
 
-          set_count(result)
+          set_count(%ConCache.Item{ttl: Helper.ttl(__MODULE__, "CACHE_TXS_COUNT_PERIOD"), value: result})
         rescue
           e ->
             Logger.debug([

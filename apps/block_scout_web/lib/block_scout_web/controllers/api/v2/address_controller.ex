@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       %{
         [created_contract_address: :names] => :optional,
         [from_address: :names] => :optional,
-        [to_address: :names] => :optional,
+        [to_address: [:names, :proxy_implementations]] => :optional,
         :block => :optional,
         [created_contract_address: :smart_contract] => :optional,
         [from_address: :smart_contract] => :optional,
@@ -83,7 +83,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @contract_address_preloads [
     :smart_contract,
     :contracts_creation_internal_transaction,
-    :contracts_creation_transaction
+    :contracts_creation_transaction,
+    :proxy_implementations
   ]
 
   @nft_necessity_by_association [

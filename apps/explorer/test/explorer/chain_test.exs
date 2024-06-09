@@ -3491,13 +3491,14 @@ defmodule Explorer.ChainTest do
     assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [uncatalog_address]}
   end
 
-  describe "stream_cataloged_token_contract_address_hashes/2" do
+  describe "stream_cataloged_tokens/2" do
     test "reduces with given reducer and accumulator" do
       today = DateTime.utc_now()
       yesterday = Timex.shift(today, days: -1)
-      %Token{contract_address_hash: catalog_address} = insert(:token, cataloged: true, updated_at: yesterday)
+      token = insert(:token, cataloged: true, updated_at: yesterday)
       insert(:token, cataloged: false)
-      assert Chain.stream_cataloged_token_contract_address_hashes([], &[&1 | &2], 1) == {:ok, [catalog_address]}
+      {:ok, [token_from_func]} = Chain.stream_cataloged_tokens([], &[&1 | &2], 1)
+      assert token_from_func.contract_address_hash == token.contract_address_hash
     end
 
     test "sorts the tokens by updated_at in ascending order" do
@@ -3513,7 +3514,14 @@ defmodule Explorer.ChainTest do
         |> Enum.sort(&(Timex.to_unix(&1.updated_at) < Timex.to_unix(&2.updated_at)))
         |> Enum.map(& &1.contract_address_hash)
 
-      assert Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1]), 12) == {:ok, expected_response}
+      {:ok, response} = Chain.stream_cataloged_tokens([], &(&2 ++ [&1]), 12)
+
+      formatted_response =
+        response
+        |> Enum.sort(&(Timex.to_unix(&1.updated_at) < Timex.to_unix(&2.updated_at)))
+        |> Enum.map(& &1.contract_address_hash)
+
+      assert formatted_response == expected_response
     end
   end
 

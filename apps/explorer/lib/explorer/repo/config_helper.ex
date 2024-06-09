@@ -54,10 +54,10 @@ defmodule Explorer.Repo.ConfigHelper do
 
   def ssl_enabled?, do: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true")
 
-  defp extract_parameters(empty) when empty == nil or empty == "", do: []
+  def extract_parameters(empty) when empty == nil or empty == "", do: []
 
   # sobelow_skip ["DOS.StringToAtom"]
-  defp extract_parameters(database_url) do
+  def extract_parameters(database_url) do
     ~r/\w*:\/\/(?<username>[a-zA-Z0-9_-]*):(?<password>[a-zA-Z0-9-*#!%^&$_.]*)?@(?<hostname>(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])):(?<port>\d+)\/(?<database>[a-zA-Z0-9_-]*)/
     |> Regex.named_captures(database_url)
     |> Keyword.new(fn {k, v} -> {String.to_atom(k), v} end)

@@ -52,7 +52,7 @@ defmodule Indexer.Fetcher.TokenUpdater do
       |> Duration.to_minutes()
       |> trunc()
 
-    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes(initial, reducer, interval_in_minutes, true)
+    {:ok, tokens} = Chain.stream_cataloged_tokens(initial, reducer, interval_in_minutes, true)
 
     tokens
   end
@@ -62,7 +62,6 @@ defmodule Indexer.Fetcher.TokenUpdater do
     Logger.debug("updating tokens")
 
     entries
-    |> Enum.map(&to_string/1)
     |> MetadataRetriever.get_functions_of()
     |> case do
       {:ok, params} ->

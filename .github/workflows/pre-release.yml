@@ -21,9 +21,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup repo
         uses: ./.github/actions/setup-repo
+        id: setup
         with:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          docker-remote-multi-platform: true
+          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build & Push Core Docker image (indexer + API)
         uses: docker/build-push-action@v5
@@ -34,6 +38,7 @@ jobs:
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
           tags: blockscout/blockscout:master, blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -62,6 +67,7 @@ jobs:
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
           tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
+          labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -89,6 +95,7 @@ jobs:
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
           tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-api
+          labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8

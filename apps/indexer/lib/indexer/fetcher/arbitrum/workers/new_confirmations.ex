@@ -44,6 +44,16 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   require Logger
 
+  @typedoc """
+    A map containing list of transaction logs for a specific block range.
+    - the key is the tuple with the start and end of the block range
+    - the value is the list of transaction logs received for the block range
+  """
+  @type cached_logs :: %{{non_neg_integer(), non_neg_integer()} => [%{String.t() => any()}]}
+
+  @logs_per_report 10
+  @zero_counters %{pairs_counter: 1, capped_logs_counter: 0, report?: false}
+
   # keccak256("SendRootUpdated(bytes32,bytes32)")
   @send_root_updated_event "0xb4df3847300f076a369cd76d2314b470a1194d9e8a6bb97f1860aee88a5f6748"
 
@@ -732,33 +742,48 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       "Use L1 blocks #{batch.commitment_transaction.block_number}..#{confirmation_desc.l1_block_num - 1} to look for a rollup block confirmation within #{batch.start_block}..#{batch.end_block} of ##{batch.number}"
     )
 
-    l1_blocks_pairs_to_get_logs(
-      batch.commitment_transaction.block_number,
-      confirmation_desc.l1_block_num - 1,
-      l1_outbox_config.logs_block_range
-    )
-    |> Enum.reduce_while({:ok, nil, cache}, fn {log_start, log_end}, {_, _, updated_cache} ->
-      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
-      {status, latest_block_confirmed, new_cache} =
-        do_check_if_batch_confirmed(
-          {batch.start_block, batch.end_block},
-          {log_start, log_end},
-          l1_outbox_config,
-          updated_cache
-        )
+    block_pairs =
+      l1_blocks_pairs_to_get_logs(
+        batch.commitment_transaction.block_number,
+        confirmation_desc.l1_block_num - 1,
+        l1_outbox_config.logs_block_range
+      )
 
-      case {status, latest_block_confirmed} do
-        {:error, _} ->
-          {:halt, {:error, nil, new_cache}}
+    block_pairs_length = length(block_pairs)
 
-        {_, nil} ->
-          {:cont, {:ok, nil, new_cache}}
+    {status, block, new_cache, _} =
+      block_pairs
+      |> Enum.reduce_while({:ok, nil, cache, @zero_counters}, fn {log_start, log_end},
+                                                                 {_, _, updated_cache, counters} ->
+        {status, latest_block_confirmed, new_cache, logs_amount} =
+          do_check_if_batch_confirmed(
+            {batch.start_block, batch.end_block},
+            {log_start, log_end},
+            l1_outbox_config,
+            updated_cache
+          )
 
-        {_, previous_confirmed_rollup_block} ->
-          log_info("Confirmed block ##{previous_confirmed_rollup_block} for the batch found")
-          {:halt, {:ok, previous_confirmed_rollup_block, new_cache}}
-      end
-    end)
+        case {status, latest_block_confirmed} do
+          {:error, _} ->
+            {:halt, {:error, nil, new_cache, @zero_counters}}
+
+          {_, nil} ->
+            next_counters = next_counters(counters, logs_amount)
+
+            # credo:disable-for-lines:3 Credo.Check.Refactor.Nesting
+            if next_counters.report? and block_pairs_length != next_counters.pairs_counter do
+              log_info("Examined #{next_counters.pairs_counter - 1} of #{block_pairs_length} L1 block ranges")
+            end
+
+            {:cont, {:ok, nil, new_cache, next_counters}}
+
+          {_, previous_confirmed_rollup_block} ->
+            log_info("Confirmed block ##{previous_confirmed_rollup_block} for the batch found")
+            {:halt, {:ok, previous_confirmed_rollup_block, new_cache, @zero_counters}}
+        end
+      end)
+
+    {status, block, new_cache}
   end
 
   # Generates descending order pairs of start and finish block numbers, ensuring
@@ -766,6 +791,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # Examples:
   # l1_blocks_pairs_to_get_logs(1, 10, 3) -> [{8, 10}, {5, 7}, {2, 4}, {1, 1}]
   # l1_blocks_pairs_to_get_logs(5, 10, 3) -> [{8, 10}, {5, 7}]
+  @spec l1_blocks_pairs_to_get_logs(non_neg_integer(), non_neg_integer(), non_neg_integer()) :: [
+          {non_neg_integer(), non_neg_integer()}
+        ]
   defp l1_blocks_pairs_to_get_logs(start, finish, max_range) do
     # credo:disable-for-lines:9 Credo.Check.Refactor.PipeChainStart
     Stream.unfold(finish, fn cur_finish ->
@@ -794,14 +822,26 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # - `cache`: A cache of previously fetched logs to reduce `eth_getLogs` calls.
   #
   # ## Returns
-  # - A tuple `{:ok, latest_block_confirmed, new_cache}`:
+  # - A tuple `{:ok, latest_block_confirmed, new_cache, logs_length}`:
   #   - `latest_block_confirmed` is the highest rollup block number confirmed within
   #     the specified range.
-  # - A tuple `{:ok, nil, new_cache}` if no rollup blocks within the specified range
-  #   are confirmed.
-  # - A tuple `{:error, nil, new_cache}` if during parsing logs a rollup block with
-  #   given hash is not being found in the database.
+  # - A tuple `{:ok, nil, new_cache, logs_length}` if no rollup blocks within the
+  #   specified range are confirmed.
+  # - A tuple `{:error, nil, new_cache, logs_length}` if during parsing logs a rollup
+  #    block with given hash is not being found in the database.
   # For all three cases the `new_cache` contains the updated logs cache.
+  @spec do_check_if_batch_confirmed(
+          {non_neg_integer(), non_neg_integer()},
+          {non_neg_integer(), non_neg_integer()},
+          %{
+            :outbox_address => String.t(),
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            optional(any()) => any()
+          },
+          __MODULE__.cached_logs()
+        ) ::
+          {:ok, nil | non_neg_integer(), __MODULE__.cached_logs(), non_neg_integer()}
+          | {:error, nil, __MODULE__.cached_logs(), non_neg_integer()}
   defp do_check_if_batch_confirmed(
          {rollup_start_block, rollup_end_block},
          {log_start, log_end},
@@ -824,7 +864,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     {status, latest_block_confirmed} =
       logs
       |> Enum.reduce_while({:ok, nil}, fn event, _acc ->
-        log_info("Examining the transaction #{event["transactionHash"]}")
+        log_debug("Examining the transaction #{event["transactionHash"]}")
 
         rollup_block_hash = send_root_updated_event_parse(event)
         rollup_block_num = Db.rollup_block_hash_to_num(rollup_block_hash)
@@ -835,16 +875,34 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             {:halt, {:error, nil}}
 
           value when value >= rollup_start_block and value <= rollup_end_block ->
-            log_info("The rollup block ##{rollup_block_num} within the range")
+            log_debug("The rollup block ##{rollup_block_num} within the range")
             {:halt, {:ok, rollup_block_num}}
 
           _ ->
-            log_info("The rollup block ##{rollup_block_num} outside of the range")
+            log_debug("The rollup block ##{rollup_block_num} outside of the range")
             {:cont, {:ok, nil}}
         end
       end)
 
-    {status, latest_block_confirmed, new_cache}
+    {status, latest_block_confirmed, new_cache, length(logs)}
+  end
+
+  # Simplifies the process of updating counters for the `eth_getLogs` requests
+  # to be used for logging purposes.
+  @spec next_counters(
+          %{:pairs_counter => non_neg_integer(), :capped_logs_counter => non_neg_integer(), optional(any()) => any()},
+          non_neg_integer()
+        ) :: %{
+          :pairs_counter => non_neg_integer(),
+          :capped_logs_counter => non_neg_integer(),
+          :report? => boolean()
+        }
+  defp next_counters(%{pairs_counter: pairs_counter, capped_logs_counter: capped_logs_counter}, logs_amount) do
+    %{
+      pairs_counter: pairs_counter + 1,
+      capped_logs_counter: rem(capped_logs_counter + logs_amount, @logs_per_report),
+      report?: div(capped_logs_counter + logs_amount, @logs_per_report) > 0
+    }
   end
 
   # Retrieves logs for `SendRootUpdated` events between specified blocks,
@@ -868,6 +926,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # - A tuple containing:
   #   - The list of logs corresponding to `SendRootUpdated` events.
   #   - The updated cache with the newly fetched logs.
+  @spec get_logs_new_confirmations(
+          non_neg_integer(),
+          non_neg_integer(),
+          binary(),
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          __MODULE__.cached_logs()
+        ) :: {[%{String.t() => any()}], __MODULE__.cached_logs()}
   defp get_logs_new_confirmations(start_block, end_block, outbox_address, json_rpc_named_arguments, cache \\ %{})
        when start_block <= end_block do
     # TODO: consider to have a persistent cache in DB to reduce the number of getLogs requests

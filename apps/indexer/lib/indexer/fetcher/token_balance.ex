@@ -34,22 +34,25 @@ defmodule Indexer.Fetcher.TokenBalance do
 
   @max_retries 3
 
-  @spec async_fetch([
-          %{
-            token_contract_address_hash: Hash.Address.t(),
-            address_hash: Hash.Address.t(),
-            block_number: non_neg_integer(),
-            token_type: String.t(),
-            token_id: non_neg_integer()
-          }
-        ]) :: :ok
-  def async_fetch(token_balances) do
+  @spec async_fetch(
+          [
+            %{
+              token_contract_address_hash: Hash.Address.t(),
+              address_hash: Hash.Address.t(),
+              block_number: non_neg_integer(),
+              token_type: String.t(),
+              token_id: non_neg_integer()
+            }
+          ],
+          boolean()
+        ) :: :ok
+  def async_fetch(token_balances, realtime?) do
     if TokenBalanceSupervisor.disabled?() do
       :ok
     else
       formatted_params = Enum.map(token_balances, &entry/1)
 
-      BufferedTask.buffer(__MODULE__, formatted_params, :infinity)
+      BufferedTask.buffer(__MODULE__, formatted_params, realtime?, :infinity)
     end
   end
 

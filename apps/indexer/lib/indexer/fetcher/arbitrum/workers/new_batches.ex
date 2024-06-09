@@ -690,7 +690,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     blocks_to_batches = unwrap_rollup_block_ranges(batches)
 
     required_blocks_numbers = Map.keys(blocks_to_batches)
-    log_info("Identified #{length(required_blocks_numbers)} rollup blocks")
+    log_debug("Identified #{length(required_blocks_numbers)} rollup blocks")
 
     {blocks_to_import_map, txs_to_import_list} =
       get_rollup_blocks_and_txs_from_db(required_blocks_numbers, blocks_to_batches)
