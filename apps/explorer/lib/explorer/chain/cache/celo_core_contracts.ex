@@ -1,10 +1,28 @@
 defmodule Explorer.Chain.Cache.CeloCoreContracts do
   @moduledoc """
   Cache for Celo core contract addresses.
+
+  This module operates with a `CELO_CORE_CONTRACTS` environment variable, which
+  contains the JSON map of core contract addresses on the Celo network. The
+  module provides functions to fetch the addresses of core contracts at a given
+  block. Additionally, it provides a function to obtain the state of a specific
+  contract by fetching the latest event for the contract at a given block.
+
+  The CELO network includes several core contracts that are central to its
+  operation. These core contracts manage various aspects of the Celo network,
+  including its stablecoins, governance, identity, and more.
+
+  For details on the structure of the `CELO_CORE_CONTRACTS` environment
+  variable, see `app/explorer/lib/fetch_celo_core_contracts.ex`.
   """
   @dialyzer :no_match
 
   require Logger
+
+  alias Explorer.Chain.Block
+  alias EthereumJSONRPC
+
+  @type contract_name :: String.t()
 
   @atom_to_contract_name %{
     accounts: "Accounts",
@@ -29,9 +47,40 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     }
   }
 
+  @doc """
+  A map where keys are atoms representing contract types, and values are strings
+  representing the names of the contracts.
+  """
+  @spec atom_to_contract_name() :: %{atom() => contract_name}
   def atom_to_contract_name, do: @atom_to_contract_name
+
+  @doc """
+  A nested map where keys are atoms representing contract types, and values are
+  maps of event atoms to event names.
+  """
+  @spec atom_to_contract_event_names() :: %{atom() => %{atom() => contract_name}}
   def atom_to_contract_event_names, do: @atom_to_contract_event_names
 
+  @doc """
+  Gets the specified event for a core contract at a given block number.
+
+  ## Parameters
+  - `contract_atom`: The atom representing the contract.
+  - `event_atom`: The atom representing the event.
+  - `block_number`: The block number at which to fetch the event.
+
+  ## Returns (one of the following)
+  - `{:ok, map() | nil}`: The event data if found, or `nil` if no event is found.
+  - `{:error, reason}`: An error tuple with the reason for the failure.
+  """
+  @spec get_event(atom(), atom(), Block.block_number()) ::
+          {:ok, map() | nil}
+          | {:error,
+             :contract_atom_not_found
+             | :event_atom_not_found
+             | :contract_name_not_found
+             | :event_name_not_found
+             | :contract_address_not_found}
   def get_event(contract_atom, event_atom, block_number) do
     core_contracts = Application.get_env(:explorer, __MODULE__)[:contracts]
 
@@ -113,6 +162,22 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     end
   end
 
+  @doc """
+  Gets the address of a core contract at a given block number.
+
+  ## Parameters
+  - `contract_atom`: The atom representing the contract.
+  - `block_number`: The block number at which to fetch the address.
+
+  ## Returns (one of the following)
+  - `{:ok, EthereumJSONRPC.address() | nil}`: The address of the contract, or `nil` if not found.
+  - `{:error, reason}`: An error tuple with the reason for the failure.
+  """
+  @spec get_address(atom(), Block.block_number()) ::
+          {:ok, EthereumJSONRPC.address() | nil}
+          | {:error,
+             :contract_atom_not_found
+             | :contract_name_not_found}
   def get_address(
         contract_atom,
         block_number
