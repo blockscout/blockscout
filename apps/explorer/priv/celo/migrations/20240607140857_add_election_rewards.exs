@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Celo.Migrations.AddEpochElectionRewardsTable do
+defmodule Explorer.Repo.Celo.Migrations.AddElectionRewards do
   use Ecto.Migration
 
   def change do
@@ -7,7 +7,7 @@ defmodule Explorer.Repo.Celo.Migrations.AddEpochElectionRewardsTable do
       "DROP TYPE celo_election_reward_type"
     )
 
-    create table(:celo_epoch_election_rewards, primary_key: false) do
+    create table(:celo_election_rewards, primary_key: false) do
       add(:amount, :numeric, precision: 100, null: false)
       add(:type, :celo_election_reward_type, null: false, primary_key: true)
 

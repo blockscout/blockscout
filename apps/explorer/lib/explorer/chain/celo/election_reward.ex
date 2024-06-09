@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Celo.Epoch.ElectionReward do
+defmodule Explorer.Chain.Celo.ElectionReward do
   @moduledoc """
   Represents the rewards distributed in an epoch election.
   """
@@ -6,17 +6,12 @@ defmodule Explorer.Chain.Celo.Epoch.ElectionReward do
 
   alias Explorer.Chain.{Address, Block, Hash, Wei}
 
-  @types_enum [
-    :voter,
-    :validator,
-    :group,
-    :delegated_payment
-  ]
+  @types_enum ~w(voter validator group delegated_payment)a
 
   @required_attrs ~w(amount type block_hash account_hash associated_account_hash)a
 
   @primary_key false
-  typed_schema "celo_epoch_election_rewards" do
+  typed_schema "celo_election_rewards" do
     field(:amount, Wei, null: false)
 
     field(
@@ -68,7 +63,7 @@ defmodule Explorer.Chain.Celo.Epoch.ElectionReward do
     # todo: do I need to set this unique constraint here? or it is redundant?
     # |> unique_constraint(
     #   [:block_hash, :account_hash, :type],
-    #   name: :celo_epoch_election_rewards_pkey
+    #   name: :celo_election_rewards_pkey
     # )
   end
 end

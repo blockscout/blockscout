@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Celo.Migrations.AddPendingEpochBlockOperationsTable do
+defmodule Explorer.Repo.Celo.Migrations.AddPendingEpochBlockOperations do
   use Ecto.Migration
 
   def change do

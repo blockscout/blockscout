@@ -64,8 +64,8 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.Arbitrum.BatchTransactions
     ],
     celo: [
-      Runner.Celo.Epoch.ElectionRewards,
-      Runner.Celo.Epoch.Rewards
+      Runner.Celo.ElectionRewards,
+      Runner.Celo.EpochRewards
     ]
   }
 

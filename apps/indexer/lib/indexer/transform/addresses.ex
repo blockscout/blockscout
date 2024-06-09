@@ -156,7 +156,7 @@ defmodule Indexer.Transform.Addresses do
         %{from: :l2_token_address, to: :hash}
       ]
     ],
-    celo_epoch_election_rewards: [
+    celo_election_rewards: [
       [
         %{from: :account_hash, to: :hash}
       ]
@@ -473,7 +473,7 @@ defmodule Indexer.Transform.Addresses do
               optional(:l2_token_address) => String.t()
             }
           ],
-          optional(:celo_epoch_election_rewards) => [
+          optional(:celo_election_rewards) => [
             %{
               required(:account_hash) => String.t()
             }

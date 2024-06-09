@@ -282,26 +282,35 @@ defmodule Indexer.Helper do
   end
 
   @doc """
-    Retrieves decoded results of `eth_call` requests to contracts, with retry logic for handling errors.
+    Retrieves decoded results of `eth_call` requests to contracts, with retry
+    logic for handling errors.
 
-    The function attempts the specified number of retries, with a progressive delay between
-    each retry, for each `eth_call` request. If, after all retries, some requests remain
-    unsuccessful, it returns a list of unique error messages encountered.
+    The function attempts the specified number of retries, with a progressive
+    delay between each retry, for each `eth_call` request. If, after all
+    retries, some requests remain unsuccessful, it returns a list of unique
+    error messages encountered.
 
     ## Parameters
-    - `requests`: A list of `EthereumJSONRPC.Contract.call()` instances describing the parameters
-                  for `eth_call`, including the contract address and method selector.
-    - `abi`: A list of maps providing the ABI that describes the input parameters and output
-             format for the contract functions.
-    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-    - `retries_left`: The number of retries allowed for any `eth_call` that returns an error.
+    - `requests`: A list of `EthereumJSONRPC.Contract.call()` instances
+                  describing the parameters for `eth_call`, including the
+                  contract address and method selector.
+    - `abi`: A list of maps providing the ABI that describes the input
+             parameters and output format for the contract functions.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC
+                                  connection.
+    - `retries_left`: The number of retries allowed for any `eth_call` that
+                      returns an error.
+    - `log_error?` (optional):  A boolean indicating whether to log error
+                               messages on retries. Defaults to `true`.
 
     ## Returns
     - `{responses, errors}` where:
-      - `responses`: A list of tuples `{status, result}`, where `result` is the decoded response
-                     from the corresponding `eth_call` if `status` is `:ok`, or the error message
-                     if `status` is `:error`.
-      - `errors`: A list of error messages, if any element in `responses` contains `:error`.
+      - `responses`: A list of tuples `{status, result}`, where `result` is the
+                     decoded response from the corresponding `eth_call` if
+                     `status` is `:ok`, or the error message if `status` is
+                     `:error`.
+      - `errors`: A list of error messages, if any element in `responses`
+        contains `:error`.
   """
   @spec read_contracts_with_retries(
           [EthereumJSONRPC.Contract.call()],
@@ -309,12 +318,12 @@ defmodule Indexer.Helper do
           EthereumJSONRPC.json_rpc_named_arguments(),
           integer()
         ) :: {[{:ok | :error, any()}], list()}
-  def read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left)
+  def read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, log_error? \\ true)
       when is_list(requests) and is_list(abi) and is_integer(retries_left) do
-    do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, 0)
+    do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, 0, log_error?)
   end
 
-  defp do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, retries_done) do
+  defp do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, retries_done, log_error?) do
     responses = ContractReader.query_contracts(requests, abi, json_rpc_named_arguments: json_rpc_named_arguments)
 
     error_messages =
@@ -335,9 +344,17 @@ defmodule Indexer.Helper do
       if retries_left <= 0 do
         {responses, Enum.uniq(error_messages)}
       else
-        Logger.error("#{List.first(error_messages)}. Retrying...")
+        if log_error?, do: Logger.error("#{List.first(error_messages)}. Retrying...")
         pause_before_retry(retries_done)
-        do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, retries_done + 1)
+
+        do_read_contracts_with_retries(
+          requests,
+          abi,
+          json_rpc_named_arguments,
+          retries_left,
+          retries_done + 1,
+          log_error?
+        )
       end
     end
   end
