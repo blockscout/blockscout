@@ -4,7 +4,27 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     Router for /api/v2/tokens. This route has separate router in order to ignore sobelow's warning about missing CSRF protection
   """
   use BlockScoutWeb, :router
+  alias BlockScoutWeb.API.V2
   alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
+
+  @max_query_string_length 5_000
+
+  pipeline :api_v2 do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
+    plug(:accepts, ["json"])
+    plug(CheckApiV2)
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(RateLimit)
+  end
 
   pipeline :api_v2_no_forgery_protect do
     plug(
@@ -26,7 +46,11 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
   scope "/", as: :api_v2 do
     pipe_through(:api_v2_no_forgery_protect)
 
-    alias BlockScoutWeb.API.V2
+    patch("/:address_hash_param/instances/:token_id/refetch-metadata", V2.TokenController, :refetch_metadata)
+  end
+
+  scope "/", as: :api_v2 do
+    pipe_through(:api_v2)
 
     if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
       get("/bridged", V2.TokenController, :bridged_tokens_list)
@@ -43,6 +67,5 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     get("/:address_hash_param/instances/:token_id/transfers", V2.TokenController, :transfers_by_instance)
     get("/:address_hash_param/instances/:token_id/holders", V2.TokenController, :holders_by_instance)
     get("/:address_hash_param/instances/:token_id/transfers-count", V2.TokenController, :transfers_count_by_instance)
-    patch("/:address_hash_param/instances/:token_id/refetch-metadata", V2.TokenController, :refetch_metadata)
   end
 end
