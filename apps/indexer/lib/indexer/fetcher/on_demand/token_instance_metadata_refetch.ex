@@ -72,16 +72,20 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
           nil
       end
 
-    case {:fetched_metadata, MetadataRetriever.fetch_json(result, token_id, normalized_token_id, from_base_uri?)} do
-      {:fetched_metadata, {:ok, metadata}} ->
-        TokenInstance.set_metadata(token_instance, metadata)
+    with {:empty_result, false} <- {:empty_result, is_nil(result)},
+         {:fetched_metadata, {:ok, metadata}} <-
+           {:fetched_metadata, MetadataRetriever.fetch_json(result, token_id, normalized_token_id, from_base_uri?)} do
+      TokenInstance.set_metadata(token_instance, metadata)
 
-        Publisher.broadcast(
-          %{fetched_token_instance_metadata: [token_instance.token_contract_address_hash, metadata]},
-          :on_demand
-        )
+      Publisher.broadcast(
+        %{fetched_token_instance_metadata: [token_instance.token_contract_address_hash, metadata]},
+        :on_demand
+      )
+    else
+      {:empty_result, true} ->
+        :ok
 
-      _error ->
+      {:fetched_metadata, _error} ->
         Logger.error(fn ->
           "Error while setting address #{inspect(to_string(token_instance.token_contract_address_hash))} metadata"
         end)
