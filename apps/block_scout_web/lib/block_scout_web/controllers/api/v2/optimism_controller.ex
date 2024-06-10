@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/txn-batch-by-celestia-blob/:commitment/:height` endpoint.
+    Function to handle GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment` endpoint.
   """
   @spec txn_batch_by_celestia_blob(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def txn_batch_by_celestia_blob(conn, %{"commitment" => commitment, "height" => height}) do
