@@ -225,7 +225,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     - `block`: block structure containing frame sequence info related to the block.
 
     ## Returns
-    An extended map containing `l1_batch` item with the Optimism batch info
+    An extended map containing `optimism` item with the Optimism batch info
     (L1 transaction hashes, timestamp, related blobs).
   """
   @spec extend_block_json_response(map(), %{
@@ -265,15 +265,27 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           }
         end)
 
+      {batch_data_container, blob_items} =
+        cond do
+          not Enum.empty?(eip4844_blobs) ->
+            {"in_blob4844", eip4844_blobs}
+
+          not Enum.empty?(celestia_blobs) ->
+            {"in_celestia", celestia_blobs}
+
+          true ->
+            {"in_calldata", []}
+        end
+
       batch_info =
         %{
           "l1_transaction_hash" => Enum.join(frame_sequence.l1_transaction_hashes, ","),
-          "l1_timestamp" => frame_sequence.l1_timestamp
+          "l1_timestamp" => frame_sequence.l1_timestamp,
+          "batch_data_container" => batch_data_container
         }
-        |> extend_batch_info_by_blobs(eip4844_blobs, "eip4844_blobs")
-        |> extend_batch_info_by_blobs(celestia_blobs, "celestia_blobs")
+        |> extend_batch_info_by_blobs(blob_items, "blobs")
 
-      Map.put(out_json, "l1_batch", batch_info)
+      Map.put(out_json, "optimism", batch_info)
     end
   end
 
