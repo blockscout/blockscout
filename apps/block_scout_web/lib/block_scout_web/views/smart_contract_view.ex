@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "tuple") ->
         tuple_types =
           type
-          |> String.slice(0..-3)
+          |> String.slice(0..-3//1)
           |> supplement_type_with_components(components)
 
         values =

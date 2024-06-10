@@ -155,7 +155,7 @@ defmodule Explorer.Account.Notifier.Email do
     raw_path = url_params()[:path]
 
     if raw_path |> String.ends_with?("/") do
-      raw_path |> String.slice(0..-2)
+      raw_path |> String.slice(0..-2//1)
     else
       raw_path
     end

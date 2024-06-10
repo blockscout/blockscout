@@ -382,7 +382,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           tuple_item_types =
             rest
             |> String.split("]")
-            |> Enum.slice(0..-3)
+            |> Enum.slice(0..-3//1)
             |> Enum.join("]")
 
           array_str = "[" <> (rest |> String.split("[") |> List.last())

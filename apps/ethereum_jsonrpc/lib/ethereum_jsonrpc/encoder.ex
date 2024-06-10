@@ -101,7 +101,7 @@ defmodule EthereumJSONRPC.Encoder do
 
     decoded_data =
       result
-      |> String.slice(2..-1)
+      |> String.slice(2..-1//1)
       |> Base.decode16!(case: :lower)
       |> TypeDecoder.decode_raw(types_list)
       |> Enum.zip(types_list)
