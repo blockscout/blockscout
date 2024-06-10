@@ -126,7 +126,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
       %{
         "number" => batch.number,
         "transactions_count" => batch.transactions_count,
-        "block_count" => batch.end_block - batch.start_block + 1,
+        "blocks_count" => batch.end_block - batch.start_block + 1,
         "batch_data_container" => batch.batch_container
       }
       |> add_l1_tx_info(batch)
