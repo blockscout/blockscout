@@ -130,7 +130,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   defp mb_find_uid_in_queue(:unknown_uid, uid) do
     SolidityPublisherWorker
     |> QuePersistence.all()
-    |> Enum.any?(fn
+    |> Enum.find_value(fn
       %Que.Job{arguments: {"flattened_api", _, _, ^uid}} ->
         :pending
 
@@ -138,8 +138,8 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
         :pending
 
       _ ->
-        :unknown_uid
-    end)
+        nil
+    end) || :unknown_uid
   end
 
   defp mb_find_uid_in_queue(other_status, _), do: other_status
