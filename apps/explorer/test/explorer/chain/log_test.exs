@@ -172,7 +172,7 @@ defmodule Explorer.Chain.LogTest do
           data: data
         )
 
-      request_zero_implementations()
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       assert {{:ok, "eb9b3c4c", "WantsPets(string indexed arg0, uint256 arg1, bool indexed arg2)",
                [
