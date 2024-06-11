@@ -63,7 +63,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
                                               :proxy_implementations
                                             ]
                                           ] => :optional,
-                                          [from_address: :names] => :optional,
+                                          [from_address: [:names, :smart_contract, :proxy_implementations]] =>
+                                            :optional,
                                           [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
                                         }
                                         |> Map.merge(@chain_type_transaction_necessity_by_association)

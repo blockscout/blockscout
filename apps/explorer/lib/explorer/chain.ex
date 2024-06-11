@@ -403,7 +403,7 @@ defmodule Explorer.Chain do
             base
           else
             base
-            |> preload(transaction: [:from_address, to_address: [:proxy_implementations]])
+            |> preload(transaction: [from_address: [:proxy_implementations], to_address: [:proxy_implementations]])
           end
 
         preloaded_query
