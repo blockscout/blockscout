@@ -110,7 +110,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                           elem(
                             quote do
                               has_one(:zksync_batch_transaction, ZkSyncBatchTransaction,
-                                foreign_key: :hash,
+                                foreign_key: :tx_hash,
                                 references: :hash
                               )
 
