@@ -1676,7 +1676,7 @@ defmodule Explorer.Chain do
         elements
 
       blocks ->
-        blocks
+        blocks |> Repo.preload(Map.keys(necessity_by_association))
     end
   end
 
