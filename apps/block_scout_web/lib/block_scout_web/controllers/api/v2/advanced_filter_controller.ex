@@ -42,6 +42,13 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   @methods_id_to_name_map Map.new(@methods, fn %{method_id: method_id, name: name} -> {method_id, name} end)
   @methods_name_to_id_map Map.new(@methods, fn %{method_id: method_id, name: name} -> {name, method_id} end)
 
+  @methods_filter_limit 20
+  @tokens_filter_limit 20
+
+  @doc """
+  Function responsible for `api/v2/advanced-filters/` endpoint.
+  """
+  @spec list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list(conn, params) do
     full_options = params |> extract_filters() |> Keyword.merge(paging_options(params)) |> Keyword.merge(@api_true)
 
@@ -61,13 +68,17 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       advanced_filters: advanced_filters,
       decoded_transactions: decoded_transactions,
       search_params: %{
-        method_ids: method_id_to_name_from_params(params, methods_acc),
-        tokens: contract_address_hash_to_token_from_params(params)
+        method_ids: method_id_to_name_from_params(full_options[:methods] || [], methods_acc),
+        tokens: contract_address_hash_to_token_from_params(full_options[:token_contract_address_hashes])
       },
       next_page_params: next_page_params
     )
   end
 
+  @doc """
+  Function responsible for `api/v2/advanced-filters/csv` endpoint.
+  """
+  @spec list_csv(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list_csv(conn, params) do
     with {:recaptcha, true} <-
            {:recaptcha,
@@ -97,6 +108,11 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     end
   end
 
+  @doc """
+  Function responsible for `api/v2/advanced-filters/methods` endpoint,
+  including `api/v2/advanced-filters/methods/?q=:search_string`.
+  """
+  @spec list_methods(Plug.Conn.t(), map()) :: {:method, nil | Explorer.Chain.ContractMethod.t()} | Plug.Conn.t()
   def list_methods(conn, %{"q" => query}) do
     case {@methods_id_to_name_map[query], @methods_name_to_id_map[query]} do
       {name, _} when is_binary(name) ->
@@ -125,9 +141,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     render(conn, :methods, methods: @methods)
   end
 
-  defp method_id_to_name_from_params(params, methods_acc) do
-    prepared_method_ids = prepare_methods(params["methods"]) || []
-
+  defp method_id_to_name_from_params(prepared_method_ids, methods_acc) do
     {decoded_method_ids, method_ids_to_find} =
       Enum.reduce(prepared_method_ids, {%{}, []}, fn method_id, {decoded, to_decode} ->
         {:ok, method_id_hash} = Data.cast(method_id)
@@ -163,16 +177,16 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     |> Map.merge(decoded_method_ids)
   end
 
-  defp contract_address_hash_to_token_from_params(params) do
-    token_contract_address_hashes_to_include =
-      prepare_address_hashes(params["token_contract_address_hashes_to_include"]) || []
+  defp contract_address_hash_to_token_from_params(tokens) do
+    token_contract_address_hashes_to_include = tokens[:include] || []
 
-    token_contract_address_hashes_to_exclude =
-      prepare_address_hashes(params["token_contract_address_hashes_to_exclude"]) || []
+    token_contract_address_hashes_to_exclude = tokens[:exclude] || []
 
     token_contract_address_hashes_to_include
     |> Kernel.++(token_contract_address_hashes_to_exclude)
+    |> Enum.reject(&(&1 == "native"))
     |> Enum.uniq()
+    |> Enum.take(@tokens_filter_limit)
     |> Token.get_by_contract_address_hashes(@api_true)
     |> Map.new(fn token -> {token.contract_address_hash, token} end)
   end
@@ -180,25 +194,32 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   defp extract_filters(params) do
     [
       tx_types: prepare_tx_types(params["tx_types"]),
-      methods: prepare_methods(params["methods"]),
+      methods: params["methods"] |> prepare_methods(),
       age: prepare_age(params["age_from"], params["age_to"]),
       from_address_hashes:
         prepare_include_exclude_address_hashes(
           params["from_address_hashes_to_include"],
-          params["from_address_hashes_to_exclude"]
+          params["from_address_hashes_to_exclude"],
+          &prepare_address_hash/1
         ),
       to_address_hashes:
         prepare_include_exclude_address_hashes(
           params["to_address_hashes_to_include"],
-          params["to_address_hashes_to_exclude"]
+          params["to_address_hashes_to_exclude"],
+          &prepare_address_hash/1
         ),
       address_relation: prepare_address_relation(params["address_relation"]),
       amount: prepare_amount(params["amount_from"], params["amount_to"]),
       token_contract_address_hashes:
-        prepare_include_exclude_address_hashes(
-          params["token_contract_address_hashes_to_include"],
-          params["token_contract_address_hashes_to_exclude"]
+        params["token_contract_address_hashes_to_include"]
+        |> prepare_include_exclude_address_hashes(
+          params["token_contract_address_hashes_to_exclude"],
+          &prepare_token_address_hash/1
         )
+        |> Enum.map(fn
+          {key, value} when is_list(value) -> {key, Enum.take(value, @tokens_filter_limit)}
+          key_value -> key_value
+        end)
     ]
   end
 
@@ -227,6 +248,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       _ ->
         false
     end)
+    |> Enum.uniq()
+    |> Enum.take(@methods_filter_limit)
   end
 
   defp prepare_methods(_), do: nil
@@ -239,8 +262,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       _ -> nil
     end
   end
-
-  defp prepare_address_hashes(address_hashes, map_filter_function \\ &prepare_address_hash/1)
 
   defp prepare_address_hashes(address_hashes, map_filter_function)
        when is_binary(address_hashes) do
@@ -282,10 +303,10 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     end
   end
 
-  defp prepare_include_exclude_address_hashes(include, exclude) do
+  defp prepare_include_exclude_address_hashes(include, exclude, map_filter_function) do
     [
-      include: prepare_address_hashes(include, &prepare_token_address_hash/1),
-      exclude: prepare_address_hashes(exclude, &prepare_token_address_hash/1)
+      include: prepare_address_hashes(include, map_filter_function),
+      exclude: prepare_address_hashes(exclude, map_filter_function)
     ]
   end
 

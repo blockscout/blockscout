@@ -1,5 +1,4 @@
 defmodule BlockScoutWeb.API.V2.TokenController do
-  alias Bamboo.SentEmailViewerPlug.Helper
   alias Explorer.PagingOptions
   use BlockScoutWeb, :controller
 

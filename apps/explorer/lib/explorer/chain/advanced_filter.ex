@@ -75,7 +75,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     tasks =
       options
       |> queries(paging_options)
-      |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query, in_parallel: true) end) end)
+      |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query) end) end)
 
     tasks
     |> Task.yield_many(:timer.seconds(60))
