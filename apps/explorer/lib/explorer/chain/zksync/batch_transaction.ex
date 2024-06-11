@@ -1,14 +1,14 @@
 defmodule Explorer.Chain.ZkSync.BatchTransaction do
   @moduledoc """
-    Models a list of transactions related to a batch for ZkSync.
+  Models a list of transactions related to a batch for ZkSync.
 
-    Changes in the schema should be reflected in the bulk import module:
-    - Explorer.Chain.Import.Runner.ZkSync.BatchTransactions
+  Changes in the schema should be reflected in the bulk import module:
+  - Explorer.Chain.Import.Runner.ZkSync.BatchTransactions
 
-    Migrations:
-    - Explorer.Repo.ZkSync.Migrations.CreateZkSyncTables
-    - Explorer.Repo.ZkSync.Migrations.RenameFieldInBatchTransactions
-    """
+  Migrations:
+  - Explorer.Repo.ZkSync.Migrations.CreateZkSyncTables
+  - Explorer.Repo.ZkSync.Migrations.RenameFieldInBatchTransactions
+  """
 
   use Explorer.Schema
 
@@ -26,7 +26,13 @@ defmodule Explorer.Chain.ZkSync.BatchTransaction do
   @primary_key false
   typed_schema "zksync_batch_l2_transactions" do
     belongs_to(:batch, TransactionBatch, foreign_key: :batch_number, references: :number, type: :integer)
-    belongs_to(:l2_transaction, Transaction, foreign_key: :tx_hash, primary_key: true, references: :hash, type: Hash.Full)
+
+    belongs_to(:l2_transaction, Transaction,
+      foreign_key: :tx_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full
+    )
 
     timestamps()
   end
