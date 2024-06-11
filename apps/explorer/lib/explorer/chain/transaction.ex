@@ -988,7 +988,7 @@ defmodule Explorer.Chain.Transaction do
            abi
            |> ABI.parse_specification()
            |> ABI.find_and_decode(data) do
-      {:ok, result}
+      {:ok, alter_inputs_names(result)}
     end
   rescue
     e ->
@@ -1001,6 +1001,17 @@ defmodule Explorer.Chain.Transaction do
       end)
 
       {:error, :could_not_decode}
+  end
+
+  defp alter_inputs_names({%FunctionSelector{input_names: names} = selector, mapping}) do
+    names =
+      names
+      |> Enum.with_index()
+      |> Enum.map(fn {name, index} ->
+        if name == "", do: "arg#{index}", else: name
+      end)
+
+    {%FunctionSelector{selector | input_names: names}, mapping}
   end
 
   defp selector_mapping(selector, values, hash) do

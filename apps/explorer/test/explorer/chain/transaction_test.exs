@@ -298,6 +298,40 @@ defmodule Explorer.Chain.TransactionTest do
       assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}, _, _} =
                Transaction.decoded_input_data(transaction, [])
     end
+
+    test "arguments name in function call replaced with argN if it's empty string" do
+      contract =
+        insert(:smart_contract,
+          contract_code_md5: "123",
+          abi: [
+            %{
+              "constant" => false,
+              "inputs" => [%{"name" => "", "type" => "uint256"}],
+              "name" => "set",
+              "outputs" => [],
+              "payable" => false,
+              "stateMutability" => "nonpayable",
+              "type" => "function"
+            }
+          ]
+        )
+        |> Repo.preload(:address)
+
+      input_data =
+        "set(uint)"
+        |> ABI.encode([10])
+        |> Base.encode16(case: :lower)
+
+      transaction =
+        :transaction
+        |> insert(to_address: contract.address, input: "0x" <> input_data)
+        |> Repo.preload(to_address: :smart_contract)
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
+      assert {{:ok, "60fe47b1", "set(uint256 arg0)", [{"arg0", "uint256", 10}]}, _, _} =
+               Transaction.decoded_input_data(transaction, [])
+    end
   end
 
   describe "Poison.encode!/1" do
