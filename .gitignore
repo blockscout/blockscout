@@ -68,3 +68,8 @@ dump.rdb
 *.env.local
 *.env.staging
 .devcontainer/.blockscout_config
+
+# dets tables
+queue_storage
+tasks_in_progress
+/dets

@@ -286,6 +286,19 @@ defmodule ConfigHelper do
     err -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(err)}"
   end
 
+  def parse_json_with_atom_keys_env_var(env_var, default_value \\ "{}") do
+    with {:ok, map} <-
+           env_var
+           |> safe_get_env(default_value)
+           |> Jason.decode() do
+      for {key, value} <- map, into: %{}, do: {String.to_atom(key), value}
+    else
+      {:error, error} -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(error)}"
+    end
+  rescue
+    error -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(error)}"
+  end
+
   @spec parse_list_env_var(String.t(), String.t() | nil) :: list()
   def parse_list_env_var(env_var, default_value \\ nil) do
     addresses_var = safe_get_env(env_var, default_value)
@@ -302,6 +315,21 @@ defmodule ConfigHelper do
       formatted_addresses_list
     else
       []
+    end
+  end
+
+  @spec parse_url_env_var(String.t(), boolean()) :: String.t() | nil
+  def parse_url_env_var(env_var, default_value \\ nil, trailing_slash_needed? \\ false) do
+    with url when not is_nil(url) <- safe_get_env(env_var, default_value),
+         url <- String.trim_trailing(url, "/"),
+         {url, true} <- {url, trailing_slash_needed?} do
+      url <> "/"
+    else
+      {url, false} ->
+        url
+
+      nil ->
+        nil
     end
   end
 

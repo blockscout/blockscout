@@ -15,7 +15,7 @@ defmodule Explorer.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.13",
+      elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -89,7 +89,7 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 1.0"},
-      {:phoenix_html, "== 3.0.4"},
+      {:phoenix_html, "== 3.3.4"},
       {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},

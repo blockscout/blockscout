@@ -21,6 +21,9 @@ defmodule Explorer.Chain.Token.Instance do
   * `refetch_after` - when to refetch the token instance
   * `retries_count` - number of times the token instance has been retried
   * `is_banned` - if the token instance is banned
+  * `media_urls` - map of media urls, key is resolution value is url
+  * `media_type` - mime type of media
+  * `cdn_upload_error` - error while processing(resizing)/uploading media to cdn
   """
   @primary_key false
   typed_schema "token_instances" do
@@ -34,6 +37,9 @@ defmodule Explorer.Chain.Token.Instance do
     field(:refetch_after, :utc_datetime_usec)
     field(:retries_count, :integer)
     field(:is_banned, :boolean, default: false)
+    field(:media_urls, :map)
+    field(:media_type, :string)
+    field(:cdn_upload_error, :string)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -62,7 +68,10 @@ defmodule Explorer.Chain.Token.Instance do
       :owner_updated_at_log_index,
       :refetch_after,
       :retries_count,
-      :is_banned
+      :is_banned,
+      :media_urls,
+      :media_type,
+      :cdn_upload_error
     ])
     |> validate_required([:token_id, :token_contract_address_hash])
     |> foreign_key_constraint(:token_contract_address_hash)
@@ -680,5 +689,33 @@ defmodule Explorer.Chain.Token.Instance do
         String.starts_with?(error, error_pattern)
       end) && interval
     end) || 13
+  end
+
+  def set_media_urls({token_contract_address_hash, token_id}, urls, {type, subtype}) do
+    now = DateTime.utc_now()
+
+    token_id
+    |> token_instance_query(token_contract_address_hash)
+    |> Repo.update_all(
+      [set: [media_urls: urls, media_type: "#{type}/#{subtype}", updated_at: now]],
+      timeout: @timeout
+    )
+  end
+
+  def set_cdn_upload_error({token_contract_address_hash, token_id}, error) do
+    now = DateTime.utc_now()
+
+    token_id
+    |> token_instance_query(token_contract_address_hash)
+    |> Repo.update_all(
+      [set: [cdn_upload_error: error, updated_at: now]],
+      timeout: @timeout
+    )
+  end
+
+  def stream_instances_to_resize_and_upload(each_fun) do
+    __MODULE__
+    |> where([ti], not is_nil(ti.metadata) and is_nil(ti.media_urls) and is_nil(ti.cdn_upload_error))
+    |> Repo.stream_each(each_fun)
   end
 end
