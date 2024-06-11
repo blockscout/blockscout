@@ -55,38 +55,35 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   # TODO might be redundant to preload blob fields in some of the endpoints
   @transaction_necessity_by_association %{
                                           :block => :optional,
-                                          [created_contract_address: :names] => :optional,
-                                          [created_contract_address: :token] => :optional,
-                                          [created_contract_address: :smart_contract] => :optional,
+                                          [
+                                            created_contract_address: [
+                                              :names,
+                                              :token,
+                                              :smart_contract,
+                                              :proxy_implementations
+                                            ]
+                                          ] => :optional,
                                           [from_address: :names] => :optional,
-                                          [to_address: :names] => :optional,
-                                          [to_address: :smart_contract] => :optional
+                                          [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
                                         }
                                         |> Map.merge(@chain_type_transaction_necessity_by_association)
 
   @token_transfers_necessity_by_association %{
-    [from_address: :smart_contract] => :optional,
-    [to_address: :smart_contract] => :optional,
-    [from_address: :names] => :optional,
-    [to_address: :names] => :optional
+    [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+    [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
   }
 
   @token_transfers_in_tx_necessity_by_association %{
-    [from_address: :smart_contract] => :optional,
-    [to_address: :smart_contract] => :optional,
-    [from_address: :names] => :optional,
-    [to_address: :names] => :optional,
+    [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+    [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
     token: :required
   }
 
   @internal_transaction_necessity_by_association [
     necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional
+      [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
     }
   ]
 
@@ -387,9 +384,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       full_options =
         [
           necessity_by_association: %{
-            [address: :names] => :optional,
-            [address: :smart_contract] => :optional,
-            address: :optional
+            [address: [:names, :smart_contract, :proxy_implementations]] => :optional
           }
         ]
         |> Keyword.merge(paging_options(params))
@@ -421,7 +416,9 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     with {:ok, transaction, _transaction_hash} <-
            validate_transaction(transaction_hash_string, params,
              necessity_by_association:
-               Map.merge(@transaction_necessity_by_association, %{[block: [miner: :names]] => :optional}),
+               Map.merge(@transaction_necessity_by_association, %{
+                 [block: [miner: [:names, :smart_contract, :proxy_implementations]]] => :optional
+               }),
              api?: true
            ) do
       state_changes_plus_next_page =
