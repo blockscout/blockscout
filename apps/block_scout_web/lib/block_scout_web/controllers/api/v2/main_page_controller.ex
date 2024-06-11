@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     necessity_by_association: %{
       :block => :required,
       [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-      [from_address: [:names, :smart_contract]] => :optional,
+      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
       [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
     },
     paging_options: %PagingOptions{page_size: 6},

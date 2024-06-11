@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @transaction_necessity_by_association [
     necessity_by_association: %{
       [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-      [from_address: [:names, :smart_contract]] => :optional,
+      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
       [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
       :block => :optional
     },

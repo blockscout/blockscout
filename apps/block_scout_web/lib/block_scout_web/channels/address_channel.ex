@@ -337,7 +337,7 @@ defmodule BlockScoutWeb.AddressChannel do
           transactions
           |> Repo.preload([
             [
-              from_address: [:names],
+              from_address: [:names, :smart_contract, :proxy_implementations],
               to_address: [:names, :smart_contract, :proxy_implementations],
               created_contract_address: [:names, :smart_contract, :proxy_implementations]
             ]
