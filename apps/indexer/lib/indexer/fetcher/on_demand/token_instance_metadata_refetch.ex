@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
       TokenInstance.set_metadata(token_instance, metadata)
 
       Publisher.broadcast(
-        %{fetched_token_instance_metadata: [token_instance.token_contract_address_hash, metadata]},
+        %{fetched_token_instance_metadata: [token_instance.token_contract_address_hash, token_id, metadata]},
         :on_demand
       )
     else
