@@ -56,25 +56,19 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @transaction_necessity_by_association [
     necessity_by_association:
       %{
-        [created_contract_address: :names] => :optional,
-        [from_address: :names] => :optional,
-        [to_address: :names] => :optional,
-        :block => :optional,
-        [created_contract_address: :smart_contract] => :optional,
-        [from_address: :smart_contract] => :optional,
-        [to_address: :smart_contract] => :optional
+        [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        :block => :optional
       }
       |> Map.merge(@chain_type_transaction_necessity_by_association)
   ]
 
   @internal_transaction_necessity_by_association [
     necessity_by_association: %{
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional
+      [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
     }
   ]
 
@@ -83,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @block_params [
     necessity_by_association:
       %{
-        [miner: :names] => :optional,
+        [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
         :uncles => :optional,
         :nephews => :optional,
         :rewards => :optional,
@@ -257,7 +251,10 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   def withdrawals(conn, %{"block_hash_or_number" => block_hash_or_number} = params) do
     with {:ok, block} <- block_param_to_block(block_hash_or_number) do
       full_options =
-        [necessity_by_association: %{address: :optional}, api?: true]
+        [
+          necessity_by_association: %{[address: [:names, :smart_contract, :proxy_implementations]] => :optional},
+          api?: true
+        ]
         |> Keyword.merge(paging_options(params))
 
       withdrawals_plus_one = Chain.block_to_withdrawals(block.hash, full_options)

@@ -175,10 +175,8 @@ defmodule BlockScoutWeb.Notifier do
             DenormalizationHelper.extend_transaction_preload([
               :token,
               :transaction,
-              from_address: :smart_contract,
-              to_address: :smart_contract,
-              from_address: :names,
-              to_address: :names
+              from_address: [:names, :smart_contract, :proxy_implementations],
+              to_address: [:names, :smart_contract, :proxy_implementations]
             ])
           ))
       )
@@ -202,12 +200,9 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :transactions, :realtime, transactions}) do
     base_preloads = [
       :block,
-      created_contract_address: :names,
-      from_address: :names,
-      to_address: :names,
-      created_contract_address: :smart_contract,
-      from_address: :smart_contract,
-      to_address: :smart_contract
+      created_contract_address: [:names, :smart_contract, :proxy_implementations],
+      from_address: [:names, :smart_contract, :proxy_implementations],
+      to_address: [:names, :smart_contract, :proxy_implementations]
     ]
 
     preloads = if API_V2.enabled?(), do: [:token_transfers | base_preloads], else: base_preloads

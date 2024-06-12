@@ -146,6 +146,7 @@ defmodule BlockScoutWeb.AddressChannel do
     {:noreply, socket}
   end
 
+  # TODO: fix or remove, "internal_transaction.json" clause does not exist
   def handle_out(
         "internal_transaction",
         %{address: _address, internal_transaction: internal_transaction},
@@ -330,7 +331,19 @@ defmodule BlockScoutWeb.AddressChannel do
         event
       )
       when is_list(transactions) do
-    transaction_json = TransactionViewAPI.render("transactions.json", %{transactions: transactions, conn: nil})
+    transaction_json =
+      TransactionViewAPI.render("transactions.json", %{
+        transactions:
+          transactions
+          |> Repo.preload([
+            [
+              from_address: [:names, :smart_contract, :proxy_implementations],
+              to_address: [:names, :smart_contract, :proxy_implementations],
+              created_contract_address: [:names, :smart_contract, :proxy_implementations]
+            ]
+          ]),
+        conn: nil
+      })
 
     push(socket, event, %{transactions: transaction_json})
 
@@ -375,7 +388,17 @@ defmodule BlockScoutWeb.AddressChannel do
       )
       when is_list(token_transfers) do
     token_transfer_json =
-      TransactionViewAPI.render("token_transfers.json", %{token_transfers: token_transfers, conn: nil})
+      TransactionViewAPI.render("token_transfers.json", %{
+        token_transfers:
+          token_transfers
+          |> Repo.preload([
+            [
+              from_address: [:names, :smart_contract, :proxy_implementations],
+              to_address: [:names, :smart_contract, :proxy_implementations]
+            ]
+          ]),
+        conn: nil
+      })
 
     push(socket, event, %{token_transfers: token_transfer_json})
 

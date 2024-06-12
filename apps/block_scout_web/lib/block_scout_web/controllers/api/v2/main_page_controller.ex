@@ -13,12 +13,9 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   @transactions_options [
     necessity_by_association: %{
       :block => :required,
-      [created_contract_address: :names] => :optional,
-      [from_address: :names] => :optional,
-      [to_address: :names] => :optional,
-      [created_contract_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :smart_contract] => :optional
+      [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
     },
     paging_options: %PagingOptions{page_size: 6},
     api?: true
@@ -30,7 +27,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     blocks =
       [paging_options: %PagingOptions{page_size: 4}, api?: true]
       |> Chain.list_blocks()
-      |> Repo.replica().preload([[miner: :names], :transactions, :rewards])
+      |> Repo.replica().preload([[miner: [:names, :smart_contract, :proxy_implementations]], :transactions, :rewards])
 
     conn
     |> put_status(200)
