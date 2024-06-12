@@ -7,8 +7,8 @@ defmodule Explorer.SmartContract.Vyper.PublisherTest do
 
   @moduletag timeout: :infinity
 
-  alias Explorer.Chain.{ContractMethod, SmartContract}
-  alias Explorer.{Factory, Repo}
+  alias Explorer.Chain.{SmartContract}
+  alias Explorer.Factory
   alias Explorer.SmartContract.Vyper.Publisher
 
   setup do
