@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
+  alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
 
@@ -334,13 +335,15 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       ) do
     address_hash_string = params["address_hash_param"]
     token_id_string = params["token_id"]
+    recaptcha_response = params["recaptcha_response"]
 
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:recaptcha, true} <- {:recaptcha, CSVHelper.captcha_helper().recaptcha_passed?(recaptcha_response)},
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
-         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)} do
-      token_instance = token_instance_from_token_id_and_token_address(token_id, address_hash, token)
+         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
+         {:ok, token_instance} <- Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
       TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance)
 
       conn

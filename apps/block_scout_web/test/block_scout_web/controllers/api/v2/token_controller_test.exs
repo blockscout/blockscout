@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   use BlockScoutWeb.ConnCase
 
+  import Mox
+
   alias Explorer.Repo
 
   alias Explorer.Chain.{Address, Token, Token.Instance, TokenTransfer}
@@ -1068,14 +1070,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "regression for #9906", %{conn: conn} do
       token = insert(:token, type: "ERC-721")
 
-      instance =
-        insert(:token_instance,
-          token_id: 0,
-          token_contract_address_hash: token.contract_address_hash,
-          metadata: %{
-            "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
-          }
-        )
+      insert(:token_instance,
+        token_id: 0,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{
+          "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
+        }
+      )
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
 
@@ -1441,6 +1442,42 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0/transfers-count")
 
       assert %{"transfers_count" => ^count} = json_response(request, 200)
+    end
+  end
+
+  describe "/tokens/{address_hash}/instances/{token_id}/refetch-metadata" do
+    test "token instance metadata on-demand re-fetcher is called", %{conn: conn} do
+      BlockScoutWeb.TestCaptchaHelper
+      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+
+      token = insert(:token, type: "ERC-721")
+      token_id = 0
+
+      insert(:token_instance, token_id: token_id, token_contract_address_hash: token.contract_address_hash)
+
+      request =
+        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
+          "recaptcha_response" => "123"
+        })
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+    end
+
+    test "don't fetch token instance metadata for non-existent token instance", %{conn: conn} do
+      BlockScoutWeb.TestCaptchaHelper
+      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+
+      token = insert(:token, type: "ERC-721")
+      token_id = 0
+
+      insert(:token_instance, token_id: token_id, token_contract_address_hash: token.contract_address_hash)
+
+      request =
+        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/1/refetch-metadata", %{
+          "recaptcha_response" => "123"
+        })
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
   end
 

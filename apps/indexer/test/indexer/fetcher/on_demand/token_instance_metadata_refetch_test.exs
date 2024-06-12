@@ -70,6 +70,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
 
       assert(token_instance_from_db)
       refute is_nil(token_instance_from_db.metadata)
+      assert token_instance_from_db.metadata == metadata
 
       assert is_nil(
                Repo.get_by(TokenInstanceMetadataRefetchAttempt,
@@ -80,7 +81,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
 
       assert_receive(
         {:chain_event, :fetched_token_instance_metadata, :on_demand,
-         [^token_contract_address_hash_string, ^token_id, %{metadata: ^metadata}]}
+         [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
       Application.put_env(:explorer, :http_adapter, HTTPoison)

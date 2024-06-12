@@ -71,7 +71,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
       end
 
     with {:empty_result, false} <- {:empty_result, is_nil(result)},
-         {:fetched_metadata, {:ok, metadata}} <-
+         {:fetched_metadata, {:ok, %{metadata: metadata}}} <-
            {:fetched_metadata, MetadataRetriever.fetch_json(result, token_id, nil, from_base_uri?)} do
       TokenInstance.set_metadata(token_instance, metadata)
 
