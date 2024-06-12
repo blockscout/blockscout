@@ -139,7 +139,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       from_address: transaction.from_address,
       to_address: transaction.to_address,
       value: transaction.value.value,
-      fee: transaction.gas_price && Decimal.mult(transaction.gas_price.value, transaction.gas_used),
+      fee: transaction |> Transaction.fee(:wei) |> elem(1),
       block_number: transaction.block_number,
       transaction_index: transaction.index
     }
@@ -171,9 +171,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       timestamp: token_transfer.transaction.block_timestamp,
       from_address: token_transfer.from_address,
       to_address: token_transfer.to_address,
-      fee:
-        token_transfer.transaction.gas_price &&
-          Decimal.mult(token_transfer.transaction.gas_price.value, token_transfer.transaction.gas_used),
+      fee: token_transfer.transaction |> Transaction.fee(:wei) |> elem(1),
       token_transfer: %TokenTransfer{
         token_transfer
         | amounts: [token_transfer.amount],
@@ -231,7 +229,11 @@ defmodule Explorer.Chain.AdvancedFilter do
     query =
       from(transaction in Transaction,
         as: :transaction,
-        preload: [:from_address, :to_address],
+        preload: [
+          :block,
+          from_address: [:names, :smart_contract, :proxy_implementations],
+          to_address: [:names, :smart_contract, :proxy_implementations]
+        ],
         order_by: [
           desc: transaction.block_number,
           desc: transaction.index
@@ -264,7 +266,11 @@ defmodule Explorer.Chain.AdvancedFilter do
         as: :internal_transaction,
         join: transaction in assoc(internal_transaction, :transaction),
         as: :transaction,
-        preload: [:from_address, :to_address, transaction: transaction],
+        preload: [
+          from_address: [:names, :smart_contract, :proxy_implementations],
+          to_address: [:names, :smart_contract, :proxy_implementations],
+          transaction: transaction
+        ],
         order_by: [
           desc: transaction.block_number,
           desc: transaction.index,
@@ -672,7 +678,12 @@ defmodule Explorer.Chain.AdvancedFilter do
     else
       from(token_transfer in subquery(query),
         as: :unnested_token_transfer,
-        preload: [:transaction, :token, :from_address, :to_address],
+        preload: [
+          :transaction,
+          :token,
+          from_address: [:names, :smart_contract, :proxy_implementations],
+          to_address: [:names, :smart_contract, :proxy_implementations]
+        ],
         select_merge: %{
           token_ids: [token_transfer.token_id],
           amounts: [token_transfer.amount]

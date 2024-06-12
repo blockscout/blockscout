@@ -1,8 +1,10 @@
 defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
   use BlockScoutWeb.ConnCase
 
+  import Mox
+
   alias Explorer.Chain.{AdvancedFilter, Data}
-  alias Explorer.Factory
+  alias Explorer.{Factory, TestHelper}
 
   describe "/advanced_filters" do
     test "empty list", %{conn: conn} do
@@ -173,8 +175,9 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
     end
 
     test "filter by methods", %{conn: conn} do
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       tx = :transaction |> insert() |> with_block()
-      # contract_address = insert(:smart_contract).address
 
       smart_contract = build(:smart_contract)
 
