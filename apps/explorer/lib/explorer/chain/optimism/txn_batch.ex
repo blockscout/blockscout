@@ -83,18 +83,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
     frame_sequence_id = repo.one(query)
 
     if not is_nil(frame_sequence_id) do
-      query =
-        from(fsb in FrameSequenceBlob,
-          select: %{
-            l1_transaction_hash: fsb.l1_transaction_hash,
-            l1_timestamp: fsb.l1_timestamp,
-            metadata: fsb.metadata
-          },
-          where: fsb.frame_sequence_id == ^frame_sequence_id,
-          order_by: [asc: fsb.id]
-        )
-
-      bound_blobs = repo.all(query)
+      bound_blobs = FrameSequenceBlob.list(frame_sequence_id, options)
 
       # l1_transaction_hashes =
       #   bound_blobs
@@ -114,12 +103,14 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
       #   |> repo.aggregate(:max, :l2_block_number)
 
       blobs =
-        Enum.map(bound_blobs, fn blob ->
+        bound_blobs
+        |> Enum.map(fn b ->
           %{
-            "blob_height" => Map.get(blob.metadata, "height"),
-            "blob_commitment" => Map.get(blob.metadata, "commitment"),
-            "l1_transaction_hash" => blob.l1_transaction_hash,
-            "l1_timestamp" => blob.l1_timestamp
+            "height" => b.metadata["height"],
+            "namespace" => b.metadata["namespace"],
+            "commitment" => b.metadata["commitment"],
+            "l1_transaction_hash" => b.l1_transaction_hash,
+            "l1_timestamp" => b.l1_timestamp
           }
         end)
 

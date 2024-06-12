@@ -98,7 +98,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, block_check_interval, last_safe_block} <- Optimism.get_block_check_interval(json_rpc_named_arguments) do
-      start_block = max(start_block_l1, last_l1_block_number)
+      start_block = max(start_block_l1, last_l1_block_number + 1)
 
       Process.send(self(), :continue, [])
 
@@ -254,6 +254,13 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
                 optimism_txn_batches: %{params: batches},
                 timeout: :infinity
               })
+
+            sequence_ids = Enum.map(sequences, fn s -> s.id end)
+
+            Repo.update_all(
+              from(fs in FrameSequence, where: fs.id in ^sequence_ids),
+              set: [view_ready: true]
+            )
 
             Helper.log_blocks_chunk_handling(
               chunk_start,

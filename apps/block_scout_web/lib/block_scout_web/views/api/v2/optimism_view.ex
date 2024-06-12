@@ -51,9 +51,36 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   @doc """
+    Function to render GET requests to `/api/v2/optimism/batches` endpoint.
+  """
+  @spec render(binary(), map()) :: map() | list() | non_neg_integer()
+  def render("optimism_batches.json", %{
+        batches: batches,
+        next_page_params: next_page_params
+      }) do
+    items =
+      batches
+      |> Enum.map(fn batch ->
+        {from, to} = batch.l2_block_range
+
+        %{
+          "internal_id" => batch.id,
+          "l1_timestamp" => batch.l1_timestamp,
+          "l2_block_range" => "#{from}-#{to}",
+          "l1_tx_hashes" => batch.l1_transaction_hashes
+        }
+      end)
+
+    %{
+      items: items,
+      next_page_params: next_page_params
+    }
+  end
+
+  @doc """
     Function to render GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment` endpoint.
   """
-  def render("optimism_txn_batch_by_celestia_blob.json", %{batch: batch}) do
+  def render("optimism_batch_by_celestia_blob.json", %{batch: batch}) do
     batch
   end
 
