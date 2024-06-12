@@ -12,9 +12,9 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   alias Explorer.Chain.Token.Instance, as: TokenInstance
   alias Explorer.Counters.Helper, as: CountersHelper
   alias Explorer.SmartContract.Reader
+  alias Explorer.Token.MetadataRetriever
   alias Explorer.Utility.TokenInstanceMetadataRefetchAttempt
   alias Indexer.Fetcher.TokenInstance.Helper, as: TokenInstanceHelper
-  alias Indexer.Fetcher.TokenInstance.MetadataRetriever
 
   @max_delay :timer.hours(168)
 
