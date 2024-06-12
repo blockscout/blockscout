@@ -375,9 +375,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   @spec put_token_to_instance(Instance.t(), Token.t()) :: Instance.t()
   defp put_token_to_instance(
-        token_instance,
-        token
-      ) do
+         token_instance,
+         token
+       ) do
     %{token_instance | token: token}
   end
 end
