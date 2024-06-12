@@ -344,7 +344,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
          {:ok, token_instance} <- Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
-      TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance)
+      token_instance_with_token =
+        token_instance
+        |> put_token_to_instance(token)
+
+      TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance_with_token)
 
       conn
       |> put_status(200)
@@ -361,7 +365,6 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         token_instance
         |> Chain.select_repo(@api_true).preload([:owner])
         |> Chain.put_owner_to_token_instance(token, @api_true)
-        |> put_token_to_instance(token)
 
       {:error, :not_found} ->
         %Instance{

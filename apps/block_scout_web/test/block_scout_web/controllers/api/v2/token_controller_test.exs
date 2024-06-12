@@ -1,13 +1,19 @@
 defmodule BlockScoutWeb.API.V2.TokenControllerTest do
+  use EthereumJSONRPC.Case, async: false
   use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ChannelCase, async: false
 
   import Mox
 
-  alias Explorer.Repo
+  alias BlockScoutWeb.Notifier
+
+  alias Explorer.{Repo, TestHelper}
 
   alias Explorer.Chain.{Address, Token, Token.Instance, TokenTransfer}
-
   alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Explorer.Chain.Events.Subscriber
+
+  alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
 
   describe "/tokens/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -1446,14 +1452,59 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   end
 
   describe "/tokens/{address_hash}/instances/{token_id}/refetch-metadata" do
+    setup :set_mox_from_context
+
+    setup :verify_on_exit!
+
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
+      start_supervised!(
+        {TokenInstanceMetadataRefetchOnDemand,
+         [mocked_json_rpc_named_arguments, [name: TokenInstanceMetadataRefetchOnDemand]]}
+      )
+
+      %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
+
+      Subscriber.to(:fetched_token_instance_metadata, :on_demand)
+
+      :ok
+    end
+
     test "token instance metadata on-demand re-fetcher is called", %{conn: conn} do
       BlockScoutWeb.TestCaptchaHelper
       |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
 
       token = insert(:token, type: "ERC-721")
-      token_id = 0
+      token_id = 1
 
-      insert(:token_instance, token_id: token_id, token_contract_address_hash: token.contract_address_hash)
+      insert(:token_instance,
+        token_id: token_id,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{}
+      )
+
+      metadata = %{"name" => "Super Token"}
+      url = "http://metadata.endpoint.com"
+      token_contract_address_hash_string = to_string(token.contract_address_hash)
+
+      TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn ^url, _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
+      end)
+
+      topic = "token_instances:#{token_contract_address_hash_string}"
+
+      {:ok, _reply, _socket} =
+        BlockScoutWeb.UserSocketV2
+        |> socket("no_id", %{})
+        |> subscribe_and_join(topic)
 
       request =
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
@@ -1461,6 +1512,28 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         })
 
       assert %{"message" => "OK"} = json_response(request, 200)
+
+      :timer.sleep(100)
+
+      assert_receive(
+        {:chain_event, :fetched_token_instance_metadata, :on_demand,
+         [^token_contract_address_hash_string, ^token_id, ^metadata]}
+      )
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       event: "fetched_token_instance_metadata",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      token_instance_from_db =
+        Repo.get_by(Instance, token_id: token_id, token_contract_address_hash: token.contract_address_hash)
+
+      assert(token_instance_from_db)
+      assert token_instance_from_db.metadata == metadata
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "don't fetch token instance metadata for non-existent token instance", %{conn: conn} do

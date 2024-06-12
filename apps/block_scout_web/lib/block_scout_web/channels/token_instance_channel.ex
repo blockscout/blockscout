@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.TokenInstanceChannel do
   def handle_out(
         "fetched_token_instance_metadata",
         res,
-        %Phoenix.Socket{handler: BlockScoutWeb.UserSocket} = socket
+        %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
       ) do
     push(socket, "fetched_token_instance_metadata", res)
 

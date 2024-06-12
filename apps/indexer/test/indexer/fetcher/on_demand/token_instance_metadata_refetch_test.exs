@@ -4,9 +4,9 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
 
   import Mox
 
-  alias Explorer.Chain.{Address}
   alias Explorer.Chain.Token.Instance, as: TokenInstance
   alias Explorer.Chain.Events.Subscriber
+  alias Explorer.TestHelper
   alias Explorer.Utility.TokenInstanceMetadataRefetchAttempt
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
 
@@ -52,7 +52,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
       url = "http://metadata.endpoint.com"
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
-      fetch_token_uri_mock(url, token_contract_address_hash_string)
+      TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
       Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
 
@@ -141,7 +141,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
       url = "http://metadata.endpoint.com"
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
-      fetch_token_uri_mock(url, token_contract_address_hash_string)
+      TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
       Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
 
@@ -176,45 +176,6 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
       )
 
       Application.put_env(:explorer, :http_adapter, HTTPoison)
-    end
-
-    defp fetch_token_uri_mock(url, token_contract_address_hash_string) do
-      encoded_url =
-        "0x" <>
-          (ABI.TypeEncoder.encode([url], %ABI.FunctionSelector{
-             function: nil,
-             types: [
-               :string
-             ]
-           })
-           |> Base.encode16(case: :lower))
-
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: 0,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data:
-                                        "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000001",
-                                      to: ^token_contract_address_hash_string
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             id: 0,
-             jsonrpc: "2.0",
-             result: encoded_url
-           }
-         ]}
-      end)
     end
   end
 end
