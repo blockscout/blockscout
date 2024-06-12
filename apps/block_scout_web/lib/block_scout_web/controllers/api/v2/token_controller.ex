@@ -356,8 +356,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     case Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
       {:ok, token_instance} ->
         token_instance
-        |> Chain.select_repo(@api_true).preload([:owner, :token])
+        |> Chain.select_repo(@api_true).preload([:owner])
         |> Chain.put_owner_to_token_instance(token, @api_true)
+        |> put_token_to_instance(token)
 
       {:error, :not_found} ->
         %Instance{
@@ -370,5 +371,13 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         |> Instance.put_is_unique(token, @api_true)
         |> Chain.put_owner_to_token_instance(token, @api_true)
     end
+  end
+
+  @spec put_token_to_instance(Instance.t(), Token.t()) :: Instance.t()
+  defp put_token_to_instance(
+        token_instance,
+        token
+      ) do
+    %{token_instance | token: token}
   end
 end

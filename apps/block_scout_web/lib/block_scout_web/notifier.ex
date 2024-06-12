@@ -245,10 +245,10 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event(
         {:chain_event, :fetched_token_instance_metadata, :on_demand,
-         [to_string(token_contract_address_hash), token_id, fetched_token_instance_metadata]}
+         [token_contract_address_hash_string, token_id, fetched_token_instance_metadata]}
       ) do
     Endpoint.broadcast(
-      "token_instances:#{to_string(token_contract_address_hash)}",
+      "token_instances:#{token_contract_address_hash_string}",
       "fetched_token_instance_metadata",
       %{token_id: token_id, fetched_metadata: fetched_token_instance_metadata}
     )
