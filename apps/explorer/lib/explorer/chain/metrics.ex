@@ -48,6 +48,18 @@ defmodule Explorer.Chain.Metrics do
       end)
     end)
     |> Task.yield_many(:timer.hours(1))
+    |> Enum.map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          raise "Query fetching explorer & chain metrics terminated: #{inspect(reason)}"
+
+        nil ->
+          raise "Query fetching explorer & chain metrics timed out."
+      end
+    end)
   end
 
   # sobelow_skip ["DOS.StringToAtom"]
