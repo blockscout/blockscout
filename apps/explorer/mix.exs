@@ -25,7 +25,7 @@ defmodule Explorer.Mixfile do
       ],
       start_permanent: Mix.env() == :prod,
       version: "6.6.0",
-      xref: [exclude: [BlockScoutWeb.WebRouter.Helpers, Indexer.Helper]]
+      xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper]]
     ]
   end
 

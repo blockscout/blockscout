@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.WebRouter do
+defmodule BlockScoutWeb.Routers.WebRouter do
   @moduledoc """
   Router for web app
   """

@@ -148,8 +148,8 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   def source_url(input) do
     case Chain.Hash.Address.cast(input) do
       {:ok, _} ->
-        address_hash_str = input
-        "#{base_url()}/coins/#{platform()}/contract/#{address_hash_str}"
+        address_hash_string = input
+        "#{base_url()}/coins/#{platform()}/contract/#{address_hash_string}"
 
       _ ->
         symbol = input

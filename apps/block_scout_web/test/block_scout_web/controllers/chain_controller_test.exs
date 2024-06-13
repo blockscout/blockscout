@@ -3,7 +3,8 @@ defmodule BlockScoutWeb.ChainControllerTest do
     # ETS table is shared in `Explorer.Counters.AddressesCounter`
     async: false
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
+  import BlockScoutWeb.Routers.WebRouter.Helpers,
+    only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
   alias Explorer.Chain.Block
   alias Explorer.Counters.AddressesCounter

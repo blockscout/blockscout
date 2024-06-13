@@ -243,6 +243,17 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "fetched_bytecode", %{fetched_bytecode: fetched_bytecode})
   end
 
+  def handle_event(
+        {:chain_event, :fetched_token_instance_metadata, :on_demand,
+         [token_contract_address_hash_string, token_id, fetched_token_instance_metadata]}
+      ) do
+    Endpoint.broadcast(
+      "token_instances:#{token_contract_address_hash_string}",
+      "fetched_token_instance_metadata",
+      %{token_id: token_id, fetched_metadata: fetched_token_instance_metadata}
+    )
+  end
+
   def handle_event({:chain_event, :changed_bytecode, :on_demand, [address_hash]}) do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
   end
