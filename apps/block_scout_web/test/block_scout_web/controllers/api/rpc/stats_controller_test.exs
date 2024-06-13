@@ -177,7 +177,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
         image_url: nil
       }
 
-      ExchangeRates.handle_info({nil, {:ok, [eth]}}, %{})
+      ExchangeRates.handle_info({nil, {:ok, false, [eth]}}, %{})
 
       params = %{
         "module" => "stats",

@@ -106,6 +106,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     "#{source_url}/market_chart?#{URI.encode_query(query_params)}"
   end
 
+  @impl Source
   def secondary_source_url do
     id = config(:secondary_coin_id)
 
