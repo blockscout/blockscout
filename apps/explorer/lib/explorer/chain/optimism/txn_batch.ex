@@ -32,6 +32,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   @type t :: %__MODULE__{
           l2_block_number: non_neg_integer(),
           frame_sequence_id: non_neg_integer(),
+          frame_sequence_id_prev: non_neg_integer(),
           frame_sequence: %Ecto.Association.NotLoaded{} | FrameSequence.t()
         }
 
@@ -39,6 +40,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   schema "op_transaction_batches" do
     field(:l2_block_number, :integer, primary_key: true)
     belongs_to(:frame_sequence, FrameSequence, foreign_key: :frame_sequence_id, references: :id, type: :integer)
+    field(:frame_sequence_id_prev, :integer)
 
     timestamps()
   end
@@ -115,11 +117,11 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
         end)
 
       %{
-        #"l1_transaction_hash" => Enum.join(l1_transaction_hashes, ","),
-        #"l1_timestamp" => l1_timestamp,
+        # "l1_transaction_hash" => Enum.join(l1_transaction_hashes, ","),
+        # "l1_timestamp" => l1_timestamp,
         "batch_data_container" => "in_celestia",
-        #"l2_block_number_from" => l2_block_number_from,
-        #"l2_block_number_to" => l2_block_number_to,
+        # "l2_block_number_from" => l2_block_number_from,
+        # "l2_block_number_to" => l2_block_number_to,
         "blobs" => blobs
       }
     end

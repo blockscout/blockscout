@@ -86,6 +86,7 @@ defmodule Explorer.Chain.Import.Runner.Optimism.TxnBatches do
         set: [
           # don't update `l2_block_number` as it is a primary key and used for the conflict target
           frame_sequence_id: fragment("EXCLUDED.frame_sequence_id"),
+          frame_sequence_id_prev: tb.frame_sequence_id,
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tb.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tb.updated_at)
         ]

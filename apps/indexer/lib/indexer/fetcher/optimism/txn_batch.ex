@@ -98,7 +98,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
          {:ok, block_check_interval, last_safe_block} <- Optimism.get_block_check_interval(json_rpc_named_arguments) do
-      start_block = max(start_block_l1, last_l1_block_number + 1)
+      start_block = max(start_block_l1, last_l1_block_number)
 
       Process.send(self(), :continue, [])
 
@@ -248,19 +248,15 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
                 timeout: :infinity
               })
 
-            {:ok, _} =
+            {:ok, inserted} =
               Chain.import(%{
                 optimism_frame_sequence_blobs: %{params: blobs},
                 optimism_txn_batches: %{params: batches},
                 timeout: :infinity
               })
 
-            sequence_ids = Enum.map(sequences, fn s -> s.id end)
-
-            Repo.update_all(
-              from(fs in FrameSequence, where: fs.id in ^sequence_ids),
-              set: [view_ready: true]
-            )
+            remove_prev_frame_sequences(inserted)
+            set_frame_sequences_view_ready(sequences)
 
             Helper.log_blocks_chunk_handling(
               chunk_start,
@@ -1189,6 +1185,28 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
       end)
 
     {unique_batches, unique_sequences, unique_blobs}
+  end
+
+  defp remove_prev_frame_sequences(inserted) do
+    frame_sequence_id_prevs =
+      inserted
+      |> Map.get(:insert_txn_batches, [])
+      |> Enum.map(fn tb -> tb.frame_sequence_id_prev end)
+      |> Enum.uniq()
+      |> Enum.filter(fn frame_sequence_id_prev ->
+        frame_sequence_id_prev > 0
+      end)
+
+    Repo.delete_all(from(fs in FrameSequence, where: fs.id in ^frame_sequence_id_prevs))
+  end
+
+  defp set_frame_sequences_view_ready(sequences) do
+    sequence_ids = Enum.map(sequences, fn s -> s.id end)
+
+    Repo.update_all(
+      from(fs in FrameSequence, where: fs.id in ^sequence_ids),
+      set: [view_ready: true]
+    )
   end
 
   defp txs_filter(transactions_params, batch_submitter, batch_inbox) do

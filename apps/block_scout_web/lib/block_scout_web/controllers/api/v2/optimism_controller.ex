@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   import Ecto.Query, only: [from: 2]
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Optimism.{Deposit, DisputeGame, FrameSequence, OutputRoot, TxnBatch, Withdrawal}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -72,27 +73,13 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       batches
       |> Enum.map(fn fs ->
         Task.async(fn ->
-          l2_block_number_from =
-            Repo.replica().aggregate(
-              from(
-                tb in TxnBatch,
-                where: tb.frame_sequence_id == ^fs.id
-              ),
-              :min,
-              :l2_block_number
-            )
+          l2_block_number_from = batches_edge_l2_block_number(fs.id, :min)
+          l2_block_number_to = batches_edge_l2_block_number(fs.id, :max)
+          tx_count = batches_tx_count_for_block_range({l2_block_number_from, l2_block_number_to})
 
-          l2_block_number_to =
-            Repo.replica().aggregate(
-              from(
-                tb in TxnBatch,
-                where: tb.frame_sequence_id == ^fs.id
-              ),
-              :max,
-              :l2_block_number
-            )
-
-          Map.put(fs, :l2_block_range, {l2_block_number_from, l2_block_number_to})
+          fs
+          |> Map.put(:l2_block_range, {l2_block_number_from, l2_block_number_to})
+          |> Map.put(:tx_count, tx_count)
         end)
       end)
       |> Task.yield_many(:infinity)
@@ -104,6 +91,43 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       batches: batches,
       next_page_params: next_page_params
     })
+  end
+
+  defp batches_edge_l2_block_number(id, type) when type == :min do
+    Repo.replica().one(
+      from(
+        tb in TxnBatch,
+        select: tb.l2_block_number,
+        where: tb.frame_sequence_id == ^id,
+        order_by: [asc: tb.l2_block_number],
+        limit: 1
+      )
+    )
+  end
+
+  defp batches_edge_l2_block_number(id, type) when type == :max do
+    Repo.replica().one(
+      from(
+        tb in TxnBatch,
+        select: tb.l2_block_number,
+        where: tb.frame_sequence_id == ^id,
+        order_by: [desc: tb.l2_block_number],
+        limit: 1
+      )
+    )
+  end
+
+  defp batches_tx_count_for_block_range({l2_block_number_from, l2_block_number_to}) do
+    Repo.replica().aggregate(
+      from(
+        t in Transaction,
+        inner_join: b in Block,
+        on: b.hash == t.block_hash and b.consensus == true,
+        where: t.block_number >= ^l2_block_number_from and t.block_number <= ^l2_block_number_to
+      ),
+      :count,
+      timeout: :infinity
+    )
   end
 
   @doc """
