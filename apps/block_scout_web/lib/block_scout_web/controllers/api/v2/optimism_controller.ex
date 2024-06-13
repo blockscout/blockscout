@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
     next_page_params = next_page_params(next_page, batches, params)
 
-    batches =
+    items =
       batches
       |> Enum.map(fn fs ->
         Task.async(fn ->
@@ -88,7 +88,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     conn
     |> put_status(200)
     |> render(:optimism_batches, %{
-      batches: batches,
+      batches: items,
       next_page_params: next_page_params
     })
   end

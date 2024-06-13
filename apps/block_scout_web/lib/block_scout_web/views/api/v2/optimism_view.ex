@@ -53,7 +53,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   @doc """
     Function to render GET requests to `/api/v2/optimism/batches` endpoint.
   """
-  @spec render(binary(), map()) :: map() | list() | non_neg_integer()
   def render("optimism_batches.json", %{
         batches: batches,
         next_page_params: next_page_params
@@ -307,9 +306,10 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
       batch_info =
         %{
-          "l1_transaction_hash" => Enum.join(frame_sequence.l1_transaction_hashes, ","),
+          "l1_tx_hashes" => frame_sequence.l1_transaction_hashes,
           "l1_timestamp" => frame_sequence.l1_timestamp,
-          "batch_data_container" => batch_data_container
+          "batch_data_container" => batch_data_container,
+          "internal_id" => frame_sequence.id
         }
         |> extend_batch_info_by_blobs(blob_items, "blobs")
 

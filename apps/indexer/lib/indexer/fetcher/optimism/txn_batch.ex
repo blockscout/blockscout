@@ -1188,16 +1188,14 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
   end
 
   defp remove_prev_frame_sequences(inserted) do
-    frame_sequence_id_prevs =
+    ids =
       inserted
       |> Map.get(:insert_txn_batches, [])
       |> Enum.map(fn tb -> tb.frame_sequence_id_prev end)
       |> Enum.uniq()
-      |> Enum.filter(fn frame_sequence_id_prev ->
-        frame_sequence_id_prev > 0
-      end)
+      |> Enum.filter(fn id -> id > 0 end)
 
-    Repo.delete_all(from(fs in FrameSequence, where: fs.id in ^frame_sequence_id_prevs))
+    Repo.delete_all(from(fs in FrameSequence, where: fs.id in ^ids))
   end
 
   defp set_frame_sequences_view_ready(sequences) do

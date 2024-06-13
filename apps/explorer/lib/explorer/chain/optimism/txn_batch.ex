@@ -70,8 +70,6 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   """
   @spec batch_by_celestia_blob(binary(), non_neg_integer(), list()) :: map() | nil
   def batch_by_celestia_blob(commitment, height, options \\ []) do
-    repo = select_repo(options)
-
     commitment = Base.decode16!(String.trim_leading(commitment, "0x"), case: :mixed)
     height = :binary.encode_unsigned(height)
     key = :crypto.hash(:sha256, height <> commitment)
@@ -82,30 +80,12 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
         where: fsb.key == ^key and fsb.type == :celestia
       )
 
-    frame_sequence_id = repo.one(query)
+    frame_sequence_id = select_repo(options).one(query)
 
     if not is_nil(frame_sequence_id) do
-      bound_blobs = FrameSequenceBlob.list(frame_sequence_id, options)
-
-      # l1_transaction_hashes =
-      #   bound_blobs
-      #   |> Enum.map(& &1.l1_transaction_hash)
-      #   |> Enum.uniq()
-
-      # l1_timestamp = List.last(bound_blobs).l1_timestamp
-
-      # l2_block_number_from =
-      #   __MODULE__
-      #   |> where(frame_sequence_id: ^frame_sequence_id)
-      #   |> repo.aggregate(:min, :l2_block_number)
-
-      # l2_block_number_to =
-      #   __MODULE__
-      #   |> where(frame_sequence_id: ^frame_sequence_id)
-      #   |> repo.aggregate(:max, :l2_block_number)
-
       blobs =
-        bound_blobs
+        frame_sequence_id
+        |> FrameSequenceBlob.list(options)
         |> Enum.map(fn b ->
           %{
             "height" => b.metadata["height"],
@@ -117,12 +97,9 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
         end)
 
       %{
-        # "l1_transaction_hash" => Enum.join(l1_transaction_hashes, ","),
-        # "l1_timestamp" => l1_timestamp,
         "batch_data_container" => "in_celestia",
-        # "l2_block_number_from" => l2_block_number_from,
-        # "l2_block_number_to" => l2_block_number_to,
-        "blobs" => blobs
+        "blobs" => blobs,
+        "internal_id" => frame_sequence_id
       }
     end
   end
