@@ -19,6 +19,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix possible unknown UID bug ([#10240](https://github.com/blockscout/blockscout/issues/10240))
 - Batch transactions view recovered and support of proofs through ZkSync Hyperchain ([#10234](https://github.com/blockscout/blockscout/issues/10234))
 - Fix nil abi issue in get_naive_implementation_abi and get_master_copy_pattern methods ([#10239](https://github.com/blockscout/blockscout/issues/10239))
 - Add smart contracts preloads to from_address ([#10236](https://github.com/blockscout/blockscout/issues/10236))
