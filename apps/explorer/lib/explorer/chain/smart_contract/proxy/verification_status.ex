@@ -93,7 +93,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.VerificationStatus do
   def validate_uid(<<_address::binary-size(40), timestamp_hex::binary>> = uid) do
     case Integer.parse(timestamp_hex, 16) do
       {timestamp, ""} ->
-        if DateTime.utc_now() |> DateTime.to_unix() > timestamp do
+        if DateTime.utc_now() |> DateTime.to_unix() >= timestamp do
           {:ok, uid}
         else
           :error
