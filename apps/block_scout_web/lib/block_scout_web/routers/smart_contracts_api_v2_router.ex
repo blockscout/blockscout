@@ -53,12 +53,17 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     get("/:address_hash/methods-write", V2.SmartContractController, :methods_write)
     get("/:address_hash/methods-read-proxy", V2.SmartContractController, :methods_read_proxy)
     get("/:address_hash/methods-write-proxy", V2.SmartContractController, :methods_write_proxy)
-    post("/:address_hash/query-read-method", V2.SmartContractController, :query_read_method)
     get("/:address_hash/solidityscan-report", V2.SmartContractController, :solidityscan_report)
-    post("/:address_hash/audit-reports", V2.SmartContractController, :audit_report_submission)
     get("/:address_hash/audit-reports", V2.SmartContractController, :audit_reports_list)
 
     get("/verification/config", V2.VerificationController, :config)
+  end
+
+  scope "/", as: :api_v2 do
+    pipe_through(:api_v2_no_forgery_protect)
+
+    post("/:address_hash/query-read-method", V2.SmartContractController, :query_read_method)
+    post("/:address_hash/audit-reports", V2.SmartContractController, :audit_report_submission)
   end
 
   scope "/:address_hash/verification/via", as: :api_v2 do
