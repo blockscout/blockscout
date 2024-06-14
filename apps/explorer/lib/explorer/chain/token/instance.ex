@@ -634,7 +634,7 @@ defmodule Explorer.Chain.Token.Instance do
         Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, options)
 
   @doc """
-  Sets set_metadata for the given Explorer.Chain.Token.Instance
+  Sets metadata for the given Explorer.Chain.Token.Instance
   """
   @spec set_metadata(t(), map()) :: {non_neg_integer(), nil}
   def set_metadata(token_instance, metadata) when is_map(metadata) do
@@ -1017,5 +1017,23 @@ defmodule Explorer.Chain.Token.Instance do
       true ->
         {nil, false}
     end
+  end
+
+  @doc """
+  Drops metadata for the given token contract address hash.
+  It is used in the API endpoint /:address_hash_param/instances/trigger-nft-collection-metadata-refetch,
+  which should be called by admin service.
+  """
+  @spec drop_metadata(Hash.Address.t()) :: {non_neg_integer(), nil}
+  def drop_metadata(token_contract_address_hash) do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(instance in __MODULE__,
+        where: instance.token_contract_address_hash == ^token_contract_address_hash
+      ),
+      [set: [metadata: nil, error: nil, updated_at: now]],
+      timeout: @timeout
+    )
   end
 end
