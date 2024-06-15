@@ -119,7 +119,25 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   # ## Returns
   # - A list of maps with detailed information about each batch, formatted for use
   #   in JSON HTTP responses.
-  @spec render_arbitrum_batches([L1Batch]) :: [map()]
+  @spec render_arbitrum_batches(
+          [L1Batch]
+          | [
+              %{
+                :number => non_neg_integer(),
+                :transactions_count => non_neg_integer(),
+                :start_block => non_neg_integer(),
+                :end_block => non_neg_integer(),
+                :commitment_transaction => %{
+                  :hash => binary(),
+                  :block_number => non_neg_integer(),
+                  :timestamp => DateTime.t(),
+                  :status => :finalized | :unfinalized,
+                  optional(any()) => any()
+                },
+                optional(any()) => any()
+              }
+            ]
+        ) :: [map()]
   defp render_arbitrum_batches(batches) do
     Enum.map(batches, fn batch ->
       %{
@@ -228,8 +246,13 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
 
   # Augments an output JSON with commit transaction details and its status.
   @spec add_l1_tx_info(map(), %{
-          :__struct__ => L1Batch,
-          :commitment_transaction => any(),
+          :commitment_transaction => %{
+            :hash => binary(),
+            :block_number => non_neg_integer(),
+            :timestamp => DateTime.t(),
+            :status => :finalized | :unfinalized,
+            optional(any()) => any()
+          },
           optional(any()) => any()
         }) :: map()
   defp add_l1_tx_info(out_json, %L1Batch{} = batch) do
@@ -242,6 +265,25 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
         "block_number" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :block),
         "timestamp" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :ts),
         "status" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :status)
+      }
+    })
+  end
+
+  defp add_l1_tx_info(out_json, %{
+         commitment_transaction: %{
+           hash: hash,
+           block_number: block_number,
+           timestamp: ts,
+           status: status
+         }
+       }) do
+    out_json
+    |> Map.merge(%{
+      "commitment_transaction" => %{
+        "hash" => Hash.to_string(%Hash{byte_count: 32, bytes: hash}),
+        "block_number" => block_number,
+        "timestamp" => ts,
+        "status" => status
       }
     })
   end

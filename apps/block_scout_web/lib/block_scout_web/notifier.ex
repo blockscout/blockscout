@@ -124,6 +124,16 @@ defmodule BlockScoutWeb.Notifier do
     end)
   end
 
+  def handle_event({:chain_event, :new_arbitrum_batches, :realtime, batches}) do
+    batches
+    |> Enum.sort_by(& &1.number, :asc)
+    |> Enum.each(fn batch ->
+      Endpoint.broadcast("arbitrum_batches:new_arbitrum_batch", "new_arbitrum_batch", %{
+        batch: batch
+      })
+    end)
+  end
+
   def handle_event({:chain_event, :exchange_rate}) do
     exchange_rate = Market.get_coin_exchange_rate()
 
