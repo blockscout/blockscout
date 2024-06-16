@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
     alias Explorer.Chain.Address
     alias Explorer.Chain.Cache.StabilityValidatorsCounters
     alias Explorer.Chain.Stability.Validator, as: ValidatorStability
+    alias Explorer.Helper
 
     defp check_paginated_response(first_page_resp, second_page_resp, list) do
       assert Enum.count(first_page_resp["items"]) == 50
@@ -19,12 +20,12 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
 
     defp compare_default_sorting_for_asc({validator_1, blocks_count_1}, {validator_2, blocks_count_2}) do
       case {
-        compare(blocks_count_1, blocks_count_2),
-        compare(
+        Helper.compare(blocks_count_1, blocks_count_2),
+        Helper.compare(
           Keyword.fetch!(ValidatorStability.state_enum(), validator_1.state),
           Keyword.fetch!(ValidatorStability.state_enum(), validator_2.state)
         ),
-        compare(validator_1.address_hash.bytes, validator_2.address_hash.bytes)
+        Helper.compare(validator_1.address_hash.bytes, validator_2.address_hash.bytes)
       } do
         {:lt, _, _} -> false
         {:eq, :lt, _} -> false
@@ -35,12 +36,12 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
 
     defp compare_default_sorting_for_desc({validator_1, blocks_count_1}, {validator_2, blocks_count_2}) do
       case {
-        compare(blocks_count_1, blocks_count_2),
-        compare(
+        Helper.compare(blocks_count_1, blocks_count_2),
+        Helper.compare(
           Keyword.fetch!(ValidatorStability.state_enum(), validator_1.state),
           Keyword.fetch!(ValidatorStability.state_enum(), validator_2.state)
         ),
-        compare(validator_1.address_hash.bytes, validator_2.address_hash.bytes)
+        Helper.compare(validator_1.address_hash.bytes, validator_2.address_hash.bytes)
       } do
         {:gt, _, _} -> false
         {:eq, :lt, _} -> false
@@ -57,14 +58,6 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
     defp compare_item({%ValidatorStability{} = validator, count}, json) do
       assert json["blocks_validated_count"] == count + 1
       assert compare_item(validator, json)
-    end
-
-    defp compare(a, b) do
-      cond do
-        a < b -> :lt
-        a > b -> :gt
-        true -> :eq
-      end
     end
 
     describe "/validators/stability" do

@@ -42,3 +42,4 @@ Absinthe.Test.prime(BlockScoutWeb.GraphQL.Schema)
 Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
 
 Mox.defmock(BlockScoutWeb.TestCaptchaHelper, for: BlockScoutWeb.CaptchaHelper)
+Mox.defmock(Explorer.Mox.HTTPoison, for: HTTPoison.Base)

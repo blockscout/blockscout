@@ -110,7 +110,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                           elem(
                             quote do
                               has_one(:zksync_batch_transaction, ZkSyncBatchTransaction,
-                                foreign_key: :hash,
+                                foreign_key: :tx_hash,
                                 references: :hash
                               )
 
@@ -263,7 +263,7 @@ defmodule Explorer.Chain.Transaction do
   alias ABI.FunctionSelector
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
-  alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
+  alias Explorer.{Chain, Helper, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
     Block,
@@ -1529,24 +1529,16 @@ defmodule Explorer.Chain.Transaction do
 
   defp compare_default_sorting(a, b) do
     case {
-      compare(a.block_number, b.block_number),
-      compare(a.index, b.index),
+      Helper.compare(a.block_number, b.block_number),
+      Helper.compare(a.index, b.index),
       DateTime.compare(a.inserted_at, b.inserted_at),
-      compare(Hash.to_integer(a.hash), Hash.to_integer(b.hash))
+      Helper.compare(Hash.to_integer(a.hash), Hash.to_integer(b.hash))
     } do
       {:lt, _, _, _} -> false
       {:eq, :lt, _, _} -> false
       {:eq, :eq, :lt, _} -> false
       {:eq, :eq, :eq, :gt} -> false
       _ -> true
-    end
-  end
-
-  defp compare(a, b) do
-    cond do
-      a < b -> :lt
-      a > b -> :gt
-      true -> :eq
     end
   end
 

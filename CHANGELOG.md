@@ -1,5 +1,80 @@
 # Changelog
 
+## 6.7.0
+
+### 🚀 Features
+
+- API endpoint to re-fetch token instance metadata ([#10097](https://github.com/blockscout/blockscout/issues/10097))
+- Advanced Filters ([#9769](https://github.com/blockscout/blockscout/issues/9769))
+- *(ci)* Use remote arm64 builder ([#9468](https://github.com/blockscout/blockscout/issues/9468))
+- Adding Mobula price source ([#9971](https://github.com/blockscout/blockscout/issues/9971))
+- Get ERC-1155 token name from contractURI getter fallback ([#10187](https://github.com/blockscout/blockscout/issues/10187))
+- Push relevant entries to the front of bound queue ([#10193](https://github.com/blockscout/blockscout/issues/10193))
+- Add feature toggle for WETH filtering ([#10208](https://github.com/blockscout/blockscout/issues/10208))
+- Batch read methods requests ([#10192](https://github.com/blockscout/blockscout/issues/10192))
+- Set dynamic ttl of cache modules derived from MapCache ([#10109](https://github.com/blockscout/blockscout/issues/10109))
+- Add Fee column to Internal transactions CSV export ([#10204](https://github.com/blockscout/blockscout/issues/10204))
+- Add window between balance fetch retries for missing balanceOf tokens ([#10142](https://github.com/blockscout/blockscout/issues/10142))
+- Indexer for cross level messages on Arbitrum ([#9312](https://github.com/blockscout/blockscout/issues/9312))
+
+### 🐛 Bug Fixes
+
+- Fix possible unknown UID bug ([#10240](https://github.com/blockscout/blockscout/issues/10240))
+- Batch transactions view recovered and support of proofs through ZkSync Hyperchain ([#10234](https://github.com/blockscout/blockscout/issues/10234))
+- Fix nil abi issue in get_naive_implementation_abi and get_master_copy_pattern methods ([#10239](https://github.com/blockscout/blockscout/issues/10239))
+- Add smart contracts preloads to from_address ([#10236](https://github.com/blockscout/blockscout/issues/10236))
+- Add proxy_implementations preloads ([#10225](https://github.com/blockscout/blockscout/issues/10225))
+- Cannot truncate chardata ([#10227](https://github.com/blockscout/blockscout/issues/10227))
+- ERC-1155 tokens metadata retrieve ([#10231](https://github.com/blockscout/blockscout/issues/10231))
+- Replace empty arg names with argN ([#9748](https://github.com/blockscout/blockscout/issues/9748))
+- Fix unknown UID bug ([#10226](https://github.com/blockscout/blockscout/issues/10226))
+- Fixed the field name ([#10216](https://github.com/blockscout/blockscout/issues/10216))
+- Excessive logging for Arbitrum batches confirmations ([#10205](https://github.com/blockscout/blockscout/issues/10205))
+- Filter WETH transfers in indexer + migration to delete historical incorrect WETH transfers ([#10134](https://github.com/blockscout/blockscout/issues/10134))
+- Fix flaky test
+- Resolve flaky address_controller test for web
+- Add the ability to allow empty traces ([#10200](https://github.com/blockscout/blockscout/issues/10200))
+- Move auth routes to general router ([#10153](https://github.com/blockscout/blockscout/issues/10153))
+- Add a separate db url for events listener ([#10164](https://github.com/blockscout/blockscout/issues/10164))
+- Fix Retry NFT fetcher ([#10146](https://github.com/blockscout/blockscout/issues/10146))
+- Add missing preloads to tokens endpoints ([#10072](https://github.com/blockscout/blockscout/issues/10072))
+- Missing nil case for revert reason ([#10136](https://github.com/blockscout/blockscout/issues/10136))
+- Hotfix for Indexer.Fetcher.Optimism.WithdrawalEvent and EthereumJSONRPC.Receipt ([#10130](https://github.com/blockscout/blockscout/issues/10130))
+
+### 🚜 Refactor
+
+- Remove hardcoded numResults from fetch_pending_transactions_besu ([#10117](https://github.com/blockscout/blockscout/issues/10117))
+
+### ⚡ Performance
+
+- Replace individual queries with ecto preload ([#10203](https://github.com/blockscout/blockscout/issues/10203))
+
+### ⚙️ Miscellaneous Tasks
+
+- Refactor PendingTransactionsSanitizer to use batched requests ([#10101](https://github.com/blockscout/blockscout/issues/10101))
+- Exclude write methods from read tabs ([#10111](https://github.com/blockscout/blockscout/issues/10111))
+- Return is verified=true for verified minimal proxy pattern ([#10132](https://github.com/blockscout/blockscout/issues/10132))
+- Bump ecto_sql from 3.11.1 to 3.11.2
+
+### New ENV Variables
+
+| Variable                                     | Required | Description                                                                                                                                                                                                                                 | Default                                                | Version | Need recompile | Application  |
+| -------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------- | -------------- | --- |
+| `DATABASE_EVENT_URL`                                    |          | Variable to define the Postgres Database endpoint that will be used by event listener process. Applicable for separate indexer and API setup. More info in related PR. Implemented in [#10164](https://github.com/blockscout/blockscout/pull/10164).                                                                                                                                                                                              | (empty)                                                                            | v6.7.0+  |                | API          |
+| `INDEXER_TOKEN_INSTANCE_RETRY_MAX_REFETCH_INTERVAL`            |          | Maximum interval between attempts to fetch token instance metadata. [Time format](env-variables.md#time-format). Implemented in [#10027](https://github.com/blockscout/blockscout/pull/10027).                                                                                                                                                                                                                                                                                                                                | `168h`                                     | v6.7.0+ | | Indexer      |
+| `INDEXER_TOKEN_INSTANCE_RETRY_EXPONENTIAL_TIMEOUT_BASE`        |          | Base to calculate exponential timeout. Implemented in [#10027](https://github.com/blockscout/blockscout/pull/10027).                                                                                                                                                                                                                                                                                                                                                                                                          | `2`                                        | v6.7.0+ | | Indexer      |
+| `INDEXER_TOKEN_INSTANCE_RETRY_EXPONENTIAL_TIMEOUT_COEFF`       |          | Coefficient to calculate exponential timeout. Implemented in [#10027](https://github.com/blockscout/blockscout/pull/10027).                                                                                                                                                                                                                                                                                                                                                                                                   | `100`                                      | v6.7.0+ | | Indexer      |
+| `MISSING_BALANCE_OF_TOKENS_WINDOW_SIZE`                        |          | Minimal blocks count until the next token balance request will be executed for tokens that doesn't implement `balanceOf` function. Implemented in [#10142](https://github.com/blockscout/blockscout/pull/10142)                                                                                                                                                                                                                                                                                                               | 100                                        | v6.7.0+ | | Indexer      |
+| `ETHEREUM_JSONRPC_GETH_ALLOW_EMPTY_TRACES`                     |          | Allow transactions to not have internal transactions. Implemented in [#10200](https://github.com/blockscout/blockscout/pull/10200)                                                                                                                                                                                                                                                                                                                                                                                            | `false`                                    | v6.7.0+ | | Indexer      |
+| `SANITIZE_INCORRECT_WETH_BATCH_SIZE`  |          | Number of token transfers to sanitize in the batch. Implemented in [#10134](https://github.com/blockscout/blockscout/pull/10134)              | 100     | v6.7.0+ | | API, Indexer |
+| `SANITIZE_INCORRECT_WETH_CONCURRENCY` |          | Number of parallel sanitizing token transfer batches processing. Implemented in [#10134](https://github.com/blockscout/blockscout/pull/10134) | 1       | v6.7.0+ | | API, Indexer |
+| `EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID`            |          | Explicitly set Mobula coin ID for secondary coin market chart.                                                                                                                          | (empty)          | v6.7.0+  | | API, Indexer |
+| `EXCHANGE_RATES_MOBULA_API_KEY`                      |          | Mobula API key.                                                                                                                                                                                                                                                     | (empty)          | v6.7.0+ | | API, Indexer |
+| `EXCHANGE_RATES_MOBULA_CHAIN_ID`                     |          | [Mobula](https://www.mobula.io/) chain id for which token prices are fetched, see full list in the [`Documentation`](https://docs.mobula.io/blockchains/intro-blockchains). | ethereum         | v6.7.0+ | | API, Indexer |
+| `TOKEN_INSTANCE_METADATA_REFETCH_ON_DEMAND_FETCHER_THRESHOLD`           |          | An initial threshold (for exponential backoff) to re-fetch token instance's metadata on-demand. [Time format](env-variables.md#time-format). Implemented in [#10097](https://github.com/blockscout/blockscout/pull/10097).   | 5s       | v6.7.0+ |                | API, Indexer  |
+| `WHITELISTED_WETH_CONTRACTS`                            |          | Comma-separated list of smart-contract addresses hashes of WETH-like tokens which deposit and withdrawal events you'd like to index. Implemented in [#10134](https://github.com/blockscout/blockscout/pull/10134)                                     | (empty)                                                                                                                        | v6.7.0+ | | API, Indexer|
+| `WETH_TOKEN_TRANSFERS_FILTERING_ENABLED`                |          | Toggle for WETH token transfers filtering which was introduced in [#10134](https://github.com/blockscout/blockscout/pull/10134). Implemented in [#10208](https://github.com/blockscout/blockscout/pull/10208)                                         | false                                                                                                                          | v6.7.0+ |  | API, Indexer|
+
 ## 6.6.0
 
 ### 🚀 Features

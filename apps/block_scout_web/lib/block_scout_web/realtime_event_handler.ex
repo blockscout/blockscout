@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     Subscriber.to(:token_total_supply, :on_demand)
     Subscriber.to(:changed_bytecode, :on_demand)
     Subscriber.to(:fetched_bytecode, :on_demand)
+    Subscriber.to(:fetched_token_instance_metadata, :on_demand)
     Subscriber.to(:eth_bytecode_db_lookup_started, :on_demand)
     Subscriber.to(:zkevm_confirmed_batches, :realtime)
     Subscriber.to(:new_arbitrum_batches, :realtime)

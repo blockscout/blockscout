@@ -6,9 +6,9 @@ defmodule Explorer.Chain.Events.Publisher do
   @allowed_events ~w(addresses address_coin_balances address_token_balances
     address_current_token_balances blocks block_rewards internal_transactions
     last_block_number optimism_deposits token_transfers transactions contract_verification_result
-    token_total_supply changed_bytecode fetched_bytecode smart_contract_was_verified
-    zkevm_confirmed_batches eth_bytecode_db_lookup_started smart_contract_was_not_verified
-    new_arbitrum_batches)a
+    token_total_supply changed_bytecode fetched_bytecode fetched_token_instance_metadata
+    smart_contract_was_verified zkevm_confirmed_batches eth_bytecode_db_lookup_started
+    smart_contract_was_not_verified new_arbitrum_batches)a
 
   def broadcast(_data, false), do: :ok
 
