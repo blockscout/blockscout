@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Chain & explorer Prometheus metrics ([#10063](https://github.com/blockscout/blockscout/issues/10063))
 - API endpoint to re-fetch token instance metadata ([#10097](https://github.com/blockscout/blockscout/issues/10097))
 - Advanced Filters ([#9769](https://github.com/blockscout/blockscout/issues/9769))
 - *(ci)* Use remote arm64 builder ([#9468](https://github.com/blockscout/blockscout/issues/9468))
@@ -19,6 +20,10 @@
 
 ### 🐛 Bug Fixes
 
+- Add preloads to summary and tokens endpoints ([#10259](https://github.com/blockscout/blockscout/issues/10259))
+- Advanced filter contract creation transaction ([#10257](https://github.com/blockscout/blockscout/issues/10257))
+- Proper hex-encoded transaction hash recognition in ZkSync batches status checker ([#10255](https://github.com/blockscout/blockscout/issues/10255))
+- Pipe through  api_v2_no_forgery_protect POST requests in SmartContractsApiV2Router
 - Fix possible unknown UID bug ([#10240](https://github.com/blockscout/blockscout/issues/10240))
 - Batch transactions view recovered and support of proofs through ZkSync Hyperchain ([#10234](https://github.com/blockscout/blockscout/issues/10234))
 - Fix nil abi issue in get_naive_implementation_abi and get_master_copy_pattern methods ([#10239](https://github.com/blockscout/blockscout/issues/10239))
