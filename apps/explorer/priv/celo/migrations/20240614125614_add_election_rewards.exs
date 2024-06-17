@@ -19,16 +19,17 @@ defmodule Explorer.Repo.Celo.Migrations.AddElectionRewards do
       )
 
       add(
-        :account_hash,
+        :account_address_hash,
         references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea),
         null: false,
         primary_key: true
       )
 
       add(
-        :associated_account_hash,
+        :associated_account_address_hash,
         references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea),
-        null: false
+        null: false,
+        primary_key: true
       )
 
       timestamps()

@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
 
   @types_enum ~w(voter validator group delegated_payment)a
 
-  @required_attrs ~w(amount type block_hash account_hash associated_account_hash)a
+  @required_attrs ~w(amount type block_hash account_address_hash associated_account_address_hash)a
 
   @primary_key false
   typed_schema "celo_election_rewards" do
@@ -33,19 +33,20 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
 
     belongs_to(
-      :account,
+      :account_address,
       Address,
       primary_key: true,
-      foreign_key: :account_hash,
+      foreign_key: :account_address_hash,
       references: :hash,
       type: Hash.Address,
       null: false
     )
 
     belongs_to(
-      :associated_account,
+      :associated_account_address,
       Address,
-      foreign_key: :associated_account_hash,
+      primary_key: true,
+      foreign_key: :associated_account_address_hash,
       references: :hash,
       type: Hash.Address,
       null: false
@@ -59,10 +60,12 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:block_hash)
+    |> foreign_key_constraint(:account_address_hash)
+    |> foreign_key_constraint(:associated_account_address_hash)
 
     # todo: do I need to set this unique constraint here? or it is redundant?
     # |> unique_constraint(
-    #   [:block_hash, :account_hash, :type],
+    #   [:block_hash, :type, :account_address_hash, :associated_account_address_hash],
     #   name: :celo_election_rewards_pkey
     # )
   end

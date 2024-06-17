@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.Celo.ElectionRewards do
   @moduledoc """
-  Bulk imports `t:Explorer.Chain.Celo.Epoch.ElectionReward.t/0`.
+  Bulk imports `t:Explorer.Chain.Celo.ElectionReward.t/0`.
   """
 
   require Ecto.Query
@@ -60,7 +60,18 @@ defmodule Explorer.Chain.Import.Runner.Celo.ElectionRewards do
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = _options) when is_list(changes_list) do
     # Enforce Celo.Epoch.ElectionReward ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_hash, &1.type, &1.account_hash})
+    ordered_changes_list =
+      Enum.sort_by(
+        changes_list,
+        &{
+          &1.block_hash,
+          &1.type,
+          &1.account_address_hash,
+          &1.associated_account_address_hash
+        }
+      )
+
+    dbg(ordered_changes_list)
 
     {:ok, inserted} =
       Import.insert_changes_list(
@@ -70,8 +81,13 @@ defmodule Explorer.Chain.Import.Runner.Celo.ElectionRewards do
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: [:block_hash, :type, :account_hash],
-        on_conflict: :nothing
+        conflict_target: [
+          :block_hash,
+          :type,
+          :account_address_hash,
+          :associated_account_address_hash
+        ],
+        on_conflict: :replace_all
       )
 
     {:ok, inserted}

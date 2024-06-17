@@ -189,11 +189,9 @@ defmodule Indexer.Supervisor do
         configure(ArbitrumRollupMessagesCatchup.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
-        dbg(
-          configure(Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor, [
-            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
-          ])
-        ),
+        configure(Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
         configure(Indexer.Fetcher.Celo.EpochRewards.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
