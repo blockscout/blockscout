@@ -33,6 +33,14 @@ defmodule Explorer.Chain.AdvancedFilter do
       type: Hash.Address
     )
 
+    belongs_to(
+      :created_contract_address,
+      Address,
+      foreign_key: :created_contract_address_hash,
+      references: :hash,
+      type: Hash.Address
+    )
+
     field(:value, :decimal, null: true)
 
     has_one(:token_transfer, TokenTransfer, foreign_key: :transaction_hash, references: :hash, null: true)
@@ -137,7 +145,11 @@ defmodule Explorer.Chain.AdvancedFilter do
       input: transaction.input,
       timestamp: transaction.block_timestamp,
       from_address: transaction.from_address,
+      from_address_hash: transaction.from_address_hash,
       to_address: transaction.to_address,
+      to_address_hash: transaction.to_address_hash,
+      created_contract_address: transaction.created_contract_address,
+      created_contract_address_hash: transaction.created_contract_address_hash,
       value: transaction.value.value,
       fee: transaction |> Transaction.fee(:wei) |> elem(1),
       block_number: transaction.block_number,
@@ -152,7 +164,11 @@ defmodule Explorer.Chain.AdvancedFilter do
       input: internal_transaction.input,
       timestamp: internal_transaction.transaction.block_timestamp,
       from_address: internal_transaction.from_address,
+      from_address_hash: internal_transaction.from_address_hash,
       to_address: internal_transaction.to_address,
+      to_address_hash: internal_transaction.to_address_hash,
+      created_contract_address: internal_transaction.created_contract_address,
+      created_contract_address_hash: internal_transaction.created_contract_address_hash,
       value: internal_transaction.value.value,
       fee:
         internal_transaction.transaction.gas_price && internal_transaction.gas_used &&
@@ -170,7 +186,11 @@ defmodule Explorer.Chain.AdvancedFilter do
       input: token_transfer.transaction.input,
       timestamp: token_transfer.transaction.block_timestamp,
       from_address: token_transfer.from_address,
+      from_address_hash: token_transfer.from_address_hash,
       to_address: token_transfer.to_address,
+      to_address_hash: token_transfer.to_address_hash,
+      created_contract_address: nil,
+      created_contract_address_hash: nil,
       fee: token_transfer.transaction |> Transaction.fee(:wei) |> elem(1),
       token_transfer: %TokenTransfer{
         token_transfer
@@ -232,7 +252,8 @@ defmodule Explorer.Chain.AdvancedFilter do
         preload: [
           :block,
           from_address: [:names, :smart_contract, :proxy_implementations],
-          to_address: [:names, :smart_contract, :proxy_implementations]
+          to_address: [:names, :smart_contract, :proxy_implementations],
+          created_contract_address: [:names, :smart_contract, :proxy_implementations]
         ],
         order_by: [
           desc: transaction.block_number,
@@ -269,6 +290,7 @@ defmodule Explorer.Chain.AdvancedFilter do
         preload: [
           from_address: [:names, :smart_contract, :proxy_implementations],
           to_address: [:names, :smart_contract, :proxy_implementations],
+          created_contract_address: [:names, :smart_contract, :proxy_implementations],
           transaction: transaction
         ],
         order_by: [
