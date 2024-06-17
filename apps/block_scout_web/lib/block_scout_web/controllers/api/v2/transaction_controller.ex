@@ -468,7 +468,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   def summary(conn, %{"transaction_hash_param" => transaction_hash_string, "just_request_body" => "true"} = params) do
     with {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
-         {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+         {:ok, transaction, _transaction_hash} <-
+           validate_transaction(transaction_hash_string, params,
+             necessity_by_association: %{
+               [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+               [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
+             },
+             api?: true
+           ) do
       conn
       |> json(TransactionInterpretationService.get_request_body(transaction))
     end
@@ -485,7 +492,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           | Plug.Conn.t()
   def summary(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     with {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
-         {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+         {:ok, transaction, _transaction_hash} <-
+           validate_transaction(transaction_hash_string, params,
+             necessity_by_association: %{
+               [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+               [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
+             },
+             api?: true
+           ) do
       {response, code} =
         case TransactionInterpretationService.interpret(transaction) do
           {:ok, response} -> {response, 200}
