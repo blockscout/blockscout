@@ -208,11 +208,11 @@ defmodule Explorer.Market.History.CatalogerTest do
 
     {:ok, pid} = Cataloger.start_link([])
 
-    :timer.sleep(4000)
+    :timer.sleep(5000)
 
     Process.send(pid, {:fetch_price_history, 1}, [])
 
-    :timer.sleep(4000)
+    :timer.sleep(5000)
 
     assert [
              %Explorer.Market.MarketHistory{
