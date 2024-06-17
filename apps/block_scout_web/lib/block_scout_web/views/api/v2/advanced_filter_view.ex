@@ -56,6 +56,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       "UtcTimestamp",
       "FromAddress",
       "ToAddress",
+      "CreatedContractAddress",
       "Value",
       "TokenContractAddressHash",
       "TokenDecimals",
@@ -83,8 +84,9 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
           advanced_filter.type,
           method_id,
           advanced_filter.timestamp,
-          Address.checksum(advanced_filter.from_address.hash),
-          Address.checksum(advanced_filter.to_address.hash),
+          Address.checksum(advanced_filter.from_address_hash),
+          Address.checksum(advanced_filter.to_address_hash),
+          Address.checksum(advanced_filter.created_contract_address_hash),
           advanced_filter.value,
           if(advanced_filter.type != "coin_transfer",
             do: advanced_filter.token_transfer.token.contract_address_hash,
@@ -130,14 +132,21 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
         Helper.address_with_info(
           nil,
           advanced_filter.from_address,
-          advanced_filter.from_address.hash,
+          advanced_filter.from_address_hash,
           false
         ),
       to:
         Helper.address_with_info(
           nil,
           advanced_filter.to_address,
-          advanced_filter.to_address.hash,
+          advanced_filter.to_address_hash,
+          false
+        ),
+      created_contract:
+        Helper.address_with_info(
+          nil,
+          advanced_filter.created_contract_address,
+          advanced_filter.created_contract_address_hash,
           false
         ),
       value: advanced_filter.value,
