@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Metrics do
   alias Explorer.Prometheus.Instrumenter
 
   @interval :timer.hours(1)
-  @options [timeout: :infinity, api?: true]
+  @options [timeout: 60_000, api?: true]
   @metrics_list [
     :weekly_success_transactions_number,
     :weekly_deployed_smart_contracts_number,
