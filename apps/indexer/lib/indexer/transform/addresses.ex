@@ -160,6 +160,14 @@ defmodule Indexer.Transform.Addresses do
       [
         %{from: :account_hash, to: :hash}
       ]
+    ],
+    celo_validator_group_votes: [
+      [
+        %{from: :account_address_hash, to: :hash}
+      ],
+      [
+        %{from: :group_address_hash, to: :hash}
+      ]
     ]
   }
 
@@ -476,6 +484,12 @@ defmodule Indexer.Transform.Addresses do
           optional(:celo_election_rewards) => [
             %{
               required(:account_hash) => String.t()
+            }
+          ],
+          optional(:celo_validator_group_votes) => [
+            %{
+              required(:account_address_hash) => String.t(),
+              required(:group_address_hash) => String.t()
             }
           ]
         }) :: [params]

@@ -991,6 +991,11 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,
     ConfigHelper.chain_type() == :polygon_zkevm &&
       ConfigHelper.parse_bool_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED")
 
+config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor,
+  enabled:
+    ConfigHelper.chain_type() == :celo and
+      not ConfigHelper.parse_bool_env_var("INDEXER_CELO_EPOCH_FETCHER_DISABLED")
+
 config :indexer, Indexer.Fetcher.Celo.EpochRewards.Supervisor,
   enabled:
     ConfigHelper.chain_type() == :celo and

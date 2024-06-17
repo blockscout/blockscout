@@ -157,13 +157,9 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
   end
 
   defp fetch_logs_by_chunks(from_block..to_block, requests_func, json_rpc_named_arguments) do
-    chunks_number = ceil((to_block - from_block + 1) / @chunk_size)
-
-    0..chunks_number
-    |> Enum.reduce([], fn current_chunk, acc ->
-      chunk_start = from_block + @chunk_size * current_chunk
-      chunk_end = min(chunk_start + @chunk_size - 1, to_block)
-
+    from_block..to_block
+    |> IndexerHelper.range_chunk_every(@chunk_size)
+    |> Enum.reduce([], fn chunk_start..chunk_end, acc ->
       IndexerHelper.log_blocks_chunk_handling(chunk_start, chunk_end, 0, to_block, nil, :L1)
 
       requests = requests_func.(chunk_start, chunk_end)

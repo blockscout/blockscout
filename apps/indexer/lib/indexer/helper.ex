@@ -169,6 +169,36 @@ defmodule Indexer.Helper do
   end
 
   @doc """
+  Splits a given range into chunks of the specified size.
+
+  ## Parameters
+  - `range`: The range to be split into chunks.
+  - `chunk_size`: The size of each chunk.
+
+  ## Returns
+  - A stream of ranges, each representing a chunk of the specified size.
+
+  ## Examples
+
+      iex> Explorer.Chain.Cache.CeloCoreContracts.range_chunk_every(1..10, 3)
+      #Stream<...>
+
+      iex> Enum.to_list(Explorer.Chain.Cache.CeloCoreContracts.range_chunk_every(1..10, 3))
+      [1..3, 4..6, 7..9, 10..10]
+  """
+  @spec range_chunk_every(Range.t(), non_neg_integer()) :: Enum.t()
+  def range_chunk_every(from..to, chunk_size) do
+    chunks_number = floor((to - from + 1) / chunk_size)
+
+    0..chunks_number
+    |> Stream.map(fn current_chunk ->
+      chunk_start = from + chunk_size * current_chunk
+      chunk_end = min(chunk_start + chunk_size - 1, to)
+      chunk_start..chunk_end
+    end)
+  end
+
+  @doc """
     Retrieves event logs from Ethereum-like blockchains within a specified block
     range for a given address and set of topics using JSON-RPC.
 
@@ -372,7 +402,7 @@ defmodule Indexer.Helper do
     - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
     - `error_message_generator`: A function that generates a string containing the error
                                  message returned by the RPC call.
-    - `retries_left`: The number of retries allowed for any RPC call that returns an error.
+    - `max_retries`: The number of retries allowed for any RPC call that returns an error.
 
     ## Returns
     - `{:ok, responses}`: When all calls are successful, `responses` is a list of standard
@@ -384,9 +414,9 @@ defmodule Indexer.Helper do
   """
   @spec repeated_batch_rpc_call([Transport.request()], EthereumJSONRPC.json_rpc_named_arguments(), fun(), integer()) ::
           {:error, any()} | {:ok, any()}
-  def repeated_batch_rpc_call(requests, json_rpc_named_arguments, error_message_generator, retries_left)
-      when is_list(requests) and is_function(error_message_generator) and is_integer(retries_left) do
-    do_repeated_batch_rpc_call(requests, json_rpc_named_arguments, error_message_generator, retries_left, 0)
+  def repeated_batch_rpc_call(requests, json_rpc_named_arguments, error_message_generator, max_retries)
+      when is_list(requests) and is_function(error_message_generator) and is_integer(max_retries) do
+    do_repeated_batch_rpc_call(requests, json_rpc_named_arguments, error_message_generator, max_retries, 0)
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity

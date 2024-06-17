@@ -58,6 +58,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   @spec atom_to_contract_event_names() :: %{atom() => %{atom() => contract_name}}
   def atom_to_contract_event_names, do: @atom_to_contract_event_names
 
+  defp core_contracts, do: Application.get_env(:explorer, __MODULE__)[:contracts]
+
   @doc """
   Gets the specified event for a core contract at a given block number.
 
@@ -79,8 +81,6 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
              | :event_name_not_found
              | :contract_address_not_found}
   def get_event(contract_atom, event_atom, block_number) do
-    core_contracts = Application.get_env(:explorer, __MODULE__)[:contracts]
-
     with {:ok, address} when not is_nil(address) <- get_address(contract_atom, block_number),
          {:contract_atom, {:ok, contract_name}} <-
            {:contract_atom, Map.fetch(@atom_to_contract_name, contract_atom)},
@@ -92,7 +92,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
              |> Map.fetch(event_atom)
            },
          {:events, {:ok, contract_name_to_addresses}} <-
-           {:events, Map.fetch(core_contracts, "events")},
+           {:events, Map.fetch(core_contracts(), "events")},
          {:contract_name, {:ok, contract_addresses}} <-
            {:contract_name, Map.fetch(contract_name_to_addresses, contract_name)},
          {:contract_address, {:ok, contract_events}} <-
@@ -159,6 +159,35 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     end
   end
 
+  defp get_address_updates(contract_atom) do
+    with {:atom, {:ok, contract_name}} <-
+           {:atom, Map.fetch(@atom_to_contract_name, contract_atom)},
+         {:addresses, {:ok, contract_name_to_addresses}} <-
+           {:addresses, Map.fetch(core_contracts(), "addresses")},
+         {:name, {:ok, address_updates}} <-
+           {:name, Map.fetch(contract_name_to_addresses, contract_name)} do
+      {:ok, address_updates}
+    else
+      {:atom, :error} ->
+        Logger.error("Unknown contract atom: #{inspect(contract_atom)}")
+        {:error, :contract_atom_not_found}
+
+      {:addresses, :error} ->
+        raise "Missing `addresses` key in CELO core contracts JSON"
+
+      {:name, :error} ->
+        Logger.error(fn ->
+          [
+            "Unknown name for contract atom: #{contract_atom}, ",
+            "ensure `CELO_CORE_CONTRACTS` env var is set ",
+            "and the provided JSON contains required key"
+          ]
+        end)
+
+        {:error, :contract_name_not_found}
+    end
+  end
+
   @doc """
   Gets the address of a core contract at a given block number.
 
@@ -179,45 +208,36 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
         contract_atom,
         block_number
       ) do
-    core_contracts = Application.get_env(:explorer, __MODULE__)[:contracts]
+    contract_atom
+    |> get_address_updates()
+    |> case do
+      {:ok, address_updates} ->
+        current_address =
+          address_updates
+          |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
+          |> Enum.take(-1)
+          |> case do
+            [%{"address" => address}] ->
+              address
 
-    with {:atom, {:ok, contract_name}} <-
-           {:atom, Map.fetch(@atom_to_contract_name, contract_atom)},
-         {:addresses, {:ok, contract_name_to_addresses}} <-
-           {:addresses, Map.fetch(core_contracts, "addresses")},
-         {:name, {:ok, address_updates}} <-
-           {:name, Map.fetch(contract_name_to_addresses, contract_name)} do
-      current_address =
-        address_updates
-        |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
-        |> Enum.take(-1)
-        |> case do
-          [%{"address" => address}] ->
-            address
+            _ ->
+              nil
+          end
 
-          _ ->
-            nil
-        end
+        {:ok, current_address}
 
-      {:ok, current_address}
-    else
-      {:atom, :error} ->
-        Logger.error("Unknown contract atom: #{inspect(contract_atom)}")
-        {:error, :contract_atom_not_found}
+      error ->
+        error
+    end
+  end
 
-      {:addresses, :error} ->
-        raise "Missing `addresses` key in CELO core contracts JSON"
-
-      {:name, :error} ->
-        Logger.error(fn ->
-          [
-            "Unknown name for contract atom: #{contract_atom}, ",
-            "ensure `CELO_CORE_CONTRACTS` env var is set ",
-            "and the provided JSON contains required key"
-          ]
-        end)
-
-        {:error, :contract_name_not_found}
+  def get_first_update_block_number(contract_atom) do
+    with {:ok, address_updates} <- get_address_updates(contract_atom),
+         %{"updated_at_block_number" => updated_at_block_number} <-
+           address_updates
+           |> Enum.sort_by(& &1["updated_at_block_number"])
+           |> List.first() do
+      {:ok, updated_at_block_number}
     end
   end
 end
