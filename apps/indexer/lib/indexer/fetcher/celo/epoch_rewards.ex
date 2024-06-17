@@ -4,23 +4,24 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
 
   import Ecto.Query, only: [from: 2, subquery: 1]
 
-  alias ABI.FunctionSelector
-
+  import Explorer.Helper, only: [decode_data: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-
   import Explorer.Chain.Celo.Helper, only: [epoch_block_number?: 1]
+  import Indexer.Fetcher.Celo.Helper, only: [abi_to_method_id: 1]
 
   alias Explorer.Repo
   alias Explorer.Chain
   alias Explorer.Chain.Cache.CeloCoreContracts
-  alias Explorer.Chain.Celo.PendingEpochBlockOperation
+  alias Explorer.Chain.Celo.{PendingEpochBlockOperation, ValidatorGroupVote}
   alias Explorer.Chain.{Block, Hash, Log, TokenTransfer}
   alias Explorer.SmartContract.Reader
 
   alias Indexer.Helper, as: IndexerHelper
   alias Indexer.{BufferedTask, Tracer}
+  alias Indexer.Fetcher.Celo.ValidatorGroupVotes
   alias Indexer.Transform.Addresses
   alias Indexer.Transform.Celo.ValidatorEpochPaymentDistributions
+
   require Logger
 
   use Indexer.Fetcher, restart: :permanent
@@ -35,37 +36,7 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
 
   @repeated_request_max_retries 3
 
-  @validator_group_vote_activated_topic "0x45aac85f38083b18efe2d441a65b9c1ae177c78307cb5a5d4aec8f7dbcaeabfe"
-
-  @validator_group_vote_activated_event_abi [
-    %{
-      "name" => "ValidatorGroupVoteActivated",
-      "type" => "event",
-      "anonymous" => false,
-      "inputs" => [
-        %{
-          "indexed" => true,
-          "name" => "account",
-          "type" => "address"
-        },
-        %{
-          "indexed" => true,
-          "name" => "group",
-          "type" => "address"
-        },
-        %{
-          "indexed" => false,
-          "name" => "value",
-          "type" => "uint256"
-        },
-        %{
-          "indexed" => false,
-          "name" => "units",
-          "type" => "uint256"
-        }
-      ]
-    }
-  ]
+  @epoch_rewards_distributed_to_voters_topic "0x91ba34d62474c14d6c623cd322f4256666c7a45b7fdaa3378e009d39dfcec2a7"
 
   @get_active_votes_for_group_by_account_abi [
     %{
@@ -203,13 +174,13 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
 
         :retry
     end
+
+    :ok
   end
 
   def fetch_epoch(pending_operation, json_rpc_named_arguments) do
     with {:ok, voter_rewards} <- fetch_voter_rewards(pending_operation, json_rpc_named_arguments),
          {:ok, epoch_rewards} <- fetch_epoch_rewards(pending_operation),
-         # todo: replace `_ignore` with pattern matching on `:ok`
-         #  _ignore <- valid_voter_rewards?(voter_rewards, epoch_rewards),
          epoch_payment_distributions = fetch_epoch_payment_distributions(pending_operation),
          {:ok, delegated_payments} <-
            fetch_payment_delegations(pending_operation, epoch_payment_distributions, json_rpc_named_arguments) do
@@ -220,6 +191,7 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
         )
 
       dbg(epoch_rewards)
+      validate_voter_rewards(pending_operation, voter_rewards)
 
       election_rewards =
         [
@@ -235,13 +207,6 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
           celo_election_rewards: election_rewards
         })
 
-      {:ok,
-       %{
-         addresses: %{params: addresses_params},
-         celo_election_rewards: %{params: election_rewards},
-         celo_epoch_rewards: %{params: [epoch_rewards]}
-       }}
-
       {:ok, imported} =
         Chain.import(%{
           addresses: %{params: addresses_params},
@@ -253,22 +218,37 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
     end
   end
 
-  def valid_voter_rewards?(voter_rewards, epoch_rewards) do
+  def validate_voter_rewards(pending_operation, voter_rewards) do
     manual_voters_total = voter_rewards |> Enum.map(& &1.amount) |> Enum.sum()
+    {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, pending_operation.block_number)
 
-    if manual_voters_total ==
-         epoch_rewards.voters_total do
+    voter_rewards_from_event_total =
+      from(
+        l in Log,
+        where:
+          l.block_hash == ^pending_operation.block_hash and
+            l.address_hash == ^election_contract_address and
+            l.first_topic == ^@epoch_rewards_distributed_to_voters_topic and
+            is_nil(l.transaction_hash),
+        select: l.data
+      )
+      |> Repo.all()
+      |> Enum.map(fn data ->
+        [amount] = decode_data(data, [{:uint, 256}])
+        amount
+      end)
+      |> Enum.sum()
+
+    if voter_rewards_from_event_total == manual_voters_total do
       :ok
     else
-      Logger.error(fn ->
+      Logger.warning(fn ->
         [
           "Total voter rewards do not match. ",
           "Amount calculated manually: #{manual_voters_total}. ",
-          "Amount returned by `calculateTargetEpochRewards`: #{epoch_rewards.voters_total}."
+          "Amount got from `EpochRewardsDistributedToVoters` events: #{voter_rewards_from_event_total}."
         ]
       end)
-
-      {:error, :total_voter_rewards_do_not_match}
     end
   end
 
@@ -287,27 +267,7 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
         select: log
       )
 
-    query |> Repo.all() |> ValidatorEpochPaymentDistributions.parse()
-  end
-
-  defp event_to_account_and_group(event) do
-    {:ok, %FunctionSelector{},
-     [
-       {"account", "address", true, account_address},
-       {"group", "address", true, group_address},
-       _value,
-       _units
-     ]} =
-      @validator_group_vote_activated_event_abi
-      |> Log.find_and_decode(
-        event,
-        event.transaction_hash
-      )
-
-    %{
-      account_address: "0x" <> Base.encode16(account_address, case: :lower),
-      group_address: "0x" <> Base.encode16(group_address, case: :lower)
-    }
+    query |> Repo.all() |> dbg() |> ValidatorEpochPaymentDistributions.parse()
   end
 
   def fetch_contract_version(address, block_number, json_rpc_named_arguments) do
@@ -416,9 +376,9 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
 
             %{
               block_hash: block_hash,
-              account_hash: beneficiary_address,
+              account_address_hash: beneficiary_address,
               amount: amount,
-              associated_account_hash: validator_address,
+              associated_account_address_hash: validator_address,
               type: :delegated_payment
             }
         end)
@@ -441,47 +401,59 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
     end
   end
 
-  def block_number_to_accounts_with_activated_votes(block_number) do
-    query =
-      from(
-        log in Log,
-        where:
-          log.block_number < ^block_number and
-            log.first_topic == ^@validator_group_vote_activated_topic,
-        # `:data` is needed only for decoding, but is not used in the result
-        select: [:first_topic, :second_topic, :third_topic, :data],
-        distinct: [:first_topic, :second_topic, :third_topic]
-      )
-
-    query |> Repo.all() |> Enum.map(&event_to_account_and_group/1)
-  end
-
   def fetch_voter_rewards(
         %{block_number: block_number, block_hash: block_hash},
         json_rpc_named_arguments
       ) do
+    :ok = ValidatorGroupVotes.fetch(block_number)
+
     {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, block_number)
 
-    [%{"method_id" => method_id}] =
-      @get_active_votes_for_group_by_account_abi
-      |> Reader.get_abi_with_method_id()
+    elected_groups_query =
+      from(
+        l in Log,
+        where:
+          l.block_hash == ^block_hash and
+            l.address_hash == ^election_contract_address and
+            l.first_topic == ^@epoch_rewards_distributed_to_voters_topic and
+            is_nil(l.transaction_hash),
+        select: fragment("SUBSTRING(? from 13)", l.second_topic)
+      )
 
-    accounts_with_activated_votes = block_number_to_accounts_with_activated_votes(block_number)
+    query =
+      from(
+        v in ValidatorGroupVote,
+        where:
+          v.group_address_hash in subquery(elected_groups_query) and
+            v.block_number <= ^block_number,
+        distinct: true,
+        select: {v.account_address_hash, v.group_address_hash}
+      )
+
+    accounts_with_activated_votes =
+      query
+      |> Repo.all()
+      |> Enum.map(fn
+        {account_address_hash, group_address_hash} ->
+          {
+            Hash.to_string(account_address_hash),
+            Hash.to_string(group_address_hash)
+          }
+      end)
+
+    method_id = abi_to_method_id(@get_active_votes_for_group_by_account_abi)
 
     requests =
       accounts_with_activated_votes
-      |> Enum.map(fn %{
-                       account_address: account_address,
-                       group_address: group_address
-                     } ->
+      |> Enum.map(fn {account_address_hash, group_address_hash} ->
         (block_number - 1)..block_number
         |> Enum.map(fn block_number ->
           %{
             contract_address: election_contract_address,
             method_id: method_id,
             args: [
-              group_address,
-              account_address
+              group_address_hash,
+              account_address_hash
             ],
             block_number: block_number
           }
@@ -489,59 +461,45 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
       end)
       |> Enum.concat()
 
-    with {responses, []} <-
-           IndexerHelper.read_contracts_with_retries(
-             requests,
-             @get_active_votes_for_group_by_account_abi,
-             json_rpc_named_arguments,
-             @repeated_request_max_retries
-           ),
-         {:ok, diffs} <-
-           responses
-           |> Enum.chunk_every(2)
-           |> Enum.map(fn
-             [ok: [votes_before], ok: [votes_after]]
-             when is_integer(votes_before) and
-                    is_integer(votes_after) ->
-               {:ok, votes_after - votes_before}
+    {responses, []} =
+      IndexerHelper.read_contracts_with_retries(
+        requests,
+        @get_active_votes_for_group_by_account_abi,
+        json_rpc_named_arguments,
+        @repeated_request_max_retries
+      )
 
-             error ->
-               Logger.error("Could not fetch votes: #{inspect(error)}")
-               {:error, :could_not_fetch_votes, error}
-           end)
-           |> Enum.reduce({:ok, []}, fn
-             {:ok, diff}, {:ok, diffs} ->
-               {:ok, [diff | diffs]}
+    diffs =
+      responses
+      |> Enum.chunk_every(2)
+      |> Enum.map(fn
+        [ok: [votes_before], ok: [votes_after]]
+        when is_integer(votes_before) and
+               is_integer(votes_after) ->
+          votes_after - votes_before
+      end)
 
-             _, _ ->
-               {:error, :could_not_fetch_votes}
-           end) do
-      # WARN: we do not count Revoked/Activated votes for the last epoch, but
-      # should we?
-      #
-      # See https://github.com/fedor-ivn/celo-blockscout/tree/master/apps/indexer/lib/indexer/fetcher/celo_epoch_data.ex#L179-L187
-      # There is no case when those events occur in the epoch block.
-      rewards =
-        accounts_with_activated_votes
-        |> Enum.zip_with(
-          diffs,
-          fn %{
-               account_address: account_address,
-               group_address: group_address
-             },
-             diff ->
-            %{
-              block_hash: block_hash,
-              account_hash: account_address,
-              amount: diff,
-              associated_account_hash: group_address,
-              type: :voter
-            }
-          end
-        )
+    # WARN: we do not count Revoked/Activated votes for the last epoch, but
+    # should we?
+    #
+    # See https://github.com/fedor-ivn/celo-blockscout/tree/master/apps/indexer/lib/indexer/fetcher/celo_epoch_data.ex#L179-L187
+    # There is no case when those events occur in the epoch block.
+    rewards =
+      accounts_with_activated_votes
+      |> Enum.zip_with(
+        diffs,
+        fn {account_address_hash, group_address_hash}, diff ->
+          %{
+            block_hash: block_hash,
+            account_address_hash: account_address_hash,
+            amount: diff,
+            associated_account_address_hash: group_address_hash,
+            type: :voter
+          }
+        end
+      )
 
-      {:ok, rewards}
-    end
+    {:ok, rewards}
   end
 
   def payment_distributions_to_validator_and_group_rewards(
@@ -558,16 +516,16 @@ defmodule Indexer.Fetcher.Celo.EpochRewards do
       [
         %{
           block_hash: block_hash,
-          account_hash: validator_address,
+          account_address_hash: validator_address,
           amount: validator_payment,
-          associated_account_hash: group_address,
+          associated_account_address_hash: group_address,
           type: :validator
         },
         %{
           block_hash: block_hash,
-          account_hash: group_address,
+          account_address_hash: group_address,
           amount: group_payment,
-          associated_account_hash: validator_address,
+          associated_account_address_hash: validator_address,
           type: :group
         }
       ]
