@@ -177,7 +177,6 @@ defmodule Explorer.Chain.Token do
 
     from(
       token in __MODULE__,
-      select: token.contract_address_hash,
       where: token.cataloged == true and token.updated_at <= ^some_time_ago_date
     )
   end
@@ -237,6 +236,14 @@ defmodule Explorer.Chain.Token do
 
   def get_by_contract_address_hash(hash, options) do
     Chain.select_repo(options).get_by(__MODULE__, contract_address_hash: hash)
+  end
+
+  @doc """
+    Gets tokens with given contract address hashes.
+  """
+  @spec get_by_contract_address_hashes([Hash.Address.t()], [Chain.api?()]) :: [Token.t()]
+  def get_by_contract_address_hashes(hashes, options) do
+    Chain.select_repo(options).all(from(t in __MODULE__, where: t.contract_address_hash in ^hashes))
   end
 
   @doc """

@@ -2,13 +2,24 @@ defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
   alias BlockScoutWeb.Plug.{GraphQL, RateLimit}
-  alias BlockScoutWeb.{ApiRouter, WebRouter}
+  alias BlockScoutWeb.Routers.{AccountRouter, ApiRouter, WebRouter}
+
+  @max_query_string_length 5_000
 
   if Application.compile_env(:block_scout_web, :admin_panel_enabled) do
-    forward("/admin", BlockScoutWeb.AdminRouter)
+    forward("/admin", BlockScoutWeb.Routers.AdminRouter)
   end
 
   pipeline :browser do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 100_000,
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -18,15 +29,33 @@ defmodule BlockScoutWeb.Router do
   end
 
   pipeline :api do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 20_000_000,
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
   end
 
   pipeline :api_v1_graphql do
+    plug(
+      Plug.Parsers,
+      parsers: [:json, Absinthe.Plug.Parser],
+      json_decoder: Poison,
+      body_reader: {BlockScoutWeb.GraphQL.BodyReader, :read_body, []}
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
     plug(RateLimit, graphql?: true)
   end
+
+  match(:*, "/auth/*path", AccountRouter, [])
 
   forward("/api", ApiRouter)
 
@@ -66,12 +95,6 @@ defmodule BlockScoutWeb.Router do
   end
 
   if Application.compile_env(:block_scout_web, WebRouter)[:enabled] do
-    forward("/", BlockScoutWeb.WebRouter)
-  else
-    scope "/", BlockScoutWeb do
-      pipe_through(:browser)
-
-      forward("/", APIDocsController, :index)
-    end
+    forward("/", BlockScoutWeb.Routers.WebRouter)
   end
 end

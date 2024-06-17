@@ -12,21 +12,7 @@ defmodule Explorer.Repo do
   DATABASE_URL environment variable.
   """
   def init(_, opts) do
-    db_url = System.get_env("DATABASE_URL")
-    repo_conf = Application.get_env(:explorer, Explorer.Repo)
-
-    merged =
-      %{url: db_url}
-      |> ConfigHelper.get_db_config()
-      |> Keyword.merge(repo_conf, fn
-        _key, v1, nil -> v1
-        _key, nil, v2 -> v2
-        _, _, v2 -> v2
-      end)
-
-    Application.put_env(:explorer, Explorer.Repo, merged)
-
-    {:ok, Keyword.put(opts, :url, db_url)}
+    ConfigHelper.init_repo_module(__MODULE__, opts)
   end
 
   def logged_transaction(fun_or_multi, opts \\ []) do
@@ -187,21 +173,7 @@ defmodule Explorer.Repo do
       adapter: Ecto.Adapters.Postgres
 
     def init(_, opts) do
-      db_url = Application.get_env(:explorer, __MODULE__)[:url]
-      repo_conf = Application.get_env(:explorer, __MODULE__)
-
-      merged =
-        %{url: db_url}
-        |> ConfigHelper.get_db_config()
-        |> Keyword.merge(repo_conf, fn
-          _key, v1, nil -> v1
-          _key, nil, v2 -> v2
-          _, _, v2 -> v2
-        end)
-
-      Application.put_env(:explorer, __MODULE__, merged)
-
-      {:ok, Keyword.put(opts, :url, db_url)}
+      ConfigHelper.init_repo_module(__MODULE__, opts)
     end
   end
 
@@ -245,6 +217,16 @@ defmodule Explorer.Repo do
     end
   end
 
+  defmodule Arbitrum do
+    use Ecto.Repo,
+      otp_app: :explorer,
+      adapter: Ecto.Adapters.Postgres
+
+    def init(_, opts) do
+      ConfigHelper.init_repo_module(__MODULE__, opts)
+    end
+  end
+
   defmodule BridgedTokens do
     use Ecto.Repo,
       otp_app: :explorer,
@@ -266,6 +248,16 @@ defmodule Explorer.Repo do
   end
 
   defmodule Stability do
+    use Ecto.Repo,
+      otp_app: :explorer,
+      adapter: Ecto.Adapters.Postgres
+
+    def init(_, opts) do
+      ConfigHelper.init_repo_module(__MODULE__, opts)
+    end
+  end
+
+  defmodule Mud do
     use Ecto.Repo,
       otp_app: :explorer,
       adapter: Ecto.Adapters.Postgres

@@ -1,7 +1,7 @@
 defmodule EthereumJSONRPC.Logs do
   @moduledoc """
   Collection of logs included in return from
-  [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionreceipt).
+  [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionreceipt).
   """
 
   alias EthereumJSONRPC.Log

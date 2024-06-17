@@ -85,7 +85,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   def token_holders_ordered_by_value(token_contract_address_hash, options \\ []) do
     token_contract_address_hash
     |> token_holders_ordered_by_value_query_without_address_preload(options)
-    |> preload(:address)
+    |> preload(address: [:names, :smart_contract, :proxy_implementations])
   end
 
   @doc """
@@ -131,7 +131,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       _ ->
         token_contract_address_hash
         |> token_holders_by_token_id_query(token_id)
-        |> preload(:address)
+        |> preload(address: [:names, :smart_contract, :proxy_implementations])
         |> order_by([tb], desc: :value, desc: :address_hash)
         |> Chain.page_token_balances(paging_options)
         |> limit(^paging_options.page_size)

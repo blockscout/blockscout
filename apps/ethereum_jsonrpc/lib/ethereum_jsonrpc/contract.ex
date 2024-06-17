@@ -18,7 +18,7 @@ defmodule EthereumJSONRPC.Contract do
           required(:contract_address) => String.t(),
           required(:method_id) => String.t(),
           required(:args) => [term()],
-          optional(:block_number) => EthereumJSONRPC.block_number()
+          optional(:block_number) => EthereumJSONRPC.block_number() | nil
         }
 
   @typedoc """

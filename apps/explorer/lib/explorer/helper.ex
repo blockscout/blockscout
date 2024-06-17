@@ -166,4 +166,19 @@ defmodule Explorer.Helper do
   end
 
   def valid_url?(_), do: false
+
+  @doc """
+  Compare two values and returns either :lt, :eq or :gt.
+
+  Please be careful: this function compares arguments using `<` and `>`,
+  hence it should not be used to compare structures (for instance %DateTime{} or %Decimal{}).
+  """
+  @spec compare(term(), term()) :: :lt | :eq | :gt
+  def compare(a, b) do
+    cond do
+      a < b -> :lt
+      a > b -> :gt
+      true -> :eq
+    end
+  end
 end

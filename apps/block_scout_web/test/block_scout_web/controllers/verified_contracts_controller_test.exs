@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.VerifiedContractsControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [verified_contracts_path: 2, verified_contracts_path: 3]
+  import BlockScoutWeb.Routers.WebRouter.Helpers, only: [verified_contracts_path: 2, verified_contracts_path: 3]
 
   alias Explorer.Chain.SmartContract
 

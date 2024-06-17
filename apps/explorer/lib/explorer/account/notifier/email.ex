@@ -5,7 +5,7 @@ defmodule Explorer.Account.Notifier.Email do
 
   require Logger
 
-  alias BlockScoutWeb.WebRouter.Helpers
+  alias BlockScoutWeb.Routers.WebRouter.Helpers
   alias Explorer.Account.{Identity, Watchlist, WatchlistAddress, WatchlistNotification}
   alias Explorer.Repo
 

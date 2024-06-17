@@ -1,7 +1,7 @@
 defmodule EthereumJSONRPC.Receipts do
   @moduledoc """
   Receipts format as returned by
-  [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionreceipt) from batch
+  [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionreceipt) from batch
   requests.
   """
 
@@ -110,6 +110,9 @@ defmodule EthereumJSONRPC.Receipts do
         l1_fee_scalar: 0,\
         l1_gas_price: 0,\
         l1_gas_used: 0\
+      """
+    :arbitrum -> """
+        gas_used_for_l1: nil\
       """
     _ -> ""
   end}

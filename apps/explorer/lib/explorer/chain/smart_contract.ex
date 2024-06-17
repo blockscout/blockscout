@@ -270,6 +270,7 @@ defmodule Explorer.Chain.SmartContract do
   * `autodetect_constructor_args` - field was added for storing user's choice
   * `is_yul` - field was added for storing user's choice
   * `certified` - boolean flag, which can be set for set of smart-contracts via runtime env variable to prioritize those smart-contracts in the search.
+  * `is_blueprint` - boolean flag, determines if contract is ERC-5202 compatible blueprint contract or not.
   """
   typed_schema "smart_contracts" do
     field(:name, :string, null: false)
@@ -296,6 +297,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:metadata_from_verified_bytecode_twin, :boolean, virtual: true)
     field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
     field(:certified, :boolean)
+    field(:is_blueprint, :boolean)
 
     has_many(
       :decompiled_smart_contracts,
@@ -347,7 +349,8 @@ defmodule Explorer.Chain.SmartContract do
       :contract_code_md5,
       :compiler_settings,
       :license_type,
-      :certified
+      :certified,
+      :is_blueprint
     ])
     |> validate_required([
       :name,
@@ -390,7 +393,8 @@ defmodule Explorer.Chain.SmartContract do
         :contract_code_md5,
         :autodetect_constructor_args,
         :license_type,
-        :certified
+        :certified,
+        :is_blueprint
       ])
       |> (&if(verification_with_files?,
             do: &1,
@@ -584,7 +588,7 @@ defmodule Explorer.Chain.SmartContract do
     {implementation_address_hash, _} =
       Implementation.get_implementation(
         smart_contract,
-        Keyword.put(options, :unverified_proxy_only?, true)
+        Keyword.put(options, :proxy_without_abi?, true)
       )
 
     implementation_smart_contract =
@@ -603,6 +607,18 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   def compose_address_for_unverified_smart_contract(address_result, _hash, _options), do: address_result
+
+  def single_implementation_smart_contract_from_proxy(proxy_hash, options) do
+    {implementation_address_hashes, _} = Implementation.get_implementation(proxy_hash, options)
+
+    if implementation_address_hashes && Enum.count(implementation_address_hashes) == 1 do
+      implementation_address_hashes
+      |> Enum.at(0)
+      |> Proxy.implementation_to_smart_contract(options)
+    else
+      nil
+    end
+  end
 
   @doc """
   Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
@@ -934,28 +950,29 @@ defmodule Explorer.Chain.SmartContract do
     with true <- is_nil(current_smart_contract),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          true <- Chain.contract?(address) do
-      {implementation_address, implementation_address_fetched?} =
+      {implementation_smart_contract, implementation_address_fetched?} =
         if fetch_implementation? do
-          {implementation_address_hash, _} =
-            Implementation.get_implementation(
+          implementation_smart_contract =
+            SmartContract.single_implementation_smart_contract_from_proxy(
               %{
-                updated: %__MODULE__{
-                  address_hash: address_hash
+                updated: %SmartContract{
+                  address_hash: address_hash,
+                  abi: nil
                 },
                 implementation_updated_at: nil,
                 implementation_address_fetched?: false,
                 refetch_necessity_checked?: false
               },
-              Keyword.put(options, :unverified_proxy_only?, true)
+              Keyword.put(options, :proxy_without_abi?, true)
             )
 
-          {implementation_address_hash |> Proxy.implementation_to_smart_contract(options), true}
+          {implementation_smart_contract, true}
         else
           {nil, false}
         end
 
       address_verified_bytecode_twin_contract =
-        implementation_address ||
+        implementation_smart_contract ||
           get_address_verified_bytecode_twin_contract(address_hash, options).verified_contract
 
       smart_contract =
@@ -987,8 +1004,8 @@ defmodule Explorer.Chain.SmartContract do
   @spec verified_with_full_match?(Hash.Address.t() | String.t()) :: boolean()
   def verified_with_full_match?(address_hash, options \\ [])
 
-  def verified_with_full_match?(address_hash_str, options) when is_binary(address_hash_str) do
-    case Chain.string_to_address_hash(address_hash_str) do
+  def verified_with_full_match?(address_hash_string, options) when is_binary(address_hash_string) do
+    case Chain.string_to_address_hash(address_hash_string) do
       {:ok, address_hash} ->
         check_verified_with_full_match(address_hash, options)
 
@@ -1005,15 +1022,15 @@ defmodule Explorer.Chain.SmartContract do
     Checks if a `Explorer.Chain.SmartContract` exists for the provided address hash.
 
     ## Parameters
-    - `address_hash_str` or `address_hash`: The hash of the address in binary string
+    - `address_hash_string` or `address_hash`: The hash of the address in binary string
                                             form or directly as an address hash.
 
     ## Returns
     - `boolean()`: `true` if a smart contract exists, `false` otherwise.
   """
   @spec verified?(Hash.Address.t() | String.t()) :: boolean()
-  def verified?(address_hash_str) when is_binary(address_hash_str) do
-    case Chain.string_to_address_hash(address_hash_str) do
+  def verified?(address_hash_string) when is_binary(address_hash_string) do
+    case Chain.string_to_address_hash(address_hash_string) do
       {:ok, address_hash} ->
         verified_smart_contract_exists?(address_hash)
 

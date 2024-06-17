@@ -71,6 +71,8 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
                          [[], output],
                          _,
                          [[], error],
+                         _,
+                         [[], fee],
                          _
                        ] ->
           %{
@@ -91,7 +93,8 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
             value: value,
             input: input,
             output: output,
-            error: error
+            error: error,
+            fee: fee
           }
         end)
 
@@ -113,6 +116,13 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
       assert result.input == to_string(internal_transaction.input)
       assert result.output == to_string(internal_transaction.output)
       assert result.error == to_string(internal_transaction.error)
+
+      assert result.fee ==
+               to_string(
+                 internal_transaction.transaction.gas_price
+                 |> Wei.mult(internal_transaction.gas_used)
+                 |> Wei.to(:wei)
+               )
     end
 
     test "fetches all internal transactions" do

@@ -120,6 +120,16 @@ defmodule BlockScoutWeb.API.V2.BlockView do
         end
       end
 
+    :arbitrum ->
+      defp chain_type_fields(result, block, single_block?) do
+        if single_block? do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+          BlockScoutWeb.API.V2.ArbitrumView.extend_block_json_response(result, block)
+        else
+          result
+        end
+      end
+
     :ethereum ->
       defp chain_type_fields(result, block, single_block?) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage

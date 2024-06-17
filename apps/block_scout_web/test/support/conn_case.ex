@@ -21,7 +21,8 @@ defmodule BlockScoutWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import BlockScoutWeb.Router.Helpers
-      import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
+      import BlockScoutWeb.Routers.WebRouter.Helpers, except: [static_path: 2]
+      import BlockScoutWeb.Routers.AccountRouter.Helpers, except: [static_path: 2]
       import Bureaucrat.Helpers
 
       # The default endpoint for testing
@@ -29,8 +30,8 @@ defmodule BlockScoutWeb.ConnCase do
 
       import Explorer.Factory
 
-      alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
-      alias BlockScoutWeb.ApiRouter.Helpers, as: ApiRoutes
+      alias BlockScoutWeb.Routers.AdminRouter.Helpers, as: AdminRoutes
+      alias BlockScoutWeb.Routers.ApiRouter.Helpers, as: ApiRoutes
     end
   end
 
