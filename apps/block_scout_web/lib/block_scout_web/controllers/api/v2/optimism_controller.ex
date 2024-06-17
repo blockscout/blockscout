@@ -220,7 +220,11 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec games_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def games_count(conn, _params) do
-    items_count(conn, DisputeGame)
+    count = DisputeGame.get_last_known_index() + 1
+
+    conn
+    |> put_status(200)
+    |> render(:optimism_items_count, %{count: count})
   end
 
   @doc """
