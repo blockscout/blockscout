@@ -60,9 +60,10 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
     - `options`: A keyword list of options that may include whether to use a replica database.
 
     ## Returns
-    - Blobs related to the specified frame sequence id sorted by an entity id.
+    - A tuple {type, blobs} where `type` can be one of: `in_blob4844`, `in_celestia`, `in_calldata`.
+      The `blobs` in the list of blobs related to the specified frame sequence id sorted by an entity id.
   """
-  @spec list(non_neg_integer(), list()) :: [__MODULE__.t()]
+  @spec list(non_neg_integer(), list()) :: {:in_blob4844 | :in_celestia | :in_calldata, [map()]}
   def list(frame_sequence_id, options \\ []) do
     repo = select_repo(options)
 
@@ -72,6 +73,45 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
         order_by: [asc: fsb.id]
       )
 
-    repo.all(query)
+    query
+    |> repo.all()
+    |> filter_blobs_by_type()
+  end
+
+  defp filter_blobs_by_type(blobs) do
+    eip4844_blobs =
+      blobs
+      |> Enum.filter(fn b -> b.type == :eip4844 end)
+      |> Enum.map(fn b ->
+        %{
+          "hash" => b.metadata["hash"],
+          "l1_transaction_hash" => b.l1_transaction_hash,
+          "l1_timestamp" => b.l1_timestamp
+        }
+      end)
+
+    celestia_blobs =
+      blobs
+      |> Enum.filter(fn b -> b.type == :celestia end)
+      |> Enum.map(fn b ->
+        %{
+          "height" => b.metadata["height"],
+          "namespace" => b.metadata["namespace"],
+          "commitment" => b.metadata["commitment"],
+          "l1_transaction_hash" => b.l1_transaction_hash,
+          "l1_timestamp" => b.l1_timestamp
+        }
+      end)
+
+    cond do
+      not Enum.empty?(eip4844_blobs) ->
+        {:in_blob4844, eip4844_blobs}
+
+      not Enum.empty?(celestia_blobs) ->
+        {:in_celestia, celestia_blobs}
+
+      true ->
+        {:in_calldata, []}
+    end
   end
 end

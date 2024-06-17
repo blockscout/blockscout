@@ -13,10 +13,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       delete_parameters_from_next_page_params: 1
     ]
 
-  import Ecto.Query, only: [from: 2]
-
-  alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain
+  alias Explorer.Chain.Transaction
   alias Explorer.Chain.Optimism.{Deposit, DisputeGame, FrameSequence, OutputRoot, TxnBatch, Withdrawal}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -73,12 +71,12 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       batches
       |> Enum.map(fn fs ->
         Task.async(fn ->
-          l2_block_number_from = batches_edge_l2_block_number(fs.id, :min)
-          l2_block_number_to = batches_edge_l2_block_number(fs.id, :max)
-          tx_count = batches_tx_count_for_block_range({l2_block_number_from, l2_block_number_to})
+          l2_block_number_from = TxnBatch.edge_l2_block_number(fs.id, :min)
+          l2_block_number_to = TxnBatch.edge_l2_block_number(fs.id, :max)
+          tx_count = Transaction.tx_count_for_block_range(l2_block_number_from..l2_block_number_to)
 
           fs
-          |> Map.put(:l2_block_range, {l2_block_number_from, l2_block_number_to})
+          |> Map.put(:l2_block_range, l2_block_number_from..l2_block_number_to)
           |> Map.put(:tx_count, tx_count)
         end)
       end)
@@ -91,43 +89,6 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       batches: items,
       next_page_params: next_page_params
     })
-  end
-
-  defp batches_edge_l2_block_number(id, type) when type == :min do
-    Repo.replica().one(
-      from(
-        tb in TxnBatch,
-        select: tb.l2_block_number,
-        where: tb.frame_sequence_id == ^id,
-        order_by: [asc: tb.l2_block_number],
-        limit: 1
-      )
-    )
-  end
-
-  defp batches_edge_l2_block_number(id, type) when type == :max do
-    Repo.replica().one(
-      from(
-        tb in TxnBatch,
-        select: tb.l2_block_number,
-        where: tb.frame_sequence_id == ^id,
-        order_by: [desc: tb.l2_block_number],
-        limit: 1
-      )
-    )
-  end
-
-  defp batches_tx_count_for_block_range({l2_block_number_from, l2_block_number_to}) do
-    Repo.replica().aggregate(
-      from(
-        t in Transaction,
-        inner_join: b in Block,
-        on: b.hash == t.block_hash and b.consensus == true,
-        where: t.block_number >= ^l2_block_number_from and t.block_number <= ^l2_block_number_to
-      ),
-      :count,
-      timeout: :infinity
-    )
   end
 
   @doc """
@@ -152,14 +113,32 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
         "0x" <> commitment
       end
 
-    batch = TxnBatch.batch_by_celestia_blob(commitment, height, api?: true)
+    batch = FrameSequence.batch_by_celestia_blob(commitment, height, api?: true)
 
     if is_nil(batch) do
       {:error, :not_found}
     else
       conn
       |> put_status(200)
-      |> render(:optimism_batch_by_celestia_blob, %{batch: batch})
+      |> render(:optimism_batch, %{batch: batch})
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/optimism/batches/:internal_id` endpoint.
+  """
+  @spec batch_by_internal_id(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def batch_by_internal_id(conn, %{"internal_id" => internal_id}) do
+    {internal_id, ""} = Integer.parse(internal_id)
+
+    batch = FrameSequence.batch_by_internal_id(internal_id, api?: true)
+
+    if is_nil(batch) do
+      {:error, :not_found}
+    else
+      conn
+      |> put_status(200)
+      |> render(:optimism_batch, %{batch: batch})
     end
   end
 

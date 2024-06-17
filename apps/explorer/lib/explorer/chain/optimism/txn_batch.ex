@@ -11,14 +11,15 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
     - Explorer.Repo.Migrations.AddOpFrameSequencesTable
     - Explorer.Repo.Migrations.RemoveOpEpochNumberField
     - Explorer.Repo.Optimism.Migrations.AddCelestiaBlobMetadata
+    - Explorer.Repo.Optimism.Migrations.AddFrameSequenceIdPrevField
   """
 
   use Explorer.Schema
 
   import Explorer.Chain, only: [join_association: 3, select_repo: 1]
 
-  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
-  alias Explorer.PagingOptions
+  alias Explorer.Chain.Optimism.FrameSequence
+  alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -56,52 +57,39 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   end
 
   @doc """
-    Finds and returns L1 batch data from the op_frame_sequences and
-    op_frame_sequence_blobs DB tables by Celestia blob's commitment and height.
+    Returns an edge L2 block number (min or max) of an L2 block range
+    for the specified frame sequence.
 
     ## Parameters
-    - `commitment`: Blob's commitment in the form of hex string beginning with 0x prefix.
-    - `height`: Blob's height.
-    - `options`: A keyword list of options that may include whether to use a replica database.
+    - `id`: The ID of the frame sequence for which the edge block number must be returned.
+    - `type`: Can be :min or :max depending on which block number needs to be returned.
 
     ## Returns
-    - A map with info about L1 batch bound to the specified Celestia blob.
-    - nil if the blob is not found.
+    - The min/max block number or `nil` if the block range is not found.
   """
-  @spec batch_by_celestia_blob(binary(), non_neg_integer(), list()) :: map() | nil
-  def batch_by_celestia_blob(commitment, height, options \\ []) do
-    commitment = Base.decode16!(String.trim_leading(commitment, "0x"), case: :mixed)
-    height = :binary.encode_unsigned(height)
-    key = :crypto.hash(:sha256, height <> commitment)
-
-    query =
-      from(fsb in FrameSequenceBlob,
-        select: fsb.frame_sequence_id,
-        where: fsb.key == ^key and fsb.type == :celestia
+  @spec edge_l2_block_number(non_neg_integer(), :min | :max) :: non_neg_integer() | nil
+  def edge_l2_block_number(id, type) when type == :min do
+    Repo.replica().one(
+      from(
+        tb in __MODULE__,
+        select: tb.l2_block_number,
+        where: tb.frame_sequence_id == ^id,
+        order_by: [asc: tb.l2_block_number],
+        limit: 1
       )
+    )
+  end
 
-    frame_sequence_id = select_repo(options).one(query)
-
-    if not is_nil(frame_sequence_id) do
-      blobs =
-        frame_sequence_id
-        |> FrameSequenceBlob.list(options)
-        |> Enum.map(fn b ->
-          %{
-            "height" => b.metadata["height"],
-            "namespace" => b.metadata["namespace"],
-            "commitment" => b.metadata["commitment"],
-            "l1_transaction_hash" => b.l1_transaction_hash,
-            "l1_timestamp" => b.l1_timestamp
-          }
-        end)
-
-      %{
-        "batch_data_container" => "in_celestia",
-        "blobs" => blobs,
-        "internal_id" => frame_sequence_id
-      }
-    end
+  def edge_l2_block_number(id, type) when type == :max do
+    Repo.replica().one(
+      from(
+        tb in __MODULE__,
+        select: tb.l2_block_number,
+        where: tb.frame_sequence_id == ^id,
+        order_by: [desc: tb.l2_block_number],
+        limit: 1
+      )
+    )
   end
 
   @doc """
@@ -114,7 +102,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
     ## Returns
     - A list of found entities sorted by `l2_block_number` in descending order.
   """
-  @spec list :: [__MODULE__.t()]
+  @spec list(list()) :: [__MODULE__.t()]
   def list(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 

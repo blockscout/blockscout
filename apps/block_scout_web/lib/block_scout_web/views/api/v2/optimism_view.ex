@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     items =
       batches
       |> Enum.map(fn batch ->
-        {from, to} = batch.l2_block_range
+        from..to = batch.l2_block_range
 
         %{
           "internal_id" => batch.id,
@@ -78,9 +78,10 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   @doc """
-    Function to render GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment` endpoint.
+    Function to render GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment`
+    and `/api/v2/optimism/batches/:internal_id` endpoints.
   """
-  def render("optimism_batch_by_celestia_blob.json", %{batch: batch}) do
+  def render("optimism_batch.json", %{batch: batch}) do
     batch
   end
 
@@ -266,52 +267,16 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     if is_nil(frame_sequence) do
       out_json
     else
-      blobs = FrameSequenceBlob.list(frame_sequence.id, api?: true)
-
-      eip4844_blobs =
-        blobs
-        |> Enum.filter(fn b -> b.type == :eip4844 end)
-        |> Enum.map(fn b ->
-          %{
-            "hash" => b.metadata["hash"],
-            "l1_transaction_hash" => b.l1_transaction_hash,
-            "l1_timestamp" => b.l1_timestamp
-          }
-        end)
-
-      celestia_blobs =
-        blobs
-        |> Enum.filter(fn b -> b.type == :celestia end)
-        |> Enum.map(fn b ->
-          %{
-            "height" => b.metadata["height"],
-            "namespace" => b.metadata["namespace"],
-            "commitment" => b.metadata["commitment"],
-            "l1_transaction_hash" => b.l1_transaction_hash,
-            "l1_timestamp" => b.l1_timestamp
-          }
-        end)
-
-      {batch_data_container, blob_items} =
-        cond do
-          not Enum.empty?(eip4844_blobs) ->
-            {"in_blob4844", eip4844_blobs}
-
-          not Enum.empty?(celestia_blobs) ->
-            {"in_celestia", celestia_blobs}
-
-          true ->
-            {"in_calldata", []}
-        end
+      {batch_data_container, blobs} = FrameSequenceBlob.list(frame_sequence.id, api?: true)
 
       batch_info =
         %{
-          "l1_tx_hashes" => frame_sequence.l1_transaction_hashes,
+          "internal_id" => frame_sequence.id,
           "l1_timestamp" => frame_sequence.l1_timestamp,
-          "batch_data_container" => batch_data_container,
-          "internal_id" => frame_sequence.id
+          "l1_tx_hashes" => frame_sequence.l1_transaction_hashes,
+          "batch_data_container" => batch_data_container
         }
-        |> extend_batch_info_by_blobs(blob_items, "blobs")
+        |> extend_batch_info_by_blobs(blobs, "blobs")
 
       Map.put(out_json, "optimism", batch_info)
     end
