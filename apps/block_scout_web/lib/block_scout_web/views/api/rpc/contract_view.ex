@@ -78,8 +78,13 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   defp set_proxy_info(contract_output, contract) do
     result =
       if contract.is_proxy do
+        implementation_address_hash_string = List.first(contract.implementation_address_hash_strings)
+
+        # todo: `ImplementationAddress` is kept for backward compatibility,
+        # remove when clients unbound from these props
         contract_output
-        |> Map.put_new(:ImplementationAddress, contract.implementation_address_hash_string)
+        |> Map.put_new(:ImplementationAddress, implementation_address_hash_string)
+        |> Map.put_new(:ImplementationAddresses, contract.implementation_address_hash_strings)
       else
         contract_output
       end
