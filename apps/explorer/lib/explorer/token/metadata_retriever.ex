@@ -209,20 +209,19 @@ defmodule Explorer.Token.MetadataRetriever do
       if Enum.empty?(erc_1155_tokens) do
         fetched_result
       else
-        result =
-          fetched_result
-          |> Enum.filter(fn token ->
-            !Map.has_key?(token, :name) &&
-              Enum.any?(erc_1155_tokens, fn erc_1155_token ->
-                erc_1155_token.contract_address_hash == token.contract_address_hash
-              end)
-          end)
+        fetched_result
+        |> Enum.reduce([], fn token, acc ->
+          # # credo:disable-for-lines:2
+          updated_token =
+            if Enum.any?(erc_1155_tokens, &(&1.contract_address_hash == token.contract_address_hash)) do
+              try_to_fetch_erc_1155_name(token, token.contract_address_hash, "ERC-1155")
+            else
+              token
+            end
 
-        result
-        |> Enum.map(fn token ->
-          try_to_fetch_erc_1155_name(%{}, token.contract_address_hash, "ERC-1155")
+          [updated_token | acc]
         end)
-        |> Enum.filter(fn result -> result != %{} end)
+        |> Enum.reverse()
       end
 
     {:ok, processed_result}

@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     options =
       [
         necessity_by_association: %{
-          :address => :optional
+          [address: [:names, :smart_contract, :proxy_implementations]] => :optional
         }
       ]
       |> Keyword.merge(@api_true)

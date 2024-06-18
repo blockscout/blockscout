@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.BlockWithdrawalControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [block_withdrawal_path: 3]
+  import BlockScoutWeb.Routers.WebRouter.Helpers, only: [block_withdrawal_path: 3]
 
   describe "GET index/2" do
     test "with invalid block number", %{conn: conn} do

@@ -6,12 +6,16 @@ defmodule BlockScoutWeb.Application do
   use Application
 
   alias BlockScoutWeb.Endpoint
+  alias BlockScoutWeb.Prometheus.Exporter, as: PrometheusExporter
+  alias BlockScoutWeb.Prometheus.PublicExporter, as: PrometheusPublicExporter
 
   def start(_type, _args) do
     base_children = [Supervisor.child_spec(Endpoint, [])]
     api_children = setup_and_define_children()
     all_children = base_children ++ api_children
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
+    PrometheusExporter.setup()
+    PrometheusPublicExporter.setup()
     Supervisor.start_link(all_children, opts)
   end
 
@@ -31,6 +35,7 @@ defmodule BlockScoutWeb.Application do
       alias BlockScoutWeb.Prometheus.{Exporter, PhoenixInstrumenter}
       alias BlockScoutWeb.{MainPageRealtimeEventHandler, RealtimeEventHandler, SmartContractRealtimeEventHandler}
       alias BlockScoutWeb.Utility.EventHandlersMetrics
+      alias Explorer.Chain.Metrics, as: ChainMetrics
 
       PhoenixInstrumenter.setup()
       Exporter.setup()
@@ -57,7 +62,8 @@ defmodule BlockScoutWeb.Application do
         {SmartContractRealtimeEventHandler, name: SmartContractRealtimeEventHandler},
         {BlocksIndexedCounter, name: BlocksIndexedCounter},
         {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
-        {EventHandlersMetrics, []}
+        {EventHandlersMetrics, []},
+        {ChainMetrics, []}
       ]
     end
   end

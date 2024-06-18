@@ -81,6 +81,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
              | :event_name_not_found
              | :contract_address_not_found}
   def get_event(contract_atom, event_atom, block_number) do
+    core_contracts = Application.get_env(:explorer, __MODULE__)[:contracts]
+
     with {:ok, address} when not is_nil(address) <- get_address(contract_atom, block_number),
          {:contract_atom, {:ok, contract_name}} <-
            {:contract_atom, Map.fetch(@atom_to_contract_name, contract_atom)},

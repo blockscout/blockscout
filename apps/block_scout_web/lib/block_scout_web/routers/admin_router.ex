@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.AdminRouter do
+defmodule BlockScoutWeb.Routers.AdminRouter do
   @moduledoc """
   Router for admin pages.
   """

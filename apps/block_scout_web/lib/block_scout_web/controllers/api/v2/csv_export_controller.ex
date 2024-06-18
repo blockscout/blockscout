@@ -20,11 +20,11 @@ defmodule BlockScoutWeb.API.V2.CSVExportController do
   def export_token_holders(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:recaptcha, true} <-
            {:recaptcha,
             Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] ||
-              CSVHelper.captcha_helper().recaptcha_passed?(params["recaptcha_response"])} do
+              CSVHelper.captcha_helper().recaptcha_passed?(params["recaptcha_response"])},
+         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
       token_holders = Chain.fetch_token_holders_from_token_hash_for_csv(address_hash, @options)
 
       token_holders

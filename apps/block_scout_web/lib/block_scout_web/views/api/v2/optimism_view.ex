@@ -169,7 +169,14 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
                  {:ok, address} <-
                    Chain.hash_to_address(
                      w.from,
-                     [necessity_by_association: %{:names => :optional, :smart_contract => :optional}, api?: true],
+                     [
+                       necessity_by_association: %{
+                         :names => :optional,
+                         :smart_contract => :optional,
+                         :proxy_implementations => :optional
+                       },
+                       api?: true
+                     ],
                      false
                    ) do
               {address, address.hash}

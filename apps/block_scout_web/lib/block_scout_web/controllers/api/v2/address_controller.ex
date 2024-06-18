@@ -47,13 +47,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @transaction_necessity_by_association [
     necessity_by_association:
       %{
-        [created_contract_address: :names] => :optional,
-        [from_address: :names] => :optional,
-        [to_address: [:names, :proxy_implementations]] => :optional,
-        :block => :optional,
-        [created_contract_address: :smart_contract] => :optional,
-        [from_address: :smart_contract] => :optional,
-        [to_address: :smart_contract] => :optional
+        [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        :block => :optional
       }
       |> Map.merge(@chain_type_transaction_necessity_by_association),
     api?: true
@@ -61,10 +58,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @token_transfer_necessity_by_association [
     necessity_by_association: %{
-      [to_address: :smart_contract] => :optional,
-      [from_address: :smart_contract] => :optional,
-      [to_address: :names] => :optional,
-      [from_address: :names] => :optional,
+      [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
       :block => :optional,
       :transaction => :optional,
       :token => :optional
@@ -75,7 +70,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @address_options [
     necessity_by_association: %{
       :names => :optional,
-      :token => :optional
+      :token => :optional,
+      :proxy_implementations => :optional
     },
     api?: true
   ]
@@ -184,10 +180,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       options =
         [
           necessity_by_association: %{
-            [to_address: :smart_contract] => :optional,
-            [from_address: :smart_contract] => :optional,
-            [to_address: :names] => :optional,
-            [from_address: :names] => :optional,
+            [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+            [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
             :block => :optional,
             :token => :optional,
             :transaction => :optional
@@ -258,12 +252,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       full_options =
         [
           necessity_by_association: %{
-            [created_contract_address: :names] => :optional,
-            [from_address: :names] => :optional,
-            [to_address: :names] => :optional,
-            [created_contract_address: :smart_contract] => :optional,
-            [from_address: :smart_contract] => :optional,
-            [to_address: :smart_contract] => :optional
+            [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+            [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+            [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
           }
         ]
         |> Keyword.merge(paging_options(params))
@@ -292,7 +283,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       formatted_topic = if String.starts_with?(prepared_topic, "0x"), do: prepared_topic, else: "0x" <> prepared_topic
 
-      options = params |> paging_options() |> Keyword.merge(topic: formatted_topic) |> Keyword.merge(@api_true)
+      options =
+        params
+        |> paging_options()
+        |> Keyword.merge(topic: formatted_topic)
+        |> Keyword.merge(
+          necessity_by_association: %{[address: [:names, :smart_contract, :proxy_implementations]] => :optional}
+        )
+        |> Keyword.merge(@api_true)
 
       results_plus_one = Chain.address_to_logs(address_hash, false, options)
 
@@ -335,6 +333,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       full_options =
         [
           necessity_by_association: %{
+            [miner: :proxy_implementations] => :optional,
             miner: :required,
             nephews: :optional,
             transactions: :optional,

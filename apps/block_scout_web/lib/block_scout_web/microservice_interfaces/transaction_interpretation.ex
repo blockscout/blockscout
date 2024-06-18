@@ -139,10 +139,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     full_options =
       [
         necessity_by_association: %{
-          [from_address: :smart_contract] => :optional,
-          [to_address: :smart_contract] => :optional,
-          [from_address: :names] => :optional,
-          [to_address: :names] => :optional
+          [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+          [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
         }
       ]
       |> Keyword.merge(@api_true)
@@ -158,9 +156,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     log_options =
       [
         necessity_by_association: %{
-          [address: :names] => :optional,
-          [address: :smart_contract] => :optional,
-          address: :optional
+          [address: [:names, :smart_contract, :proxy_implementations]] => :optional
         },
         limit: @items_limit
       ]
@@ -180,10 +176,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     token_transfer_options =
       [
         necessity_by_association: %{
-          [from_address: :smart_contract] => :optional,
-          [to_address: :smart_contract] => :optional,
-          [from_address: :names] => :optional,
-          [to_address: :names] => :optional,
+          [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+          [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
           :token => :optional
         }
       ]
@@ -203,9 +197,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     full_options =
       [
         necessity_by_association: %{
-          [address: :names] => :optional,
-          [address: :smart_contract] => :optional,
-          address: :optional
+          [address: [:names, :smart_contract, :proxy_implementations]] => :optional
         }
       ]
       |> Keyword.merge(@api_true)
@@ -253,7 +245,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
           [
             necessity_by_association: %{
               :names => :optional,
-              :smart_contract => :optional
+              :smart_contract => :optional,
+              :proxy_implementations => :optional
             },
             api?: true
           ],
