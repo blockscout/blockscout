@@ -385,12 +385,16 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end
   end
 
+  defp get_naive_implementation_abi(nil, _getter_name), do: nil
+
   defp get_naive_implementation_abi(abi, getter_name) do
     abi
     |> Enum.find(fn method ->
       Map.get(method, "name") == getter_name && Map.get(method, "stateMutability") == "view"
     end)
   end
+
+  defp get_master_copy_pattern(nil), do: nil
 
   defp get_master_copy_pattern(abi) do
     abi

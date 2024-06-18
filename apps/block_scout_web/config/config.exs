@@ -75,6 +75,12 @@ config :logger, :api_v2,
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :api_v2]
 
+config :prometheus, BlockScoutWeb.Prometheus.PublicExporter,
+  path: "/public-metrics",
+  format: :auto,
+  registry: :public,
+  auth: false
+
 config :prometheus, BlockScoutWeb.Prometheus.PhoenixInstrumenter,
   # override default for Phoenix 1.4 compatibility
   # * `:transport_name` to `:transport`
@@ -87,11 +93,11 @@ config :prometheus, BlockScoutWeb.Prometheus.PhoenixInstrumenter,
 
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 
-config :block_scout_web, BlockScoutWeb.ApiRouter,
+config :block_scout_web, BlockScoutWeb.Routers.ApiRouter,
   writing_enabled: !ConfigHelper.parse_bool_env_var("API_V1_WRITE_METHODS_DISABLED"),
   reading_enabled: !ConfigHelper.parse_bool_env_var("API_V1_READ_METHODS_DISABLED")
 
-config :block_scout_web, BlockScoutWeb.WebRouter, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP")
+config :block_scout_web, BlockScoutWeb.Routers.WebRouter, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP")
 
 config :block_scout_web, BlockScoutWeb.CSPHeader,
   mixpanel_url: System.get_env("MIXPANEL_URL", "https://api-js.mixpanel.com"),

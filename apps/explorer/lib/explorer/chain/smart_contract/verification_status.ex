@@ -114,7 +114,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   def validate_uid(<<_address::binary-size(40), timestamp_hex::binary>> = uid) do
     case Integer.parse(timestamp_hex, 16) do
       {timestamp, ""} ->
-        if DateTime.utc_now() |> DateTime.to_unix() > timestamp do
+        if DateTime.utc_now() |> DateTime.to_unix() >= timestamp do
           {:ok, uid}
         else
           :error
@@ -130,7 +130,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   defp mb_find_uid_in_queue(:unknown_uid, uid) do
     SolidityPublisherWorker
     |> QuePersistence.all()
-    |> Enum.any?(fn
+    |> Enum.find_value(fn
       %Que.Job{arguments: {"flattened_api", _, _, ^uid}} ->
         :pending
 
@@ -138,8 +138,8 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
         :pending
 
       _ ->
-        :unknown_uid
-    end)
+        nil
+    end) || :unknown_uid
   end
 
   defp mb_find_uid_in_queue(other_status, _), do: other_status
