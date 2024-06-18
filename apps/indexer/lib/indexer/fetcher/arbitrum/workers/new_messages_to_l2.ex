@@ -24,6 +24,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
+  alias Explorer.Chain.Events.Publisher
 
   require Logger
 
@@ -46,7 +47,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   This function calculates the block range for discovering new messages from L1 to L2
   based on the latest block number available on the network. It then fetches logs
   related to L1-to-L2 events within this range, extracts message details from both
-  the log and the corresponding L1 transaction, and imports them into the database.
+  the log and the corresponding L1 transaction, and imports them into the database. If
+  new messages were discovered, their amount is announced to be broadcasted through
+  a websocket.
 
   ## Parameters
   - A map containing:
@@ -100,13 +103,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     if start_block <= end_block do
       log_info("Block range for discovery new messages from L1: #{start_block}..#{end_block}")
 
-      discover(
-        bridge_address,
-        start_block,
-        end_block,
-        json_rpc_named_arguments,
-        chunk_size
-      )
+      new_messages_amount =
+        discover(
+          bridge_address,
+          start_block,
+          end_block,
+          json_rpc_named_arguments,
+          chunk_size
+        )
+
+      if new_messages_amount > 0 do
+        Publisher.broadcast(%{new_messages_to_arbitrum_amount: new_messages_amount}, :realtime)
+      end
 
       {:ok, end_block}
     else
@@ -200,7 +208,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   # - `chunk_size`: The size of chunks for processing RPC calls in batches.
   #
   # ## Returns
-  # - N/A
+  # - amount of discovered messages
   defp discover(bridge_address, start_block, end_block, json_rpc_named_argument, chunk_size) do
     logs =
       get_logs_for_l1_to_l2_messages(
@@ -221,6 +229,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
         arbitrum_messages: %{params: messages},
         timeout: :infinity
       })
+
+    length(messages)
   end
 
   # Retrieves logs representing the `MessageDelivered` events.

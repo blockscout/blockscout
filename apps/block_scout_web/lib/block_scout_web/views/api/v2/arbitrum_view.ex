@@ -114,7 +114,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   # transaction that committed the batch to L1.
   #
   # ## Parameters
-  # - `batches`: A list of `Explorer.Chain.Arbitrum.L1Batch` entries.
+  # - `batches`: A list of `Explorer.Chain.Arbitrum.L1Batch` entries or a list of maps
+  #              with the corresponding fields.
   #
   # ## Returns
   # - A list of maps with detailed information about each batch, formatted for use
@@ -139,14 +140,45 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
             ]
         ) :: [map()]
   defp render_arbitrum_batches(batches) do
-    Enum.map(batches, fn batch ->
-      %{
-        "number" => batch.number,
-        "transactions_count" => batch.transactions_count,
-        "blocks_count" => batch.end_block - batch.start_block + 1
-      }
-      |> add_l1_tx_info(batch)
-    end)
+    Enum.map(batches, &render_base_info_for_batch/1)
+  end
+
+  # Transforms a L1 batch into a map format for HTTP response.
+  #
+  # This function processes an Arbitrum L1 batch and converts it into a map that
+  # includes basic batch information and details of the associated transaction
+  # that committed the batch to L1.
+  #
+  # ## Parameters
+  # - `batch`: Either an `Explorer.Chain.Arbitrum.L1Batch` entry or a map with
+  #            the corresponding fields.
+  #
+  # ## Returns
+  # - A  map with detailed information about the batch, formatted for use in JSON HTTP responses.
+  @spec render_base_info_for_batch(
+          L1Batch
+          | %{
+              :number => non_neg_integer(),
+              :transactions_count => non_neg_integer(),
+              :start_block => non_neg_integer(),
+              :end_block => non_neg_integer(),
+              :commitment_transaction => %{
+                :hash => binary(),
+                :block_number => non_neg_integer(),
+                :timestamp => DateTime.t(),
+                :status => :finalized | :unfinalized,
+                optional(any()) => any()
+              },
+              optional(any()) => any()
+            }
+        ) :: map()
+  def render_base_info_for_batch(batch) do
+    %{
+      "number" => batch.number,
+      "transactions_count" => batch.transactions_count,
+      "blocks_count" => batch.end_block - batch.start_block + 1
+    }
+    |> add_l1_tx_info(batch)
   end
 
   @doc """

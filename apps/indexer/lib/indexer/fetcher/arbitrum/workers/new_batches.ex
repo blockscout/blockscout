@@ -296,7 +296,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # constructs comprehensive data structures for batches, lifecycle transactions, rollup
   # blocks, and rollup transactions. Additionally, it identifies any L2-to-L1 messages that
   # have been committed within these batches and updates their status. All discovered and
-  # processed data are then imported into the database.
+  # processed data are then imported into the database. If new batches were found, they are
+  # announced to be broadcasted through a websocket.
   #
   # ## Parameters
   # - `sequencer_inbox_address`: The SequencerInbox contract address used to filter logs.

@@ -13,7 +13,11 @@ defmodule BlockScoutWeb.UserSocketV2 do
   channel("tokens:*", BlockScoutWeb.TokenChannel)
   channel("token_instances:*", BlockScoutWeb.TokenInstanceChannel)
   channel("zkevm_batches:*", BlockScoutWeb.PolygonZkevmConfirmedBatchChannel)
-  channel("arbitrum_batches:*", BlockScoutWeb.ArbitrumBatchesChannel)
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :arbitrum -> channel("arbitrum:*", BlockScoutWeb.ArbitrumChannel)
+    _ -> nil
+  end
 
   def connect(_params, socket) do
     {:ok, socket}

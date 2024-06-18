@@ -29,6 +29,14 @@ defmodule BlockScoutWeb.Notifier do
 
   @check_broadcast_sequence_period 500
 
+  case Application.compile_env(:explorer, :chain_type) do
+    :arbitrum ->
+      @chain_type_specific_events ~w(new_arbitrum_batches new_messages_to_arbitrum_amount)a
+
+    _ ->
+      @chain_type_specific_events ~w()a
+  end
+
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
     Endpoint.broadcast("addresses:new_address", "count", %{count: Counters.address_estimated_count()})
 
@@ -120,16 +128,6 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.each(fn confirmed_batch ->
       Endpoint.broadcast("zkevm_batches:new_zkevm_confirmed_batch", "new_zkevm_confirmed_batch", %{
         batch: confirmed_batch
-      })
-    end)
-  end
-
-  def handle_event({:chain_event, :new_arbitrum_batches, :realtime, batches}) do
-    batches
-    |> Enum.sort_by(& &1.number, :asc)
-    |> Enum.each(fn batch ->
-      Endpoint.broadcast("arbitrum_batches:new_arbitrum_batch", "new_arbitrum_batch", %{
-        batch: batch
       })
     end)
   end
@@ -288,6 +286,15 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:#{address_current_token_balances.address_hash}", "address_current_token_balances", %{
       address_current_token_balances: address_current_token_balances.address_current_token_balances
     })
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :arbitrum ->
+      def handle_event({:chain_event, topic, _, _} = event) when topic in @chain_type_specific_events,
+        do: BlockScoutWeb.Notifiers.Arbitrum.handle_event(event)
+
+    _ ->
+      nil
   end
 
   def handle_event(event) do
