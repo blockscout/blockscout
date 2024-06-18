@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.WebRouter.Helpers,
+  import BlockScoutWeb.Routers.WebRouter.Helpers,
     only: [transaction_path: 3]
 
   alias Explorer.Chain.Transaction

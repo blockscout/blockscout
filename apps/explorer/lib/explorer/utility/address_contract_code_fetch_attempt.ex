@@ -39,13 +39,24 @@ defmodule Explorer.Utility.AddressContractCodeFetchAttempt do
   @doc """
   Deletes row from address_contract_code_fetch_attempts table for the given address
   """
-  @spec delete_address_contract_code_fetch_attempt(Hash.Address.t()) :: {non_neg_integer(), nil}
-  def delete_address_contract_code_fetch_attempt(address_hash) do
+  @spec delete(Hash.Address.t()) :: {non_neg_integer(), nil}
+  def delete(address_hash) do
     __MODULE__
     |> where([address_contract_code_fetch_attempt], address_contract_code_fetch_attempt.address_hash == ^address_hash)
     |> Repo.delete_all()
   end
 
+  @doc """
+  Inserts the number of retries for fetching contract code for a given address.
+
+  ## Parameters
+    - `address_hash` - The hash of the address for which the retries number is to be inserted.
+
+  ## Returns
+    The result of the insertion operation.
+
+  """
+  @spec insert_retries_number(Hash.Address.t()) :: {non_neg_integer(), nil | [term()]}
   def insert_retries_number(address_hash) do
     now = DateTime.utc_now()
     params = [%{address_hash: address_hash, inserted_at: now, updated_at: now, retries_number: 1}]

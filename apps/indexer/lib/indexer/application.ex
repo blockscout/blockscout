@@ -8,6 +8,7 @@ defmodule Indexer.Application do
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
 
   alias Indexer.Memory
@@ -50,6 +51,7 @@ defmodule Indexer.Application do
       {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
       {ContractCodeOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {TokenInstanceMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenTotalSupplyOnDemand.Supervisor, []},
       {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]}
     ]

@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.WebRouter.Helpers,
+  import BlockScoutWeb.Routers.WebRouter.Helpers,
     only: [address_token_transfers_path: 4, address_token_transfers_path: 5]
 
   alias Explorer.Chain.{Address, Token}

@@ -23,7 +23,7 @@
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
 <% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
-<% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
+<% address_hash_string = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
@@ -34,7 +34,7 @@
       <div class="card js-ad-dependant-mb-3">
         <div class="card-body">
           <%= cond do %>
-            <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
+            <% Enum.member?(circles_addresses_list, address_hash_string) -> %>
               <div class="custom-dapp-header-container">
                 <img class="custom-address-icon"/>
               </div>
