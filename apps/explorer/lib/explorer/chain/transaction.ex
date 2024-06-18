@@ -122,6 +122,28 @@ defmodule Explorer.Chain.Transaction.Schema do
                             2
                           )
 
+                        :celo ->
+                          elem(
+                            quote do
+                              field(:gateway_fee, Wei)
+
+                              belongs_to(:gas_fee_recipient, Address,
+                                foreign_key: :gas_fee_recipient_address_hash,
+                                references: :hash,
+                                type: Hash.Address
+                              )
+
+                              belongs_to(:gas_token_contract_address, Address,
+                                foreign_key: :gas_token_contract_address_hash,
+                                references: :hash,
+                                type: Hash.Address
+                              )
+
+                              has_one(:gas_token, through: [:gas_token_contract_address, :token])
+                            end,
+                            2
+                          )
+
                         :arbitrum ->
                           elem(
                             quote do
@@ -296,6 +318,9 @@ defmodule Explorer.Chain.Transaction do
 
                                 :arbitrum ->
                                   ~w(gas_used_for_l1)a
+
+                                :celo ->
+                                  ~w(gateway_fee gas_fee_recipient_address_hash gas_token_contract_address_hash)a
 
                                 _ ->
                                   ~w()a

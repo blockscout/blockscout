@@ -177,6 +177,16 @@ defmodule Explorer.Repo do
     end
   end
 
+  defmodule Celo do
+    use Ecto.Repo,
+      otp_app: :explorer,
+      adapter: Ecto.Adapters.Postgres
+
+    def init(_, opts) do
+      ConfigHelper.init_repo_module(__MODULE__, opts)
+    end
+  end
+
   defmodule RSK do
     use Ecto.Repo,
       otp_app: :explorer,

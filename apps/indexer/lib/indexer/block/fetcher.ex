@@ -54,6 +54,9 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.Blocks, as: TransformBlocks
   alias Indexer.Transform.PolygonZkevm.Bridge, as: PolygonZkevmBridge
 
+  alias Indexer.Transform.Celo.TransactionGasTokens, as: CeloTransactionGasTokens
+  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
+
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
   @type t :: %__MODULE__{}
@@ -151,6 +154,11 @@ defmodule Indexer.Block.Fetcher do
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
+         %{token_transfers: celo_native_token_transfers, tokens: celo_tokens} =
+           CeloTransactionTokenTransfers.parse_transactions(transactions_with_receipts),
+         celo_gas_tokens = CeloTransactionGasTokens.parse(transactions_with_receipts),
+         token_transfers = token_transfers ++ celo_native_token_transfers,
+         tokens = Enum.uniq(tokens ++ celo_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          optimism_withdrawals =
@@ -229,6 +237,7 @@ defmodule Indexer.Block.Fetcher do
            polygon_edge_deposit_executes: polygon_edge_deposit_executes,
            polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
            shibarium_bridge_operations: shibarium_bridge_operations,
+           celo_gas_tokens: celo_gas_tokens,
            arbitrum_messages: arbitrum_xlevel_messages
          },
          {:ok, inserted} <-
@@ -264,6 +273,7 @@ defmodule Indexer.Block.Fetcher do
          polygon_edge_deposit_executes: polygon_edge_deposit_executes,
          polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
          shibarium_bridge_operations: shibarium_bridge_operations,
+         celo_gas_tokens: celo_gas_tokens,
          arbitrum_messages: arbitrum_xlevel_messages
        }) do
     case Application.get_env(:explorer, :chain_type) do
@@ -289,6 +299,18 @@ defmodule Indexer.Block.Fetcher do
       :shibarium ->
         basic_import_options
         |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
+
+      :celo ->
+        tokens =
+          basic_import_options
+          |> Map.get(:tokens, %{})
+          |> Map.get(:params, [])
+
+        basic_import_options
+        |> Map.put(
+          :tokens,
+          %{params: (tokens ++ celo_gas_tokens) |> Enum.uniq()}
+        )
 
       :arbitrum ->
         basic_import_options
@@ -685,7 +707,7 @@ defmodule Indexer.Block.Fetcher do
      Map.delete(address_params, :fetched_coin_balance_block_number)}
   end
 
-  defp token_transfers_merge_token(token_transfers, tokens) do
+  def token_transfers_merge_token(token_transfers, tokens) do
     Enum.map(token_transfers, fn token_transfer ->
       token =
         Enum.find(tokens, fn token ->

@@ -48,6 +48,15 @@ defmodule EthereumJSONRPC.Transaction do
                            ]
                          )
 
+    :celo ->
+      @chain_type_fields quote(
+                           do: [
+                             gas_token_contract_address_hash: EthereumJSONRPC.address(),
+                             gas_fee_recipient_address_hash: EthereumJSONRPC.address(),
+                             gateway_fee: non_neg_integer()
+                           ]
+                         )
+
     :arbitrum ->
       @chain_type_fields quote(
                            do: [
@@ -103,6 +112,11 @@ defmodule EthereumJSONRPC.Transaction do
        * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).
        * `"requestRecord"` - map of wrapped transaction data (used by Suave).
       """
+    :celo -> """
+          * `"feeCurrency"` - `t:EthereumJSONRPC.address/0` of the currency used to pay for gas.
+          * `"gatewayFee"` - `t:EthereumJSONRPC.quantity/0` of the gateway fee.
+          * `"gatewayFeeRecipient"` - `t:EthereumJSONRPC.address/0` of the gateway fee recipient.
+      """
     _ -> ""
   end}
   """
@@ -134,7 +148,7 @@ defmodule EthereumJSONRPC.Transaction do
         }
 
   @doc """
-  Geth `elixir` can be converted to `params`.  Geth does not supply `"publicKey"` or `"standardV"`, unlike Nethermind.
+  Geth `elixir` can be converted to `params`. Geth does not supply `"publicKey"` or `"standardV"`, unlike Nethermind.
 
       iex> EthereumJSONRPC.Transaction.elixir_to_params(
       ...>   %{
@@ -516,6 +530,13 @@ defmodule EthereumJSONRPC.Transaction do
           })
         end
 
+      :celo ->
+        put_if_present(params, elixir, [
+          {"feeCurrency", :gas_token_contract_address_hash},
+          {"gatewayFee", :gateway_fee},
+          {"gatewayFeeRecipient", :gas_fee_recipient_address_hash}
+        ])
+
       :arbitrum ->
         put_if_present(params, elixir, [
           {"requestId", :request_id}
@@ -676,6 +697,16 @@ defmodule EthereumJSONRPC.Transaction do
   # ZkSync fields
   defp entry_to_elixir({key, _}) when key in ~w(l1BatchNumber l1BatchTxIndex) do
     {:ignore, :ignore}
+  end
+
+  # Celo-specific fields
+  if Application.compile_env(:explorer, :chain_type) == :celo do
+    defp entry_to_elixir({key, value})
+         when key in ~w(feeCurrency gatewayFeeRecipient),
+         do: {key, value}
+
+    defp entry_to_elixir({"gatewayFee" = key, quantity_or_nil}),
+      do: {key, quantity_or_nil && quantity_to_integer(quantity_or_nil)}
   end
 
   defp entry_to_elixir(_) do

@@ -40,6 +40,12 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :zksync_execute_transaction => :optional
       }
 
+    :celo ->
+      @chain_type_transaction_necessity_by_association %{
+        :gas_token => :optional
+      }
+      @chain_type_block_necessity_by_association %{}
+
     :arbitrum ->
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{
