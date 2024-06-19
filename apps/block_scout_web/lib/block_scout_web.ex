@@ -24,12 +24,13 @@ defmodule BlockScoutWeb do
 
       import BlockScoutWeb.Controller
       import BlockScoutWeb.Router.Helpers
-      import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
+      import BlockScoutWeb.Routers.WebRouter.Helpers, except: [static_path: 2]
       import BlockScoutWeb.Gettext
       import BlockScoutWeb.ErrorHelper
+      import BlockScoutWeb.Routers.AccountRouter.Helpers, except: [static_path: 2]
       import Plug.Conn
 
-      alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
+      alias BlockScoutWeb.Routers.AdminRouter.Helpers, as: AdminRoutes
     end
   end
 
@@ -56,9 +57,11 @@ defmodule BlockScoutWeb do
         WeiHelper
       }
 
+      import BlockScoutWeb.Routers.AccountRouter.Helpers, except: [static_path: 2]
+
       import Explorer.Chain.CurrencyHelper, only: [divide_decimals: 2]
 
-      import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
+      import BlockScoutWeb.Routers.WebRouter.Helpers, except: [static_path: 2]
     end
   end
 

@@ -1,11 +1,11 @@
-defmodule BlockScoutWeb.WebRouter do
+defmodule BlockScoutWeb.Routers.WebRouter do
   @moduledoc """
   Router for web app
   """
   use BlockScoutWeb, :router
   require Ueberauth
 
-  alias BlockScoutWeb.Plug.CheckAccountWeb
+  alias BlockScoutWeb.Routers.AccountRouter
 
   @max_query_string_length 5_000
 
@@ -28,78 +28,11 @@ defmodule BlockScoutWeb.WebRouter do
     plug(BlockScoutWeb.ChecksumAddress)
   end
 
-  pipeline :account do
-    plug(
-      Plug.Parsers,
-      parsers: [:urlencoded, :multipart, :json],
-      length: 100_000,
-      query_string_length: @max_query_string_length,
-      pass: ["*/*"],
-      json_decoder: Poison
-    )
-
-    plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
-    plug(:accepts, ["html"])
-    plug(:fetch_session)
-    plug(:fetch_flash)
-    plug(CheckAccountWeb)
-    plug(:protect_from_forgery)
-    plug(BlockScoutWeb.CSPHeader)
-    plug(BlockScoutWeb.ChecksumAddress)
-  end
-
   if Mix.env() == :dev do
     forward("/sent_emails", Bamboo.SentEmailViewerPlug)
   end
 
-  scope "/auth", BlockScoutWeb do
-    pipe_through(:account)
-
-    get("/profile", Account.AuthController, :profile)
-    get("/logout", Account.AuthController, :logout)
-    get("/:provider", Account.AuthController, :request)
-    get("/:provider/callback", Account.AuthController, :callback)
-  end
-
-  scope "/account", BlockScoutWeb do
-    pipe_through(:account)
-
-    resources("/tag_address", Account.TagAddressController,
-      only: [:index, :new, :create, :delete],
-      as: :tag_address
-    )
-
-    resources("/tag_transaction", Account.TagTransactionController,
-      only: [:index, :new, :create, :delete],
-      as: :tag_transaction
-    )
-
-    resources("/watchlist", Account.WatchlistController,
-      only: [:show],
-      singleton: true,
-      as: :watchlist
-    )
-
-    resources("/watchlist_address", Account.WatchlistAddressController,
-      only: [:new, :create, :edit, :update, :delete],
-      as: :watchlist_address
-    )
-
-    resources("/api_key", Account.ApiKeyController,
-      only: [:new, :create, :edit, :update, :delete, :index],
-      as: :api_key
-    )
-
-    resources("/custom_abi", Account.CustomABIController,
-      only: [:new, :create, :edit, :update, :delete, :index],
-      as: :custom_abi
-    )
-
-    resources("/public_tags_request", Account.PublicTagsRequestController,
-      only: [:new, :create, :edit, :update, :delete, :index],
-      as: :public_tags_request
-    )
-  end
+  forward("/account", AccountRouter)
 
   # Disallows Iframes (write routes)
   scope "/", BlockScoutWeb do

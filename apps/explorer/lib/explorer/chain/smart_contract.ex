@@ -1004,8 +1004,8 @@ defmodule Explorer.Chain.SmartContract do
   @spec verified_with_full_match?(Hash.Address.t() | String.t()) :: boolean()
   def verified_with_full_match?(address_hash, options \\ [])
 
-  def verified_with_full_match?(address_hash_str, options) when is_binary(address_hash_str) do
-    case Chain.string_to_address_hash(address_hash_str) do
+  def verified_with_full_match?(address_hash_string, options) when is_binary(address_hash_string) do
+    case Chain.string_to_address_hash(address_hash_string) do
       {:ok, address_hash} ->
         check_verified_with_full_match(address_hash, options)
 
@@ -1022,15 +1022,15 @@ defmodule Explorer.Chain.SmartContract do
     Checks if a `Explorer.Chain.SmartContract` exists for the provided address hash.
 
     ## Parameters
-    - `address_hash_str` or `address_hash`: The hash of the address in binary string
+    - `address_hash_string` or `address_hash`: The hash of the address in binary string
                                             form or directly as an address hash.
 
     ## Returns
     - `boolean()`: `true` if a smart contract exists, `false` otherwise.
   """
   @spec verified?(Hash.Address.t() | String.t()) :: boolean()
-  def verified?(address_hash_str) when is_binary(address_hash_str) do
-    case Chain.string_to_address_hash(address_hash_str) do
+  def verified?(address_hash_string) when is_binary(address_hash_string) do
+    case Chain.string_to_address_hash(address_hash_string) do
       {:ok, address_hash} ->
         verified_smart_contract_exists?(address_hash)
 

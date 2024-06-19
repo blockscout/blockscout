@@ -400,7 +400,7 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
               [
                 %{
                   batch_number: block.batch_number,
-                  hash: l2_tx_hash
+                  tx_hash: l2_tx_hash
                 }
                 | l2_txs
               ]

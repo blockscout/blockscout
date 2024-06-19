@@ -4,7 +4,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
   [`trace_replayTransaction`](https://openethereum.github.io/JSONRPC-trace-module#trace_replaytransaction).
   """
 
-  import EthereumJSONRPC.Transaction, only: [put_if_present: 3]
+  import EthereumJSONRPC, only: [put_if_present: 3]
   alias EthereumJSONRPC.Nethermind.Trace.{Action, Result}
 
   @doc """

@@ -24,8 +24,8 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.6.0",
-      xref: [exclude: [BlockScoutWeb.WebRouter.Helpers, Indexer.Helper]]
+      version: "6.7.0",
+      xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper]]
     ]
   end
 
@@ -109,7 +109,7 @@ defmodule Explorer.Mixfile do
       # `:spandex` tracing of `:ecto`
       {:spandex_ecto, "~> 0.7.0"},
       # Attach `:prometheus_ecto` to `:ecto`
-      {:telemetry, "~> 0.4.3"},
+      {:telemetry, "~> 1.2.1"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},

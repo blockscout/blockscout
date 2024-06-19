@@ -14,6 +14,7 @@ defmodule Explorer.Repo.Celo.Migrations.RemoveTransactionHashFromPrimaryKeyInTok
       ADD PRIMARY KEY (transaction_hash, block_hash, log_index);
       """
     )
+
     execute(
       "ALTER TABLE token_transfers ALTER COLUMN transaction_hash DROP NOT NULL",
       "ALTER TABLE token_transfers ALTER COLUMN transaction_hash SET NOT NULL"

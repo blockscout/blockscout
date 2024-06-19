@@ -5,11 +5,13 @@ defmodule Explorer.Chain.Token.Instance do
 
   use Explorer.Schema
 
-  alias Explorer.{Chain, Helper}
+  alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token.Instance
   alias Explorer.PagingOptions
+
+  @timeout 60_000
 
   @typedoc """
   * `token_id` - ID of the token
@@ -617,4 +619,21 @@ defmodule Explorer.Chain.Token.Instance do
     do:
       not (token.type == "ERC-1155") or
         Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, options)
+
+  @doc """
+  Sets set_metadata for the given Explorer.Chain.Token.Instance
+  """
+  @spec set_metadata(__MODULE__, map()) :: {non_neg_integer(), nil}
+  def set_metadata(token_instance, metadata) when is_map(metadata) do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(instance in __MODULE__,
+        where: instance.token_contract_address_hash == ^token_instance.token_contract_address_hash,
+        where: instance.token_id == ^token_instance.token_id
+      ),
+      [set: [metadata: metadata, error: nil, updated_at: now]],
+      timeout: @timeout
+    )
+  end
 end

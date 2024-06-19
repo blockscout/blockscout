@@ -60,7 +60,7 @@ defmodule Indexer.Fetcher.PendingBlockOperationsSanitizer do
       |> update([pbo, po, b], set: [block_number: b.number])
       |> Repo.update_all([], timeout: @timeout)
 
-    InternalTransaction.async_fetch(block_numbers)
+    InternalTransaction.async_fetch(block_numbers, false)
 
     block_numbers
   end

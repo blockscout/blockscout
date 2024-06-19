@@ -152,8 +152,9 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
              "address" => %{
                "hash" => Address.checksum(addr),
                # todo: added for backward compatibility, remove when frontend unbound from these props
+               "implementation_address" => nil,
                "implementation_name" => nil,
-               "implementation_names" => [],
+               "implementations" => [],
                "is_contract" => false,
                "is_verified" => false,
                "name" => nil,
@@ -166,7 +167,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
            }}
         end)
 
-      assert Enum.all?(created, fn {addr, map_tag, _} ->
+      assert Enum.all?(created, fn {addr, map_tag, map} ->
                response =
                  conn
                  |> get("/api/account/v2/tags/address/#{addr}")
@@ -182,7 +183,9 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
         |> json_response(200)
         |> Map.get("items")
 
-      assert Enum.all?(created, fn {_, _, map} -> map in response end)
+      assert Enum.all?(created, fn {_, _, map} ->
+               map in response
+             end)
     end
 
     test "delete address tag", %{conn: conn} do
@@ -208,8 +211,9 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
              "address" => %{
                "hash" => Address.checksum(addr),
                # todo: added for backward compatibility, remove when frontend unbound from these props
+               "implementation_address" => nil,
                "implementation_name" => nil,
-               "implementation_names" => [],
+               "implementations" => [],
                "is_contract" => false,
                "is_verified" => false,
                "name" => nil,
@@ -222,7 +226,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
            }}
         end)
 
-      assert Enum.all?(created, fn {addr, map_tag, _} ->
+      assert Enum.all?(created, fn {addr, map_tag, map} ->
                response =
                  conn
                  |> get("/api/account/v2/tags/address/#{addr}")

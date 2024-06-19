@@ -137,7 +137,7 @@ defmodule Indexer.TokenBalances do
         block_number: token_balance.block_number
       })
     end)
-    |> TokenBalance.async_fetch()
+    |> TokenBalance.async_fetch(false)
   end
 
   defp ignore_request_with_errors(%{value: nil, value_fetched_at: nil, error: _error}), do: false

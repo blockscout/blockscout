@@ -1,40 +1,47 @@
 defmodule Explorer.Chain.TokenTransfer.Schema do
+  @moduledoc """
+    Models token trasfers.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.TokenTransfers
+  """
+
   alias Explorer.Chain.{
     Address,
     Block,
     Hash,
     Transaction
   }
-  alias Explorer.Chain.Token.Instance
 
+  alias Explorer.Chain.Token.Instance
 
   # Remove `transaction_hash` from primary key for `:celo` chain type. See
   # `Explorer.Chain.Log.Schema` for more details.
   @transaction_field (case Application.compile_env(:explorer, :chain_type) do
-    :celo ->
-      quote do
-        [
-          belongs_to(:transaction, Transaction,
-            foreign_key: :transaction_hash,
-            references: :hash,
-            type: Hash.Full
-          )
-        ]
-      end
+                        :celo ->
+                          quote do
+                            [
+                              belongs_to(:transaction, Transaction,
+                                foreign_key: :transaction_hash,
+                                references: :hash,
+                                type: Hash.Full
+                              )
+                            ]
+                          end
 
-    _ ->
-      quote do
-        [
-          belongs_to(:transaction, Transaction,
-            foreign_key: :transaction_hash,
-            primary_key: true,
-            references: :hash,
-            type: Hash.Full,
-            null: false
-          )
-        ]
-      end
-  end)
+                        _ ->
+                          quote do
+                            [
+                              belongs_to(:transaction, Transaction,
+                                foreign_key: :transaction_hash,
+                                primary_key: true,
+                                references: :hash,
+                                type: Hash.Full,
+                                null: false
+                              )
+                            ]
+                          end
+                      end)
 
   defmacro generate do
     quote do
@@ -45,7 +52,10 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
         field(:log_index, :integer, primary_key: true, null: false)
         field(:amounts, {:array, :decimal})
         field(:token_ids, {:array, :decimal})
+        field(:token_id, :decimal, virtual: true)
         field(:index_in_batch, :integer, virtual: true)
+        field(:reverse_index_in_batch, :integer, virtual: true)
+        field(:token_decimals, :decimal, virtual: true)
         field(:token_type, :string)
         field(:block_consensus, :boolean)
 
@@ -57,7 +67,10 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
         )
 
         belongs_to(:to_address, Address,
-        foreign_key: :to_address_hash, references: :hash, type: Hash.Address, null: false
+          foreign_key: :to_address_hash,
+          references: :hash,
+          type: Hash.Address,
+          null: false
         )
 
         belongs_to(
@@ -158,27 +171,29 @@ defmodule Explorer.Chain.TokenTransfer do
   * `:log_index` - Index of the corresponding `t:Explorer.Chain.Log.t/0` in the block.
   * `:amounts` - Tokens transferred amounts in case of batched transfer in ERC-1155
   * `:token_ids` - IDs of the tokens (applicable to ERC-1155 tokens)
+  * `:token_id` - virtual field, ID of token, used to unnest ERC-1155 batch transfers
+  * `:index_in_batch` - Index of the token transfer in the ERC-1155 batch transfer
+  * `:reverse_index_in_batch` - Reverse index of the token transfer in the ERC-1155 batch transfer, last element index is 1
   * `:block_consensus` - Consensus of the block that the transfer took place
   """
   Explorer.Chain.TokenTransfer.Schema.generate()
 
-
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash block_hash token_type)a
-  |> (&(case Application.compile_env(:explorer, :chain_type) do
-    :celo ->
-      &1
+                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                          :celo ->
+                            &1
 
-    _ ->
-        [:transaction_hash | &1]
-  end)).()
+                          _ ->
+                            [:transaction_hash | &1]
+                        end)).()
   @optional_attrs ~w(amount amounts token_ids block_consensus)a
-  |> (&(case Application.compile_env(:explorer, :chain_type) do
-    :celo ->
-      [:transaction_hash | &1]
+                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                          :celo ->
+                            [:transaction_hash | &1]
 
-    _ ->
-      &1
-  end)).()
+                          _ ->
+                            &1
+                        end)).()
 
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do
@@ -220,7 +235,13 @@ defmodule Explorer.Chain.TokenTransfer do
         []
 
       _ ->
-        preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
+        preloads =
+          DenormalizationHelper.extend_transaction_preload([
+            :transaction,
+            :token,
+            [from_address: [:names, :smart_contract, :proxy_implementations]],
+            [to_address: [:names, :smart_contract, :proxy_implementations]]
+          ])
 
         only_consensus_transfers_query()
         |> where([tt], tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number))
@@ -241,7 +262,13 @@ defmodule Explorer.Chain.TokenTransfer do
         []
 
       _ ->
-        preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
+        preloads =
+          DenormalizationHelper.extend_transaction_preload([
+            :transaction,
+            :token,
+            [from_address: [:names, :smart_contract, :proxy_implementations]],
+            [to_address: [:names, :smart_contract, :proxy_implementations]]
+          ])
 
         only_consensus_transfers_query()
         |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
@@ -578,5 +605,20 @@ defmodule Explorer.Chain.TokenTransfer do
 
   defp logs_to_token_transfers_query(query, []) do
     query
+  end
+
+  @doc """
+    Checks if `WHITELISTED_WETH_CONTRACTS` env contains provided address hash.
+    WHITELISTED_WETH_CONTRACTS env is the list of whitelisted WETH contracts addresses.
+  """
+  @spec whitelisted_weth_contract?(any()) :: boolean()
+  def whitelisted_weth_contract?(contract_address_hash) do
+    env = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
+
+    if env[:weth_token_transfers_filtering_enabled] do
+      (contract_address_hash |> to_string() |> String.downcase()) in env[:whitelisted_weth_contracts]
+    else
+      true
+    end
   end
 end

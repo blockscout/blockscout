@@ -13,40 +13,44 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   # def render("celo_epoch.json", )
 
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
-    case {
-      Map.get(transaction, :gas_token_contract_address),
-      Map.get(transaction, :gas_token)
-    } do
-      {_, %NotLoaded{}} ->
-        out_json
+    token_json =
+      case {
+        Map.get(transaction, :gas_token_contract_address),
+        Map.get(transaction, :gas_token)
+      } do
+        # todo: this clause is redundant, consider removing it
+        {_, %NotLoaded{}} ->
+          nil
 
-      {nil, _} ->
-        out_json |> add_gas_token_field(nil)
+        {nil, _} ->
+          nil
 
-      {gas_token_contract_address, nil} ->
-        Logger.error(
-          "Transaction #{transaction.hash} has a gas token contract address '#{gas_token_contract_address}' but no associated token found in the database"
-        )
+        {gas_token_contract_address, gas_token} ->
+          if is_nil(gas_token) do
+            Logger.error(fn ->
+              [
+                "Transaction #{transaction.hash} has a ",
+                "gas token contract address #{gas_token_contract_address} ",
+                "but no associated token found in the database"
+              ]
+            end)
+          end
 
-        out_json |> add_gas_token_field(nil)
-
-      {gas_token_contract_address, gas_token} ->
-        out_json
-        |> add_gas_token_field(
           TokenView.render("token.json", %{
             token: gas_token,
             contract_address_hash: gas_token_contract_address
           })
-        )
-    end
+      end
+
+    Map.put(out_json, "celo", %{"gas_token" => token_json})
   end
 
   defp maybe_add_epoch_reward(
-        out_json,
-        %Block{celo_epoch_reward: %Reward{} = reward} = block,
-        true = _single_block?
-      )
-      when is_epoch_block(block.number) do
+         out_json,
+         %Block{celo_epoch_reward: %Reward{} = reward} = block,
+         true = _single_block?
+       )
+       when is_epoch_block(block.number) do
     Map.put(out_json, "epoch", %{
       reserve_bolster: reward.reserve_bolster,
       community_total: reward.community_total,
@@ -73,13 +77,5 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       |> maybe_add_epoch_reward(block, single_block?)
 
     Map.put(out_json, "celo", celo_extra_data)
-  end
-
-  defp add_gas_token_field(out_json, token_json) do
-    out_json
-    |> Map.put(
-      "gas_token",
-      token_json
-    )
   end
 end

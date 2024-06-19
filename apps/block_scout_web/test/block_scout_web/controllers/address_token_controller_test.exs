@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
   use BlockScoutWeb.ConnCase, async: true
   use ExUnit.Case, async: false
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [address_token_path: 3]
+  import BlockScoutWeb.Routers.WebRouter.Helpers, only: [address_token_path: 3]
   import Mox
 
   alias Explorer.Chain.{Address, Token}

@@ -33,11 +33,12 @@ defmodule Indexer.Fetcher.Celo.EpochRewardsTest do
                  block_number: unfetched.number,
                  block_hash: unfetched.hash
                }
-      ] == EpochRewards.init(
-        [],
-        fn block_number, acc -> [block_number | acc] end,
-        json_rpc_named_arguments
-      )
+             ] ==
+               EpochRewards.init(
+                 [],
+                 fn block_number, acc -> [block_number | acc] end,
+                 json_rpc_named_arguments
+               )
     end
 
     # todo: implement this test (need help: how to update block after calling `insert(...)`?)

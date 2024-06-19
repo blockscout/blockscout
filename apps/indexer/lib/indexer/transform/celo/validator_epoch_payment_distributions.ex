@@ -5,8 +5,8 @@ defmodule Indexer.Transform.Celo.ValidatorEpochPaymentDistributions do
   """
   alias ABI.FunctionSelector
 
-  alias Explorer.Chain.{Hash, Log}
   alias Explorer.Chain.Cache.CeloCoreContracts
+  alias Explorer.Chain.{Hash, Log}
 
   require Logger
 
@@ -45,13 +45,13 @@ defmodule Indexer.Transform.Celo.ValidatorEpochPaymentDistributions do
   def signature, do: @event_signature
 
   def parse(logs) do
-    validators_contract_address = CeloCoreContracts.get_address(:validators)
-
     logs
-    |> Enum.filter(
-      &(Hash.to_string(&1.address_hash) == validators_contract_address and
-          Hash.to_string(&1.first_topic) == @event_signature)
-    )
+    |> Enum.filter(fn log ->
+      {:ok, validators_contract_address} = CeloCoreContracts.get_address(:validators, log.block_number)
+
+      Hash.to_string(log.address_hash) == validators_contract_address and
+        Hash.to_string(log.first_topic) == @event_signature
+    end)
     |> Enum.map(fn log ->
       {:ok, %FunctionSelector{},
        [
@@ -59,7 +59,7 @@ defmodule Indexer.Transform.Celo.ValidatorEpochPaymentDistributions do
          {"validatorPayment", "uint256", false, validator_payment},
          {"group", "address", true, group_address},
          {"groupPayment", "uint256", false, group_payment}
-       ]} = Log.find_and_decode(@event_abi, log, nil)
+       ]} = Log.find_and_decode(@event_abi, log, log.block_hash)
 
       %{
         validator_address: "0x" <> Base.encode16(validator_address, case: :lower),

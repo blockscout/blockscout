@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   use BlockScoutWeb.ConnCase
-  alias Explorer.Chain.SmartContract
-  alias Explorer.TestHelper
+  alias Explorer.{Chain, TestHelper}
+  alias Explorer.Chain.{Address, SmartContract}
 
   import Mox
 
@@ -532,6 +532,224 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                conn
                |> get("/api", params)
                |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
+    end
+
+    test "with a verified proxy contract address", %{conn: conn} do
+      implementation_contract =
+        insert(:smart_contract,
+          name: "Implementation",
+          external_libraries: [],
+          constructor_arguments: "",
+          abi: [
+            %{
+              "type" => "constructor",
+              "inputs" => [
+                %{"type" => "address", "name" => "_proxyStorage"},
+                %{"type" => "address", "name" => "_implementationAddress"}
+              ]
+            },
+            %{
+              "constant" => false,
+              "inputs" => [%{"name" => "x", "type" => "uint256"}],
+              "name" => "set",
+              "outputs" => [],
+              "payable" => false,
+              "stateMutability" => "nonpayable",
+              "type" => "function"
+            },
+            %{
+              "constant" => true,
+              "inputs" => [],
+              "name" => "get",
+              "outputs" => [%{"name" => "", "type" => "uint256"}],
+              "payable" => false,
+              "stateMutability" => "view",
+              "type" => "function"
+            }
+          ],
+          license_type: 9
+        )
+
+      implementation_contract_address_hash_string =
+        Base.encode16(implementation_contract.address_hash.bytes, case: :lower)
+
+      proxy_tx_input =
+        "0x11b804ab000000000000000000000000" <>
+          implementation_contract_address_hash_string <>
+          "000000000000000000000000000000000000000000000000000000000000006035323031313537360000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000284e159163400000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd30000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d61100000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d6110000000000000000000000000000000000000000000000000000000000000003e8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd300000000000000000000000000000000000000000000000000000000000000184f7074696d69736d2053756273637269626572204e465473000000000000000000000000000000000000000000000000000000000000000000000000000000054f504e46540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000037697066733a2f2f516d66544e504839765651334b5952346d6b52325a6b757756424266456f5a5554545064395538666931503332752f300000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c82bbe41f2cf04e3a8efa18f7032bdd7f6d98a81000000000000000000000000efba8a2a82ec1fb1273806174f5e28fbb917cf9500000000000000000000000000000000000000000000000000000000"
+
+      proxy_deployed_bytecode =
+        "0x363d3d373d3d3d363d73" <> implementation_contract_address_hash_string <> "5af43d82803e903d91602b57fd5bf3"
+
+      proxy_address =
+        insert(:contract_address,
+          contract_code: proxy_deployed_bytecode,
+          verified: true
+        )
+
+      proxy_abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "payable" => false,
+          "outputs" => [%{"type" => "bool", "name" => ""}],
+          "name" => "upgradeTo",
+          "inputs" => [%{"type" => "address", "name" => "newImplementation"}],
+          "constant" => false
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "payable" => false,
+          "outputs" => [%{"type" => "uint256", "name" => ""}],
+          "name" => "version",
+          "inputs" => [],
+          "constant" => true
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "payable" => false,
+          "outputs" => [%{"type" => "address", "name" => ""}],
+          "name" => "implementation",
+          "inputs" => [],
+          "constant" => true
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "payable" => false,
+          "outputs" => [],
+          "name" => "renounceOwnership",
+          "inputs" => [],
+          "constant" => false
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "payable" => false,
+          "outputs" => [%{"type" => "address", "name" => ""}],
+          "name" => "getOwner",
+          "inputs" => [],
+          "constant" => true
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "payable" => false,
+          "outputs" => [%{"type" => "address", "name" => ""}],
+          "name" => "getProxyStorage",
+          "inputs" => [],
+          "constant" => true
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "payable" => false,
+          "outputs" => [],
+          "name" => "transferOwnership",
+          "inputs" => [%{"type" => "address", "name" => "_newOwner"}],
+          "constant" => false
+        },
+        %{
+          "type" => "constructor",
+          "stateMutability" => "nonpayable",
+          "payable" => false,
+          "inputs" => [
+            %{"type" => "address", "name" => "_proxyStorage"},
+            %{"type" => "address", "name" => "_implementationAddress"}
+          ]
+        },
+        %{"type" => "fallback", "stateMutability" => "nonpayable", "payable" => false},
+        %{
+          "type" => "event",
+          "name" => "Upgraded",
+          "inputs" => [
+            %{"type" => "uint256", "name" => "version", "indexed" => false},
+            %{"type" => "address", "name" => "implementation", "indexed" => true}
+          ],
+          "anonymous" => false
+        },
+        %{
+          "type" => "event",
+          "name" => "OwnershipRenounced",
+          "inputs" => [%{"type" => "address", "name" => "previousOwner", "indexed" => true}],
+          "anonymous" => false
+        },
+        %{
+          "type" => "event",
+          "name" => "OwnershipTransferred",
+          "inputs" => [
+            %{"type" => "address", "name" => "previousOwner", "indexed" => true},
+            %{"type" => "address", "name" => "newOwner", "indexed" => true}
+          ],
+          "anonymous" => false
+        }
+      ]
+
+      proxy_contract =
+        insert(:smart_contract,
+          address_hash: proxy_address.hash,
+          name: "Proxy",
+          abi: proxy_abi
+        )
+
+      tx =
+        insert(:transaction,
+          created_contract_address_hash: proxy_address.hash,
+          input: proxy_tx_input
+        )
+        |> with_block(status: :ok)
+
+      name = implementation_contract.name
+      from = Address.checksum(tx.from_address_hash)
+      tx_hash = to_string(tx.hash)
+      address_hash = Address.checksum(proxy_address.hash)
+
+      {:ok, implementation_contract_address_hash} =
+        Chain.string_to_address_hash("0x" <> implementation_contract_address_hash_string)
+
+      checksummed_implementation_contract_address_hash =
+        implementation_contract_address_hash && Address.checksum(implementation_contract_address_hash)
+
+      insert(:proxy_implementation,
+        proxy_address_hash: proxy_address.hash,
+        proxy_type: "eip1167",
+        address_hashes: [implementation_contract.address_hash],
+        names: [name]
+      )
+
+      params = %{
+        "module" => "contract",
+        "action" => "getsourcecode",
+        "address" => Address.checksum(proxy_address.hash)
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      expected_result = [
+        %{
+          "Address" => to_string(proxy_contract.address_hash),
+          "SourceCode" => proxy_contract.contract_source_code,
+          "ABI" => Jason.encode!(proxy_contract.abi),
+          "ContractName" => proxy_contract.name,
+          "CompilerVersion" => proxy_contract.compiler_version,
+          "FileName" => "",
+          "IsProxy" => "true",
+          "ImplementationAddress" => to_string(implementation_contract.address_hash),
+          "ImplementationAddresses" => [to_string(implementation_contract.address_hash)],
+          "EVMVersion" => nil,
+          "OptimizationUsed" => "false"
+        }
+      ]
 
       assert response["result"] == expected_result
       assert response["status"] == "1"

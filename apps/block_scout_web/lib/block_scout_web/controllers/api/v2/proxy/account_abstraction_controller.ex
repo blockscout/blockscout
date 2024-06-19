@@ -157,7 +157,8 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
       |> Chain.hashes_to_addresses(
         necessity_by_association: %{
           :names => :optional,
-          :smart_contract => :optional
+          :smart_contract => :optional,
+          :proxy_implementations => :optional
         },
         api?: true
       )

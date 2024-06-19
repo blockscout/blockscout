@@ -7,7 +7,13 @@ defmodule EthereumJSONRPC.Transaction do
   [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblockhashandindex),
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblocknumberandindex)
   """
-  import EthereumJSONRPC, only: [quantity_to_integer: 1, integer_to_quantity: 1, request: 1]
+  import EthereumJSONRPC,
+    only: [
+      quantity_to_integer: 1,
+      integer_to_quantity: 1,
+      request: 1,
+      put_if_present: 3
+    ]
 
   alias EthereumJSONRPC
 
@@ -54,6 +60,13 @@ defmodule EthereumJSONRPC.Transaction do
                              gas_token_contract_address_hash: EthereumJSONRPC.address(),
                              gas_fee_recipient_address_hash: EthereumJSONRPC.address(),
                              gateway_fee: non_neg_integer()
+                           ]
+                         )
+
+    :arbitrum ->
+      @chain_type_fields quote(
+                           do: [
+                             request_id: non_neg_integer()
                            ]
                          )
 
@@ -530,6 +543,11 @@ defmodule EthereumJSONRPC.Transaction do
           {"gatewayFeeRecipient", :gas_fee_recipient_address_hash}
         ])
 
+      :arbitrum ->
+        put_if_present(params, elixir, [
+          {"requestId", :request_id}
+        ])
+
       _ ->
         params
     end
@@ -652,7 +670,7 @@ defmodule EthereumJSONRPC.Transaction do
     do: {"input", value}
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas maxFeePerBlobGas) and
+       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas maxFeePerBlobGas requestId) and
               quantity != nil do
     {key, quantity_to_integer(quantity)}
   end
@@ -699,17 +717,5 @@ defmodule EthereumJSONRPC.Transaction do
 
   defp entry_to_elixir(_) do
     {nil, nil}
-  end
-
-  def put_if_present(result, transaction, keys) do
-    Enum.reduce(keys, result, fn {from_key, to_key}, acc ->
-      value = transaction[from_key]
-
-      if value do
-        Map.put(acc, to_key, value)
-      else
-        acc
-      end
-    end)
   end
 end

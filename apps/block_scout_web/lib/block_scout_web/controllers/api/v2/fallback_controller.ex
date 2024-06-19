@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   alias BlockScoutWeb.API.V2.ApiView
   alias Ecto.Changeset
 
-  @verification_failed "API v2 smart-contract verification failed"
   @invalid_parameters "Invalid parameter(s)"
   @invalid_address_hash "Invalid address hash"
   @invalid_hash "Invalid hash"
@@ -36,7 +35,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:format, _params}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_parameters}"]
+      ["#{@invalid_parameters}"]
     end)
 
     conn
@@ -47,7 +46,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:format_address, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_address_hash}"]
+      ["#{@invalid_address_hash}"]
     end)
 
     conn
@@ -58,7 +57,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:format_url, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_url}"]
+      ["#{@invalid_url}"]
     end)
 
     conn
@@ -69,7 +68,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:not_found, _, :empty_items_with_next_page_params}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: :empty_items_with_next_page_params"]
+      [":empty_items_with_next_page_params"]
     end)
 
     conn
@@ -78,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:not_found, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@not_found}"]
+      ["#{@not_found}"]
     end)
 
     conn
@@ -89,7 +88,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:contract_interaction_disabled, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@contract_interaction_disabled}"]
+      ["#{@contract_interaction_disabled}"]
     end)
 
     conn
@@ -100,7 +99,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:error, {:invalid, :hash}}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_hash}"]
+      ["#{@invalid_hash}"]
     end)
 
     conn
@@ -111,7 +110,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:error, {:invalid, :number}}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_number}"]
+      ["#{@invalid_number}"]
     end)
 
     conn
@@ -122,7 +121,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:error, :not_found}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: :not_found"]
+      [":not_found"]
     end)
 
     conn
@@ -138,7 +137,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:restricted_access, true}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@restricted_access}"]
+      ["#{@restricted_access}"]
     end)
 
     conn
@@ -149,7 +148,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:already_verified, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@already_verified}"]
+      ["#{@already_verified}"]
     end)
 
     conn
@@ -159,7 +158,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:no_json_file, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@json_not_found}"]
+      ["#{@json_not_found}"]
     end)
 
     conn
@@ -169,7 +168,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:file_error, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@error_while_reading_json}"]
+      ["#{@error_while_reading_json}"]
     end)
 
     conn
@@ -179,7 +178,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:libs_format, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@error_in_libraries}"]
+      ["#{@error_in_libraries}"]
     end)
 
     conn
@@ -189,7 +188,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:lost_consensus, {:ok, block}}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@block_lost_consensus}"]
+      ["#{@block_lost_consensus}"]
     end)
 
     conn
@@ -199,7 +198,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:lost_consensus, {:error, :not_found}}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@block_lost_consensus}"]
+      ["#{@block_lost_consensus}"]
     end)
 
     conn
@@ -208,7 +207,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:recaptcha, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_captcha_resp}"]
+      ["#{@invalid_captcha_resp}"]
     end)
 
     conn
@@ -219,7 +218,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:auth, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@unauthorized}"]
+      ["#{@unauthorized}"]
     end)
 
     conn
@@ -230,7 +229,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:sensitive_endpoints_api_key, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@not_configured_api_key}"]
+      ["#{@not_configured_api_key}"]
     end)
 
     conn
@@ -241,7 +240,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:api_key, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@wrong_api_key}"]
+      ["#{@wrong_api_key}"]
     end)
 
     conn
@@ -276,6 +275,13 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> put_status(:not_found)
     |> put_view(ApiView)
     |> render(:message, %{message: @unverified_smart_contract})
+  end
+
+  def call(conn, {:method, _}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @not_found})
   end
 
   def call(conn, {:is_empty_response, true}) do

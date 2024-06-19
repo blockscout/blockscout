@@ -11,6 +11,11 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
   """
   require Logger
 
+  import Indexer.Transform.TokenTransfers,
+    only: [
+      filter_tokens_for_supply_update: 1
+    ]
+
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Chain.Hash
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
@@ -43,13 +48,12 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
   def parse_transactions(transactions) do
     token_transfers =
       if Application.get_env(:explorer, :chain_type) == :celo do
-        celo_token_address = CeloCoreContracts.get_address(:celo_token)
-
         transactions
         |> Enum.filter(fn tx -> tx.value > 0 end)
         |> Enum.map(fn tx ->
           to_address_hash = Map.get(tx, :to_address_hash) || Map.get(tx, :created_contract_address_hash)
           log_index = -1 * (tx.index + 1) * @transaction_buffer_size
+          {:ok, celo_token_address} = CeloCoreContracts.get_address(:celo_token, tx.block_number)
 
           %{
             amount: Decimal.new(tx.value),
@@ -69,7 +73,9 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
         []
       end
 
-    TokenTotalSupplyUpdater.add_token_transfers(token_transfers)
+    token_transfers
+    |> filter_tokens_for_supply_update()
+    |> TokenTotalSupplyUpdater.add_tokens()
 
     %{
       token_transfers: token_transfers,
@@ -77,9 +83,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
     }
   end
 
-  def parse_internal_transactions(transactions, block_number_to_block_hash) do
-    celo_token_address = CeloCoreContracts.get_address(:celo_token)
-
+  def parse_internal_transactions(internal_transactions, block_number_to_block_hash) do
     token_transfers =
       internal_transactions
       |> Enum.filter(fn itx ->
@@ -91,6 +95,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
       |> Enum.map(fn itx ->
         to_address_hash = Map.get(itx, :to_address_hash) || Map.get(itx, :created_contract_address_hash)
         log_index = -1 * (itx.transaction_index * @transaction_buffer_size + itx.index)
+        {:ok, celo_token_address} = CeloCoreContracts.get_address(:celo_token, itx.block_number)
 
         %{
           amount: Decimal.new(itx.value),
@@ -108,7 +113,9 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
 
     Logger.debug("Found #{length(token_transfers)} Celo token transfers from internal transactions.")
 
-    TokenTotalSupplyUpdater.add_token_transfers(token_transfers)
+    token_transfers
+    |> filter_tokens_for_supply_update()
+    |> TokenTotalSupplyUpdater.add_tokens()
 
     %{
       token_transfers: token_transfers,
@@ -118,12 +125,14 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
 
   defp to_tokens([]), do: []
 
-  defp to_tokens(_token_transfers) do
-    [
-      %{
-        contract_address_hash: CeloCoreContracts.get_address(:celo_token),
+  defp to_tokens(token_transfers) do
+    token_transfers
+    |> Enum.map(
+      &%{
+        contract_address_hash: &1.token_contract_address_hash,
         type: @token_type
       }
-    ]
+    )
+    |> Enum.uniq()
   end
 end

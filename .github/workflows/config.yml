@@ -581,6 +581,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
   test_nethermind_mox_indexer:
     strategy:
       fail-fast: false
@@ -647,6 +648,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
   test_nethermind_mox_block_scout_web:
     strategy:
       fail-fast: false
@@ -747,3 +749,4 @@ jobs:
           ACCOUNT_REDIS_URL: "redis://localhost:6379"
           SOURCIFY_INTEGRATION_ENABLED: "true"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"

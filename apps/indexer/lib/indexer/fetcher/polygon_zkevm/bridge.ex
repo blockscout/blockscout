@@ -21,8 +21,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
   alias Explorer.Chain.PolygonZkevm.Reader
-  alias Explorer.SmartContract.Reader, as: SmartContractReader
-  alias Indexer.Helper
+  alias Indexer.Helper, as: IndexerHelper
   alias Indexer.Transform.Addresses
 
   # 32-byte signature of the event BridgeEvent(uint8 leafType, uint32 originNetwork, address originAddress, uint32 destinationNetwork, address destinationAddress, uint256 amount, bytes metadata, uint32 depositCount)
@@ -68,8 +67,11 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   @spec filter_bridge_events(list(), binary()) :: list()
   def filter_bridge_events(events, bridge_contract) do
     Enum.filter(events, fn event ->
-      Helper.address_hash_to_string(event.address_hash, true) == bridge_contract and
-        Enum.member?([@bridge_event, @claim_event_v1, @claim_event_v2], Helper.log_topic_to_string(event.first_topic))
+      IndexerHelper.address_hash_to_string(event.address_hash, true) == bridge_contract and
+        Enum.member?(
+          [@bridge_event, @claim_event_v1, @claim_event_v2],
+          IndexerHelper.log_topic_to_string(event.first_topic)
+        )
     end)
   end
 
@@ -111,7 +113,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
     error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
 
-    Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+    IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
   @doc """
@@ -239,7 +241,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   defp blocks_to_timestamps(events, json_rpc_named_arguments) do
     events
-    |> Helper.get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
+    |> IndexerHelper.get_blocks_by_events(json_rpc_named_arguments, 100_000_000)
     |> Enum.reduce(%{}, fn block, acc ->
       block_number = quantity_to_integer(Map.get(block, "number"))
       timestamp = timestamp_to_datetime(Map.get(block, "timestamp"))
@@ -384,14 +386,16 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     tokens_not_inserted =
       tokens_to_insert
       |> Enum.reject(fn token ->
-        Enum.any?(tokens_inserted, fn inserted -> token.address == Helper.address_hash_to_string(inserted.address) end)
+        Enum.any?(tokens_inserted, fn inserted ->
+          token.address == IndexerHelper.address_hash_to_string(inserted.address)
+        end)
       end)
       |> Enum.map(& &1.address)
 
     tokens_inserted_outside = Reader.token_addresses_to_ids_from_db(tokens_not_inserted)
 
     tokens_inserted
-    |> Enum.reduce(%{}, fn t, acc -> Map.put(acc, Helper.address_hash_to_string(t.address), t.id) end)
+    |> Enum.reduce(%{}, fn t, acc -> Map.put(acc, IndexerHelper.address_hash_to_string(t.address), t.id) end)
     |> Map.merge(tokens_existing)
     |> Map.merge(tokens_inserted_outside)
   end
@@ -429,7 +433,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
       if status == :ok do
         response = parse_response(response)
 
-        address = Helper.address_hash_to_string(request.contract_address, true)
+        address = IndexerHelper.address_hash_to_string(request.contract_address, true)
 
         new_data = get_new_data(token_data_acc[address] || %{}, request, response)
 
@@ -455,7 +459,8 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
       end)
       |> List.flatten()
 
-    {responses, error_messages} = read_contracts_with_retries(requests, @erc20_abi, json_rpc_named_arguments, 3)
+    {responses, error_messages} =
+      IndexerHelper.read_contracts_with_retries(requests, @erc20_abi, json_rpc_named_arguments, 3)
 
     if not Enum.empty?(error_messages) or Enum.count(requests) != Enum.count(responses) do
       Logger.warning(
@@ -464,33 +469,6 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
     end
 
     {requests, responses}
-  end
-
-  defp read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left) when retries_left > 0 do
-    responses = SmartContractReader.query_contracts(requests, abi, json_rpc_named_arguments: json_rpc_named_arguments)
-
-    error_messages =
-      Enum.reduce(responses, [], fn {status, error_message}, acc ->
-        acc ++
-          if status == :error do
-            [error_message]
-          else
-            []
-          end
-      end)
-
-    if Enum.empty?(error_messages) do
-      {responses, []}
-    else
-      retries_left = retries_left - 1
-
-      if retries_left == 0 do
-        {responses, Enum.uniq(error_messages)}
-      else
-        :timer.sleep(1000)
-        read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left)
-      end
-    end
   end
 
   defp get_new_data(data, request, response) do

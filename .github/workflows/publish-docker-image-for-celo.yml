@@ -1,17 +1,17 @@
-name: Immutable Publish Docker image
+name: Celo Publish Docker image
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - production-immutable
+      - production-celo
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
-      DOCKER_CHAIN_NAME: immutable
+      DOCKER_CHAIN_NAME: celo
     steps:
       - uses: actions/checkout@v4
       - name: Setup repo
@@ -40,4 +40,4 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=polygon_edge
+            CHAIN_TYPE=${{ env.DOCKER_CHAIN_NAME }}

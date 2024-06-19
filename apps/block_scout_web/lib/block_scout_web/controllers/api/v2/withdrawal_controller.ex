@@ -12,7 +12,13 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
 
   def withdrawals_list(conn, params) do
     full_options =
-      [necessity_by_association: %{address: :optional, block: :optional}, api?: true]
+      [
+        necessity_by_association: %{
+          [address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+          block: :optional
+        },
+        api?: true
+      ]
       |> Keyword.merge(paging_options(params))
 
     withdrawals_plus_one = Chain.list_withdrawals(full_options)

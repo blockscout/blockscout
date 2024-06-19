@@ -2,12 +2,12 @@ defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
   alias BlockScoutWeb.Plug.{GraphQL, RateLimit}
-  alias BlockScoutWeb.{ApiRouter, WebRouter}
+  alias BlockScoutWeb.Routers.{AccountRouter, ApiRouter, WebRouter}
 
   @max_query_string_length 5_000
 
   if Application.compile_env(:block_scout_web, :admin_panel_enabled) do
-    forward("/admin", BlockScoutWeb.AdminRouter)
+    forward("/admin", BlockScoutWeb.Routers.AdminRouter)
   end
 
   pipeline :browser do
@@ -55,6 +55,8 @@ defmodule BlockScoutWeb.Router do
     plug(RateLimit, graphql?: true)
   end
 
+  match(:*, "/auth/*path", AccountRouter, [])
+
   forward("/api", ApiRouter)
 
   scope "/graphiql" do
@@ -93,6 +95,6 @@ defmodule BlockScoutWeb.Router do
   end
 
   if Application.compile_env(:block_scout_web, WebRouter)[:enabled] do
-    forward("/", BlockScoutWeb.WebRouter)
+    forward("/", BlockScoutWeb.Routers.WebRouter)
   end
 end
