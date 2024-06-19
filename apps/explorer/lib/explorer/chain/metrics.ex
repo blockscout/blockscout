@@ -28,7 +28,9 @@ defmodule Explorer.Chain.Metrics do
   end
 
   def init(_) do
-    send(self(), :set_metrics)
+    unless Application.get_env(:explorer, __MODULE__, :disabled?) do
+      send(self(), :set_metrics)
+    end
 
     {:ok, %{}}
   end
