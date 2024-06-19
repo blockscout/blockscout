@@ -34,13 +34,11 @@ for IP in $IP_LIST; do
         BEST_BUILDER=$IP
       fi
     fi
-  else
-    echo "Host $IP is unreachable, skipping."
   fi
 done
 
 if [ -n "$BEST_BUILDER" ]; then
-  echo "$BEST_BUILDER"
+  echo "$BEST_BUILDER" | tr -d '[:space:]'
 else
   echo "No reachable hosts found."
 fi
