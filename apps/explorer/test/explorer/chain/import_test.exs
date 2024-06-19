@@ -375,12 +375,12 @@ defmodule Explorer.Chain.ImportTest do
       not_existing_block_hash = "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471db"
 
       incorrect_data =
-        update_in(@import_data, [:transactions, :params], fn params ->
+        update_in(@import_data, [:logs, :params], fn params ->
           [params |> Enum.at(0) |> Map.put(:block_hash, not_existing_block_hash)]
         end)
 
       assert_raise(Postgrex.Error, fn -> Import.all(incorrect_data) end)
-      assert [] = Repo.all(Transaction)
+      assert [] = Repo.all(Log)
       assert %{consensus: true, refetch_needed: true} = Repo.one(Block)
     end
 
