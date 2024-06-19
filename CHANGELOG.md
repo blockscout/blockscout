@@ -7,7 +7,6 @@
 - Public metrics toggler ([#10279](https://github.com/blockscout/blockscout/issues/10279))
 - Chain & explorer Prometheus metrics ([#10063](https://github.com/blockscout/blockscout/issues/10063))
 - API endpoint to re-fetch token instance metadata ([#10097](https://github.com/blockscout/blockscout/issues/10097))
-- Advanced Filters ([#9769](https://github.com/blockscout/blockscout/issues/9769))
 - *(ci)* Use remote arm64 builder ([#9468](https://github.com/blockscout/blockscout/issues/9468))
 - Adding Mobula price source ([#9971](https://github.com/blockscout/blockscout/issues/9971))
 - Get ERC-1155 token name from contractURI getter fallback ([#10187](https://github.com/blockscout/blockscout/issues/10187))
