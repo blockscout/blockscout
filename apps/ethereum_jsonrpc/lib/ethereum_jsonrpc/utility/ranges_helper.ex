@@ -58,7 +58,7 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
 
   defp number_in_ranges?(number, ranges) do
     Enum.reduce_while(ranges, false, fn
-      _from.._to = range, _acc -> if number in range, do: {:halt, true}, else: {:cont, false}
+      _from.._to//_ = range, _acc -> if number in range, do: {:halt, true}, else: {:cont, false}
       num_to_latest, _acc -> if number >= num_to_latest, do: {:halt, true}, else: {:cont, false}
     end)
   end
@@ -78,7 +78,7 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     |> Enum.reject(&is_nil/1)
     |> Enum.sort_by(
       fn
-        from.._to -> from
+        from.._to//_ -> from
         el -> el
       end,
       :asc
@@ -86,10 +86,10 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     |> Enum.chunk_while(
       nil,
       fn
-        _from.._to = chunk, nil ->
+        _from.._to//_ = chunk, nil ->
           {:cont, chunk}
 
-        _ch_from..ch_to = chunk, acc_from..acc_to = acc ->
+        _ch_from..ch_to//_ = chunk, acc_from..acc_to//_ = acc ->
           if Range.disjoint?(chunk, acc),
             do: {:cont, acc, chunk},
             else: {:cont, acc_from..max(ch_to, acc_to)}
@@ -97,7 +97,7 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
         num, nil ->
           {:halt, num}
 
-        num, acc_from.._ = acc ->
+        num, acc_from.._//_ = acc ->
           if Range.disjoint?(num..num, acc), do: {:cont, acc, num}, else: {:halt, acc_from}
 
         _, num ->
@@ -113,7 +113,7 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
   @spec split([Range.t()], integer) :: [Range.t()]
   def split(ranges, size) do
     ranges
-    |> Enum.reduce([], fn from..to = range, acc ->
+    |> Enum.reduce([], fn from..to//_ = range, acc ->
       range_size = Range.size(range)
 
       if range_size > size do

@@ -2311,7 +2311,7 @@ defmodule Explorer.Chain do
   @spec missing_block_number_ranges(Range.t()) :: [Range.t()]
   def missing_block_number_ranges(range)
 
-  def missing_block_number_ranges(range_start..range_end) do
+  def missing_block_number_ranges(range_start..range_end//_) do
     range_min = min(range_start, range_end)
     range_max = max(range_start, range_end)
 

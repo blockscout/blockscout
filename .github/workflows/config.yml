@@ -32,8 +32,8 @@ on:
 
 env:
   MIX_ENV: test
-  OTP_VERSION: ${{ github.ref_name == '9256/merge' && '26.2.5.1' || vars.OTP_VERSION }}
-  ELIXIR_VERSION: ${{ github.ref_name == '9256/merge' && '1.16.3' || vars.ELIXIR_VERSION }}
+  OTP_VERSION: ${{ github.ref_name == '9256/merge' && '27.0' || vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ github.ref_name == '9256/merge' && '1.17.1' || vars.ELIXIR_VERSION }}
   ACCOUNT_AUTH0_DOMAIN: "blockscoutcom.us.auth0.com"
 
 jobs:
