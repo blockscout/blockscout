@@ -34,20 +34,21 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
 
     ## Parameters
     - `end_block`: The ending block number up to which the discovery should occur.
-                   If `nil` or negative, the function returns with no action taken.
+                   If `nil` or lesser than the indexer first block, the function
+                   returns with no action taken.
     - `state`: Contains the operational configuration, including the depth of
                blocks to consider for the starting point of message discovery.
 
     ## Returns
     - `{:ok, nil}`: If `end_block` is `nil`, indicating no discovery action was required.
-    - `{:ok, 0}`: If `end_block` is negative, indicating that the genesis of the block
-                  chain was reached.
+    - `{:ok, rollup_first_block}`: If `end_block` is lesser than the indexer first block,
+      indicating that the "genesis" of the block chain was reached.
     - `{:ok, start_block}`: Upon successful discovery of historical messages, where
-                            `start_block` indicates the necessity to consider another
-                            block range in the next iteration of message discovery.
+      `start_block` indicates the necessity to consider another block range in the next
+      iteration of message discovery.
     - `{:ok, end_block + 1}`: If the required block range is not fully indexed,
-                              indicating that the next iteration of message discovery
-                              should start with the same block range.
+      indicating that the next iteration of message discovery should start with the same
+      block range.
   """
   @spec discover_historical_messages_from_l2(nil | integer(), %{
           :config => %{
@@ -62,18 +63,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     {:ok, nil}
   end
 
-  def discover_historical_messages_from_l2(end_block, _)
-      when is_integer(end_block) and end_block < 0 do
-    {:ok, 0}
+  def discover_historical_messages_from_l2(end_block, %{config: %{rollup_rpc: %{first_block: rollup_first_block}}})
+      when is_integer(end_block) and end_block < rollup_first_block do
+    {:ok, rollup_first_block}
   end
 
   def discover_historical_messages_from_l2(
         end_block,
-        %{config: %{messages_from_l2_blocks_depth: messages_from_l2_blocks_depth}} = _state
+        %{
+          config: %{
+            messages_from_l2_blocks_depth: messages_from_l2_blocks_depth,
+            rollup_rpc: %{first_block: rollup_first_block}
+          }
+        } = _state
       )
-      when is_integer(end_block) and is_integer(messages_from_l2_blocks_depth) and
-             messages_from_l2_blocks_depth > 0 do
-    start_block = max(0, end_block - messages_from_l2_blocks_depth + 1)
+      when is_integer(end_block) do
+    start_block = max(rollup_first_block, end_block - messages_from_l2_blocks_depth + 1)
 
     if Db.indexed_blocks?(start_block, end_block) do
       do_discover_historical_messages_from_l2(start_block, end_block)
@@ -130,21 +135,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     `:relayed`, as they represent completed actions from L1 to L2.
 
     ## Parameters
-    - `end_block`: The ending block number for the discovery operation. If `nil` or negative,
-      the function returns immediately with no action.
+    - `end_block`: The ending block number for the discovery operation.
+                   If `nil` or lesser than the indexer first block, the function
+                   returns with no action taken.
     - `state`: The current state of the operation, containing configuration parameters
-      including `messages_to_l2_blocks_depth`, `chunk_size`, and JSON RPC connection settings.
+               including `messages_to_l2_blocks_depth`, `chunk_size`, and JSON RPC connection
+               settings.
 
     ## Returns
     - `{:ok, nil}`: If `end_block` is `nil`, indicating no action was necessary.
-    - `{:ok, 0}`: If `end_block` is negative, indicating that the genesis of the block chain
-                  was reached.
+    - `{:ok, rollup_first_block}`: If `end_block` is lesser than the indexer first block,
+      indicating that the "genesis" of the block chain was reached.
     - `{:ok, start_block}`: On successful completion of historical message discovery, where
-                            `start_block` indicates the necessity to consider another block
-                            range in the next iteration of message discovery.
+      `start_block` indicates the necessity to consider another block range in the next
+      iteration of message discovery.
     - `{:ok, end_block + 1}`: If the required block range is not fully indexed, indicating
-                              that the next iteration of message discovery should start with
-                              the same block range.
+      that the next iteration of message discovery should start with the same block range.
   """
   @spec discover_historical_messages_to_l2(nil | integer(), %{
           :config => %{
@@ -164,14 +170,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     {:ok, nil}
   end
 
-  def discover_historical_messages_to_l2(end_block, _)
-      when is_integer(end_block) and end_block < 0 do
-    {:ok, 0}
+  def discover_historical_messages_to_l2(end_block, %{config: %{rollup_rpc: %{first_block: rollup_first_block}}})
+      when is_integer(end_block) and end_block < rollup_first_block do
+    {:ok, rollup_first_block}
   end
 
-  def discover_historical_messages_to_l2(end_block, %{config: %{messages_to_l2_blocks_depth: _} = config} = _state)
+  def discover_historical_messages_to_l2(
+        end_block,
+        %{config: %{messages_to_l2_blocks_depth: _, rollup_rpc: %{first_block: _}} = config} = _state
+      )
       when is_integer(end_block) do
-    start_block = max(0, end_block - config.messages_to_l2_blocks_depth + 1)
+    start_block = max(config.rollup_rpc.first_block, end_block - config.messages_to_l2_blocks_depth + 1)
 
     # Although indexing blocks is not necessary to determine the completion of L1-to-L2 messages,
     # for database consistency, it is preferable to delay marking these messages as completed.
