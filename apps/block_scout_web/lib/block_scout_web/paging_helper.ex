@@ -215,7 +215,8 @@ defmodule BlockScoutWeb.PagingHelper do
       "order",
       "state_filter",
       "l2_block_range_start",
-      "l2_block_range_end"
+      "l2_block_range_end",
+      "batch_number"
     ])
   end
 
