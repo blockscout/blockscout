@@ -940,4 +940,24 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       blocks
     end
   end
+
+  defp celo_pending_epoch_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
+    ordered_epoch_blocks =
+      inserted_blocks
+      |> Enum.filter(fn block -> CeloHelper.epoch_block_number?(block.number) && block.consensus end)
+      |> Enum.map(&%{block_hash: &1.hash})
+      |> Enum.sort_by(& &1.block_hash)
+      |> Enum.dedup_by(& &1.block_hash)
+
+    Import.insert_changes_list(
+      repo,
+      ordered_epoch_blocks,
+      conflict_target: :block_hash,
+      on_conflict: :nothing,
+      for: CeloPendingEpochBlockOperation,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
+  end
 end
