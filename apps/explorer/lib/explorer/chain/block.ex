@@ -10,8 +10,8 @@ defmodule Explorer.Chain.Block.Schema do
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
-  alias Explorer.Chain.Celo.Epoch.Reward, as: CeloEpochReward
-  alias Explorer.Chain.Celo.Epoch.ElectionReward, as: CeloEpochElectionReward
+  alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
                         :ethereum ->
