@@ -4357,7 +4357,7 @@ defmodule Explorer.Chain do
     |> Instance.address_to_unique_token_instances()
     |> Instance.page_token_instance(paging_options)
     |> limit(^paging_options.page_size)
-    |> preload([_], [:owner])
+    |> preload([_], owner: [:names, :smart_contract, :proxy_implementations])
     |> select_repo(options).all()
     |> Enum.map(&put_owner_to_token_instance(&1, token, options))
   end
@@ -4383,7 +4383,16 @@ defmodule Explorer.Chain do
       |> Instance.owner_query()
       |> select_repo(options).one()
 
-    %{token_instance | owner: select_repo(options).get_by(Address, hash: owner_address_hash)}
+    owner =
+      Address.get(
+        owner_address_hash,
+        options
+        |> Keyword.merge(
+          necessity_by_association: %{[owner: [:names, :smart_contract, :proxy_implementations]] => :optional}
+        )
+      )
+
+    %{token_instance | owner: owner}
   end
 
   def put_owner_to_token_instance(%Instance{} = token_instance, _token, _options), do: token_instance
