@@ -438,6 +438,37 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
+    Retrieves a batch by its number.
+
+    ## Parameters
+    - `number`: The number of a rollup batch.
+
+    ## Returns
+    - A map representing a bath compatible with the database import operation,
+      or `nil` if no batch with such a number is found.
+  """
+  @spec get_batch_by_number(non_neg_integer()) ::
+          %{
+            number: non_neg_integer(),
+            transactions_count: non_neg_integer(),
+            start_block: FullBlock.block_number(),
+            end_block: FullBlock.block_number(),
+            before_acc: String.t(),
+            after_acc: String.t(),
+            commitment_id: non_neg_integer()
+          }
+          | nil
+  def get_batch_by_number(number) do
+    case Reader.get_batch_by_number(number) do
+      nil ->
+        nil
+
+      batch ->
+        batch |> batch_to_map()
+    end
+  end
+
+  @doc """
     Retrieves rollup blocks within a specified block range that have not yet been confirmed.
 
     ## Parameters
@@ -727,6 +758,19 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @spec closest_block_after_timestamp(DateTime.t()) :: {:error, :not_found} | {:ok, FullBlock.block_number()}
   def closest_block_after_timestamp(timestamp) do
     Chain.timestamp_to_block_number(timestamp, :after, false)
+  end
+
+  defp batch_to_map(batch) do
+    [
+      :number,
+      :transactions_count,
+      :start_block,
+      :end_block,
+      :before_acc,
+      :after_acc,
+      :commitment_id
+    ]
+    |> db_record_to_map(batch)
   end
 
   defp lifecycle_transaction_to_map(tx) do

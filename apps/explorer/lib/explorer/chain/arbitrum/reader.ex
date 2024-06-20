@@ -354,6 +354,27 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
+    Retrieves the batch by its number.
+
+    ## Parameters
+    - `number`: The number of a rollup batch.
+
+    ## Returns
+    - An instance of `Explorer.Chain.Arbitrum.L1Batch`, or `nil` if no batch with
+      such a number is found.
+  """
+  @spec get_batch_by_number(non_neg_integer()) :: L1Batch.t() | nil
+  def get_batch_by_number(number) do
+    query =
+      from(batch in L1Batch,
+        where: batch.number == ^number
+      )
+
+    query
+    |> Repo.one()
+  end
+
+  @doc """
     Retrieves the L1 block number where the confirmation transaction of the highest confirmed rollup block was included.
 
     ## Returns
