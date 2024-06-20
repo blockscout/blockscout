@@ -20,6 +20,7 @@
 
 ### 🐛 Bug Fixes
 
+- Add token instances preloads ([#10288](https://github.com/blockscout/blockscout/issues/10288))
 - Set timeout in seconds ([#10283](https://github.com/blockscout/blockscout/issues/10283))
 - Fix ci setup repo error ([#10277](https://github.com/blockscout/blockscout/issues/10277))
 - `getsourcecode` in API v1 for verified proxy ([#10273](https://github.com/blockscout/blockscout/issues/10273))
