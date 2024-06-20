@@ -4,6 +4,8 @@ defmodule EthereumJSONRPC.Encoder do
   received from, the blockchain.
   """
 
+  require Logger
+
   alias ABI.TypeDecoder
 
   @doc """
@@ -103,6 +105,9 @@ defmodule EthereumJSONRPC.Encoder do
       result
       |> String.slice(2..-1)
       |> Base.decode16!(case: :lower)
+      |> fn x ->
+        Logger.info("TypeDecoder 1, data: #{inspect(x)}, types: #{inspect(types_list)}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}")
+      end.()
       |> TypeDecoder.decode_raw(types_list)
       |> Enum.zip(types_list)
       |> Enum.map(fn

@@ -3,6 +3,8 @@ defmodule Explorer.Helper do
   Auxiliary common functions.
   """
 
+  require Logger
+
   alias ABI.TypeDecoder
   alias Explorer.Chain
   alias Explorer.Chain.Data
@@ -29,6 +31,7 @@ defmodule Explorer.Helper do
   def decode_data(encoded_data, types) do
     encoded_data
     |> Base.decode16!(case: :mixed)
+    |> fn x -> Logger.info("TypeDecoder 3, data: #{inspect(x)}, types: #{inspect(types)}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}") end.()
     |> TypeDecoder.decode_raw(types)
   end
 

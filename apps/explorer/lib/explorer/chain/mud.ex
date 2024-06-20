@@ -255,6 +255,7 @@ defmodule Explorer.Chain.Mud do
   defp decode_abi_encoded_strings("0x" <> hex_encoded) do
     hex_encoded
     |> Base.decode16!(case: :mixed)
+    |> fn x -> Logger.info("TypeDecoder 2, data: #{inspect(x)}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}") end.()
     |> TypeDecoder.decode_raw([{:array, :string}])
     |> Enum.at(0)
   end

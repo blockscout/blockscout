@@ -538,6 +538,7 @@ defmodule Explorer.Chain.BridgedToken do
           try do
             balancer_current_tokens_encoded
             |> Base.decode16!(case: :mixed)
+            |> fn x -> Logger.info("TypeDecoder 5, data: #{inspect(x)}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}") end.()
             |> TypeDecoder.decode_raw([{:array, :address}])
           rescue
             _ -> []
@@ -751,6 +752,7 @@ defmodule Explorer.Chain.BridgedToken do
       try do
         abi_encoded_value
         |> Base.decode16!(case: :mixed)
+        |> fn x -> Logger.info("TypeDecoder 6, data: #{inspect(x)}, types: #{inspect(types)}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}") end.()
         |> TypeDecoder.decode_raw(types)
       rescue
         _ -> [nil]
@@ -787,6 +789,7 @@ defmodule Explorer.Chain.BridgedToken do
   defp decode_contract_response(abi_encoded_value, type) do
     abi_encoded_value
     |> Base.decode16!(case: :mixed)
+    |> fn x -> Logger.info("TypeDecoder 7, data: #{inspect(x)}, types: #{inspect([type])}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}") end.()
     |> TypeDecoder.decode_raw([type])
   end
 

@@ -431,6 +431,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         _ =
           assumed_arguments
           |> Base.decode16!(case: :mixed)
+          |> fn x -> Logger.info("TypeDecoder 10, data: #{inspect(x)}, types: #{inspect(input_types)}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}") end.()
           |> TypeDecoder.decode_raw(input_types)
 
         assumed_arguments
