@@ -18,8 +18,10 @@ defmodule Explorer.Chain.Metrics do
     :weekly_verified_smart_contracts_number,
     :weekly_new_addresses_number,
     :weekly_new_tokens_number,
-    :weekly_new_token_transfers_number,
-    :weekly_active_addresses_number
+    :weekly_new_token_transfers_number
+    # todo; this metric causes increasing of AccessShareLocks
+    # which increases DB loading. Disabling this metric for now.
+    # :weekly_active_addresses_number
   ]
 
   @spec start_link(term()) :: GenServer.on_start()
