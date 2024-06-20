@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
-  alias Explorer.{Chain, Helper, Repo}
+  alias Explorer.{Chain, Helper}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
@@ -138,7 +138,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {:ok, holder_address_hash}} <- {:format, Chain.string_to_address_hash(holder_address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(holder_address_hash_string, params) do
-      holder_address = %Address{Repo.get_by(Address, hash: holder_address_hash) | proxy_implementations: nil}
+      holder_address = Address.get(holder_address_hash, @api_true)
+
+      holder_address_with_proxy_implementations =
+        holder_address && %Address{holder_address | proxy_implementations: nil}
 
       results_plus_one =
         Instance.token_instances_by_holder_address_hash(
@@ -158,7 +161,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> put_status(200)
       |> put_view(AddressView)
       |> render(:nft_list, %{
-        token_instances: token_instances |> put_owner(holder_address),
+        token_instances: token_instances |> put_owner(holder_address_with_proxy_implementations),
         next_page_params: next_page_params,
         token: token
       })
