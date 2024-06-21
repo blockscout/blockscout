@@ -4388,7 +4388,7 @@ defmodule Explorer.Chain do
         owner_address_hash,
         options
         |> Keyword.merge(
-          necessity_by_association: %{[owner: [:names, :smart_contract, :proxy_implementations]] => :optional}
+          necessity_by_association: %{names: :optional, smart_contract: :optional, proxy_implementations: :optional}
         )
       )
 
