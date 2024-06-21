@@ -3,8 +3,6 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
     Functionality to discover proven batches
   """
 
-  require Logger
-
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Indexer.Fetcher.ZkSync.Utils.{Db, Rpc}
 
@@ -98,7 +96,6 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
         "0x7f61885c" <> encoded_params ->
           # proveBatches(StoredBatchInfo calldata _prevBatch, StoredBatchInfo[] calldata _committedBatches, ProofInput calldata _proof)
           # IO.inspect(FunctionSelector.decode("proveBatches((uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32),(uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32)[],(uint256[],uint256[]))"))
-          Logger.info("TypeDecoder 11, data: #{inspect(Base.decode16!(encoded_params, case: :lower))}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}")
           [_prev_batch, proven_batches, _proof] =
             TypeDecoder.decode(
               Base.decode16!(encoded_params, case: :lower),
@@ -137,7 +134,6 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
         "0xc37533bb" <> encoded_params ->
           # proveBatchesSharedBridge(uint256 _chainId, StoredBatchInfo calldata _prevBatch, StoredBatchInfo[] calldata _committedBatches, ProofInput calldata _proof)
           # IO.inspect(FunctionSelector.decode("proveBatchesSharedBridge(uint256,(uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32),(uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32)[],(uint256[],uint256[]))"))
-          Logger.info("TypeDecoder 12, data: #{inspect(Base.decode16!(encoded_params, case: :lower))}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}")
           [_chainid, _prev_batch, proven_batches, _proof] =
             TypeDecoder.decode(
               Base.decode16!(encoded_params, case: :lower),

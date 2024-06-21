@@ -4558,7 +4558,6 @@ defmodule Explorer.Chain do
   defp decode_params(params, types) do
     params
     |> Base.decode16!(case: :mixed)
-    |> fn x -> Logger.info("TypeDecoder 4, data: #{inspect(x)}, types: #{inspect(types)}, stacktrace: #{inspect(Process.info(self(), :current_stacktrace))}") end.()
     |> TypeDecoder.decode_raw(types)
   end
 
