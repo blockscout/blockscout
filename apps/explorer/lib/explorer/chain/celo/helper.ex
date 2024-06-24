@@ -5,6 +5,10 @@ defmodule Explorer.Chain.Celo.Helper do
 
   alias Explorer.Chain.Block
 
+  @burn_address_hash_string "0x000000000000000000000000000000000000dead"
+
+  def burn_address_hash_string, do: @burn_address_hash_string
+
   @blocks_per_epoch 17_280
 
   def blocks_per_epoch, do: @blocks_per_epoch

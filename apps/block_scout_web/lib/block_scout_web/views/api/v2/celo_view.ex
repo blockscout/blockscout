@@ -2,11 +2,11 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   require Logger
 
   import Explorer.Chain.Celo.Helper, only: [is_epoch_block_number: 1]
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Ecto.Association.NotLoaded
 
   alias BlockScoutWeb.API.V2.{TokenView, TransactionView, Helper}
+  alias Explorer.Chain
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
   alias Explorer.Chain.Celo.EpochReward
@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           token_transfer &&
             TransactionView.render(
               "token_transfer.json",
-              %{token_transfer: token_transfer}
+              %{token_transfer: token_transfer, conn: nil}
             )
 
         {field, token_transfer_json}
@@ -40,39 +40,79 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   def render("celo_epoch_rewards.json", _block), do: nil
 
-  def render("celo_base_fee.json", block) do
+  def render("celo_base_fee.json", %Block{} = block) do
     # For the blocks, where both FeeHandler and Governance contracts aren't
     # deployed, the base fee is not burnt, but refunded to transaction sender,
     # so we return nil in this case.
-    fee_handler_base_fee_breakdown(block) || governance_base_fee_breakdown(block)
+
+    base_fee = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
+
+    fee_handler_base_fee_breakdown(
+      base_fee,
+      block.number
+    ) ||
+      governance_base_fee_breakdown(
+        base_fee,
+        block.number
+      )
   end
 
-  defp fee_handler_base_fee_breakdown(block) do
-    with {:ok, fee_handler_contract_address_hash} when not is_nil(fee_handler_contract_address_hash) <-
-           CeloCoreContracts.get_address(:fee_handler, block.number),
-         {:ok, %{"address" => carbon_offsetting_contract_address_hash}} <-
-           CeloCoreContracts.get_event(:fee_handler, :carbon_offsetting_fund_set, block.number),
-         {:ok, %{"value" => burn_fraction}} <-
-           CeloCoreContracts.get_event(:fee_handler, :burn_fraction_set, block.number) do
-      base_fee = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
-      burn_fraction_decimal = Decimal.new(burn_fraction)
+  defp burn_fraction_decimal(burn_fraction_fixidity_lib)
+       when is_integer(burn_fraction_fixidity_lib) do
+    base = Decimal.new(1, 10, 24)
+    fraction = Decimal.new(1, burn_fraction_fixidity_lib, 0)
+    Decimal.div(fraction, base)
+  end
 
-      burnt_amount = Decimal.mult(base_fee, burn_fraction_decimal)
-      burnt_percentage = Decimal.mult(burn_fraction_decimal, 100)
+  defp fee_handler_base_fee_breakdown(base_fee, block_number) do
+    with {:ok, fee_handler_contract_address_hash} when not is_nil(fee_handler_contract_address_hash) <-
+           CeloCoreContracts.get_address(:fee_handler, block_number),
+         {:ok, %{"address" => fee_beneficiary_address_hash}} <-
+           CeloCoreContracts.get_event(:fee_handler, :fee_beneficiary_set, block_number),
+         {:ok, %{"value" => burn_fraction_fixidity_lib}} <-
+           CeloCoreContracts.get_event(:fee_handler, :burn_fraction_set, block_number) do
+      burn_fraction = burn_fraction_decimal(burn_fraction_fixidity_lib)
+
+      burnt_amount = Decimal.mult(base_fee, burn_fraction)
+      burnt_percentage = Decimal.mult(burn_fraction, 100)
+
       carbon_offsetting_amount = Decimal.sub(base_fee, burnt_amount)
       carbon_offsetting_percentage = Decimal.sub(100, burnt_percentage)
 
+      address_hashes_to_fetch_from_db = [
+        fee_handler_contract_address_hash,
+        fee_beneficiary_address_hash,
+        CeloHelper.burn_address_hash_string()
+      ]
+
+      [
+        fee_handler_contract_address_info,
+        fee_beneficiary_address_info,
+        burn_address_info
+      ] =
+        address_hashes_to_fetch_from_db
+        |> Enum.map(&(&1 |> Chain.string_to_address_hash() |> elem(1)))
+        |> Chain.hashes_to_addresses()
+        |> Stream.concat(Stream.duplicate(nil, 3))
+        |> Stream.zip(address_hashes_to_fetch_from_db)
+        |> Enum.map(fn {address, address_hash} ->
+          Helper.address_with_info(
+            address,
+            address_hash
+          )
+        end)
+
       %{
-        recipient: fee_handler_contract_address_hash,
+        recipient: fee_handler_contract_address_info,
         amount: base_fee,
         breakdown: [
           %{
-            address: burn_address_hash_string(),
+            address: burn_address_info,
             amount: Decimal.to_float(burnt_amount),
             percentage: Decimal.to_float(burnt_percentage)
           },
           %{
-            address: carbon_offsetting_contract_address_hash,
+            address: fee_beneficiary_address_info,
             amount: Decimal.to_float(carbon_offsetting_amount),
             percentage: Decimal.to_float(carbon_offsetting_percentage)
           }
@@ -83,24 +123,30 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     end
   end
 
-  defp governance_base_fee_breakdown(block) do
-    CeloCoreContracts.get_address(:governance, block.number)
-    |> case do
-      {:ok, address_hash} when not is_nil(address_hash) ->
-        base_fee = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
+  defp governance_base_fee_breakdown(base_fee, block_number) do
+    with {:ok, address_hash_string} when not is_nil(address_hash_string) <-
+           CeloCoreContracts.get_address(:governance, block_number),
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
+      address =
+        address_hash
+        |> Chain.hash_to_address()
+        |> case do
+          {:ok, address} -> address
+          {:error, :not_found} -> nil
+        end
 
-        %{
-          recipient: address_hash,
-          amount: base_fee,
-          breakdown: [
-            %{
-              address: address_hash,
-              amount: base_fee,
-              percentage: 100.0
-            }
-          ]
-        }
+      address_with_info =
+        Helper.address_with_info(
+          address,
+          address_hash
+        )
 
+      %{
+        recipient: address_with_info,
+        amount: base_fee,
+        breakdown: []
+      }
+    else
       _ ->
         nil
     end
@@ -147,12 +193,12 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   defp maybe_add_epoch_rewards(celo_epoch_json, _block, false),
     do: celo_epoch_json
 
-  defp maybe_add_base_fee(celo_json, block, true) do
-    base_fee_breakdown_json = render("celo_base_fee.json", block)
+  defp maybe_add_base_fee(celo_json, block_or_transaction, true) do
+    base_fee_breakdown_json = render("celo_base_fee.json", block_or_transaction)
     Map.put(celo_json, "base_fee", base_fee_breakdown_json)
   end
 
-  defp maybe_add_base_fee(celo_json, _block, false),
+  defp maybe_add_base_fee(celo_json, _block_or_transaction, false),
     do: celo_json
 
   def extend_block_json_response(out_json, %Block{} = block, single_block?) do
