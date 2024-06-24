@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.NFTHelper do
           retrieve_image(metadata["image"])
 
         metadata["properties"]["image"] ->
-          retrieve_image(metadata["image"])
+          retrieve_image(metadata["properties"]["image"])
 
         metadata["properties"]["image"]["description"] ->
           metadata["properties"]["image"]["description"]
