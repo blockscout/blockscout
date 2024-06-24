@@ -6,13 +6,13 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   alias Ecto.Association.NotLoaded
 
   alias BlockScoutWeb.API.V2.{TokenView, TransactionView, Helper}
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
-  alias Explorer.Chain.Celo.EpochReward
+  alias Explorer.Chain.Celo.{EpochReward, ElectionReward}
   alias Explorer.Chain.Cache.CeloCoreContracts
 
-  def render("celo_epoch_rewards.json", block) when is_epoch_block_number(block.number) do
+  def render("celo_epoch_rewards.json", %Block{} = block) when is_epoch_block_number(block.number) do
     %EpochReward{
       reserve_bolster_transfer: reserve_bolster_transfer,
       community_transfer: community_transfer,
@@ -38,7 +38,19 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     )
   end
 
-  def render("celo_epoch_rewards.json", _block), do: nil
+  def render("celo_epoch_rewards.json", %Block{} = _block),
+    do: nil
+
+  def render("celo_aggregated_election_rewards.json", %Block{} = block)
+      when is_epoch_block_number(block.number) do
+    block.hash
+    |> ElectionReward.block_hash_to_aggregated_rewards_by_type_query()
+    |> Repo.replica().all()
+    |> Map.new()
+  end
+
+  def render("celo_aggregated_election_rewards.json", %Block{} = _block),
+    do: nil
 
   def render("celo_base_fee.json", %Block{} = block) do
     # For the blocks, where both FeeHandler and Governance contracts aren't
@@ -185,13 +197,25 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     Map.put(out_json, "celo", %{"gas_token" => token_json})
   end
 
-  defp maybe_add_epoch_rewards(celo_epoch_json, block, true) do
+  defp maybe_add_epoch_info(
+         celo_epoch_json,
+         block,
+         true
+       ) do
     epoch_rewards_json = render("celo_epoch_rewards.json", block)
-    Map.put(celo_epoch_json, "rewards", epoch_rewards_json)
+    aggregated_election_rewards_json = render("celo_aggregated_election_rewards.json", block)
+
+    celo_epoch_json
+    |> Map.put("rewards", epoch_rewards_json)
+    |> Map.put("aggregated_election_rewards", aggregated_election_rewards_json)
   end
 
-  defp maybe_add_epoch_rewards(celo_epoch_json, _block, false),
-    do: celo_epoch_json
+  defp maybe_add_epoch_info(
+         celo_epoch_json,
+         _block,
+         false
+       ),
+       do: celo_epoch_json
 
   defp maybe_add_base_fee(celo_json, block_or_transaction, true) do
     base_fee_breakdown_json = render("celo_base_fee.json", block_or_transaction)
@@ -207,7 +231,10 @@ defmodule BlockScoutWeb.API.V2.CeloView do
         "is_epoch_block" => CeloHelper.epoch_block_number?(block.number),
         "number" => CeloHelper.block_number_to_epoch_number(block.number)
       }
-      |> maybe_add_epoch_rewards(block, single_block?)
+      |> maybe_add_epoch_info(
+        block,
+        single_block?
+      )
 
     celo_json =
       %{"epoch" => celo_epoch_json}

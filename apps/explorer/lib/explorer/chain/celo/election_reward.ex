@@ -69,4 +69,14 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     #   name: :celo_election_rewards_pkey
     # )
   end
+
+  @spec block_hash_to_aggregated_rewards_by_type_query(Hash.Full.t()) :: Ecto.Query.t()
+  def block_hash_to_aggregated_rewards_by_type_query(block_hash) do
+    from(
+      r in __MODULE__,
+      where: r.block_hash == ^block_hash,
+      select: {r.type, sum(r.amount)},
+      group_by: r.type
+    )
+  end
 end
