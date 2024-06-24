@@ -77,7 +77,7 @@ defmodule Explorer.Chain.Celo.EpochReward do
         ]
       )
 
-    log_index_to_token_transfer = query |> Repo.all() |> Map.new()
+    log_index_to_token_transfer = query |> Repo.replica().all() |> Map.new()
 
     Enum.reduce(virtual_field_to_log_index, epoch_reward, fn
       {field, log_index}, acc ->
