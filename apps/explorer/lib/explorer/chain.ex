@@ -3011,7 +3011,7 @@ defmodule Explorer.Chain do
 
         {:error, reason} ->
           Logger.error(fn ->
-            ["Error while fetching first trace for tx: #{hash_string} error reason: ", to_string(reason)]
+            ["Error while fetching first trace for tx: #{hash_string} error reason: ", inspect(reason)]
           end)
 
           fetch_tx_revert_reason_using_call(transaction)
