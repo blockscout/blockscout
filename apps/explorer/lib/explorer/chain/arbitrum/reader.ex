@@ -13,6 +13,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Chain.{Hash, Transaction}
 
+  @to_l2_messages_transaction_types [100, 105]
+
   @doc """
     Retrieves the number of the latest L1 block where an L1-to-L2 message was discovered.
 
@@ -729,6 +731,24 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     select_repo(options).all(query)
+  end
+
+  @doc """
+  """
+  @spec missed_messages_to_l2(non_neg_integer()) :: [Hash.t()]
+  def missed_messages_to_l2(messages_limit) do
+    query =
+      from(rollup_tx in Transaction,
+        left_join: msg in Message,
+        on: rollup_tx.hash == msg.completion_transaction_hash and msg.direction == :to_l2,
+        where: rollup_tx.type in @to_l2_messages_transaction_types and is_nil(msg.completion_transaction_hash),
+        select: rollup_tx.hash,
+        order_by: [desc: rollup_tx.block_timestamp],
+        limit: ^messages_limit
+      )
+
+    query
+    |> Repo.all()
   end
 
   @doc """

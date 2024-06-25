@@ -641,6 +641,12 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     end
   end
 
+  @spec missed_messages_to_l2(non_neg_integer()) :: [String.t()]
+  def missed_messages_to_l2(messages_limit) do
+    Reader.missed_messages_to_l2(messages_limit)
+    |> Enum.map(&Hash.to_string/1)
+  end
+
   @doc """
     Retrieves all rollup logs in the range of blocks from `start_block` to `end_block`
     corresponding to the `L2ToL1Tx` event emitted by the ArbSys contract.
