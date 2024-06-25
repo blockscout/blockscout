@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
     defp token_response(conn, token, address_hash) do
       if token.bridged do
-        bridged_token = Repo.get_by(BridgedToken, home_token_contract_address_hash: address_hash)
+        bridged_token = Repo.replica().get_by(BridgedToken, home_token_contract_address_hash: address_hash)
 
         conn
         |> put_status(200)
