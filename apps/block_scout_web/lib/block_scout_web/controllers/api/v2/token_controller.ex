@@ -48,6 +48,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+    alias Explorer.Repo
+
     defp token_response(conn, token, address_hash) do
       if token.bridged do
         bridged_token = Repo.get_by(BridgedToken, home_token_contract_address_hash: address_hash)
