@@ -23,14 +23,14 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
       %Token{
         available_supply: to_decimal(market_data["circulating_supply"]),
         total_supply: to_decimal(market_data["total_supply"]) || to_decimal(market_data["circulating_supply"]),
-        btc_value: btc_value,
+        btc_value: to_decimal(btc_value),
         id: id,
         last_updated: nil,
         market_cap_usd: to_decimal(market_data["market_cap"]),
         tvl_usd: nil,
         name: market_data["name"],
         symbol: String.upcase(market_data["symbol"]),
-        usd_value: current_price,
+        usd_value: to_decimal(current_price),
         volume_24h_usd: to_decimal(market_data["volume"]),
         image_url: image_url
       }
@@ -65,7 +65,11 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @impl Source
   def source_url do
-    "#{base_url()}/market/data?asset=#{config(:coin_id)}"
+    coin_id = config(:coin_id)
+
+    if coin_id,
+      do: "#{base_url()}/market/data?asset=#{coin_id}",
+      else: "#{base_url()}/market/data?symbol=#{Explorer.coin_name()}"
   end
 
   @impl Source
@@ -90,7 +94,11 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @spec history_source_url() :: String.t()
   def history_source_url do
-    "#{base_url()}/market/history?asset=#{config(:coin_id)}"
+    coin_id = config(:coin_id)
+
+    if coin_id,
+      do: "#{base_url()}/market/history?asset=#{config(:coin_id)}",
+      else: "#{base_url()}/market/history?symbol=#{Explorer.coin_name()}"
   end
 
   @spec history_url(non_neg_integer(), boolean()) :: String.t()
