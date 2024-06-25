@@ -65,7 +65,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @impl Source
   def source_url do
-    "#{base_url()}/market/data?asset=#{Explorer.coin_name()}"
+    "#{base_url()}/market/data?asset=#{config(:coin_id)}"
   end
 
   @impl Source
@@ -90,7 +90,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @spec history_source_url() :: String.t()
   def history_source_url do
-    "#{base_url()}/market/history?asset=#{Explorer.coin()}"
+    "#{base_url()}/market/history?asset=#{config(:coin_id)}"
   end
 
   @spec history_url(non_neg_integer(), boolean()) :: String.t()
