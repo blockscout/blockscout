@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.7.1
+
+### 🐛 Bug Fixes
+
+- Fix to_string error ([#10319](https://github.com/blockscout/blockscout/issues/10319))
+- Fix bridged tokens ([#10318](https://github.com/blockscout/blockscout/issues/10318))
+- Missing onlyTopCall option on some geth networks ([#10309](https://github.com/blockscout/blockscout/issues/10309))
+
 ## 6.7.0
 
 ### 🚀 Features
