@@ -66,10 +66,18 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   @impl Source
   def source_url do
     coin_id = config(:coin_id)
+    symbol = if Explorer.coin(), do: String.upcase(Explorer.coin()), else: nil
 
-    if coin_id,
-      do: "#{base_url()}/market/data?asset=#{coin_id}",
-      else: "#{base_url()}/market/data?symbol=#{Explorer.coin_name()}"
+    cond do
+      coin_id ->
+        "#{base_url()}/market/data?asset=#{coin_id}"
+
+      symbol ->
+        "#{base_url()}/market/data?symbol=#{symbol}"
+
+      true ->
+        nil
+    end
   end
 
   @impl Source
@@ -95,10 +103,18 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   @spec history_source_url() :: String.t()
   def history_source_url do
     coin_id = config(:coin_id)
+    symbol = if Explorer.coin(), do: String.upcase(Explorer.coin()), else: nil
 
-    if coin_id,
-      do: "#{base_url()}/market/history?asset=#{config(:coin_id)}",
-      else: "#{base_url()}/market/history?symbol=#{Explorer.coin_name()}"
+    cond do
+      coin_id ->
+        "#{base_url()}/market/history?asset=#{coin_id}"
+
+      symbol ->
+        "#{base_url()}/market/history?symbol=#{symbol}"
+
+      true ->
+        nil
+    end
   end
 
   @spec history_url(non_neg_integer(), boolean()) :: String.t()
