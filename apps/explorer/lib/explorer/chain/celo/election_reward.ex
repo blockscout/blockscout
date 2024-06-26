@@ -4,8 +4,16 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   """
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Block, Hash, Wei}
+  import Ecto.Query,
+    only: [
+      from: 2,
+      where: 3
+    ]
 
+  alias Explorer.Chain.{Address, Block, Hash, Wei}
+  alias Explorer.PagingOptions
+
+  @type type :: :voter | :validator | :group | :delegated_payment
   @types_enum ~w(voter validator group delegated_payment)a
 
   @required_attrs ~w(amount type block_hash account_address_hash associated_account_address_hash)a
@@ -70,7 +78,8 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     # )
   end
 
-  @spec block_hash_to_aggregated_rewards_by_type_query(Hash.Full.t()) :: Ecto.Query.t()
+  def types, do: @types_enum
+
   def block_hash_to_aggregated_rewards_by_type_query(block_hash) do
     from(
       r in __MODULE__,
@@ -78,5 +87,45 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       select: {r.type, sum(r.amount)},
       group_by: r.type
     )
+  end
+
+  def block_hash_to_rewards_by_type_query(block_hash, reward_type) do
+    from(
+      r in __MODULE__,
+      where: r.block_hash == ^block_hash and r.type == ^reward_type,
+      select: r,
+      order_by: [
+        desc: :amount,
+        asc: :account_address_hash,
+        asc: :associated_account_address_hash
+      ]
+    )
+  end
+
+  def paginate(query, %PagingOptions{key: nil}), do: query
+
+  def paginate(query, %PagingOptions{key: {amount, account_address_hash, associated_account_address_hash}}) do
+    where(
+      query,
+      [reward],
+      reward.amount < ^amount or
+        (reward.amount == ^amount and
+           reward.account_address_hash > ^account_address_hash) or
+        (reward.amount == ^amount and
+           reward.account_address_hash == ^account_address_hash and
+           reward.associated_account_address_hash > ^associated_account_address_hash)
+    )
+  end
+
+  def to_block_paging_params(%__MODULE__{
+        amount: amount,
+        account_address_hash: account_address_hash,
+        associated_account_address_hash: associated_account_address_hash
+      }) do
+    %{
+      "amount" => amount,
+      "account_address_hash" => account_address_hash,
+      "associated_account_address_hash" => associated_account_address_hash
+    }
   end
 end

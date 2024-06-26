@@ -17,9 +17,16 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
-  alias BlockScoutWeb.API.V2.{TransactionView, WithdrawalView}
+  alias BlockScoutWeb.API.V2.{
+    CeloView,
+    TransactionView,
+    WithdrawalView
+  }
+
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+  alias Explorer.Chain.Celo.Reader, as: CeloReader
   alias Explorer.Chain.InternalTransaction
 
   case Application.compile_env(:explorer, :chain_type) do
@@ -277,6 +284,69 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         withdrawals: withdrawals |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
+    end
+  end
+
+  @doc """
+  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/election-rewards/:reward_type` endpoint.
+  """
+  def celo_election_rewards(
+        conn,
+        %{"block_hash_or_number" => block_hash_or_number, "reward_type" => reward_type} = params
+      ) do
+    reward_type_to_atom = %{
+      "voter" => :voter,
+      "validator" => :validator,
+      "group" => :group,
+      "delegated-payment" => :delegated_payment
+    }
+
+    with {:ok, reward_type_atom} <- Map.fetch(reward_type_to_atom, reward_type),
+         {:ok, block} <-
+           block_param_to_block(block_hash_or_number) do
+      address_associations = [:names, :smart_contract, :proxy_implementations]
+
+      full_options =
+        [
+          necessity_by_association: %{
+            [account_address: address_associations] => :optional,
+            [associated_account_address: address_associations] => :optional
+          }
+        ]
+        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(@api_true)
+
+      rewards_plus_one =
+        CeloReader.block_hash_to_election_rewards_by_type(
+          block.hash,
+          reward_type_atom,
+          full_options
+        )
+
+      {rewards, next_page} = split_list_by_page(rewards_plus_one)
+
+      filtered_params =
+        params
+        |> delete_parameters_from_next_page_params()
+        |> Map.delete("reward_type")
+
+      next_page_params =
+        next_page_params(
+          next_page,
+          rewards,
+          filtered_params,
+          &CeloElectionReward.to_block_paging_params/1
+        )
+
+      conn
+      |> put_status(200)
+      |> put_view(CeloView)
+      |> render(:celo_election_rewards, %{
+        rewards: rewards,
+        next_page_params: next_page_params
+      })
+    else
+      :error -> {:error, {:invalid, :celo_reward_type}}
     end
   end
 

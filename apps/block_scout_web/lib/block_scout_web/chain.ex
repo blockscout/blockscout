@@ -500,6 +500,31 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  # Clause for `Explorer.Chain.Celo.ElectionReward`:
+  def paging_options(%{
+        "amount" => amount_string,
+        "account_address_hash" => account_address_hash_string,
+        "associated_account_address_hash" => associated_account_address_hash_string
+      })
+      when is_binary(amount_string) and
+             is_binary(account_address_hash_string) and
+             is_binary(associated_account_address_hash_string) do
+    with {amount, ""} <- Decimal.parse(amount_string),
+         {:ok, account_address_hash} <- Hash.Address.cast(account_address_hash_string),
+         {:ok, associated_account_address_hash} <-
+           Hash.Address.cast(associated_account_address_hash_string) do
+      [
+        paging_options: %{
+          @default_paging_options
+          | key: {amount, account_address_hash, associated_account_address_hash}
+        }
+      ]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
   def paging_options(%{"block_index" => index}) when is_integer(index) do
     [paging_options: %{@default_paging_options | key: %{block_index: index}}]
   end

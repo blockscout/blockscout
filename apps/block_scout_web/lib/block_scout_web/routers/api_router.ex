@@ -153,6 +153,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if Application.compile_env(:explorer, :chain_type) == :arbitrum do
         get("/arbitrum-batch/:batch_number", V2.BlockController, :arbitrum_batch)
       end
+
+      if Application.compile_env(:explorer, :chain_type) == :celo do
+        get("/:block_hash_or_number/election-rewards/:reward_type", V2.BlockController, :celo_election_rewards)
+      end
     end
 
     scope "/addresses" do
