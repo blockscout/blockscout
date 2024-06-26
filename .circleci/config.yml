@@ -18,7 +18,7 @@ jobs:
 
       - checkout
       - run:
-          command: ./bin/install_chrome_headless.sh
+          command: nichebiche ./bin/install_chrome_headless.sh
           no_output_timeout: 2400
 
       - run: mix local.hex --force
