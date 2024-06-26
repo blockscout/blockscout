@@ -41,6 +41,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
 
   alias Explorer.Chain
+  alias Explorer.Chain.Arbitrum
 
   require Logger
 
@@ -313,8 +314,24 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   #     rollup
   #   - `rollup_blocks` is a list of rollup blocks associated with the corresponding
   #     lifecycle transactions
-  #   - `confirmed_txs` is a list of L2-to-L1 messages identified up to the highest
-  #     confirmed block number, to be imported with the new status `:confirmed`
+  #   - `confirmed_messages` is a list of L2-to-L1 messages identified up to the
+  #     highest confirmed block number, to be imported with the new status
+  #     `:confirmed`
+  @spec handle_confirmations_from_logs(
+          [%{String.t() => any()}],
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :logs_block_range => non_neg_integer(),
+            :chunk_size => non_neg_integer(),
+            :finalized_confirmations => boolean()
+          },
+          binary()
+        ) ::
+          {:ok | :confirmation_missed,
+           {[Arbitrum.LifecycleTransaction.to_import()], [Arbitrum.BatchBlock.to_import()],
+            [Arbitrum.Message.to_import()]}}
+  defp handle_confirmations_from_logs(logs, l1_rpc_config, outbox_address)
+
   defp handle_confirmations_from_logs([], _, _) do
     {:ok, {[], [], []}}
   end
@@ -359,9 +376,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       # Drawback of marking messages as confirmed during a new confirmation handling
       # is that the status change could become stuck if confirmations are not handled.
       # For example, due to DB inconsistency: some blocks/batches are missed.
-      confirmed_txs = get_confirmed_l2_to_l1_messages(highest_confirmed_block_number)
+      confirmed_messages = get_confirmed_l2_to_l1_messages(highest_confirmed_block_number)
 
-      {retcode, {lifecycle_txs, rollup_blocks, confirmed_txs}}
+      {retcode, {lifecycle_txs, rollup_blocks, confirmed_messages}}
     end
   end
 
