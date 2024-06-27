@@ -42,35 +42,25 @@
   def format_data(%{"data" => data}) when is_list(data) and length(data) >= 1000 do
     chain = chain()
 
-    case data do
-      data when is_list(data) ->
-        data
-        |> Enum.reduce([], fn
-          %{"blockchains" => blockchains, "contracts" => contracts} = item, acc
-          when is_list(blockchains) and is_list(contracts) ->
-            case Enum.find_index(blockchains, fn bc -> bc == chain end) do
-              nil ->
-                acc
-
-              index ->
-                contract = Enum.at(contracts, index)
-
-                case Chain.Hash.Address.cast(contract) do
-                  {:ok, token_contract_hash} ->
-                    [token_contract_hash | acc]
-
-                  _ ->
-                    acc
-                end
-            end
-
-          item, acc ->
+    Enum.reduce(data, [], fn
+      %{"blockchains" => blockchains, "contracts" => contracts}, acc
+      when is_list(blockchains) and is_list(contracts) ->
+        case Enum.find_index(blockchains, fn bc -> bc == chain end) do
+          nil ->
             acc
-        end)
 
-      other ->
-        []
-    end
+          index ->
+            contract = Enum.at(contracts, index)
+
+            case Chain.Hash.Address.cast(contract) do
+              {:ok, token_contract_hash} -> [token_contract_hash | acc]
+              _ -> acc
+            end
+        end
+
+      _, acc ->
+        acc
+    end)
   end
 
   @impl Source
