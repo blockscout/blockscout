@@ -30,6 +30,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
 
+  alias BlockScoutWeb.API.V2.CeloView
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+  alias Explorer.Chain.Celo.Reader, as: CeloReader
+
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
@@ -90,6 +94,27 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   ]
 
   @api_true [api?: true]
+
+  @celo_election_rewards_options [
+    necessity_by_association: %{
+      [
+        account_address: [
+          :names,
+          :smart_contract,
+          :proxy_implementations
+        ]
+      ] => :optional,
+      [
+        associated_account_address: [
+          :names,
+          :smart_contract,
+          :proxy_implementations
+        ]
+      ] => :optional,
+      :block => :optional
+    },
+    api?: true
+  ]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -529,6 +554,34 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> render(:nft_collections, %{collections: collections, next_page_params: next_page_params})
+    end
+  end
+
+  def celo_election_rewards(conn, %{"address_hash_param" => address_hash_string} = params) do
+    with {:ok, address_hash, _address} <- validate_address(address_hash_string, params) do
+      full_options =
+        @celo_election_rewards_options
+        |> Keyword.merge(paging_options(params))
+
+      results_plus_one = CeloReader.address_hash_to_election_rewards(address_hash, full_options)
+
+      {rewards, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params =
+        next_page_params(
+          next_page,
+          rewards,
+          delete_parameters_from_next_page_params(params),
+          &CeloElectionReward.to_address_paging_params/1
+        )
+
+      conn
+      |> put_status(200)
+      |> put_view(CeloView)
+      |> render(:celo_election_rewards, %{
+        rewards: rewards,
+        next_page_params: next_page_params
+      })
     end
   end
 

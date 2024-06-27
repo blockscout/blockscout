@@ -176,6 +176,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:address_hash_param/withdrawals", V2.AddressController, :withdrawals)
       get("/:address_hash_param/nft", V2.AddressController, :nft_list)
       get("/:address_hash_param/nft/collections", V2.AddressController, :nft_collections)
+
+      if Application.compile_env(:explorer, :chain_type) == :celo do
+        get("/:address_hash_param/election-rewards", V2.AddressController, :celo_election_rewards)
+      end
     end
 
     scope "/main-page" do

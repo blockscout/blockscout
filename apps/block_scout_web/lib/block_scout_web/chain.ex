@@ -18,10 +18,8 @@ defmodule BlockScoutWeb.Chain do
 
   alias BlockScoutWeb.PagingHelper
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.UserOperation
   alias Explorer.Account.{TagAddress, TagTransaction, WatchlistAddress}
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
-  alias Explorer.Chain.Block.Reward
 
   alias Explorer.Chain.{
     Address,
@@ -29,6 +27,7 @@ defmodule BlockScoutWeb.Chain do
     Address.CurrentTokenBalance,
     Beacon.Blob,
     Block,
+    Block.Reward,
     Hash,
     InternalTransaction,
     Log,
@@ -43,6 +42,7 @@ defmodule BlockScoutWeb.Chain do
     Wei
   }
 
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
 
@@ -500,7 +500,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  # Clause for `Explorer.Chain.Celo.ElectionReward`:
+  # Clauses for `Explorer.Chain.Celo.ElectionReward`:
   def paging_options(%{
         "amount" => amount_string,
         "account_address_hash" => account_address_hash_string,
@@ -517,6 +517,33 @@ defmodule BlockScoutWeb.Chain do
         paging_options: %{
           @default_paging_options
           | key: {amount, account_address_hash, associated_account_address_hash}
+        }
+      ]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{
+        "block_hash" => block_hash_string,
+        "amount" => amount_string,
+        "associated_account_address_hash" => associated_account_address_hash_string,
+        "type" => type_string
+      })
+      when is_binary(block_hash_string) and
+             is_binary(amount_string) and
+             is_binary(associated_account_address_hash_string) and
+             is_binary(type_string) do
+    with {:ok, block_hash} <- Hash.Full.cast(block_hash_string),
+         {amount, ""} <- Decimal.parse(amount_string),
+         {:ok, associated_account_address_hash} <-
+           Hash.Address.cast(associated_account_address_hash_string),
+         {:ok, type} <- CeloElectionReward.type_from_string(type_string) do
+      [
+        paging_options: %{
+          @default_paging_options
+          | key: {block_hash, amount, associated_account_address_hash, type}
         }
       ]
     else

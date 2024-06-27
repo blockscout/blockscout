@@ -294,14 +294,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         conn,
         %{"block_hash_or_number" => block_hash_or_number, "reward_type" => reward_type} = params
       ) do
-    reward_type_to_atom = %{
-      "voter" => :voter,
-      "validator" => :validator,
-      "group" => :group,
-      "delegated-payment" => :delegated_payment
-    }
-
-    with {:ok, reward_type_atom} <- Map.fetch(reward_type_to_atom, reward_type),
+    with {:ok, reward_type_atom} <- CeloElectionReward.type_from_string(reward_type),
          {:ok, block} <-
            block_param_to_block(block_hash_or_number) do
       address_associations = [:names, :smart_contract, :proxy_implementations]

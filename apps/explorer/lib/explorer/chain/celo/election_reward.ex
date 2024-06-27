@@ -16,6 +16,13 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @type type :: :voter | :validator | :group | :delegated_payment
   @types_enum ~w(voter validator group delegated_payment)a
 
+  @reward_type_string_to_atom %{
+    "voter" => :voter,
+    "validator" => :validator,
+    "group" => :group,
+    "delegated-payment" => :delegated_payment
+  }
+
   @required_attrs ~w(amount type block_hash account_address_hash associated_account_address_hash)a
 
   @primary_key false
@@ -80,6 +87,11 @@ defmodule Explorer.Chain.Celo.ElectionReward do
 
   def types, do: @types_enum
 
+  @spec type_from_string(String.t()) :: {:ok, type} | :error
+  def type_from_string(type_string) do
+    Map.fetch(@reward_type_string_to_atom, type_string)
+  end
+
   def block_hash_to_aggregated_rewards_by_type_query(block_hash) do
     from(
       r in __MODULE__,
@@ -102,8 +114,23 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
   end
 
+  def address_hash_to_rewards_query(address_hash) do
+    from(
+      r in __MODULE__,
+      where: r.account_address_hash == ^address_hash,
+      select: r,
+      order_by: [
+        desc: :block_hash,
+        desc: :amount,
+        asc: :associated_account_address_hash,
+        asc: :type
+      ]
+    )
+  end
+
   def paginate(query, %PagingOptions{key: nil}), do: query
 
+  # Clause to paginate election rewards on block's page
   def paginate(query, %PagingOptions{key: {amount, account_address_hash, associated_account_address_hash}}) do
     where(
       query,
@@ -117,6 +144,24 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
   end
 
+  # Clause to paginate election rewards on a page of address
+  def paginate(query, %PagingOptions{key: {block_hash, amount, associated_account_address_hash, type}}) do
+    where(
+      query,
+      [reward],
+      reward.block_hash < ^block_hash or
+        (reward.block_hash == ^block_hash and
+           reward.amount < ^amount) or
+        (reward.block_hash == ^block_hash and
+           reward.amount == ^amount and
+           reward.associated_account_address_hash > ^associated_account_address_hash) or
+        (reward.block_hash == ^block_hash and
+           reward.amount == ^amount and
+           reward.associated_account_address_hash == ^associated_account_address_hash and
+           reward.type > ^type)
+    )
+  end
+
   def to_block_paging_params(%__MODULE__{
         amount: amount,
         account_address_hash: account_address_hash,
@@ -126,6 +171,20 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       "amount" => amount,
       "account_address_hash" => account_address_hash,
       "associated_account_address_hash" => associated_account_address_hash
+    }
+  end
+
+  def to_address_paging_params(%__MODULE__{
+        block_hash: block_hash,
+        amount: amount,
+        associated_account_address_hash: associated_account_address_hash,
+        type: type
+      }) do
+    %{
+      "block_hash" => block_hash,
+      "amount" => amount,
+      "associated_account_address_hash" => associated_account_address_hash,
+      "type" => type
     }
   end
 end

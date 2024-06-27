@@ -93,7 +93,8 @@ defmodule Explorer.Chain do
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
-  @default_paging_options %PagingOptions{page_size: 50}
+  @default_page_size 50
+  @default_paging_options %PagingOptions{page_size: @default_page_size}
 
   @token_transfers_per_transaction_preview 10
   @token_transfers_necessity_by_association %{
@@ -121,7 +122,6 @@ defmodule Explorer.Chain do
   @revert_msg_prefix_6_empty "execution reverted"
 
   @limit_showing_transactions 10_000
-  @default_page_size 50
 
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`

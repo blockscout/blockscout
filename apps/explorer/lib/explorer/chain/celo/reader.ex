@@ -14,6 +14,19 @@ defmodule Explorer.Chain.Celo.Reader do
   alias Explorer.Chain.{Hash, Wei}
 
   @election_reward_types ElectionReward.types()
+  @default_paging_options default_paging_options()
+
+  def address_hash_to_election_rewards(address_hash, options \\ []) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    address_hash
+    |> ElectionReward.address_hash_to_rewards_query()
+    |> ElectionReward.paginate(paging_options)
+    |> limit(^paging_options.page_size)
+    |> join_associations(necessity_by_association)
+    |> select_repo(options).all()
+  end
 
   @spec block_hash_to_election_rewards_by_type(
           Hash.t(),
@@ -24,7 +37,7 @@ defmodule Explorer.Chain.Celo.Reader do
   def block_hash_to_election_rewards_by_type(block_hash, reward_type, options \\ [])
       when reward_type in @election_reward_types do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, default_paging_options())
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     block_hash
     |> ElectionReward.block_hash_to_rewards_by_type_query(reward_type)
