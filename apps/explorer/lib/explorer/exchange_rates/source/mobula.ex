@@ -4,7 +4,7 @@
   """
 
   require Logger
-  alias Explorer.{Chain}
+  alias Explorer.Chain
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -132,12 +132,6 @@
   def source_url(input) do
     symbol = input
     "#{base_url()}/market/data?symbol=#{symbol}"
-  end
-
-  def secondary_source_url do
-    coin_id = config(:secondary_coin_id)
-
-    if coin_id, do: "#{base_url()}/market/data/#{coin_id}", else: nil
   end
 
   @spec secondary_history_source_url() :: String.t()

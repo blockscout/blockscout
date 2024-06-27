@@ -3,7 +3,6 @@ defmodule Explorer.ExchangeRates.Source do
   Behaviour for fetching exchange rates from external sources.
   """
 
-  alias Explorer.ExchangeRates.Source.Mobula
   alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Source.CoinGecko
   alias Explorer.ExchangeRates.Token
