@@ -758,8 +758,24 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #
   # ## Returns
   # - A tuple containing:
-  #   - A map of rollup blocks, ready for database import.
+  #   - A map of rollup blocks, where each block is ready for database import.
   #   - A list of rollup transactions, ready for database import.
+  @spec get_rollup_blocks_and_transactions(
+          %{
+            non_neg_integer() => %{
+              :number => non_neg_integer(),
+              :start_block => non_neg_integer(),
+              :end_block => non_neg_integer(),
+              optional(any()) => any()
+            }
+          },
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            optional(any()) => any()
+          }
+        ) ::
+          {%{non_neg_integer() => Arbitrum.BatchBlock.to_import()}, [Arbitrum.BatchTransaction.to_import()]}
   defp get_rollup_blocks_and_transactions(
          batches,
          rollup_rpc_config
