@@ -260,7 +260,6 @@ defmodule Indexer.Fetcher.Optimism do
          {:contract_is_valid, true} <-
            {:contract_is_valid,
             caller == Indexer.Fetcher.Optimism.WithdrawalEvent or Helper.address_correct?(output_oracle)},
-         false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
          {last_l1_block_number, last_l1_transaction_hash} <- caller.get_last_l1_item(),
          {:start_block_l1_valid, true} <-
@@ -353,7 +352,7 @@ defmodule Indexer.Fetcher.Optimism do
     - A tuple of OptimismPortal contract address and start block: {optimism_portal, start_block}.
     - `nil` in case of error.
   """
-  @spec read_system_config(binary(), map()) :: {binary(), non_neg_integer()} | nil
+  @spec read_system_config(binary(), list()) :: {binary(), non_neg_integer()} | nil
   def read_system_config(contract_address, json_rpc_named_arguments) do
     requests = [
       # optimismPortal() public getter

@@ -74,7 +74,6 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {optimism_portal, start_block_l1} <- Optimism.read_system_config(system_config, json_rpc_named_arguments),
-         false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
          {last_l1_block_number, last_l1_tx_hash} <- get_last_l1_item(),
          {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
