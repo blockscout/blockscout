@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @invalid_hash "Invalid hash"
   @invalid_number "Invalid number"
   @invalid_url "Invalid URL"
-  @invalid_celo_reward_type "Invalid Celo reward type, allowed types are: validator, group, delegated-payment"
+  @invalid_celo_reward_type "Invalid Celo reward type, allowed types are: validator, group, voter, delegated-payment"
   @not_found "Not found"
   @contract_interaction_disabled "Contract interaction disabled"
   @restricted_access "Restricted access"
