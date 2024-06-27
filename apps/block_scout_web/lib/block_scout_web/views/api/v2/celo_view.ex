@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   alias Explorer.Chain.Celo.{ElectionReward, EpochReward, Reader}
   alias Explorer.Chain.{Block, Transaction}
 
-  def render("celo_epoch_rewards.json", %Block{} = block) when is_epoch_block_number(block.number) do
+  def render("celo_epoch_distributions.json", %Block{} = block) when is_epoch_block_number(block.number) do
     %EpochReward{
       reserve_bolster_transfer: reserve_bolster_transfer,
       community_transfer: community_transfer,
@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     )
   end
 
-  def render("celo_epoch_rewards.json", %Block{} = _block),
+  def render("celo_epoch_distributions.json", %Block{} = _block),
     do: nil
 
   def render("celo_aggregated_election_rewards.json", %Block{} = block)
@@ -250,11 +250,11 @@ defmodule BlockScoutWeb.API.V2.CeloView do
          block,
          true
        ) do
-    epoch_rewards_json = render("celo_epoch_rewards.json", block)
+    epoch_rewards_json = render("celo_epoch_distributions.json", block)
     aggregated_election_rewards_json = render("celo_aggregated_election_rewards.json", block)
 
     celo_epoch_json
-    |> Map.put("rewards", epoch_rewards_json)
+    |> Map.put("ditributions", epoch_rewards_json)
     |> Map.put("aggregated_election_rewards", aggregated_election_rewards_json)
   end
 
