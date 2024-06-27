@@ -1,9 +1,10 @@
-defmodule Explorer.ExchangeRates.Source.Mobula do
+-defmodule Explorer.ExchangeRates.Source.Mobula do
   @moduledoc """
   Adapter for fetching exchange rates from https://mobula.io
   """
 
   require Logger
+  alias Explorer.{Chain}
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -36,6 +37,38 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
       }
     ]
   end
+
+  @impl Source
+  def format_data(%{"data" => data}) when is_list(data) and length(data) >= 1000 do
+    chain = chain()
+
+    case data do
+      data when is_list(data) ->
+        data
+        |> Enum.reduce([], fn
+          %{"blockchains" => blockchains, "contracts" => contracts} = item, acc when is_list(blockchains) and is_list(contracts) ->
+            case Enum.find_index(blockchains, fn bc -> bc == chain end) do
+              nil ->
+                acc
+              index ->
+                contract = Enum.at(contracts, index)
+                case Chain.Hash.Address.cast(contract) do
+                  {:ok, token_contract_hash} ->
+                    [token_contract_hash | acc]
+                  _ ->
+                    acc
+                end
+            end
+
+          item, acc ->
+            acc
+        end)
+
+      other ->
+        []
+    end
+  end
+
 
   @impl Source
   def format_data(%{"data" => data}) do
@@ -88,9 +121,20 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   end
 
   @impl Source
+  def source_url(:coins_list) do
+    "#{base_url()}/all?fields=contracts,blockchains"
+  end
+
+  @impl Source
   def source_url(input) do
     symbol = input
     "#{base_url()}/market/data?symbol=#{symbol}"
+  end
+
+  def secondary_source_url do
+    coin_id = config(:secondary_coin_id)
+
+    if coin_id, do: "#{base_url()}/market/data/#{coin_id}", else: nil
   end
 
   @spec secondary_history_source_url() :: String.t()
