@@ -46,15 +46,19 @@
       data when is_list(data) ->
         data
         |> Enum.reduce([], fn
-          %{"blockchains" => blockchains, "contracts" => contracts} = item, acc when is_list(blockchains) and is_list(contracts) ->
+          %{"blockchains" => blockchains, "contracts" => contracts} = item, acc
+          when is_list(blockchains) and is_list(contracts) ->
             case Enum.find_index(blockchains, fn bc -> bc == chain end) do
               nil ->
                 acc
+
               index ->
                 contract = Enum.at(contracts, index)
+
                 case Chain.Hash.Address.cast(contract) do
                   {:ok, token_contract_hash} ->
                     [token_contract_hash | acc]
+
                   _ ->
                     acc
                 end
@@ -68,7 +72,6 @@
         []
     end
   end
-
 
   @impl Source
   def format_data(%{"data" => data}) do
