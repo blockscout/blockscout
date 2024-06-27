@@ -29,7 +29,7 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
   import Explorer.Helper, only: [parse_integer: 1]
 
   alias EthereumJSONRPC.Block.ByHash
-  alias EthereumJSONRPC.Blocks
+  alias EthereumJSONRPC.{Blocks, Contract}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Beacon.Blob, as: BeaconBlob
   alias Explorer.Chain.{Block, Hash}
@@ -79,20 +79,23 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
   def handle_info(:init_with_delay, %{json_rpc_named_arguments_l2: json_rpc_named_arguments_l2} = state) do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
+    optimism_env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
+    system_config = optimism_env[:optimism_l1_system_config]
+    optimism_l1_rpc = optimism_env[:optimism_l1_rpc]
+
+    with {:system_config_valid, true} <- {:system_config_valid, Helper.address_correct?(system_config)},
          {:genesis_block_l2_invalid, false} <-
            {:genesis_block_l2_invalid, is_nil(env[:genesis_block_l2]) or env[:genesis_block_l2] < 0},
          {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
-         optimism_l1_rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc],
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.address_correct?(env[:batch_inbox])},
-         {:batch_submitter_valid, true} <- {:batch_submitter_valid, Helper.address_correct?(env[:batch_submitter])},
-         start_block_l1 = parse_integer(env[:start_block_l1]),
+         json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
+         {start_block_l1, batch_inbox, batch_submitter} = read_system_config(system_config, json_rpc_named_arguments),
+         {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.address_correct?(batch_inbox)},
+         {:batch_submitter_valid, true} <- {:batch_submitter_valid, Helper.address_correct?(batch_submitter)},
          false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
          chunk_size = parse_integer(env[:blocks_chunk_size]),
          {:chunk_size_valid, true} <- {:chunk_size_valid, !is_nil(chunk_size) && chunk_size > 0},
-         json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {last_l1_block_number, last_l1_transaction_hash, last_l1_tx} = get_last_l1_item(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
@@ -104,8 +107,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
 
       {:noreply,
        %{
-         batch_inbox: String.downcase(env[:batch_inbox]),
-         batch_submitter: String.downcase(env[:batch_submitter]),
+         batch_inbox: batch_inbox,
+         batch_submitter: batch_submitter,
          eip4844_blobs_api_url: trim_url(env[:eip4844_blobs_api_url]),
          celestia_blobs_api_url: trim_url(env[:celestia_blobs_api_url]),
          block_check_interval: block_check_interval,
@@ -118,8 +121,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
        }}
     else
-      {:start_block_l1_undefined, true} ->
-        # the process shouldn't start if the start block is not defined
+      {:system_config_valid, false} ->
+        Logger.error("SystemConfig contract address is invalid or undefined.")
         {:stop, :normal, state}
 
       {:genesis_block_l2_invalid, true} ->
@@ -163,6 +166,10 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check op_transaction_batches table."
         )
 
+        {:stop, :normal, state}
+
+      nil ->
+        Logger.error("Cannot read SystemConfig contract.")
         {:stop, :normal, state}
 
       _ ->
@@ -1222,6 +1229,35 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
     |> Enum.sort(fn t1, t2 ->
       {t1.block_number, t1.index} < {t2.block_number, t2.index}
     end)
+  end
+
+  defp read_system_config(contract_address, json_rpc_named_arguments) do
+    requests = [
+      # startBlock() public getter
+      Contract.eth_call_request("0x48cd4cb1", contract_address, 0, nil, nil),
+      # batchInbox() public getter
+      Contract.eth_call_request("0xdac6e63a", contract_address, 1, nil, nil),
+      # batcherHash() public getter
+      Contract.eth_call_request("0xe81b2c6d", contract_address, 2, nil, nil)
+    ]
+
+    error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
+
+    case Helper.repeated_call(
+           &json_rpc/2,
+           [requests, json_rpc_named_arguments],
+           error_message,
+           Helper.infinite_retries_number()
+         ) do
+      {:ok, responses} ->
+        start_block = quantity_to_integer(Enum.at(responses, 0).result)
+        "0x000000000000000000000000" <> batch_inbox = Enum.at(responses, 1).result
+        "0x000000000000000000000000" <> batch_submitter = Enum.at(responses, 2).result
+        {start_block, String.downcase("0x" <> batch_inbox), String.downcase("0x" <> batch_submitter)}
+
+      _ ->
+        nil
+    end
   end
 
   defp first_byte("0x" <> tx_input) do
