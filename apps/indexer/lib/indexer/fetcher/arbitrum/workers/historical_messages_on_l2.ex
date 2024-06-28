@@ -12,13 +12,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1]
 
-  alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
   alias EthereumJSONRPC.Transaction, as: TransactionByRPC
 
   alias Explorer.Chain
 
   alias Indexer.Fetcher.Arbitrum.Messaging
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
   require Logger
 
@@ -110,7 +109,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   defp do_discover_historical_messages_from_l2(start_block, end_block) do
     log_info("Block range for discovery historical messages from L2: #{start_block}..#{end_block}")
 
-    logs = Db.l2_to_l1_logs(start_block, end_block)
+    logs = Db.logs_for_missed_messages_from_l2(start_block, end_block)
 
     unless logs == [] do
       messages =
@@ -218,67 +217,51 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
        ) do
     log_info("Block range for discovery historical messages to L2: #{start_block}..#{end_block}")
 
-    {messages, _} =
-      start_block..end_block
-      |> Enum.chunk_every(chunk_size)
-      |> Enum.reduce({[], 0}, fn chunk, {messages_acc, chunks_counter} ->
-        Logging.log_details_chunk_handling(
-          "Collecting rollup data",
-          {"block", "blocks"},
-          chunk,
-          chunks_counter,
-          end_block - start_block + 1
-        )
+    transactions = Db.transactions_for_missed_messages_to_l2(start_block, end_block)
+    transactions_length = length(transactions)
 
-        # Since DB does not contain the field RequestId specific to Arbitrum
-        # all transactions will be requested from the rollup RPC endpoint.
-        # The catchup process intended to be run once and only for the BS instance
-        # which are already exist, so it does not make sense to introduce
-        # the new field in DB
-        requests = build_block_by_number_requests(chunk)
+    if transactions_length > 0 do
+      log_info("#{transactions_length} historical messages to L2 discovered")
 
-        messages =
-          requests
-          |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getBlockByNumber")
-          |> get_transactions()
-          |> Enum.map(fn tx ->
-            tx
-            |> TransactionByRPC.to_elixir()
-            |> TransactionByRPC.elixir_to_params()
-          end)
-          |> Messaging.filter_l1_to_l2_messages(false)
+      messages =
+        transactions
+        |> Enum.chunk_every(chunk_size)
+        |> Enum.reduce([], fn chunk, messages_acc ->
+          # Since DB does not contain the field RequestId specific to Arbitrum
+          # all transactions will be requested from the rollup RPC endpoint.
+          # The catchup process intended to be run once and only for the BS instance
+          # which are already exist, so it does not make sense to introduce
+          # the new field in DB
+          requests = build_transaction_requests(chunk)
 
-        {messages ++ messages_acc, chunks_counter + length(chunk)}
-      end)
+          messages =
+            requests
+            |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
+            |> Enum.map(fn tx ->
+              tx
+              |> TransactionByRPC.to_elixir()
+              |> TransactionByRPC.elixir_to_params()
+            end)
+            |> Messaging.filter_l1_to_l2_messages(false)
 
-    unless messages == [] do
+          messages ++ messages_acc
+        end)
+
       log_info("#{length(messages)} completions of L1-to-L2 messages will be imported")
+      import_to_db(messages)
     end
-
-    import_to_db(messages)
 
     {:ok, start_block}
   end
 
-  # Constructs a list of `eth_getBlockByNumber` requests for a given list of block numbers.
-  defp build_block_by_number_requests(block_numbers) do
-    block_numbers
-    |> Enum.reduce([], fn block_num, requests_list ->
+  # Constructs a list of `eth_getTransactionByHash` requests for a given list of transaction hashes.
+  defp build_transaction_requests(tx_hashes) do
+    tx_hashes
+    |> Enum.reduce([], fn tx_hash, requests_list ->
       [
-        BlockByNumber.request(%{
-          id: block_num,
-          number: block_num
-        })
+        Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash})
         | requests_list
       ]
-    end)
-  end
-
-  # Aggregates transactions from a list of blocks, combining them into a single list.
-  defp get_transactions(blocks_by_rpc) do
-    blocks_by_rpc
-    |> Enum.reduce([], fn block_by_rpc, txs ->
-      block_by_rpc["transactions"] ++ txs
     end)
   end
 

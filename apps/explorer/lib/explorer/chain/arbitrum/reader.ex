@@ -56,18 +56,18 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
-    Retrieves the number of the earliest rollup block where an L2-to-L1 message was discovered.
-
-    ## Returns
-    - The number of rollup block, or `nil` if no L2-to-L1 messages are found.
   """
-  @spec rollup_block_of_earliest_discovered_message_from_l2() :: FullBlock.block_number() | nil
-  def rollup_block_of_earliest_discovered_message_from_l2 do
+  @spec rollup_block_of_first_missed_message_from_l2(binary(), binary()) :: FullBlock.block_number() | nil
+  def rollup_block_of_first_missed_message_from_l2(arbsys_contract, l2_to_l1_event) do
     query =
-      from(msg in Message,
-        select: msg.originating_transaction_block_number,
-        where: msg.direction == :from_l2 and not is_nil(msg.originating_transaction_block_number),
-        order_by: [asc: msg.originating_transaction_block_number],
+      from(log in Log,
+        left_join: msg in Message,
+        on: log.transaction_hash == msg.originating_transaction_hash and msg.direction == :from_l2,
+        where:
+          log.address_hash == ^arbsys_contract and log.first_topic == ^l2_to_l1_event and
+            is_nil(msg.originating_transaction_hash),
+        select: log.block_number,
+        order_by: [desc: log.block_number],
         limit: 1
       )
 
@@ -76,26 +76,16 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
-    Retrieves the number of the earliest rollup block where a completed L1-to-L2 message was discovered.
-
-    ## Returns
-    - The block number of the rollup block, or `nil` if no completed L1-to-L2 messages are found,
-      or if the rollup transaction that emitted the corresponding message has not been indexed yet.
   """
-  @spec rollup_block_of_earliest_discovered_message_to_l2() :: FullBlock.block_number() | nil
-  def rollup_block_of_earliest_discovered_message_to_l2 do
-    completion_tx_subquery =
-      from(msg in Message,
-        select: msg.completion_transaction_hash,
-        where: msg.direction == :to_l2 and not is_nil(msg.completion_transaction_hash),
-        order_by: [asc: msg.message_id],
-        limit: 1
-      )
-
+  @spec rollup_block_of_first_missed_message_to_l2() :: FullBlock.block_number() | nil
+  def rollup_block_of_first_missed_message_to_l2 do
     query =
-      from(tx in Transaction,
-        select: tx.block_number,
-        where: tx.hash == subquery(completion_tx_subquery),
+      from(rollup_tx in Transaction,
+        left_join: msg in Message,
+        on: rollup_tx.hash == msg.completion_transaction_hash and msg.direction == :to_l2,
+        where: rollup_tx.type in @to_l2_messages_transaction_types and is_nil(msg.completion_transaction_hash),
+        select: rollup_tx.block_number,
+        order_by: [desc: rollup_tx.block_number],
         limit: 1
       )
 
@@ -735,16 +725,17 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
   @doc """
   """
-  @spec transactions_for_missed_messages_to_l2(non_neg_integer()) :: [Hash.t()]
-  def transactions_for_missed_messages_to_l2(messages_limit) do
+  @spec transactions_for_missed_messages_to_l2(non_neg_integer(), non_neg_integer()) :: [Hash.t()]
+  def transactions_for_missed_messages_to_l2(start_block, end_block) do
     query =
       from(rollup_tx in Transaction,
         left_join: msg in Message,
         on: rollup_tx.hash == msg.completion_transaction_hash and msg.direction == :to_l2,
-        where: rollup_tx.type in @to_l2_messages_transaction_types and is_nil(msg.completion_transaction_hash),
+        where:
+          rollup_tx.type in @to_l2_messages_transaction_types and is_nil(msg.completion_transaction_hash) and
+            rollup_tx.block_number >= ^start_block and rollup_tx.block_number <= ^end_block,
         select: rollup_tx.hash,
-        order_by: [desc: rollup_tx.block_timestamp],
-        limit: ^messages_limit
+        order_by: [desc: rollup_tx.block_timestamp]
       )
 
     query
@@ -753,23 +744,25 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
   @doc """
   """
-  @spec logs_for_missed_messages_from_l2(binary(), binary(), non_neg_integer()) :: %{
-          transaction_hash: Hash.t(),
-          data: binary()
-        }
-  def logs_for_missed_messages_from_l2(arbsys_contract, l2_to_l1_event, messages_limit) do
+  @spec logs_for_missed_messages_from_l2(non_neg_integer(), non_neg_integer(), binary(), binary()) :: [Log.t()]
+  def logs_for_missed_messages_from_l2(start_block, end_block, arbsys_contract, l2_to_l1_event) do
+    # It is assumed that all the messages from the same transaction are handled
+    # atomically so there is no need to check the message_id for each log entry.
+    # Otherwise, the join condition must be extended with
+    # fragment("encode(l0.fourth_topic, 'hex') = LPAD(TO_HEX(a1.message_id::BIGINT), 64, '0')")
     query =
       from(log in Log,
         left_join: msg in Message,
         on:
           log.transaction_hash == msg.originating_transaction_hash and msg.direction == :from_l2 and
-            fragment("encode(l0.fourth_topic, 'hex') = LPAD(TO_HEX(a1.message_id::BIGINT), 64, '0')"),
+            msg.originating_transaction_block_number >= ^start_block and
+            msg.originating_transaction_block_number <= ^end_block,
         where:
           log.address_hash == ^arbsys_contract and log.first_topic == ^l2_to_l1_event and
+            log.block_number >= ^start_block and log.block_number <= ^end_block and
             is_nil(msg.originating_transaction_hash),
         select: log,
-        order_by: [desc: log.block_number, desc: log.index],
-        limit: ^messages_limit
+        order_by: [desc: log.block_number, desc: log.index]
       )
 
     query

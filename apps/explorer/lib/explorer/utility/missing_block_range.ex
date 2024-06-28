@@ -182,7 +182,9 @@ defmodule Explorer.Utility.MissingBlockRange do
   defp update_to_number_or_delete_range(%{from_number: from} = range, to) when to > from, do: Repo.delete(range)
   defp update_to_number_or_delete_range(range, to), do: update_range(range, %{to_number: to})
 
-  defp get_range_by_block_number(number) do
+  @doc """
+  """
+  def get_range_by_block_number(number) do
     number
     |> include_bound_query()
     |> Repo.one()
