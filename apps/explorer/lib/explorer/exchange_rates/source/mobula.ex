@@ -42,21 +42,17 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   def format_data(%{"data" => data}) when is_list(data) do
     chain = chain()
 
-    Enum.reduce(data, [], fn item, acc ->
-      case item do
-        %{"blockchains" => blockchains, "contracts" => contracts}
-        when is_list(blockchains) and is_list(contracts) ->
-          with {:ok, index} <- find_contract_index(blockchains, chain),
-               {:ok, contract} <- get_contract(contracts, index),
-               {:ok, token_contract_hash} <- cast_contract_hash(contract) do
-            [token_contract_hash | acc]
-          else
-            _ -> acc
-          end
-
-        _ ->
-          acc
-      end
+    Enum.reduce(data, [], fn
+      item, acc ->
+        with %{"blockchains" => blockchains, "contracts" => contracts}
+             when is_list(blockchains) and is_list(contracts) <- item,
+             index when not is_nil(index) <- Enum.find_index(blockchains, &(&1 == chain)),
+             contract when not is_nil(contract) <- Enum.at(contracts, index),
+             {:ok, token_contract_hash} <- Explorer.Chain.Hash.Address.cast(contract) do
+          [token_contract_hash | acc]
+        else
+          _ -> acc
+        end
     end)
   end
 
@@ -85,30 +81,6 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @impl Source
   def format_data(_), do: []
-
-  defp find_contract_index(blockchains, chain) do
-    case Enum.find_index(blockchains, fn bc -> bc == chain end) do
-      nil -> :error
-      index -> {:ok, index}
-    end
-  end
-
-  defp get_contract(contracts, index) do
-    contract = Enum.at(contracts, index)
-
-    if contract do
-      {:ok, contract}
-    else
-      :error
-    end
-  end
-
-  defp cast_contract_hash(contract) do
-    case Chain.Hash.Address.cast(contract) do
-      {:ok, token_contract_hash} -> {:ok, token_contract_hash}
-      _ -> :error
-    end
-  end
 
   @impl Source
   def source_url do
