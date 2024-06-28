@@ -3,9 +3,13 @@ defmodule Explorer.Chain.Celo.Helper do
   Common helper functions for Celo.
   """
 
+  import Explorer.Chain.Cache.CeloCoreContracts, only: [atom_to_contract_name: 0]
+
   alias Explorer.Chain.Block
 
   @blocks_per_epoch 17_280
+
+  @core_contract_atoms atom_to_contract_name() |> Map.keys()
 
   def blocks_per_epoch, do: @blocks_per_epoch
 
@@ -13,6 +17,9 @@ defmodule Explorer.Chain.Celo.Helper do
            when is_integer(block_number) and
                   block_number >= 0 and
                   rem(block_number, @blocks_per_epoch) == 0
+
+  defguard is_core_contract_atom(atom)
+           when atom in @core_contract_atoms
 
   @spec epoch_block_number?(block_number :: Block.block_number()) :: boolean
   def epoch_block_number?(block_number)

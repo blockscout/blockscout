@@ -1,5 +1,5 @@
-defmodule Indexer.Fetcher.Celo.EpochRewards.Supervisor.Case do
-  alias Indexer.Fetcher.Celo.EpochRewards
+defmodule Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor.Case do
+  alias Indexer.Fetcher.Celo.EpochBlockOperations
 
   def start_supervised!(fetcher_arguments \\ []) when is_list(fetcher_arguments) do
     merged_fetcher_arguments =
@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.Celo.EpochRewards.Supervisor.Case do
       )
 
     [merged_fetcher_arguments]
-    |> EpochRewards.Supervisor.child_spec()
+    |> EpochBlockOperations.Supervisor.child_spec()
     |> ExUnit.Callbacks.start_supervised!()
   end
 end

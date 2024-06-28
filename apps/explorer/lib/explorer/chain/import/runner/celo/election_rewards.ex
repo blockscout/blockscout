@@ -71,8 +71,6 @@ defmodule Explorer.Chain.Import.Runner.Celo.ElectionRewards do
         }
       )
 
-    dbg(ordered_changes_list)
-
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,

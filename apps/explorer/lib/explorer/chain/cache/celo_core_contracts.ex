@@ -79,11 +79,10 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
              | :event_atom_not_found
              | :contract_name_not_found
              | :event_name_not_found
-             | :contract_address_not_found}
+             | :contract_address_not_found
+             | :event_does_not_exist}
   def get_event(contract_atom, event_atom, block_number) do
-    core_contracts = Application.get_env(:explorer, __MODULE__)[:contracts]
-
-    with {:ok, address} when not is_nil(address) <- get_address(contract_atom, block_number),
+    with {:ok, address} <- get_address(contract_atom, block_number),
          {:contract_atom, {:ok, contract_name}} <-
            {:contract_atom, Map.fetch(@atom_to_contract_name, contract_atom)},
          {:event_atom, {:ok, event_name}} <-
@@ -100,13 +99,11 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
          {:contract_address, {:ok, contract_events}} <-
            {:contract_address, Map.fetch(contract_addresses, address)},
          {:event_name, {:ok, event_updates}} <-
-           {:event_name, Map.fetch(contract_events, event_name)} do
-      current_event =
-        event_updates
-        |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
-        |> Enum.take(-1)
-        |> List.first()
-
+           {:event_name, Map.fetch(contract_events, event_name)},
+         current_event when not is_nil(current_event) <-
+           event_updates
+           |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
+           |> List.last() do
       {:ok, current_event}
     else
       nil ->
@@ -144,6 +141,9 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
         end)
 
         {:error, :event_name_not_found}
+
+      nil ->
+        {:error, :event_does_not_exist}
 
       {:contract_address, :error} ->
         Logger.error(fn ->
@@ -205,28 +205,18 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
           {:ok, EthereumJSONRPC.address() | nil}
           | {:error,
              :contract_atom_not_found
-             | :contract_name_not_found}
-  def get_address(
-        contract_atom,
-        block_number
-      ) do
-    contract_atom
-    |> get_address_updates()
-    |> case do
-      {:ok, address_updates} ->
-        current_address =
-          address_updates
-          |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
-          |> Enum.take(-1)
-          |> case do
-            [%{"address" => address}] ->
-              address
-
-            _ ->
-              nil
-          end
-
-        {:ok, current_address}
+             | :contract_name_not_found
+             | :address_does_not_exist}
+  def get_address(contract_atom, block_number) do
+    with {:ok, address_updates} <- get_address_updates(contract_atom),
+         %{"address" => current_address} <-
+           address_updates
+           |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
+           |> List.last() do
+      {:ok, current_address}
+    else
+      nil ->
+        {:error, :address_does_not_exist}
 
       error ->
         error

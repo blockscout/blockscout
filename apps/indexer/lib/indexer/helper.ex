@@ -180,10 +180,10 @@ defmodule Indexer.Helper do
 
   ## Examples
 
-      iex> Explorer.Chain.Cache.CeloCoreContracts.range_chunk_every(1..10, 3)
+      iex> Indexer.Helper.range_chunk_every(1..10, 3)
       #Stream<...>
 
-      iex> Enum.to_list(Explorer.Chain.Cache.CeloCoreContracts.range_chunk_every(1..10, 3))
+      iex> Enum.to_list(Indexer.Helper.range_chunk_every(1..10, 3))
       [1..3, 4..6, 7..9, 10..10]
   """
   @spec range_chunk_every(Range.t(), non_neg_integer()) :: Enum.t()

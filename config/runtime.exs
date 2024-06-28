@@ -999,7 +999,7 @@ config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor,
     ConfigHelper.chain_type() == :celo and
       not ConfigHelper.parse_bool_env_var("INDEXER_CELO_EPOCH_FETCHER_DISABLED")
 
-config :indexer, Indexer.Fetcher.Celo.EpochRewards.Supervisor,
+config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
   enabled:
     ConfigHelper.chain_type() == :celo and
       not ConfigHelper.parse_bool_env_var("INDEXER_CELO_EPOCH_FETCHER_DISABLED")
