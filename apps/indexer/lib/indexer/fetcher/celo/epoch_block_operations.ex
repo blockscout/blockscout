@@ -56,13 +56,17 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
     ]
   end
 
-  @spec async_fetch([%{block_number: Block.block_number(), block_hash: Hash.Full}]) :: :ok
-  def async_fetch(entries, timeout \\ 5000) when is_list(entries) do
+  @spec async_fetch(
+          [%{block_number: Block.block_number(), block_hash: Hash.Full}],
+          boolean(),
+          integer()
+        ) :: :ok
+  def async_fetch(entries, realtime?, timeout \\ 5000) when is_list(entries) do
     if EpochBlockOperationsSupervisor.disabled?() do
       :ok
     else
       filtered_entries = Enum.filter(entries, &epoch_block_number?(&1.block_number))
-      BufferedTask.buffer(__MODULE__, filtered_entries, timeout)
+      BufferedTask.buffer(__MODULE__, filtered_entries, realtime?, timeout)
     end
   end
 

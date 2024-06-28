@@ -20,6 +20,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens, as: PolygonZkevmBridgeL1Tokens
+  alias Indexer.Fetcher.Celo.EpochBlockOperations, as: CeloEpochBlockOperations
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
 
   alias Indexer.{Prometheus, TokenBalances, Tracer}
@@ -501,6 +502,14 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_polygon_zkevm_bridge_l1_tokens(_), do: :ok
+
+  def async_import_celo_epoch_block_operations(%{blocks: operations}, realtime?) do
+    operations
+    |> Enum.map(&%{block_number: &1.number, block_hash: &1.hash})
+    |> CeloEpochBlockOperations.async_fetch(realtime?)
+  end
+
+  def async_import_celo_epoch_block_operations(_, _), do: :ok
 
   defp block_reward_errors_to_block_numbers(block_reward_errors) when is_list(block_reward_errors) do
     Enum.map(block_reward_errors, &block_reward_error_to_block_number/1)
