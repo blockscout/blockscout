@@ -182,19 +182,23 @@ defmodule Explorer.Market.History.Cataloger do
 
   @spec source_price(boolean()) :: module()
   defp source_price(secondary_coin?) do
-    if secondary_coin? do
-      config_or_default(
-        :secondary_coin_price_source,
-        Explorer.ExchangeRates.Source,
-        Explorer.Market.History.Source.Price.CryptoCompare
-      )
-    else
-      config_or_default(
-        :price_source,
-        Explorer.ExchangeRates.Source,
-        Explorer.Market.History.Source.Price.CryptoCompare
-      )
-    end
+
+    source =
+      if secondary_coin? do
+        config_or_default(
+          :secondary_coin_price_source,
+          Explorer.ExchangeRates.Source,
+          Explorer.Market.History.Source.Price.CryptoCompare
+        )
+      else
+        config_or_default(
+          :price_source,
+          Explorer.ExchangeRates.Source,
+          Explorer.Market.History.Source.Price.CryptoCompare
+        )
+      end
+
+    source
   end
 
   @spec source_market_cap() :: module()
