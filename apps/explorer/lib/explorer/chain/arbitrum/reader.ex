@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   alias Explorer.{Chain, PagingOptions, Repo}
 
   alias Explorer.Chain.Block, as: FullBlock
-  alias Explorer.Chain.{Hash, Transaction}
+  alias Explorer.Chain.{Hash, Transaction, Log}
 
   @to_l2_messages_transaction_types [100, 105]
 
@@ -735,8 +735,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
   @doc """
   """
-  @spec missed_messages_to_l2(non_neg_integer()) :: [Hash.t()]
-  def missed_messages_to_l2(messages_limit) do
+  @spec transactions_for_missed_messages_to_l2(non_neg_integer()) :: [Hash.t()]
+  def transactions_for_missed_messages_to_l2(messages_limit) do
     query =
       from(rollup_tx in Transaction,
         left_join: msg in Message,
@@ -744,6 +744,31 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         where: rollup_tx.type in @to_l2_messages_transaction_types and is_nil(msg.completion_transaction_hash),
         select: rollup_tx.hash,
         order_by: [desc: rollup_tx.block_timestamp],
+        limit: ^messages_limit
+      )
+
+    query
+    |> Repo.all()
+  end
+
+  @doc """
+  """
+  @spec logs_for_missed_messages_from_l2(binary(), binary(), non_neg_integer()) :: %{
+          transaction_hash: Hash.t(),
+          data: binary()
+        }
+  def logs_for_missed_messages_from_l2(arbsys_contract, l2_to_l1_event, messages_limit) do
+    query =
+      from(log in Log,
+        left_join: msg in Message,
+        on:
+          log.transaction_hash == msg.originating_transaction_hash and msg.direction == :from_l2 and
+            fragment("encode(l0.fourth_topic, 'hex') = LPAD(TO_HEX(a1.message_id::BIGINT), 64, '0')"),
+        where:
+          log.address_hash == ^arbsys_contract and log.first_topic == ^l2_to_l1_event and
+            is_nil(msg.originating_transaction_hash),
+        select: log,
+        order_by: [desc: log.block_number, desc: log.index],
         limit: ^messages_limit
       )
 

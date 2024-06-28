@@ -641,10 +641,35 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     end
   end
 
-  @spec missed_messages_to_l2(non_neg_integer()) :: [String.t()]
-  def missed_messages_to_l2(messages_limit) do
-    Reader.missed_messages_to_l2(messages_limit)
+  @doc """
+  """
+  @spec transactions_for_missed_messages_to_l2(non_neg_integer()) :: [String.t()]
+  def transactions_for_missed_messages_to_l2(messages_limit) do
+    Reader.transactions_for_missed_messages_to_l2(messages_limit)
     |> Enum.map(&Hash.to_string/1)
+  end
+
+  @doc """
+  """
+  @spec logs_for_missed_messages_from_l2(non_neg_integer()) :: [
+          %{
+            data: String,
+            index: non_neg_integer(),
+            first_topic: String,
+            second_topic: String,
+            third_topic: String,
+            fourth_topic: String,
+            address_hash: String,
+            transaction_hash: String,
+            block_hash: String,
+            block_number: FullBlock.block_number()
+          }
+        ]
+  def logs_for_missed_messages_from_l2(messages_limit) do
+    arbsys_contract = Application.get_env(:indexer, Indexer.Fetcher.Arbitrum.Messaging)[:arbsys_contract]
+
+    Reader.logs_for_missed_messages_from_l2(arbsys_contract, @l2_to_l1_event, messages_limit)
+    |> Enum.map(&logs_to_map/1)
   end
 
   @doc """
