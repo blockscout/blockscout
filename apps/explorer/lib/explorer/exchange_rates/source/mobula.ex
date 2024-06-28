@@ -4,7 +4,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   """
 
   require Logger
-  alias Explorer.Chain
+  alias Explorer.Chain.Hash.Address
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -39,7 +39,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   end
 
   @impl Source
-  def format_data(%{"data" => data}) when is_list(data) and length(data) >= 1000 do
+  def format_data(%{"data" => data}) when is_list(data) do
     chain = chain()
 
     Enum.reduce(data, [], fn item, acc ->
