@@ -1,4 +1,4 @@
--defmodule Explorer.ExchangeRates.Source.Mobula do
+defmodule Explorer.ExchangeRates.Source.Mobula do
   @moduledoc """
   Adapter for fetching exchange rates from https://mobula.io
   """
@@ -42,24 +42,21 @@
   def format_data(%{"data" => data}) when is_list(data) and length(data) >= 1000 do
     chain = chain()
 
-    Enum.reduce(data, [], fn
-      %{"blockchains" => blockchains, "contracts" => contracts}, acc
-      when is_list(blockchains) and is_list(contracts) ->
-        case Enum.find_index(blockchains, fn bc -> bc == chain end) do
-          nil ->
-            acc
+    Enum.reduce(data, [], fn item, acc ->
+      case item do
+        %{"blockchains" => blockchains, "contracts" => contracts}
+        when is_list(blockchains) and is_list(contracts) ->
+          with {:ok, index} <- find_contract_index(blockchains, chain),
+               {:ok, contract} <- get_contract(contracts, index),
+               {:ok, token_contract_hash} <- cast_contract_hash(contract) do
+            [token_contract_hash | acc]
+          else
+            _ -> acc
+          end
 
-          index ->
-            contract = Enum.at(contracts, index)
-
-            case Chain.Hash.Address.cast(contract) do
-              {:ok, token_contract_hash} -> [token_contract_hash | acc]
-              _ -> acc
-            end
-        end
-
-      _, acc ->
-        acc
+        _ ->
+          acc
+      end
     end)
   end
 
@@ -88,6 +85,30 @@
 
   @impl Source
   def format_data(_), do: []
+
+  defp find_contract_index(blockchains, chain) do
+    case Enum.find_index(blockchains, fn bc -> bc == chain end) do
+      nil -> :error
+      index -> {:ok, index}
+    end
+  end
+
+  defp get_contract(contracts, index) do
+    contract = Enum.at(contracts, index)
+
+    if contract do
+      {:ok, contract}
+    else
+      :error
+    end
+  end
+
+  defp cast_contract_hash(contract) do
+    case Chain.Hash.Address.cast(contract) do
+      {:ok, token_contract_hash} -> {:ok, token_contract_hash}
+      _ -> :error
+    end
+  end
 
   @impl Source
   def source_url do
