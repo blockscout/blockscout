@@ -48,7 +48,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
              when is_list(blockchains) and is_list(contracts) <- item,
              index when not is_nil(index) <- Enum.find_index(blockchains, &(&1 == chain)),
              contract when not is_nil(contract) <- Enum.at(contracts, index),
-             {:ok, token_contract_hash} <- Explorer.Chain.Hash.Address.cast(contract) do
+             {:ok, token_contract_hash} <- Address.cast(contract) do
           [token_contract_hash | acc]
         else
           _ -> acc
