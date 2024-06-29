@@ -246,7 +246,7 @@ defmodule Indexer.Block.Fetcher do
       Prometheus.Instrumenter.block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
-      update_transactions_cache(inserted[:transactions])
+      # update_transactions_cache(inserted[:transactions])
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
       update_withdrawals_cache(inserted[:withdrawals])
