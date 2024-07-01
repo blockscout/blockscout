@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   import Indexer.Helper, only: [read_contracts_with_retries: 4]
 
   alias Explorer.Repo
+  alias Indexer.Fetcher.Celo.ValidatorGroupVotes
 
   alias Explorer.Chain.{
     Cache.CeloCoreContracts,
@@ -47,6 +48,8 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
         %{block_number: block_number, block_hash: block_hash} = pending_operation,
         json_rpc_named_arguments
       ) do
+    :ok = ValidatorGroupVotes.fetch(block_number)
+
     {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, block_number)
 
     elected_groups_query =
