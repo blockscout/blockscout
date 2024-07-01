@@ -13,6 +13,8 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
   alias Explorer.Chain.TokenTransfer
   alias Indexer.Transform.Celo.ValidatorEpochPaymentDistributions
 
+  require Logger
+
   @max_request_retries 3
 
   @epoch_block_targets [
@@ -80,10 +82,16 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
     requests =
       targets
       |> Enum.map(fn {contract_atom, topic} ->
-        {:ok, address} = CeloCoreContracts.get_address(contract_atom, number)
-        {address, topic}
+        res = CeloCoreContracts.get_address(contract_atom, number)
+        {res, topic}
       end)
-      |> Enum.reject(&match?({nil, _targets}, &1))
+      |> Enum.split_with(&match?({{:ok, _address}, _targets}, &1))
+      |> tap(fn {_, not_found} ->
+        if not Enum.empty?(not_found) do
+          Logger.info("Could not fetch addresses for the following contract atoms: #{inspect(not_found)}")
+        end
+      end)
+      |> elem(0)
       |> Enum.with_index(start_request_id)
       |> Enum.map(fn {{address, topic}, request_id} ->
         Logs.request(
