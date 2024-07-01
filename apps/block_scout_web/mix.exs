@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:cors_plug, "~> 3.0"},
       {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
-      {:dataloader, "~> 1.0.0"},
+      {:dataloader, "~> 2.0.0"},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       # Need until https://github.com/absinthe-graphql/absinthe_relay/pull/125 is released, then can be removed
       # The current `absinthe_relay` is compatible though as shown from that PR
