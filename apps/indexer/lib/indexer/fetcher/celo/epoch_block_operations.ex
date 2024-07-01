@@ -5,6 +5,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   import Explorer.Chain.Celo.Helper, only: [epoch_block_number?: 1]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Block
   alias Explorer.Chain.Celo.PendingEpochBlockOperation
   alias Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, as: EpochBlockOperationsSupervisor
   alias Indexer.Transform.Addresses

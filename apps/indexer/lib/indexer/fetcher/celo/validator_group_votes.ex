@@ -152,7 +152,7 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
 
     {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, chunk_from_block)
 
-    request =
+    requests =
       [
         @validator_group_active_vote_revoked_topic,
         @validator_group_vote_activated_topic
@@ -172,9 +172,9 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
 
     {:ok, responses} =
       IndexerHelper.repeated_batch_rpc_call(
-        [request],
+        requests,
         json_rpc_named_arguments,
-        fn message -> "Could not fetch logs: #{message}" end,
+        fn message -> Logger.error("Could not fetch logs: #{message}") end,
         @max_request_retries
       )
 
