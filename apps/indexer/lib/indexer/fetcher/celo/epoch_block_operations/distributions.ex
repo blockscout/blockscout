@@ -1,13 +1,17 @@
 defmodule Indexer.Fetcher.Celo.EpochBlockOperations.Distributions do
+  @moduledoc """
+  Fetches Reserve bolster, Community, and Carbon offsetting distributions for
+  the epoch block.
+  """
   import Ecto.Query, only: [from: 2, subquery: 1]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.Repo
 
   alias Explorer.Chain.{
+    Cache.CeloCoreContracts,
     Hash,
-    TokenTransfer,
-    Cache.CeloCoreContracts
+    TokenTransfer
   }
 
   @mint_address_hash_string burn_address_hash_string()

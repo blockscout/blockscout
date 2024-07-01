@@ -34,7 +34,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperationsTest do
                  block_hash: unfetched.hash
                }
              ] ==
-              EpochBlockOperations.init(
+               EpochBlockOperations.init(
                  [],
                  fn block_number, acc -> [block_number | acc] end,
                  json_rpc_named_arguments

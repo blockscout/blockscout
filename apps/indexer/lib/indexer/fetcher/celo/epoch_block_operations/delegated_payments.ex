@@ -1,4 +1,7 @@
 defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
+  @moduledoc """
+  Fetches delegated validator payments for the epoch block.
+  """
   import Ecto.Query, only: [from: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Indexer.Fetcher.Celo.Helper, only: [abi_to_method_id: 1]

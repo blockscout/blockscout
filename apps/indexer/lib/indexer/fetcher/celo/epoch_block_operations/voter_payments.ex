@@ -1,4 +1,7 @@
 defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
+  @moduledoc """
+  Fetches voter payments for the epoch block.
+  """
   import Ecto.Query, only: [from: 2]
 
   import Explorer.Helper, only: [decode_data: 2]
@@ -143,7 +146,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
     manual_voters_total = voter_rewards |> Enum.map(& &1.amount) |> Enum.sum()
     {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, pending_operation.block_number)
 
-    voter_rewards_from_event_total =
+    query =
       from(
         l in Log,
         where:
@@ -153,6 +156,9 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
             is_nil(l.transaction_hash),
         select: l.data
       )
+
+    voter_rewards_from_event_total =
+      query
       |> Repo.all()
       |> Enum.map(fn data ->
         [amount] = decode_data(data, [{:uint, 256}])

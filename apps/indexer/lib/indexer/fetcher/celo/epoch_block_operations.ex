@@ -11,10 +11,10 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   alias Indexer.{BufferedTask, Tracer}
 
   alias Indexer.Fetcher.Celo.EpochBlockOperations.{
+    DelegatedPayments,
     Distributions,
-    VoterPayments,
     ValidatorAndGroupPayments,
-    DelegatedPayments
+    VoterPayments
   }
 
   require Logger

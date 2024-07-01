@@ -1,4 +1,7 @@
 defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPayments do
+  @moduledoc """
+  Fetches validator and group payments for the epoch block.
+  """
   import Ecto.Query, only: [from: 2]
 
   alias Explorer.Chain.Cache.CeloCoreContracts

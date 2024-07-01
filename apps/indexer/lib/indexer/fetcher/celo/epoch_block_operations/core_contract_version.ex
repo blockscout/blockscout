@@ -1,4 +1,7 @@
 defmodule Indexer.Fetcher.Celo.EpochBlockOperations.CoreContractVersion do
+  @moduledoc """
+  Fetches the version of the celo core contract.
+  """
   import Indexer.Fetcher.Celo.Helper, only: [abi_to_method_id: 1]
   import Indexer.Helper, only: [read_contracts_with_retries: 5]
 
@@ -31,8 +34,8 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.CoreContractVersion do
       block_number: block_number
     }
 
-    read_contracts_with_retries(
-      [request],
+    [request]
+    |> read_contracts_with_retries(
       @get_version_number_abi,
       json_rpc_named_arguments,
       @repeated_request_max_retries,

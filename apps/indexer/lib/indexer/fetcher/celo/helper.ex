@@ -1,4 +1,8 @@
 defmodule Indexer.Fetcher.Celo.Helper do
+  @moduledoc """
+  Helper functions for the Celo fetchers.
+  """
+
   @spec abi_to_method_id([map()] | map()) :: binary()
   def abi_to_method_id([method]), do: abi_to_method_id(method)
 

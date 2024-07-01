@@ -366,14 +366,17 @@ defmodule Indexer.Helper do
           end
       end)
 
-    if error_messages == [] do
-      {responses, []}
-    else
-      retries_left = retries_left - 1
+    retries_left = retries_left - 1
 
-      if retries_left <= 0 do
+    cond do
+      error_messages == [] ->
+        {responses, []}
+
+      retries_left <= 0 ->
+        if log_error?, do: Logger.error("#{List.first(error_messages)}.")
         {responses, Enum.uniq(error_messages)}
-      else
+
+      true ->
         if log_error?, do: Logger.error("#{List.first(error_messages)}. Retrying...")
         pause_before_retry(retries_done)
 
@@ -385,7 +388,6 @@ defmodule Indexer.Helper do
           retries_done + 1,
           log_error?
         )
-      end
     end
   end
 
