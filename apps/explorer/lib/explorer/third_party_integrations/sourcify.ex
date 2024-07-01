@@ -388,13 +388,10 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp prepare_additional_source(address_hash_string, %{"name" => _name, "content" => content, "path" => path}) do
-    splitted_path =
+    trimmed_path =
       path
       |> String.split("/")
-
-    trimmed_path =
-      splitted_path
-      |> Enum.slice(9..Enum.count(splitted_path))
+      |> Enum.slice(9..-1)
       |> Enum.join("/")
 
     %{
