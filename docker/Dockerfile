@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.16.3-erlang-26.2.5-alpine-3.18.6 AS builder
+FROM hexpm/elixir:1.16.3-erlang-26.2.5.1-alpine-3.18.7 AS builder
 
 WORKDIR /app
 
@@ -68,7 +68,7 @@ RUN mkdir -p /opt/release \
   && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
 ##############################################################
-FROM hexpm/elixir:1.16.3-erlang-26.2.5-alpine-3.18.6
+FROM hexpm/elixir:1.16.3-erlang-26.2.5.1-alpine-3.18.7
 
 ARG RELEASE_VERSION
 ENV RELEASE_VERSION=${RELEASE_VERSION}
