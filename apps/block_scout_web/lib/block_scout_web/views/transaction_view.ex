@@ -597,7 +597,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def trim(length, string) do
-    %{show: String.slice(string, 0..length), hide: String.slice(string, (length + 1)..String.length(string))}
+    %{show: String.slice(string, 0..length), hide: String.slice(string, (length + 1)..-1//1)}
   end
 
   defp template_to_string(template) when is_list(template) do
