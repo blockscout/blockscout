@@ -47,6 +47,10 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     CoinBalanceRealtime.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
+    Application.put_env(:indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, disabled?: true)
+
+    maybe_set_celo_core_contracts_env()
+
     %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
   end
 
@@ -236,6 +240,15 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              }
            ]}
         end)
+        |> (fn mox ->
+              if Application.get_env(:explorer, :chain_type) == :celo do
+                expect(mox, :json_rpc, fn [], _options ->
+                  {:ok, []}
+                end)
+              else
+                mox
+              end
+            end).()
         |> expect(:json_rpc, 1, fn
           [
             %{id: 0, jsonrpc: "2.0", method: "trace_block", params: ["0x3C365F"]},
@@ -737,6 +750,15 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              }
            ]}
         end)
+        |> (fn mox ->
+              if Application.get_env(:explorer, :chain_type) == :celo do
+                expect(mox, :json_rpc, fn [], _options ->
+                  {:ok, []}
+                end)
+              else
+                mox
+              end
+            end).()
       end
 
       first_expected_reward = %Wei{value: Decimal.new(165_998_000_000_000)}
@@ -895,8 +917,10 @@ defmodule Indexer.Block.Realtime.FetcherTest do
         Map.put(block_1_data, "hash", "0xa4ec735cabe1510b5ae081b30f17222580b4588dbec52830529753a688b046cd")
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        n = unless Application.get_env(:explorer, :chain_type) == :celo, do: 6, else: 8
+
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, 6, fn
+        |> expect(:json_rpc, n, fn
           [
             %{
               id: 0,
@@ -954,6 +978,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
           ],
           _ ->
             {:ok, [%{id: 0, jsonrpc: "2.0", result: "0x53507afe51f28000"}]}
+
+          [], _ ->
+            {:ok, []}
         end)
         |> expect(:json_rpc, 3, fn
           [
@@ -984,6 +1011,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
           ],
           _ ->
             {:ok, [%{id: 0, jsonrpc: "2.0", result: "0x53474fa377a46000"}]}
+
+          [], _ ->
+            {:ok, []}
         end)
       end
 
@@ -1011,5 +1041,136 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       assert %{consensus: false} = block_2_old
       assert %{consensus: true} = block_1_new
     end
+  end
+
+  def maybe_set_celo_core_contracts_env do
+    first_block = 19_874_311
+
+    Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
+      contracts: %{
+        "addresses" => %{
+          "Accounts" => [
+            %{
+              "address" => "0xed7f51a34b4e71fbe69b3091fcf879cd14bd73a9",
+              "updated_at_block_number" => first_block
+            }
+          ],
+          "Election" => [
+            %{
+              "address" => "0x1c3edf937cfc2f6f51784d20deb1af1f9a8655fa",
+              "updated_at_block_number" => first_block
+            }
+          ],
+          "EpochRewards" => [
+            %{
+              "address" => "0xb10ee11244526b94879e1956745ba2e35ae2ba20",
+              "updated_at_block_number" => first_block
+            }
+          ],
+          "FeeHandler" => [
+            %{
+              "address" => "0x90d94229623a0a38826a4a7557a6d79acde43f76",
+              "updated_at_block_number" => first_block
+            },
+            %{
+              "address" => "0xeaaff71ab67b5d0ef34ba62ea06ac3d3e2daaa38",
+              "updated_at_block_number" => first_block
+            }
+          ],
+          "GasPriceMinimum" => [
+            %{
+              "address" => "0xd0bf87a5936ee17014a057143a494dc5c5d51e5e",
+              "updated_at_block_number" => first_block
+            }
+          ],
+          "GoldToken" => [
+            %{
+              "address" => "0xf194afdf50b03e69bd7d057c1aa9e10c9954e4c9",
+              "updated_at_block_number" => first_block
+            }
+          ],
+          "Governance" => [
+            %{
+              "address" => "0xaa963fc97281d9632d96700ab62a4d1340f9a28a",
+              "updated_at_block_number" => first_block
+            }
+          ],
+          "LockedGold" => [
+            %{
+              "address" => "0x6a4cc5693dc5bfa3799c699f3b941ba2cb00c341",
+              "updated_at_block_number" => first_block
+            }
+          ],
+          "Reserve" => [
+            %{
+              "address" => "0xa7ed835288aa4524bb6c73dd23c0bf4315d9fe3e",
+              "updated_at_block_number" => first_block
+            }
+          ],
+          "StableToken" => [
+            %{
+              "address" => "0x874069fa1eb16d44d622f2e0ca25eea172369bc1",
+              "updated_at_block_number" => first_block
+            }
+          ],
+          "Validators" => [
+            %{
+              "address" => "0x9acf2a99914e083ad0d610672e93d14b0736bbcc",
+              "updated_at_block_number" => first_block
+            }
+          ]
+        },
+        "events" => %{
+          "EpochRewards" => %{
+            "0xb10ee11244526b94879e1956745ba2e35ae2ba20" => %{
+              "CarbonOffsettingFundSet" => [
+                %{
+                  "address" => "0x0000000000000000000000000000000000000000",
+                  "updated_at_block_number" => first_block
+                },
+                %{
+                  "address" => "0x22579ca45ee22e2e16ddf72d955d6cf4c767b0ef",
+                  "updated_at_block_number" => first_block
+                }
+              ]
+            }
+          },
+          "FeeHandler" => %{
+            "0x90d94229623a0a38826a4a7557a6d79acde43f76" => %{
+              "BurnFractionSet" => [
+                %{
+                  "updated_at_block_number" => first_block,
+                  "value" => 0.8
+                }
+              ],
+              "FeeBeneficiarySet" => [
+                %{
+                  "address" => "0x0000000000000000000000000000000000000000",
+                  "updated_at_block_number" => first_block
+                }
+              ]
+            },
+            "0xeaaff71ab67b5d0ef34ba62ea06ac3d3e2daaa38" => %{
+              "BurnFractionSet" => [
+                %{
+                  "updated_at_block_number" => first_block,
+                  "value" => 0.8
+                }
+              ],
+              "FeeBeneficiarySet" => [
+                %{
+                  "address" => "0x0000000000000000000000000000000000000000",
+                  "updated_at_block_number" => first_block
+                },
+                %{
+                  "address" => "0x07f007d389883622ef8d4d347b3f78007f28d8b7",
+                  "updated_at_block_number" => first_block
+                }
+              ]
+            }
+          }
+        }
+      }
+    )
   end
 end
