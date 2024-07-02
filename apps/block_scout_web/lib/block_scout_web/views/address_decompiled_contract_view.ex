@@ -266,7 +266,7 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
         |> Enum.reduce("", fn p, a ->
           a <> new_style <> p <> "</span>\n"
         end)
-        |> String.slice(0..-2)
+        |> String.slice(0..-2//1)
     end
   end
 end

@@ -50,8 +50,9 @@ defmodule Explorer.Account.TagAddress do
   end
 
   defp put_hashed_fields(changeset) do
+    # Using force_change instead of put_change due to https://github.com/danielberkompas/cloak_ecto/issues/53
     changeset
-    |> put_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
+    |> force_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
   end
 
   defp check_existence_or_create_address(%Changeset{changes: %{address_hash: address_hash}, valid?: true} = changeset) do

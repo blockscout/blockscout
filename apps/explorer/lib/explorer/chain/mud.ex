@@ -30,7 +30,9 @@ defmodule Explorer.Chain.Mud do
 
   @schema_prefix "mud"
 
-  @store_tables_table_id Base.decode16!("746273746f72650000000000000000005461626c657300000000000000000000", case: :lower)
+  @store_tables_table_id Base.decode16!("746273746f72650000000000000000005461626c657300000000000000000000",
+                           case: :lower
+                         )
 
   # https://github.com/latticexyz/mud/blob/cc4f4246e52982354e398113c46442910f9b04bb/packages/store/src/codegen/tables/Tables.sol#L34-L42
   @store_tables_table_schema %Schema{
