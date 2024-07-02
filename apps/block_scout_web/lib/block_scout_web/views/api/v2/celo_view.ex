@@ -255,7 +255,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     aggregated_election_rewards_json = render("celo_aggregated_election_rewards.json", block)
 
     celo_epoch_json
-    |> Map.put("ditributions", epoch_rewards_json)
+    |> Map.put("distributions", epoch_rewards_json)
     |> Map.put("aggregated_election_rewards", aggregated_election_rewards_json)
   end
 
