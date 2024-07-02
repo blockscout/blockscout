@@ -1,12 +1,20 @@
 # Changelog
 
+## 6.7.1
+
+### 🐛 Bug Fixes
+
+- Fix to_string error ([#10319](https://github.com/blockscout/blockscout/issues/10319))
+- Fix bridged tokens ([#10318](https://github.com/blockscout/blockscout/issues/10318))
+- Missing onlyTopCall option on some geth networks ([#10309](https://github.com/blockscout/blockscout/issues/10309))
+
 ## 6.7.0
 
 ### 🚀 Features
 
+- Public metrics toggler ([#10279](https://github.com/blockscout/blockscout/issues/10279))
 - Chain & explorer Prometheus metrics ([#10063](https://github.com/blockscout/blockscout/issues/10063))
 - API endpoint to re-fetch token instance metadata ([#10097](https://github.com/blockscout/blockscout/issues/10097))
-- Advanced Filters ([#9769](https://github.com/blockscout/blockscout/issues/9769))
 - *(ci)* Use remote arm64 builder ([#9468](https://github.com/blockscout/blockscout/issues/9468))
 - Adding Mobula price source ([#9971](https://github.com/blockscout/blockscout/issues/9971))
 - Get ERC-1155 token name from contractURI getter fallback ([#10187](https://github.com/blockscout/blockscout/issues/10187))
@@ -20,6 +28,11 @@
 
 ### 🐛 Bug Fixes
 
+- Add token instances preloads ([#10288](https://github.com/blockscout/blockscout/issues/10288))
+- Set timeout in seconds ([#10283](https://github.com/blockscout/blockscout/issues/10283))
+- Fix ci setup repo error ([#10277](https://github.com/blockscout/blockscout/issues/10277))
+- `getsourcecode` in API v1 for verified proxy ([#10273](https://github.com/blockscout/blockscout/issues/10273))
+- Add preloads for tx summary endpoint ([#10261](https://github.com/blockscout/blockscout/issues/10261))
 - Add preloads to summary and tokens endpoints ([#10259](https://github.com/blockscout/blockscout/issues/10259))
 - Advanced filter contract creation transaction ([#10257](https://github.com/blockscout/blockscout/issues/10257))
 - Proper hex-encoded transaction hash recognition in ZkSync batches status checker ([#10255](https://github.com/blockscout/blockscout/issues/10255))

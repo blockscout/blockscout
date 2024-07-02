@@ -46,6 +46,8 @@ defmodule Explorer.Utility.MissingBalanceOfToken do
   Set currently_implemented: true for all provided token contract address hashes
   """
   @spec mark_as_implemented([Hash.Address.t()]) :: {non_neg_integer(), nil | [term()]}
+  def mark_as_implemented([]), do: :ok
+
   def mark_as_implemented(token_contract_address_hashes) do
     __MODULE__
     |> where([mbot], mbot.token_contract_address_hash in ^token_contract_address_hashes)

@@ -87,7 +87,7 @@ defmodule Explorer.Prometheus.Instrumenter do
     Gauge.set([name: :weekly_new_token_transfers_number, registry: :public], number)
   end
 
-  def weekly_active_addresses_number(number) do
+  def weekly_simplified_active_addresses_number(number) do
     Gauge.set([name: :weekly_active_addresses_number, registry: :public], number)
   end
 end

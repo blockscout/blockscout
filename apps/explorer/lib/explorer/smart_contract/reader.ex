@@ -868,7 +868,7 @@ defmodule Explorer.SmartContract.Reader do
     result =
       if String.ends_with?(type, "[]") do
         value
-        |> Enum.map(fn tuple -> new_value(%{"type" => String.slice(type, 0..-3)}, [tuple], 0) end)
+        |> Enum.map(fn tuple -> new_value(%{"type" => String.slice(type, 0..-3//1)}, [tuple], 0) end)
         |> flat_arrays_map()
       else
         value
@@ -922,7 +922,7 @@ defmodule Explorer.SmartContract.Reader do
   def zip_tuple_values_with_types(value, type) do
     types_string =
       type
-      |> String.slice(6..-2)
+      |> String.slice(6..-2//1)
 
     types =
       if String.trim(types_string) == "" do

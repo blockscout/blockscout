@@ -119,7 +119,7 @@ defmodule Explorer.ChainSpec.Geth.Importer do
     if accounts do
       parse_accounts(accounts)
     else
-      Logger.warn(fn -> "No accounts are defined in genesis" end)
+      Logger.warning(fn -> "No accounts are defined in genesis" end)
 
       []
     end
