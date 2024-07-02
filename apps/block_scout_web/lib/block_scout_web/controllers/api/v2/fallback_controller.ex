@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @invalid_hash "Invalid hash"
   @invalid_number "Invalid number"
   @invalid_url "Invalid URL"
-  @invalid_celo_reward_type "Invalid Celo reward type, allowed types are: validator, group, voter, delegated-payment"
+  @invalid_celo_election_reward_type "Invalid Celo reward type, allowed types are: validator, group, voter, delegated-payment"
   @not_found "Not found"
   @contract_interaction_disabled "Contract interaction disabled"
   @restricted_access "Restricted access"
@@ -99,12 +99,12 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   end
 
   def call(conn, {:error, {:invalid, entity}})
-      when entity in ~w(hash number celo_reward_type)a do
+      when entity in ~w(hash number celo_election_reward_type)a do
     message =
       case entity do
         :hash -> @invalid_hash
         :number -> @invalid_number
-        :celo_reward_type -> @invalid_celo_reward_type
+        :celo_election_reward_type -> @invalid_celo_election_reward_type
       end
 
     Logger.error(fn ->

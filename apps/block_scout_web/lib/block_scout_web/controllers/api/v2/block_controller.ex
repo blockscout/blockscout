@@ -290,11 +290,15 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/election-rewards/:reward_type` endpoint.
   """
+  @spec celo_election_rewards(Plug.Conn.t(), map()) ::
+          {:error, :not_found | {:invalid, :hash | :number | :celo_election_reward_type}}
+          | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
+          | Plug.Conn.t()
   def celo_election_rewards(
         conn,
         %{"block_hash_or_number" => block_hash_or_number, "reward_type" => reward_type} = params
       ) do
-    with {:ok, reward_type_atom} <- CeloElectionReward.type_from_string(reward_type),
+    with {:ok, reward_type_atom} <- celo_reward_type_to_atom(reward_type),
          {:ok, block} <-
            block_param_to_block(block_hash_or_number) do
       address_associations = [:names, :smart_contract, :proxy_implementations]
@@ -338,14 +342,21 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         rewards: rewards,
         next_page_params: next_page_params
       })
-    else
-      :error -> {:error, {:invalid, :celo_reward_type}}
     end
   end
 
   defp block_param_to_block(block_hash_or_number, options \\ @api_true) do
     with {:ok, type, value} <- parse_block_hash_or_number_param(block_hash_or_number) do
       fetch_block(type, value, options)
+    end
+  end
+
+  defp celo_reward_type_to_atom(reward_type_string) do
+    reward_type_string
+    |> CeloElectionReward.type_from_string()
+    |> case do
+      {:ok, type} -> {:ok, type}
+      :error -> {:error, {:invalid, :celo_election_reward_type}}
     end
   end
 end
