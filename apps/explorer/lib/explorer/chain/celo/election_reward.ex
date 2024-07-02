@@ -67,6 +67,12 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       null: false
     )
 
+    field(
+      :block_number,
+      :integer,
+      virtual: true
+    ) :: Block.block_number()
+
     timestamps()
   end
 
@@ -117,13 +123,17 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   def address_hash_to_rewards_query(address_hash) do
     from(
       r in __MODULE__,
+      join: b in assoc(r, :block),
       where: r.account_address_hash == ^address_hash,
       select: r,
+      select_merge: %{
+        block_number: b.number
+      },
       order_by: [
-        desc: :block_hash,
-        desc: :amount,
-        asc: :associated_account_address_hash,
-        asc: :type
+        desc: b.number,
+        desc: r.amount,
+        asc: r.associated_account_address_hash,
+        asc: r.type
       ]
     )
   end
@@ -145,17 +155,17 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   end
 
   # Clause to paginate election rewards on a page of address
-  def paginate(query, %PagingOptions{key: {block_hash, amount, associated_account_address_hash, type}}) do
+  def paginate(query, %PagingOptions{key: {block_number, amount, associated_account_address_hash, type}}) do
     where(
       query,
       [reward],
-      reward.block_hash < ^block_hash or
-        (reward.block_hash == ^block_hash and
+      reward.block_number < ^block_number or
+        (reward.block_number == ^block_number and
            reward.amount < ^amount) or
-        (reward.block_hash == ^block_hash and
+        (reward.block_number == ^block_number and
            reward.amount == ^amount and
            reward.associated_account_address_hash > ^associated_account_address_hash) or
-        (reward.block_hash == ^block_hash and
+        (reward.block_number == ^block_number and
            reward.amount == ^amount and
            reward.associated_account_address_hash == ^associated_account_address_hash and
            reward.type > ^type)
@@ -175,13 +185,13 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   end
 
   def to_address_paging_params(%__MODULE__{
-        block_hash: block_hash,
+        block_number: block_number,
         amount: amount,
         associated_account_address_hash: associated_account_address_hash,
         type: type
       }) do
     %{
-      "block_hash" => block_hash,
+      "block_number" => block_number,
       "amount" => amount,
       "associated_account_address_hash" => associated_account_address_hash,
       "type" => type

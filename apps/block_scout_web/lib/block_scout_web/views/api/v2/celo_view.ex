@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     }
   end
 
-  def prepare_election_reward(%ElectionReward{block: %NotLoaded{}} = reward) do
+  def prepare_election_reward(%ElectionReward{block_number: nil} = reward) do
     %{
       amount: reward.amount,
       account:
@@ -101,8 +101,9 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   def prepare_election_reward(%ElectionReward{} = reward) do
     %{
       amount: reward.amount,
-      block_number: reward.block.number,
-      epoch_number: reward.block.number |> CeloHelper.block_number_to_epoch_number(),
+      block_number: reward.block_number,
+      block_hash: reward.block_hash,
+      epoch_number: reward.block_number |> CeloHelper.block_number_to_epoch_number(),
       account:
         Helper.address_with_info(
           reward.account_address,

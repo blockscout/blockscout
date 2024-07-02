@@ -110,8 +110,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           :smart_contract,
           :proxy_implementations
         ]
-      ] => :optional,
-      :block => :optional
+      ] => :optional
     },
     api?: true
   ]

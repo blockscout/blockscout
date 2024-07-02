@@ -14,7 +14,11 @@ defmodule BlockScoutWeb.Chain do
       string_to_transaction_hash: 1
     ]
 
-  import Explorer.Helper, only: [parse_integer: 1]
+  import Explorer.Helper,
+    only: [
+      parse_integer: 1,
+      safe_parse_non_negative_integer: 1
+    ]
 
   alias BlockScoutWeb.PagingHelper
   alias Ecto.Association.NotLoaded
@@ -526,16 +530,16 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def paging_options(%{
-        "block_hash" => block_hash_string,
+        "block_number" => block_number_string,
         "amount" => amount_string,
         "associated_account_address_hash" => associated_account_address_hash_string,
         "type" => type_string
       })
-      when is_binary(block_hash_string) and
+      when is_binary(block_number_string) and
              is_binary(amount_string) and
              is_binary(associated_account_address_hash_string) and
              is_binary(type_string) do
-    with {:ok, block_hash} <- Hash.Full.cast(block_hash_string),
+    with {:ok, block_number} <- safe_parse_non_negative_integer(block_number_string),
          {amount, ""} <- Decimal.parse(amount_string),
          {:ok, associated_account_address_hash} <-
            Hash.Address.cast(associated_account_address_hash_string),
@@ -543,7 +547,7 @@ defmodule BlockScoutWeb.Chain do
       [
         paging_options: %{
           @default_paging_options
-          | key: {block_hash, amount, associated_account_address_hash, type}
+          | key: {block_number, amount, associated_account_address_hash, type}
         }
       ]
     else
