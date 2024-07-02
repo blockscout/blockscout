@@ -49,13 +49,11 @@ defmodule Explorer.Prometheus.Instrumenter do
     registry: :public
   ]
 
-  # todo; this metric causes increasing of AccessShareLocks
-  # which increases DB loading. Disabling this metric for now.
-  # @gauge [
-  #   name: :weekly_active_addresses_number,
-  #   help: "Number of active EOA addresses (participated in transactions in to/from) in the last 7 days",
-  #   registry: :public
-  # ]
+  @gauge [
+    name: :weekly_active_addresses_number,
+    help: "Number of active EOA addresses (participated in transactions in to/from) in the last 7 days",
+    registry: :public
+  ]
 
   def block_import_stage_runner(function, stage, runner, step) do
     {time, result} = :timer.tc(function)
@@ -89,9 +87,7 @@ defmodule Explorer.Prometheus.Instrumenter do
     Gauge.set([name: :weekly_new_token_transfers_number, registry: :public], number)
   end
 
-  # todo; this metric causes increasing of AccessShareLocks
-  # which increases DB loading. Disabling this metric for now.
-  # def weekly_active_addresses_number(number) do
-  #   Gauge.set([name: :weekly_active_addresses_number, registry: :public], number)
-  # end
+  def weekly_simplified_active_addresses_number(number) do
+    Gauge.set([name: :weekly_active_addresses_number, registry: :public], number)
+  end
 end
