@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Metrics.Queries do
 
   alias Explorer.Chain.{
     Address,
+    Block,
     DenormalizationHelper,
     InternalTransaction,
     SmartContract,
