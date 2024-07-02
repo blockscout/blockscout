@@ -312,7 +312,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     out_json
     |> Map.merge(%{
       "commitment_transaction" => %{
-        "hash" => Hash.to_string(%Hash{byte_count: 32, bytes: hash}),
+        "hash" => %Hash{byte_count: 32, bytes: hash},
         "block_number" => block_number,
         "timestamp" => ts,
         "status" => status
