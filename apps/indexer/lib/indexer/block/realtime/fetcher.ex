@@ -236,7 +236,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   def import(_, _) do
-    Logger.warn("Empty parameters were provided for realtime fetcher")
+    Logger.warning("Empty parameters were provided for realtime fetcher")
 
     {:ok, []}
   end

@@ -173,8 +173,8 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: :smart_contract],
-            [to_address: :smart_contract]
+            [from_address: [:names, :smart_contract, :proxy_implementations]],
+            [to_address: [:names, :smart_contract, :proxy_implementations]]
           ])
 
         only_consensus_transfers_query()
@@ -196,7 +196,13 @@ defmodule Explorer.Chain.TokenTransfer do
         []
 
       _ ->
-        preloads = DenormalizationHelper.extend_transaction_preload([:transaction, :token, :from_address, :to_address])
+        preloads =
+          DenormalizationHelper.extend_transaction_preload([
+            :transaction,
+            :token,
+            [from_address: [:names, :smart_contract, :proxy_implementations]],
+            [to_address: [:names, :smart_contract, :proxy_implementations]]
+          ])
 
         only_consensus_transfers_query()
         |> where([tt], tt.token_contract_address_hash == ^token_address_hash)

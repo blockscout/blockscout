@@ -119,7 +119,7 @@ defmodule Explorer.Market.History.Cataloger do
   # Failed to get records. Try again.
   @impl GenServer
   def handle_info({_ref, {:price_history, {day_count, failed_attempts, secondary_coin?, :error}}}, state) do
-    Logger.warn(fn -> "Failed to fetch price history. Trying again." end)
+    Logger.warning(fn -> "Failed to fetch price history. Trying again." end)
 
     fetch_price_history(day_count, secondary_coin?, failed_attempts + 1)
 
@@ -129,7 +129,7 @@ defmodule Explorer.Market.History.Cataloger do
   # Failed to get records. Try again.
   @impl GenServer
   def handle_info({_ref, {:market_cap_history, {day_count, failed_attempts, :error}}}, state) do
-    Logger.warn(fn -> "Failed to fetch market cap history. Trying again." end)
+    Logger.warning(fn -> "Failed to fetch market cap history. Trying again." end)
 
     fetch_market_cap_history(day_count, failed_attempts + 1)
 
@@ -139,7 +139,7 @@ defmodule Explorer.Market.History.Cataloger do
   # Failed to get records. Try again.
   @impl GenServer
   def handle_info({_ref, {:tvl_history, {day_count, failed_attempts, :error}}}, state) do
-    Logger.warn(fn -> "Failed to fetch tvl history. Trying again." end)
+    Logger.warning(fn -> "Failed to fetch tvl history. Trying again." end)
 
     fetch_tvl_history(day_count, failed_attempts + 1)
 

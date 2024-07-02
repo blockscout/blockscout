@@ -142,6 +142,17 @@ defmodule Explorer.Chain.Address do
     |> unique_constraint(:hash)
   end
 
+  @spec get(Hash.Address.t(), [Chain.necessity_by_association_option() | Chain.api?()]) :: t() | nil
+  def get(hash, options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    query = from(address in Address, where: address.hash == ^hash)
+
+    query
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).one()
+  end
+
   def checksum(address_or_hash, iodata? \\ false)
 
   def checksum(nil, _iodata?), do: ""
@@ -181,7 +192,7 @@ defmodule Explorer.Chain.Address do
     |> stream_binary()
     |> Stream.zip(match_byte_stream)
     |> Enum.map(fn
-      {digit, _} when digit in '0123456789' ->
+      {digit, _} when digit in ~c"0123456789" ->
         digit
 
       {alpha, 1} ->
@@ -209,7 +220,7 @@ defmodule Explorer.Chain.Address do
     |> stream_binary()
     |> Stream.zip(match_byte_stream)
     |> Enum.map(fn
-      {digit, _} when digit in '0123456789' ->
+      {digit, _} when digit in ~c"0123456789" ->
         digit
 
       {alpha, 1} ->

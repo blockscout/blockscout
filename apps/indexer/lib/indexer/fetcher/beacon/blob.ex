@@ -20,7 +20,8 @@ defmodule Indexer.Fetcher.Beacon.Blob do
   @default_max_batch_size 10
   @default_max_concurrency 1
   @default_retries_limit 2
-  @default_retry_deadline :timer.minutes(5)
+  # 5 minutes in seconds
+  @default_retry_deadline 300
 
   @doc """
   Asynchronously fetches blobs for given `block_timestamp`.

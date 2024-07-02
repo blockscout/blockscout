@@ -36,7 +36,8 @@ defmodule Explorer.Account.Identity do
   end
 
   defp put_hashed_fields(changeset) do
+    # Using force_change instead of put_change due to https://github.com/danielberkompas/cloak_ecto/issues/53
     changeset
-    |> put_change(:uid_hash, get_field(changeset, :uid))
+    |> force_change(:uid_hash, get_field(changeset, :uid))
   end
 end

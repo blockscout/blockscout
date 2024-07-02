@@ -153,7 +153,7 @@ defmodule Explorer.Chain.Hash do
   def to_iodata(%__MODULE__{byte_count: byte_count} = hash) do
     integer = to_integer(hash)
     hexadecimal_digit_count = byte_count_to_hexadecimal_digit_count(byte_count)
-    unprefixed = :io_lib.format('~#{hexadecimal_digit_count}.16.0b', [integer])
+    unprefixed = :io_lib.format(~c"~#{hexadecimal_digit_count}.16.0b", [integer])
 
     ["0x", unprefixed]
   end
