@@ -155,6 +155,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   end
 
   # Clause to paginate election rewards on a page of address
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def paginate(query, %PagingOptions{key: {block_number, amount, associated_account_address_hash, type}}) do
     where(
       query,

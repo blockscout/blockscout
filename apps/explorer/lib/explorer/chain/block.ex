@@ -5,13 +5,20 @@ defmodule Explorer.Chain.Block.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Blocks
   """
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Hash,
+    PendingBlockOperation,
+    Transaction,
+    Wei,
+    Withdrawal
+  }
 
-  alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
-  alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
   alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
-  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+  alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
                         :ethereum ->
@@ -48,15 +55,17 @@ defmodule Explorer.Chain.Block.Schema do
                           )
 
                         :celo ->
-                          quote do
-                            has_one(:celo_epoch_reward, CeloEpochReward, foreign_key: :block_hash, references: :hash)
+                          elem(
+                            quote do
+                              has_one(:celo_epoch_reward, CeloEpochReward, foreign_key: :block_hash, references: :hash)
 
-                            has_many(:celo_epoch_election_rewards, CeloEpochReward,
-                              foreign_key: :block_hash,
-                              references: :hash
-                            )
-                          end
-                          |> elem(2)
+                              has_many(:celo_epoch_election_rewards, CeloEpochReward,
+                                foreign_key: :block_hash,
+                                references: :hash
+                              )
+                            end,
+                            2
+                          )
 
                         :arbitrum ->
                           elem(
