@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "tuple") ->
         tuple_types =
           type
-          |> String.slice(0..-3)
+          |> String.slice(0..-3//1)
           |> supplement_type_with_components(components)
 
         values =
@@ -132,7 +132,7 @@ defmodule BlockScoutWeb.SmartContractView do
         to_string(address)
 
       _ ->
-        Logger.warn(fn -> ["Error decoding address value: #{inspect(value)}"] end)
+        Logger.warning(fn -> ["Error decoding address value: #{inspect(value)}"] end)
         "(decoding error)"
     end
   end

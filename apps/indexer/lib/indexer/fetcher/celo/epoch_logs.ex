@@ -13,6 +13,8 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
   alias Explorer.Chain.TokenTransfer
   alias Indexer.Transform.Celo.ValidatorEpochPaymentDistributions
 
+  require Logger
+
   @max_request_retries 3
 
   @epoch_block_targets [
@@ -38,60 +40,72 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
         ) :: Logs.t()
   def fetch(blocks, json_rpc_named_arguments)
 
-  if Application.compile_env(:explorer, :chain_type) == :celo do
-    def fetch(blocks, json_rpc_named_arguments) do
-      requests =
-        blocks
-        |> Enum.reduce({[], 0}, fn %{number: number}, {acc, start_request_id} ->
-          targets =
-            @default_block_targets ++
-              if epoch_block_number?(number) do
-                @epoch_block_targets
-              else
-                []
-              end
-
-          requests =
-            targets
-            |> Enum.map(fn {contract_atom, topic} ->
-              {:ok, address} = CeloCoreContracts.get_address(contract_atom, number)
-              {address, topic}
-            end)
-            |> Enum.reject(&match?({nil, _targets}, &1))
-            |> Enum.with_index(start_request_id)
-            |> Enum.map(fn {{address, topic}, request_id} ->
-              Logs.request(
-                request_id,
-                %{
-                  from_block: number,
-                  to_block: number,
-                  address: address,
-                  topics: [topic]
-                }
-              )
-            end)
-
-          next_start_request_id = start_request_id + length(requests)
-          {[requests | acc], next_start_request_id}
-        end)
-        |> elem(0)
-        |> Enum.reverse()
-        |> Enum.concat()
-
-      with {:ok, responses} <-
-             IndexerHelper.repeated_batch_rpc_call(
-               requests,
-               json_rpc_named_arguments,
-               fn message -> "Could not fetch epoch logs: #{message}" end,
-               @max_request_retries
-             ),
-           {:ok, logs} <- Logs.from_responses(responses) do
-        logs
-        |> Enum.filter(&(&1.transaction_hash == &1.block_hash))
-        |> Enum.map(&Map.put(&1, :transaction_hash, nil))
-      end
+  def fetch(blocks, json_rpc_named_arguments) do
+    if Application.get_env(:explorer, :chain_type) == :celo do
+      do_fetch(blocks, json_rpc_named_arguments)
+    else
+      []
     end
-  else
-    def fetch(_blocks, _json_rpc_named_arguments), do: []
+  end
+
+  defp do_fetch(blocks, json_rpc_named_arguments) do
+    requests =
+      blocks
+      |> Enum.reduce({[], 0}, &blocks_reducer/2)
+      |> elem(0)
+      |> Enum.reverse()
+      |> Enum.concat()
+
+    with {:ok, responses} <-
+           IndexerHelper.repeated_batch_rpc_call(
+             requests,
+             json_rpc_named_arguments,
+             fn message -> "Could not fetch epoch logs: #{message}" end,
+             @max_request_retries
+           ),
+         {:ok, logs} <- Logs.from_responses(responses) do
+      logs
+      |> Enum.filter(&(&1.transaction_hash == &1.block_hash))
+      |> Enum.map(&Map.put(&1, :transaction_hash, nil))
+    end
+  end
+
+  defp blocks_reducer(%{number: number}, {acc, start_request_id}) do
+    targets =
+      @default_block_targets ++
+        if epoch_block_number?(number) do
+          @epoch_block_targets
+        else
+          []
+        end
+
+    requests =
+      targets
+      |> Enum.map(fn {contract_atom, topic} ->
+        res = CeloCoreContracts.get_address(contract_atom, number)
+        {res, topic}
+      end)
+      |> Enum.split_with(&match?({{:ok, _address}, _targets}, &1))
+      |> tap(fn {_, not_found} ->
+        if not Enum.empty?(not_found) do
+          Logger.info("Could not fetch addresses for the following contract atoms: #{inspect(not_found)}")
+        end
+      end)
+      |> elem(0)
+      |> Enum.with_index(start_request_id)
+      |> Enum.map(fn {{address, topic}, request_id} ->
+        Logs.request(
+          request_id,
+          %{
+            from_block: number,
+            to_block: number,
+            address: address,
+            topics: [topic]
+          }
+        )
+      end)
+
+    next_start_request_id = start_request_id + length(requests)
+    {[requests | acc], next_start_request_id}
   end
 end

@@ -180,10 +180,10 @@ defmodule Indexer.Helper do
 
   ## Examples
 
-      iex> Explorer.Chain.Cache.CeloCoreContracts.range_chunk_every(1..10, 3)
+      iex> Indexer.Helper.range_chunk_every(1..10, 3)
       #Stream<...>
 
-      iex> Enum.to_list(Explorer.Chain.Cache.CeloCoreContracts.range_chunk_every(1..10, 3))
+      iex> Enum.to_list(Indexer.Helper.range_chunk_every(1..10, 3))
       [1..3, 4..6, 7..9, 10..10]
   """
   @spec range_chunk_every(Range.t(), non_neg_integer()) :: Enum.t()
@@ -366,14 +366,17 @@ defmodule Indexer.Helper do
           end
       end)
 
-    if error_messages == [] do
-      {responses, []}
-    else
-      retries_left = retries_left - 1
+    retries_left = retries_left - 1
 
-      if retries_left <= 0 do
+    cond do
+      error_messages == [] ->
+        {responses, []}
+
+      retries_left <= 0 ->
+        if log_error?, do: Logger.error("#{List.first(error_messages)}.")
         {responses, Enum.uniq(error_messages)}
-      else
+
+      true ->
         if log_error?, do: Logger.error("#{List.first(error_messages)}. Retrying...")
         pause_before_retry(retries_done)
 
@@ -385,7 +388,6 @@ defmodule Indexer.Helper do
           retries_done + 1,
           log_error?
         )
-      end
     end
   end
 

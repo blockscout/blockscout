@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.Celo.EpochRewardsTest do
+defmodule Indexer.Fetcher.Celo.EpochBlockOperationsTest do
   # MUST be `async: false` so that {:shared, pid} is set for connection to allow CoinBalanceFetcher's self-send to have
   # connection allowed immediately.
   # use EthereumJSONRPC.Case, async: false
@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.Celo.EpochRewardsTest do
 
   import Explorer.Chain.Celo.Helper, only: [blocks_per_epoch: 0]
 
-  alias Indexer.Fetcher.Celo.EpochRewards
+  alias Indexer.Fetcher.Celo.EpochBlockOperations
 
   # @moduletag :capture_log
 
@@ -34,7 +34,7 @@ defmodule Indexer.Fetcher.Celo.EpochRewardsTest do
                  block_hash: unfetched.hash
                }
              ] ==
-               EpochRewards.init(
+               EpochBlockOperations.init(
                  [],
                  fn block_number, acc -> [block_number | acc] end,
                  json_rpc_named_arguments

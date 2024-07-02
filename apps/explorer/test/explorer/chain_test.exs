@@ -2333,7 +2333,11 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      insert(:token_transfer, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
 
       assert [%TokenTransfer{token: %Token{}, transaction: %Transaction{}}] =
                Chain.transaction_to_token_transfers(
@@ -2936,7 +2940,9 @@ defmodule Explorer.ChainTest do
 
       decompiled_smart_contracts =
         Repo.all(
-          from(ds in DecompiledSmartContract, where: ds.address_hash == ^inserted_decompiled_smart_contract.address_hash)
+          from(ds in DecompiledSmartContract,
+            where: ds.address_hash == ^inserted_decompiled_smart_contract.address_hash
+          )
         )
 
       assert Enum.count(decompiled_smart_contracts) == 2

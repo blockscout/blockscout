@@ -385,9 +385,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           optional(any()) => any()
         }) :: map()
   defp extend_with_transaction_info(out_json, %Transaction{} = arbitrum_tx) do
-    # These checks are only needed for the case when the module is compiled with
-    # chain_type different from "arbitrum"
-    gas_used_for_l1 = Map.get(arbitrum_tx, :gas_used_for_l1, 0)
+    # Map.get is only needed for the case when the module is compiled with
+    # chain_type different from "arbitrum", `|| 0` is used to avoid nil values
+    # for the transaction prior to the migration to Arbitrum specific BS build.
+    gas_used_for_l1 = Map.get(arbitrum_tx, :gas_used_for_l1, 0) || 0
+
     gas_used = Map.get(arbitrum_tx, :gas_used, 0)
     gas_price = Map.get(arbitrum_tx, :gas_price, 0)
 

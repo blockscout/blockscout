@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Celo.ValidatorGroupVote do
   end
 
   @spec changeset(
-          Explorer.Chain.Celo.ActivatedValidatorGroupVote.t(),
+          __MODULE__.t(),
           :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any}
         ) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = vote, attrs \\ %{}) do

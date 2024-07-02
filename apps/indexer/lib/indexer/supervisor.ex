@@ -192,7 +192,7 @@ defmodule Indexer.Supervisor do
         configure(Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
-        configure(Indexer.Fetcher.Celo.EpochRewards.Supervisor, [
+        configure(Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},

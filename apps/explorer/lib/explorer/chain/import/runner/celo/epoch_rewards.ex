@@ -6,8 +6,7 @@ defmodule Explorer.Chain.Import.Runner.Celo.EpochRewards do
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.Celo.EpochReward
-  alias Explorer.Chain.Celo.PendingEpochBlockOperation
+  alias Explorer.Chain.Celo.{EpochReward, PendingEpochBlockOperation}
   alias Explorer.Chain.Import
   alias Explorer.Prometheus.Instrumenter
 

@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Metrics.Queries do
       distinct: 2,
       from: 2,
       join: 4,
+      join: 5,
       select: 3,
       subquery: 1,
       union: 2,
@@ -127,7 +128,7 @@ defmodule Explorer.Chain.Metrics.Queries do
   @spec weekly_new_token_transfers_number_query() :: Ecto.Query.t()
   def weekly_new_token_transfers_number_query do
     TokenTransfer
-    |> join(:inner, [tt], block in assoc(tt, :block))
+    |> join(:inner, [tt], block in Block, on: block.number == tt.block_number)
     |> where([tt, block], block.timestamp >= ago(7, "day"))
     |> where([tt, block], block.consensus == true)
     |> select([tt, block], fragment("COUNT(*)"))
