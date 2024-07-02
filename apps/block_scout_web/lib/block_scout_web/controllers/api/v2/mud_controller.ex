@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
   import BlockScoutWeb.PagingHelper, only: [mud_records_sorting: 1]
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Data, Hash, Mud, Mud.Schema.FieldSchema, Mud.Table}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -25,6 +26,18 @@ defmodule BlockScoutWeb.API.V2.MudController do
       |> Mud.worlds_list()
       |> split_list_by_page()
 
+    world_addresses =
+      worlds
+      |> Chain.hashes_to_addresses(
+        necessity_by_association: %{
+          :names => :optional,
+          :smart_contract => :optional,
+          :proxy_implementations => :optional
+        },
+        api?: true
+      )
+      |> Enum.into(%{}, &{&1.hash, &1})
+
     next_page_params =
       next_page_params(next_page, worlds, conn.query_params, fn item ->
         %{"world" => item}
@@ -32,7 +45,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
     conn
     |> put_status(200)
-    |> render(:worlds, %{worlds: worlds, next_page_params: next_page_params})
+    |> render(:worlds, %{worlds: worlds, world_addresses: world_addresses, next_page_params: next_page_params})
   end
 
   @doc """
