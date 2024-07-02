@@ -50,7 +50,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
     defp token_response(conn, token, address_hash) do
       if token.bridged do
-        bridged_token = Repo.get_by(BridgedToken, home_token_contract_address_hash: address_hash)
+        bridged_token =
+          Chain.select_repo(@api_true).get_by(BridgedToken, home_token_contract_address_hash: address_hash)
 
         conn
         |> put_status(200)

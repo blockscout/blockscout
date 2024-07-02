@@ -444,9 +444,9 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp extract_meta_from_deployed_bytecode(code_unknown_case) do
     with true <- is_binary(code_unknown_case),
          code <- String.downcase(code_unknown_case),
-         last_2_bytes <- code |> String.slice(-4..-1),
+         last_2_bytes <- code |> String.slice(-4..-1//1),
          {meta_length, ""} <- last_2_bytes |> Integer.parse(16),
-         meta <- String.slice(code, (-(meta_length + 2) * 2)..-5) do
+         meta <- String.slice(code, (-(meta_length + 2) * 2)..-5//1) do
       {meta, last_2_bytes}
     else
       _ ->

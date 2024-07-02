@@ -3011,7 +3011,7 @@ defmodule Explorer.Chain do
 
         {:error, reason} ->
           Logger.error(fn ->
-            ["Error while fetching first trace for tx: #{hash_string} error reason: ", to_string(reason)]
+            ["Error while fetching first trace for tx: #{hash_string} error reason: ", inspect(reason)]
           end)
 
           fetch_tx_revert_reason_using_call(transaction)
@@ -5257,11 +5257,11 @@ defmodule Explorer.Chain do
           result
 
         {:exit, reason} ->
-          Logger.warn("Query fetching token counters terminated: #{inspect(reason)}")
+          Logger.warning("Query fetching token counters terminated: #{inspect(reason)}")
           0
 
         nil ->
-          Logger.warn("Query fetching token counters timed out.")
+          Logger.warning("Query fetching token counters timed out.")
           0
       end
     end)

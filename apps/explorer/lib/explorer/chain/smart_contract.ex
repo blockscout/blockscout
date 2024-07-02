@@ -1149,7 +1149,7 @@ defmodule Explorer.Chain.SmartContract do
   defp error_message(%{"message" => string} = error) when is_map(error), do: error_message_with_log(string)
 
   defp error_message(error) do
-    Logger.warn(fn -> ["Unknown verifier error: ", inspect(error)] end)
+    Logger.warning(fn -> ["Unknown verifier error: ", inspect(error)] end)
     "There was an error validating your contract, please try again."
   end
 

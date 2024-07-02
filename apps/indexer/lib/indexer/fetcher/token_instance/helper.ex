@@ -290,7 +290,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   rescue
     error in Postgrex.Error ->
       if retrying? do
-        Logger.warn(
+        Logger.warning(
           [
             "Failed to upsert token instance: {#{to_string(token_contract_address_hash)}, #{token_id}}, error: #{inspect(error)}"
           ],
