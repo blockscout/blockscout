@@ -125,7 +125,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
         error ->
           error = parse_error(error)
-          Logger.warn(["There was an error compiling a provided contract: ", inspect(error)])
+          Logger.warning(["There was an error compiling a provided contract: ", inspect(error)])
           {:error, [first_error | _]} = error
           %{"message" => error_message} = first_error
           {:error, :compilation, error_message}
@@ -164,7 +164,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
         error ->
           error = parse_error(error)
-          Logger.warn(["There was an error compiling a provided contract: ", inspect(error)])
+          Logger.warning(["There was an error compiling a provided contract: ", inspect(error)])
           {:error, [first_error | _]} = error
           %{"message" => error_message} = first_error
           {:error, :compilation, error_message}

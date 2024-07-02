@@ -500,7 +500,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       case mode do
         :full_32 -> "0x000000000000000000000000" <> beacon_contract_address_hash_string
         :exact_20 -> "0x" <> beacon_contract_address_hash_string
-        :short -> "0x" <> String.slice(beacon_contract_address_hash_string, 10..-1)
+        :short -> "0x" <> String.slice(beacon_contract_address_hash_string, 10..-1//1)
       end
 
     EthereumJSONRPC.Mox

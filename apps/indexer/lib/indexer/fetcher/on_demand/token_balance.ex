@@ -195,7 +195,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   end
 
   defp prepare_updated_balance({{:error, error}, ctb}, block_number) do
-    Logger.warn(fn ->
+    Logger.warning(fn ->
       [
         "Error on updating current token #{to_string(ctb.token_contract_address_hash)} balance for address #{to_string(ctb.address_hash)} at block number #{block_number}: ",
         inspect(error)

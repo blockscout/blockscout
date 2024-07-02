@@ -69,15 +69,20 @@ defmodule EthereumJSONRPC.Geth do
            id_to_params
            |> debug_trace_transaction_requests(true)
            |> json_rpc(json_rpc_named_arguments_corrected_timeout),
-         {:ok, [first_trace]} <-
+         {:ok, traces} <-
            debug_trace_transaction_responses_to_internal_transactions_params(
              responses,
              id_to_params,
              json_rpc_named_arguments_corrected_timeout
            ) do
-      %{block_hash: block_hash} = transactions_params |> Enum.at(0)
+      case {traces, transactions_params} do
+        {[%{} = first_trace | _], [%{block_hash: block_hash} | _]} ->
+          {:ok,
+           [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]}
 
-      {:ok, [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]}
+        _ ->
+          {:error, :not_found}
+      end
     end
   end
 

@@ -544,10 +544,10 @@ defmodule Indexer.Transform.TransactionActions do
   defp uniswap_handle_swap_amounts(log, amount0, amount1, symbol0, symbol1, address0, address1) do
     cond do
       String.first(amount0) === "-" and String.first(amount1) !== "-" ->
-        {amount1, symbol1, address1, String.slice(amount0, 1, String.length(amount0) - 1), symbol0, address0, false}
+        {amount1, symbol1, address1, String.slice(amount0, 1..-1//1), symbol0, address0, false}
 
       String.first(amount1) === "-" and String.first(amount0) !== "-" ->
-        {amount0, symbol0, address0, String.slice(amount1, 1, String.length(amount1) - 1), symbol1, address1, false}
+        {amount0, symbol0, address0, String.slice(amount1, 1..-1//1), symbol1, address1, false}
 
       amount1 === "0" and String.first(amount0) !== "-" ->
         {amount0, symbol0, address0, amount1, symbol1, address1, false}
