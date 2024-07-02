@@ -85,7 +85,7 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
         res = CeloCoreContracts.get_address(contract_atom, number)
         {res, topic}
       end)
-      |> Enum.split_with(&match?({{:ok, _address}, _targets}, &1))
+      |> Enum.split_with(&match?({{:ok, _address}, _topic}, &1))
       |> tap(fn {_, not_found} ->
         if not Enum.empty?(not_found) do
           Logger.info("Could not fetch addresses for the following contract atoms: #{inspect(not_found)}")
@@ -93,7 +93,7 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
       end)
       |> elem(0)
       |> Enum.with_index(start_request_id)
-      |> Enum.map(fn {{address, topic}, request_id} ->
+      |> Enum.map(fn {{{:ok, address}, topic}, request_id} ->
         Logs.request(
           request_id,
           %{

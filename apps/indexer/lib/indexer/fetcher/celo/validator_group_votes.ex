@@ -25,7 +25,6 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
   @last_fetched_block_key "celo_validator_group_votes_last_fetched_block_number"
 
   @max_request_retries 3
-  @chunk_size 200_000
 
   @validator_group_vote_activated_topic "0x45aac85f38083b18efe2d441a65b9c1ae177c78307cb5a5d4aec8f7dbcaeabfe"
   @validator_group_active_vote_revoked_topic "0xae7458f8697a680da6be36406ea0b8f40164915ac9cc40c0dad05a2ff6e8c6a8"
@@ -57,6 +56,7 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
       :ok,
       %{
         config: %{
+          batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size],
           json_rpc_named_arguments: args[:json_rpc_named_arguments]
         },
         data: %{}
@@ -66,7 +66,15 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
   end
 
   @impl GenServer
-  def handle_continue(:ok, %{config: %{json_rpc_named_arguments: json_rpc_named_arguments}} = state) do
+  def handle_continue(
+        :ok,
+        %{
+          config: %{
+            batch_size: batch_size,
+            json_rpc_named_arguments: json_rpc_named_arguments
+          }
+        } = state
+      ) do
     {:ok, latest_block_number} =
       EthereumJSONRPC.fetch_block_number_by_tag(
         "latest",
@@ -75,7 +83,7 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
 
     Logger.info("Fetching votes up to latest block number #{latest_block_number}")
 
-    fetch_up_to_block_number(latest_block_number, json_rpc_named_arguments)
+    fetch_up_to_block_number(latest_block_number, batch_size, json_rpc_named_arguments)
 
     {:noreply, state}
   end
@@ -90,16 +98,21 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
   def handle_call(
         {:fetch, block_number},
         _from,
-        %{config: %{json_rpc_named_arguments: json_rpc_named_arguments}} = state
+        %{
+          config: %{
+            batch_size: batch_size,
+            json_rpc_named_arguments: json_rpc_named_arguments
+          }
+        } = state
       ) do
     Logger.info("Fetching votes on demand up to block number #{block_number}")
 
-    fetch_up_to_block_number(block_number, json_rpc_named_arguments)
+    fetch_up_to_block_number(block_number, batch_size, json_rpc_named_arguments)
 
     {:reply, :ok, state}
   end
 
-  defp fetch_up_to_block_number(block_number, json_rpc_named_arguments) do
+  defp fetch_up_to_block_number(block_number, batch_size, json_rpc_named_arguments) do
     {:ok, last_fetched_block_number} =
       @last_fetched_block_key
       |> Constants.get_constant_value()
@@ -112,7 +125,7 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
       block_range = last_fetched_block_number..block_number
 
       block_range
-      |> IndexerHelper.range_chunk_every(@chunk_size)
+      |> IndexerHelper.range_chunk_every(batch_size)
       |> Enum.each(&process_chunk(&1, block_range, json_rpc_named_arguments))
 
       Logger.info("Fetched validator group votes up to block number #{block_number}")
