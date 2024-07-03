@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   transactions.
   """
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1, log_debug: 1]
 
   alias EthereumJSONRPC.Transaction, as: TransactionByRPC
 
@@ -40,7 +40,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
       If `nil` or less than the indexer's first block, the function returns with no
       action taken.
     - `state`: Contains the operational configuration, including the depth of
-      blocks to consider for the starting point of message discovery.
+      blocks to consider for the starting point of message discovery and the
+      first block of the rollup chain.
 
     ## Returns
     - `{:ok, nil}`: If `end_block` is `nil`, indicating no discovery action was
@@ -56,7 +57,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   """
   @spec discover_historical_messages_from_l2(nil | integer(), %{
           :config => %{
-            :messages_to_l2_blocks_depth => non_neg_integer(),
+            :missed_messages_blocks_depth => non_neg_integer(),
+            :rollup_rpc => %{
+              :first_block => non_neg_integer(),
+              optional(any()) => any()
+            },
             optional(any()) => any()
           },
           optional(any()) => any()
@@ -76,13 +81,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
         end_block,
         %{
           config: %{
-            messages_from_l2_blocks_depth: messages_from_l2_blocks_depth,
+            missed_messages_blocks_depth: missed_messages_blocks_depth,
             rollup_rpc: %{first_block: rollup_first_block}
           }
         } = _state
       )
       when is_integer(end_block) do
-    start_block = max(rollup_first_block, end_block - messages_from_l2_blocks_depth + 1)
+    start_block = max(rollup_first_block, end_block - missed_messages_blocks_depth + 1)
 
     if Db.indexed_blocks?(start_block, end_block) do
       do_discover_historical_messages_from_l2(start_block, end_block)
@@ -147,8 +152,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
       less than the indexer's first block, the function returns with no action
       taken.
     - `state`: The current state of the operation, containing configuration
-      parameters including `messages_to_l2_blocks_depth`, `chunk_size`, and JSON
-      RPC connection settings.
+      parameters including the depth of blocks to consider for the starting point
+      of message discovery, size of chunk to make request to RPC, and JSON RPC
+      connection settings.
 
     ## Returns
     - `{:ok, nil}`: If `end_block` is `nil`, indicating no action was necessary.
@@ -163,7 +169,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   """
   @spec discover_historical_messages_to_l2(nil | integer(), %{
           :config => %{
-            :messages_to_l2_blocks_depth => non_neg_integer(),
+            :missed_messages_blocks_depth => non_neg_integer(),
             :rollup_rpc => %{
               :chunk_size => non_neg_integer(),
               :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
@@ -186,10 +192,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
 
   def discover_historical_messages_to_l2(
         end_block,
-        %{config: %{messages_to_l2_blocks_depth: _, rollup_rpc: %{first_block: _}} = config} = _state
+        %{config: %{missed_messages_blocks_depth: _, rollup_rpc: %{first_block: _}} = config} = _state
       )
       when is_integer(end_block) do
-    start_block = max(config.rollup_rpc.first_block, end_block - config.messages_to_l2_blocks_depth + 1)
+    start_block = max(config.rollup_rpc.first_block, end_block - config.missed_messages_blocks_depth + 1)
 
     # Although indexing blocks is not necessary to determine the completion of L1-to-L2 messages,
     # for database consistency, it is preferable to delay marking these messages as completed.
@@ -245,7 +251,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     transactions_length = length(transactions)
 
     if transactions_length > 0 do
-      log_info("#{transactions_length} historical messages to L2 discovered")
+      log_debug("#{transactions_length} historical messages to L2 discovered")
 
       messages =
         transactions

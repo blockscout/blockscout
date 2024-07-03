@@ -216,7 +216,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
     with {:block, nil} <-
            {:block, Reader.rollup_block_of_first_missed_message_from_l2(arbsys_contract, @l2_to_l1_event)},
-         {:synced, nil} <- {:synced, MissingBlockRange.get_range_by_block_number(rollup_first_block + 1)} do
+         {:synced, true} <- {:synced, rollup_synced?()} do
       log_info("No missed messages from L2 found")
       rollup_first_block - 1
     else
@@ -224,8 +224,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         log_info("First missed message from L2 found in block #{value}")
         value
 
-      {:synced, _} ->
-        log_info("No missed messages from L2 found but historical block fetching still in progress")
+      {:synced, false} ->
+        log_info("No missed messages from L2 found but historical blocks fetching still in progress")
         initial_value
     end
   end
@@ -253,7 +253,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
           nil | FullBlock.block_number()
   def rollup_block_to_discover_missed_messages_to_l2(initial_value, rollup_first_block) do
     with {:block, nil} <- {:block, Reader.rollup_block_of_first_missed_message_to_l2()},
-         {:synced, nil} <- {:synced, MissingBlockRange.get_range_by_block_number(rollup_first_block)} do
+         {:synced, true} <- {:synced, rollup_synced?()} do
       log_info("No missed messages to L2 found")
       rollup_first_block - 1
     else
@@ -261,8 +261,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         log_info("First missed message to L2 found in block #{value}")
         value
 
-      {:synced, _} ->
-        log_info("No missed messages to L2 found but historical block fetching still in progress")
+      {:synced, false} ->
+        log_info("No missed messages to L2 found but historical blocks fetching still in progress")
         initial_value
     end
   end
@@ -371,7 +371,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     - A list of `Explorer.Chain.Block` instances containing detailed information for each
       block number in the input list. Returns an empty list if no blocks are found for the given numbers.
   """
-  @spec rollup_blocks(maybe_improper_list(FullBlock.block_number(), [])) :: [FullBlock]
+  @spec rollup_blocks([FullBlock.block_number()]) :: [FullBlock.t()]
+  def rollup_blocks(list_of_block_numbers)
+
+  def rollup_blocks([]), do: []
+
   def rollup_blocks(list_of_block_numbers)
       when is_list(list_of_block_numbers) do
     query =
@@ -766,6 +770,22 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @spec closest_block_after_timestamp(DateTime.t()) :: {:error, :not_found} | {:ok, FullBlock.block_number()}
   def closest_block_after_timestamp(timestamp) do
     Chain.timestamp_to_block_number(timestamp, :after, false)
+  end
+
+  # Checks if the rollup is synced by verifying if the block after the first block exists in the database.
+  @spec rollup_synced?() :: boolean()
+  defp rollup_synced? do
+    # Since zero block does not have any useful data, it make sense to consider
+    # the block just after it
+    rollup_tail = Application.get_all_env(:indexer)[:first_block] + 1
+
+    query =
+      from(
+        block in FullBlock,
+        where: block.number == ^rollup_tail and block.consensus == true
+      )
+
+    if(is_nil(query |> Repo.one()), do: false, else: true)
   end
 
   defp lifecycle_transaction_to_map(tx) do

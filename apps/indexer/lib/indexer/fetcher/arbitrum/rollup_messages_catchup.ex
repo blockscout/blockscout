@@ -92,8 +92,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
 
     config_tracker = Application.get_all_env(:indexer)[__MODULE__]
     recheck_interval = config_tracker[:recheck_interval]
-    messages_to_l2_blocks_depth = config_tracker[:messages_to_l2_blocks_depth]
-    messages_from_l2_blocks_depth = config_tracker[:messages_to_l1_blocks_depth]
+    missed_messages_blocks_depth = config_tracker[:missed_messages_blocks_depth]
 
     Process.send(self(), :wait_for_new_block, [])
 
@@ -107,8 +106,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
          },
          json_l2_rpc_named_arguments: args[:json_rpc_named_arguments],
          recheck_interval: recheck_interval,
-         messages_to_l2_blocks_depth: messages_to_l2_blocks_depth,
-         messages_from_l2_blocks_depth: messages_from_l2_blocks_depth
+         missed_messages_blocks_depth: missed_messages_blocks_depth
        },
        data: %{}
      }}
@@ -181,18 +179,19 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   #
   # ## Parameters
   # - `:init_worker`: The message that triggers the handler.
-  # - `state`: The current state of the fetcher.
+  # - `state`: The current state of the fetcher containing the first rollup block
+  #   number and the number of the most recent block indexed.
   #
   # ## Returns
   # - `{:noreply, new_state}` where the end blocks for both L1-to-L2 and L2-to-L1
   #   message discovery are established.
   @impl GenServer
-  def handle_info(:init_worker, %{config: %{rollup_rpc: %{first_block: rollup_first_block}}, data: _} = state) do
+  def handle_info(:init_worker, %{config: %{rollup_rpc: %{first_block: rollup_first_block}}, data: %{new_block: just_received_block}} = state) do
     historical_msg_from_l2_end_block =
-      Db.rollup_block_to_discover_missed_messages_from_l2(state.data.new_block - 1, rollup_first_block)
+      Db.rollup_block_to_discover_missed_messages_from_l2(just_received_block, rollup_first_block)
 
     historical_msg_to_l2_end_block =
-      Db.rollup_block_to_discover_missed_messages_to_l2(state.data.new_block - 1, rollup_first_block)
+      Db.rollup_block_to_discover_missed_messages_to_l2(just_received_block, rollup_first_block)
 
     Process.send(self(), :historical_msg_from_l2, [])
 
