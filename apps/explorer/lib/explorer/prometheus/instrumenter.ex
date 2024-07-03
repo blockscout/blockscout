@@ -21,7 +21,8 @@ defmodule Explorer.Prometheus.Instrumenter do
 
   @gauge [
     name: :weekly_deployed_smart_contracts_number,
-    help: "Number of deployed smart-contracts in the last 7 days",
+    help:
+      "Number of deployed smart-contracts (smart-contracts from internal transactions are not accounted) in the last 7 days",
     registry: :public
   ]
 
