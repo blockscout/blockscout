@@ -1,11 +1,15 @@
 defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   @moduledoc """
-  Handles the discovery and processing of historical messages between Layer 1 (L1) and Layer 2 (L2) within an Arbitrum rollup.
+  Handles the discovery and processing of historical messages between Layer 1 (L1)  and Layer 2 (L2) within an Arbitrum rollup.
 
-  L1-to-L2 messages are discovered by requesting rollup transactions through RPC.
-  This is necessary because some Arbitrum-specific fields are not included in the
-  already indexed transactions within the database.
+  ## L1-to-L2 Messages
+  L1-to-L2 messages are discovered by first inspecting the database to identify
+  potentially missed messages. Then, rollup transactions are requested through RPC
+  to fetch the necessary data. This is required because some Arbitrum-specific fields,
+  such as the `requestId`, are not included in the already indexed transactions within
+  the database.
 
+  ## L2-to-L1 Messages
   L2-to-L1 messages are discovered by analyzing the logs of already indexed rollup
   transactions.
   """
@@ -22,7 +26,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   require Logger
 
   @doc """
-    Initiates the discovery process for historical messages sent from L2 to L1 up to a specified block number.
+    Initiates the discovery process for historical messages sent from L2 to L1 up  to a specified block number.
 
     This function orchestrates the discovery of historical messages from L2 to L1
     by analyzing the rollup logs representing the `L2ToL1Tx` event. It determines
@@ -33,21 +37,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
 
     ## Parameters
     - `end_block`: The ending block number up to which the discovery should occur.
-                   If `nil` or lesser than the indexer first block, the function
-                   returns with no action taken.
+      If `nil` or less than the indexer's first block, the function returns with no
+      action taken.
     - `state`: Contains the operational configuration, including the depth of
-               blocks to consider for the starting point of message discovery.
+      blocks to consider for the starting point of message discovery.
 
     ## Returns
-    - `{:ok, nil}`: If `end_block` is `nil`, indicating no discovery action was required.
-    - `{:ok, rollup_first_block}`: If `end_block` is lesser than the indexer first block,
-      indicating that the "genesis" of the block chain was reached.
+    - `{:ok, nil}`: If `end_block` is `nil`, indicating no discovery action was
+      required.
+    - `{:ok, rollup_first_block}`: If `end_block` is less than the indexer's first
+      block, indicating that the "genesis" of the blockchain was reached.
     - `{:ok, start_block}`: Upon successful discovery of historical messages, where
-      `start_block` indicates the necessity to consider another block range in the next
-      iteration of message discovery.
+      `start_block` indicates the necessity to consider another block range in the
+      next iteration of message discovery.
     - `{:ok, end_block + 1}`: If the required block range is not fully indexed,
-      indicating that the next iteration of message discovery should start with the same
-      block range.
+      indicating that the next iteration of message discovery should start with the
+      same block range.
   """
   @spec discover_historical_messages_from_l2(nil | integer(), %{
           :config => %{
@@ -105,7 +110,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   #
   # ## Returns
   # - `{:ok, start_block}`: A tuple indicating successful processing, returning the initial
-  #                         starting block number.
+  #   starting block number.
+  @spec do_discover_historical_messages_from_l2(non_neg_integer(), non_neg_integer()) :: {:ok, non_neg_integer()}
   defp do_discover_historical_messages_from_l2(start_block, end_block) do
     log_info("Block range for discovery historical messages from L2: #{start_block}..#{end_block}")
 
@@ -125,31 +131,35 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   @doc """
     Initiates the discovery of historical messages sent from L1 to L2 up to a specified block number.
 
-    This function orchestrates the process of discovering historical L1-to-L2 messages within
-    a given rollup block range, based on the existence of the `requestId` field in the rollup
-    transaction body. Transactions are requested through RPC because already indexed
-    transactions from the database cannot be utilized; the `requestId` field is not included
-    in the transaction model. The function ensures that the block range has been indexed
-    before proceeding with message discovery and import. The imported messages are marked as
-    `:relayed`, as they represent completed actions from L1 to L2.
+    This function orchestrates the process of discovering historical L1-to-L2
+    messages within a given rollup block range, based on the existence of the
+    `requestId` field in the rollup transaction body. The initial list of
+    transactions that could contain the messages is received from the database, and
+    then their bodies are re-requested through RPC because already indexed
+    transactions from the database cannot be utilized; the `requestId` field is not
+    included in the transaction model. The function ensures that the block range
+    has been indexed before proceeding with message discovery and import. The
+    imported messages are marked as `:relayed`, as they represent completed actions
+    from L1 to L2.
 
     ## Parameters
-    - `end_block`: The ending block number for the discovery operation.
-                   If `nil` or lesser than the indexer first block, the function
-                   returns with no action taken.
-    - `state`: The current state of the operation, containing configuration parameters
-               including `messages_to_l2_blocks_depth`, `chunk_size`, and JSON RPC connection
-               settings.
+    - `end_block`: The ending block number for the discovery operation. If `nil` or
+      less than the indexer's first block, the function returns with no action
+      taken.
+    - `state`: The current state of the operation, containing configuration
+      parameters including `messages_to_l2_blocks_depth`, `chunk_size`, and JSON
+      RPC connection settings.
 
     ## Returns
     - `{:ok, nil}`: If `end_block` is `nil`, indicating no action was necessary.
-    - `{:ok, rollup_first_block}`: If `end_block` is lesser than the indexer first block,
-      indicating that the "genesis" of the block chain was reached.
-    - `{:ok, start_block}`: On successful completion of historical message discovery, where
-      `start_block` indicates the necessity to consider another block range in the next
-      iteration of message discovery.
-    - `{:ok, end_block + 1}`: If the required block range is not fully indexed, indicating
-      that the next iteration of message discovery should start with the same block range.
+    - `{:ok, rollup_first_block}`: If `end_block` is less than the indexer's first
+      block, indicating that the "genesis" of the blockchain was reached.
+    - `{:ok, start_block}`: On successful completion of historical message
+      discovery, where `start_block` indicates the necessity to consider another
+      block range in the next iteration of message discovery.
+    - `{:ok, end_block + 1}`: If the required block range is not fully indexed,
+      indicating that the next iteration of message discovery should start with the
+      same block range.
   """
   @spec discover_historical_messages_to_l2(nil | integer(), %{
           :config => %{
@@ -194,22 +204,36 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     end
   end
 
-  # The function iterates through the block range in chunks, making RPC calls to fetch rollup block
-  # data and extract transactions. Each transaction is filtered for L1-to-L2 messages based on
-  # existence of `requestId` field in the transaction body, and then imported into the database.
-  # The imported messages are marked as `:relayed` as they represent completed actions from L1 to L2.
+  # Discovers and processes historical messages sent from L1 to L2 within a
+  # specified rollup block range.
   #
-  # Already indexed transactions from the database cannot be used because the `requestId` field is
-  # not included in the transaction model.
+  # This function identifies which of already indexed transactions within the
+  # block range contains L1-to-L2 messages and makes RPC calls to fetch
+  # transaction data. These transactions are then processed to construct proper
+  # message structures, which are imported into the database. The imported
+  # messages are marked as `:relayed` as they represent completed actions from L1
+  # to L2.
+  #
+  # Note: Already indexed transactions from the database cannot be used because
+  # the `requestId` field is not included in the transaction model.
   #
   # ## Parameters
   # - `start_block`: The starting block number for the discovery range.
   # - `end_block`: The ending block number for the discovery range.
-  # - `config`: The configuration map containing settings for RPC communication and chunk size.
+  # - `config`: The configuration map containing settings for RPC communication
+  #   and chunk size.
   #
   # ## Returns
-  # - `{:ok, start_block}`: A tuple indicating successful processing, returning the initial
-  #                         starting block number.
+  # - `{:ok, start_block}`: A tuple indicating successful processing, returning
+  #                         the initial starting block number.
+  @spec do_discover_historical_messages_to_l2(non_neg_integer(), non_neg_integer(), %{
+          :rollup_rpc => %{
+            :chunk_size => non_neg_integer(),
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            optional(any()) => any()
+          },
+          optional(any()) => any()
+        }) :: {:ok, non_neg_integer()}
   defp do_discover_historical_messages_to_l2(
          start_block,
          end_block,

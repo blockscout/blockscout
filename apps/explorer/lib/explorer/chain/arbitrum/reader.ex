@@ -56,6 +56,20 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
+    Retrieves the rollup block number of the first missed L2-to-L1 message.
+
+    The function identifies missing messages by checking logs for the specified
+    L2-to-L1 event and verifying if there are corresponding entries in the messages
+    table. A message is considered missed if there is a log entry without a
+    matching message record.
+
+    ## Parameters
+    - `arbsys_contract`: The address of the Arbitrum system contract.
+    - `l2_to_l1_event`: The event identifier for L2-to-L1 messages.
+
+    ## Returns
+    - The block number of the first missed L2-to-L1 message, or `nil` if no missed
+      messages are found.
   """
   @spec rollup_block_of_first_missed_message_from_l2(binary(), binary()) :: FullBlock.block_number() | nil
   def rollup_block_of_first_missed_message_from_l2(arbsys_contract, l2_to_l1_event) do
@@ -76,6 +90,16 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
+    Retrieves the rollup block number of the first missed L1-to-L2 message.
+
+    The function identifies missing messages by checking transactions of specific
+    types that are supposed to contain L1-to-L2 messages and verifying if there are
+    corresponding entries in the messages table. A message is considered missed if
+    there is a transaction without a matching message record.
+
+    ## Returns
+    - The block number of the first missed L1-to-L2 message, or `nil` if no missed
+      messages are found.
   """
   @spec rollup_block_of_first_missed_message_to_l2() :: FullBlock.block_number() | nil
   def rollup_block_of_first_missed_message_to_l2 do
@@ -724,6 +748,21 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
+    Retrieves the transaction hashes for missed L1-to-L2 messages within a specified
+    block range.
+
+    The function identifies missed messages by checking transactions of specific
+    types that are supposed to contain L1-to-L2 messages and verifying if there are
+    corresponding entries in the messages table. A message is considered missed if
+    there is a transaction without a matching message record within the specified
+    block range.
+
+    ## Parameters
+    - `start_block`: The starting block number of the range.
+    - `end_block`: The ending block number of the range.
+
+    ## Returns
+    - A list of transaction hashes for missed L1-to-L2 messages.
   """
   @spec transactions_for_missed_messages_to_l2(non_neg_integer(), non_neg_integer()) :: [Hash.t()]
   def transactions_for_missed_messages_to_l2(start_block, end_block) do
@@ -743,6 +782,21 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
+    Retrieves the logs for missed L2-to-L1 messages within a specified block range.
+
+    The function identifies missed messages by checking logs for the specified
+    L2-to-L1 event and verifying if there are corresponding entries in the messages
+    table. A message is considered missed if there is a log entry without a
+    matching message record within the specified block range.
+
+    ## Parameters
+    - `start_block`: The starting block number of the range.
+    - `end_block`: The ending block number of the range.
+    - `arbsys_contract`: The address of the Arbitrum system contract.
+    - `l2_to_l1_event`: The event identifier for L2-to-L1 messages.
+
+    ## Returns
+    - A list of logs for missed L2-to-L1 messages.
   """
   @spec logs_for_missed_messages_from_l2(non_neg_integer(), non_neg_integer(), binary(), binary()) :: [Log.t()]
   def logs_for_missed_messages_from_l2(start_block, end_block, arbsys_contract, l2_to_l1_event) do

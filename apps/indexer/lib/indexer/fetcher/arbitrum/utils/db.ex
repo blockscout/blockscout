@@ -191,19 +191,39 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
+    Determines the rollup block number to discover missed L2-to-L1 messages within
+    a specified range.
+
+    The function checks for the first missed L2-to-L1 message and whether historical
+    block fetching is still in progress. If no missed messages are found and
+    historical fetching is complete, it returns the block number just before the
+    first rollup block. Otherwise, it returns the appropriate block number based on
+    the findings.
+
+    ## Parameters
+    - `initial_value`: The initial block number to start the further search of the
+      missed messages from if no missed messages are found and historical blocks
+      are not fetched yet.
+    - `rollup_first_block`: The block number of the first rollup block.
+
+    ## Returns
+    - The block number of the first missed L2-to-L1 message.
   """
-  @spec rollup_block_to_discover_missed_messages_from_l2(FullBlock.block_number(), FullBlock.block_number()) :: nil | FullBlock.block_number()
+  @spec rollup_block_to_discover_missed_messages_from_l2(FullBlock.block_number(), FullBlock.block_number()) ::
+          nil | FullBlock.block_number()
   def rollup_block_to_discover_missed_messages_from_l2(initial_value, rollup_first_block) do
     arbsys_contract = Application.get_env(:indexer, Indexer.Fetcher.Arbitrum.Messaging)[:arbsys_contract]
 
-    with {:block, nil} <- {:block, Reader.rollup_block_of_first_missed_message_from_l2(arbsys_contract, @l2_to_l1_event)},
+    with {:block, nil} <-
+           {:block, Reader.rollup_block_of_first_missed_message_from_l2(arbsys_contract, @l2_to_l1_event)},
          {:synced, nil} <- {:synced, MissingBlockRange.get_range_by_block_number(rollup_first_block + 1)} do
-          log_info("No missed messages from L2 found")
-          rollup_first_block - 1
+      log_info("No missed messages from L2 found")
+      rollup_first_block - 1
     else
       {:block, value} ->
         log_info("First missed message from L2 found in block #{value}")
         value
+
       {:synced, _} ->
         log_info("No missed messages from L2 found but historical block fetching still in progress")
         initial_value
@@ -211,22 +231,40 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
+    Determines the rollup block number to discover missed L1-to-L2 messages within
+    a specified range.
+
+    The function checks for the first missed L1-to-L2 message and whether historical
+    block fetching is still in progress. If no missed messages are found and
+    historical fetching is complete, it returns the block number just before the
+    first rollup block. Otherwise, it returns the appropriate block number based on
+    the findings.
+
+    ## Parameters
+    - `initial_value`: The initial block number to start the further search of the
+      missed messages from if no missed messages are found and historical blocks
+      are not fetched yet.
+    - `rollup_first_block`: The block number of the first rollup block.
+
+    ## Returns
+    - The block number of the first missed L1-to-L2 message.
   """
-  @spec rollup_block_to_discover_missed_messages_to_l2(FullBlock.block_number(), FullBlock.block_number()) :: nil | FullBlock.block_number()
+  @spec rollup_block_to_discover_missed_messages_to_l2(FullBlock.block_number(), FullBlock.block_number()) ::
+          nil | FullBlock.block_number()
   def rollup_block_to_discover_missed_messages_to_l2(initial_value, rollup_first_block) do
     with {:block, nil} <- {:block, Reader.rollup_block_of_first_missed_message_to_l2()},
          {:synced, nil} <- {:synced, MissingBlockRange.get_range_by_block_number(rollup_first_block)} do
-          log_info("No missed messages to L2 found")
-          rollup_first_block - 1
+      log_info("No missed messages to L2 found")
+      rollup_first_block - 1
     else
       {:block, value} ->
         log_info("First missed message to L2 found in block #{value}")
         value
+
       {:synced, _} ->
         log_info("No missed messages to L2 found but historical block fetching still in progress")
         initial_value
     end
-
   end
 
   @doc """
@@ -631,6 +669,21 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
+    Retrieves the transaction hashes as strings for missed L1-to-L2 messages within
+    a specified block range.
+
+    The function identifies missed messages by checking transactions of specific
+    types that are supposed to contain L1-to-L2 messages and verifying if there are
+    corresponding entries in the messages table. A message is considered missed if
+    there is a transaction without a matching message record within the specified
+    block range.
+
+    ## Parameters
+    - `start_block`: The starting block number of the range.
+    - `end_block`: The ending block number of the range.
+
+    ## Returns
+    - A list of transaction hashes as strings for missed L1-to-L2 messages.
   """
   @spec transactions_for_missed_messages_to_l2(non_neg_integer(), non_neg_integer()) :: [String.t()]
   def transactions_for_missed_messages_to_l2(start_block, end_block) do
@@ -639,18 +692,32 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
+    Retrieves the logs for missed L2-to-L1 messages within a specified block range
+    and converts them to maps.
+
+    The function identifies missed messages by checking logs for the specified
+    L2-to-L1 event and verifying if there are corresponding entries in the messages
+    table. A message is considered missed if there is a log entry without a
+    matching message record within the specified block range.
+
+    ## Parameters
+    - `start_block`: The starting block number of the range.
+    - `end_block`: The ending block number of the range.
+
+    ## Returns
+    - A list of maps representing the logs for missed L2-to-L1 messages.
   """
   @spec logs_for_missed_messages_from_l2(non_neg_integer(), non_neg_integer()) :: [
           %{
-            data: String,
+            data: String.t(),
             index: non_neg_integer(),
-            first_topic: String,
-            second_topic: String,
-            third_topic: String,
-            fourth_topic: String,
-            address_hash: String,
-            transaction_hash: String,
-            block_hash: String,
+            first_topic: String.t(),
+            second_topic: String.t(),
+            third_topic: String.t(),
+            fourth_topic: String.t(),
+            address_hash: String.t(),
+            transaction_hash: String.t(),
+            block_hash: String.t(),
             block_number: FullBlock.block_number()
           }
         ]
