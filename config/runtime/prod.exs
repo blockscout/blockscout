@@ -36,21 +36,24 @@ config :explorer, Explorer.Repo,
   listener_url: System.get_env("DATABASE_EVENT_URL"),
   pool_size: pool_size,
   ssl: ExplorerConfigHelper.ssl_enabled?(),
-  queue_target: queue_target
+  queue_target: queue_target,
+  ssl_opts: [verify: :verify_none]
 
 # Configures API the database
 config :explorer, Explorer.Repo.Replica1,
   url: ExplorerConfigHelper.get_api_db_url(),
   pool_size: ConfigHelper.parse_integer_env_var("POOL_SIZE_API", 50),
   ssl: ExplorerConfigHelper.ssl_enabled?(),
-  queue_target: queue_target
+  queue_target: queue_target,
+  ssl_opts: [verify: :verify_none]
 
 # Configures Account database
 config :explorer, Explorer.Repo.Account,
   url: ExplorerConfigHelper.get_account_db_url(),
   pool_size: ConfigHelper.parse_integer_env_var("ACCOUNT_POOL_SIZE", 50),
   ssl: ExplorerConfigHelper.ssl_enabled?(),
-  queue_target: queue_target
+  queue_target: queue_target,
+  ssl_opts: [verify: :verify_none]
 
 # Configure Beacon Chain database
 config :explorer, Explorer.Repo.Beacon,
@@ -58,7 +61,8 @@ config :explorer, Explorer.Repo.Beacon,
   # actually this repo is not started, and its pool size remains unused.
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures BridgedTokens database
 config :explorer, Explorer.Repo.BridgedTokens,
@@ -66,13 +70,15 @@ config :explorer, Explorer.Repo.BridgedTokens,
   # actually this repo is not started, and its pool size remains unused.
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures Optimism database
 config :explorer, Explorer.Repo.Optimism,
   url: System.get_env("DATABASE_URL"),
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures PolygonEdge database
 config :explorer, Explorer.Repo.PolygonEdge,
@@ -80,13 +86,15 @@ config :explorer, Explorer.Repo.PolygonEdge,
   # actually this repo is not started, and its pool size remains unused.
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures PolygonZkevm database
 config :explorer, Explorer.Repo.PolygonZkevm,
   url: System.get_env("DATABASE_URL"),
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures ZkSync database
 config :explorer, Explorer.Repo.ZkSync,
@@ -94,7 +102,8 @@ config :explorer, Explorer.Repo.ZkSync,
   # actually this repo is not started, and its pool size remains unused.
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures Rootstock database
 config :explorer, Explorer.Repo.RSK,
@@ -102,25 +111,29 @@ config :explorer, Explorer.Repo.RSK,
   # actually this repo is not started, and its pool size remains unused.
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures Shibarium database
 config :explorer, Explorer.Repo.Shibarium,
   url: System.get_env("DATABASE_URL"),
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures Suave database
 config :explorer, Explorer.Repo.Suave,
   url: ExplorerConfigHelper.get_suave_db_url(),
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures Filecoin database
 config :explorer, Explorer.Repo.Filecoin,
   url: System.get_env("DATABASE_URL"),
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures Arbitrum database
 config :explorer, Explorer.Repo.Arbitrum,
@@ -128,20 +141,23 @@ config :explorer, Explorer.Repo.Arbitrum,
   # actually this repo is not started, and its pool size remains unused.
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures Stability database
 config :explorer, Explorer.Repo.Stability,
   url: System.get_env("DATABASE_URL"),
   pool_size: 1,
-  ssl: ExplorerConfigHelper.ssl_enabled?()
+  ssl: ExplorerConfigHelper.ssl_enabled?(),
+  ssl_opts: [verify: :verify_none]
 
 # Configures Mud database
 config :explorer, Explorer.Repo.Mud,
   url: ExplorerConfigHelper.get_mud_db_url(),
   pool_size: ConfigHelper.parse_integer_env_var("MUD_POOL_SIZE", 50),
   ssl: ExplorerConfigHelper.ssl_enabled?(),
-  queue_target: queue_target
+  queue_target: queue_target,
+  ssl_opts: [verify: :verify_none]
 
 variant = Variant.get()
 
