@@ -169,14 +169,18 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
       end)
       |> Enum.sum()
 
-    if voter_rewards_from_event_total - manual_voters_total < Enum.count(voter_rewards) do
+    voter_rewards_count = Enum.count(voter_rewards)
+    voter_rewards_diff = voter_rewards_from_event_total - manual_voters_total
+
+    if voter_rewards_diff < voter_rewards_count or voter_rewards_count == 0 do
       :ok
     else
       Logger.warning(fn ->
         [
           "Total voter rewards do not match. ",
           "Amount calculated manually: #{manual_voters_total}. ",
-          "Amount got from `EpochRewardsDistributedToVoters` events: #{voter_rewards_from_event_total}."
+          "Amount got from `EpochRewardsDistributedToVoters` events: #{voter_rewards_from_event_total}. ",
+          "Voter rewards count: #{voter_rewards_count}."
         ]
       end)
 
