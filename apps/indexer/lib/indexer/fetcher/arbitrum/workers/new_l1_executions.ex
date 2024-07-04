@@ -29,6 +29,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
+  alias Explorer.Chain.Arbitrum
 
   require Logger
 
@@ -216,7 +217,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     # that have not yet been indexed. This ensures that as soon as a new unexecuted
     # message is added to the database, it can be marked as relayed, considering
     # the execution transactions that have already been indexed.
-    messages = get_relayed_messages(end_block)
+    messages = get_relayed_messages()
 
     unless messages == [] do
       log_info("Marking #{length(messages)} l2-to-l1 messages as completed")
@@ -269,6 +270,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   #     statuses, and unique identifiers.
   #   - A list of detailed execution information for L2-to-L1 messages.
   # Both lists are prepared for database importation.
+  @spec get_executions_from_logs(
+          [%{String.t() => any()}],
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            :track_finalization => boolean(),
+            optional(any()) => any()
+          }
+        ) :: {[Arbitrum.LifecycleTransaction.to_import()], [Arbitrum.L1Execution.to_import()]}
+  defp get_executions_from_logs(logs, l1_rpc_config)
+
+  defp get_executions_from_logs([], _), do: {[], []}
+
   defp get_executions_from_logs(
          logs,
          %{
@@ -370,23 +384,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   # Retrieves unexecuted messages from L2 to L1, marking them as completed if their
   # corresponding execution transactions are identified.
   #
-  # This function fetches messages confirmed on L1 up to the specified rollup block
-  # number and matches these messages with their corresponding execution transactions.
-  # For matched pairs, it updates the message status to `:relayed` and links them with
-  # the execution transactions.
-  #
-  # ## Parameters
-  # - `block_number`: The block number up to which messages are considered for
-  #   completion.
+  # This function fetches messages confirmed on L1 and matches these messages with
+  # their corresponding execution transactions. For matched pairs, it updates the
+  # message status to `:relayed` and links them with the execution transactions.
   #
   # ## Returns
   # - A list of messages marked as completed, ready for database import.
-  defp get_relayed_messages(block_number) do
+  @spec get_relayed_messages() :: [Arbitrum.Message.to_import()]
+  defp get_relayed_messages do
     # Assuming that both catchup block fetcher and historical messages catchup fetcher
     # will check all discovered historical messages to be marked as executed it is not
     # needed to handle :initiated and :sent of historical messages here, only for
     # new messages discovered and changed their status from `:sent` to `:confirmed`
-    confirmed_messages = Db.confirmed_l2_to_l1_messages(block_number)
+    confirmed_messages = Db.confirmed_l2_to_l1_messages()
 
     if Enum.empty?(confirmed_messages) do
       []

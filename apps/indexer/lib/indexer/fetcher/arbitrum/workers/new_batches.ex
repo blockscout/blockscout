@@ -33,6 +33,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
 
   alias Explorer.Chain
+  alias Explorer.Chain.Arbitrum
 
   require Logger
 
@@ -409,6 +410,30 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # - A tuple containing lists of batches, lifecycle transactions, rollup blocks,
   #   rollup transactions, and committed messages (with the status `:sent`), all
   #   ready for database import.
+  @spec handle_batches_from_logs(
+          [%{String.t() => any()}],
+          non_neg_integer(),
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            optional(any()) => any()
+          },
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            optional(any()) => any()
+          }
+        ) :: {
+          [Arbitrum.L1Batch.to_import()],
+          [Arbitrum.LifecycleTransaction.to_import()],
+          [Arbitrum.BatchBlock.to_import()],
+          [Arbitrum.BatchTransaction.to_import()],
+          [Arbitrum.Message.to_import()]
+        }
+  defp handle_batches_from_logs(logs, msg_to_block_shift, l1_rpc_config, rollup_rpc_config)
+
+  defp handle_batches_from_logs([], _, _, _), do: {[], [], [], [], []}
+
   defp handle_batches_from_logs(
          logs,
          msg_to_block_shift,
