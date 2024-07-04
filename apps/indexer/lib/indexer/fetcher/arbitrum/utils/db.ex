@@ -8,6 +8,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Arbitrum
   alias Explorer.Chain.Arbitrum.Reader
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Chain.{Data, Hash, Log}
@@ -558,21 +559,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       database import operation. If no messages with the 'confirmed' status are found by
       the specified block number, an empty list is returned.
   """
-  @spec confirmed_l2_to_l1_messages(FullBlock.block_number()) :: [
-          %{
-            direction: :from_l2,
-            message_id: non_neg_integer(),
-            originator_address: binary(),
-            originating_transaction_hash: binary(),
-            originating_transaction_block_number: FullBlock.block_number(),
-            completion_transaction_hash: nil,
-            status: :confirmed
-          }
-        ]
-  def confirmed_l2_to_l1_messages(block_number)
-      when is_integer(block_number) and block_number >= 0 do
+  @spec confirmed_l2_to_l1_messages() :: [Arbitrum.Message.to_import()]
+  def confirmed_l2_to_l1_messages do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:confirmed, block_number)
+    Reader.l2_to_l1_messages(:confirmed, nil)
     |> Enum.map(&message_to_map/1)
   end
 
@@ -739,6 +729,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     |> db_record_to_map(block)
   end
 
+  @spec message_to_map(Arbitrum.Message.t()) :: Arbitrum.Message.to_import()
   defp message_to_map(message) do
     [
       :direction,

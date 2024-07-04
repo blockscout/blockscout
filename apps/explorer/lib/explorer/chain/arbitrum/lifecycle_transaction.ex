@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
   @moduledoc """
-    Models an L1 lifecycle transaction for Arbitrum.
+    Models an L1 lifecycle transaction for Arbitrum. Lifecycle transactions are transactions that change the state of transactions and blocks on Arbitrum rollups.
 
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Arbitrum.LifecycleTransactions
@@ -11,25 +11,41 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{
-    Block,
-    Hash
-  }
+  alias Explorer.Chain.Hash
 
   alias Explorer.Chain.Arbitrum.{BatchBlock, L1Batch}
 
   @required_attrs ~w(id hash block_number timestamp status)a
 
-  @type t :: %__MODULE__{
-          id: non_neg_integer(),
-          hash: Hash.t(),
-          block_number: Block.block_number(),
-          timestamp: DateTime.t(),
-          status: String.t()
+  @typedoc """
+  Descriptor of the a L1 transaction changing state of transactions and blocks of Arbitrum rollups:
+    * `id` - The ID of the transaction used for referencing.
+    * `hash` - The hash of the L1 transaction.
+    * `block_number` - The number of the L1 block where the transaction is included.
+    * `timestamp` - The timestamp of the block in which the transaction is included.
+    * `status` - The status of the transaction: `:unfinalized` or `:finalized`
+  """
+  @type to_import :: %{
+          :id => non_neg_integer(),
+          :hash => binary(),
+          :block_number => non_neg_integer(),
+          :timestamp => DateTime.t(),
+          :status => :unfinalized | :finalized
         }
 
+  @typedoc """
+    * `id` - The ID of the transaction used for referencing.
+    * `hash` - The hash of the L1 transaction.
+    * `block_number` - The number of the L1 block where the transaction is included.
+    * `timestamp` - The timestamp of the block in which the transaction is included.
+    * `status` - The status of the transaction: `:unfinalized` or `:finalized`.
+    * `committed_batches` - A list of `Explorer.Chain.Arbitrum.L1Batch` instances
+                            that are committed by the transaction.
+    * `confirmed_blocks` - A list of `Explorer.Chain.Arbitrum.BatchBlock` instances
+                           that are confirmed by the transaction.
+  """
   @primary_key {:id, :integer, autogenerate: false}
-  schema "arbitrum_lifecycle_l1_transactions" do
+  typed_schema "arbitrum_lifecycle_l1_transactions" do
     field(:hash, Hash.Full)
     field(:block_number, :integer)
     field(:timestamp, :utc_datetime_usec)

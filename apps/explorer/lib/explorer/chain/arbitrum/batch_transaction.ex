@@ -16,15 +16,24 @@ defmodule Explorer.Chain.Arbitrum.BatchTransaction do
 
   @required_attrs ~w(batch_number tx_hash)a
 
-  @type t :: %__MODULE__{
-          batch_number: non_neg_integer(),
-          batch: %Ecto.Association.NotLoaded{} | L1Batch.t() | nil,
-          tx_hash: Hash.t(),
-          l2_transaction: %Ecto.Association.NotLoaded{} | Transaction.t() | nil
+  @typedoc """
+  Descriptor of the a rollup transaction included in an Arbitrum batch:
+    * `batch_number` - The number of the Arbitrum batch.
+    * `tx_hash` - The hash of the rollup transaction.
+  """
+  @type to_import :: %{
+          :batch_number => non_neg_integer(),
+          :tx_hash => binary()
         }
 
+  @typedoc """
+    * `tx_hash` - The hash of the rollup transaction.
+    * `l2_transaction` - An instance of `Explorer.Chain.Transaction` referenced by `tx_hash`.
+    * `batch_number` - The number of the Arbitrum batch.
+    * `batch` - An instance of `Explorer.Chain.Arbitrum.L1Batch` referenced by `batch_number`.
+  """
   @primary_key false
-  schema "arbitrum_batch_l2_transactions" do
+  typed_schema "arbitrum_batch_l2_transactions" do
     belongs_to(:batch, L1Batch, foreign_key: :batch_number, references: :number, type: :integer)
 
     belongs_to(:l2_transaction, Transaction,
