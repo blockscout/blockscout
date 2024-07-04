@@ -38,7 +38,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   require Logger
 
   # keccak256("SequencerBatchDelivered(uint256,bytes32,bytes32,bytes32,uint256,(uint64,uint64,uint64,uint64),uint8)")
-  @message_sequencer_batch_delivered "0x7394f4a19a13c7b92b5bb71033245305946ef78452f7b4986ac1390b5df4ebd7"
+  @event_sequencer_batch_delivered "0x7394f4a19a13c7b92b5bb71033245305946ef78452f7b4986ac1390b5df4ebd7"
 
   @doc """
     Discovers and imports new batches of rollup transactions within the current L1 block range.
@@ -393,7 +393,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         start_block,
         end_block,
         sequencer_inbox_address,
-        [@message_sequencer_batch_delivered],
+        [@event_sequencer_batch_delivered],
         json_rpc_named_arguments
       )
 
@@ -434,6 +434,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             :chunk_size => non_neg_integer(),
             optional(any()) => any()
           },
+          binary(),
           %{
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             :chunk_size => non_neg_integer(),
@@ -446,9 +447,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           [Arbitrum.BatchTransaction.to_import()],
           [Arbitrum.Message.to_import()]
         }
-  defp handle_batches_from_logs(logs, msg_to_block_shift, l1_rpc_config, rollup_rpc_config)
+  defp handle_batches_from_logs(logs, msg_to_block_shift, l1_rpc_config, node_interface_address, rollup_rpc_config)
 
-  defp handle_batches_from_logs([], _, _, _), do: {[], [], [], [], []}
+  defp handle_batches_from_logs([], _, _, _, _), do: {[], [], [], [], []}
 
   defp handle_batches_from_logs(
          logs,
@@ -826,8 +827,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     # since the default direction for the block range exploration is chosen to be from the highest to lowest
     # the step is calculated to be positive
     case Db.get_batch_by_number(batch_number) do
-      nil -> {nil, nil}
-      %{start_block: start_block, end_block: end_block} -> {start_block - 1, div(end_block - start_block, 2)}
+      nil ->
+        {nil, nil}
+
+      %Arbitrum.L1Batch{start_block: start_block, end_block: end_block} ->
+        {start_block - 1, div(end_block - start_block, 2)}
     end
   end
 
@@ -837,8 +841,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     # since the default direction for the block range exploration is chosen to be from the highest to lowest
     # the step is calculated to be negative
     case Db.get_batch_by_number(batch_number) do
-      nil -> {nil, nil}
-      %{start_block: start_block, end_block: end_block} -> {end_block + 1, div(start_block - end_block, 2)}
+      nil ->
+        {nil, nil}
+
+      %Arbitrum.L1Batch{start_block: start_block, end_block: end_block} ->
+        {end_block + 1, div(start_block - end_block, 2)}
     end
   end
 

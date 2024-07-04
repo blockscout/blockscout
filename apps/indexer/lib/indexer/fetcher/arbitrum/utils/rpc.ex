@@ -12,8 +12,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
   @rpc_resend_attempts 20
 
+  # outbox()
   @selector_outbox "ce11e6ab"
+  # sequencerInbox()
   @selector_sequencer_inbox "ee35f327"
+  # bridge()
   @selector_bridge "e78cea92"
   @rollup_contract_abi [
     %{
@@ -57,6 +60,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     }
   ]
 
+  # findBatchContainingBlock(uint64 blockNum)
   @selector_find_batch_containing_block "81f1adaf"
   @node_interface_contract_abi [
     %{
