@@ -12,34 +12,20 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   alias Explorer.Chain.Celo.{ElectionReward, EpochReward, Reader}
   alias Explorer.Chain.{Block, Transaction}
 
-  def render("celo_epoch_distributions.json", %Block{} = block) when is_epoch_block_number(block.number) do
-    %EpochReward{
-      reserve_bolster_transfer: reserve_bolster_transfer,
-      community_transfer: community_transfer,
-      carbon_offsetting_transfer: carbon_offsetting_transfer
-    } = EpochReward.load_token_transfers(block.celo_epoch_reward)
+  @address_params [
+    necessity_by_association: %{
+      :names => :optional,
+      :smart_contract => :optional,
+      :proxy_implementations => :optional
+    },
+    api?: true
+  ]
 
-    Map.new(
-      [
-        reserve_bolster_transfer: reserve_bolster_transfer,
-        community_transfer: community_transfer,
-        carbon_offsetting_transfer: carbon_offsetting_transfer
-      ],
-      fn {field, token_transfer} ->
-        token_transfer_json =
-          token_transfer &&
-            TransactionView.render(
-              "token_transfer.json",
-              %{token_transfer: token_transfer, conn: nil}
-            )
-
-        {field, token_transfer_json}
-      end
-    )
+  def render("celo_epoch_distributions.json", block) do
+    block
+    |> Map.get(:celo_epoch_reward)
+    |> prepare_epoch_distributions()
   end
-
-  def render("celo_epoch_distributions.json", %Block{} = _block),
-    do: nil
 
   def render("celo_aggregated_election_rewards.json", %Block{} = block)
       when is_epoch_block_number(block.number) do
@@ -48,7 +34,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     # Return a map with all possible election reward types, even if they are not
     # present in the database.
     ElectionReward.types()
-    |> Map.new(&{&1, nil})
+    |> Map.new(&{&1, 0})
     |> Map.merge(aggregated_election_rewards)
   end
 
@@ -81,6 +67,34 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       "next_page_params" => next_page_params
     }
   end
+
+  def prepare_epoch_distributions(%EpochReward{} = epoch_reward) do
+    %EpochReward{
+      reserve_bolster_transfer: reserve_bolster_transfer,
+      community_transfer: community_transfer,
+      carbon_offsetting_transfer: carbon_offsetting_transfer
+    } = EpochReward.load_token_transfers(epoch_reward)
+
+    Map.new(
+      [
+        reserve_bolster_transfer: reserve_bolster_transfer,
+        community_transfer: community_transfer,
+        carbon_offsetting_transfer: carbon_offsetting_transfer
+      ],
+      fn {field, token_transfer} ->
+        token_transfer_json =
+          token_transfer &&
+            TransactionView.render(
+              "token_transfer.json",
+              %{token_transfer: token_transfer, conn: nil}
+            )
+
+        {field, token_transfer_json}
+      end
+    )
+  end
+
+  def prepare_epoch_distributions(_epoch_reward), do: nil
 
   def prepare_election_reward(%ElectionReward{block_number: nil} = reward) do
     %{
@@ -153,7 +167,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       ] =
         address_hashes_to_fetch_from_db
         |> Enum.map(&(&1 |> Chain.string_to_address_hash() |> elem(1)))
-        |> Chain.hashes_to_addresses()
+        |> Chain.hashes_to_addresses(@address_params)
         |> Stream.concat(Stream.duplicate(nil, 3))
         |> Stream.zip(address_hashes_to_fetch_from_db)
         |> Enum.map(fn {address, address_hash} ->
@@ -252,7 +266,18 @@ defmodule BlockScoutWeb.API.V2.CeloView do
          true
        ) do
     epoch_rewards_json = render("celo_epoch_distributions.json", block)
-    aggregated_election_rewards_json = render("celo_aggregated_election_rewards.json", block)
+
+    # Workaround: we assume that if epoch rewards are not fetched for a block,
+    # we should not display aggregated election rewards for it.
+    #
+    # todo: consider checking pending block epoch operations to determine if
+    # epoch is fetched or not
+    aggregated_election_rewards_json =
+      if epoch_rewards_json do
+        render("celo_aggregated_election_rewards.json", block)
+      else
+        nil
+      end
 
     celo_epoch_json
     |> Map.put("distributions", epoch_rewards_json)
