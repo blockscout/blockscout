@@ -111,6 +111,19 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
 
         {:ok, []}
 
+      {_, ["(-32000) execution reverted"]} ->
+        # todo: we should start fetching payment delegations only after the
+        # first `PaymentDelegationSet` event is emitted. Unfortunately, relying
+        # on contract version is not enough since the method could not be
+        # present.
+        Logger.info(fn ->
+          [
+            "Could not fetch payment delegations since `getPaymentDelegation` constantly returns error. ",
+            "Most likely, the method is not available on block #{block_number}. ",
+          ]
+        end)
+        {:ok, []}
+
       error ->
         Logger.error("Could not fetch payment delegations: #{inspect(error)}")
 
