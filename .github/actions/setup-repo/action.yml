@@ -68,7 +68,7 @@ runs:
       with:
         platforms: linux/amd64
         append: |
-          - endpoint: ssh://root@${{ env.BUILDER_IP }}
+          - endpoint: ssh://ubuntu@${{ env.BUILDER_IP }}
             platforms: linux/arm64/v8
 
     - name: Log in to Docker Hub
