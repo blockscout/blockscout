@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Metrics do
     :weekly_new_addresses_number,
     :weekly_new_tokens_number,
     :weekly_new_token_transfers_number,
-    :weekly_active_addresses_number
+    :weekly_simplified_active_addresses_number
   ]
 
   @spec start_link(term()) :: GenServer.on_start()
@@ -28,7 +28,7 @@ defmodule Explorer.Chain.Metrics do
   end
 
   def init(_) do
-    if Application.get_env(:explorer, __MODULE__, :disabled?) do
+    if Application.get_env(:explorer, __MODULE__)[:disabled?] do
       :ignore
     else
       send(self(), :set_metrics)

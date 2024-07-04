@@ -21,7 +21,8 @@ defmodule Explorer.Prometheus.Instrumenter do
 
   @gauge [
     name: :weekly_deployed_smart_contracts_number,
-    help: "Number of deployed smart-contracts in the last 7 days",
+    help:
+      "Number of deployed smart-contracts (smart-contracts from internal transactions are not accounted) in the last 7 days",
     registry: :public
   ]
 
@@ -87,7 +88,7 @@ defmodule Explorer.Prometheus.Instrumenter do
     Gauge.set([name: :weekly_new_token_transfers_number, registry: :public], number)
   end
 
-  def weekly_active_addresses_number(number) do
+  def weekly_simplified_active_addresses_number(number) do
     Gauge.set([name: :weekly_active_addresses_number, registry: :public], number)
   end
 end

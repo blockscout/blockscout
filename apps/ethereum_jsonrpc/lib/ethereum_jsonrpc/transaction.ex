@@ -673,13 +673,8 @@ defmodule EthereumJSONRPC.Transaction do
     end
   end
 
-  # ZkSync fields
-  defp entry_to_elixir({key, _}) when key in ~w(l1BatchNumber l1BatchTxIndex) do
-    {:ignore, :ignore}
-  end
-
   defp entry_to_elixir(_) do
-    {nil, nil}
+    {:ignore, :ignore}
   end
 
   def put_if_present(result, transaction, keys) do

@@ -1,5 +1,29 @@
 # Changelog
 
+## 6.7.2
+
+### 🐛 Bug Fixes
+
+- Apply Ecto set explicit ssl_opts: [verify: :verify_none] to all prod repos ([#10369](https://github.com/blockscout/blockscout/issues/10369))
+- Fix slow internal transactions query ([#10346](https://github.com/blockscout/blockscout/issues/10346))
+- Don't execute update query for empty list ([#10344](https://github.com/blockscout/blockscout/issues/10344))
+- Add rescue on tx revert reason fetching ([#10366](https://github.com/blockscout/blockscout/issues/10366))
+- Reth compatibility ([#10335](https://github.com/blockscout/blockscout/issues/10335))
+- Public metrics enabling ([#10365](https://github.com/blockscout/blockscout/issues/10365))
+- Flaky market test ([#10262](https://github.com/blockscout/blockscout/issues/10262))
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump elixir to 1.16.3 and Erlang OTP to 26.2.5.1 ([#9256](https://github.com/blockscout/blockscout/issues/9256))
+
+## 6.7.1
+
+### 🐛 Bug Fixes
+
+- Fix to_string error ([#10319](https://github.com/blockscout/blockscout/issues/10319))
+- Fix bridged tokens ([#10318](https://github.com/blockscout/blockscout/issues/10318))
+- Missing onlyTopCall option on some geth networks ([#10309](https://github.com/blockscout/blockscout/issues/10309))
+
 ## 6.7.0
 
 ### 🚀 Features
@@ -20,6 +44,8 @@
 
 ### 🐛 Bug Fixes
 
+- Add token instances preloads ([#10288](https://github.com/blockscout/blockscout/issues/10288))
+- Set timeout in seconds ([#10283](https://github.com/blockscout/blockscout/issues/10283))
 - Fix ci setup repo error ([#10277](https://github.com/blockscout/blockscout/issues/10277))
 - `getsourcecode` in API v1 for verified proxy ([#10273](https://github.com/blockscout/blockscout/issues/10273))
 - Add preloads for tx summary endpoint ([#10261](https://github.com/blockscout/blockscout/issues/10261))

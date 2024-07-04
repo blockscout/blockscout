@@ -15,14 +15,28 @@ defmodule Explorer.Chain.Arbitrum.L1Execution do
 
   @required_attrs ~w(message_id execution_id)a
 
-  @type t :: %__MODULE__{
-          message_id: non_neg_integer(),
-          execution_id: non_neg_integer(),
-          execution_transaction: %Ecto.Association.NotLoaded{} | LifecycleTransaction.t() | nil
+  @typedoc """
+  Descriptor of the a L1 execution transaction related to a L2 to L1 message on Arbitrum rollups:
+    * `message_id` - The ID of the message from `Explorer.Chain.Arbitrum.Message`.
+                     There could be situations when an execution of a message is
+                     discovered, but the message itself is not indexed yet.
+    * `execution_id` - The ID of the execution transaction from `Explorer.Chain.Arbitrum.LifecycleTransaction`.
+  """
+  @type to_import :: %{
+          :message_id => non_neg_integer(),
+          :execution_id => non_neg_integer()
         }
 
+  @typedoc """
+    * `message_id` - The ID of the message from `Explorer.Chain.Arbitrum.Message`.
+                     There could be situations when an execution of a message is
+                     discovered, but the message itself is not indexed yet.
+    * `execution_id` - The ID of the execution transaction from `Explorer.Chain.Arbitrum.LifecycleTransaction`.
+    * `execution_transaction` - An instance of `Explorer.Chain.Arbitrum.LifecycleTransaction`
+                                referenced by `execution_id`.
+  """
   @primary_key {:message_id, :integer, autogenerate: false}
-  schema "arbitrum_l1_executions" do
+  typed_schema "arbitrum_l1_executions" do
     belongs_to(:execution_transaction, LifecycleTransaction,
       foreign_key: :execution_id,
       references: :id,
