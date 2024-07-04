@@ -288,6 +288,7 @@ defmodule Indexer.Supervisor do
   end
 
   defp configure(process, opts) do
+    # todo: shouldn't we pay attention to process.disabled?() predicate?
     if Application.get_env(:indexer, process)[:enabled] do
       [{process, opts}]
     else
