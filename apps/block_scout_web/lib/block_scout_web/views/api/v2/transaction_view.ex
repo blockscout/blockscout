@@ -518,6 +518,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           render(__MODULE__, "revert_reason.json", raw: hex)
       end
     end
+  rescue
+    _ ->
+      nil
   end
 
   @doc """

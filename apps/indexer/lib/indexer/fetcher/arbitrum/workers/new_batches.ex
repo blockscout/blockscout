@@ -456,6 +456,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           {[Arbitrum.L1Batch.to_import()], [Arbitrum.LifecycleTransaction.to_import()],
            [Arbitrum.BatchBlock.to_import()], [Arbitrum.BatchTransaction.to_import()], [Arbitrum.Message.to_import()],
            [Arbitrum.DaMultiPurposeRecord.to_import()]}
+  defp handle_batches_from_logs(logs, msg_to_block_shift, l1_rpc_config, sequencer_inbox_address, rollup_rpc_config)
+
+  defp handle_batches_from_logs([], _, _, _, _), do: {[], [], [], [], [], []}
+
   defp handle_batches_from_logs(
          logs,
          msg_to_block_shift,

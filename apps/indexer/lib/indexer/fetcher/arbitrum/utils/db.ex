@@ -529,11 +529,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       database import operation. If no messages with the 'confirmed' status are found by
       the specified block number, an empty list is returned.
   """
-  @spec confirmed_l2_to_l1_messages(FullBlock.block_number()) :: [Arbitrum.Message.to_import()]
-  def confirmed_l2_to_l1_messages(block_number)
-      when is_integer(block_number) and block_number >= 0 do
+  @spec confirmed_l2_to_l1_messages() :: [Arbitrum.Message.to_import()]
+  def confirmed_l2_to_l1_messages do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:confirmed, block_number)
+    Reader.l2_to_l1_messages(:confirmed, nil)
     |> Enum.map(&message_to_map/1)
   end
 

@@ -301,7 +301,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     result
   rescue
     exception ->
-      Logger.warn(fn ->
+      Logger.warning(fn ->
         [
           "Error formatting constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
           Exception.format(:error, exception)
@@ -382,7 +382,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           tuple_item_types =
             rest
             |> String.split("]")
-            |> Enum.slice(0..-3)
+            |> Enum.slice(0..-3//1)
             |> Enum.join("]")
 
           array_str = "[" <> (rest |> String.split("[") |> List.last())

@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Arbitrum.L1Batch do
     * `end_block` - The number of the last block in the batch.
     * `before_acc` - The hash of the state before the batch.
     * `after_acc` - The hash of the state after the batch.
-    * `commitment_id` - The ID of the commitment L1 transaction from Explorer.Chain.LifecycleTransaction.
+    * `commitment_id` - The ID of the commitment L1 transaction from Explorer.Chain.Arbitrum.LifecycleTransaction.
     * `batch_container` - The tag meaning the container of the batch data: `:in_blob4844`, `:in_calldata`, `:in_celestia`, `:in_anytrust`
   """
   @type to_import :: %{

@@ -2,6 +2,7 @@ defmodule Explorer.Market.History.CatalogerTest do
   use Explorer.DataCase, async: false
 
   import Mox
+  import Ecto.Query, only: [order_by: 2]
 
   alias Explorer.Market.MarketHistory
   alias Explorer.Market.History.Cataloger
@@ -208,11 +209,11 @@ defmodule Explorer.Market.History.CatalogerTest do
 
     {:ok, pid} = Cataloger.start_link([])
 
-    :timer.sleep(4000)
+    :timer.sleep(5000)
 
     Process.send(pid, {:fetch_price_history, 1}, [])
 
-    :timer.sleep(4000)
+    :timer.sleep(5000)
 
     assert [
              %Explorer.Market.MarketHistory{
@@ -221,7 +222,7 @@ defmodule Explorer.Market.History.CatalogerTest do
              %Explorer.Market.MarketHistory{
                date: ~D[2018-04-02]
              } = second_entry
-           ] = MarketHistory |> Repo.all()
+           ] = MarketHistory |> order_by(asc: :date) |> Repo.all()
 
     assert Decimal.eq?(first_entry.closing_price, Decimal.new(10))
     assert Decimal.eq?(second_entry.closing_price, Decimal.new(20))

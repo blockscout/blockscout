@@ -1,5 +1,5 @@
 defmodule Explorer.Chain.Cache.GasPriceOracleTest do
-  use Explorer.DataCase
+  use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Cache.GasPriceOracle
   alias Explorer.Chain.Wei
