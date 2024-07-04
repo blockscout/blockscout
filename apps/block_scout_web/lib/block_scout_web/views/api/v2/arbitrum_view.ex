@@ -121,7 +121,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   # - A list of maps with detailed information about each batch, formatted for use
   #   in JSON HTTP responses.
   @spec render_arbitrum_batches(
-          [L1Batch]
+          [L1Batch.t()]
           | [
               %{
                 :number => non_neg_integer(),
@@ -156,7 +156,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   # ## Returns
   # - A  map with detailed information about the batch, formatted for use in JSON HTTP responses.
   @spec render_base_info_for_batch(
-          L1Batch
+          L1Batch.t()
           | %{
               :number => non_neg_integer(),
               :transactions_count => non_neg_integer(),
@@ -278,13 +278,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
 
   # Augments an output JSON with commit transaction details and its status.
   @spec add_l1_tx_info(map(), %{
-          :commitment_transaction => %{
-            :hash => binary(),
-            :block_number => non_neg_integer(),
-            :timestamp => DateTime.t(),
-            :status => :finalized | :unfinalized,
-            optional(any()) => any()
-          },
+          :commitment_transaction => LifecycleTransaction.t() | LifecycleTransaction.to_import(),
           optional(any()) => any()
         }) :: map()
   defp add_l1_tx_info(out_json, %L1Batch{} = batch) do
