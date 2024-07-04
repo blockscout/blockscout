@@ -252,7 +252,7 @@ defmodule EthereumJSONRPC.Receipts do
   end
 
   defp convert_hash(receipt, key) do
-    hash_hex = receipt[key] |> String.slice(2..-1)
+    hash_hex = receipt[key] |> String.slice(2..-1//1)
     hash_bin = Base.decode16!(hash_hex, case: :lower)
     hash_base58 = Base58.encode(hash_bin)
 
