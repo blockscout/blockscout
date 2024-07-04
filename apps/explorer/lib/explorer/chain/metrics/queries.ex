@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Metrics.Queries do
 
   alias Explorer.Chain.{
     Address,
+    Block,
     DenormalizationHelper,
     InternalTransaction,
     SmartContract,
@@ -71,23 +72,24 @@ defmodule Explorer.Chain.Metrics.Queries do
         |> select([tx, block], tx.created_contract_address_hash)
       end
 
-    internal_transactions_query =
-      InternalTransaction
-      |> join(:inner, [it], transaction in assoc(it, :transaction))
-      |> where([it, tx], not is_nil(it.created_contract_address_hash))
-      |> where([it, tx], tx.block_timestamp >= ago(7, "day"))
-      |> where([it, tx], tx.block_consensus == true)
-      |> where([it, tx], tx.status == ^1)
-      |> select([it, tx], it.created_contract_address_hash)
-      |> wrapped_union_subquery()
+    # todo: this part is too slow, need to optimize
+    # internal_transactions_query =
+    #   InternalTransaction
+    #   |> join(:inner, [it], transaction in assoc(it, :transaction))
+    #   |> where([it, tx], not is_nil(it.created_contract_address_hash))
+    #   |> where([it, tx], tx.block_timestamp >= ago(7, "day"))
+    #   |> where([it, tx], tx.block_consensus == true)
+    #   |> where([it, tx], tx.status == ^1)
+    #   |> select([it, tx], it.created_contract_address_hash)
+    #   |> wrapped_union_subquery()
 
-    query =
-      transactions_query
-      |> wrapped_union_subquery()
-      |> union(^internal_transactions_query)
+    # query =
+    #   transactions_query
+    #   |> wrapped_union_subquery()
+    #   |> union(^internal_transactions_query)
 
     from(
-      q in subquery(query),
+      q in subquery(transactions_query),
       select: fragment("COUNT(DISTINCT(?))", q.created_contract_address_hash)
     )
   end
@@ -135,7 +137,27 @@ defmodule Explorer.Chain.Metrics.Queries do
   end
 
   @doc """
-  Retrieves the query for the number of active EOA and smart-contract addresses in the current week.
+  Retrieves the query for the number of addresses initiated transactions in the current week.
+  """
+  @spec weekly_simplified_active_addresses_number_query() :: Ecto.Query.t()
+  def weekly_simplified_active_addresses_number_query do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      Transaction
+      |> where([tx], tx.block_timestamp >= ago(7, "day"))
+      |> where([tx], tx.block_consensus == true)
+      |> select([tx], fragment("COUNT(DISTINCT(?))", tx.from_address_hash))
+    else
+      Transaction
+      |> join(:inner, [tx], block in assoc(tx, :block))
+      |> where([tx, block], block.timestamp >= ago(7, "day"))
+      |> where([tx, block], block.consensus == true)
+      |> select([tx], fragment("COUNT(DISTINCT(?))", tx.from_address_hash))
+    end
+  end
+
+  @doc """
+  Retrieves the query for the number of active EOA and smart-contract addresses (from/to/contract participated in transactions, internal transactions, token transfers) in the current week.
+  This query is currently unused since the very low performance: it doesn't return results in 1 hour.
   """
   @spec weekly_active_addresses_number_query() :: Ecto.Query.t()
   def weekly_active_addresses_number_query do

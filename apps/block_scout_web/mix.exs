@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.7.0",
+      version: "6.7.2",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:cors_plug, "~> 3.0"},
       {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
-      {:dataloader, "~> 1.0.0"},
+      {:dataloader, "~> 2.0.0"},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       # Need until https://github.com/absinthe-graphql/absinthe_relay/pull/125 is released, then can be removed
       # The current `absinthe_relay` is compatible though as shown from that PR
@@ -135,8 +135,11 @@ defmodule BlockScoutWeb.Mixfile do
       {:prometheus_phoenix, "~> 1.2"},
       # Expose metrics from URL Prometheus server can scrape
       {:prometheus_plugs, "~> 1.1"},
-      # OS process metrics for Prometheus
-      {:prometheus_process_collector, "~> 1.3"},
+      # OS process metrics for Prometheus, custom ref to include https://github.com/deadtrickster/prometheus_process_collector/pull/30
+      {:prometheus_process_collector,
+       git: "https://github.com/Phybbit/prometheus_process_collector.git",
+       ref: "3dc94dcff422d7b9cbd7ddf6bf2a896446705f3f",
+       override: true},
       {:remote_ip, "~> 1.0"},
       {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},

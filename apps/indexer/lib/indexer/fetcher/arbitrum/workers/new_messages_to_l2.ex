@@ -24,6 +24,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
+  alias Explorer.Chain.Arbitrum
 
   require Logger
 
@@ -260,6 +261,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   # ## Returns
   # - A list of maps describing discovered messages compatible with the database
   #   import operation.
+  @spec get_messages_from_logs(
+          [%{String.t() => any()}],
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          non_neg_integer()
+        ) :: [Arbitrum.Message.to_import()]
+  defp get_messages_from_logs(logs, json_rpc_named_arguments, chunk_size)
+
+  defp get_messages_from_logs([], _, _), do: []
+
   defp get_messages_from_logs(logs, json_rpc_named_arguments, chunk_size) do
     {messages, txs_requests} = parse_logs_for_l1_to_l2_messages(logs)
 

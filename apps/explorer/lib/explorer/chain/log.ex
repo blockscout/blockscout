@@ -237,7 +237,7 @@ defmodule Explorer.Chain.Log do
     end
   rescue
     e ->
-      Logger.warn(fn ->
+      Logger.warning(fn ->
         [
           "Could not decode input data for log from transaction hash: ",
           Hash.to_iodata(transaction_hash),

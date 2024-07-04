@@ -145,7 +145,7 @@ defmodule Explorer.Chain.Stability.Validator do
         %{active: active_validators_list, all: validators_list}
 
       error ->
-        Logger.warn(fn -> ["Error on getting validator lists: #{inspect(error)}"] end)
+        Logger.warning(fn -> ["Error on getting validator lists: #{inspect(error)}"] end)
         nil
     end
   end
@@ -164,7 +164,8 @@ defmodule Explorer.Chain.Stability.Validator do
       result =
         case format_missing_blocks_result(response) do
           {:error, message} ->
-            Logger.warn(fn -> ["Error on getValidatorMissingBlocks for #{validators_address_hashes}: #{message}"] end)
+            Logger.warning(fn -> ["Error on getValidatorMissingBlocks for #{validators_address_hashes}: #{message}"] end)
+
             nil
 
           amount ->

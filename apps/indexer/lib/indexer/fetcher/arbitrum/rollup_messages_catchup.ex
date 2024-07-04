@@ -82,6 +82,8 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   def init(args) do
     Logger.metadata(fetcher: :arbitrum_bridge_l2_catchup)
 
+    indexer_first_block = Application.get_all_env(:indexer)[:first_block]
+
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
     rollup_chunk_size = config_common[:rollup_chunk_size]
 
@@ -97,7 +99,8 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
        config: %{
          rollup_rpc: %{
            json_rpc_named_arguments: args[:json_rpc_named_arguments],
-           chunk_size: rollup_chunk_size
+           chunk_size: rollup_chunk_size,
+           first_block: indexer_first_block
          },
          json_l2_rpc_named_arguments: args[:json_rpc_named_arguments],
          recheck_interval: recheck_interval,
@@ -272,9 +275,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   @impl GenServer
   def handle_info(
         :historical_msg_to_l2,
-        %{
-          data: %{duration: _, historical_msg_to_l2_end_block: _, progressed: _}
-        } = state
+        %{data: %{duration: _, historical_msg_to_l2_end_block: _, progressed: _}} = state
       ) do
     end_block = state.data.historical_msg_to_l2_end_block
 
@@ -297,9 +298,9 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
 
   # Decides whether to stop or continue the fetcher based on the current state of message discovery.
   #
-  # If both `historical_msg_from_l2_end_block` and `historical_msg_to_l2_end_block` are 0 or less,
-  # indicating that there are no more historical messages to fetch, the task is stopped with a normal
-  # termination.
+  # If both `historical_msg_from_l2_end_block` and `historical_msg_to_l2_end_block` are lesser than
+  # the indexer first block, indicating that there are no more historical messages to fetch, the
+  # task is stopped with a normal termination.
   #
   # ## Parameters
   # - `:plan_next_iteration`: The message that triggers this function.
@@ -311,13 +312,15 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   def handle_info(
         :plan_next_iteration,
         %{
+          config: %{rollup_rpc: %{first_block: rollup_first_block}},
           data: %{
             historical_msg_from_l2_end_block: from_l2_end_block,
             historical_msg_to_l2_end_block: to_l2_end_block
           }
         } = state
       )
-      when from_l2_end_block <= 0 and to_l2_end_block <= 0 do
+      when from_l2_end_block <= rollup_first_block and
+             to_l2_end_block <= rollup_first_block do
     {:stop, :normal, state}
   end
 
