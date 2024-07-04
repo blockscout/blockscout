@@ -119,9 +119,10 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
         Logger.info(fn ->
           [
             "Could not fetch payment delegations since `getPaymentDelegation` constantly returns error. ",
-            "Most likely, the method is not available on block #{block_number}. ",
+            "Most likely, the method is not available on block #{block_number}. "
           ]
         end)
+
         {:ok, []}
 
       error ->
