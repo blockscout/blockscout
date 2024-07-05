@@ -34,16 +34,23 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       the key `:id`, representing the index of the L1 transaction in the
       `arbitrum_lifecycle_l1_transactions` table.
   """
-  @spec get_indices_for_l1_transactions(map()) :: map()
+  @spec get_indices_for_l1_transactions(%{
+          binary() => %{
+            :hash => binary(),
+            :block_number => FullBlock.block_number(),
+            :timestamp => DateTime.t(),
+            :status => :unfinalized | :finalized,
+            optional(:id) => non_neg_integer()
+          }
+        }) :: %{binary() => Arbitrum.LifecycleTransaction.to_import()}
   # TODO: consider a way to remove duplicate with ZkSync.Utils.Db
-  # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
   def get_indices_for_l1_transactions(new_l1_txs)
       when is_map(new_l1_txs) do
     # Get indices for l1 transactions previously handled
     l1_txs =
       new_l1_txs
       |> Map.keys()
-      |> Reader.lifecycle_transactions()
+      |> Reader.lifecycle_transaction_ids()
       |> Enum.reduce(new_l1_txs, fn {hash, id}, txs ->
         {_, txs} =
           Map.get_and_update!(txs, hash.bytes, fn l1_tx ->
@@ -77,6 +84,25 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       )
 
     updated_l1_txs
+  end
+
+  @doc """
+    Reads a list of L1 transactions by their hashes from the
+    `arbitrum_lifecycle_l1_transactions` table and converts them to maps.
+
+    ## Parameters
+    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+
+    ## Returns
+    - A list of maps representing the `Explorer.Chain.Arbitrum.LifecycleTransaction`
+      corresponding to the hashes from the input list. The output list is
+      compatible with the database import operation.
+  """
+  @spec lifecycle_transactions([binary()]) :: [Arbitrum.LifecycleTransaction.to_import()]
+  def lifecycle_transactions(l1_tx_hashes) do
+    l1_tx_hashes
+    |> Reader.lifecycle_transactions()
+    |> Enum.map(&lifecycle_transaction_to_map/1)
   end
 
   @doc """
@@ -719,6 +745,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Chain.timestamp_to_block_number(timestamp, :after, false)
   end
 
+  @spec lifecycle_transaction_to_map(Arbitrum.LifecycleTransaction.t()) :: Arbitrum.LifecycleTransaction.to_import()
   defp lifecycle_transaction_to_map(tx) do
     [:id, :hash, :block_number, :timestamp, :status]
     |> db_record_to_map(tx)
