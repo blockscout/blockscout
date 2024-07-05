@@ -7,8 +7,6 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
 
   alias Indexer.Helper, as: IndexerHelper
 
-  alias Indexer.Helper, as: IndexerHelper
-
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
   @zero_hash_binary <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
 
