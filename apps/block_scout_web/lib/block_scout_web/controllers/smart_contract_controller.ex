@@ -30,6 +30,7 @@ defmodule BlockScoutWeb.SmartContractController do
           address.smart_contract
           |> Implementation.get_implementation()
           |> Tuple.to_list()
+          |> List.first()
           |> List.first() || burn_address_hash_string()
         else
           burn_address_hash_string()

@@ -118,8 +118,7 @@ defmodule Explorer.Chain do
   @revert_msg_prefix_4 "Reverted "
   # Geth-like node
   @revert_msg_prefix_5 "execution reverted: "
-  # keccak256("Error(string)")
-  @revert_error_method_id "08c379a0"
+  @revert_msg_prefix_6_empty "execution reverted"
 
   @limit_showing_transactions 10_000
   @default_page_size 50
@@ -364,9 +363,10 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
+  @spec address_to_logs(Hash.Address.t(), [paging_options | necessity_by_association_option | api?]) :: [Log.t()]
   def address_to_logs(address_hash, csv_export?, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     case paging_options do
       %PagingOptions{key: {0, 0}} ->
@@ -403,13 +403,14 @@ defmodule Explorer.Chain do
             base
           else
             base
-            |> preload(transaction: [:to_address, :from_address])
+            |> preload(transaction: [from_address: [:proxy_implementations], to_address: [:proxy_implementations]])
           end
 
         preloaded_query
         |> page_logs(paging_options)
         |> filter_topic(Keyword.get(options, :topic))
         |> where_block_number_in_period(from_block, to_block)
+        |> join_associations(necessity_by_association)
         |> select_repo(options).all()
         |> Enum.take(paging_options.page_size)
     end
@@ -865,13 +866,7 @@ defmodule Explorer.Chain do
   """
   @spec finished_indexing_internal_transactions?([api?]) :: boolean()
   def finished_indexing_internal_transactions?(options \\ []) do
-    internal_transactions_disabled? =
-      Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] or
-        not Application.get_env(:indexer, Indexer.Supervisor)[:enabled]
-
-    if internal_transactions_disabled? do
-      true
-    else
+    if indexer_running?() and internal_transactions_fetcher_running?() do
       json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
       variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
@@ -880,6 +875,8 @@ defmodule Explorer.Chain do
       else
         check_left_blocks_to_index_internal_transactions(options)
       end
+    else
+      true
     end
   end
 
@@ -930,7 +927,7 @@ defmodule Explorer.Chain do
   """
   @spec finished_indexing?([api?]) :: boolean()
   def finished_indexing?(options \\ []) do
-    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
+    if indexer_running?() do
       indexed_ratio = indexed_ratio_blocks()
 
       case finished_indexing_from_ratio?(indexed_ratio) do
@@ -1176,7 +1173,7 @@ defmodule Explorer.Chain do
           else
             LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
 
-            {implementation_address_hash, _} =
+            {implementation_address_hashes, _} =
               Implementation.get_implementation(
                 %{
                   updated: %SmartContract{
@@ -1186,23 +1183,10 @@ defmodule Explorer.Chain do
                   implementation_address_fetched?: false,
                   refetch_necessity_checked?: false
                 },
-                Keyword.put(options, :unverified_proxy_only?, true)
+                Keyword.put(options, :proxy_without_abi?, true)
               )
 
-            implementation_smart_contract =
-              implementation_address_hash
-              |> Proxy.implementation_to_smart_contract(options)
-
-            address_verified_bytecode_twin_contract =
-              implementation_smart_contract ||
-                SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
-
-            address_result
-            |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
-            |> (&if(is_nil(implementation_smart_contract),
-                  do: &1,
-                  else: SmartContract.add_implementation_info_to_contract(&1, implementation_address_hash)
-                )).()
+            add_implementation_and_bytecode_twin_to_result(address_result, implementation_address_hashes, hash, options)
           end
 
         _ ->
@@ -1216,6 +1200,33 @@ defmodule Explorer.Chain do
       nil -> {:error, :not_found}
       address -> {:ok, address}
     end
+  end
+
+  defp add_implementation_and_bytecode_twin_to_result(address_result, implementation_address_hashes, hash, options) do
+    # implementation is added only in the case when mapping proxy to implementation is 1:1 (excluding Diamond proxy)
+    {implementation_smart_contract, implementation_address_hash} =
+      if implementation_address_hashes && Enum.count(implementation_address_hashes) == 1 do
+        implementation_address_hash = implementation_address_hashes |> Enum.at(0)
+
+        implementation_smart_contract =
+          implementation_address_hash
+          |> Proxy.implementation_to_smart_contract(options)
+
+        {implementation_smart_contract, implementation_address_hash}
+      else
+        {nil, nil}
+      end
+
+    address_verified_bytecode_twin_contract =
+      implementation_smart_contract ||
+        SmartContract.get_address_verified_bytecode_twin_contract(hash, options).verified_contract
+
+    address_result
+    |> SmartContract.add_bytecode_twin_info_to_contract(address_verified_bytecode_twin_contract, hash)
+    |> (&if(is_nil(implementation_smart_contract),
+          do: &1,
+          else: SmartContract.add_implementation_info_to_contract(&1, implementation_address_hash)
+        )).()
   end
 
   @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
@@ -1475,7 +1486,7 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio_blocks() :: Decimal.t()
   def indexed_ratio_blocks do
-    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] do
+    if indexer_running?() do
       %{min: min_saved_block_number, max: max_saved_block_number} = BlockNumber.get_all()
 
       min_blockchain_block_number = Application.get_env(:indexer, :first_block)
@@ -1505,8 +1516,7 @@ defmodule Explorer.Chain do
 
   @spec indexed_ratio_internal_transactions() :: Decimal.t()
   def indexed_ratio_internal_transactions do
-    if Application.get_env(:indexer, Indexer.Supervisor)[:enabled] &&
-         not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] do
+    if indexer_running?() and internal_transactions_fetcher_running?() do
       %{max: max_saved_block_number} = BlockNumber.get_all()
       pbo_count = PendingBlockOperationCache.estimated_count()
 
@@ -1666,7 +1676,7 @@ defmodule Explorer.Chain do
         elements
 
       blocks ->
-        blocks
+        blocks |> Repo.preload(Map.keys(necessity_by_association))
     end
   end
 
@@ -1723,6 +1733,20 @@ defmodule Explorer.Chain do
     |> Enum.into(%{})
   end
 
+  @doc """
+    Retrieves the total row count for a given table.
+
+    This function estimates the row count using system catalogs. If the estimate
+    is unavailable, it performs an exact count using an aggregate query.
+
+    ## Parameters
+    - `module`: The module representing the table schema.
+    - `options`: An optional keyword list of options, such as selecting a specific repository.
+
+    ## Returns
+    - The total row count as a non-negative integer.
+  """
+  @spec get_table_rows_total_count(atom(), keyword()) :: non_neg_integer()
   def get_table_rows_total_count(module, options) do
     table_name = module.__schema__(:source)
 
@@ -2132,11 +2156,34 @@ defmodule Explorer.Chain do
     select_repo(options).one!(query)
   end
 
+  def indexer_running? do
+    Application.get_env(:indexer, Indexer.Supervisor)[:enabled] or match?({:ok, _, _}, last_db_block_status())
+  end
+
+  def internal_transactions_fetcher_running? do
+    not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] or
+      match?({:ok, _, _}, last_db_internal_transaction_block_status())
+  end
+
   def last_db_block_status do
     query =
       from(block in Block,
         select: {block.number, block.timestamp},
         where: block.consensus == true,
+        order_by: [desc: block.number],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> block_status()
+  end
+
+  def last_db_internal_transaction_block_status do
+    query =
+      from(it in InternalTransaction,
+        join: block in assoc(it, :block),
+        select: {block.number, block.timestamp},
         order_by: [desc: block.number],
         limit: 1
       )
@@ -2437,6 +2484,21 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+    Finds the block number closest to a given timestamp, with a one-minute buffer, optionally
+    adjusting based on whether the block should be before or after the timestamp.
+
+    ## Parameters
+    - `given_timestamp`: The timestamp for which the closest block number is being sought.
+    - `closest`: A direction indicator (`:before` or `:after`) specifying whether the block number
+                returned should be before or after the given timestamp.
+    - `from_api`: A boolean flag indicating whether to use the replica database or the primary one
+                  for the query.
+
+    ## Returns
+    - `{:ok, block_number}` where `block_number` is the block number closest to the specified timestamp.
+    - `{:error, :not_found}` if no block is found within the specified criteria.
+  """
   @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
           {:ok, Block.block_number()} | {:error, :not_found}
   def timestamp_to_block_number(given_timestamp, closest, from_api) do
@@ -2924,17 +2986,58 @@ defmodule Explorer.Chain do
     end
   end
 
-  def fetch_tx_revert_reason(
-        %Transaction{
-          block_number: block_number,
-          to_address_hash: to_address_hash,
-          from_address_hash: from_address_hash,
-          input: data,
-          gas: gas,
-          gas_price: gas_price,
-          value: value
-        } = transaction
-      ) do
+  def fetch_tx_revert_reason(transaction) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    hash_string = to_string(transaction.hash)
+
+    response =
+      fetch_first_trace(
+        [
+          %{
+            block_hash: transaction.block_hash,
+            block_number: transaction.block_number,
+            hash_data: hash_string,
+            transaction_index: transaction.index
+          }
+        ],
+        json_rpc_named_arguments
+      )
+
+    revert_reason =
+      case response do
+        {:ok, first_trace_params} ->
+          first_trace_params |> Enum.at(0) |> Map.get(:output, %Data{bytes: <<>>}) |> to_string()
+
+        {:error, reason} ->
+          Logger.error(fn ->
+            ["Error while fetching first trace for tx: #{hash_string} error reason: ", inspect(reason)]
+          end)
+
+          fetch_tx_revert_reason_using_call(transaction)
+
+        :ignore ->
+          fetch_tx_revert_reason_using_call(transaction)
+      end
+
+    if !is_nil(revert_reason) do
+      transaction
+      |> Changeset.change(%{revert_reason: revert_reason})
+      |> Repo.update()
+    end
+
+    revert_reason
+  end
+
+  defp fetch_tx_revert_reason_using_call(%Transaction{
+         block_number: block_number,
+         to_address_hash: to_address_hash,
+         from_address_hash: from_address_hash,
+         input: data,
+         gas: gas,
+         gas_price: gas_price,
+         value: value
+       }) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     req =
@@ -2949,31 +3052,41 @@ defmodule Explorer.Chain do
         Wei.hex_format(value)
       )
 
-    revert_reason =
-      case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
-        {:error, %{data: data}} ->
-          data
+    case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
+      {:error, error} ->
+        parse_revert_reason_from_error(error)
 
-        {:error, %{message: message}} ->
-          message
-
-        _ ->
-          ""
-      end
-
-    formatted_revert_reason =
-      revert_reason |> format_revert_reason_message() |> (&if(String.valid?(&1), do: &1, else: revert_reason)).()
-
-    if byte_size(formatted_revert_reason) > 0 do
-      transaction
-      |> Changeset.change(%{revert_reason: formatted_revert_reason})
-      |> Repo.update()
+      _ ->
+        nil
     end
-
-    formatted_revert_reason
   end
 
-  def format_revert_reason_message(revert_reason) do
+  @doc """
+  Parses the revert reason from an error returned by JSON RPC node during eth_call.
+  Returns the formatted revert reason as a hex or utf8 string.
+  Returns `nil` if the revert reason cannot be parsed or error format is unknown.
+  """
+  @spec parse_revert_reason_from_error(any()) :: String.t() | nil
+  def parse_revert_reason_from_error(%{data: data}), do: format_revert_data(data)
+
+  def parse_revert_reason_from_error(%{message: message}), do: format_revert_reason_message(message)
+
+  def parse_revert_reason_from_error(_), do: nil
+
+  defp format_revert_data(revert_data) do
+    case revert_data do
+      "revert" ->
+        ""
+
+      "0x" <> _ ->
+        revert_data
+
+      _ ->
+        nil
+    end
+  end
+
+  defp format_revert_reason_message(revert_reason) do
     case revert_reason do
       @revert_msg_prefix_1 <> rest ->
         rest
@@ -2982,41 +3095,19 @@ defmodule Explorer.Chain do
         rest
 
       @revert_msg_prefix_3 <> rest ->
-        extract_revert_reason_message_wrapper(rest)
+        rest
 
       @revert_msg_prefix_4 <> rest ->
-        extract_revert_reason_message_wrapper(rest)
+        rest
 
       @revert_msg_prefix_5 <> rest ->
-        extract_revert_reason_message_wrapper(rest)
+        rest
 
-      revert_reason_full ->
-        revert_reason_full
-    end
-  end
-
-  defp extract_revert_reason_message_wrapper(revert_reason_message) do
-    case revert_reason_message do
-      "0x" <> hex ->
-        extract_revert_reason_message(hex)
+      @revert_msg_prefix_6_empty ->
+        ""
 
       _ ->
-        revert_reason_message
-    end
-  end
-
-  defp extract_revert_reason_message(hex) do
-    case hex do
-      @revert_error_method_id <> msg_with_offset ->
-        [msg] =
-          msg_with_offset
-          |> Base.decode16!(case: :mixed)
-          |> TypeDecoder.decode_raw([:string])
-
-        msg
-
-      _ ->
-        hex
+        nil
     end
   end
 
@@ -3251,6 +3342,22 @@ defmodule Explorer.Chain do
 
   def limit_showing_transactions, do: @limit_showing_transactions
 
+  @doc """
+    Dynamically joins and preloads associations in a query based on necessity.
+
+    This function adjusts the provided Ecto query to include joins for associations. It supports
+    both optional and required joins. Optional joins use the `preload` function to fetch associations
+    without enforcing their presence. Required joins ensure the association exists.
+
+    ## Parameters
+    - `query`: The initial Ecto query.
+    - `associations`: A single association or a tuple with nested association preloads.
+    - `necessity`: Specifies if the association is `:optional` or `:required`.
+
+    ## Returns
+    - The modified query with the specified associations joined according to the defined necessity.
+  """
+  @spec join_association(atom() | Ecto.Query.t(), [{atom(), atom()}], :optional | :required) :: Ecto.Query.t()
   def join_association(query, [{association, nested_preload}], necessity)
       when is_atom(association) and is_atom(nested_preload) do
     case necessity do
@@ -3268,6 +3375,7 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec join_association(atom() | Ecto.Query.t(), atom(), :optional | :required) :: Ecto.Query.t()
   def join_association(query, association, necessity) do
     case necessity do
       :optional ->
@@ -3278,10 +3386,23 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec join_associations(atom() | Ecto.Query.t(), map) :: Ecto.Query.t()
   @doc """
-    Function to preload entities associated with selected in provided query items
+    Applies dynamic joins to a query based on provided association necessities.
+
+    This function iterates over a map of associations with their required join types, either
+    `:optional` or `:required`, and applies the corresponding joins to the given query.
+
+    More info is available on https://hexdocs.pm/ecto/Ecto.Query.html#preload/3
+
+    ## Parameters
+    - `query`: The base query to which associations will be joined.
+    - `necessity_by_association`: A map specifying each association and its necessity
+      (`:optional` or `:required`).
+
+    ## Returns
+    - The query with all specified associations joined according to their necessity.
   """
+  @spec join_associations(atom() | Ecto.Query.t(), %{any() => :optional | :required}) :: Ecto.Query.t()
   def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
@@ -3588,27 +3709,31 @@ defmodule Explorer.Chain do
 
     Instance
     |> where([instance], not is_nil(instance.error))
+    |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after < ^DateTime.utc_now())
     |> select([instance], %{
       contract_address_hash: instance.token_contract_address_hash,
-      token_id: instance.token_id,
-      updated_at: instance.updated_at
+      token_id: instance.token_id
     })
-    |> order_by([instance], desc: instance.error in ^high_priority, asc: instance.error in ^negative_priority)
+    |> order_by([instance],
+      asc: instance.refetch_after,
+      desc: instance.error in ^high_priority,
+      asc: instance.error in ^negative_priority
+    )
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
-  Streams a list of token contract addresses that have been cataloged.
+  Streams a list of tokens that have been cataloged.
   """
-  @spec stream_cataloged_token_contract_address_hashes(
+  @spec stream_cataloged_tokens(
           initial :: accumulator,
-          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator),
+          reducer :: (entry :: Token.t(), accumulator -> accumulator),
           some_time_ago_updated :: integer(),
           limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_cataloged_token_contract_address_hashes(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
+  def stream_cataloged_tokens(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
       when is_function(reducer, 2) do
     some_time_ago_updated
     |> Token.cataloged_tokens()
@@ -3789,6 +3914,14 @@ defmodule Explorer.Chain do
   end
 
   defp token_instance_metadata_on_conflict do
+    config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
+
+    coef = config[:exp_timeout_coeff]
+    base = config[:exp_timeout_base]
+    max_refetch_interval = config[:max_refetch_interval]
+
+    max_retry_count = :math.log(max_refetch_interval / 1000 / coef) / :math.log(base)
+
     from(
       token_instance in Instance,
       update: [
@@ -3799,7 +3932,22 @@ defmodule Explorer.Chain do
           owner_updated_at_log_index: token_instance.owner_updated_at_log_index,
           owner_address_hash: token_instance.owner_address_hash,
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_instance.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at)
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at),
+          retries_count: token_instance.retries_count + 1,
+          refetch_after:
+            fragment(
+              """
+              CASE WHEN EXCLUDED.metadata IS NULL THEN
+                NOW() AT TIME ZONE 'UTC' + interval '1 seconds' * (? * ? ^ LEAST(? + 1.0, ?))
+              ELSE
+                NULL
+              END
+              """,
+              ^coef,
+              ^base,
+              token_instance.retries_count,
+              ^max_retry_count
+            )
         ]
       ],
       where: is_nil(token_instance.metadata)
@@ -4209,7 +4357,7 @@ defmodule Explorer.Chain do
     |> Instance.address_to_unique_token_instances()
     |> Instance.page_token_instance(paging_options)
     |> limit(^paging_options.page_size)
-    |> preload([_], [:owner])
+    |> preload([_], owner: [:names, :smart_contract, :proxy_implementations])
     |> select_repo(options).all()
     |> Enum.map(&put_owner_to_token_instance(&1, token, options))
   end
@@ -4235,7 +4383,16 @@ defmodule Explorer.Chain do
       |> Instance.owner_query()
       |> select_repo(options).one()
 
-    %{token_instance | owner: select_repo(options).get_by(Address, hash: owner_address_hash)}
+    owner =
+      Address.get(
+        owner_address_hash,
+        options
+        |> Keyword.merge(
+          necessity_by_association: %{names: :optional, smart_contract: :optional, proxy_implementations: :optional}
+        )
+      )
+
+    %{token_instance | owner: owner}
   end
 
   def put_owner_to_token_instance(%Instance{} = token_instance, _token, _options), do: token_instance
@@ -5100,11 +5257,11 @@ defmodule Explorer.Chain do
           result
 
         {:exit, reason} ->
-          Logger.warn("Query fetching token counters terminated: #{inspect(reason)}")
+          Logger.warning("Query fetching token counters terminated: #{inspect(reason)}")
           0
 
         nil ->
-          Logger.warn("Query fetching token counters timed out.")
+          Logger.warning("Query fetching token counters timed out.")
           0
       end
     end)

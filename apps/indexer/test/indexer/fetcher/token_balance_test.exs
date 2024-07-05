@@ -187,7 +187,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
     test "filters out params with tokens that doesn't implement balanceOf function" do
       address = insert(:address)
-      missing_balance_of_token = insert(:missing_balance_of_token)
+      missing_balance_of_token = insert(:missing_balance_of_token, currently_implemented: true)
 
       assert TokenBalance.run(
                [
@@ -198,6 +198,39 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
              ) == :ok
 
       assert Repo.all(Address.TokenBalance) == []
+    end
+
+    test "set currently_implemented: true for missing balanceOf token if balance was successfully fetched" do
+      address = insert(:address)
+      missing_balance_of_token = insert(:missing_balance_of_token)
+      window_size = Application.get_env(:explorer, MissingBalanceOfToken)[:window_size]
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
+             }
+           ]}
+        end
+      )
+
+      refute missing_balance_of_token.currently_implemented
+
+      assert TokenBalance.run(
+               [
+                 {address.hash.bytes, missing_balance_of_token.token_contract_address_hash.bytes,
+                  missing_balance_of_token.block_number + window_size + 1, "ERC-20", nil, 0}
+               ],
+               nil
+             ) == :ok
+
+      assert %{currently_implemented: true} = Repo.one(MissingBalanceOfToken)
     end
 
     test "in case of error deletes token balance placeholders below the given number and inserts new missing balanceOf tokens" do

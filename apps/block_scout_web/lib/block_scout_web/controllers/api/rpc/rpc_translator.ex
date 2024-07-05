@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   end
 
   defp action_accessed?(action, write_actions) do
-    conf = Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)
+    conf = Application.get_env(:block_scout_web, BlockScoutWeb.Routers.ApiRouter)
 
     if action in write_actions do
       conf[:writing_enabled] || {:error, :no_action}

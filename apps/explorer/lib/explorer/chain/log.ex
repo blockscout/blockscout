@@ -232,12 +232,12 @@ defmodule Explorer.Chain.Log do
              log.fourth_topic && log.fourth_topic.bytes,
              log.data.bytes
            ),
-         selector <- %{selector | method_id: first_four_bytes} do
-      {:ok, selector, mapping}
+         selector <- %FunctionSelector{selector | method_id: first_four_bytes} do
+      {:ok, alter_inputs_names(selector), alter_mapping_names(mapping)}
     end
   rescue
     e ->
-      Logger.warn(fn ->
+      Logger.warning(fn ->
         [
           "Could not decode input data for log from transaction hash: ",
           Hash.to_iodata(transaction_hash),
@@ -260,6 +260,28 @@ defmodule Explorer.Chain.Log do
 
     IO.iodata_to_binary([name, "(", text, ")"])
   end
+
+  defp alter_inputs_names(%FunctionSelector{input_names: names} = selector) do
+    names =
+      names
+      |> Enum.with_index()
+      |> Enum.map(fn {name, index} ->
+        if name == "", do: "arg#{index}", else: name
+      end)
+
+    %FunctionSelector{selector | input_names: names}
+  end
+
+  defp alter_mapping_names(mapping) when is_list(mapping) do
+    mapping
+    |> Enum.with_index()
+    |> Enum.map(fn {{name, type, indexed?, value}, index} ->
+      name = if name == "", do: "arg#{index}", else: name
+      {name, type, indexed?, value}
+    end)
+  end
+
+  defp alter_mapping_names(mapping), do: mapping
 
   defp decode_event_via_sig_provider(
          log,

@@ -48,8 +48,9 @@ defmodule Explorer.Account.TagTransaction do
   end
 
   defp put_hashed_fields(changeset) do
+    # Using force_change instead of put_change due to https://github.com/danielberkompas/cloak_ecto/issues/53
     changeset
-    |> put_change(:tx_hash_hash, hash_to_lower_case_string(get_field(changeset, :tx_hash)))
+    |> force_change(:tx_hash_hash, hash_to_lower_case_string(get_field(changeset, :tx_hash)))
   end
 
   defp check_transaction_existence(%Changeset{changes: %{tx_hash: tx_hash}} = changeset) do

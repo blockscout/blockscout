@@ -129,6 +129,62 @@ defmodule Explorer.Chain.LogTest do
                ]}, _, _} = Log.decode(log, transaction, [], false)
     end
 
+    test "replace arg names with argN if it's empty string" do
+      to_address = insert(:address, contract_code: "0x")
+
+      insert(:smart_contract,
+        abi: [
+          %{
+            "anonymous" => false,
+            "inputs" => [
+              %{"indexed" => true, "name" => "", "type" => "string"},
+              %{"indexed" => false, "name" => "", "type" => "uint256"},
+              %{"indexed" => true, "name" => "", "type" => "bool"}
+            ],
+            "name" => "WantsPets",
+            "type" => "event"
+          }
+        ],
+        address_hash: to_address.hash,
+        contract_code_md5: "123"
+      )
+
+      topic1_bytes = ExKeccak.hash_256("WantsPets(string,uint256,bool)")
+      topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
+      topic2_bytes = ExKeccak.hash_256("bob")
+      topic2 = "0x" <> Base.encode16(topic2_bytes, case: :lower)
+      topic3 = "0x0000000000000000000000000000000000000000000000000000000000000001"
+      data = "0x0000000000000000000000000000000000000000000000000000000000000000"
+
+      transaction =
+        :transaction_to_verified_contract
+        |> insert(to_address: to_address)
+        |> Repo.preload(to_address: :smart_contract)
+
+      log =
+        insert(:log,
+          address: to_address,
+          transaction: transaction,
+          first_topic: topic(topic1),
+          second_topic: topic(topic2),
+          third_topic: topic(topic3),
+          fourth_topic: nil,
+          data: data
+        )
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
+      assert {{:ok, "eb9b3c4c", "WantsPets(string indexed arg0, uint256 arg1, bool indexed arg2)",
+               [
+                 {"arg0", "string", true,
+                  {:dynamic,
+                   <<56, 228, 122, 123, 113, 157, 206, 99, 102, 42, 234, 244, 52, 64, 50, 111, 85, 27, 138, 126, 225,
+                     152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
+                 {"arg1", "uint256", false, 0},
+                 {"arg2", "bool", true, true}
+               ]}, _, _} = Log.decode(log, transaction, [], false)
+    end
+
     test "finds decoding candidates" do
       params =
         params_for(:smart_contract, %{

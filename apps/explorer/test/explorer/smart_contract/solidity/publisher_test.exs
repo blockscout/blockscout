@@ -193,5 +193,45 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
       response = Publisher.publish(contract_address.hash, params, external_libraries_form_params)
       assert {:ok, %SmartContract{} = _smart_contract} = response
     end
+
+    test "allows to re-verify solidity contracts" do
+      contract_code_info = Factory.contract_code_info_modern_compiler()
+
+      contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
+
+      :transaction
+      |> insert(created_contract_address_hash: contract_address.hash, input: contract_code_info.tx_input)
+      |> with_block(status: :ok)
+
+      valid_attrs = %{
+        "contract_source_code" => contract_code_info.source_code,
+        "compiler_version" => contract_code_info.version,
+        "name" => contract_code_info.name,
+        "optimization" => contract_code_info.optimized
+      }
+
+      response = Publisher.publish(contract_address.hash, valid_attrs)
+      assert {:ok, %SmartContract{}} = response
+
+      updated_name = "AnotherContractName"
+
+      updated_contract_source_code =
+        String.replace(
+          valid_attrs["contract_source_code"],
+          "contract #{valid_attrs["name"]}",
+          "contract #{updated_name}"
+        )
+
+      valid_attrs =
+        valid_attrs
+        |> Map.put("name", updated_name)
+        |> Map.put("contract_source_code", updated_contract_source_code)
+
+      response = Publisher.publish(contract_address.hash, valid_attrs)
+      assert {:ok, %SmartContract{} = smart_contract} = response
+
+      assert smart_contract.name == valid_attrs["name"]
+      assert smart_contract.contract_source_code == valid_attrs["contract_source_code"]
+    end
   end
 end

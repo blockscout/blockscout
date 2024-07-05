@@ -58,11 +58,12 @@ defmodule Explorer.Account.WatchlistNotification do
   end
 
   defp put_hashed_fields(changeset) do
+    # Using force_change instead of put_change due to https://github.com/danielberkompas/cloak_ecto/issues/53
     changeset
-    |> put_change(:from_address_hash_hash, hash_to_lower_case_string(get_field(changeset, :from_address_hash)))
-    |> put_change(:to_address_hash_hash, hash_to_lower_case_string(get_field(changeset, :to_address_hash)))
-    |> put_change(:transaction_hash_hash, hash_to_lower_case_string(get_field(changeset, :transaction_hash)))
-    |> put_change(:subject_hash, get_field(changeset, :subject))
+    |> force_change(:from_address_hash_hash, hash_to_lower_case_string(get_field(changeset, :from_address_hash)))
+    |> force_change(:to_address_hash_hash, hash_to_lower_case_string(get_field(changeset, :to_address_hash)))
+    |> force_change(:transaction_hash_hash, hash_to_lower_case_string(get_field(changeset, :transaction_hash)))
+    |> force_change(:subject_hash, get_field(changeset, :subject))
   end
 
   @doc """

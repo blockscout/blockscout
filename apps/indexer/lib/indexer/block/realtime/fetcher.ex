@@ -14,15 +14,15 @@ defmodule Indexer.Block.Realtime.Fetcher do
   import Indexer.Block.Fetcher,
     only: [
       async_import_realtime_coin_balances: 1,
-      async_import_blobs: 1,
-      async_import_block_rewards: 1,
-      async_import_created_contract_codes: 1,
-      async_import_internal_transactions: 1,
-      async_import_replaced_transactions: 1,
-      async_import_tokens: 1,
-      async_import_token_balances: 1,
+      async_import_blobs: 2,
+      async_import_block_rewards: 2,
+      async_import_created_contract_codes: 2,
+      async_import_internal_transactions: 2,
+      async_import_replaced_transactions: 2,
+      async_import_tokens: 2,
+      async_import_token_balances: 2,
       async_import_token_instances: 1,
-      async_import_uncles: 1,
+      async_import_uncles: 2,
       async_import_polygon_zkevm_bridge_l1_tokens: 1,
       fetch_and_import_range: 2
     ]
@@ -236,7 +236,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   def import(_, _) do
-    Logger.warn("Empty parameters were provided for realtime fetcher")
+    Logger.warning("Empty parameters were provided for realtime fetcher")
 
     {:ok, []}
   end
@@ -452,16 +452,18 @@ defmodule Indexer.Block.Realtime.Fetcher do
          imported,
          %{block_rewards: %{errors: block_reward_errors}}
        ) do
+    realtime? = true
+
     async_import_realtime_coin_balances(imported)
-    async_import_block_rewards(block_reward_errors)
-    async_import_created_contract_codes(imported)
-    async_import_internal_transactions(imported)
-    async_import_tokens(imported)
-    async_import_token_balances(imported)
+    async_import_block_rewards(block_reward_errors, realtime?)
+    async_import_created_contract_codes(imported, realtime?)
+    async_import_internal_transactions(imported, realtime?)
+    async_import_tokens(imported, realtime?)
+    async_import_token_balances(imported, realtime?)
     async_import_token_instances(imported)
-    async_import_uncles(imported)
-    async_import_replaced_transactions(imported)
-    async_import_blobs(imported)
+    async_import_uncles(imported, realtime?)
+    async_import_replaced_transactions(imported, realtime?)
+    async_import_blobs(imported, realtime?)
     async_import_polygon_zkevm_bridge_l1_tokens(imported)
   end
 end

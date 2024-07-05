@@ -5,17 +5,21 @@ defmodule Explorer.Chain.Token.Instance do
 
   use Explorer.Schema
 
-  alias Explorer.{Chain, Helper}
+  alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token.Instance
   alias Explorer.PagingOptions
+
+  @timeout 60_000
 
   @typedoc """
   * `token_id` - ID of the token
   * `token_contract_address_hash` - Address hash foreign key
   * `metadata` - Token instance metadata
   * `error` - error fetching token instance
+  * `refetch_after` - when to refetch the token instance
+  * `retries_count` - number of times the token instance has been retried
   """
   @primary_key false
   typed_schema "token_instances" do
@@ -26,6 +30,8 @@ defmodule Explorer.Chain.Token.Instance do
     field(:owner_updated_at_log_index, :integer)
     field(:current_token_balance, :any, virtual: true)
     field(:is_unique, :boolean, virtual: true)
+    field(:refetch_after, :utc_datetime_usec)
+    field(:retries_count, :integer)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -51,7 +57,9 @@ defmodule Explorer.Chain.Token.Instance do
       :error,
       :owner_address_hash,
       :owner_updated_at_block,
-      :owner_updated_at_log_index
+      :owner_updated_at_log_index,
+      :refetch_after,
+      :retries_count
     ])
     |> validate_required([:token_id, :token_contract_address_hash])
     |> foreign_key_constraint(:token_contract_address_hash)
@@ -611,4 +619,21 @@ defmodule Explorer.Chain.Token.Instance do
     do:
       not (token.type == "ERC-1155") or
         Chain.token_id_1155_is_unique?(token.contract_address_hash, instance.token_id, options)
+
+  @doc """
+  Sets set_metadata for the given Explorer.Chain.Token.Instance
+  """
+  @spec set_metadata(__MODULE__, map()) :: {non_neg_integer(), nil}
+  def set_metadata(token_instance, metadata) when is_map(metadata) do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(instance in __MODULE__,
+        where: instance.token_contract_address_hash == ^token_instance.token_contract_address_hash,
+        where: instance.token_id == ^token_instance.token_id
+      ),
+      [set: [metadata: metadata, error: nil, updated_at: now]],
+      timeout: @timeout
+    )
+  end
 end

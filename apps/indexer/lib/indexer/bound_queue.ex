@@ -104,6 +104,24 @@ defmodule Indexer.BoundQueue do
   end
 
   @doc """
+  `push_front/2` items from `items` into `bound_queue` until it is full.
+  """
+  def push_front_until_maximum_size(
+        %__MODULE__{size: maximum_size, maximum_size: maximum_size} = bound_queue,
+        remaining
+      ),
+      do: {bound_queue, remaining}
+
+  def push_front_until_maximum_size(%__MODULE__{} = bound_queue, [] = remaining), do: {bound_queue, remaining}
+
+  def push_front_until_maximum_size(%__MODULE__{} = bound_queue, [head | tail] = remaining) do
+    case push_front(bound_queue, head) do
+      {:ok, new_bound_queue} -> push_front_until_maximum_size(new_bound_queue, tail)
+      {:error, :maximum_size} -> {bound_queue, remaining}
+    end
+  end
+
+  @doc """
   Shrinks the queue to half its current `size` and sets that as its new `max_size`.
   """
   def shrink(%__MODULE__{size: size}) when size <= 1, do: {:error, :minimum_size}

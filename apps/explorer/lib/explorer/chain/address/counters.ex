@@ -128,10 +128,10 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def address_hash_to_transaction_count_query(address_hash) do
-    from(
-      transaction in Transaction,
-      where: transaction.to_address_hash == ^address_hash or transaction.from_address_hash == ^address_hash
-    )
+    dynamic = Transaction.where_transactions_to_from(address_hash)
+
+    Transaction
+    |> where([transaction], ^dynamic)
   end
 
   @spec address_hash_to_transaction_count(Hash.Address.t()) :: non_neg_integer()
@@ -490,7 +490,7 @@ defmodule Explorer.Chain.Address.Counters do
             Map.put(acc, type, counter)
 
           {:exit, reason} ->
-            Logger.warn(fn ->
+            Logger.warning(fn ->
               [
                 "Query fetching address counters for #{address_hash} terminated: #{inspect(reason)}"
               ]
@@ -499,7 +499,7 @@ defmodule Explorer.Chain.Address.Counters do
             acc
 
           nil ->
-            Logger.warn(fn ->
+            Logger.warning(fn ->
               [
                 "Query fetching address counters for #{address_hash} timed out."
               ]

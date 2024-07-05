@@ -59,7 +59,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
          true <- contract_code_object.code !== "0x" do
       case Address.set_contract_code(address_hash, contract_code_object.code) do
         {1, _} ->
-          AddressContractCodeFetchAttempt.delete_address_contract_code_fetch_attempt(address_hash)
+          AddressContractCodeFetchAttempt.delete(address_hash)
           Publisher.broadcast(%{fetched_bytecode: [address_hash, contract_code_object.code]}, :on_demand)
 
         _ ->

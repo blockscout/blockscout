@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - master
+      - production-arbitrum
       - production-core
-      - production-eth-experimental
-      - production-eth-goerli
       - production-eth-sepolia
+      - production-filecoin
       - production-fuse
       - production-optimism
       - production-immutable
@@ -29,13 +29,11 @@ on:
     types: [opened, synchronize, reopened, labeled]
     branches:
       - master
-      - production-optimism
-      - production-zksync
 
 env:
   MIX_ENV: test
-  OTP_VERSION: ${{ vars.OTP_VERSION || '25.3.2.8' }}
-  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION || '1.14.5' }}
+  OTP_VERSION: ${{ github.ref_name == '9256/merge' && '26.2.5.1' || vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ github.ref_name == '9256/merge' && '1.16.3' || vars.ELIXIR_VERSION }}
   ACCOUNT_AUTH0_DOMAIN: "blockscoutcom.us.auth0.com"
 
 jobs:
@@ -583,6 +581,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
   test_nethermind_mox_indexer:
     strategy:
       fail-fast: false
@@ -649,6 +648,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
   test_nethermind_mox_block_scout_web:
     strategy:
       fail-fast: false
@@ -749,3 +749,4 @@ jobs:
           ACCOUNT_REDIS_URL: "redis://localhost:6379"
           SOURCIFY_INTEGRATION_ENABLED: "true"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"

@@ -291,28 +291,88 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
   describe "transaction_revert_reason/2" do
     test "handles transactions with gas_price set to nil" do
-      transaction = insert(:transaction, gas_price: nil, error: "execution reverted")
+      transaction =
+        :transaction
+        |> insert(error: "execution reverted")
+        |> with_block()
+        |> Map.put(:gas_price, nil)
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{
-                                id: 0,
-                                method: "eth_call",
-                                params: [
-                                  %{gasPrice: "0x0"},
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-        {:error,
-         %{
-           data:
-             "0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002b556e69737761705632526f757465723a20494e53554646494349454e545f4f55545055545f414d4f554e54000000000000000000000000000000000000000000"
-         }}
-      end)
+      hex_reason =
+        "0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002b556e69737761705632526f757465723a20494e53554646494349454e545f4f55545055545f414d4f554e54000000000000000000000000000000000000000000"
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn
+          [%{method: "debug_traceTransaction"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 result: %{
+                   "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                   "gas" => "0x5208",
+                   "gasUsed" => "0x5208",
+                   "input" => "0x01",
+                   "output" => hex_reason,
+                   "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                   "type" => "CALL",
+                   "value" => "0x86b3"
+                 }
+               }
+             ]}
+
+          [%{method: "trace_replayTransaction"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 result: %{
+                   "output" => "0x",
+                   "stateDiff" => nil,
+                   "trace" => [
+                     %{
+                       "action" => %{
+                         "callType" => "call",
+                         "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                         "gas" => "0x5208",
+                         "input" => "0x01",
+                         "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                         "value" => "0x86b3"
+                       },
+                       "error" => "Reverted",
+                       "result" => %{
+                         "gasUsed" => "0x5208",
+                         "output" => hex_reason
+                       },
+                       "subtraces" => 0,
+                       "traceAddress" => [],
+                       "type" => "call"
+                     }
+                   ],
+                   "transactionHash" => "0xdf5574290913659a1ac404ccf2d216c40587f819400a52405b081dda728ac120",
+                   "vmTrace" => nil
+                 }
+               }
+             ]}
+
+          %{method: "eth_call"}, _options ->
+            {:error,
+             %{
+               code: 3,
+               data: hex_reason,
+               message: "execution reverted"
+             }}
+        end
+      )
 
       revert_reason = TransactionView.transaction_revert_reason(transaction, nil)
 
-      assert revert_reason == {:error, :not_a_contract_call}
+      assert revert_reason ==
+               {:ok, "08c379a0", "Error(string reason)",
+                [
+                  {"reason", "string", "UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT"}
+                ]}
     end
   end
 end

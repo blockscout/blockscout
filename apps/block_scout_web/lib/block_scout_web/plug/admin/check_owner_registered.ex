@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.Plug.Admin.CheckOwnerRegistered do
   import Phoenix.Controller, only: [redirect: 2]
   import Plug.Conn
 
-  alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
+  alias BlockScoutWeb.Routers.AdminRouter.Helpers, as: AdminRoutes
   alias Explorer.Admin
   alias Plug.Conn
 

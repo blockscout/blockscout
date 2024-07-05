@@ -1,6 +1,6 @@
 defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   @moduledoc """
-  Methods for processing the data from `trace_replayBlockTransactions` JSON RPC method
+  Methods for processing the data from `trace_replayTransaction` and `trace_replayBlockTransactions` JSON RPC methods
   """
   require Logger
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
@@ -144,8 +144,8 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
     request(%{id: id, method: "trace_replayBlockTransactions", params: [integer_to_quantity(block_number), ["trace"]]})
   end
 
-  def trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module)
-      when is_list(responses) and is_map(id_to_params) do
+  defp trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module)
+       when is_list(responses) and is_map(id_to_params) do
     with {:ok, traces} <- trace_replay_transaction_responses_to_first_trace(responses, id_to_params) do
       params =
         traces

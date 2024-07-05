@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "tuple") ->
         tuple_types =
           type
-          |> String.slice(0..-3)
+          |> String.slice(0..-3//1)
           |> supplement_type_with_components(components)
 
         values =
@@ -132,7 +132,7 @@ defmodule BlockScoutWeb.SmartContractView do
         to_string(address)
 
       _ ->
-        Logger.warn(fn -> ["Error decoding address value: #{inspect(value)}"] end)
+        Logger.warning(fn -> ["Error decoding address value: #{inspect(value)}"] end)
         "(decoding error)"
     end
   end
@@ -219,16 +219,6 @@ defmodule BlockScoutWeb.SmartContractView do
       revert_reason,
       options
     )
-  end
-
-  def decode_hex_revert_reason(hex_revert_reason) do
-    case Integer.parse(hex_revert_reason, 16) do
-      {number, ""} ->
-        :binary.encode_unsigned(number)
-
-      _ ->
-        hex_revert_reason
-    end
   end
 
   def not_last_element?(length, index), do: length > 1 and index < length - 1

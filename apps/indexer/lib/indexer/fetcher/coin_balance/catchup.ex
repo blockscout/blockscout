@@ -30,7 +30,7 @@ defmodule Indexer.Fetcher.CoinBalance.Catchup do
     else
       entries = Enum.map(balance_fields, &Helper.entry/1)
 
-      BufferedTask.buffer(__MODULE__, entries)
+      BufferedTask.buffer(__MODULE__, entries, false)
     end
   end
 

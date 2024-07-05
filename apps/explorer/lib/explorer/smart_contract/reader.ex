@@ -291,9 +291,7 @@ defmodule Explorer.SmartContract.Reader do
 
     abi_with_method_id
     |> Enum.filter(&Helper.queriable_method?(&1))
-    |> Enum.map(
-      &fetch_current_value_from_blockchain(&1, abi_with_method_id, contract_address_hash, false, options, from)
-    )
+    |> fetch_current_values_from_blockchain(abi_with_method_id, contract_address_hash, false, options, from)
   end
 
   def read_only_functions_from_abi_with_sender(_, _, _, _), do: []
@@ -356,39 +354,88 @@ defmodule Explorer.SmartContract.Reader do
     "tuple[#{tuple_types}]"
   end
 
-  def fetch_current_value_from_blockchain(
-        function,
+  @spec fetch_current_values_from_blockchain(
+          any(),
+          [%{optional(binary()) => any()}],
+          Explorer.Chain.Hash.t(),
+          boolean(),
+          keyword(),
+          nil | binary()
+        ) :: [SmartContract.function_description()]
+  def fetch_current_values_from_blockchain(
+        functions,
         abi,
         contract_address_hash,
         leave_error_as_map,
         options,
         from \\ nil
       ) do
-    case function do
-      %{"inputs" => []} ->
-        method_id = function["method_id"]
-        args = function["inputs"]
+    initial_methods_id_order = Enum.map(functions, &Map.get(&1, "method_id"))
 
-        %{output: outputs, names: names} =
-          query_function_with_names(
-            contract_address_hash,
-            %{method_id: method_id, args: args},
-            :regular,
-            from,
-            abi,
-            leave_error_as_map,
-            options
-          )
+    %{to_be_fetched: to_be_fetched, method_id_to_outputs: method_id_to_outputs, unchanged: unchanged} =
+      Enum.reduce(
+        functions,
+        %{to_be_fetched: %{}, method_id_to_outputs: %{}, unchanged: %{}},
+        fn function,
+           %{
+             to_be_fetched: to_be_fetched,
+             unchanged: unchanged,
+             method_id_to_outputs: method_id_to_outputs
+           } ->
+          case function do
+            %{"inputs" => []} ->
+              [%ABI.FunctionSelector{returns: returns, method_id: _method_id}] = ABI.parse_specification([function])
 
-        function
-        |> Map.replace!("outputs", outputs)
-        |> Map.put("abi_outputs", Map.get(function, "outputs", []))
-        |> Map.put("names", names)
+              outputs = extract_outputs(returns)
 
-      _ ->
-        function
-        |> Map.put("abi_outputs", Map.get(function, "outputs", []))
-    end
+              %{
+                to_be_fetched: Map.put(to_be_fetched, function["method_id"], function),
+                unchanged: unchanged,
+                method_id_to_outputs: Map.put(method_id_to_outputs, function["method_id"], {outputs, function})
+              }
+
+            _ ->
+              %{
+                to_be_fetched: to_be_fetched,
+                unchanged:
+                  Map.put(
+                    unchanged,
+                    function["method_id"],
+                    Map.put(function, "abi_outputs", Map.get(function, "outputs", []))
+                  ),
+                method_id_to_outputs: method_id_to_outputs
+              }
+          end
+        end
+      )
+
+    methods = to_be_fetched |> Enum.map(fn {method_id, _function} -> {method_id, []} end) |> Enum.into(%{})
+
+    res =
+      contract_address_hash
+      |> query_verified_contract(methods, from, leave_error_as_map, abi, options)
+
+    method_id_to_abi_with_fetched_value =
+      res
+      |> Enum.map(fn {method_id, _result} ->
+        {outputs, function} = method_id_to_outputs[method_id]
+
+        names = outputs_to_list(function["outputs"])
+
+        outputs = link_outputs_and_values(res, outputs, method_id)
+        function = to_be_fetched[method_id]
+
+        {method_id,
+         function
+         |> Map.replace!("outputs", outputs)
+         |> Map.put("abi_outputs", Map.get(function, "outputs", []))
+         |> Map.put("names", names)}
+      end)
+      |> Enum.into(%{})
+
+    Enum.map(initial_methods_id_order, fn method_id ->
+      unchanged[method_id] || method_id_to_abi_with_fetched_value[method_id]
+    end)
   end
 
   @doc """
@@ -821,7 +868,7 @@ defmodule Explorer.SmartContract.Reader do
     result =
       if String.ends_with?(type, "[]") do
         value
-        |> Enum.map(fn tuple -> new_value(%{"type" => String.slice(type, 0..-3)}, [tuple], 0) end)
+        |> Enum.map(fn tuple -> new_value(%{"type" => String.slice(type, 0..-3//1)}, [tuple], 0) end)
         |> flat_arrays_map()
       else
         value
@@ -875,7 +922,7 @@ defmodule Explorer.SmartContract.Reader do
   def zip_tuple_values_with_types(value, type) do
     types_string =
       type
-      |> String.slice(6..-2)
+      |> String.slice(6..-2//1)
 
     types =
       if String.trim(types_string) == "" do

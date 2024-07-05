@@ -1,7 +1,7 @@
 defmodule EthereumJSONRPC.Blocks do
   @moduledoc """
-  Blocks format as returned by [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash)
-  and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber) from batch requests.
+  Blocks format as returned by [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbyhash)
+  and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbynumber) from batch requests.
   """
 
   alias EthereumJSONRPC.{Block, Transactions, Transport, Uncles, Withdrawals}
@@ -128,6 +128,11 @@ defmodule EthereumJSONRPC.Blocks do
               withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
               blob_gas_used: 0,\
               excess_blob_gas: 0,\
+      """
+    :arbitrum -> """
+              send_root: nil,\
+              send_count: nil,\
+              l1_block_number: nil,\
       """
     _ -> ""
   end}

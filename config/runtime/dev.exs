@@ -156,12 +156,32 @@ config :explorer, Explorer.Repo.Filecoin,
   url: System.get_env("DATABASE_URL"),
   pool_size: 1
 
+# Configure Arbitrum database
+config :explorer, Explorer.Repo.Arbitrum,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  # actually this repo is not started, and its pool size remains unused.
+  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
+  pool_size: 1
+
 # Configures Stability database
 config :explorer, Explorer.Repo.Stability,
   database: database,
   hostname: hostname,
   url: System.get_env("DATABASE_URL"),
   pool_size: 1
+
+database_mud = if System.get_env("MUD_DATABASE_URL"), do: nil, else: database
+hostname_mud = if System.get_env("MUD_DATABASE_URL"), do: nil, else: hostname
+
+# Configure MUD indexer database
+config :explorer, Explorer.Repo.Mud,
+  database: database_mud,
+  hostname: hostname_mud,
+  url: ExplorerConfigHelper.get_mud_db_url(),
+  pool_size: ConfigHelper.parse_integer_env_var("MUD_POOL_SIZE", 10),
+  queue_target: queue_target
 
 variant = Variant.get()
 

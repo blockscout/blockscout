@@ -1,7 +1,7 @@
 defmodule EthereumJSONRPC.Block do
   @moduledoc """
-  Block format as returned by [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash)
-  and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber).
+  Block format as returned by [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbyhash)
+  and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbynumber).
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1, timestamp_to_datetime: 1]
@@ -26,6 +26,15 @@ defmodule EthereumJSONRPC.Block do
                              withdrawals_root: EthereumJSONRPC.hash(),
                              blob_gas_used: non_neg_integer(),
                              excess_blob_gas: non_neg_integer()
+                           ]
+                         )
+
+    :arbitrum ->
+      @chain_type_fields quote(
+                           do: [
+                             send_count: non_neg_integer(),
+                             send_root: EthereumJSONRPC.hash(),
+                             l1_block_number: non_neg_integer()
                            ]
                          )
 
@@ -75,20 +84,20 @@ defmodule EthereumJSONRPC.Block do
    * `"number"` - the block number `t:EthereumJSONRPC.quantity/0`. `nil` when block is pending.
    * `"parentHash" - the `t:EthereumJSONRPC.hash/0` of the parent block.
    * `"receiptsRoot"` - `t:EthereumJSONRPC.hash/0` of the root of the receipts.
-     [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
+     [trie](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/) of the block.
    * `"sealFields"` - UNKNOWN
    * `"sha3Uncles"` - `t:EthereumJSONRPC.hash/0` of the
      [uncles](https://bitcoin.stackexchange.com/questions/39329/in-ethereum-what-is-an-uncle-block) data in the block.
    * `"signature"` - UNKNOWN
    * `"size"` - `t:EthereumJSONRPC.quantity/0` of bytes in this block
    * `"stateRoot" - `t:EthereumJSONRPC.hash/0` of the root of the final state
-     [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
+     [trie](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/) of the block.
    * `"step"` - UNKNOWN
    * `"timestamp"`: the unix timestamp as a `t:EthereumJSONRPC.quantity/0` for when the block was collated.
    * `"totalDifficulty" - `t:EthereumJSONRPC.quantity/0` of the total difficulty of the chain until this block.
    * `"transactions"` - `t:list/0` of `t:EthereumJSONRPC.Transaction.t/0`.
    * `"transactionsRoot" - `t:EthereumJSONRPC.hash/0` of the root of the transaction
-     [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
+     [trie](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/) of the block.
    * `uncles`: `t:list/0` of
      [uncles](https://bitcoin.stackexchange.com/questions/39329/in-ethereum-what-is-an-uncle-block)
      `t:EthereumJSONRPC.hash/0`.
@@ -172,6 +181,11 @@ defmodule EthereumJSONRPC.Block do
           "blobGasUsed" => 262144,\
           "excessBlobGas" => 79429632,\
       """
+    :arbitrum -> """
+          "sendRoot" => "0xc71ee2cf4201f65590aa6c052270dc41e926e628f213e268a58d9a8d8f739f82",\
+          "sendCount" => 91,\
+          "l1BlockNumber" => 19828534,\
+      """
     _ -> ""
   end}
       ...>     "uncles" => []
@@ -198,7 +212,6 @@ defmodule EthereumJSONRPC.Block do
         transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
   #{case Application.compile_env(:explorer, :chain_type) do
     :rsk -> """
-
             bitcoin_merged_mining_coinbase_transaction: "0x00000000000000805bf0dc9203da49a3b4e3ec913806e43102cc07db991272dc8b7018da57eb5abe59a32d070000ffffffff03449a4d26000000001976a914536ffa992491508dca0354e52f32a3a7a679a53a88ac00000000000000002b6a2952534b424c4f434b3ad2508d21d28c8f89d495923c0758ec3f64bd6755b4ec416f5601312600542a400000000000000000266a24aa21a9ed4ae42ea6dca2687aaed665714bf58b055c4e11f2fb038605930d630b49ad7b9d00000000",\
             bitcoin_merged_mining_header: "0x00006d20ffd048280094a6ea0851d854036aacaa25ee0f23f0040200000000000000000078d2638fe0b4477c54601e6449051afba8228e0a88ff06b0c91f091fd34d5da57487c76402610517372c2fe9",\
             bitcoin_merged_mining_merkle_proof: "0x8e5a4ba74eb4eb2f9ad4cabc2913aeed380a5becf7cd4d513341617efb798002bd83a783c31c66a8a8f6cc56c071c2d471cb610e3dc13054b9d216021d8c7e9112f622564449ebedcedf7d4ccb6fe0ffac861b7ed1446c310813cdf712e1e6add28b1fe1c0ae5e916194ba4f285a9340aba41e91bf847bf31acf37a9623a04a2348a37ab9faa5908122db45596bbc03e9c3644b0d4589471c4ff30fc139f3ba50506e9136fa0df799b487494de3e2b3dec937338f1a2e18da057c1f60590a9723672a4355b9914b1d01af9f582d9e856f6e1744be00f268b0b01d559329f7e0685aa63ffeb7c28486d7462292021d1345cddbf7c920ca34bb7aa4c6cdbe068806e35d0db662e7fcda03cb4d779594638c62a1fdd7ec98d1fb6d240d853958abe57561d9b9d0465cf8b9d6ee3c58b0d8b07d6c4c5d8f348e43fe3c06011b6a0008db4e0b16c77ececc3981f9008201cea5939869d648e59a09bd2094b1196ff61126bffb626153deed2563e1745436247c94a85d2947756b606d67633781c99d7",\
@@ -209,6 +222,11 @@ defmodule EthereumJSONRPC.Block do
             withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
             blob_gas_used: 262144,\
             excess_blob_gas: 79429632,\
+      """
+    :arbitrum -> """
+            send_root: "0xc71ee2cf4201f65590aa6c052270dc41e926e628f213e268a58d9a8d8f739f82",\
+            send_count: 91,\
+            l1_block_number: 19828534,\
       """
     _ -> ""
   end}
@@ -272,6 +290,11 @@ defmodule EthereumJSONRPC.Block do
             withdrawals_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
             blob_gas_used: 0,\
             excess_blob_gas: 0,\
+      """
+    :arbitrum -> """
+            send_root: nil,\
+            send_count: nil,\
+            l1_block_number: nil,\
       """
     _ -> ""
   end}
@@ -462,9 +485,9 @@ defmodule EthereumJSONRPC.Block do
     }
   end
 
-  defp chain_type_fields(params, elixir) do
-    case Application.get_env(:explorer, :chain_type) do
-      :rsk ->
+  case Application.compile_env(:explorer, :chain_type) do
+    :rsk ->
+      defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
           minimum_gas_price: Map.get(elixir, "minimumGasPrice"),
@@ -473,8 +496,10 @@ defmodule EthereumJSONRPC.Block do
           bitcoin_merged_mining_merkle_proof: Map.get(elixir, "bitcoinMergedMiningMerkleProof"),
           hash_for_merged_mining: Map.get(elixir, "hashForMergedMining")
         })
+      end
 
-      :ethereum ->
+    :ethereum ->
+      defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
           withdrawals_root:
@@ -482,10 +507,20 @@ defmodule EthereumJSONRPC.Block do
           blob_gas_used: Map.get(elixir, "blobGasUsed", 0),
           excess_blob_gas: Map.get(elixir, "excessBlobGas", 0)
         })
+      end
 
-      _ ->
+    :arbitrum ->
+      defp chain_type_fields(params, elixir) do
         params
-    end
+        |> Map.merge(%{
+          send_count: Map.get(elixir, "sendCount"),
+          send_root: Map.get(elixir, "sendRoot"),
+          l1_block_number: Map.get(elixir, "l1BlockNumber")
+        })
+      end
+
+    _ ->
+      defp chain_type_fields(params, _), do: params
   end
 
   @doc """
@@ -791,7 +826,9 @@ defmodule EthereumJSONRPC.Block do
   end
 
   defp entry_to_elixir({key, quantity}, _block)
-       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number size cumulativeDifficulty totalDifficulty paidFees minimumGasPrice blobGasUsed excessBlobGas) and
+       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number size
+                      cumulativeDifficulty totalDifficulty paidFees minimumGasPrice blobGasUsed
+                      excessBlobGas l1BlockNumber sendCount) and
               not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
   end
@@ -805,8 +842,10 @@ defmodule EthereumJSONRPC.Block do
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
   defp entry_to_elixir({key, _} = entry, _block)
-       when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot sealFields sha3Uncles
-                     signature stateRoot step transactionsRoot uncles withdrawalsRoot bitcoinMergedMiningHeader bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningMerkleProof hashForMergedMining),
+       when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot
+                      sealFields sha3Uncles signature stateRoot step transactionsRoot uncles
+                      withdrawalsRoot bitcoinMergedMiningHeader bitcoinMergedMiningCoinbaseTransaction
+                      bitcoinMergedMiningMerkleProof hashForMergedMining sendRoot),
        do: entry
 
   defp entry_to_elixir({"timestamp" = key, timestamp}, _block) do
@@ -824,11 +863,6 @@ defmodule EthereumJSONRPC.Block do
   defp entry_to_elixir({"withdrawals" = key, withdrawals}, %{"hash" => block_hash, "number" => block_number})
        when not is_nil(block_number) do
     {key, Withdrawals.to_elixir(withdrawals, block_hash, quantity_to_integer(block_number))}
-  end
-
-  # Arbitrum fields
-  defp entry_to_elixir({"l1BlockNumber", _}, _block) do
-    {:ignore, :ignore}
   end
 
   # bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningHeader bitcoinMergedMiningMerkleProof hashForMergedMining - RSK https://github.com/blockscout/blockscout/pull/2934
