@@ -66,7 +66,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
 
   def prepare_for_import(da_info, l1_connection_config) do
     da_info
-    |> Enum.reduce({[], %{}}, fn info, {acc, cache} ->
+    |> Enum.reduce({[], MapSet.new()}, fn info, {acc, cache} ->
       case info do
         %Celestia{} ->
           {Celestia.prepare_for_import(acc, info), cache}

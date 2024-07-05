@@ -144,7 +144,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     - `da_info`: The AnyTrust DA info struct containing details about the data blob.
     - `l1_connection_config`: A map containing the address of the Sequencer Inbox contract
       and configuration parameters for the JSON RPC connection.
-    - `cache`: A map used to cache the checked keysets.
+    - `cache`: A set of unique elements used to cache the checked keysets.
 
     ## Returns
     - A tuple containing:
@@ -160,9 +160,9 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
             :sequencer_inbox_address => String.t(),
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
           },
-          %{binary() => boolean()}
+          MapSet.t()
         ) ::
-          {[Arbitrum.DaMultiPurposeRecord.to_import()], %{binary() => boolean()}}
+          {[Arbitrum.DaMultiPurposeRecord.to_import()], MapSet.t()}
   def prepare_for_import(source, %__MODULE__{} = da_info, l1_connection_config, cache) do
     data = %{
       keyset_hash: ArbitrumHelper.bytes_to_hex_str(da_info.keyset_hash),
@@ -212,7 +212,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
   # - `l1_connection_config`: A map containing the address of the Sequencer Inbox
   #                           contract and configuration parameters for the JSON RPC
   #                           connection.
-  # - `cache`: A map used to cache the checked keysets.
+  # - `cache`: A set of unique elements used to cache the checked keysets.
   #
   # ## Returns
   # - `{:new_keyset, keyset_info, updated_cache}` if the keyset is not found and fetched from L1.
@@ -223,23 +223,23 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
             :sequencer_inbox_address => binary(),
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
           },
-          %{binary() => boolean()}
+          MapSet.t()
         ) ::
-          {:new_keyset, __MODULE__.keyset(), %{binary() => boolean()}}
-          | {:existing_keyset, nil, %{binary() => boolean()}}
-  defp check_if_new_keyset(keyset_hash, _, cache) when is_map_key(cache, keyset_hash) do
-    {:existing_keyset, nil, cache}
-  end
-
+          {:new_keyset, __MODULE__.keyset(), MapSet.t()}
+          | {:existing_keyset, nil, MapSet.t()}
   defp check_if_new_keyset(keyset_hash, l1_connection_config, cache) do
-    updated_cache = Map.put_new(cache, keyset_hash, true)
+    if MapSet.member?(cache, keyset_hash) do
+      {:existing_keyset, nil, cache}
+    else
+      updated_cache = MapSet.put(cache, keyset_hash)
 
-    case Db.anytrust_keyset_exists?(keyset_hash) do
-      true ->
-        {:existing_keyset, nil, updated_cache}
+      case Db.anytrust_keyset_exists?(keyset_hash) do
+        true ->
+          {:existing_keyset, nil, updated_cache}
 
-      false ->
-        {:new_keyset, get_keyset_info_from_l1(keyset_hash, l1_connection_config), updated_cache}
+        false ->
+          {:new_keyset, get_keyset_info_from_l1(keyset_hash, l1_connection_config), updated_cache}
+      end
     end
   end
 
