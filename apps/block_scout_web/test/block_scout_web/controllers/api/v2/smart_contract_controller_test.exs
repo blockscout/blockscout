@@ -164,9 +164,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
-      response = json_response(request, 200)
 
-      assert correct_response == response
+      assert ^correct_response = json_response(request, 200)
     end
 
     test "get smart-contract with decoded constructor", %{conn: conn} do
@@ -268,9 +267,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       TestHelper.get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
-      response = json_response(request, 200)
 
-      assert correct_response == response
+      assert ^correct_response = json_response(request, 200)
     end
 
     test "get smart-contract data from bytecode twin without constructor args", %{conn: conn} do
@@ -374,9 +372,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-      response = json_response(request, 200)
 
-      assert correct_response == response
+      assert ^correct_response = json_response(request, 200)
     end
 
     test "get smart-contract multiple additional sources from EIP-1167 implementation", %{conn: conn} do
@@ -494,9 +491,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       }
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
-      response = json_response(request, 200)
 
-      assert correct_response == response
+      assert ^correct_response = json_response(request, 200)
     end
 
     test "get smart-contract which is blueprint", %{conn: conn} do
@@ -562,9 +558,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
-      response = json_response(request, 200)
 
-      assert correct_response == response
+      assert ^correct_response = json_response(request, 200)
     end
   end
 
@@ -676,9 +671,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     }
 
     request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
-    response = json_response(request, 200)
 
-    assert correct_response == response
+    assert ^correct_response = json_response(request, 200)
   end
 
   describe "/smart-contracts/{address_hash} <> eth_bytecode_db" do

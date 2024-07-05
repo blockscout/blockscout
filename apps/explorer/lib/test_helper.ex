@@ -14,12 +14,13 @@ defmodule Explorer.TestHelper do
 
     expect(mox, :json_rpc, fn %{
                                 id: 0,
-                                method: "eth_getStorageAt",
                                 params: [
                                   _,
                                   "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
                                   "latest"
-                                ]
+                                ],
+                                method: "eth_getStorageAt",
+                                jsonrpc: "2.0"
                               },
                               _options ->
       response
@@ -35,12 +36,13 @@ defmodule Explorer.TestHelper do
 
     expect(mox, :json_rpc, fn %{
                                 id: 0,
-                                method: "eth_getStorageAt",
                                 params: [
                                   _,
                                   "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
                                   "latest"
-                                ]
+                                ],
+                                method: "eth_getStorageAt",
+                                jsonrpc: "2.0"
                               },
                               _options ->
       response
