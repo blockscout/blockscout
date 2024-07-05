@@ -143,7 +143,8 @@ defmodule Explorer.Utility.MissingBlockRange do
     ## Returns
     - Returns `nil` if no intersecting ranges are found, or an `Explorer.Utility.MissingBlockRange` instance of the first intersecting range otherwise.
   """
-  @spec intersects_with_range(Block.block_number(), Block.block_number()) :: nil | Explorer.Utility.MissingBlockRange.t()
+  @spec intersects_with_range(Block.block_number(), Block.block_number()) ::
+          nil | Explorer.Utility.MissingBlockRange.t()
   def intersects_with_range(lower_number, higher_number)
       when is_integer(lower_number) and lower_number >= 0 and
              is_integer(higher_number) and lower_number <= higher_number do

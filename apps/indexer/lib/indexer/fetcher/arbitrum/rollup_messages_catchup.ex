@@ -186,7 +186,10 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   # - `{:noreply, new_state}` where the end blocks for both L1-to-L2 and L2-to-L1
   #   message discovery are established.
   @impl GenServer
-  def handle_info(:init_worker, %{config: %{rollup_rpc: %{first_block: rollup_first_block}}, data: %{new_block: just_received_block}} = state) do
+  def handle_info(
+        :init_worker,
+        %{config: %{rollup_rpc: %{first_block: rollup_first_block}}, data: %{new_block: just_received_block}} = state
+      ) do
     historical_msg_from_l2_end_block =
       Db.rollup_block_to_discover_missed_messages_from_l2(just_received_block, rollup_first_block)
 

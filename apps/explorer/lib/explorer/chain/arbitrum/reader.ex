@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   alias Explorer.{Chain, PagingOptions, Repo}
 
   alias Explorer.Chain.Block, as: FullBlock
-  alias Explorer.Chain.{Hash, Transaction, Log}
+  alias Explorer.Chain.{Hash, Log, Transaction}
 
   @to_l2_messages_transaction_types [100, 105]
 

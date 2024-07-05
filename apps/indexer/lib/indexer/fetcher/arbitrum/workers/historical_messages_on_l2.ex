@@ -267,11 +267,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
           messages =
             requests
             |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
-            |> Enum.map(fn tx ->
-              tx
-              |> TransactionByRPC.to_elixir()
-              |> TransactionByRPC.elixir_to_params()
-            end)
+            |> Enum.map(&transaction_json_to_map/1)
             |> Messaging.filter_l1_to_l2_messages(false)
 
           messages ++ messages_acc
@@ -293,6 +289,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
         | requests_list
       ]
     end)
+  end
+
+  # Transforms a JSON transaction object into a map.
+  @spec transaction_json_to_map(EthereumJSONRPC.transaction()) :: map()
+  defp transaction_json_to_map(transaction_json) do
+    transaction_json
+    |> TransactionByRPC.to_elixir()
+    |> TransactionByRPC.elixir_to_params()
   end
 
   # Imports a list of messages into the database.

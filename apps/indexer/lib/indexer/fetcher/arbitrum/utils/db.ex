@@ -707,6 +707,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   """
   @spec transactions_for_missed_messages_to_l2(non_neg_integer(), non_neg_integer()) :: [String.t()]
   def transactions_for_missed_messages_to_l2(start_block, end_block) do
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
     Reader.transactions_for_missed_messages_to_l2(start_block, end_block)
     |> Enum.map(&Hash.to_string/1)
   end
@@ -744,6 +745,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   def logs_for_missed_messages_from_l2(start_block, end_block) do
     arbsys_contract = Application.get_env(:indexer, Indexer.Fetcher.Arbitrum.Messaging)[:arbsys_contract]
 
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
     Reader.logs_for_missed_messages_from_l2(start_block, end_block, arbsys_contract, @l2_to_l1_event)
     |> Enum.map(&logs_to_map/1)
   end
