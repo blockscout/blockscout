@@ -18,18 +18,17 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
 
   @required_attrs ~w(id key type metadata l1_transaction_hash l1_timestamp frame_sequence_id)a
 
-  @type t :: %__MODULE__{
-          key: binary(),
-          type: String.t(),
-          metadata: map(),
-          l1_transaction_hash: Hash.t(),
-          l1_timestamp: DateTime.t(),
-          frame_sequence_id: non_neg_integer(),
-          frame_sequence: %Ecto.Association.NotLoaded{} | FrameSequence.t()
-        }
-
+  @typedoc """
+    * `key` - A unique id (key) of the blob.
+    * `type` - A type of the blob (`celestia` or `eip4844`).
+    * `metadata` - A map containing metadata of the blob.
+    * `l1_transaction_hash` - The corresponding L1 transaction hash which point to the blob.
+    * `l1_timestamp` - The timestamp of the L1 transaction.
+    * `frame_sequence_id` - A frame sequence ID which is bound with this blob.
+    * `frame_sequence` - An instance of `Explorer.Chain.Optimism.FrameSequence` referenced by `frame_sequence_id`.
+  """
   @primary_key {:id, :integer, autogenerate: false}
-  schema "op_frame_sequence_blobs" do
+  typed_schema "op_frame_sequence_blobs" do
     field(:key, :binary)
     field(:type, Ecto.Enum, values: [:celestia, :eip4844])
     field(:metadata, :map)

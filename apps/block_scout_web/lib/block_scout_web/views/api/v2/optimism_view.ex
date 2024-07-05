@@ -65,7 +65,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         %{
           "internal_id" => batch.id,
           "l1_timestamp" => batch.l1_timestamp,
-          "l2_block_range" => "#{from}-#{to}",
+          "l2_block_start" => from,
+          "l2_block_end" => to,
           "tx_count" => batch.tx_count,
           "l1_tx_hashes" => batch.l1_transaction_hashes
         }

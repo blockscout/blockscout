@@ -16,12 +16,10 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
 
   use Explorer.Schema
 
-  import Explorer.Chain, only: [join_association: 3, select_repo: 1]
+  import Explorer.Chain, only: [default_paging_options: 0, join_association: 3, select_repo: 1]
 
   alias Explorer.Chain.Optimism.FrameSequence
   alias Explorer.{PagingOptions, Repo}
-
-  @default_paging_options %PagingOptions{page_size: 50}
 
   @required_attrs ~w(l2_block_number frame_sequence_id)a
 
@@ -30,15 +28,14 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   @max_blob_data_size (4 * 31 + 3) * 1024 - 4
   @rounds 1024
 
-  @type t :: %__MODULE__{
-          l2_block_number: non_neg_integer(),
-          frame_sequence_id: non_neg_integer(),
-          frame_sequence_id_prev: non_neg_integer(),
-          frame_sequence: %Ecto.Association.NotLoaded{} | FrameSequence.t()
-        }
-
+  @typedoc """
+    * `l2_block_number` - An L2 block number related to the specified frame sequence.
+    * `frame_sequence_id` - ID of the frame sequence the L2 block relates to.
+    * `frame_sequence_id_prev` - Previous ID of the frame sequence (should be 0 until the table row is updated).
+    * `frame_sequence` - An instance of `Explorer.Chain.Optimism.FrameSequence` referenced by `frame_sequence_id`.
+  """
   @primary_key false
-  schema "op_transaction_batches" do
+  typed_schema "op_transaction_batches" do
     field(:l2_block_number, :integer, primary_key: true)
     belongs_to(:frame_sequence, FrameSequence, foreign_key: :frame_sequence_id, references: :id, type: :integer)
     field(:frame_sequence_id_prev, :integer)
@@ -104,7 +101,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   """
   @spec list(list()) :: [__MODULE__.t()]
   def list(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
 
     case paging_options do
       %PagingOptions{key: {0}} ->

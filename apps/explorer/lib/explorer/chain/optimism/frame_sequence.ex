@@ -13,26 +13,23 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
 
   use Explorer.Schema
 
-  import Explorer.Chain, only: [select_repo: 1]
+  import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
 
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.Optimism.{FrameSequenceBlob, TxnBatch}
   alias Explorer.PagingOptions
 
-  @default_paging_options %PagingOptions{page_size: 50}
-
   @required_attrs ~w(id l1_transaction_hashes l1_timestamp)a
 
-  @type t :: %__MODULE__{
-          l1_transaction_hashes: [Hash.t()],
-          l1_timestamp: DateTime.t(),
-          view_ready: boolean(),
-          transaction_batches: %Ecto.Association.NotLoaded{} | [TxnBatch.t()],
-          blobs: %Ecto.Association.NotLoaded{} | [FrameSequenceBlob.t()]
-        }
-
+  @typedoc """
+    * `l1_transaction_hashes` - The list of L1 transaction hashes where the frame sequence is stored.
+    * `l1_timestamp` - UTC timestamp of the last L1 transaction of `l1_transaction_hashes` list.
+    * `view_ready` - Boolean flag indicating if the frame sequence is ready for displaying on UI.
+    * `transaction_batches` - Instances of `Explorer.Chain.Optimism.TxnBatch` bound with this frame sequence.
+    * `blobs` - Instances of `Explorer.Chain.Optimism.FrameSequenceBlob` bound with this frame sequence.
+  """
   @primary_key {:id, :integer, autogenerate: false}
-  schema "op_frame_sequences" do
+  typed_schema "op_frame_sequences" do
     field(:l1_transaction_hashes, {:array, Hash.Full})
     field(:l1_timestamp, :utc_datetime_usec)
     field(:view_ready, :boolean)
@@ -116,7 +113,8 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
       result = %{
         "internal_id" => internal_id,
         "l1_timestamp" => batch.l1_timestamp,
-        "l2_block_range" => "#{l2_block_number_from}-#{l2_block_number_to}",
+        "l2_block_start" => l2_block_number_from,
+        "l2_block_end" => l2_block_number_to,
         "tx_count" => tx_count,
         "l1_tx_hashes" => batch.l1_transaction_hashes,
         "batch_data_container" => batch_data_container
@@ -142,7 +140,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
   """
   @spec list(list()) :: [__MODULE__.t()]
   def list(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
     only_view_ready = Keyword.get(options, :only_view_ready?, false)
 
     case paging_options do
