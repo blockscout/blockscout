@@ -945,7 +945,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - A map containing information about the AnyTrust keyset, otherwise an empty map.
   """
   @spec get_anytrust_keyset(binary()) :: map() | nil
-  def get_anytrust_keyset("0x" <> _ = keyset_hash) do
+  def get_anytrust_keyset("0x" <> <<_::binary-size(64)>> = keyset_hash) do
     get_anytrust_keyset(keyset_hash |> Chain.string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes))
   end
 
