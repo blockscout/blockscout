@@ -56,6 +56,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       "type" => "function"
     }
   ]
+
+  # getKeysetCreationBlock(bytes32 ksHash)
   @selector_get_keyset_creation_block "258f0495"
   @selector_sequencer_inbox_contract_abi [
     %{
@@ -156,9 +158,14 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       json_rpc_named_arguments,
       @rpc_resend_attempts
     )
+    # Extracts the list of responses from the tuple returned by read_contracts_with_retries.
     |> Kernel.elem(0)
+    # Retrieves the first response from the list of responses. The responses are in a list
+    # because read_contracts_with_retries accepts a list of method calls.
     |> List.first()
+    # Extracts the result from the {status, result} tuple which is composed in EthereumJSONRPC.Encoder.decode_result.
     |> Kernel.elem(1)
+    # Extracts the first decoded value from the result, which is a list, even if it contains only one value.
     |> List.first()
   end
 
