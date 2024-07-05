@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Optimism.Deposit do
   @allowed_attrs @required_attrs ++ @optional_attrs
 
   @typedoc """
-    * `l1_block_number` - The block number on L1 when the L1 transaction occured.
+    * `l1_block_number` - The block number on L1 when the L1 transaction occurred.
     * `l1_block_timestamp` - Timestamp of the L1 block.
     * `l1_transaction_hash` - The deposit transaction hash on L1.
     * `l1_transaction_origin` - Origin address of the deposit.
