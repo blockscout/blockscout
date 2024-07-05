@@ -45,19 +45,27 @@ defmodule Indexer.Fetcher.PolygonEdge.Deposit do
 
   @impl GenServer
   def init(_args) do
+    {:ok, %{}, {:continue, :ok}}
+  end
+
+  @impl GenServer
+  def handle_continue(:ok, state) do
     Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    PolygonEdge.init_l1(
-      Deposit,
-      env,
-      self(),
-      env[:state_sender],
-      "State Sender",
-      "polygon_edge_deposits",
-      "Deposits"
-    )
+    case PolygonEdge.init_l1(
+           Deposit,
+           env,
+           self(),
+           env[:state_sender],
+           "State Sender",
+           "polygon_edge_deposits",
+           "Deposits"
+         ) do
+      :ignore -> {:stop, :normal, state}
+      {:ok, new_state} -> {:noreply, new_state}
+    end
   end
 
   @impl GenServer
