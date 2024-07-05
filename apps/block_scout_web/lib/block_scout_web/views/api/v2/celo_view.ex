@@ -204,7 +204,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
       address =
         address_hash
-        |> Chain.hash_to_address()
+        |> Chain.hash_to_address(@address_params)
         |> case do
           {:ok, address} -> address
           {:error, :not_found} -> nil
