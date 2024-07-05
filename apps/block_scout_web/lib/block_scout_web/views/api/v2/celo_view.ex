@@ -140,7 +140,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   end
 
   defp fee_handler_base_fee_breakdown(base_fee, block_number) do
-    with {:ok, fee_handler_contract_address_hash} when not is_nil(fee_handler_contract_address_hash) <-
+    with {:ok, fee_handler_contract_address_hash} <-
            CeloCoreContracts.get_address(:fee_handler, block_number),
          {:ok, %{"address" => fee_beneficiary_address_hash}} <-
            CeloCoreContracts.get_event(:fee_handler, :fee_beneficiary_set, block_number),
@@ -154,28 +154,40 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       carbon_offsetting_amount = Decimal.sub(base_fee, burnt_amount)
       carbon_offsetting_percentage = Decimal.sub(100, burnt_percentage)
 
+      celo_burn_address_hash_string = CeloHelper.burn_address_hash_string()
+
       address_hashes_to_fetch_from_db = [
         fee_handler_contract_address_hash,
         fee_beneficiary_address_hash,
-        CeloHelper.burn_address_hash_string()
+        celo_burn_address_hash_string
       ]
 
-      [
-        fee_handler_contract_address_info,
-        fee_beneficiary_address_info,
-        burn_address_info
-      ] =
+      address_hash_string_to_address =
         address_hashes_to_fetch_from_db
         |> Enum.map(&(&1 |> Chain.string_to_address_hash() |> elem(1)))
         |> Chain.hashes_to_addresses(@address_params)
-        |> Stream.concat(Stream.duplicate(nil, 3))
-        |> Stream.zip(address_hashes_to_fetch_from_db)
-        |> Enum.map(fn {address, address_hash} ->
-          Helper.address_with_info(
-            address,
-            address_hash
-          )
+        |> Map.new(fn address ->
+          {
+            to_string(address.hash),
+            address
+          }
         end)
+
+      %{
+        ^fee_handler_contract_address_hash => fee_handler_contract_address_info,
+        ^fee_beneficiary_address_hash => fee_beneficiary_address_info,
+        ^celo_burn_address_hash_string => burn_address_info
+      } =
+        Map.new(
+          address_hashes_to_fetch_from_db,
+          &{
+            &1,
+            Helper.address_with_info(
+              Map.get(address_hash_string_to_address, &1),
+              &1
+            )
+          }
+        )
 
       %{
         recipient: fee_handler_contract_address_info,
