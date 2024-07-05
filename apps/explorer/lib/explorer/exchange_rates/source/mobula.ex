@@ -44,15 +44,15 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
     Enum.reduce(data, [], fn
       item, acc ->
-        with %{"blockchains" => blockchains, "contracts" => contracts}
-             when is_list(blockchains) and is_list(contracts) <- item,
-             index when not is_nil(index) <- Enum.find_index(blockchains, &(&1 == chain)),
-             contract when not is_nil(contract) <- Enum.at(contracts, index),
-             {:ok, token_contract_hash} <- Address.cast(contract) do
-          [token_contract_hash | acc]
-        else
-          _ -> acc
-        end
+      with %{"blockchains" => blockchains, "contracts" => contracts}
+           when is_list(blockchains) and is_list(contracts) <- item,
+           index when not is_nil(index) <- Enum.find_index(blockchains, &(String.downcase(&1) == chain)),
+           contract when not is_nil(contract) <- Enum.at(contracts, index),
+           {:ok, token_contract_hash} <- Address.cast(contract) do
+        [token_contract_hash | acc]
+      else
+        _ -> acc
+      end
     end)
   end
 
@@ -196,7 +196,8 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   end
 
   defp chain do
-    config(:platform) || "ethereum"
+    (config(:platform) || "ethereum")
+    |> String.downcase()
   end
 
   defp base_url do
