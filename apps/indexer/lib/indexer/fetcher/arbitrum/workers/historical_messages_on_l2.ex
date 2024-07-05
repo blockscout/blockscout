@@ -292,7 +292,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   end
 
   # Transforms a JSON transaction object into a map.
-  @spec transaction_json_to_map(EthereumJSONRPC.transaction()) :: map()
+  @spec transaction_json_to_map(%{String.t() => any()}) :: map()
   defp transaction_json_to_map(transaction_json) do
     transaction_json
     |> TransactionByRPC.to_elixir()
