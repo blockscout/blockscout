@@ -71,3 +71,35 @@ defmodule Explorer.Chain.Arbitrum.DaMultiPurposeRecord do
     |> unique_constraint(:data_key)
   end
 end
+
+defmodule Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper do
+  @moduledoc """
+    Helper functions to work with `Explorer.Chain.Arbitrum.DaMultiPurposeRecord` data
+  """
+
+  alias Explorer.Chain.Hash
+
+  @doc """
+    Calculates the data key for `Explorer.Chain.Arbitrum.DaMultiPurposeRecord` that contains Celestia blob data.
+
+    ## Parameters
+    - `height`: The height of the block in the Celestia network.
+    - `tx_commitment`: The transaction commitment.
+
+    ## Returns
+    - A binary representing the calculated data key for the record containing
+      Celestia blob data.
+  """
+  @spec calculate_celestia_data_key(binary() | non_neg_integer(), binary() | Explorer.Chain.Hash.t()) :: binary()
+  def calculate_celestia_data_key(height, tx_commitment) when is_binary(height) do
+    calculate_celestia_data_key(String.to_integer(height), tx_commitment)
+  end
+
+  def calculate_celestia_data_key(height, %Hash{} = tx_commitment) when is_integer(height) do
+    calculate_celestia_data_key(height, tx_commitment.bytes)
+  end
+
+  def calculate_celestia_data_key(height, tx_commitment) when is_integer(height) and is_binary(tx_commitment) do
+    :crypto.hash(:sha256, :binary.encode_unsigned(height) <> tx_commitment)
+  end
+end

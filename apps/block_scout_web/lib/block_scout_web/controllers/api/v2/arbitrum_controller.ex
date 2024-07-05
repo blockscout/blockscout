@@ -9,6 +9,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       parse_block_hash_or_number_param: 1
     ]
 
+  import Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper, only: [calculate_celestia_data_key: 2]
+
   alias Explorer.PagingOptions
   alias Explorer.Chain.Arbitrum.{L1Batch, Message, Reader}
 
@@ -96,8 +98,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   def batch_by_data_availability_info(conn, %{"tx_commitment" => tx_commitment, "height" => height} = _params) do
     # In case of Celestia, `data_key` is the hash of the height and the commitment hash
     with {:ok, :hash, tx_commitment_hash} <- parse_block_hash_or_number_param(tx_commitment),
-         height_as_int <- String.to_integer(height),
-         key <- :crypto.hash(:sha256, :binary.encode_unsigned(height_as_int) <> tx_commitment_hash.bytes) do
+         key <- calculate_celestia_data_key(height, tx_commitment_hash) do
       case Reader.get_da_record_by_data_key(key, api?: true) do
         {:ok, {batch_number, _}} ->
           batch(conn, %{"batch_number" => batch_number})

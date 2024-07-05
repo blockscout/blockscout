@@ -5,6 +5,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
   """
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1]
+  import Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper, only: [calculate_celestia_data_key: 2]
 
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
 
@@ -93,8 +94,6 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
   """
   @spec prepare_for_import(list(), __MODULE__.t()) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
   def prepare_for_import(source, %__MODULE__{} = da_info) do
-    key = :crypto.hash(:sha256, :binary.encode_unsigned(da_info.height) <> da_info.tx_commitment)
-
     data = %{
       height: da_info.height,
       tx_commitment: ArbitrumHelper.bytes_to_hex_str(da_info.tx_commitment),
@@ -104,7 +103,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
     [
       %{
         data_type: 0,
-        data_key: key,
+        data_key: calculate_celestia_data_key(da_info.height, da_info.tx_commitment),
         data: data,
         batch_number: da_info.batch_number
       }
