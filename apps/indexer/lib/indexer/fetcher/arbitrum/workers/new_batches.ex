@@ -34,6 +34,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
+  alias Explorer.Chain.Events.Publisher
 
   require Logger
 
@@ -296,7 +297,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # constructs comprehensive data structures for batches, lifecycle transactions, rollup
   # blocks, and rollup transactions. Additionally, it identifies any L2-to-L1 messages that
   # have been committed within these batches and updates their status. All discovered and
-  # processed data are then imported into the database.
+  # processed data are then imported into the database. If new batches were found, they are
+  # announced to be broadcasted through a websocket.
   #
   # ## Parameters
   # - `sequencer_inbox_address`: The SequencerInbox contract address used to filter logs.
@@ -326,10 +328,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         l1_rpc_config.json_rpc_named_arguments
       )
 
+    new_batches_discovery? = end_block >= start_block
+
     logs =
-      if end_block >= start_block do
+      if new_batches_discovery? do
+        # called by `discover`
         raw_logs
       else
+        # called by `discover_historical`
         Enum.reverse(raw_logs)
       end
 
@@ -355,6 +361,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           arbitrum_messages: %{params: committed_txs},
           timeout: :infinity
         })
+
+      if not Enum.empty?(batches) and new_batches_discovery? do
+        Publisher.broadcast(
+          [{:new_arbitrum_batches, extend_batches_with_commitment_transactions(batches, lifecycle_txs)}],
+          :realtime
+        )
+      end
     end)
   end
 
@@ -1092,6 +1105,24 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     |> Db.initiated_l2_to_l1_messages()
     |> Enum.map(fn tx ->
       Map.put(tx, :status, :sent)
+    end)
+  end
+
+  # Extends the provided list of batches with their corresponding commitment transactions.
+  @spec extend_batches_with_commitment_transactions(
+          [%{:commitment_id => non_neg_integer(), optional(any()) => any()}],
+          [%{:id => non_neg_integer(), optional(any()) => any()}]
+        ) :: [
+          %{
+            :commitment_id => non_neg_integer(),
+            :commitment_transaction => %{:id => non_neg_integer(), optional(any()) => any()},
+            optional(any()) => any()
+          }
+        ]
+  defp extend_batches_with_commitment_transactions(batches, lifecycle_txs) do
+    Enum.map(batches, fn batch ->
+      lifecycle_tx = Enum.find(lifecycle_txs, fn tx -> tx.id == batch.commitment_id end)
+      Map.put(batch, :commitment_transaction, lifecycle_tx)
     end)
   end
 end
