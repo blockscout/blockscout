@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Arbitrum.BatchBlock do
     * `batch_number` - The number of the Arbitrum batch.
     * `block_number` - The number of the rollup block.
     * `confirmation_id` - The ID of the confirmation L1 transaction from
-                          `Explorer.Chain.LifecycleTransaction`, or `nil` if the
+                          `Explorer.Chain.Arbitrum.LifecycleTransaction`, or `nil` if the
                           block is not confirmed yet.
   """
   @type to_import :: %{

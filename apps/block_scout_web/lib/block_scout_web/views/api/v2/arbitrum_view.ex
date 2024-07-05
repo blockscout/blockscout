@@ -115,22 +115,62 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   # transaction that committed the batch to L1.
   #
   # ## Parameters
-  # - `batches`: A list of `Explorer.Chain.Arbitrum.L1Batch` entries.
+  # - `batches`: A list of `Explorer.Chain.Arbitrum.L1Batch` entries or a list of maps
+  #              with the corresponding fields.
   #
   # ## Returns
   # - A list of maps with detailed information about each batch, formatted for use
   #   in JSON HTTP responses.
-  @spec render_arbitrum_batches([L1Batch]) :: [map()]
+  @spec render_arbitrum_batches(
+          [L1Batch.t()]
+          | [
+              %{
+                :number => non_neg_integer(),
+                :transactions_count => non_neg_integer(),
+                :start_block => non_neg_integer(),
+                :end_block => non_neg_integer(),
+                :batch_container => atom() | nil,
+                :commitment_transaction => LifecycleTransaction.to_import(),
+                optional(any()) => any()
+              }
+            ]
+        ) :: [map()]
   defp render_arbitrum_batches(batches) do
-    Enum.map(batches, fn batch ->
-      %{
-        "number" => batch.number,
-        "transactions_count" => batch.transactions_count,
-        "blocks_count" => batch.end_block - batch.start_block + 1,
-        "batch_data_container" => batch.batch_container
-      }
-      |> add_l1_tx_info(batch)
-    end)
+    Enum.map(batches, &render_base_info_for_batch/1)
+  end
+
+  # Transforms a L1 batch into a map format for HTTP response.
+  #
+  # This function processes an Arbitrum L1 batch and converts it into a map that
+  # includes basic batch information and details of the associated transaction
+  # that committed the batch to L1.
+  #
+  # ## Parameters
+  # - `batch`: Either an `Explorer.Chain.Arbitrum.L1Batch` entry or a map with
+  #            the corresponding fields.
+  #
+  # ## Returns
+  # - A  map with detailed information about the batch, formatted for use in JSON HTTP responses.
+  @spec render_base_info_for_batch(
+          L1Batch.t()
+          | %{
+              :number => non_neg_integer(),
+              :transactions_count => non_neg_integer(),
+              :start_block => non_neg_integer(),
+              :end_block => non_neg_integer(),
+              :batch_container => atom() | nil,
+              :commitment_transaction => LifecycleTransaction.to_import(),
+              optional(any()) => any()
+            }
+        ) :: map()
+  def render_base_info_for_batch(batch) do
+    %{
+      "number" => batch.number,
+      "transactions_count" => batch.transactions_count,
+      "blocks_count" => batch.end_block - batch.start_block + 1,
+      "batch_data_container" => batch.batch_container
+    }
+    |> add_l1_tx_info(batch)
   end
 
   @doc """
@@ -246,8 +286,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
 
   # Augments an output JSON with commit transaction details and its status.
   @spec add_l1_tx_info(map(), %{
-          :__struct__ => L1Batch,
-          :commitment_transaction => any(),
+          :commitment_transaction => LifecycleTransaction.t() | LifecycleTransaction.to_import(),
           optional(any()) => any()
         }) :: map()
   defp add_l1_tx_info(out_json, %L1Batch{} = batch) do
@@ -260,6 +299,25 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
         "block_number" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :block),
         "timestamp" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :ts),
         "status" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :status)
+      }
+    })
+  end
+
+  defp add_l1_tx_info(out_json, %{
+         commitment_transaction: %{
+           hash: hash,
+           block_number: block_number,
+           timestamp: ts,
+           status: status
+         }
+       }) do
+    out_json
+    |> Map.merge(%{
+      "commitment_transaction" => %{
+        "hash" => %Hash{byte_count: 32, bytes: hash},
+        "block_number" => block_number,
+        "timestamp" => ts,
+        "status" => status
       }
     })
   end
