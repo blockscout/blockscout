@@ -8,6 +8,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1]
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Arbitrum
   alias Explorer.Chain.Arbitrum.Reader
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Chain.{Data, Hash}
@@ -33,16 +34,23 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       the key `:id`, representing the index of the L1 transaction in the
       `arbitrum_lifecycle_l1_transactions` table.
   """
-  @spec get_indices_for_l1_transactions(map()) :: map()
+  @spec get_indices_for_l1_transactions(%{
+          binary() => %{
+            :hash => binary(),
+            :block_number => FullBlock.block_number(),
+            :timestamp => DateTime.t(),
+            :status => :unfinalized | :finalized,
+            optional(:id) => non_neg_integer()
+          }
+        }) :: %{binary() => Arbitrum.LifecycleTransaction.to_import()}
   # TODO: consider a way to remove duplicate with ZkSync.Utils.Db
-  # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
   def get_indices_for_l1_transactions(new_l1_txs)
       when is_map(new_l1_txs) do
     # Get indices for l1 transactions previously handled
     l1_txs =
       new_l1_txs
       |> Map.keys()
-      |> Reader.lifecycle_transactions()
+      |> Reader.lifecycle_transaction_ids()
       |> Enum.reduce(new_l1_txs, fn {hash, id}, txs ->
         {_, txs} =
           Map.get_and_update!(txs, hash.bytes, fn l1_tx ->
@@ -76,6 +84,25 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       )
 
     updated_l1_txs
+  end
+
+  @doc """
+    Reads a list of L1 transactions by their hashes from the
+    `arbitrum_lifecycle_l1_transactions` table and converts them to maps.
+
+    ## Parameters
+    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+
+    ## Returns
+    - A list of maps representing the `Explorer.Chain.Arbitrum.LifecycleTransaction`
+      corresponding to the hashes from the input list. The output list is
+      compatible with the database import operation.
+  """
+  @spec lifecycle_transactions([binary()]) :: [Arbitrum.LifecycleTransaction.to_import()]
+  def lifecycle_transactions(l1_tx_hashes) do
+    l1_tx_hashes
+    |> Reader.lifecycle_transactions()
+    |> Enum.map(&lifecycle_transaction_to_map/1)
   end
 
   @doc """
@@ -589,21 +616,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       database import operation. If no messages with the 'confirmed' status are found by
       the specified block number, an empty list is returned.
   """
-  @spec confirmed_l2_to_l1_messages(FullBlock.block_number()) :: [
-          %{
-            direction: :from_l2,
-            message_id: non_neg_integer(),
-            originator_address: binary(),
-            originating_transaction_hash: binary(),
-            originating_transaction_block_number: FullBlock.block_number(),
-            completion_transaction_hash: nil,
-            status: :confirmed
-          }
-        ]
-  def confirmed_l2_to_l1_messages(block_number)
-      when is_integer(block_number) and block_number >= 0 do
+  @spec confirmed_l2_to_l1_messages() :: [Arbitrum.Message.to_import()]
+  def confirmed_l2_to_l1_messages do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:confirmed, block_number)
+    Reader.l2_to_l1_messages(:confirmed, nil)
     |> Enum.map(&message_to_map/1)
   end
 
@@ -788,6 +804,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     if(is_nil(query |> Repo.one()), do: false, else: true)
   end
 
+  @spec lifecycle_transaction_to_map(Arbitrum.LifecycleTransaction.t()) :: Arbitrum.LifecycleTransaction.to_import()
   defp lifecycle_transaction_to_map(tx) do
     [:id, :hash, :block_number, :timestamp, :status]
     |> db_record_to_map(tx)
@@ -798,6 +815,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     |> db_record_to_map(block)
   end
 
+  @spec message_to_map(Arbitrum.Message.t()) :: Arbitrum.Message.to_import()
   defp message_to_map(message) do
     [
       :direction,

@@ -193,21 +193,44 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
+    Reads a list of L1 transactions by their hashes from the `arbitrum_lifecycle_l1_transactions` table and returns their IDs.
+
+    ## Parameters
+    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+
+    ## Returns
+    - A list of tuples containing transaction hashes and IDs for the transaction
+      hashes from the input list. The output list may be smaller than the input
+      list.
+  """
+  @spec lifecycle_transaction_ids([binary()]) :: [{Hash.t(), non_neg_integer}]
+  def lifecycle_transaction_ids(l1_tx_hashes) when is_list(l1_tx_hashes) do
+    query =
+      from(
+        lt in LifecycleTransaction,
+        select: {lt.hash, lt.id},
+        where: lt.hash in ^l1_tx_hashes
+      )
+
+    Repo.all(query, timeout: :infinity)
+  end
+
+  @doc """
     Reads a list of L1 transactions by their hashes from the `arbitrum_lifecycle_l1_transactions` table.
 
     ## Parameters
     - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
 
     ## Returns
-    - A list of `Explorer.Chain.Arbitrum.LifecycleTransaction` corresponding to the hashes from
-      the input list. The output list may be smaller than the input list.
+    - A list of `Explorer.Chain.Arbitrum.LifecycleTransaction` corresponding to the
+      hashes from the input list. The output list may be smaller than the input
+      list.
   """
-  @spec lifecycle_transactions(maybe_improper_list(Hash.t(), [])) :: [LifecycleTransaction]
+  @spec lifecycle_transactions([binary()]) :: [LifecycleTransaction.t()]
   def lifecycle_transactions(l1_tx_hashes) when is_list(l1_tx_hashes) do
     query =
       from(
         lt in LifecycleTransaction,
-        select: {lt.hash, lt.id},
         where: lt.hash in ^l1_tx_hashes
       )
 
@@ -520,18 +543,24 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
-    Retrieves all L2-to-L1 messages with the specified status that originated in rollup blocks with numbers not higher than `block_number`.
+    Retrieves all L2-to-L1 messages with the specified status.
+
+    If `block_number` is not `nil`, only messages originating in rollup blocks with
+    numbers not higher than the specified block are considered. Otherwise, all
+    messages are considered.
 
     ## Parameters
-    - `status`: The status of the messages to retrieve, such as `:initiated`, `:sent`, `:confirmed`, or `:relayed`.
-    - `block_number`: The number of a rollup block that limits the messages lookup.
+    - `status`: The status of the messages to retrieve, such as `:initiated`,
+      `:sent`, `:confirmed`, or `:relayed`.
+    - `block_number`: The number of a rollup block that limits the messages lookup,
+      or `nil`.
 
     ## Returns
-    - Instances of `Explorer.Chain.Arbitrum.Message` corresponding to the criteria, or `[]` if no messages
-      with the given status are found in the rollup blocks up to the specified number.
+    - Instances of `Explorer.Chain.Arbitrum.Message` corresponding to the criteria,
+      or `[]` if no messages with the given status are found.
   """
-  @spec l2_to_l1_messages(:confirmed | :initiated | :relayed | :sent, FullBlock.block_number()) :: [
-          Message
+  @spec l2_to_l1_messages(:confirmed | :initiated | :relayed | :sent, FullBlock.block_number() | nil) :: [
+          Message.t()
         ]
   def l2_to_l1_messages(status, block_number)
       when status in [:initiated, :sent, :confirmed, :relayed] and
@@ -542,6 +571,16 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         where:
           msg.direction == :from_l2 and msg.originating_transaction_block_number <= ^block_number and
             msg.status == ^status,
+        order_by: [desc: msg.message_id]
+      )
+
+    Repo.all(query, timeout: :infinity)
+  end
+
+  def l2_to_l1_messages(status, nil) when status in [:initiated, :sent, :confirmed, :relayed] do
+    query =
+      from(msg in Message,
+        where: msg.direction == :from_l2 and msg.status == ^status,
         order_by: [desc: msg.message_id]
       )
 

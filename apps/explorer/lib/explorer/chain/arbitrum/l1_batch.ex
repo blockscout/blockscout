@@ -11,28 +11,44 @@ defmodule Explorer.Chain.Arbitrum.L1Batch do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{
-    Block,
-    Hash
-  }
+  alias Explorer.Chain.Hash
 
   alias Explorer.Chain.Arbitrum.LifecycleTransaction
 
   @required_attrs ~w(number transactions_count start_block end_block before_acc after_acc commitment_id)a
 
-  @type t :: %__MODULE__{
+  @typedoc """
+  Descriptor of the a L1 batch for Arbitrum rollups:
+    * `number` - The number of the Arbitrum batch.
+    * `transactions_count` - The number of transactions in the batch.
+    * `start_block` - The number of the first block in the batch.
+    * `end_block` - The number of the last block in the batch.
+    * `before_acc` - The hash of the state before the batch.
+    * `after_acc` - The hash of the state after the batch.
+    * `commitment_id` - The ID of the commitment L1 transaction from Explorer.Chain.LifecycleTransaction.
+  """
+  @type to_import :: %{
           number: non_neg_integer(),
           transactions_count: non_neg_integer(),
-          start_block: Block.block_number(),
-          end_block: Block.block_number(),
-          before_acc: Hash.t(),
-          after_acc: Hash.t(),
-          commitment_id: non_neg_integer(),
-          commitment_transaction: %Ecto.Association.NotLoaded{} | LifecycleTransaction.t() | nil
+          start_block: non_neg_integer(),
+          end_block: non_neg_integer(),
+          before_acc: binary(),
+          after_acc: binary(),
+          commitment_id: non_neg_integer()
         }
 
+  @typedoc """
+    * `number` - The number of the Arbitrum batch.
+    * `transactions_count` - The number of transactions in the batch.
+    * `start_block` - The number of the first block in the batch.
+    * `end_block` - The number of the last block in the batch.
+    * `before_acc` - The hash of the state before the batch.
+    * `after_acc` - The hash of the state after the batch.
+    * `commitment_id` - The ID of the commitment L1 transaction from `Explorer.Chain.Arbitrum.LifecycleTransaction`.
+    * `commitment_transaction` - An instance of `Explorer.Chain.Arbitrum.LifecycleTransaction` referenced by `commitment_id`.
+  """
   @primary_key {:number, :integer, autogenerate: false}
-  schema "arbitrum_l1_batches" do
+  typed_schema "arbitrum_l1_batches" do
     field(:transactions_count, :integer)
     field(:start_block, :integer)
     field(:end_block, :integer)

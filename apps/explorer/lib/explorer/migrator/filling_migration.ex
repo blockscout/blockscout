@@ -32,15 +32,20 @@ defmodule Explorer.Migrator.FillingMigration do
 
       @impl true
       def init(_) do
+        {:ok, %{}, {:continue, :ok}}
+      end
+
+      @impl true
+      def handle_continue(:ok, state) do
         case MigrationStatus.get_status(migration_name()) do
           "completed" ->
             update_cache()
-            :ignore
+            {:stop, :normal, state}
 
           _ ->
             MigrationStatus.set_status(migration_name(), "started")
             schedule_batch_migration()
-            {:ok, %{}}
+            {:noreply, %{}}
         end
       end
 

@@ -44,7 +44,12 @@ defmodule Explorer.Counters.AverageBlockTime do
     refresh_period = Application.get_env(:explorer, __MODULE__)[:cache_period]
     Process.send_after(self(), :refresh_timestamps, refresh_period)
 
-    {:ok, refresh_timestamps()}
+    {:ok, %{}, {:continue, :ok}}
+  end
+
+  @impl true
+  def handle_continue(:ok, _state) do
+    {:noreply, refresh_timestamps()}
   end
 
   @impl true
