@@ -1,12 +1,12 @@
-defmodule Explorer.Chain.Import.Runner.Arbitrum.L1Batches do
+defmodule Explorer.Chain.Import.Runner.Arbitrum.DaMultiPurposeRecords do
   @moduledoc """
-    Bulk imports of Explorer.Chain.Arbitrum.L1Batch.
+    Bulk imports of Explorer.Chain.Arbitrum.DaMultiPurposeRecord.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.Arbitrum.L1Batch
+  alias Explorer.Chain.Arbitrum.DaMultiPurposeRecord
   alias Explorer.Chain.Import
   alias Explorer.Prometheus.Instrumenter
 
@@ -17,13 +17,13 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.L1Batches do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [L1Batch.t()]
+  @type imported :: [DaMultiPurposeRecord.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: L1Batch
+  def ecto_schema_module, do: DaMultiPurposeRecord
 
   @impl Import.Runner
-  def option_key, do: :arbitrum_l1_batches
+  def option_key, do: :arbitrum_da_multi_purpose_records
 
   @impl Import.Runner
   @spec imported_table_row() :: %{:value_description => binary(), :value_type => binary()}
@@ -44,12 +44,12 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.L1Batches do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :insert_arbitrum_l1_batches, fn repo, _ ->
+    Multi.run(multi, :insert_da_multi_purpose_records, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :arbitrum_l1_batches,
-        :arbitrum_l1_batches
+        :arbitrum_da_multi_purpose_records,
+        :arbitrum_da_multi_purpose_records
       )
     end)
   end
@@ -58,23 +58,23 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.L1Batches do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [L1Batch.t()]}
+          {:ok, [DaMultiPurposeRecord.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce Arbitrum.L1Batch ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.number)
+    # Enforce Arbitrum.DaMultiPurposeRecord ShareLocks order (see docs: sharelock.md)
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.data_key)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        for: L1Batch,
+        for: DaMultiPurposeRecord,
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: :number,
+        conflict_target: :data_key,
         on_conflict: on_conflict
       )
 
@@ -83,31 +83,23 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.L1Batches do
 
   defp default_on_conflict do
     from(
-      tb in L1Batch,
+      rec in DaMultiPurposeRecord,
       update: [
         set: [
-          # don't update `number` as it is a primary key and used for the conflict target
-          transactions_count: fragment("EXCLUDED.transactions_count"),
-          start_block: fragment("EXCLUDED.start_block"),
-          end_block: fragment("EXCLUDED.end_block"),
-          before_acc: fragment("EXCLUDED.before_acc"),
-          after_acc: fragment("EXCLUDED.after_acc"),
-          commitment_id: fragment("EXCLUDED.commitment_id"),
-          batch_container: fragment("EXCLUDED.batch_container"),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tb.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tb.updated_at)
+          # don't update `data_key` as it is a primary key and used for the conflict target
+          data_type: fragment("EXCLUDED.data_type"),
+          data: fragment("EXCLUDED.data"),
+          batch_number: fragment("EXCLUDED.batch_number"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", rec.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", rec.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.transactions_count, EXCLUDED.start_block, EXCLUDED.end_block, EXCLUDED.before_acc, EXCLUDED.after_acc, EXCLUDED.commitment_id, EXCLUDED.batch_container) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
-          tb.transactions_count,
-          tb.start_block,
-          tb.end_block,
-          tb.before_acc,
-          tb.after_acc,
-          tb.commitment_id,
-          tb.batch_container
+          "(EXCLUDED.data_type, EXCLUDED.data, EXCLUDED.batch_number) IS DISTINCT FROM (?, ?, ?)",
+          rec.data_type,
+          rec.data,
+          rec.batch_number
         )
     )
   end
