@@ -269,7 +269,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   defp fiat_fee(fee, exchange_rate) do
     fee &&
-      exchange_rate.usd_value &&
+      exchange_rate.usd_value && simple_transaction_gas() &&
       fee
       |> Wei.to(:ether)
       |> Decimal.mult(exchange_rate.usd_value)
