@@ -5,15 +5,18 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     only: [
       next_page_params: 4,
       paging_options: 1,
-      split_list_by_page: 1
+      split_list_by_page: 1,
+      parse_block_hash_or_number_param: 1
     ]
+
+  import Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper, only: [calculate_celestia_data_key: 2]
 
   alias Explorer.PagingOptions
   alias Explorer.Chain.Arbitrum.{L1Batch, Message, Reader}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
-  @batch_necessity_by_association %{:commitment_transaction => :optional}
+  @batch_necessity_by_association %{:commitment_transaction => :required}
 
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
@@ -72,6 +75,39 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         |> render(:arbitrum_batch, %{batch: batch})
 
       {:error, :not_found} = res ->
+        res
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/arbitrum/batches/da/:data_hash` or
+    `/api/v2/arbitrum/batches/da/:tx_commitment/:height` endpoints.
+  """
+  @spec batch_by_data_availability_info(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def batch_by_data_availability_info(conn, %{"data_hash" => data_hash} = _params) do
+    # In case of AnyTrust, `data_key` is the hash of the data itself
+    case Reader.get_da_record_by_data_key(data_hash, api?: true) do
+      {:ok, {batch_number, _}} ->
+        batch(conn, %{"batch_number" => batch_number})
+
+      {:error, :not_found} = res ->
+        res
+    end
+  end
+
+  def batch_by_data_availability_info(conn, %{"tx_commitment" => tx_commitment, "height" => height} = _params) do
+    # In case of Celestia, `data_key` is the hash of the height and the commitment hash
+    with {:ok, :hash, tx_commitment_hash} <- parse_block_hash_or_number_param(tx_commitment),
+         key <- calculate_celestia_data_key(height, tx_commitment_hash) do
+      case Reader.get_da_record_by_data_key(key, api?: true) do
+        {:ok, {batch_number, _}} ->
+          batch(conn, %{"batch_number" => batch_number})
+
+        {:error, :not_found} = res ->
+          res
+      end
+    else
+      res ->
         res
     end
   end

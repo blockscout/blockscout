@@ -6,7 +6,15 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   import Ecto.Query, only: [from: 2, limit: 2, order_by: 2, subquery: 1, where: 2, where: 3]
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Arbitrum.{BatchBlock, BatchTransaction, L1Batch, L1Execution, LifecycleTransaction, Message}
+  alias Explorer.Chain.Arbitrum.{
+    BatchBlock,
+    BatchTransaction,
+    DaMultiPurposeRecord,
+    L1Batch,
+    L1Execution,
+    LifecycleTransaction,
+    Message
+  }
 
   alias Explorer.{Chain, PagingOptions, Repo}
 
@@ -232,7 +240,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       the input list. The output list may be smaller than the input list if some IDs do not
       correspond to any existing transactions.
   """
-  @spec l1_executions(maybe_improper_list(non_neg_integer(), [])) :: [L1Execution]
+  @spec l1_executions(maybe_improper_list(non_neg_integer(), [])) :: [L1Execution.t()]
   def l1_executions(message_ids) when is_list(message_ids) do
     query =
       from(
@@ -287,7 +295,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - A list of `Explorer.Chain.Arbitrum.LifecycleTransaction` representing unfinalized transactions,
       or `[]` if no unfinalized transactions are found.
   """
-  @spec lifecycle_unfinalized_transactions(FullBlock.block_number()) :: [LifecycleTransaction]
+  @spec lifecycle_unfinalized_transactions(FullBlock.block_number()) :: [LifecycleTransaction.t()]
   def lifecycle_unfinalized_transactions(finalized_block)
       when is_integer(finalized_block) and finalized_block >= 0 do
     query =
@@ -361,7 +369,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - An instance of `Explorer.Chain.Arbitrum.L1Batch` representing the batch containing
       the specified rollup block number, or `nil` if no corresponding batch is found.
   """
-  @spec get_batch_by_rollup_block_number(FullBlock.block_number()) :: L1Batch | nil
+  @spec get_batch_by_rollup_block_number(FullBlock.block_number()) :: L1Batch.t() | nil
   def get_batch_by_rollup_block_number(number)
       when is_integer(number) and number >= 0 do
     query =
@@ -491,7 +499,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       unconfirmed block within the range. Returns `[]` if no unconfirmed blocks are found
       within the range, or if the block fetcher has not indexed them.
   """
-  @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [BatchBlock]
+  @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [BatchBlock.t()]
   def unconfirmed_rollup_blocks(first_block, last_block)
       when is_integer(first_block) and first_block >= 0 and
              is_integer(last_block) and first_block <= last_block do
@@ -695,7 +703,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @spec messages(binary(),
           paging_options: PagingOptions.t(),
           api?: boolean()
-        ) :: [Message]
+        ) :: [Message.t()]
   def messages(direction, options) when direction == "from-rollup" do
     do_messages(:from_l2, options)
   end
@@ -720,7 +728,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @spec do_messages(:from_l2 | :to_l2,
           paging_options: PagingOptions.t(),
           api?: boolean()
-        ) :: [Message]
+        ) :: [Message.t()]
   defp do_messages(direction, options) do
     base_query =
       from(msg in Message,
@@ -756,7 +764,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @spec relayed_l1_to_l2_messages(
           paging_options: PagingOptions.t(),
           api?: boolean()
-        ) :: [Message]
+        ) :: [Message.t()]
   def relayed_l1_to_l2_messages(options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
@@ -802,7 +810,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   """
   def batch(number, options)
 
-  @spec batch(:latest, api?: boolean()) :: {:error, :not_found} | {:ok, L1Batch}
+  @spec batch(:latest, api?: boolean()) :: {:error, :not_found} | {:ok, L1Batch.t()}
   def batch(:latest, options) do
     L1Batch
     |> order_by(desc: :number)
@@ -817,7 +825,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @spec batch(binary() | non_neg_integer(),
           necessity_by_association: %{atom() => :optional | :required},
           api?: boolean()
-        ) :: {:error, :not_found} | {:ok, L1Batch}
+        ) :: {:error, :not_found} | {:ok, L1Batch.t()}
   def batch(number, options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -852,7 +860,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
           committed?: boolean(),
           paging_options: PagingOptions.t(),
           api?: boolean()
-        ) :: [L1Batch]
+        ) :: [L1Batch.t()]
   def batches(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -895,7 +903,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     ## Returns
     - A list of `Explorer.Chain.Arbitrum.BatchTransaction` entries belonging to the specified batch.
   """
-  @spec batch_transactions(non_neg_integer() | binary(), api?: boolean()) :: [BatchTransaction]
+  @spec batch_transactions(non_neg_integer() | binary(), api?: boolean()) :: [BatchTransaction.t()]
   def batch_transactions(batch_number, options) do
     query = from(tx in BatchTransaction, where: tx.batch_number == ^batch_number)
 
@@ -921,7 +929,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
           necessity_by_association: %{atom() => :optional | :required},
           api?: boolean(),
           paging_options: PagingOptions.t()
-        ) :: [FullBlock]
+        ) :: [FullBlock.t()]
   def batch_blocks(batch_number, options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
@@ -948,5 +956,88 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
     where(query, [block], block.number < ^block_number)
+  end
+
+  @doc """
+    Retrieves an AnyTrust keyset from the database using the provided keyset hash.
+
+    ## Parameters
+    - `keyset_hash`: A binary representing the hash of the keyset to be retrieved.
+
+    ## Returns
+    - A map containing information about the AnyTrust keyset, otherwise an empty map.
+  """
+  @spec get_anytrust_keyset(binary()) :: map() | nil
+  def get_anytrust_keyset("0x" <> <<_::binary-size(64)>> = keyset_hash) do
+    get_anytrust_keyset(keyset_hash |> Chain.string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes))
+  end
+
+  def get_anytrust_keyset(keyset_hash) do
+    query =
+      from(
+        da_records in DaMultiPurposeRecord,
+        where: da_records.data_key == ^keyset_hash and da_records.data_type == 1
+      )
+
+    case Repo.one(query) do
+      nil -> %{}
+      keyset -> keyset.data
+    end
+  end
+
+  @doc """
+    Retrieves Data Availability (DA) information from the database using the provided
+    batch number.
+
+    ## Parameters
+    - `batch_number`: The batch number to be used for retrieval.
+
+    ## Returns
+    - A map containing the DA information if found, otherwise an empty map.
+  """
+  @spec get_da_info_by_batch_number(non_neg_integer()) :: map()
+  def get_da_info_by_batch_number(batch_number) do
+    query =
+      from(
+        da_records in DaMultiPurposeRecord,
+        where: da_records.batch_number == ^batch_number and da_records.data_type == 0
+      )
+
+    case Repo.one(query) do
+      nil -> %{}
+      keyset -> keyset.data
+    end
+  end
+
+  @doc """
+    Retrieves a Data Availability (DA) record from the database using the provided
+    data key.
+
+    ## Parameters
+    - `data_key`: The key of the data to be retrieved.
+
+    ## Returns
+    - `{:ok, {batch_number, da_info}}`, where
+      - `batch_number` is the number of the batch associated with the DA record
+      - `da_info` is a map containing the DA record.
+    - `{:error, :not_found}` if no record with the specified `data_key` exists.
+  """
+  @spec get_da_record_by_data_key(binary(), api?: boolean()) :: {:ok, {non_neg_integer(), map()}} | {:error, :not_found}
+  def get_da_record_by_data_key("0x" <> _ = data_key, options) do
+    data_key_bytes = data_key |> Chain.string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes)
+    get_da_record_by_data_key(data_key_bytes, options)
+  end
+
+  def get_da_record_by_data_key(data_key, options) do
+    query =
+      from(
+        da_records in DaMultiPurposeRecord,
+        where: da_records.data_key == ^data_key and da_records.data_type == 0
+      )
+
+    case select_repo(options).one(query) do
+      nil -> {:error, :not_found}
+      keyset -> {:ok, {keyset.batch_number, keyset.data}}
+    end
   end
 end
