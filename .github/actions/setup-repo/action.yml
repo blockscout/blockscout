@@ -46,7 +46,7 @@ runs:
     - name: Find builder
       if: ${{ inputs.docker-remote-multi-platform }}
       shell: bash
-      run: echo "BUILDER_IP=$(./.github/scripts/select-builder.sh ${{ inputs.docker-arm-host }} ubuntu ~/.ssh/id_rsa)" >> $GITHUB_ENV
+      run: echo "BUILDER_IP=$(./.github/scripts/select-builder.sh ${{ inputs.docker-arm-host }} root ~/.ssh/id_rsa)" >> $GITHUB_ENV
     - name: Set up SSH
       if: ${{ inputs.docker-remote-multi-platform }}
       uses: MrSquaare/ssh-setup-action@523473d91581ccbf89565e12b40faba93f2708bd # v1.1.0
@@ -68,7 +68,7 @@ runs:
       with:
         platforms: linux/amd64
         append: |
-          - endpoint: ssh://ubuntu@${{ env.BUILDER_IP }}
+          - endpoint: ssh://root@${{ env.BUILDER_IP }}
             platforms: linux/arm64/v8
 
     - name: Log in to Docker Hub

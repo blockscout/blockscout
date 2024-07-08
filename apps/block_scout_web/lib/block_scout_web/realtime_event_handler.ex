@@ -12,6 +12,19 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
+  case Application.compile_env(:explorer, :chain_type) do
+    :arbitrum ->
+      def chain_type_specific_subscriptions do
+        Subscriber.to(:new_arbitrum_batches, :realtime)
+        Subscriber.to(:new_messages_to_arbitrum_amount, :realtime)
+      end
+
+    _ ->
+      def chain_type_specific_subscriptions do
+        nil
+      end
+  end
+
   @impl true
   def init([]) do
     Subscriber.to(:address_coin_balances, :realtime)
@@ -34,6 +47,9 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     # Does not come from the indexer
     Subscriber.to(:exchange_rate)
     Subscriber.to(:transaction_stats)
+
+    chain_type_specific_subscriptions()
+
     {:ok, []}
   end
 
