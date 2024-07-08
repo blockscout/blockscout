@@ -322,7 +322,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
             nil
         end
 
-
       aggregated_election_rewards =
         CeloReader.block_hash_to_aggregated_election_rewards_by_type(
           block.hash,

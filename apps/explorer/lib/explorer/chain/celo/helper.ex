@@ -38,8 +38,8 @@ defmodule Explorer.Chain.Celo.Helper do
   end
 
   def validate_epoch_block_number(block_number)
-       when is_epoch_block_number(block_number),
-       do: :ok
+      when is_epoch_block_number(block_number),
+      do: :ok
 
   def validate_epoch_block_number(_block_number),
     do: {:error, :not_found}
