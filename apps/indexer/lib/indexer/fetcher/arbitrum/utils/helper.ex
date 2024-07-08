@@ -83,4 +83,18 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
       )
     end)
   end
+
+  @doc """
+    Converts a binary data to a hexadecimal string.
+
+    ## Parameters
+    - `data`: The binary data to convert to a hexadecimal string.
+
+    ## Returns
+    - A hexadecimal string representation of the input data.
+  """
+  @spec bytes_to_hex_str(binary()) :: String.t()
+  def bytes_to_hex_str(data) do
+    "0x" <> Base.encode16(data, case: :lower)
+  end
 end
