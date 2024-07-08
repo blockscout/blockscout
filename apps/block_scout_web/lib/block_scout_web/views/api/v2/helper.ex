@@ -64,31 +64,25 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def address_with_info(%Address{} = address, _address_hash) do
     smart_contract? = Address.smart_contract?(address)
 
-    {proxy_implementations, implementation_address_hashes, implementation_names, implementation_address,
-     implementation_name} =
+    {proxy_implementations, implementation_address_hashes, implementation_names} =
       case address.proxy_implementations do
         %NotLoaded{} ->
-          {nil, [], [], nil, nil}
+          {nil, [], []}
 
         nil ->
-          {nil, [], [], nil, nil}
+          {nil, [], []}
 
         proxy_implementations ->
           address_hashes = proxy_implementations.address_hashes
           names = proxy_implementations.names
 
-          address_hash = Enum.at(address_hashes, 0) && address_hashes |> Enum.at(0) |> Address.checksum()
-
-          {proxy_implementations, address_hashes, names, address_hash, Enum.at(names, 0)}
+          {proxy_implementations, address_hashes, names}
       end
 
     %{
       "hash" => Address.checksum(address),
       "is_contract" => smart_contract?,
       "name" => address_name(address),
-      # todo: added for backward compatibility, remove when frontend unbound from these props
-      "implementation_address" => implementation_address,
-      "implementation_name" => implementation_name,
       "implementations" => proxy_object_info(implementation_address_hashes, implementation_names),
       "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
       "ens_domain_name" => address.ens_domain_name,
@@ -116,9 +110,6 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => Address.checksum(address_hash),
       "is_contract" => false,
       "name" => nil,
-      # todo: added for backward compatibility, remove when frontend unbound from these props
-      "implementation_address" => nil,
-      "implementation_name" => nil,
       "implementations" => [],
       "is_verified" => nil,
       "ens_domain_name" => nil,
