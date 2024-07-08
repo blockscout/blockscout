@@ -36,4 +36,11 @@ defmodule Explorer.Chain.Celo.Helper do
   def block_number_to_epoch_number(block_number) when is_integer(block_number) do
     (block_number / @blocks_per_epoch) |> Float.ceil() |> trunc()
   end
+
+  def validate_epoch_block_number(block_number)
+       when is_epoch_block_number(block_number),
+       do: :ok
+
+  def validate_epoch_block_number(_block_number),
+    do: {:error, :not_found}
 end

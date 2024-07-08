@@ -17,6 +17,12 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
+  import Explorer.Chain.Celo.Helper,
+    only: [
+      validate_epoch_block_number: 1,
+      block_number_to_epoch_number: 1
+    ]
+
   alias BlockScoutWeb.API.V2.{
     CeloView,
     TransactionView,
@@ -26,6 +32,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+  alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
   alias Explorer.Chain.Celo.Reader, as: CeloReader
   alias Explorer.Chain.InternalTransaction
 
@@ -51,9 +58,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       @chain_type_transaction_necessity_by_association %{
         :gas_token => :optional
       }
-      @chain_type_block_necessity_by_association %{
-        :celo_epoch_reward => :optional
-      }
+      @chain_type_block_necessity_by_association %{}
 
     :arbitrum ->
       @chain_type_transaction_necessity_by_association %{}
@@ -283,6 +288,54 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> render(:withdrawals, %{
         withdrawals: withdrawals |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
+      })
+    end
+  end
+
+  @doc """
+  Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/epoch` endpoint.
+  """
+  @spec celo_election_rewards(Plug.Conn.t(), map()) ::
+          {:error, :not_found | {:invalid, :hash | :number | :celo_election_reward_type}}
+          | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
+          | Plug.Conn.t()
+  def celo_epoch(conn, %{"block_hash_or_number" => block_hash_or_number}) do
+    params = [
+      necessity_by_association: %{
+        :celo_epoch_reward => :optional
+      },
+      api?: true
+    ]
+
+    with {:ok, block} <- block_param_to_block(block_hash_or_number, params),
+         :ok <- validate_epoch_block_number(block.number) do
+      epoch_number = block_number_to_epoch_number(block.number)
+
+      epoch_distribution =
+        block
+        |> Map.get(:celo_epoch_reward)
+        |> case do
+          %CeloEpochReward{} = epoch_reward ->
+            CeloEpochReward.load_token_transfers(epoch_reward, api?: true)
+
+          _ ->
+            nil
+        end
+
+
+      aggregated_election_rewards =
+        CeloReader.block_hash_to_aggregated_election_rewards_by_type(
+          block.hash,
+          api?: true
+        )
+
+      conn
+      |> put_status(200)
+      |> put_view(CeloView)
+      |> render(:celo_epoch, %{
+        epoch_number: epoch_number,
+        epoch_distribution: epoch_distribution,
+        aggregated_election_rewards: aggregated_election_rewards
       })
     end
   end

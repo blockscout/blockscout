@@ -4,9 +4,9 @@ defmodule Explorer.Chain.Celo.EpochReward do
   use Explorer.Schema
 
   import Ecto.Query, only: [from: 2]
+  import Explorer.Chain, only: [select_repo: 1]
 
   alias Explorer.Chain.Celo.EpochReward
-  alias Explorer.Repo
   alias Explorer.Chain.{Block, Hash, TokenTransfer}
 
   @required_attrs ~w(block_hash)a
@@ -52,7 +52,8 @@ defmodule Explorer.Chain.Celo.EpochReward do
           reserve_bolster_transfer_log_index: reserve_bolster_transfer_log_index,
           community_transfer_log_index: community_transfer_log_index,
           carbon_offsetting_transfer_log_index: carbon_offsetting_transfer_log_index
-        } = epoch_reward
+        } = epoch_reward,
+        options \\ []
       ) do
     virtual_field_to_log_index = [
       reserve_bolster_transfer: reserve_bolster_transfer_log_index,
@@ -77,7 +78,7 @@ defmodule Explorer.Chain.Celo.EpochReward do
         ]
       )
 
-    log_index_to_token_transfer = query |> Repo.replica().all() |> Map.new()
+    log_index_to_token_transfer = query |> select_repo(options).all() |> Map.new()
 
     Enum.reduce(virtual_field_to_log_index, epoch_reward, fn
       {field, log_index}, acc ->

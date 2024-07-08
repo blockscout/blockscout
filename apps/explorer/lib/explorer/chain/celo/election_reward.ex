@@ -23,6 +23,13 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     "delegated-payment" => :delegated_payment
   }
 
+  @reward_type_atom_to_token_atom %{
+    :voter => :celo_token,
+    :validator => :usd_token,
+    :group => :usd_token,
+    :delegated_payment => :usd_token
+  }
+
   @required_attrs ~w(amount type block_hash account_address_hash associated_account_address_hash)a
 
   @primary_key false
@@ -98,11 +105,14 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     Map.fetch(@reward_type_string_to_atom, type_string)
   end
 
+  @spec reward_type_atom_to_token_atom() :: %{type => atom()}
+  def reward_type_atom_to_token_atom, do: @reward_type_atom_to_token_atom
+
   def block_hash_to_aggregated_rewards_by_type_query(block_hash) do
     from(
       r in __MODULE__,
       where: r.block_hash == ^block_hash,
-      select: {r.type, sum(r.amount)},
+      select: {r.type, sum(r.amount), count(r)},
       group_by: r.type
     )
   end
