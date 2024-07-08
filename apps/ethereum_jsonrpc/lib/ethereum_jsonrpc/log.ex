@@ -174,9 +174,8 @@ defmodule EthereumJSONRPC.Log do
     end
   end
 
-  # zkSync specific log fields
-  defp entry_to_elixir({key, _}) when key in ~w(l1BatchNumber logType) do
-    {nil, nil}
+  defp entry_to_elixir(_) do
+    {:ignore, :ignore}
   end
 
   defp put_topics(params, topics) when is_map(params) and is_list(topics) do

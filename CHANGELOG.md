@@ -1,5 +1,21 @@
 # Changelog
 
+## 6.7.2
+
+### 🐛 Bug Fixes
+
+- Apply Ecto set explicit ssl_opts: [verify: :verify_none] to all prod repos ([#10369](https://github.com/blockscout/blockscout/issues/10369))
+- Fix slow internal transactions query ([#10346](https://github.com/blockscout/blockscout/issues/10346))
+- Don't execute update query for empty list ([#10344](https://github.com/blockscout/blockscout/issues/10344))
+- Add rescue on tx revert reason fetching ([#10366](https://github.com/blockscout/blockscout/issues/10366))
+- Reth compatibility ([#10335](https://github.com/blockscout/blockscout/issues/10335))
+- Public metrics enabling ([#10365](https://github.com/blockscout/blockscout/issues/10365))
+- Flaky market test ([#10262](https://github.com/blockscout/blockscout/issues/10262))
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump elixir to 1.16.3 and Erlang OTP to 26.2.5.1 ([#9256](https://github.com/blockscout/blockscout/issues/9256))
+
 ## 6.7.1
 
 ### 🐛 Bug Fixes

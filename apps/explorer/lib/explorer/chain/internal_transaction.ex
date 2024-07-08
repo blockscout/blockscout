@@ -576,8 +576,10 @@ defmodule Explorer.Chain.InternalTransaction do
   """
   def where_nonpending_block(query \\ nil) do
     (query || __MODULE__)
-    |> join(:left, [it], pending in assoc(it, :pending_block), as: :pending)
-    |> where([it, pending: pending], is_nil(pending.block_hash))
+    |> where(
+      [it],
+      fragment("(SELECT block_hash FROM pending_block_operations WHERE block_hash = ? LIMIT 1) IS NULL", it.block_hash)
+    )
   end
 
   def internal_transactions_to_raw(internal_transactions) when is_list(internal_transactions) do
