@@ -63,6 +63,38 @@ defmodule Indexer.Helper do
   end
 
   @doc """
+    Converts a Unix timestamp to a `DateTime`.
+
+    If the given timestamp is `nil` or `0`, it returns the Unix epoch start.
+    If the conversion fails, it also returns the Unix epoch start.
+
+    ## Parameters
+    - `time_ts`: A non-negative integer representing the Unix timestamp or `nil`.
+
+    ## Returns
+    - A `DateTime` corresponding to the given Unix timestamp, or the Unix epoch start if
+      the timestamp is `nil`, `0`, or if the conversion fails.
+  """
+  @spec timestamp_to_datetime(non_neg_integer() | nil) :: DateTime.t()
+  def timestamp_to_datetime(time_ts) do
+    {_, unix_epoch_starts} = DateTime.from_unix(0)
+
+    case is_nil(time_ts) or time_ts == 0 do
+      true ->
+        unix_epoch_starts
+
+      false ->
+        case DateTime.from_unix(time_ts) do
+          {:ok, datetime} ->
+            datetime
+
+          {:error, _} ->
+            unix_epoch_starts
+        end
+    end
+  end
+
+  @doc """
   Calculates average block time in milliseconds (based on the latest 100 blocks) divided by 2.
   Sends corresponding requests to the RPC node.
   Returns a tuple {:ok, block_check_interval, last_safe_block}

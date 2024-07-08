@@ -400,32 +400,22 @@ defmodule EthereumJSONRPC.Geth do
       type when type in ~w(call callcode delegatecall staticcall create create2 selfdestruct revert stop invalid) ->
         new_trace_address = [index | trace_address]
 
-        formatted_call =
-          %{
-            "type" => if(type in ~w(call callcode delegatecall staticcall), do: "call", else: type),
-            "callType" => type,
-            "from" => from,
-            "to" => Map.get(call, "to", "0x"),
-            "createdContractAddressHash" => Map.get(call, "to", "0x"),
-            "value" => Map.get(call, "value", "0x0"),
-            "gas" => Map.get(call, "gas", "0x0"),
-            "gasUsed" => Map.get(call, "gasUsed", "0x0"),
-            "input" => Map.get(call, "input", "0x"),
-            "init" => Map.get(call, "input", "0x"),
-            "createdContractCode" => Map.get(call, "output", "0x"),
-            "traceAddress" => if(inner?, do: Enum.reverse(new_trace_address), else: []),
-            "error" => call["error"]
-          }
-          |> case do
-            %{"error" => nil} = ok_call ->
-              ok_call
-              |> Map.delete("error")
-              # to handle staticcall, all other cases handled by EthereumJSONRPC.Geth.Call.elixir_to_internal_transaction_params/1
-              |> Map.put("output", Map.get(call, "output", "0x"))
-
-            error_call ->
-              error_call
-          end
+        formatted_call = %{
+          "type" => if(type in ~w(call callcode delegatecall staticcall), do: "call", else: type),
+          "callType" => type,
+          "from" => from,
+          "to" => Map.get(call, "to", "0x"),
+          "createdContractAddressHash" => Map.get(call, "to", "0x"),
+          "value" => Map.get(call, "value", "0x0"),
+          "gas" => Map.get(call, "gas", "0x0"),
+          "gasUsed" => Map.get(call, "gasUsed", "0x0"),
+          "input" => Map.get(call, "input", "0x"),
+          "output" => Map.get(call, "output", "0x"),
+          "init" => Map.get(call, "input", "0x"),
+          "createdContractCode" => Map.get(call, "output", "0x"),
+          "traceAddress" => if(inner?, do: Enum.reverse(new_trace_address), else: []),
+          "error" => call["error"]
+        }
 
         parse_call_tracer_calls(
           Map.get(call, "calls", []),

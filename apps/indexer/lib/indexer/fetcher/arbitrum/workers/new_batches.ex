@@ -7,12 +7,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     being created and historical batches processed in the past but not yet imported
     into the database.
 
-    The process involves fetching logs for the `SequencerBatchDelivered` event
-    emitted by the Arbitrum `SequencerInbox` contract, processing these logs to
-    extract batch details, and then building the link between batches and the
-    corresponding rollup blocks and transactions. It also discovers those
-    cross-chain messages initiated in rollup blocks linked with the new batches
-    and updates the status of messages to consider them as committed (`:sent`).
+    Fetch logs for the `SequencerBatchDelivered` event emitted by the Arbitrum
+    `SequencerInbox` contract. Process the logs to extract batch details. Build the
+    link between batches and the corresponding rollup blocks and transactions. If
+    the batch data is located in Data Availability solutions like AnyTrust or
+    Celestia, fetch DA information to locate the batch data. Discover cross-chain
+    messages initiated in rollup blocks linked with the new batches and update the
+    status of messages to consider them as committed (`:sent`).
 
     For any blocks or transactions missing in the database, data is requested in
     chunks from the rollup RPC endpoint by `eth_getBlockByNumber`. Additionally,
@@ -29,10 +30,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
 
-  alias Indexer.Helper, as: IndexerHelper
+  alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
+  alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
+  alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
+  alias Explorer.Chain.Arbitrum
+  alias Explorer.Chain.Events.Publisher
 
   require Logger
 
@@ -290,24 +295,44 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # Performs the discovery of new or historical batches within a specified block range,
   # processing and importing the relevant data into the database.
   #
-  # This function retrieves SequencerBatchDelivered event logs from the specified block range
-  # and processes these logs to identify new batches and their corresponding details. It then
-  # constructs comprehensive data structures for batches, lifecycle transactions, rollup
-  # blocks, and rollup transactions. Additionally, it identifies any L2-to-L1 messages that
-  # have been committed within these batches and updates their status. All discovered and
-  # processed data are then imported into the database.
+  # This function retrieves SequencerBatchDelivered event logs from the specified block
+  # range and processes these logs to identify new batches and their corresponding details.
+  # It then constructs comprehensive data structures for batches, lifecycle transactions,
+  # rollup blocks, rollup transactions, and Data Availability related records. Additionally,
+  # it identifies any L2-to-L1 messages that have been committed within these batches and
+  # updates their status. All discovered and processed data are then imported into the
+  # database. If new batches were found, they are announced to be broadcasted through a
+  # websocket.
   #
   # ## Parameters
   # - `sequencer_inbox_address`: The SequencerInbox contract address used to filter logs.
   # - `start_block`: The starting block number for the discovery range.
   # - `end_block`: The ending block number for the discovery range.
   # - `new_batches_limit`: The maximum number of new batches to process in one iteration.
-  # - `messages_to_blocks_shift`: The value used to align message counts with rollup block numbers.
+  # - `messages_to_blocks_shift`: The value used to align message counts with rollup block
+  #   numbers.
   # - `l1_rpc_config`: RPC configuration parameters for L1.
   # - `rollup_rpc_config`: RPC configuration parameters for rollup data.
   #
   # ## Returns
   # - N/A
+  @spec do_discover(
+          binary(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            optional(any()) => any()
+          },
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            optional(any()) => any()
+          }
+        ) :: :ok
   defp do_discover(
          sequencer_inbox_address,
          start_block,
@@ -325,10 +350,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         l1_rpc_config.json_rpc_named_arguments
       )
 
+    new_batches_discovery? = end_block >= start_block
+
     logs =
-      if end_block >= start_block do
+      if new_batches_discovery? do
+        # called by `discover`
         raw_logs
       else
+        # called by `discover_historical`
         Enum.reverse(raw_logs)
       end
 
@@ -337,11 +366,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     logs
     |> Enum.chunk_every(new_batches_limit)
     |> Enum.each(fn chunked_logs ->
-      {batches, lifecycle_txs, rollup_blocks, rollup_txs, committed_txs} =
+      {batches, lifecycle_txs, rollup_blocks, rollup_txs, committed_txs, da_records} =
         handle_batches_from_logs(
           chunked_logs,
           messages_to_blocks_shift,
           l1_rpc_config,
+          sequencer_inbox_address,
           rollup_rpc_config
         )
 
@@ -352,8 +382,16 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           arbitrum_batch_blocks: %{params: rollup_blocks},
           arbitrum_batch_transactions: %{params: rollup_txs},
           arbitrum_messages: %{params: committed_txs},
+          arbitrum_da_multi_purpose_records: %{params: da_records},
           timeout: :infinity
         })
+
+      if not Enum.empty?(batches) and new_batches_discovery? do
+        Publisher.broadcast(
+          [{:new_arbitrum_batches, extend_batches_with_commitment_transactions(batches, lifecycle_txs)}],
+          :realtime
+        )
+      end
     end)
   end
 
@@ -370,6 +408,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #
   # ## Returns
   # - A list of logs for SequencerBatchDelivered events within the specified block range.
+  @spec get_logs_new_batches(non_neg_integer(), non_neg_integer(), binary(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          [%{String.t() => any()}]
   defp get_logs_new_batches(start_block, end_block, sequencer_inbox_address, json_rpc_named_arguments)
        when start_block <= end_block do
     {:ok, logs} =
@@ -394,21 +434,45 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # and retrieves their details, avoiding the reprocessing of batches already known
   # in the database. It enriches the details of new batches with data from corresponding
   # L1 transactions and blocks, including timestamps and block ranges. The function
-  # then prepares batches, associated rollup blocks and transactions, and lifecycle
-  # transactions for database import. Additionally, L2-to-L1 messages initiated in the
-  # rollup blocks associated with the discovered batches are retrieved from the database,
-  # marked as `:sent`, and prepared for database import.
+  # then prepares batches, associated rollup blocks and transactions, lifecycle
+  # transactions and Data Availability related records for database import.
+  # Additionally, L2-to-L1 messages initiated in the rollup blocks associated with the
+  # discovered batches are retrieved from the database, marked as `:sent`, and prepared
+  # for database import.
   #
   # ## Parameters
   # - `logs`: The list of SequencerBatchDelivered event logs.
   # - `msg_to_block_shift`: The shift value for mapping batch messages to block numbers.
   # - `l1_rpc_config`: The RPC configuration for L1 requests.
+  # - `sequencer_inbox_address`: The address of the SequencerInbox contract.
   # - `rollup_rpc_config`: The RPC configuration for rollup data requests.
   #
   # ## Returns
   # - A tuple containing lists of batches, lifecycle transactions, rollup blocks,
-  #   rollup transactions, and committed messages (with the status `:sent`), all
-  #   ready for database import.
+  #   rollup transactions, committed messages (with the status `:sent`), and records
+  #   with DA-related information if applicable, all ready for database import.
+  @spec handle_batches_from_logs(
+          [%{String.t() => any()}],
+          non_neg_integer(),
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            optional(any()) => any()
+          },
+          binary(),
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            optional(any()) => any()
+          }
+        ) ::
+          {[Arbitrum.L1Batch.to_import()], [Arbitrum.LifecycleTransaction.to_import()],
+           [Arbitrum.BatchBlock.to_import()], [Arbitrum.BatchTransaction.to_import()], [Arbitrum.Message.to_import()],
+           [Arbitrum.DaMultiPurposeRecord.to_import()]}
+  defp handle_batches_from_logs(logs, msg_to_block_shift, l1_rpc_config, sequencer_inbox_address, rollup_rpc_config)
+
+  defp handle_batches_from_logs([], _, _, _, _), do: {[], [], [], [], [], []}
+
   defp handle_batches_from_logs(
          logs,
          msg_to_block_shift,
@@ -416,6 +480,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
            json_rpc_named_arguments: json_rpc_named_arguments,
            chunk_size: chunk_size
          } = l1_rpc_config,
+         sequencer_inbox_address,
          rollup_rpc_config
        ) do
     existing_batches =
@@ -423,12 +488,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       |> parse_logs_to_get_batch_numbers()
       |> Db.batches_exist()
 
-    {batches, txs_requests, blocks_requests} = parse_logs_for_new_batches(logs, existing_batches)
+    {batches, txs_requests, blocks_requests, existing_commitment_txs} =
+      parse_logs_for_new_batches(logs, existing_batches)
 
     blocks_to_ts = Rpc.execute_blocks_requests_and_get_ts(blocks_requests, json_rpc_named_arguments, chunk_size)
 
-    {lifecycle_txs_wo_indices, batches_to_import} =
+    {initial_lifecycle_txs, batches_to_import, da_info} =
       execute_tx_requests_parse_txs_calldata(txs_requests, msg_to_block_shift, blocks_to_ts, batches, l1_rpc_config)
+
+    # Check if the commitment transactions for the batches which are already in the database
+    # needs to be updated in case of reorgs
+    lifecycle_txs_wo_indices =
+      initial_lifecycle_txs
+      |> Map.merge(update_lifecycle_txs_for_new_blocks(existing_commitment_txs, blocks_to_ts))
 
     {blocks_to_import, rollup_txs_to_import} = get_rollup_blocks_and_transactions(batches_to_import, rollup_rpc_config)
 
@@ -457,17 +529,30 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         ]
       end)
 
-    committed_txs =
-      blocks_to_import
-      |> Map.keys()
-      |> Enum.max()
-      |> get_committed_l2_to_l1_messages()
+    da_records =
+      DataAvailabilityInfo.prepare_for_import(da_info, %{
+        sequencer_inbox_address: sequencer_inbox_address,
+        json_rpc_named_arguments: l1_rpc_config.json_rpc_named_arguments
+      })
+
+    # It is safe to not re-mark messages as committed for the batches that are already in the database
+    committed_messages =
+      if Enum.empty?(blocks_to_import) do
+        []
+      else
+        # Without check on the empty list of keys `Enum.max()` will raise an error
+        blocks_to_import
+        |> Map.keys()
+        |> Enum.max()
+        |> get_committed_l2_to_l1_messages()
+      end
 
     {batches_list_to_import, Map.values(lifecycle_txs), Map.values(blocks_to_import), rollup_txs_to_import,
-     committed_txs}
+     committed_messages, da_records}
   end
 
   # Extracts batch numbers from logs of SequencerBatchDelivered events.
+  @spec parse_logs_to_get_batch_numbers([%{String.t() => any()}]) :: [non_neg_integer()]
   defp parse_logs_to_get_batch_numbers(logs) do
     logs
     |> Enum.map(fn event ->
@@ -481,8 +566,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # This function sifts through logs of SequencerBatchDelivered events, extracts the
   # necessary data, and assembles a map of new batch descriptions. Additionally, it
   # prepares RPC `eth_getTransactionByHash` and `eth_getBlockByNumber` requests to
-  # fetch details not present in the logs. To minimize subsequent RPC calls, only
-  # batches not previously known (i.e., absent in `existing_batches`) are processed.
+  # fetch details not present in the logs. To minimize subsequent RPC calls, requests to
+  # get the transactions details are only made for batches not previously known.
+  # For the existing batches, the function prepares a map of commitment transactions
+  # assuming that they must be updated if reorgs occur.
   #
   # ## Parameters
   # - `logs`: A list of event logs to be processed.
@@ -495,53 +582,77 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #     the L1 transactions associated with these batches.
   #   - A list of RPC requests to fetch details of the L1 blocks where these batches
   #     were included.
+  #   - A map of commitment transactions for the existing batches where the value is
+  #     the block number of the transaction.
+  @spec parse_logs_for_new_batches(
+          [%{String.t() => any()}],
+          [non_neg_integer()]
+        ) :: {
+          %{
+            non_neg_integer() => %{
+              :number => non_neg_integer(),
+              :before_acc => binary(),
+              :after_acc => binary(),
+              :tx_hash => binary()
+            }
+          },
+          [EthereumJSONRPC.Transport.request()],
+          [EthereumJSONRPC.Transport.request()],
+          %{binary() => non_neg_integer()}
+        }
   defp parse_logs_for_new_batches(logs, existing_batches) do
-    {batches, txs_requests, blocks_requests} =
+    {batches, txs_requests, blocks_requests, existing_commitment_txs} =
       logs
-      |> Enum.reduce({%{}, [], %{}}, fn event, {batches, txs_requests, blocks_requests} ->
+      |> Enum.reduce({%{}, [], %{}, %{}}, fn event, {batches, txs_requests, blocks_requests, existing_commitment_txs} ->
         {batch_num, before_acc, after_acc} = sequencer_batch_delivered_event_parse(event)
 
         tx_hash_raw = event["transactionHash"]
         tx_hash = Rpc.string_hash_to_bytes_hash(tx_hash_raw)
         blk_num = quantity_to_integer(event["blockNumber"])
 
-        if batch_num in existing_batches do
-          {batches, txs_requests, blocks_requests}
-        else
-          updated_batches =
-            Map.put(
-              batches,
-              batch_num,
-              %{
-                number: batch_num,
-                before_acc: before_acc,
-                after_acc: after_acc,
-                tx_hash: tx_hash
-              }
-            )
+        {updated_batches, updated_txs_requests, updated_existing_commitment_txs} =
+          if batch_num in existing_batches do
+            {batches, txs_requests, Map.put(existing_commitment_txs, tx_hash, blk_num)}
+          else
+            log_info("New batch #{batch_num} found in #{tx_hash_raw}")
 
-          updated_txs_requests = [
-            Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash_raw})
-            | txs_requests
-          ]
+            updated_batches =
+              Map.put(
+                batches,
+                batch_num,
+                %{
+                  number: batch_num,
+                  before_acc: before_acc,
+                  after_acc: after_acc,
+                  tx_hash: tx_hash
+                }
+              )
 
-          updated_blocks_requests =
-            Map.put(
-              blocks_requests,
-              blk_num,
-              BlockByNumber.request(%{id: 0, number: blk_num}, false, true)
-            )
+            updated_txs_requests = [
+              Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash_raw})
+              | txs_requests
+            ]
 
-          log_info("New batch #{batch_num} found in #{tx_hash_raw}")
+            {updated_batches, updated_txs_requests, existing_commitment_txs}
+          end
 
-          {updated_batches, updated_txs_requests, updated_blocks_requests}
-        end
+        # In order to have an ability to update commitment transaction for the existing batches
+        # in case of reorgs, we need to re-execute the block requests
+        updated_blocks_requests =
+          Map.put(
+            blocks_requests,
+            blk_num,
+            BlockByNumber.request(%{id: 0, number: blk_num}, false, true)
+          )
+
+        {updated_batches, updated_txs_requests, updated_blocks_requests, updated_existing_commitment_txs}
       end)
 
-    {batches, txs_requests, Map.values(blocks_requests)}
+    {batches, txs_requests, Map.values(blocks_requests), existing_commitment_txs}
   end
 
   # Parses SequencerBatchDelivered event to get batch sequence number and associated accumulators
+  @spec sequencer_batch_delivered_event_parse(%{String.t() => any()}) :: {non_neg_integer(), binary(), binary()}
   defp sequencer_batch_delivered_event_parse(event) do
     [_, batch_sequence_number, before_acc, after_acc] = event["topics"]
 
@@ -553,7 +664,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # This function processes a list of RPC `eth_getTransactionByHash` requests, extracts
   # and decodes the calldata from the transactions to obtain batch details. It updates
   # the provided batch map with block ranges for new batches and constructs a map of
-  # lifecycle transactions with their timestamps and finalization status.
+  # lifecycle transactions with their timestamps and finalization status. Additionally,
+  # it examines the data availability (DA) information for Anytrust or Celestia and
+  # constructs a list of DA info structs.
   #
   # ## Parameters
   # - `txs_requests`: The list of RPC requests to fetch transaction data.
@@ -562,15 +675,46 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # - `blocks_to_ts`: A map of block numbers to their timestamps, required to complete
   #                   data for corresponding lifecycle transactions.
   # - `batches`: The current batch data to be updated.
-  # - A configuration map containing JSON RPC arguments, a track finalization flag,
-  #   and a chunk size for batch processing.
+  # - A configuration map containing:
+  #   - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #   - `track_finalization`: A boolean flag indicating if finalization tracking is needed.
+  #   - `chunk_size`: The size of chunks for batch processing.
   #
   # ## Returns
   # - A tuple containing:
-  #   - A map of lifecycle (L1) transactions, which are not yet compatible with
-  #     database import and require further processing.
-  #   - An updated map of batch descriptions, also requiring further processing
-  #     before database import.
+  #   - A map of lifecycle (L1) transactions, including their hashes, block numbers,
+  #     timestamps, and statuses (finalized or unfinalized).
+  #   - An updated map of batch descriptions with block ranges and data availability
+  #     information.
+  #   - A list of data availability information structs for Anytrust or Celestia.
+  @spec execute_tx_requests_parse_txs_calldata(
+          [EthereumJSONRPC.Transport.request()],
+          non_neg_integer(),
+          %{EthereumJSONRPC.block_number() => DateTime.t()},
+          %{non_neg_integer() => map()},
+          %{
+            :chunk_size => non_neg_integer(),
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :track_finalization => boolean(),
+            optional(any()) => any()
+          }
+        ) ::
+          {%{
+             binary() => %{
+               :hash => binary(),
+               :block_number => non_neg_integer(),
+               :timestamp => DateTime.t(),
+               :status => :unfinalized | :finalized
+             }
+           },
+           %{
+             non_neg_integer() => %{
+               :start_block => non_neg_integer(),
+               :end_block => non_neg_integer(),
+               :data_available => atom() | nil,
+               optional(any()) => any()
+             }
+           }, [Anytrust.t() | Celestia.t()]}
   defp execute_tx_requests_parse_txs_calldata(txs_requests, msg_to_block_shift, blocks_to_ts, batches, %{
          json_rpc_named_arguments: json_rpc_named_arguments,
          track_finalization: track_finalization?,
@@ -578,19 +722,25 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
        }) do
     txs_requests
     |> Enum.chunk_every(chunk_size)
-    |> Enum.reduce({%{}, batches}, fn chunk, {l1_txs, updated_batches} ->
+    |> Enum.reduce({%{}, batches, []}, fn chunk, {l1_txs, updated_batches, da_info} ->
       chunk
       # each eth_getTransactionByHash will take time since it returns entire batch
       # in `input` which is heavy because contains dozens of rollup blocks
       |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
-      |> Enum.reduce({l1_txs, updated_batches}, fn resp, {txs_map, batches_map} ->
+      |> Enum.reduce({l1_txs, updated_batches, da_info}, fn resp, {txs_map, batches_map, da_info_list} ->
         block_num = quantity_to_integer(resp["blockNumber"])
         tx_hash = Rpc.string_hash_to_bytes_hash(resp["hash"])
 
         # Although they are called messages in the functions' ABI, in fact they are
         # rollup blocks
-        {batch_num, prev_message_count, new_message_count} =
+        {batch_num, prev_message_count, new_message_count, extra_data} =
           add_sequencer_l2_batch_from_origin_calldata_parse(resp["input"])
+
+        {da_type, da_data} =
+          case DataAvailabilityInfo.examine_batch_accompanying_data(batch_num, extra_data) do
+            {:ok, t, d} -> {t, d}
+            {:error, _, _} -> {nil, nil}
+          end
 
         # In some cases extracted numbers for messages does not linked directly
         # with rollup blocks, for this, the numbers are shifted by a value specific
@@ -601,7 +751,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             batch_num,
             Map.merge(batches_map[batch_num], %{
               start_block: prev_message_count + msg_to_block_shift,
-              end_block: new_message_count + msg_to_block_shift - 1
+              end_block: new_message_count + msg_to_block_shift - 1,
+              batch_container: da_type
             })
           )
 
@@ -618,18 +769,28 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               end
           })
 
-        {updated_txs_map, updated_batches_map}
+        # credo:disable-for-lines:6 Credo.Check.Refactor.Nesting
+        updated_da_info_list =
+          if DataAvailabilityInfo.required_import?(da_type) do
+            [da_data | da_info_list]
+          else
+            da_info_list
+          end
+
+        {updated_txs_map, updated_batches_map, updated_da_info_list}
       end)
     end)
   end
 
   # Parses calldata of `addSequencerL2BatchFromOrigin` or `addSequencerL2BatchFromBlobs`
   # functions to extract batch information.
+  @spec add_sequencer_l2_batch_from_origin_calldata_parse(binary()) ::
+          {non_neg_integer(), non_neg_integer(), non_neg_integer(), binary() | nil}
   defp add_sequencer_l2_batch_from_origin_calldata_parse(calldata) do
     case calldata do
       "0x8f111f3c" <> encoded_params ->
         # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
-        [sequence_number, _data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
+        [sequence_number, data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
           TypeDecoder.decode(
             Base.decode16!(encoded_params, case: :lower),
             %FunctionSelector{
@@ -645,7 +806,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             }
           )
 
-        {sequence_number, prev_message_count, new_message_count}
+        {sequence_number, prev_message_count, new_message_count, data}
 
       "0x3e5aa082" <> encoded_params ->
         # addSequencerL2BatchFromBlobs(uint256 sequenceNumber, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
@@ -664,8 +825,53 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             }
           )
 
-        {sequence_number, prev_message_count, new_message_count}
+        {sequence_number, prev_message_count, new_message_count, nil}
     end
+  end
+
+  # Updates lifecycle transactions for new blocks by setting the block number and
+  # timestamp for each transaction.
+  #
+  # The function checks if a transaction's block number and timestamp match the
+  # new values. If they do not, the transaction is updated with the new block
+  # number and timestamp.
+  #
+  # Parameters:
+  # - `existing_commitment_txs`: A map where keys are transaction hashes and
+  #   values are block numbers.
+  # - `block_to_ts`: A map where keys are block numbers and values are timestamps.
+  #
+  # Returns:
+  # - A map where keys are transaction hashes and values are updated lifecycle
+  #   transactions with the block number and timestamp set, compatible with the
+  #   database import operation.
+  @spec update_lifecycle_txs_for_new_blocks(%{binary() => non_neg_integer()}, %{non_neg_integer() => non_neg_integer()}) ::
+          %{binary() => Arbitrum.LifecycleTransaction.to_import()}
+  defp update_lifecycle_txs_for_new_blocks(existing_commitment_txs, block_to_ts) do
+    existing_commitment_txs
+    |> Map.keys()
+    |> Db.lifecycle_transactions()
+    |> Enum.reduce(%{}, fn tx, txs ->
+      block_num = existing_commitment_txs[tx.hash]
+      ts = block_to_ts[block_num]
+
+      if tx.block_number == block_num and DateTime.compare(tx.timestamp, ts) == :eq do
+        txs
+      else
+        log_info(
+          "The commitment transaction 0x#{tx.hash |> Base.encode16(case: :lower)} will be updated with the new block number and timestamp"
+        )
+
+        Map.put(
+          txs,
+          tx.hash,
+          Map.merge(tx, %{
+            block_number: block_num,
+            timestamp: ts
+          })
+        )
+      end
+    end)
   end
 
   # Retrieves rollup blocks and transactions for a list of batches.
@@ -681,8 +887,24 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #
   # ## Returns
   # - A tuple containing:
-  #   - A map of rollup blocks, ready for database import.
+  #   - A map of rollup blocks, where each block is ready for database import.
   #   - A list of rollup transactions, ready for database import.
+  @spec get_rollup_blocks_and_transactions(
+          %{
+            non_neg_integer() => %{
+              :number => non_neg_integer(),
+              :start_block => non_neg_integer(),
+              :end_block => non_neg_integer(),
+              optional(any()) => any()
+            }
+          },
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            optional(any()) => any()
+          }
+        ) ::
+          {%{non_neg_integer() => Arbitrum.BatchBlock.to_import()}, [Arbitrum.BatchTransaction.to_import()]}
   defp get_rollup_blocks_and_transactions(
          batches,
          rollup_rpc_config
@@ -690,31 +912,36 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     blocks_to_batches = unwrap_rollup_block_ranges(batches)
 
     required_blocks_numbers = Map.keys(blocks_to_batches)
-    log_debug("Identified #{length(required_blocks_numbers)} rollup blocks")
 
-    {blocks_to_import_map, txs_to_import_list} =
-      get_rollup_blocks_and_txs_from_db(required_blocks_numbers, blocks_to_batches)
+    if required_blocks_numbers == [] do
+      {%{}, []}
+    else
+      log_debug("Identified #{length(required_blocks_numbers)} rollup blocks")
 
-    # While it's not entirely aligned with data integrity principles to recover
-    # rollup blocks and transactions from RPC that are not yet indexed, it's
-    # a practical compromise to facilitate the progress of batch discovery. Given
-    # the potential high frequency of new batch appearances and the substantial
-    # volume of blocks and transactions, prioritizing discovery process advancement
-    # is deemed reasonable.
-    {blocks_to_import, txs_to_import} =
-      recover_data_if_necessary(
-        blocks_to_import_map,
-        txs_to_import_list,
-        required_blocks_numbers,
-        blocks_to_batches,
-        rollup_rpc_config
+      {blocks_to_import_map, txs_to_import_list} =
+        get_rollup_blocks_and_txs_from_db(required_blocks_numbers, blocks_to_batches)
+
+      # While it's not entirely aligned with data integrity principles to recover
+      # rollup blocks and transactions from RPC that are not yet indexed, it's
+      # a practical compromise to facilitate the progress of batch discovery. Given
+      # the potential high frequency of new batch appearances and the substantial
+      # volume of blocks and transactions, prioritizing discovery process advancement
+      # is deemed reasonable.
+      {blocks_to_import, txs_to_import} =
+        recover_data_if_necessary(
+          blocks_to_import_map,
+          txs_to_import_list,
+          required_blocks_numbers,
+          blocks_to_batches,
+          rollup_rpc_config
+        )
+
+      log_info(
+        "Found #{length(Map.keys(blocks_to_import))} rollup blocks and #{length(txs_to_import)} rollup transactions in DB"
       )
 
-    log_info(
-      "Found #{length(Map.keys(blocks_to_import))} rollup blocks and #{length(txs_to_import)} rollup transactions in DB"
-    )
-
-    {blocks_to_import, txs_to_import}
+      {blocks_to_import, txs_to_import}
+    end
   end
 
   # Unwraps rollup block ranges from batch data to create a block-to-batch number map.
@@ -726,6 +953,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # ## Returns
   # - A map where each key is a rollup block number and its value is the
   #   corresponding batch number.
+  @spec unwrap_rollup_block_ranges(%{
+          non_neg_integer() => %{
+            :start_block => non_neg_integer(),
+            :end_block => non_neg_integer(),
+            :number => non_neg_integer(),
+            optional(any()) => any()
+          }
+        }) :: %{non_neg_integer() => non_neg_integer()}
   defp unwrap_rollup_block_ranges(batches) do
     batches
     |> Map.values()
@@ -798,6 +1033,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # ## Returns
   # - A tuple containing the updated map of rollup blocks and the updated list of
   #   transactions, both are ready for database import.
+  @spec recover_data_if_necessary(
+          %{non_neg_integer() => Arbitrum.BatchBlock.to_import()},
+          [Arbitrum.BatchTransaction.to_import()],
+          [non_neg_integer()],
+          %{non_neg_integer() => non_neg_integer()},
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            optional(any()) => any()
+          }
+        ) ::
+          {%{non_neg_integer() => Arbitrum.BatchBlock.to_import()}, [Arbitrum.BatchTransaction.to_import()]}
   defp recover_data_if_necessary(
          current_rollup_blocks,
          current_rollup_txs,
@@ -853,6 +1100,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #   - A list of transactions, each associated with its respective rollup block
   #     and batch number, ready for database import.
   #   - The updated counter of processed chunks (usually ignored).
+  @spec recover_rollup_blocks_and_txs_from_rpc(
+          [non_neg_integer()],
+          [non_neg_integer()],
+          %{non_neg_integer() => non_neg_integer()},
+          %{
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :chunk_size => non_neg_integer(),
+            optional(any()) => any()
+          }
+        ) ::
+          {%{non_neg_integer() => Arbitrum.BatchBlock.to_import()}, [Arbitrum.BatchTransaction.to_import()],
+           non_neg_integer()}
   defp recover_rollup_blocks_and_txs_from_rpc(
          required_blocks_numbers,
          found_blocks_numbers,
@@ -919,6 +1178,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #     for database import.
   #   - An updated list of transactions, each associated with its respective rollup
   #     block and batch number, ready for database import.
+  @spec prepare_rollup_block_map_and_transactions_list(
+          [%{id: non_neg_integer(), result: %{String.t() => any()}}],
+          %{non_neg_integer() => Arbitrum.BatchBlock.to_import()},
+          [Arbitrum.BatchTransaction.to_import()]
+        ) :: {%{non_neg_integer() => Arbitrum.BatchBlock.to_import()}, [Arbitrum.BatchTransaction.to_import()]}
   defp prepare_rollup_block_map_and_transactions_list(json_responses, rollup_blocks, rollup_txs) do
     json_responses
     |> Enum.reduce({rollup_blocks, rollup_txs}, fn resp, {blocks_map, txs_list} ->
@@ -965,11 +1229,30 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   end
 
   # Retrieves initiated L2-to-L1 messages up to specified block number and marks them as 'sent'.
+  @spec get_committed_l2_to_l1_messages(non_neg_integer()) :: [Arbitrum.Message.to_import()]
   defp get_committed_l2_to_l1_messages(block_number) do
     block_number
     |> Db.initiated_l2_to_l1_messages()
     |> Enum.map(fn tx ->
       Map.put(tx, :status, :sent)
+    end)
+  end
+
+  # Extends the provided list of batches with their corresponding commitment transactions.
+  @spec extend_batches_with_commitment_transactions(
+          [%{:commitment_id => non_neg_integer(), optional(any()) => any()}],
+          [%{:id => non_neg_integer(), optional(any()) => any()}]
+        ) :: [
+          %{
+            :commitment_id => non_neg_integer(),
+            :commitment_transaction => %{:id => non_neg_integer(), optional(any()) => any()},
+            optional(any()) => any()
+          }
+        ]
+  defp extend_batches_with_commitment_transactions(batches, lifecycle_txs) do
+    Enum.map(batches, fn batch ->
+      lifecycle_tx = Enum.find(lifecycle_txs, fn tx -> tx.id == batch.commitment_id end)
+      Map.put(batch, :commitment_transaction, lifecycle_tx)
     end)
   end
 end

@@ -61,7 +61,8 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.Arbitrum.L1Executions,
       Runner.Arbitrum.L1Batches,
       Runner.Arbitrum.BatchBlocks,
-      Runner.Arbitrum.BatchTransactions
+      Runner.Arbitrum.BatchTransactions,
+      Runner.Arbitrum.DaMultiPurposeRecords
     ],
     celo: [
       Runner.Celo.ValidatorGroupVotes,
