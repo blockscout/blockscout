@@ -457,6 +457,21 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
+    Retrieves a batch by its number.
+
+    ## Parameters
+    - `number`: The number of a rollup batch.
+
+    ## Returns
+    - An instance of `Explorer.Chain.Arbitrum.L1Batch`, or `nil` if no batch with
+      such a number is found.
+  """
+  @spec get_batch_by_number(non_neg_integer()) :: Arbitrum.L1Batch.t() | nil
+  def get_batch_by_number(number) do
+    Reader.get_batch_by_number(number)
+  end
+
+  @doc """
     Retrieves rollup blocks within a specified block range that have not yet been confirmed.
 
     ## Parameters
