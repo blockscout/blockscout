@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Celo.Helper do
 
   defguard is_epoch_block_number(block_number)
            when is_integer(block_number) and
-                  block_number >= 0 and
+                  block_number > 0 and
                   rem(block_number, @blocks_per_epoch) == 0
 
   defguard is_core_contract_atom(atom)
