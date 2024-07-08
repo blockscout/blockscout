@@ -38,13 +38,13 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
 
   describe "/stats/charts/market" do
     setup do
-      configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
-      Application.put_env(:explorer, Explorer.ExchangeRates, enabled: false)
+      configuration = Application.get_env(:explorer, Explorer.Market.MarketHistoryCache)
+      Application.put_env(:explorer, Explorer.Market.MarketHistoryCache, cache_period: 0)
 
       :ok
 
       on_exit(fn ->
-        Application.put_env(:explorer, Explorer.ExchangeRates, configuration)
+        Application.put_env(:explorer, Explorer.Market.MarketHistoryCache, configuration)
       end)
     end
 
