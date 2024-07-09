@@ -200,6 +200,8 @@ config :ethereum_jsonrpc, EthereumJSONRPC.PendingTransaction,
 config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   wait_per_timeout: ConfigHelper.parse_time_env_var("ETHEREUM_JSONRPC_WAIT_PER_TIMEOUT", "20s")
 
+config :ethereum_jsonrpc, EthereumJSONRPC.Utility.EndpointAvailabilityChecker, enabled: true
+
 ################
 ### Explorer ###
 ################
