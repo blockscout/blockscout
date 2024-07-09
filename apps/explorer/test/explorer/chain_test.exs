@@ -2221,6 +2221,12 @@ defmodule Explorer.ChainTest do
   end
 
   describe "transaction_estimated_count/1" do
+    setup do
+      Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Transaction.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Transaction.child_id())
+      :ok
+    end
+
     test "returns integer" do
       assert is_integer(TransactionCache.estimated_count())
     end
