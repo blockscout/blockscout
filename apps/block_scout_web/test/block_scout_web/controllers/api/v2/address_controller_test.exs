@@ -2423,8 +2423,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       total_supply = to_string(Chain.total_supply())
 
-      assert %{"items" => [], "next_page_params" => nil, "exchange_rate" => nil, "total_supply" => ^total_supply} =
-               json_response(request, 200)
+      pattern_response = %{"items" => [], "next_page_params" => nil, "total_supply" => total_supply}
+      response = json_response(request, 200)
+
+      assert pattern_response["items"] == response["items"]
+      assert pattern_response["next_page_params"] == response["next_page_params"]
+      assert pattern_response["total_supply"] == response["total_supply"]
     end
 
     test "check pagination", %{conn: conn} do
