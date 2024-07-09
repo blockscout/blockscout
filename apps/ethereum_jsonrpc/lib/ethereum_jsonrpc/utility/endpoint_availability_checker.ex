@@ -16,7 +16,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   end
 
   def init(_) do
-    if Application.get_env(:explorer, __MODULE__)[:enabled] do
+    if Application.get_env(:ethereum_jsonrpc, __MODULE__)[:enabled] do
       schedule_next_check()
 
       {:ok, %{unavailable_endpoints_arguments: []}}
