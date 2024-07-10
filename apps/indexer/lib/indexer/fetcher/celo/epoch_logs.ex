@@ -56,17 +56,27 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
       |> Enum.reverse()
       |> Enum.concat()
 
-    with {:ok, responses} <-
-           IndexerHelper.repeated_batch_rpc_call(
-             requests,
-             json_rpc_named_arguments,
-             fn message -> "Could not fetch epoch logs: #{message}" end,
-             @max_request_retries
-           ),
+    with {:ok, responses} <- do_requests(requests, json_rpc_named_arguments),
          {:ok, logs} <- Logs.from_responses(responses) do
       logs
       |> Enum.filter(&(&1.transaction_hash == &1.block_hash))
       |> Enum.map(&Map.put(&1, :transaction_hash, nil))
+    end
+  end
+
+  # Workaround in order to fix block fetcher tests.
+  #
+  # If the requests is empty, we still send the requests to the JSON RPC
+  defp do_requests(requests, json_rpc_named_arguments) do
+    if Enum.empty?(requests) do
+      {:ok, []}
+    else
+      IndexerHelper.repeated_batch_rpc_call(
+        requests,
+        json_rpc_named_arguments,
+        fn message -> "Could not fetch epoch logs: #{message}" end,
+        @max_request_retries
+      )
     end
   end
 
