@@ -392,15 +392,6 @@ defmodule Indexer.Block.FetcherTest do
                  }
                ]}
             end)
-            |> (fn mox ->
-                  if Application.get_env(:explorer, :chain_type) == :celo do
-                    expect(mox, :json_rpc, fn [], _options ->
-                      {:ok, []}
-                    end)
-                  else
-                    mox
-                  end
-                end).()
             |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
               {:ok, [%{id: id, result: []}]}
             end)
@@ -692,13 +683,8 @@ defmodule Indexer.Block.FetcherTest do
       block_number = 7_374_455
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        n = unless Application.get_env(:explorer, :chain_type) == :celo, do: 2, else: 3
-
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, n, fn
-          [], [] ->
-            {:ok, []}
-
+        |> expect(:json_rpc, 2, fn
           requests, _options ->
             {:ok,
              Enum.map(requests, fn
@@ -946,15 +932,6 @@ defmodule Indexer.Block.FetcherTest do
                    }
                  ]}
               end)
-              |> (fn mox ->
-                    if Application.get_env(:explorer, :chain_type) == :celo do
-                      expect(mox, :json_rpc, fn [], _options ->
-                        {:ok, []}
-                      end)
-                    else
-                      mox
-                    end
-                  end).()
               |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
                 {:ok, [%{id: id, result: []}]}
               end)
