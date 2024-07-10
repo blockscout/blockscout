@@ -1,11 +1,19 @@
 defmodule BlockScoutWeb.API.V2.TokenControllerTest do
+  use EthereumJSONRPC.Case, async: false
   use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ChannelCase, async: false
 
-  alias Explorer.Repo
+  import Mox
+
+  alias BlockScoutWeb.Notifier
+
+  alias Explorer.{Repo, TestHelper}
 
   alias Explorer.Chain.{Address, Token, Token.Instance, TokenTransfer}
-
   alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Explorer.Chain.Events.Subscriber
+
+  alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
 
   describe "/tokens/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -86,7 +94,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         )
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/counters")
+      assert json_response(request, 200)
 
+      Process.sleep(500)
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/counters")
       assert response = json_response(request, 200)
 
       assert response["transfers_count"] == "3"
@@ -532,6 +543,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         tokens_ordered_by_holders_asc
       )
 
+      :timer.sleep(200)
+
       # by circulating_market_cap
       tokens_ordered_by_circulating_market_cap =
         Enum.sort(tokens, &(&1.circulating_market_cap <= &2.circulating_market_cap))
@@ -634,9 +647,15 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token, type: "ERC-1155")
         end
 
+      erc_404_tokens =
+        for _i <- 0..50 do
+          insert(:token, type: "ERC-404")
+        end
+
       check_tokens_pagination(erc_20_tokens, conn, %{"type" => "ERC-20"})
       check_tokens_pagination(erc_721_tokens |> Enum.reverse(), conn, %{"type" => "ERC-721"})
       check_tokens_pagination(erc_1155_tokens |> Enum.reverse(), conn, %{"type" => "ERC-1155"})
+      check_tokens_pagination(erc_404_tokens |> Enum.reverse(), conn, %{"type" => "ERC-404"})
     end
 
     test "tokens are filtered by multiple type", %{conn: conn} do
@@ -655,6 +674,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token, type: "ERC-1155")
         end
 
+      erc_404_tokens =
+        for _i <- 0..24 do
+          insert(:token, type: "ERC-404")
+        end
+
       check_tokens_pagination(
         erc_721_tokens |> Kernel.++(erc_1155_tokens) |> Enum.reverse(),
         conn,
@@ -668,6 +692,14 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         conn,
         %{
           "type" => "[erc-20,ERC-1155]"
+        }
+      )
+
+      check_tokens_pagination(
+        erc_404_tokens |> Enum.reverse() |> Kernel.++(erc_20_tokens),
+        conn,
+        %{
+          "type" => "[erc-20,ERC-404]"
         }
       )
     end
@@ -1001,7 +1033,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       instance = insert(:token_instance, token_id: 0, token_contract_address_hash: token.contract_address_hash)
 
-      transfer =
+      _transfer =
         insert(:token_transfer,
           token_contract_address: token.contract_address,
           transaction: transaction,
@@ -1037,6 +1069,26 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
                "metadata" => nil,
                "owner" => nil,
                "token" => %{"address" => ^token_address, "name" => ^token_name, "type" => ^token_type}
+             } = json_response(request, 200)
+    end
+
+    # https://github.com/blockscout/blockscout/issues/9906
+    test "regression for #9906", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_id: 0,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{
+          "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
+        }
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
+
+      assert %{
+               "image_url" =>
+                 "https://ipfs.io/ipfs/QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
              } = json_response(request, 200)
     end
   end
@@ -1101,6 +1153,68 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
             transaction: transaction,
             token_ids: [id],
             token_type: "ERC-1155"
+          )
+        end
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/#{id}/transfers")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/tokens/#{token.contract_address_hash}/instances/#{id}/transfers",
+          response["next_page_params"]
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+      check_paginated_response(response, response_2nd_page, transfers_0 ++ transfers_1)
+    end
+
+    test "check that pagination works for 404 tokens", %{conn: conn} do
+      token = insert(:token, type: "ERC-404")
+
+      for _ <- 0..50 do
+        insert(:token_instance, token_id: 0)
+      end
+
+      id = :rand.uniform(1_000_000)
+
+      transaction =
+        :transaction
+        |> insert(input: "0xabcd010203040506")
+        |> with_block()
+
+      insert(:token_instance, token_id: id, token_contract_address_hash: token.contract_address_hash)
+
+      insert_list(100, :token_transfer,
+        token_contract_address: token.contract_address,
+        transaction: transaction,
+        token_ids: [id + 1],
+        token_type: "ERC-404",
+        amounts: [1]
+      )
+
+      transfers_0 =
+        insert_list(26, :token_transfer,
+          token_contract_address: token.contract_address,
+          transaction: transaction,
+          token_ids: [id, id + 1],
+          token_type: "ERC-404",
+          amounts: [1, 2]
+        )
+
+      transfers_1 =
+        for _ <- 26..50 do
+          transaction =
+            :transaction
+            |> insert(input: "0xabcd010203040506")
+            |> with_block()
+
+          insert(:token_transfer,
+            token_contract_address: token.contract_address,
+            transaction: transaction,
+            token_ids: [id],
+            token_type: "ERC-404"
           )
         end
 
@@ -1334,6 +1448,109 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0/transfers-count")
 
       assert %{"transfers_count" => ^count} = json_response(request, 200)
+    end
+  end
+
+  describe "/tokens/{address_hash}/instances/{token_id}/refetch-metadata" do
+    setup :set_mox_from_context
+
+    setup :verify_on_exit!
+
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
+      start_supervised!(
+        {TokenInstanceMetadataRefetchOnDemand,
+         [mocked_json_rpc_named_arguments, [name: TokenInstanceMetadataRefetchOnDemand]]}
+      )
+
+      %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
+
+      Subscriber.to(:fetched_token_instance_metadata, :on_demand)
+
+      :ok
+    end
+
+    test "token instance metadata on-demand re-fetcher is called", %{conn: conn} do
+      BlockScoutWeb.TestCaptchaHelper
+      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+
+      token = insert(:token, type: "ERC-721")
+      token_id = 1
+
+      insert(:token_instance,
+        token_id: token_id,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{}
+      )
+
+      metadata = %{"name" => "Super Token"}
+      url = "http://metadata.endpoint.com"
+      token_contract_address_hash_string = to_string(token.contract_address_hash)
+
+      TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn ^url, _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
+      end)
+
+      topic = "token_instances:#{token_contract_address_hash_string}"
+
+      {:ok, _reply, _socket} =
+        BlockScoutWeb.UserSocketV2
+        |> socket("no_id", %{})
+        |> subscribe_and_join(topic)
+
+      request =
+        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
+          "recaptcha_response" => "123"
+        })
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      :timer.sleep(100)
+
+      assert_receive(
+        {:chain_event, :fetched_token_instance_metadata, :on_demand,
+         [^token_contract_address_hash_string, ^token_id, ^metadata]}
+      )
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       event: "fetched_token_instance_metadata",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      token_instance_from_db =
+        Repo.get_by(Instance, token_id: token_id, token_contract_address_hash: token.contract_address_hash)
+
+      assert(token_instance_from_db)
+      assert token_instance_from_db.metadata == metadata
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
+    end
+
+    test "don't fetch token instance metadata for non-existent token instance", %{conn: conn} do
+      BlockScoutWeb.TestCaptchaHelper
+      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+
+      token = insert(:token, type: "ERC-721")
+      token_id = 0
+
+      insert(:token_instance, token_id: token_id, token_contract_address_hash: token.contract_address_hash)
+
+      request =
+        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/1/refetch-metadata", %{
+          "recaptcha_response" => "123"
+        })
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
   end
 

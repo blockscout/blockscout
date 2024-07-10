@@ -83,7 +83,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
           "sourceFiles" => sources,
           "compilerSettings" => compiler_settings_string,
           "matchType" => match_type
-        },
+        } = source,
         address_hash,
         initial_params,
         save_file_path?,
@@ -111,21 +111,59 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       |> Map.put("evm_version", compiler_settings["evmVersion"])
       |> Map.put("partially_verified", match_type == "PARTIAL")
       |> Map.put("verified_via_eth_bytecode_db", automatically_verified?)
+      |> Map.put("verified_via_verifier_alliance", source["verifier_alliance?"])
       |> Map.put(
         "optimization",
         if(is_nil(compiler_settings["optimize"]), do: true, else: compiler_settings["optimize"])
       )
       |> Map.put("compiler_settings", if(standard_json?, do: compiler_settings))
       |> Map.put("license_type", initial_params["license_type"])
+      |> Map.put("is_blueprint", source["isBlueprint"])
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
   end
 
   def publish_smart_contract(address_hash, params, abi) do
-    Logger.info("Publish successfully verified Vyper smart-contract #{address_hash} into the DB")
     attrs = address_hash |> attributes(params, abi)
 
-    SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    create_or_update_smart_contract(address_hash, attrs)
+  end
+
+  @doc """
+    Creates or updates a smart contract record based on its verification status.
+
+    This function first checks if a smart contract associated with the provided address hash
+    is already verified. If verified, it updates the existing smart contract record with the
+    new attributes provided, such as external libraries and secondary sources. During the update,
+    the contract methods are also updated: existing methods are preserved, and any new methods
+    from the provided ABI are added to ensure the contract's integrity and completeness.
+
+    If the smart contract is not verified, it creates a new record in the database with the
+    provided attributes, setting it up for verification. In this case, all contract methods
+    from the ABI are freshly inserted as part of the new smart contract creation.
+
+    ## Parameters
+    - `address_hash`: The hash of the address for the smart contract.
+    - `attrs`: A map containing attributes such as external libraries and secondary sources.
+
+    ## Returns
+    - `{:ok, Explorer.Chain.SmartContract.t()}`: Successfully created or updated smart
+      contract.
+    - `{:error, data}`: on failure, returning `Ecto.Changeset.t()` or, if any issues
+      happen during setting the address as verified, an error message.
+  """
+  @spec create_or_update_smart_contract(binary() | Explorer.Chain.Hash.t(), %{
+          :secondary_sources => list(),
+          optional(any()) => any()
+        }) :: {:error, Ecto.Changeset.t() | String.t()} | {:ok, Explorer.Chain.SmartContract.t()}
+  def create_or_update_smart_contract(address_hash, attrs) do
+    Logger.info("Publish successfully verified Vyper smart-contract #{address_hash} into the DB")
+
+    if SmartContract.verified?(address_hash) do
+      SmartContract.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    else
+      SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    end
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do
@@ -149,12 +187,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     constructor_arguments = params["constructor_arguments"]
     compiler_settings = params["compiler_settings"]
 
-    clean_constructor_arguments =
-      if constructor_arguments != nil && constructor_arguments != "" do
-        constructor_arguments
-      else
-        nil
-      end
+    clean_constructor_arguments = clear_constructor_arguments(constructor_arguments)
 
     clean_compiler_settings =
       if compiler_settings in ["", nil, %{}] do
@@ -180,12 +213,22 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       secondary_sources: params["secondary_sources"],
       abi: abi,
       verified_via_sourcify: false,
+      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
+      verified_via_verifier_alliance: params["verified_via_verifier_alliance"] || false,
       partially_verified: params["partially_verified"] || false,
       is_vyper_contract: true,
       file_path: params["file_path"],
-      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
       compiler_settings: clean_compiler_settings,
-      license_type: prepare_license_type(params["license_type"]) || :none
+      license_type: prepare_license_type(params["license_type"]) || :none,
+      is_blueprint: params["is_blueprint"] || false
     }
+  end
+
+  defp clear_constructor_arguments(constructor_arguments) do
+    if constructor_arguments != nil && constructor_arguments != "" do
+      constructor_arguments
+    else
+      nil
+    end
   end
 end

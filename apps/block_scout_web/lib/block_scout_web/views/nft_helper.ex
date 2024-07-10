@@ -54,6 +54,7 @@ defmodule BlockScoutWeb.NFTHelper do
 
   def retrieve_image(image_url) do
     image_url
+    |> URI.decode()
     |> URI.encode()
     |> compose_ipfs_url()
   end
@@ -80,7 +81,7 @@ defmodule BlockScoutWeb.NFTHelper do
   end
 
   defp ipfs_link(image_url, prefix) do
-    ipfs_uid = String.slice(image_url, String.length(prefix)..-1)
+    ipfs_uid = String.slice(image_url, String.length(prefix)..-1//1)
 
     "https://ipfs.io/ipfs/" <> ipfs_uid
   end

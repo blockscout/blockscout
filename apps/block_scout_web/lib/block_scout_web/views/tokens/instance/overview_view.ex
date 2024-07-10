@@ -1,9 +1,9 @@
 defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.{CurrencyHelper, NFTHelper}
+  alias BlockScoutWeb.NFTHelper
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, SmartContract, Token}
+  alias Explorer.Chain.{Address, CurrencyHelper, SmartContract, Token}
   alias Explorer.SmartContract.Helper
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]

@@ -1,22 +1,22 @@
 defmodule BlockScoutWeb.API.V2.ConfigControllerTest do
   use BlockScoutWeb.ConnCase
 
-  describe "/config/json-rpc-url" do
+  describe "/config/backend-version" do
     test "get json rps url if set", %{conn: conn} do
-      url = "http://rps.url:1234/v1"
-      Application.put_env(:block_scout_web, :json_rpc, url)
+      version = "v6.3.0-beta"
+      Application.put_env(:block_scout_web, :version, version)
 
-      request = get(conn, "/api/v2/config/json-rpc-url")
+      request = get(conn, "/api/v2/config/backend-version")
 
-      assert %{"json_rpc_url" => ^url} = json_response(request, 200)
+      assert %{"backend_version" => ^version} = json_response(request, 200)
     end
 
-    test "get empty json rps url if not set", %{conn: conn} do
-      Application.put_env(:block_scout_web, :json_rpc, nil)
+    test "get nil backend version if not set", %{conn: conn} do
+      Application.put_env(:block_scout_web, :version, nil)
 
-      request = get(conn, "/api/v2/config/json-rpc-url")
+      request = get(conn, "/api/v2/config/backend-version")
 
-      assert %{"json_rpc_url" => nil} = json_response(request, 200)
+      assert %{"backend_version" => nil} = json_response(request, 200)
     end
   end
 end

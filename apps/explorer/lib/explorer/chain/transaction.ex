@@ -1,5 +1,10 @@
 defmodule Explorer.Chain.Transaction.Schema do
-  @moduledoc false
+  @moduledoc """
+    Models transactions.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Transactions
+  """
 
   alias Explorer.Chain.{
     Address,
@@ -14,11 +19,15 @@ defmodule Explorer.Chain.Transaction.Schema do
     Wei
   }
 
-  alias Explorer.Chain.PolygonZkevm.BatchTransaction
+  alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
+  alias Explorer.Chain.Arbitrum.BatchTransaction, as: ArbitrumBatchTransaction
+  alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
+  alias Explorer.Chain.PolygonZkevm.BatchTransaction, as: ZkevmBatchTransaction
   alias Explorer.Chain.Transaction.{Fork, Status}
+  alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
-                        "ethereum" ->
+                        :ethereum ->
                           # elem(quote do ... end, 2) doesn't work with a single has_one instruction
                           quote do
                             [
@@ -26,7 +35,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                             ]
                           end
 
-                        "optimism" ->
+                        :optimism ->
                           elem(
                             quote do
                               field(:l1_fee, Wei)
@@ -39,7 +48,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                             2
                           )
 
-                        "suave" ->
+                        :suave ->
                           elem(
                             quote do
                               belongs_to(
@@ -74,10 +83,14 @@ defmodule Explorer.Chain.Transaction.Schema do
                             2
                           )
 
-                        "polygon_zkevm" ->
+                        :polygon_zkevm ->
                           elem(
                             quote do
-                              has_one(:zkevm_batch_transaction, BatchTransaction, foreign_key: :hash, references: :hash)
+                              has_one(:zkevm_batch_transaction, ZkevmBatchTransaction,
+                                foreign_key: :hash,
+                                references: :hash
+                              )
+
                               has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch], references: :hash)
 
                               has_one(:zkevm_sequence_transaction,
@@ -87,6 +100,60 @@ defmodule Explorer.Chain.Transaction.Schema do
 
                               has_one(:zkevm_verify_transaction,
                                 through: [:zkevm_batch, :verify_transaction],
+                                references: :hash
+                              )
+                            end,
+                            2
+                          )
+
+                        :zksync ->
+                          elem(
+                            quote do
+                              has_one(:zksync_batch_transaction, ZkSyncBatchTransaction,
+                                foreign_key: :tx_hash,
+                                references: :hash
+                              )
+
+                              has_one(:zksync_batch, through: [:zksync_batch_transaction, :batch])
+                              has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
+                              has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
+                              has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
+                            end,
+                            2
+                          )
+
+                        :arbitrum ->
+                          elem(
+                            quote do
+                              field(:gas_used_for_l1, :decimal)
+
+                              has_one(:arbitrum_batch_transaction, ArbitrumBatchTransaction,
+                                foreign_key: :tx_hash,
+                                references: :hash
+                              )
+
+                              has_one(:arbitrum_batch, through: [:arbitrum_batch_transaction, :batch])
+
+                              has_one(:arbitrum_commitment_transaction,
+                                through: [:arbitrum_batch, :commitment_transaction]
+                              )
+
+                              has_one(:arbitrum_batch_block, ArbitrumBatchBlock,
+                                foreign_key: :block_number,
+                                references: :block_number
+                              )
+
+                              has_one(:arbitrum_confirmation_transaction,
+                                through: [:arbitrum_batch_block, :confirmation_transaction]
+                              )
+
+                              has_one(:arbitrum_message_to_l2, ArbitrumMessage,
+                                foreign_key: :completion_transaction_hash,
+                                references: :hash
+                              )
+
+                              has_one(:arbitrum_message_from_l2, ArbitrumMessage,
+                                foreign_key: :originating_transaction_hash,
                                 references: :hash
                               )
                             end,
@@ -120,6 +187,7 @@ defmodule Explorer.Chain.Transaction.Schema do
         field(:status, Status)
         field(:v, :decimal)
         field(:value, Wei)
+        # TODO change to Data.t(), convert current hex-string values, prune all non-hex ones
         field(:revert_reason, :string)
         field(:max_priority_fee_per_gas, Wei)
         field(:max_fee_per_gas, Wei)
@@ -198,15 +266,14 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.{Chain, Helper, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
+    Block,
     Block.Reward,
     ContractMethod,
     Data,
     DenormalizationHelper,
     Hash,
-    Log,
     SmartContract,
     SmartContract.Proxy,
-    Token,
     TokenTransfer,
     Transaction,
     Wei
@@ -214,16 +281,27 @@ defmodule Explorer.Chain.Transaction do
 
   alias Explorer.SmartContract.SigProviderInterface
 
-  @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number block_consensus block_timestamp created_contract_address_hash cumulative_gas_used earliest_processing_start
-                     error gas_price gas_used index created_contract_code_indexed_at status
-                     to_address_hash revert_reason type has_error_in_internal_txs)a
+  @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number
+                     block_consensus block_timestamp created_contract_address_hash
+                     cumulative_gas_used earliest_processing_start error gas_price
+                     gas_used index created_contract_code_indexed_at status
+                     to_address_hash revert_reason type has_error_in_internal_txs r s v)a
 
-  @optimism_optional_attrs ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
-  @suave_optional_attrs ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
+  @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
+                                :optimism ->
+                                  ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
 
-  @required_attrs ~w(from_address_hash gas hash input nonce r s v value)a
+                                :suave ->
+                                  ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
 
-  @empty_attrs ~w()a
+                                :arbitrum ->
+                                  ~w(gas_used_for_l1)a
+
+                                _ ->
+                                  ~w()a
+                              end)
+
+  @required_attrs ~w(from_address_hash gas hash input nonce value)a
 
   @typedoc """
   X coordinate module n in
@@ -542,7 +620,7 @@ defmodule Explorer.Chain.Transaction do
     attrs_to_cast =
       @required_attrs ++
         @optional_attrs ++
-        custom_optional_attrs()
+        @chain_type_optional_attrs
 
     transaction
     |> cast(attrs, attrs_to_cast)
@@ -555,14 +633,6 @@ defmodule Explorer.Chain.Transaction do
     |> check_status()
     |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:hash)
-  end
-
-  defp custom_optional_attrs do
-    case Application.get_env(:explorer, :chain_type) do
-      "suave" -> @suave_optional_attrs
-      "optimism" -> @optimism_optional_attrs
-      _ -> @empty_attrs
-    end
   end
 
   @spec block_timestamp(t()) :: DateTime.t()
@@ -585,34 +655,64 @@ defmodule Explorer.Chain.Transaction do
   end
 
   def decoded_revert_reason(transaction, revert_reason, options \\ []) do
-    hex =
-      case revert_reason do
-        "0x" <> hex_part ->
-          hex_part
+    case revert_reason do
+      nil ->
+        nil
 
-        hex ->
-          hex
-      end
+      "0x" <> hex_part ->
+        process_hex_revert_reason(hex_part, transaction, options)
 
-    process_hex_revert_reason(hex, transaction, options)
+      hex ->
+        process_hex_revert_reason(hex, transaction, options)
+    end
   end
 
+  @default_error_abi [
+    %{
+      "inputs" => [
+        %{
+          "name" => "reason",
+          "type" => "string"
+        }
+      ],
+      "name" => "Error",
+      "type" => "error"
+    },
+    %{
+      "inputs" => [
+        %{
+          "name" => "errorCode",
+          "type" => "uint256"
+        }
+      ],
+      "name" => "Panic",
+      "type" => "error"
+    }
+  ]
+
   defp process_hex_revert_reason(hex_revert_reason, %__MODULE__{to_address: smart_contract, hash: hash}, options) do
-    case Integer.parse(hex_revert_reason, 16) do
-      {number, ""} ->
-        binary_revert_reason = :binary.encode_unsigned(number)
+    case Base.decode16(hex_revert_reason, case: :mixed) do
+      {:ok, binary_revert_reason} ->
+        case find_and_decode(@default_error_abi, binary_revert_reason, hash) do
+          {:ok, {selector, values}} ->
+            {:ok, mapping} = selector_mapping(selector, values, hash)
+            identifier = Base.encode16(selector.method_id, case: :lower)
+            text = function_call(selector.function, mapping)
+            {:ok, identifier, text, mapping}
 
-        {result, _, _} =
-          decoded_input_data(
-            %Transaction{
-              to_address: smart_contract,
-              hash: hash,
-              input: %Data{bytes: binary_revert_reason}
-            },
-            options
-          )
+          _ ->
+            {result, _, _} =
+              decoded_input_data(
+                %Transaction{
+                  to_address: smart_contract,
+                  hash: hash,
+                  input: %Data{bytes: binary_revert_reason}
+                },
+                options
+              )
 
-        result
+            result
+        end
 
       _ ->
         hex_revert_reason
@@ -888,11 +988,11 @@ defmodule Explorer.Chain.Transaction do
            abi
            |> ABI.parse_specification()
            |> ABI.find_and_decode(data) do
-      {:ok, result}
+      {:ok, alter_inputs_names(result)}
     end
   rescue
     e ->
-      Logger.warn(fn ->
+      Logger.warning(fn ->
         [
           "Could not decode input data for transaction: ",
           Hash.to_iodata(hash),
@@ -903,6 +1003,17 @@ defmodule Explorer.Chain.Transaction do
       {:error, :could_not_decode}
   end
 
+  defp alter_inputs_names({%FunctionSelector{input_names: names} = selector, mapping}) do
+    names =
+      names
+      |> Enum.with_index()
+      |> Enum.map(fn {name, index} ->
+        if name == "", do: "arg#{index}", else: name
+      end)
+
+    {%FunctionSelector{selector | input_names: names}, mapping}
+  end
+
   defp selector_mapping(selector, values, hash) do
     types = Enum.map(selector.types, &FunctionSelector.encode_type/1)
 
@@ -911,7 +1022,7 @@ defmodule Explorer.Chain.Transaction do
     {:ok, mapping}
   rescue
     e ->
-      Logger.warn(fn ->
+      Logger.warning(fn ->
         [
           "Could not decode input data for transaction: ",
           Hash.to_iodata(hash),
@@ -1155,98 +1266,6 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  @api_true [api?: true]
-  @transaction_fee_event_signature "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
-  @transaction_fee_event_abi [
-    %{
-      "anonymous" => false,
-      "inputs" => [
-        %{
-          "indexed" => false,
-          "internalType" => "address",
-          "name" => "token",
-          "type" => "address"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "uint256",
-          "name" => "totalFee",
-          "type" => "uint256"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "address",
-          "name" => "validator",
-          "type" => "address"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "uint256",
-          "name" => "validatorFee",
-          "type" => "uint256"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "address",
-          "name" => "dapp",
-          "type" => "address"
-        },
-        %{
-          "indexed" => false,
-          "internalType" => "uint256",
-          "name" => "dappFee",
-          "type" => "uint256"
-        }
-      ],
-      "name" => "TransactionFee",
-      "type" => "event"
-    }
-  ]
-
-  def maybe_prepare_stability_fees(transactions) do
-    if Application.get_env(:explorer, :chain_type) == "stability" do
-      maybe_prepare_stability_fees_inner(transactions)
-    else
-      transactions
-    end
-  end
-
-  defp maybe_prepare_stability_fees_inner(transactions) when is_list(transactions) do
-    {transactions, _tokens_acc} =
-      Enum.map_reduce(transactions, %{}, fn transaction, tokens_acc ->
-        case Log.fetch_log_by_tx_hash_and_first_topic(transaction.hash, @transaction_fee_event_signature, @api_true) do
-          fee_log when not is_nil(fee_log) ->
-            {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction.hash)
-
-            [{"token", "address", false, token_address_hash}, _, _, _, _, _] = mapping
-
-            {token, new_tokens_acc} = check_tokens_acc(bytes_to_address_hash(token_address_hash), tokens_acc)
-
-            {%Transaction{transaction | transaction_fee_log: mapping, transaction_fee_token: token}, new_tokens_acc}
-
-          _ ->
-            {transaction, tokens_acc}
-        end
-      end)
-
-    transactions
-  end
-
-  defp maybe_prepare_stability_fees_inner(transaction) do
-    [transaction] = maybe_prepare_stability_fees_inner([transaction])
-    transaction
-  end
-
-  defp check_tokens_acc(token_address_hash, tokens_acc) do
-    if Map.has_key?(tokens_acc, token_address_hash) do
-      {tokens_acc[token_address_hash], tokens_acc}
-    else
-      token = Token.get_by_contract_address_hash(token_address_hash, @api_true)
-
-      {token, Map.put(tokens_acc, token_address_hash, token)}
-    end
-  end
-
   def bytes_to_address_hash(bytes), do: %Hash{byte_count: 20, bytes: bytes}
 
   @doc """
@@ -1436,9 +1455,14 @@ defmodule Explorer.Chain.Transaction do
     from_block = Chain.from_block(options)
     to_block = Chain.to_block(options)
 
-    options
-    |> Keyword.get(:paging_options, Chain.default_paging_options())
-    |> fetch_transactions(from_block, to_block, !only_mined?)
+    paging_options =
+      options
+      |> Keyword.get(:paging_options, Chain.default_paging_options())
+
+    case paging_options do
+      %PagingOptions{key: {0, 0}, is_index_in_asc_order: false} -> []
+      _ -> fetch_transactions(paging_options, from_block, to_block, !only_mined?)
+    end
   end
 
   def address_to_transactions_tasks_query(options, _only_mined?, false) do
@@ -1505,24 +1529,16 @@ defmodule Explorer.Chain.Transaction do
 
   defp compare_default_sorting(a, b) do
     case {
-      compare(a.block_number, b.block_number),
-      compare(a.index, b.index),
+      Helper.compare(a.block_number, b.block_number),
+      Helper.compare(a.index, b.index),
       DateTime.compare(a.inserted_at, b.inserted_at),
-      compare(Hash.to_integer(a.hash), Hash.to_integer(b.hash))
+      Helper.compare(Hash.to_integer(a.hash), Hash.to_integer(b.hash))
     } do
       {:lt, _, _, _} -> false
       {:eq, :lt, _, _} -> false
       {:eq, :eq, :lt, _} -> false
       {:eq, :eq, :eq, :gt} -> false
       _ -> true
-    end
-  end
-
-  defp compare(a, b) do
-    cond do
-      a < b -> :lt
-      a > b -> :gt
-      true -> :eq
     end
   end
 
@@ -1604,12 +1620,32 @@ defmodule Explorer.Chain.Transaction do
   def page_transaction(query, %PagingOptions{is_pending_tx: true} = options),
     do: page_pending_transaction(query, options)
 
+  def page_transaction(query, %PagingOptions{key: {0, index}, is_index_in_asc_order: true}) do
+    where(
+      query,
+      [transaction],
+      transaction.block_number == 0 and transaction.index > ^index
+    )
+  end
+
   def page_transaction(query, %PagingOptions{key: {block_number, index}, is_index_in_asc_order: true}) do
     where(
       query,
       [transaction],
       transaction.block_number < ^block_number or
         (transaction.block_number == ^block_number and transaction.index > ^index)
+    )
+  end
+
+  def page_transaction(query, %PagingOptions{key: {0, 0}}) do
+    query
+  end
+
+  def page_transaction(query, %PagingOptions{key: {block_number, 0}}) do
+    where(
+      query,
+      [transaction],
+      transaction.block_number < ^block_number
     )
   end
 
@@ -1620,6 +1656,10 @@ defmodule Explorer.Chain.Transaction do
       transaction.block_number < ^block_number or
         (transaction.block_number == ^block_number and transaction.index < ^index)
     )
+  end
+
+  def page_transaction(query, %PagingOptions{key: {0}}) do
+    query
   end
 
   def page_transaction(query, %PagingOptions{key: {index}}) do
@@ -1689,50 +1729,6 @@ defmodule Explorer.Chain.Transaction do
     }
   end
 
-  @suave_bid_event "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e"
-
-  @spec suave_parse_allowed_peekers(Ecto.Schema.has_many(Log.t())) :: [String.t()]
-  def suave_parse_allowed_peekers(%NotLoaded{}), do: []
-
-  def suave_parse_allowed_peekers(logs) do
-    suave_bid_contracts =
-      Application.get_all_env(:explorer)[Transaction][:suave_bid_contracts]
-      |> String.split(",")
-      |> Enum.map(fn sbc -> String.downcase(String.trim(sbc)) end)
-
-    bid_event =
-      Enum.find(logs, fn log ->
-        sanitize_log_first_topic(log.first_topic) == @suave_bid_event &&
-          Enum.member?(suave_bid_contracts, String.downcase(Hash.to_string(log.address_hash)))
-      end)
-
-    if is_nil(bid_event) do
-      []
-    else
-      [_bid_id, _decryption_condition, allowed_peekers] =
-        Helper.decode_data(bid_event.data, [{:bytes, 16}, {:uint, 64}, {:array, :address}])
-
-      Enum.map(allowed_peekers, fn peeker ->
-        "0x" <> Base.encode16(peeker, case: :lower)
-      end)
-    end
-  end
-
-  defp sanitize_log_first_topic(first_topic) do
-    if is_nil(first_topic) do
-      ""
-    else
-      sanitized =
-        if is_binary(first_topic) do
-          first_topic
-        else
-          Hash.to_string(first_topic)
-        end
-
-      String.downcase(sanitized)
-    end
-  end
-
   @doc """
   The fee a `transaction` paid for the `t:Explorer.Transaction.t/0` `gas`
 
@@ -1770,7 +1766,7 @@ defmodule Explorer.Chain.Transaction do
   end
 
   def fee(%Transaction{gas_price: nil, gas_used: gas_used} = transaction, unit) do
-    if Application.get_env(:explorer, :chain_type) == "optimism" do
+    if Application.get_env(:explorer, :chain_type) == :optimism do
       {:actual, nil}
     else
       gas_price = effective_gas_price(transaction)
@@ -1803,17 +1799,23 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-    Calculates effective gas price for transaction with type 2 (EIP-1559)
-
-    `effective_gas_price = priority_fee_per_gas + block.base_fee_per_gas`
+  Wrapper around `effective_gas_price/2`
   """
   @spec effective_gas_price(Transaction.t()) :: Wei.t() | nil
+  def effective_gas_price(%Transaction{} = transaction), do: effective_gas_price(transaction, transaction.block)
 
-  def effective_gas_price(%Transaction{block: nil}), do: nil
-  def effective_gas_price(%Transaction{block: %NotLoaded{}}), do: nil
+  @doc """
+  Calculates effective gas price for transaction with type 2 (EIP-1559)
 
-  def effective_gas_price(%Transaction{} = transaction) do
-    base_fee_per_gas = transaction.block.base_fee_per_gas
+  `effective_gas_price = priority_fee_per_gas + block.base_fee_per_gas`
+  """
+  @spec effective_gas_price(Transaction.t(), Block.t()) :: Wei.t() | nil
+
+  def effective_gas_price(%Transaction{}, %NotLoaded{}), do: nil
+  def effective_gas_price(%Transaction{}, nil), do: nil
+
+  def effective_gas_price(%Transaction{} = transaction, block) do
+    base_fee_per_gas = block.base_fee_per_gas
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
 
@@ -1836,5 +1838,23 @@ defmodule Explorer.Chain.Transaction do
         |> Wei.to(:wei)
         |> Decimal.min(max_fee_per_gas |> Wei.sub(base_fee_per_gas) |> Wei.to(:wei))
         |> Wei.from(:wei)
+  end
+
+  @doc """
+  Dynamically adds to/from for `transactions` query based on whether the target address EOA or smart-contract
+  todo: pay attention to [EIP-5003](https://eips.ethereum.org/EIPS/eip-5003): if it will be included, this logic should be rolled back.
+  """
+  @spec where_transactions_to_from(Hash.Address.t()) :: any()
+  def where_transactions_to_from(address_hash) do
+    with {:ok, address} <- Chain.hash_to_address(address_hash),
+         true <- Chain.contract?(address) do
+      dynamic([transaction], transaction.to_address_hash == ^address_hash)
+    else
+      _ ->
+        dynamic(
+          [transaction],
+          transaction.from_address_hash == ^address_hash or transaction.to_address_hash == ^address_hash
+        )
+    end
   end
 end

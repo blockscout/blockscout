@@ -49,21 +49,29 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
   @impl GenServer
   def init(args) do
+    {:ok, %{}, {:continue, args}}
+  end
+
+  @impl GenServer
+  def handle_continue(args, state) do
     Logger.metadata(fetcher: @fetcher_name)
 
     json_rpc_named_arguments = args[:json_rpc_named_arguments]
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    PolygonEdge.init_l2(
-      Withdrawal,
-      env,
-      self(),
-      env[:state_sender],
-      "L2StateSender",
-      "polygon_edge_withdrawals",
-      "Withdrawals",
-      json_rpc_named_arguments
-    )
+    case PolygonEdge.init_l2(
+           Withdrawal,
+           env,
+           self(),
+           env[:state_sender],
+           "L2StateSender",
+           "polygon_edge_withdrawals",
+           "Withdrawals",
+           json_rpc_named_arguments
+         ) do
+      :ignore -> {:stop, :normal, state}
+      {:ok, new_state} -> {:noreply, new_state}
+    end
   end
 
   @impl GenServer
@@ -212,7 +220,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
     # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
     import_options =
-      if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
+      if Application.get_env(:explorer, :chain_type) == :polygon_edge do
         %{
           polygon_edge_withdrawals: %{params: withdrawals},
           timeout: :infinity

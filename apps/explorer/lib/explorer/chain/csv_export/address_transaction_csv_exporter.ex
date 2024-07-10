@@ -3,12 +3,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
   Exports transactions to a csv file.
   """
 
-  import Ecto.Query,
-    only: [
-      from: 2
-    ]
-
-  alias Explorer.{Market, PagingOptions, Repo}
+  alias Explorer.{Market, PagingOptions}
   alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
@@ -67,7 +62,13 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
         if Map.has_key?(acc, date) do
           acc
         else
-          Map.put(acc, date, price_at_date(date))
+          market_history = MarketHistory.price_at_date(date)
+
+          Map.put(
+            acc,
+            date,
+            {market_history && market_history.opening_price, market_history && market_history.closing_price}
+          )
         end
       end)
 
@@ -109,19 +110,6 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
     |> case do
       {:actual, value} -> value
       {:maximum, value} -> "Max of #{value}"
-    end
-  end
-
-  defp price_at_date(date) do
-    query =
-      from(
-        mh in MarketHistory,
-        where: mh.date == ^date
-      )
-
-    case Repo.one(query) do
-      nil -> {nil, nil}
-      price -> {price.opening_price, price.closing_price}
     end
   end
 end

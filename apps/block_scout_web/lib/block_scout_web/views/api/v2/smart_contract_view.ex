@@ -11,7 +11,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
-  alias Explorer.Chain.SmartContract.Proxy.EIP1167
   alias Explorer.Visualize.Sol2uml
 
   require Logger
@@ -22,8 +21,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     %{"items" => Enum.map(smart_contracts, &prepare_smart_contract_for_list/1), "next_page_params" => next_page_params}
   end
 
-  def render("smart_contract.json", %{address: address}) do
-    prepare_smart_contract(address)
+  def render("smart_contract.json", %{address: address, conn: conn}) do
+    prepare_smart_contract(address, conn)
   end
 
   def render("read_functions.json", %{functions: functions}) do
@@ -56,8 +55,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   def prepare_function_response(outputs, names, contract_address_hash) do
     case outputs do
-      {:error, %{code: code, message: message, data: data}} ->
-        revert_reason = Chain.format_revert_reason_message(data)
+      {:error, %{code: code, message: message, data: _data} = error} ->
+        revert_reason = Chain.parse_revert_reason_from_error(error)
 
         case SmartContractView.decode_revert_reason(contract_address_hash, revert_reason, @api_true) do
           {:ok, method_id, text, mapping} ->
@@ -146,38 +145,58 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_output(output), do: output
 
   # credo:disable-for-next-line
-  def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address) do
-    minimal_proxy_template = EIP1167.get_implementation_address(address.hash, @api_true)
-    bytecode_twin = SmartContract.get_address_verified_twin_contract(address.hash, @api_true)
-    metadata_for_verification = minimal_proxy_template || bytecode_twin.verified_contract
+  def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address, conn) do
+    bytecode_twin = SmartContract.get_address_verified_bytecode_twin_contract(address.hash, @api_true)
+    minimal_proxy_address_hash = address.implementation
+    implementation_or_bytecode_twin_contract = address.implementation || bytecode_twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
     fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
+    write_methods? = AddressView.smart_contract_with_write_functions?(address)
+
+    is_proxy = AddressView.smart_contract_is_proxy?(address, @api_true)
+
+    read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
+    write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
 
     additional_sources =
-      additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin)
+      get_additional_sources(
+        smart_contract,
+        smart_contract_verified,
+        implementation_or_bytecode_twin_contract
+      )
 
     visualize_sol2uml_enabled = Sol2uml.enabled?()
-    target_contract = if smart_contract_verified, do: address.smart_contract, else: metadata_for_verification
+
+    target_contract =
+      if smart_contract_verified, do: address.smart_contract, else: implementation_or_bytecode_twin_contract
 
     %{
       "verified_twin_address_hash" =>
-        metadata_for_verification && Address.checksum(metadata_for_verification.address_hash),
+        implementation_or_bytecode_twin_contract &&
+          Address.checksum(implementation_or_bytecode_twin_contract.address_hash),
       "is_verified" => smart_contract_verified,
       "is_changed_bytecode" => smart_contract_verified && address.smart_contract.is_changed_bytecode,
       "is_partially_verified" => address.smart_contract.partially_verified && smart_contract_verified,
       "is_fully_verified" => fully_verified,
       "is_verified_via_sourcify" => address.smart_contract.verified_via_sourcify && smart_contract_verified,
       "is_verified_via_eth_bytecode_db" => address.smart_contract.verified_via_eth_bytecode_db,
+      "is_verified_via_verifier_alliance" => address.smart_contract.verified_via_verifier_alliance,
       "is_vyper_contract" => target_contract.is_vyper_contract,
+      "has_custom_methods_read" => read_custom_abi?,
+      "has_custom_methods_write" => write_custom_abi?,
+      "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address),
+      "has_methods_write" => write_methods?,
+      "has_methods_read_proxy" => is_proxy,
+      "has_methods_write_proxy" => is_proxy && write_methods?,
       "minimal_proxy_address_hash" =>
-        minimal_proxy_template && Address.checksum(metadata_for_verification.address_hash),
+        minimal_proxy_address_hash && Address.checksum(minimal_proxy_address_hash.address_hash),
       "sourcify_repo_url" =>
         if(address.smart_contract.verified_via_sourcify && smart_contract_verified,
           do: AddressContractView.sourcify_repo_url(address.hash, address.smart_contract.partially_verified)
         ),
       "can_be_visualized_via_sol2uml" =>
         visualize_sol2uml_enabled && !target_contract.is_vyper_contract && !is_nil(target_contract.abi),
-      "name" => target_contract && target_contract.name,
+      "name" => target_contract.name,
       "compiler_version" => target_contract.compiler_version,
       "optimization_enabled" => target_contract.optimization,
       "optimization_runs" => target_contract.optimization_runs,
@@ -186,7 +205,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "abi" => target_contract.abi,
       "source_code" => target_contract.contract_source_code,
       "file_path" => target_contract.file_path,
-      "additional_sources" => Enum.map(additional_sources, &prepare_additional_source/1),
+      "additional_sources" =>
+        (is_list(additional_sources) && Enum.map(additional_sources, &prepare_additional_source/1)) || [],
       "compiler_settings" => target_contract.compiler_settings,
       "external_libraries" => prepare_external_libraries(target_contract.external_libraries),
       "constructor_args" => if(smart_contract_verified, do: target_contract.constructor_arguments),
@@ -195,32 +215,39 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           do: format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
         ),
       "language" => smart_contract_language(smart_contract),
-      "license_type" => smart_contract.license_type
+      "license_type" => smart_contract.license_type,
+      "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false),
+      "is_blueprint" => if(smart_contract.is_blueprint, do: smart_contract.is_blueprint, else: false)
     }
     |> Map.merge(bytecode_info(address))
   end
 
-  def prepare_smart_contract(address) do
-    bytecode_info(address)
+  def prepare_smart_contract(address, conn) do
+    read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
+    write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
+
+    %{
+      "has_custom_methods_read" => read_custom_abi?,
+      "has_custom_methods_write" => write_custom_abi?
+    }
+    |> Map.merge(bytecode_info(address))
   end
 
   @doc """
-  Returns additional sources of the smart-contract or from bytecode twin or from implementation, if it fits minimal proxy pattern (EIP-1167)
+  Returns additional sources of the smart-contract or from bytecode twin or from implementation, if it fits minimal proxy pattern (EIP-1167, Clone with immutable arguments)
   """
-  @spec additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil, %{
-          :verified_contract => any(),
-          :additional_sources => SmartContractAdditionalSource.t() | nil
-        }) :: [SmartContractAdditionalSource.t()]
-  def additional_sources(smart_contract, smart_contract_verified, minimal_proxy_template, bytecode_twin) do
+  @spec get_additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil) ::
+          [SmartContractAdditionalSource.t()] | nil
+  def get_additional_sources(smart_contract, smart_contract_verified, implementation_or_bytecode_twin_contract) do
     cond do
-      !is_nil(minimal_proxy_template) ->
-        minimal_proxy_template.smart_contract_additional_sources
+      !is_nil(implementation_or_bytecode_twin_contract) ->
+        implementation_or_bytecode_twin_contract.smart_contract_additional_sources
 
       smart_contract_verified ->
         smart_contract.smart_contract_additional_sources
 
       true ->
-        bytecode_twin.additional_sources
+        []
     end
   end
 
@@ -274,7 +301,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     result
   rescue
     exception ->
-      Logger.warn(fn ->
+      Logger.warning(fn ->
         [
           "Error formatting constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
           Exception.format(:error, exception)
@@ -306,7 +333,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
       "coin_balance" =>
         if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value),
-      "license_type" => smart_contract.license_type
+      "license_type" => smart_contract.license_type,
+      "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false)
     }
   end
 
@@ -335,15 +363,43 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end)
   end
 
-  def render_json(value, type) when is_list(value) do
-    type =
-      if String.ends_with?(type, "[]") do
-        String.slice(type, 0..-3)
-      else
-        type
+  def render_json(value, type) when is_list(value) and is_tuple(type) do
+    item_type =
+      case type do
+        {:array, item_type, _} -> item_type
+        {:array, item_type} -> item_type
       end
 
-    value |> Enum.map(&render_json(&1, type))
+    value |> Enum.map(&render_json(&1, item_type))
+  end
+
+  def render_json(value, type) when is_list(value) and not is_tuple(type) do
+    sanitized_type =
+      case type do
+        "tuple[" <> rest ->
+          # we need to convert tuple[...][] or tuple[...][n] into (...)[] or (...)[n]
+          # before sending it to the `FunctionSelector.decode_type/1. See https://github.com/poanetwork/ex_abi/issues/168.
+          tuple_item_types =
+            rest
+            |> String.split("]")
+            |> Enum.slice(0..-3//1)
+            |> Enum.join("]")
+
+          array_str = "[" <> (rest |> String.split("[") |> List.last())
+
+          "(" <> tuple_item_types <> ")" <> array_str
+
+        _ ->
+          type
+      end
+
+    item_type =
+      case FunctionSelector.decode_type(sanitized_type) do
+        {:array, item_type, _} -> item_type
+        {:array, item_type} -> item_type
+      end
+
+    value |> Enum.map(&render_json(&1, item_type))
   end
 
   def render_json(value, type) when type in [:address, "address", "address payable"] do
@@ -355,6 +411,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   def render_json(value, _type) do
-    value
+    to_string(value)
   end
 end

@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
   use BlockScoutWeb.ConnCase, async: true
   use ExUnit.Case, async: false
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
+  import BlockScoutWeb.Routers.WebRouter.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
   import Mox
 
   alias Explorer.Chain.{Address, Transaction}
@@ -426,6 +426,41 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         })
 
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 5
+    end
+
+    test "handles null filter", %{conn: conn} do
+      BlockScoutWeb.TestCaptchaHelper
+      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:log,
+        address: address,
+        index: 3,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
+
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
+
+      conn =
+        get(conn, "/api/v1/logs-csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "filter_type" => "null",
+          "filter_value" => "null",
+          "from_period" => from_period,
+          "to_period" => to_period,
+          "recaptcha_response" => "123"
+        })
+
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 3
     end
   end
 end

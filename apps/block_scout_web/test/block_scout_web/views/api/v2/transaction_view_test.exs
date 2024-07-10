@@ -1,10 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TransactionViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  import Mox
-
   alias BlockScoutWeb.API.V2.TransactionView
-  alias Explorer.Repo
 
   describe "decode_logs/2" do
     test "doesn't use decoding candidate event with different 2nd, 3d or 4th topic" do

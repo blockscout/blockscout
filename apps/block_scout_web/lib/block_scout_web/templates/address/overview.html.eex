@@ -62,7 +62,7 @@
                     @address.hash),
                     "data-test":
                     "token_hash_link"
-                  ) 
+                  )
                   %>
                 </dd>
               </dl>
@@ -124,7 +124,9 @@
           <% end %>
           <!-- Implementation -->
           <%= if @is_proxy do %>
-            <% {implementation_address_, name} = SmartContract.get_implementation_address_hash(@address.smart_contract) %>
+            <% {implementation_addresses, implementation_names} = Implementation.get_implementation(@address.smart_contract) %>
+            <% implementation_address_ = Enum.at(implementation_addresses, 0) %>
+            <% name = Enum.at(implementation_names, 0) %>
             <% implementation_address = implementation_address_ || "0x0000000000000000000000000000000000000000" %>
             <dl class="row">
               <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
@@ -137,7 +139,7 @@
                   (if name, do: name <> " | " <> implementation_address, else: implementation_address),
                   to: address_path(@conn, :show, implementation_address),
                   class: "contract-address"
-                ) 
+                )
                 %>
               </dd>
             </dl>
@@ -160,7 +162,7 @@
                     data-placement="top"
                     data-toggle="tooltip"
                     data-html="true"
-                    title='<%= "@ " <> usd_value <> "/" <> Explorer.coin_name() %>'  
+                    title='<%= "@ " <> usd_value <> "/" <> Explorer.coin_name() %>'
                   >
                   </span>)
                 </span>
@@ -288,4 +290,4 @@
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: qr_code(@address), title: @address %>
 
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>

@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
   alias BlockScoutWeb.AccessHelper
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Indexer.Fetcher.TokenBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with true <- ajax?(conn),

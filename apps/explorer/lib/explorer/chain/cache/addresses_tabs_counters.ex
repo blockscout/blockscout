@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
 
   use GenServer
 
-  import Explorer.Counters.Helper, only: [fetch_from_cache: 3]
+  import Explorer.Counters.Helper, only: [fetch_from_ets_cache: 3]
 
   alias Explorer.Chain.Address.Counters
 
@@ -16,7 +16,7 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
 
   @spec get_counter(counter_type, String.t()) :: {DateTime.t(), non_neg_integer(), response_status} | nil
   def get_counter(counter_type, address_hash) do
-    address_hash |> cache_key(counter_type) |> fetch_from_cache(@cache_name, nil) |> check_staleness()
+    address_hash |> cache_key(counter_type) |> fetch_from_ets_cache(@cache_name, nil) |> check_staleness()
   end
 
   @spec set_counter(counter_type, String.t(), non_neg_integer()) :: :ok
@@ -38,7 +38,7 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
 
   @spec get_task(atom, String.t()) :: true | nil
   def get_task(counter_type, address_hash) do
-    address_hash |> task_cache_key(counter_type) |> fetch_from_cache(@cache_name, nil)
+    address_hash |> task_cache_key(counter_type) |> fetch_from_ets_cache(@cache_name, nil)
   end
 
   def save_txs_counter_progress(address_hash, results) do

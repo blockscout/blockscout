@@ -3,36 +3,20 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     Interface to interact with Blockscout ENS microservice
   """
 
-  alias Ecto.Association.NotLoaded
   alias Explorer.Chain
+  alias Explorer.Chain.Address.MetadataPreloader
 
-  alias Explorer.Chain.{
-    Address,
-    Address.CurrentTokenBalance,
-    Block,
-    InternalTransaction,
-    Log,
-    TokenTransfer,
-    Transaction,
-    Withdrawal
-  }
+  alias Explorer.Chain.{Address, Transaction}
 
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
+
   require Logger
+
+  import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_meta: 3]
 
   @post_timeout :timer.seconds(5)
   @request_error_msg "Error while sending request to BENS microservice"
-
-  @typep supported_types ::
-           Address.t()
-           | Block.t()
-           | CurrentTokenBalance.t()
-           | InternalTransaction.t()
-           | Log.t()
-           | TokenTransfer.t()
-           | Transaction.t()
-           | Withdrawal.t()
 
   @doc """
     Batch request for ENS names via POST {{baseUrl}}/api/v1/:chainId/addresses:batch-resolve-names
@@ -66,11 +50,17 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     end
   end
 
-  @spec get_address(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
+  @doc """
+    Request for ENS name via GET {{baseUrl}}/api/v1/:chainId/addresses/{address_hash}
+  """
+  @spec get_address(binary()) :: map() | nil
   def get_address(address) do
-    with :ok <- Microservice.check_enabled(__MODULE__) do
-      http_get_request(get_address_url(address), nil)
-    end
+    result =
+      with :ok <- Microservice.check_enabled(__MODULE__) do
+        http_get_request(get_address_url(address), nil)
+      end
+
+    parse_get_address_response(result)
   end
 
   @doc """
@@ -88,6 +78,15 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
 
       http_get_request(domain_lookup_url(), query_params)
     end
+  end
+
+  @doc """
+    Request for ENS name via GET {{baseUrl}}/api/v1/:chainId/domains:lookup
+  """
+  @spec ens_domain_name_lookup(binary()) ::
+          nil | %{address_hash: binary(), expiry_date: any(), name: any(), names_count: integer()}
+  def ens_domain_name_lookup(domain) do
+    domain |> ens_domain_lookup() |> parse_lookup_response()
   end
 
   defp http_post_request(url, body) do
@@ -134,11 +133,16 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     end
   end
 
-  @spec enabled?() :: boolean
-  def enabled?, do: Application.get_env(:explorer, __MODULE__)[:enabled]
+  @spec enabled?() :: boolean()
+  def enabled?, do: Microservice.check_enabled(__MODULE__) == :ok
 
   defp batch_resolve_name_url do
-    "#{addresses_url()}:batch-resolve-names"
+    # workaround for https://github.com/PSPDFKit-labs/bypass/issues/122
+    if Mix.env() == :test do
+      "#{addresses_url()}:batch_resolve_names"
+    else
+      "#{addresses_url()}:batch-resolve-names"
+    end
   end
 
   defp address_lookup_url do
@@ -164,88 +168,6 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp base_url do
     chain_id = Application.get_env(:block_scout_web, :chain_id)
     "#{Microservice.base_url(__MODULE__)}/api/v1/#{chain_id}"
-  end
-
-  @doc """
-    Preload ENS info to list of entities if enabled?()
-  """
-  @spec maybe_preload_ens([supported_types] | supported_types) :: [supported_types] | supported_types
-  def maybe_preload_ens(argument, function \\ &preload_ens_to_list/1) do
-    if enabled?() do
-      function.(argument)
-    else
-      argument
-    end
-  end
-
-  @spec maybe_preload_ens_info_to_search_results(list()) :: list()
-  def maybe_preload_ens_info_to_search_results(list) do
-    maybe_preload_ens(list, &preload_ens_info_to_search_results/1)
-  end
-
-  @spec maybe_preload_ens_to_transaction(Transaction.t()) :: Transaction.t()
-  def maybe_preload_ens_to_transaction(transaction) do
-    maybe_preload_ens(transaction, &preload_ens_to_transaction/1)
-  end
-
-  @spec preload_ens_to_transaction(Transaction.t()) :: Transaction.t()
-  def preload_ens_to_transaction(transaction) do
-    [transaction_with_ens] = preload_ens_to_list([transaction])
-    transaction_with_ens
-  end
-
-  @spec maybe_preload_ens_to_address(Address.t()) :: Address.t()
-  def maybe_preload_ens_to_address(address) do
-    maybe_preload_ens(address, &preload_ens_to_address/1)
-  end
-
-  @spec preload_ens_to_address(Address.t()) :: Address.t()
-  def preload_ens_to_address(address) do
-    [address_with_ens] = preload_ens_to_list([address])
-    address_with_ens
-  end
-
-  @doc """
-    Preload ENS names to list of entities
-  """
-  @spec preload_ens_to_list([supported_types]) :: [supported_types]
-  def preload_ens_to_list(items) do
-    address_hash_strings =
-      Enum.reduce(items, [], fn item, acc ->
-        item_to_address_hash_strings(item) ++ acc
-      end)
-
-    case ens_names_batch_request(address_hash_strings) do
-      {:ok, result} ->
-        put_ens_names(result["names"], items)
-
-      _ ->
-        items
-    end
-  end
-
-  @doc """
-    Preload ENS info to search result, using get_address/1
-  """
-  @spec preload_ens_info_to_search_results(list) :: list
-  def preload_ens_info_to_search_results(list) do
-    Enum.map(list, fn
-      %{type: "address", ens_info: ens_info} = search_result when not is_nil(ens_info) ->
-        search_result
-
-      %{type: "address"} = search_result ->
-        ens_info = search_result[:address_hash] |> get_address() |> parse_get_address_response()
-        Map.put(search_result, :ens_info, ens_info)
-
-      search_result ->
-        search_result
-    end)
-  end
-
-  @spec ens_domain_name_lookup(binary()) ::
-          nil | %{address_hash: binary(), expiry_date: any(), name: any(), names_count: integer()}
-  def ens_domain_name_lookup(domain) do
-    domain |> ens_domain_lookup() |> parse_lookup_response()
   end
 
   defp parse_lookup_response(
@@ -293,166 +215,35 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
 
   defp parse_get_address_response(_), do: nil
 
-  defp item_to_address_hash_strings(%Transaction{
-         to_address_hash: nil,
-         created_contract_address_hash: created_contract_address_hash,
-         from_address_hash: from_address_hash
-       }) do
-    [to_string(created_contract_address_hash), to_string(from_address_hash)]
+  @doc """
+  Preloads ENS data to the list if BENS is enabled
+  """
+  @spec maybe_preload_ens(MetadataPreloader.supported_input()) :: MetadataPreloader.supported_input()
+  def maybe_preload_ens(argument) do
+    maybe_preload_meta(argument, __MODULE__, &MetadataPreloader.preload_ens_to_list/1)
   end
 
-  defp item_to_address_hash_strings(%Transaction{
-         to_address_hash: to_address_hash,
-         created_contract_address_hash: nil,
-         from_address_hash: from_address_hash,
-         token_transfers: token_transfers
-       }) do
-    token_transfers_addresses =
-      case token_transfers do
-        token_transfers_list when is_list(token_transfers_list) ->
-          List.flatten(Enum.map(token_transfers_list, &item_to_address_hash_strings/1))
-
-        _ ->
-          []
-      end
-
-    [to_string(to_address_hash), to_string(from_address_hash)] ++ token_transfers_addresses
+  @doc """
+  Preloads ENS data to the list of the search results if BENS is enabled
+  """
+  @spec maybe_preload_ens_info_to_search_results(list()) :: list()
+  def maybe_preload_ens_info_to_search_results(list) do
+    maybe_preload_meta(list, __MODULE__, &MetadataPreloader.preload_ens_info_to_search_results/1)
   end
 
-  defp item_to_address_hash_strings(%TokenTransfer{
-         to_address_hash: to_address_hash,
-         from_address_hash: from_address_hash
-       }) do
-    [to_string(to_address_hash), to_string(from_address_hash)]
+  @doc """
+  Preloads ENS data to the transaction results if BENS is enabled
+  """
+  @spec maybe_preload_ens_to_transaction(Transaction.t()) :: Transaction.t()
+  def maybe_preload_ens_to_transaction(transaction) do
+    maybe_preload_meta(transaction, __MODULE__, &MetadataPreloader.preload_ens_to_transaction/1)
   end
 
-  defp item_to_address_hash_strings(%InternalTransaction{
-         to_address_hash: to_address_hash,
-         from_address_hash: from_address_hash
-       }) do
-    [to_string(to_address_hash), to_string(from_address_hash)]
-  end
-
-  defp item_to_address_hash_strings(%Log{address_hash: address_hash}) do
-    [to_string(address_hash)]
-  end
-
-  defp item_to_address_hash_strings(%Withdrawal{address_hash: address_hash}) do
-    [to_string(address_hash)]
-  end
-
-  defp item_to_address_hash_strings(%Block{miner_hash: miner_hash}) do
-    [to_string(miner_hash)]
-  end
-
-  defp item_to_address_hash_strings(%CurrentTokenBalance{address_hash: address_hash}) do
-    [to_string(address_hash)]
-  end
-
-  defp item_to_address_hash_strings({%Address{} = address, _}) do
-    item_to_address_hash_strings(address)
-  end
-
-  defp item_to_address_hash_strings(%Address{hash: hash}) do
-    [to_string(hash)]
-  end
-
-  defp put_ens_names(names, items) do
-    Enum.map(items, &put_ens_name_to_item(&1, names))
-  end
-
-  defp put_ens_name_to_item(
-         %Transaction{
-           to_address_hash: to_address_hash,
-           created_contract_address_hash: created_contract_address_hash,
-           from_address_hash: from_address_hash
-         } = tx,
-         names
-       ) do
-    token_transfers =
-      case tx.token_transfers do
-        token_transfers_list when is_list(token_transfers_list) ->
-          Enum.map(token_transfers_list, &put_ens_name_to_item(&1, names))
-
-        other ->
-          other
-      end
-
-    %Transaction{
-      tx
-      | to_address: alter_address(tx.to_address, to_address_hash, names),
-        created_contract_address: alter_address(tx.created_contract_address, created_contract_address_hash, names),
-        from_address: alter_address(tx.from_address, from_address_hash, names),
-        token_transfers: token_transfers
-    }
-  end
-
-  defp put_ens_name_to_item(
-         %TokenTransfer{
-           to_address_hash: to_address_hash,
-           from_address_hash: from_address_hash
-         } = tt,
-         names
-       ) do
-    %TokenTransfer{
-      tt
-      | to_address: alter_address(tt.to_address, to_address_hash, names),
-        from_address: alter_address(tt.from_address, from_address_hash, names)
-    }
-  end
-
-  defp put_ens_name_to_item(
-         %InternalTransaction{
-           to_address_hash: to_address_hash,
-           created_contract_address_hash: created_contract_address_hash,
-           from_address_hash: from_address_hash
-         } = tx,
-         names
-       ) do
-    %InternalTransaction{
-      tx
-      | to_address: alter_address(tx.to_address, to_address_hash, names),
-        created_contract_address: alter_address(tx.created_contract_address, created_contract_address_hash, names),
-        from_address: alter_address(tx.from_address, from_address_hash, names)
-    }
-  end
-
-  defp put_ens_name_to_item(%Log{address_hash: address_hash} = log, names) do
-    %Log{log | address: alter_address(log.address, address_hash, names)}
-  end
-
-  defp put_ens_name_to_item(%Withdrawal{address_hash: address_hash} = withdrawal, names) do
-    %Withdrawal{withdrawal | address: alter_address(withdrawal.address, address_hash, names)}
-  end
-
-  defp put_ens_name_to_item(%Block{miner_hash: miner_hash} = block, names) do
-    %Block{block | miner: alter_address(block.miner, miner_hash, names)}
-  end
-
-  defp put_ens_name_to_item(%CurrentTokenBalance{address_hash: address_hash} = current_token_balance, names) do
-    %CurrentTokenBalance{
-      current_token_balance
-      | address: alter_address(current_token_balance.address, address_hash, names)
-    }
-  end
-
-  defp put_ens_name_to_item({%Address{} = address, count}, names) do
-    {put_ens_name_to_item(address, names), count}
-  end
-
-  defp put_ens_name_to_item(%Address{} = address, names) do
-    alter_address(address, address.hash, names)
-  end
-
-  defp alter_address(_, nil, _names) do
-    nil
-  end
-
-  defp alter_address(%NotLoaded{}, address_hash, names) do
-    %{ens_domain_name: names[to_string(address_hash)]}
-  end
-
-  defp alter_address(%Address{} = address, address_hash, names) do
-    %Address{address | ens_domain_name: names[to_string(address_hash)]}
+  @doc """
+  Preloads ENS data to the address results if BENS is enabled
+  """
+  @spec maybe_preload_ens_to_address(Address.t()) :: Address.t()
+  def maybe_preload_ens_to_address(address) do
+    maybe_preload_meta(address, __MODULE__, &MetadataPreloader.preload_ens_to_address/1)
   end
 end

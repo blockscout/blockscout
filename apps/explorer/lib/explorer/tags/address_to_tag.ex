@@ -11,7 +11,7 @@ defmodule Explorer.Tags.AddressToTag do
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
-  # Notation.import_types(BlockScoutWeb.Schema.Types)
+  # Notation.import_types(BlockScoutWeb.GraphQL.Schema.Types)
 
   @typedoc """
   * `:tag_id` - id of Tag
@@ -105,7 +105,7 @@ defmodule Explorer.Tags.AddressToTag do
         end)
         |> Enum.filter(&(!is_nil(&1)))
 
-      if Enum.count(addresses_to_delete) > 0 do
+      if not Enum.empty?(addresses_to_delete) do
         delete_query_base =
           from(
             att in AddressToTag,

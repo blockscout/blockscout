@@ -23,7 +23,7 @@
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
 <% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
-<% address_hash_str = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
+<% address_hash_string = if to_address_hash, do: "0x" <> Base.encode16(to_address_hash.bytes, case: :lower), else: nil %>
 <% {:ok, created_from_address} = if to_address_hash, do: Chain.hash_to_address(to_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <%= render BlockScoutWeb.Advertisement.TextAdView, "index.html", conn: @conn %>
@@ -34,7 +34,7 @@
       <div class="card js-ad-dependant-mb-3">
         <div class="card-body">
           <%= cond do %>
-            <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
+            <% Enum.member?(circles_addresses_list, address_hash_string) -> %>
               <div class="custom-dapp-header-container">
                 <img class="custom-address-icon"/>
               </div>
@@ -145,7 +145,7 @@
                   <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping, error: true) %>
                 <% _ -> %>
                   <% hex = BlockScoutWeb.TransactionView.get_pure_transaction_revert_reason(@transaction) %>
-                  <% utf8 = BlockScoutWeb.TransactionView.decoded_revert_reason(@transaction) %>
+                  <% utf8 = BlockScoutWeb.TransactionView.decode_revert_reason_as_utf8(hex) %>
                   <div class="tile tile-muted">
                       <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code>Raw:<%= raw("\t") %><%= hex %><%= raw("\n") %>UTF-8:<%= raw("\t") %><%= utf8 %></code></pre>
                   </div>
@@ -195,7 +195,7 @@
               </dd>
             </dl>
           <% end %>
-          <%= if Application.get_env(:explorer, :chain_type) == "optimism" && @transaction.l1_block_number do %>
+          <%= if Application.get_env(:explorer, :chain_type) == :optimism && @transaction.l1_block_number do %>
             <!-- L1 Block -->
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
@@ -217,7 +217,7 @@
           <% end %>
           <!-- Transaction Action -->
           <% %{transaction_actions: transaction_actions} = transaction_actions(@transaction) %>
-          <%= if not Enum.empty?(transaction_actions) do %>
+          <%= unless Enum.empty?(transaction_actions) do %>
             <dl class="row">
               <dt class="col-sm-3 col-lg-2 text-muted">
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -295,7 +295,7 @@
             <% {_type, %{token_transfers: token_transfers} = transaction_with_transfers} when is_list(token_transfers) and token_transfers != [] -> %>
               <!-- Tokens Transferred -->
               <% %{transfers: transfers, mintings: mintings, burnings: burnings, creations: creations} = aggregate_token_transfers(transaction_with_transfers.token_transfers) %>
-              <%= if Enum.count(transfers) > 0 do %>
+              <%= unless Enum.empty?(transfers) do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
                     <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -311,7 +311,7 @@
                 </dl>
               <% end %>
               <!-- Tokens Minted -->
-              <%= if Enum.count(mintings) > 0 do %>
+              <%= unless Enum.empty?(mintings) do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
                     <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -328,7 +328,7 @@
                 </dl>
               <% end %>
               <!-- Tokens Burnt -->
-              <%= if Enum.count(burnings) > 0 do %>
+              <%= unless Enum.empty?(burnings) do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
                     <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -344,7 +344,7 @@
                 </dl>
               <% end %>
 
-              <%= if Enum.count(creations) > 0 do %>
+              <%= unless Enum.empty?(creations) do %>
                 <dl class="row">
                   <dt class="col-sm-3 col-lg-2 text-muted">
                     <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
@@ -394,7 +394,7 @@
           <!-- L1/L2 Gas Price -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
-              <%= if Application.get_env(:explorer, :chain_type) == "optimism" do %>
+              <%= if Application.get_env(:explorer, :chain_type) == :optimism do %>
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                   text: gettext("Price per unit of gas specified by the sender on L2. Higher gas prices can prioritize transaction inclusion during times of high usage.") %>
                 <%= gettext "L2 Gas Price" %>
@@ -420,7 +420,7 @@
           <!-- Gas Limit -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted">
-              <%= if Application.get_env(:explorer, :chain_type) == "optimism" do %>
+              <%= if Application.get_env(:explorer, :chain_type) == :optimism do %>
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                   text: gettext("Maximum gas amount approved for the transaction on L2.") %>
                 <%= gettext "L2 Gas Limit" %>
@@ -479,7 +479,7 @@
           <!-- L1/L2 Gas Used by Transaction -->
           <dl class="row">
             <dt class="col-sm-3 col-lg-2 text-muted transaction-gas-used">
-              <%= if Application.get_env(:explorer, :chain_type) == "optimism" do %>
+              <%= if Application.get_env(:explorer, :chain_type) == :optimism do %>
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                   text: gettext("Actual gas amount used by the transaction on L2.") %>
                 <%= gettext "L2 Gas Used by Transaction" %>
@@ -492,7 +492,7 @@
             <% gas_used_perc = gas_used_perc(@transaction) %>
             <dd class="col-sm-9 col-lg-10"> <%= gas_used(@transaction) %> <%= if gas_used_perc, do: "| #{gas_used_perc}%" %></dd>
           </dl>
-          <%= if Application.get_env(:explorer, :chain_type) == "optimism" do %>
+          <%= if Application.get_env(:explorer, :chain_type) == :optimism do %>
             <%= if @transaction.l1_gas_used do %>
               <!-- L1 Gas Used by Transaction -->
               <dl class="row">

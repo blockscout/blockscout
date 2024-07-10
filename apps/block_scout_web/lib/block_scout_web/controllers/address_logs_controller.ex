@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.AddressLogsController do
   alias BlockScoutWeb.{AccessHelper, AddressLogsView, Controller}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
   use BlockScoutWeb, :controller

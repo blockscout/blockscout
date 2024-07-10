@@ -31,12 +31,12 @@ defmodule Indexer.Fetcher.BlockReward do
   @doc """
   Asynchronously fetches block rewards for each `t:Explorer.Chain.Explorer.block_number/0`` in `block_numbers`.
   """
-  @spec async_fetch([Block.block_number()]) :: :ok
-  def async_fetch(block_numbers) when is_list(block_numbers) do
+  @spec async_fetch([Block.block_number()], boolean()) :: :ok
+  def async_fetch(block_numbers, realtime?) when is_list(block_numbers) do
     if BlockRewardSupervisor.disabled?() do
       :ok
     else
-      BufferedTask.buffer(__MODULE__, block_numbers)
+      BufferedTask.buffer(__MODULE__, block_numbers, realtime?)
     end
   end
 
@@ -325,7 +325,7 @@ defmodule Indexer.Fetcher.BlockReward do
 
   defp fetched_beneficiary_error_to_iodata(%{code: code, message: message, data: %{block_quantity: block_quantity}})
        when is_integer(code) and is_binary(message) and is_binary(block_quantity) do
-    ["@", quantity_to_integer(block_quantity), ": (", to_string(code), ") ", message, ?\n]
+    ["@", block_quantity |> quantity_to_integer() |> to_string(), ": (", to_string(code), ") ", message, ?\n]
   end
 
   defp defaults do

@@ -106,21 +106,28 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
   @spec address_hash_to_token_transfers_including_contract(Hash.Address.t(), Keyword.t()) :: [TokenTransfer.t()]
   def address_hash_to_token_transfers_including_contract(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Helper.default_paging_options())
-    from_block = Keyword.get(options, :from_block)
-    to_block = Keyword.get(options, :to_block)
-    filter_type = Keyword.get(options, :filter_type)
-    filter_value = Keyword.get(options, :filter_value)
 
-    query =
-      from_block
-      |> query_address_hash_to_token_transfers_including_contract(to_block, address_hash, filter_type, filter_value)
-      |> order_by([token_transfer], asc: token_transfer.block_number, asc: token_transfer.log_index)
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
 
-    query
-    |> handle_token_transfer_paging_options(paging_options)
-    |> preload(^DenormalizationHelper.extend_transaction_preload([:transaction]))
-    |> preload(:token)
-    |> Repo.all()
+      _ ->
+        from_block = Keyword.get(options, :from_block)
+        to_block = Keyword.get(options, :to_block)
+        filter_type = Keyword.get(options, :filter_type)
+        filter_value = Keyword.get(options, :filter_value)
+
+        query =
+          from_block
+          |> query_address_hash_to_token_transfers_including_contract(to_block, address_hash, filter_type, filter_value)
+          |> order_by([token_transfer], asc: token_transfer.block_number, asc: token_transfer.log_index)
+
+        query
+        |> handle_token_transfer_paging_options(paging_options)
+        |> preload(^DenormalizationHelper.extend_transaction_preload([:transaction]))
+        |> preload(:token)
+        |> Repo.all()
+    end
   end
 
   defp query_address_hash_to_token_transfers_including_contract(nil, to_block, address_hash, filter_type, filter_value)

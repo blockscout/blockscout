@@ -3,11 +3,10 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.Chain.MarketHistoryChartController
-  alias EthereumJSONRPC.Variant
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Block, as: BlockCache
-  alias Explorer.Chain.Cache.{GasPriceOracle, GasUsage, RootstockLockedBTC}
+  alias Explorer.Chain.Cache.{GasPriceOracle, GasUsage}
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
@@ -28,6 +27,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       end
 
     exchange_rate = Market.get_coin_exchange_rate()
+    secondary_coin_exchange_rate = Market.get_secondary_coin_exchange_rate()
 
     transaction_stats = Helper.get_transaction_stats()
 
@@ -42,9 +42,9 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
     coin_price_change =
       case Market.fetch_recent_history() do
-        [today, yesterday | _] ->
-          today.closing_price && yesterday.closing_price &&
-            today.closing_price
+        [_today, yesterday | _] ->
+          exchange_rate.usd_value && yesterday.closing_price &&
+            exchange_rate.usd_value
             |> Decimal.div(yesterday.closing_price)
             |> Decimal.sub(1)
             |> Decimal.mult(100)
@@ -67,6 +67,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "coin_image" => exchange_rate.image_url,
         "coin_price" => exchange_rate.usd_value,
         "coin_price_change_percentage" => coin_price_change,
+        "secondary_coin_price" => secondary_coin_exchange_rate.usd_value,
         "total_gas_used" => GasUsage.total() |> to_string(),
         "transactions_today" => Enum.at(transaction_stats, 0).number_of_transactions |> to_string(),
         "gas_used_today" => Enum.at(transaction_stats, 0).gas_used,
@@ -78,7 +79,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "tvl" => exchange_rate.tvl_usd,
         "network_utilization_percentage" => network_utilization_percentage()
       }
-      |> add_rootstock_locked_btc()
+      |> add_chain_type_fields()
       |> backward_compatibility(conn)
     )
   end
@@ -148,13 +149,16 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     })
   end
 
-  defp add_rootstock_locked_btc(stats) do
-    with "rsk" <- Variant.get(),
-         rootstock_locked_btc when not is_nil(rootstock_locked_btc) <- RootstockLockedBTC.get_locked_value() do
-      stats |> Map.put("rootstock_locked_btc", rootstock_locked_btc)
-    else
-      _ -> stats
-    end
+  def secondary_coin_market_chart(conn, _params) do
+    recent_market_history = Market.fetch_recent_history(true)
+
+    chart_data =
+      recent_market_history
+      |> Enum.map(fn day -> Map.take(day, [:closing_price, :date]) end)
+
+    json(conn, %{
+      chart_data: chart_data
+    })
   end
 
   defp backward_compatibility(response, conn) do
@@ -169,5 +173,29 @@ defmodule BlockScoutWeb.API.V2.StatsController do
             %{slow: gas_prices[:slow][:price], average: gas_prices[:average][:price], fast: gas_prices[:fast][:price]}
         end)
     end
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :rsk ->
+      defp add_chain_type_fields(response) do
+        alias Explorer.Chain.Cache.RootstockLockedBTC
+
+        case RootstockLockedBTC.get_locked_value() do
+          rootstock_locked_btc when not is_nil(rootstock_locked_btc) ->
+            response |> Map.put("rootstock_locked_btc", rootstock_locked_btc)
+
+          _ ->
+            response
+        end
+      end
+
+    "optimism" ->
+      defp add_chain_type_fields(response) do
+        import Explorer.Counters.LastOutputRootSizeCounter, only: [fetch: 1]
+        response |> Map.put("last_output_root_size", fetch(@api_true))
+      end
+
+    _ ->
+      defp add_chain_type_fields(response), do: response
   end
 end

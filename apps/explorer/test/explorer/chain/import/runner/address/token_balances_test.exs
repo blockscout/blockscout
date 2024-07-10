@@ -219,6 +219,48 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
             }} = run_changes(second_changes, options)
   end
 
+  test "filters out changes with tokens that doesn't implement balanceOf function" do
+    address = insert(:address)
+    token = insert(:token)
+
+    options = %{
+      timeout: :infinity,
+      timestamps: %{inserted_at: DateTime.utc_now(), updated_at: DateTime.utc_now()}
+    }
+
+    block_number = 1
+    next_block_number = block_number + 1
+    token_contract_address_hash = token.contract_address_hash
+
+    insert(:missing_balance_of_token,
+      token_contract_address_hash: token_contract_address_hash,
+      block_number: block_number,
+      currently_implemented: true
+    )
+
+    address_hash = address.hash
+
+    changes_list = [
+      %{
+        address_hash: address_hash,
+        block_number: block_number,
+        token_contract_address_hash: token_contract_address_hash,
+        token_id: 11,
+        token_type: "ERC-721"
+      },
+      %{
+        address_hash: address_hash,
+        block_number: next_block_number,
+        token_contract_address_hash: token_contract_address_hash,
+        token_id: 12,
+        token_type: "ERC-721"
+      }
+    ]
+
+    assert {:ok, %{address_token_balances: [%{block_number: ^next_block_number}]}} =
+             run_changes_list(changes_list, options)
+  end
+
   defp run_changes(changes, options) when is_map(changes) do
     run_changes_list([changes], options)
   end

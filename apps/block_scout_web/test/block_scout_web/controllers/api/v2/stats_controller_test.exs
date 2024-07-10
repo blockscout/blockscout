@@ -37,6 +37,17 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
   end
 
   describe "/stats/charts/market" do
+    setup do
+      configuration = Application.get_env(:explorer, Explorer.Market.MarketHistoryCache)
+      Application.put_env(:explorer, Explorer.Market.MarketHistoryCache, cache_period: 0)
+
+      :ok
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Market.MarketHistoryCache, configuration)
+      end)
+    end
+
     test "get empty data", %{conn: conn} do
       request = get(conn, "/api/v2/stats/charts/market")
       assert response = json_response(request, 200)

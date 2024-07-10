@@ -118,8 +118,12 @@ defmodule Explorer.Application do
         configure(Explorer.Counters.BlockBurntFeeCounter),
         configure(Explorer.Counters.BlockPriorityFeeCounter),
         configure(Explorer.Counters.AverageBlockTime),
+        configure(Explorer.Counters.LastOutputRootSizeCounter),
+        configure(Explorer.Counters.FreshPendingTransactionsCounter),
+        configure(Explorer.Counters.Transactions24hStats),
         configure(Explorer.Validator.MetadataProcessor),
         configure(Explorer.Tags.AddressTag.Cataloger),
+        configure(Explorer.SmartContract.CertifiedSmartContractCataloger),
         configure(MinMissingBlockNumber),
         configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
         configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
@@ -133,11 +137,12 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.SanitizeMissingBlockRanges),
         configure(Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers),
         configure(Explorer.Migrator.TokenTransferTokenType),
-        configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, "stability")
+        configure(Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers),
+        configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability)
       ]
       |> List.flatten()
 
-    repos_by_chain_type() ++ account_repo() ++ configurable_children_set
+    repos_by_chain_type() ++ account_repo() ++ mud_repo() ++ configurable_children_set
   end
 
   defp repos_by_chain_type do
@@ -147,9 +152,11 @@ defmodule Explorer.Application do
         Explorer.Repo.Optimism,
         Explorer.Repo.PolygonEdge,
         Explorer.Repo.PolygonZkevm,
+        Explorer.Repo.ZkSync,
         Explorer.Repo.RSK,
         Explorer.Repo.Shibarium,
         Explorer.Repo.Suave,
+        Explorer.Repo.Arbitrum,
         Explorer.Repo.BridgedTokens,
         Explorer.Repo.Filecoin,
         Explorer.Repo.Stability
@@ -162,6 +169,14 @@ defmodule Explorer.Application do
   defp account_repo do
     if System.get_env("ACCOUNT_DATABASE_URL") || Mix.env() == :test do
       [Explorer.Repo.Account]
+    else
+      []
+    end
+  end
+
+  defp mud_repo do
+    if Application.get_env(:explorer, Explorer.Chain.Mud)[:enabled] || Mix.env() == :test do
+      [Explorer.Repo.Mud]
     else
       []
     end

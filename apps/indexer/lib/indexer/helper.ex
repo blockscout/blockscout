@@ -10,12 +10,14 @@ defmodule Indexer.Helper do
       fetch_block_number_by_tag: 2,
       json_rpc: 2,
       quantity_to_integer: 1,
+      integer_to_quantity: 1,
       request: 1
     ]
 
   alias EthereumJSONRPC.Block.ByNumber
-  alias EthereumJSONRPC.Blocks
+  alias EthereumJSONRPC.{Blocks, Transport}
   alias Explorer.Chain.Hash
+  alias Explorer.SmartContract.Reader, as: ContractReader
 
   @finite_retries_number 3
   @infinite_retries_number 100_000_000
@@ -61,6 +63,38 @@ defmodule Indexer.Helper do
   end
 
   @doc """
+    Converts a Unix timestamp to a `DateTime`.
+
+    If the given timestamp is `nil` or `0`, it returns the Unix epoch start.
+    If the conversion fails, it also returns the Unix epoch start.
+
+    ## Parameters
+    - `time_ts`: A non-negative integer representing the Unix timestamp or `nil`.
+
+    ## Returns
+    - A `DateTime` corresponding to the given Unix timestamp, or the Unix epoch start if
+      the timestamp is `nil`, `0`, or if the conversion fails.
+  """
+  @spec timestamp_to_datetime(non_neg_integer() | nil) :: DateTime.t()
+  def timestamp_to_datetime(time_ts) do
+    {_, unix_epoch_starts} = DateTime.from_unix(0)
+
+    case is_nil(time_ts) or time_ts == 0 do
+      true ->
+        unix_epoch_starts
+
+      false ->
+        case DateTime.from_unix(time_ts) do
+          {:ok, datetime} ->
+            datetime
+
+          {:error, _} ->
+            unix_epoch_starts
+        end
+    end
+  end
+
+  @doc """
   Calculates average block time in milliseconds (based on the latest 100 blocks) divided by 2.
   Sends corresponding requests to the RPC node.
   Returns a tuple {:ok, block_check_interval, last_safe_block}
@@ -88,7 +122,19 @@ defmodule Indexer.Helper do
     end
   end
 
-  defp get_safe_block(json_rpc_named_arguments) do
+  @doc """
+    Retrieves the safe block if the endpoint supports such an interface; otherwise, it requests the latest block.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    `{block_num, latest}`: A tuple where
+    - `block_num` is the safe or latest block number.
+    - `latest` is a boolean, where `true` indicates that `block_num` is the latest block number fetched using the tag `latest`.
+  """
+  @spec get_safe_block(EthereumJSONRPC.json_rpc_named_arguments()) :: {non_neg_integer(), boolean()}
+  def get_safe_block(json_rpc_named_arguments) do
     case get_block_number_by_tag("safe", json_rpc_named_arguments) do
       {:ok, safe_block} ->
         {safe_block, false}
@@ -155,6 +201,70 @@ defmodule Indexer.Helper do
   end
 
   @doc """
+    Retrieves event logs from Ethereum-like blockchains within a specified block
+    range for a given address and set of topics using JSON-RPC.
+
+    ## Parameters
+    - `from_block`: The starting block number (integer or hexadecimal string) for the log search.
+    - `to_block`: The ending block number (integer or hexadecimal string) for the log search.
+    - `address`: The address of the contract to filter logs from.
+    - `topics`: List of topics to filter the logs.
+    - `json_rpc_named_arguments`: Configuration for the JSON-RPC call.
+    - `id`: (optional) JSON-RPC request identifier, defaults to 0.
+    - `retries`: (optional) Number of retry attempts if the request fails, defaults to 3.
+
+    ## Returns
+    - `{:ok, logs}` on successful retrieval of logs.
+    - `{:error, reason}` if the request fails after all retries.
+  """
+  @spec get_logs(
+          non_neg_integer() | binary(),
+          non_neg_integer() | binary(),
+          binary(),
+          [binary()],
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:error, atom() | binary() | map()} | {:ok, any()}
+  @spec get_logs(
+          non_neg_integer() | binary(),
+          non_neg_integer() | binary(),
+          binary(),
+          [binary()],
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          integer()
+        ) :: {:error, atom() | binary() | map()} | {:ok, any()}
+  @spec get_logs(
+          non_neg_integer() | binary(),
+          non_neg_integer() | binary(),
+          binary(),
+          [binary()],
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          integer(),
+          non_neg_integer()
+        ) :: {:error, atom() | binary() | map()} | {:ok, any()}
+  def get_logs(from_block, to_block, address, topics, json_rpc_named_arguments, id \\ 0, retries \\ 3) do
+    processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
+    processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
+
+    req =
+      request(%{
+        id: id,
+        method: "eth_getLogs",
+        params: [
+          %{
+            :fromBlock => processed_from_block,
+            :toBlock => processed_to_block,
+            :address => address,
+            :topics => topics
+          }
+        ]
+      })
+
+    error_message = &"Cannot fetch logs for the block range #{from_block}..#{to_block}. Error: #{inspect(&1)}"
+
+    repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
+  end
+
+  @doc """
   Prints a log of progress when handling something splitted to block chunks.
   """
   @spec log_blocks_chunk_handling(
@@ -204,11 +314,170 @@ defmodule Indexer.Helper do
   end
 
   @doc """
-  Calls the given function with the given arguments
-  until it returns {:ok, any()} or the given attempts number is reached.
-  Pauses execution between invokes for 3..1200 seconds (depending on the number of retries).
+    Retrieves decoded results of `eth_call` requests to contracts, with retry logic for handling errors.
+
+    The function attempts the specified number of retries, with a progressive delay between
+    each retry, for each `eth_call` request. If, after all retries, some requests remain
+    unsuccessful, it returns a list of unique error messages encountered.
+
+    ## Parameters
+    - `requests`: A list of `EthereumJSONRPC.Contract.call()` instances describing the parameters
+                  for `eth_call`, including the contract address and method selector.
+    - `abi`: A list of maps providing the ABI that describes the input parameters and output
+             format for the contract functions.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+    - `retries_left`: The number of retries allowed for any `eth_call` that returns an error.
+
+    ## Returns
+    - `{responses, errors}` where:
+      - `responses`: A list of tuples `{status, result}`, where `result` is the decoded response
+                     from the corresponding `eth_call` if `status` is `:ok`, or the error message
+                     if `status` is `:error`.
+      - `errors`: A list of error messages, if any element in `responses` contains `:error`.
   """
-  @spec repeated_call((... -> any()), list(), (... -> any()), non_neg_integer()) ::
+  @spec read_contracts_with_retries(
+          [EthereumJSONRPC.Contract.call()],
+          [map()],
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          integer()
+        ) :: {[{:ok | :error, any()}], list()}
+  def read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left)
+      when is_list(requests) and is_list(abi) and is_integer(retries_left) do
+    do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, 0)
+  end
+
+  defp do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, retries_done) do
+    responses = ContractReader.query_contracts(requests, abi, json_rpc_named_arguments: json_rpc_named_arguments)
+
+    error_messages =
+      Enum.reduce(responses, [], fn {status, error_message}, acc ->
+        acc ++
+          if status == :error do
+            [error_message]
+          else
+            []
+          end
+      end)
+
+    if error_messages == [] do
+      {responses, []}
+    else
+      retries_left = retries_left - 1
+
+      if retries_left <= 0 do
+        {responses, Enum.uniq(error_messages)}
+      else
+        Logger.error("#{List.first(error_messages)}. Retrying...")
+        pause_before_retry(retries_done)
+        do_read_contracts_with_retries(requests, abi, json_rpc_named_arguments, retries_left, retries_done + 1)
+      end
+    end
+  end
+
+  @doc """
+    Executes a batch of RPC calls with retry logic for handling errors.
+
+    This function performs a batch of RPC calls, retrying a specified number of times
+    with a progressive delay between each attempt up to a maximum (20 minutes). If,
+    after all retries, some calls remain unsuccessful, it returns the batch responses,
+    which include the results of successful calls or error descriptions.
+
+    ## Parameters
+    - `requests`: A list of `Transport.request()` instances describing the RPC calls.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+    - `error_message_generator`: A function that generates a string containing the error
+                                 message returned by the RPC call.
+    - `retries_left`: The number of retries allowed for any RPC call that returns an error.
+
+    ## Returns
+    - `{:ok, responses}`: When all calls are successful, `responses` is a list of standard
+                          JSON responses, each including `id` and `result` fields.
+    - `{:error, responses}`: When some calls fail, `responses` is a list containing either
+                             standard JSON responses for successful calls (including `id`
+                             and `result` fields) or errors, which may be in an unassured
+                             format.
+  """
+  @spec repeated_batch_rpc_call([Transport.request()], EthereumJSONRPC.json_rpc_named_arguments(), fun(), integer()) ::
+          {:error, any()} | {:ok, any()}
+  def repeated_batch_rpc_call(requests, json_rpc_named_arguments, error_message_generator, retries_left)
+      when is_list(requests) and is_function(error_message_generator) and is_integer(retries_left) do
+    do_repeated_batch_rpc_call(requests, json_rpc_named_arguments, error_message_generator, retries_left, 0)
+  end
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp do_repeated_batch_rpc_call(
+         requests,
+         json_rpc_named_arguments,
+         error_message_generator,
+         retries_left,
+         retries_done
+       ) do
+    case json_rpc(requests, json_rpc_named_arguments) do
+      {:ok, responses_list} = batch_responses ->
+        standardized_error =
+          Enum.reduce_while(responses_list, %{}, fn one_response, acc ->
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+            case one_response do
+              %{error: error_msg_with_code} -> {:halt, error_msg_with_code}
+              _ -> {:cont, acc}
+            end
+          end)
+
+        case standardized_error do
+          %{code: _, message: error_msg} -> {:error, error_msg, batch_responses}
+          _ -> {:ok, batch_responses, []}
+        end
+
+      {:error, message} = err ->
+        {:error, message, err}
+    end
+    |> case do
+      # credo:disable-for-previous-line Credo.Check.Refactor.PipeChainStart
+      {:ok, responses, _} ->
+        responses
+
+      {:error, message, responses_or_error} ->
+        retries_left = retries_left - 1
+
+        if retries_left <= 0 do
+          Logger.error(error_message_generator.(message))
+          responses_or_error
+        else
+          Logger.error("#{error_message_generator.(message)} Retrying...")
+          pause_before_retry(retries_done)
+
+          do_repeated_batch_rpc_call(
+            requests,
+            json_rpc_named_arguments,
+            error_message_generator,
+            retries_left,
+            retries_done + 1
+          )
+        end
+    end
+  end
+
+  @doc """
+    Repeatedly executes a specified function with given arguments until it succeeds
+    or reaches the limit of retry attempts. It pauses between retries, with the
+    pause duration increasing progressively up to a maximum (20 minutes).
+
+    The main intent of the function is to robustly handle RPC calls that may fail.
+
+    ## Parameters
+    - `func`: The function to be called.
+    - `args`: List of arguments to pass to the function.
+    - `error_message`: A function that takes an error message and returns a log message.
+    - `retries_left`: The number of attempts left.
+    - `retries_done`: (optional) The number of attempts already made, defaults to 0.
+
+    ## Returns
+    - `{:ok, result}` on success.
+    - `{:error, reason}` if retries are exhausted without success.
+  """
+  @spec repeated_call(function(), list(), function(), non_neg_integer()) ::
+          {:ok, any()} | {:error, binary() | atom() | map()}
+  @spec repeated_call(function(), list(), function(), non_neg_integer(), non_neg_integer()) ::
           {:ok, any()} | {:error, binary() | atom() | map()}
   def repeated_call(func, args, error_message, retries_left, retries_done \\ 0) do
     case apply(func, args) do
@@ -223,10 +492,7 @@ defmodule Indexer.Helper do
           err
         else
           Logger.error("#{error_message.(message)} Retrying...")
-
-          # wait up to 20 minutes
-          :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
-
+          pause_before_retry(retries_done)
           repeated_call(func, args, error_message, retries_left, retries_done + 1)
         end
     end
@@ -306,5 +572,10 @@ defmodule Indexer.Helper do
     else
       Hash.to_string(topic)
     end
+  end
+
+  # Pauses the process, incrementally increasing the sleep time up to a maximum of 20 minutes.
+  defp pause_before_retry(retries_done) do
+    :timer.sleep(min(3000 * Integer.pow(2, retries_done), 1_200_000))
   end
 end

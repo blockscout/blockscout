@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.RootstockDataTest do
   setup :verify_on_exit!
   setup :set_mox_global
 
-  if Application.compile_env(:explorer, :chain_type) == "rsk" do
+  if Application.compile_env(:explorer, :chain_type) == :rsk do
     test "do not start when all old blocks are fetched", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       RootstockData.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 

@@ -902,7 +902,7 @@ defmodule Explorer.EthRPC do
        "from" => transaction.from_address_hash,
        "gasUsed" => encode_quantity(transaction.gas_used),
        "logs" => Enum.map(transaction.logs, &render_log(&1, transaction)),
-       'logsBloom' => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
+       "logsBloom" => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
        "status" => encode_quantity(status),
        "to" => transaction.to_address_hash,
        "transactionHash" => transaction.hash,

@@ -59,7 +59,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
 
   @spec vyper_releases_url :: String.t()
   def vyper_releases_url do
-    "https://api.github.com/repos/vyperlang/vyper/releases"
+    "https://api.github.com/repos/vyperlang/vyper/releases?per_page=100"
   end
 
   defp format_data(json, compiler) do
