@@ -74,6 +74,8 @@ defmodule Explorer.Chain.Transaction.StateChange do
     end
   end
 
+  defp update_coin_balances_from_internal_tx(%InternalTransaction{index: 0}, coin_balances), do: coin_balances
+
   defp update_coin_balances_from_internal_tx(internal_tx, coin_balances) do
     coin_balances
     |> (&if(Map.has_key?(coin_balances, internal_tx.from_address_hash),
