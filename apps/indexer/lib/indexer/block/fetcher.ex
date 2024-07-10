@@ -50,6 +50,8 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
+  alias Indexer.Transform.Scroll.L1FeeParams, as: ScrollL1FeeParams
+
   alias Indexer.Transform.Arbitrum.Messaging, as: ArbitrumMessaging
   alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
 
@@ -174,6 +176,7 @@ defmodule Indexer.Block.Fetcher do
              do: DepositExecutes.parse(logs),
              else: []
            ),
+         scroll_l1_fee_params = ScrollL1FeeParams.parse(logs),
          shibarium_bridge_operations =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
              do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
@@ -240,6 +243,7 @@ defmodule Indexer.Block.Fetcher do
            polygon_edge_withdrawals: polygon_edge_withdrawals,
            polygon_edge_deposit_executes: polygon_edge_deposit_executes,
            polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+           scroll_l1_fee_params: scroll_l1_fee_params,
            shibarium_bridge_operations: shibarium_bridge_operations,
            celo_gas_tokens: celo_gas_tokens,
            arbitrum_messages: arbitrum_xlevel_messages
@@ -276,6 +280,7 @@ defmodule Indexer.Block.Fetcher do
          polygon_edge_withdrawals: polygon_edge_withdrawals,
          polygon_edge_deposit_executes: polygon_edge_deposit_executes,
          polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+         scroll_l1_fee_params: scroll_l1_fee_params,
          shibarium_bridge_operations: shibarium_bridge_operations,
          celo_gas_tokens: celo_gas_tokens,
          arbitrum_messages: arbitrum_xlevel_messages
@@ -299,6 +304,10 @@ defmodule Indexer.Block.Fetcher do
       :polygon_zkevm ->
         basic_import_options
         |> Map.put_new(:polygon_zkevm_bridge_operations, %{params: polygon_zkevm_bridge_operations})
+
+      :scroll ->
+        basic_import_options
+        |> Map.put_new(:scroll_l1_fee_params, %{params: scroll_l1_fee_params})
 
       :shibarium ->
         basic_import_options

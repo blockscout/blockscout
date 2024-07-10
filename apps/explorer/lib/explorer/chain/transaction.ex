@@ -48,6 +48,13 @@ defmodule Explorer.Chain.Transaction.Schema do
                             2
                           )
 
+                        :scroll ->
+                          quote do
+                            [
+                              field(:l1_fee, Wei)
+                            ]
+                          end
+
                         :suave ->
                           elem(
                             quote do
@@ -314,10 +321,13 @@ defmodule Explorer.Chain.Transaction do
                                 :optimism ->
                                   ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
 
+                                :scroll ->
+                                  ~w(l1_fee)a
+
                                 :suave ->
                                   ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
 
-                                :arbitrum ->
+                               :arbitrum ->
                                   ~w(gas_used_for_l1)a
 
                                 :celo ->
