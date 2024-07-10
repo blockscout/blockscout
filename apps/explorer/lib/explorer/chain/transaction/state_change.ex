@@ -181,6 +181,11 @@ defmodule Explorer.Chain.Transaction.StateChange do
     end)
   end
 
+  @doc """
+  Returns the balance change of from address of a transaction
+  or an internal transaction.
+  """
+  @spec from_loss(Transaction.t() | InternalTransaction.t()) :: Wei.t()
   def from_loss(%Transaction{} = tx) do
     {_, fee} = Transaction.fee(tx, :wei)
 
@@ -195,6 +200,11 @@ defmodule Explorer.Chain.Transaction.StateChange do
     tx.value
   end
 
+  @doc """
+  Returns the balance change of to address of a transaction
+  or an internal transaction.
+  """
+  @spec to_profit(Transaction.t() | InternalTransaction.t()) :: Wei.t()
   def to_profit(%Transaction{} = tx) do
     if error?(tx) do
       %Wei{value: 0}
@@ -246,6 +256,11 @@ defmodule Explorer.Chain.Transaction.StateChange do
     }
   end
 
+  @doc """
+  Returns the list of native coin state changes of a transaction, including state changes from the internal transactions,
+  taking into account state changes from previous transactions in the same block.
+  """
+  @spec native_coin_entries(Transaction.t(), coin_balances_map()) :: [t()]
   def native_coin_entries(transaction, coin_balances_before_tx) do
     block = transaction.block
 
