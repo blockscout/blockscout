@@ -28,13 +28,19 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   import Explorer.MicroserviceInterfaces.Metadata,
     only: [maybe_preload_metadata: 1, maybe_preload_metadata_to_transaction: 1]
 
+  import Ecto.Query,
+    only: [
+      preload: 2
+    ]
+
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
-  alias Explorer.Chain
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
@@ -212,6 +218,46 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   @spec arbitrum_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def arbitrum_batch(conn, params) do
     handle_batch_transactions(conn, params, &ArbitrumReader.batch_transactions/2)
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/transactions/optimism-batch/:batch_number` endpoint.
+    It renders the list of L2 transactions bound to the specified batch.
+  """
+  @spec optimism_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def optimism_batch(conn, %{"batch_number" => batch_number_string} = params) do
+    {batch_number, ""} = Integer.parse(batch_number_string)
+
+    l2_block_number_from = OptimismTxnBatch.edge_l2_block_number(batch_number, :min)
+    l2_block_number_to = OptimismTxnBatch.edge_l2_block_number(batch_number, :max)
+
+    transactions_plus_one =
+      if is_nil(l2_block_number_from) or is_nil(l2_block_number_to) do
+        []
+      else
+        paging_options = paging_options(params)[:paging_options]
+
+        query =
+          case paging_options do
+            %PagingOptions{key: {0, 0}, is_index_in_asc_order: false} -> []
+            _ -> Transaction.fetch_transactions(paging_options, l2_block_number_from - 1, l2_block_number_to)
+          end
+
+        query
+        |> Chain.join_associations(@transaction_necessity_by_association)
+        |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+        |> Repo.replica().all()
+      end
+
+    {transactions, next_page} = split_list_by_page(transactions_plus_one)
+    next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+
+    conn
+    |> put_status(200)
+    |> render(:transactions, %{
+      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+      next_page_params: next_page_params
+    })
   end
 
   # Processes and renders transactions for a specified batch into an HTTP response.
