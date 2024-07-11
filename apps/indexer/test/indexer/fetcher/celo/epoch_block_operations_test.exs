@@ -21,37 +21,26 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperationsTest do
 
   setup :verify_on_exit!
 
-  describe "init/3" do
-    test "buffers blocks with pending epoch operation", %{
-      json_rpc_named_arguments: json_rpc_named_arguments
-    } do
-      unfetched = insert(:block, number: 1 * blocks_per_epoch())
-      insert(:celo_pending_epoch_block_operation, block: unfetched)
+  if Application.compile_env(:explorer, :chain_type) == :celo do
+    describe "init/3" do
+      test "buffers blocks with pending epoch operation", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        unfetched = insert(:block, number: 1 * blocks_per_epoch())
+        insert(:celo_pending_epoch_block_operation, block: unfetched)
 
-      assert [
-               %{
-                 block_number: unfetched.number,
-                 block_hash: unfetched.hash
-               }
-             ] ==
-               EpochBlockOperations.init(
-                 [],
-                 fn block_number, acc -> [block_number | acc] end,
-                 json_rpc_named_arguments
-               )
+        assert [
+                 %{
+                   block_number: unfetched.number,
+                   block_hash: unfetched.hash
+                 }
+               ] ==
+                 EpochBlockOperations.init(
+                   [],
+                   fn block_number, acc -> [block_number | acc] end,
+                   json_rpc_named_arguments
+                 )
+      end
     end
-
-    # todo: implement this test (need help: how to update block after calling `insert(...)`?)
-    # test "does not buffer blocks that lose consensus", %{
-    #   json_rpc_named_arguments: json_rpc_named_arguments
-    # } do
-    #   unfetched = insert(:block, number: 1 * blocks_per_epoch())
-    #   insert(:celo_pending_epoch_block_operation, block: unfetched)
-    #   assert [] == EpochRewards.init(
-    #     [],
-    #     fn block_number, acc -> [block_number | acc] end,
-    #     json_rpc_named_arguments
-    #   )
-    # end
   end
 end

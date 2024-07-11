@@ -1001,7 +1001,7 @@ config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes,
 
 celo_epoch_fetchers_enabled? =
   ConfigHelper.chain_type() == :celo and
-    not ConfigHelper.parse_bool_env_var("INDEXER_CELO_EPOCH_FETCHER_DISABLED")
+    not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CELO_EPOCH_FETCHER")
 
 config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor, enabled: celo_epoch_fetchers_enabled?
 

@@ -700,11 +700,6 @@ defmodule EthereumJSONRPC.Transaction do
     end
   end
 
-  # ZkSync fields
-  defp entry_to_elixir({key, _}) when key in ~w(l1BatchNumber l1BatchTxIndex) do
-    {:ignore, :ignore}
-  end
-
   # Celo-specific fields
   if Application.compile_env(:explorer, :chain_type) == :celo do
     defp entry_to_elixir({key, value})
