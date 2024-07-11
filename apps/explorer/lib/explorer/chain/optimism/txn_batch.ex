@@ -65,27 +65,32 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
     - The min/max block number or `nil` if the block range is not found.
   """
   @spec edge_l2_block_number(non_neg_integer(), :min | :max) :: non_neg_integer() | nil
-  def edge_l2_block_number(id, type) when type == :min do
-    Repo.replica().one(
-      from(
-        tb in __MODULE__,
-        select: tb.l2_block_number,
-        where: tb.frame_sequence_id == ^id,
-        order_by: [asc: tb.l2_block_number],
-        limit: 1
-      )
-    )
+  def edge_l2_block_number(id, type) when type == :min and is_integer(id) and id >= 0 do
+    query =
+      id
+      |> edge_l2_block_number_query()
+      |> order_by([tb], asc: tb.l2_block_number)
+
+    Repo.replica().one(query)
   end
 
-  def edge_l2_block_number(id, type) when type == :max do
-    Repo.replica().one(
-      from(
-        tb in __MODULE__,
-        select: tb.l2_block_number,
-        where: tb.frame_sequence_id == ^id,
-        order_by: [desc: tb.l2_block_number],
-        limit: 1
-      )
+  def edge_l2_block_number(id, type) when type == :max and is_integer(id) and id >= 0 do
+    query =
+      id
+      |> edge_l2_block_number_query()
+      |> order_by([tb], desc: tb.l2_block_number)
+
+    Repo.replica().one(query)
+  end
+
+  def edge_l2_block_number(_id, _type), do: nil
+
+  defp edge_l2_block_number_query(id) do
+    from(
+      tb in __MODULE__,
+      select: tb.l2_block_number,
+      where: tb.frame_sequence_id == ^id,
+      limit: 1
     )
   end
 

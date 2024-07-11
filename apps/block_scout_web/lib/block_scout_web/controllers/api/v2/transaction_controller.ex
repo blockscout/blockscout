@@ -225,7 +225,9 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     It renders the list of L2 transactions bound to the specified batch.
   """
   @spec optimism_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def optimism_batch(conn, %{"batch_number" => batch_number} = params) do
+  def optimism_batch(conn, %{"batch_number" => batch_number_string} = params) do
+    {batch_number, ""} = Integer.parse(batch_number_string)
+
     l2_block_number_from = OptimismTxnBatch.edge_l2_block_number(batch_number, :min)
     l2_block_number_to = OptimismTxnBatch.edge_l2_block_number(batch_number, :max)
 

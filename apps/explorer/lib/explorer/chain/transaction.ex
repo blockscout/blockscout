@@ -1868,7 +1868,7 @@ defmodule Explorer.Chain.Transaction do
       from(
         t in Transaction,
         inner_join: b in Block,
-        on: b.hash == t.block_hash and b.consensus == true,
+        on: b.number == t.block_number and b.consensus == true,
         where: t.block_number >= ^from and t.block_number <= ^to
       ),
       :count,
