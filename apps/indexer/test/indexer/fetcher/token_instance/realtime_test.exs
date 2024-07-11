@@ -6,6 +6,7 @@ defmodule Indexer.Fetcher.TokenInstance.RealtimeTest do
 
   alias Explorer.Repo
   alias Explorer.Chain.Token.Instance
+  alias Indexer.BufferedTask
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Plug.Conn
 
@@ -111,13 +112,42 @@ defmodule Indexer.Fetcher.TokenInstance.RealtimeTest do
         %{token_contract_address_hash: token.contract_address_hash, token_ids: [Decimal.new(777)]}
       ])
 
-      :timer.sleep(150)
+      wait_for_tasks(TokenInstanceRealtime)
 
       [instance] = Repo.all(Instance)
 
       assert is_nil(instance.error)
       assert instance.metadata == %{"name" => "name"}
       Bypass.down(bypass)
+    end
+  end
+
+  defp wait_for_tasks(buffered_task) do
+    wait_until(:timer.seconds(10000), fn ->
+      counts = BufferedTask.debug_count(buffered_task)
+      counts.buffer == 0 and counts.tasks == 0
+    end)
+  end
+
+  defp wait_until(timeout, producer) do
+    parent = self()
+    ref = make_ref()
+
+    spawn(fn -> do_wait_until(parent, ref, producer) end)
+
+    receive do
+      {^ref, :ok} -> :ok
+    after
+      timeout -> exit(:timeout)
+    end
+  end
+
+  defp do_wait_until(parent, ref, producer) do
+    if producer.() do
+      send(parent, {ref, :ok})
+    else
+      :timer.sleep(100)
+      do_wait_until(parent, ref, producer)
     end
   end
 end
