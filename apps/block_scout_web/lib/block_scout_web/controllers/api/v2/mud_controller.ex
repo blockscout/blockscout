@@ -203,7 +203,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
         ns |> String.pad_trailing(14, <<0>>)
 
       _ ->
-        nil
+        :error
     end
   end
 
@@ -238,17 +238,19 @@ defmodule BlockScoutWeb.API.V2.MudController do
         <<1::256>>
 
       "0x" <> hex ->
-        bin = Base.decode16!(hex, case: :mixed)
-        # addresses are padded to 32 bytes with zeros on the right
-        if FieldSchema.type_of(schema.key_schema, field_idx) == 97 do
-          <<0::size(256 - byte_size(bin) * 8), bin::binary>>
-        else
-          <<bin::binary, 0::size(256 - byte_size(bin) * 8)>>
+        with {:ok, bin} <- Base.decode16(hex, case: :mixed) do
+          # addresses are padded to 32 bytes with zeros on the right
+          if FieldSchema.type_of(schema.key_schema, field_idx) == 97 do
+            <<0::size(256 - byte_size(bin) * 8), bin::binary>>
+          else
+            <<bin::binary, 0::size(256 - byte_size(bin) * 8)>>
+          end
         end
 
       dec ->
-        num = dec |> Integer.parse() |> elem(0)
-        <<num::256>>
+        with {num, _} <- Integer.parse(dec) do
+          <<num::256>>
+        end
     end
   end
 
