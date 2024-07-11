@@ -1225,21 +1225,21 @@ defmodule Indexer.Block.FetcherTest do
 
   def maybe_set_celo_core_contracts_env do
     Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
-    contracts: %{
-      "addresses" => %{
-        "Accounts" => [],
-        "Election" => [],
-        "EpochRewards" => [],
-        "FeeHandler" => [],
-        "GasPriceMinimum" => [],
-        "GoldToken" => [],
-        "Governance" => [],
-        "LockedGold" => [],
-        "Reserve" => [],
-        "StableToken" => [],
-        "Validators" => []
+      contracts: %{
+        "addresses" => %{
+          "Accounts" => [],
+          "Election" => [],
+          "EpochRewards" => [],
+          "FeeHandler" => [],
+          "GasPriceMinimum" => [],
+          "GoldToken" => [],
+          "Governance" => [],
+          "LockedGold" => [],
+          "Reserve" => [],
+          "StableToken" => [],
+          "Validators" => []
+        }
       }
-    }
-  )
+    )
   end
 end
