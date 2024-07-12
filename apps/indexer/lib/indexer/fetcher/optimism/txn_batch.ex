@@ -47,6 +47,8 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
   # Optimism chain block time is a constant (2 seconds)
   @op_chain_block_time 2
 
+  @compressor_brotli 1
+
   def child_spec(start_link_arguments) do
     spec = %{
       id: __MODULE__,
@@ -1097,15 +1099,20 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
          genesis_block_l2,
          json_rpc_named_arguments_l2
        ) do
-    uncompressed_bytes = zlib_decompress(bytes)
+    uncompressed_bytes =
+      if first_byte(bytes) == @compressor_brotli do
+        {:ok, uncompressed} = :brotli.decode(binary_part(bytes, 1, byte_size(bytes) - 1))
+        uncompressed
+      else
+        zlib_decompress(bytes)
+      end
 
     batches =
       Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), {uncompressed_bytes, []}, fn _i, {remainder, batch_acc} ->
         try do
           {decoded, new_remainder} = ExRLP.decode(remainder, stream: true)
 
-          <<version>> = binary_part(decoded, 0, 1)
-          content = binary_part(decoded, 1, byte_size(decoded) - 1)
+          <<version::size(8), content::binary>> = decoded
 
           new_batch_acc =
             cond do
@@ -1310,7 +1317,6 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
         start_block = quantity_to_integer(Enum.at(responses, 0).result)
         "0x000000000000000000000000" <> batch_inbox = Enum.at(responses, 1).result
         "0x000000000000000000000000" <> batch_submitter = Enum.at(responses, 2).result
-
         {start_block, String.downcase("0x" <> batch_inbox), String.downcase("0x" <> batch_submitter)}
 
       _ ->

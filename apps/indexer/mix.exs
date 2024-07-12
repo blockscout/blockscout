@@ -51,6 +51,8 @@ defmodule Indexer.MixProject do
       {:decorator, "~> 1.4"},
       # JSONRPC access to Nethermind for `Explorer.Indexer`
       {:ethereum_jsonrpc, in_umbrella: true},
+      # Brotli compression/decompression
+      {:brotli, "~> 0.3.2"},
       # RLP encoding
       {:ex_rlp, "~> 0.6.0"},
       # Importing to database
