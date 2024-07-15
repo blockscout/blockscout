@@ -1,6 +1,9 @@
 defmodule Explorer.Chain.Celo.EpochReward do
-  # todo: write doc
-  @moduledoc false
+  @moduledoc """
+  Represents the distributions in the Celo epoch. Each log index points to a
+  token transfer event in the `TokenTransfer` relation. These include the
+  reserve bolster, community, and carbon offsetting transfers.
+  """
   use Explorer.Schema
 
   alias Explorer.Chain.{Block, Hash}
@@ -34,8 +37,5 @@ defmodule Explorer.Chain.Celo.EpochReward do
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:block_hash)
-    |> foreign_key_constraint(:reserve_bolster_transfer_log_index)
-    |> foreign_key_constraint(:community_transfer_log_index)
-    |> foreign_key_constraint(:carbon_offsetting_transfer_log_index)
   end
 end

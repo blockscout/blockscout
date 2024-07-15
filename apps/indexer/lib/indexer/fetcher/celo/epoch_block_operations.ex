@@ -1,6 +1,7 @@
 defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
-  # todo: write doc
-  @moduledoc false
+  @moduledoc """
+  Tracks epoch blocks awaiting processing by the epoch fetcher.
+  """
 
   import Explorer.Chain.Celo.Helper, only: [epoch_block_number?: 1]
 
