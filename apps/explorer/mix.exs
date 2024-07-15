@@ -66,7 +66,7 @@ defmodule Explorer.Mixfile do
       {:benchee_csv, "~> 1.0.0", only: :test},
       {:bypass, "~> 2.1", only: :test},
       {:briefly, "~> 0.4", github: "CargoSense/briefly"},
-      {:excid, git: "https://github.com/dwyl/cid", branch: "main", override: true},
+      {:excid, "~> 1.0.2"},
       {:comeonin, "~> 5.3"},
       # For Absinthe to load data in batches
       {:dataloader, "~> 2.0.0"},
