@@ -8,7 +8,6 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
 
   import Explorer.Helper,
     only: [
-      decode_data: 2,
       truncate_address_hash: 1,
       safe_parse_non_negative_integer: 1
     ]
@@ -138,7 +137,7 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
     validator_group_votes =
       chunk
       |> fetch_logs_chunk(block_range, json_rpc_named_arguments)
-      |> Enum.map(&log_to_vote/1)
+      |> Enum.map(&log_to_entry/1)
 
     addresses_params =
       Addresses.extract_addresses(%{
@@ -196,22 +195,19 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
     logs
   end
 
-  defp log_to_vote(log) do
+  defp log_to_entry(log) do
     type =
       case log.first_topic do
         @validator_group_vote_activated_topic -> :activated
         @validator_group_active_vote_revoked_topic -> :revoked
       end
 
-    [value, units] = decode_data(log.data, [{:uint, 256}, {:uint, 256}])
     account_address_hash = truncate_address_hash(log.second_topic)
     group_address_hash = truncate_address_hash(log.third_topic)
 
     %{
       account_address_hash: account_address_hash,
       group_address_hash: group_address_hash,
-      value: value,
-      units: units,
       type: type,
       block_number: log.block_number,
       block_hash: log.block_hash,
