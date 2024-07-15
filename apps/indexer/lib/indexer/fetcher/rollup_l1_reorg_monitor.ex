@@ -31,21 +31,31 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   def init(_args) do
     Logger.metadata(fetcher: @fetcher_name)
 
-    modules_can_use_reorg_monitor = [
+    optimism_modules = [
       Indexer.Fetcher.Optimism.OutputRoot,
       Indexer.Fetcher.Optimism.TxnBatch,
-      Indexer.Fetcher.Optimism.WithdrawalEvent,
-      Indexer.Fetcher.PolygonEdge.Deposit,
-      Indexer.Fetcher.PolygonEdge.WithdrawalExit,
-      Indexer.Fetcher.PolygonZkevm.BridgeL1,
-      Indexer.Fetcher.Shibarium.L1
+      Indexer.Fetcher.Optimism.WithdrawalEvent
     ]
+
+    modules_can_use_reorg_monitor =
+      optimism_modules ++
+        [
+          Indexer.Fetcher.PolygonEdge.Deposit,
+          Indexer.Fetcher.PolygonEdge.WithdrawalExit,
+          Indexer.Fetcher.PolygonZkevm.BridgeL1,
+          Indexer.Fetcher.Shibarium.L1
+        ]
 
     modules_using_reorg_monitor =
       modules_can_use_reorg_monitor
       |> Enum.reject(fn module ->
-        module_config = Application.get_all_env(:indexer)[module]
-        is_nil(module_config[:start_block]) and is_nil(module_config[:start_block_l1])
+        if module in optimism_modules do
+          optimism_config = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
+          is_nil(optimism_config[:optimism_l1_system_config])
+        else
+          module_config = Application.get_all_env(:indexer)[module]
+          is_nil(module_config[:start_block]) and is_nil(module_config[:start_block_l1])
+        end
       end)
 
     if Enum.empty?(modules_using_reorg_monitor) do
@@ -68,11 +78,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
             Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc]
 
           Enum.member?(
-            [
-              Indexer.Fetcher.Optimism.OutputRoot,
-              Indexer.Fetcher.Optimism.TxnBatch,
-              Indexer.Fetcher.Optimism.WithdrawalEvent
-            ],
+            optimism_modules,
             module_using_reorg_monitor
           ) ->
             # there can be more than one Optimism.* modules, so we get the common L1 RPC URL for them from Indexer.Fetcher.Optimism

@@ -31,6 +31,12 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         [transactions: :beacon_blob_transaction] => :optional
       }
 
+    :optimism ->
+      @chain_type_transaction_necessity_by_association %{}
+      @chain_type_block_necessity_by_association %{
+        :op_frame_sequence => :optional
+      }
+
     :zksync ->
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{

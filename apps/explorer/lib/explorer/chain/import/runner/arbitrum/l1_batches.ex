@@ -93,19 +93,21 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.L1Batches do
           before_acc: fragment("EXCLUDED.before_acc"),
           after_acc: fragment("EXCLUDED.after_acc"),
           commitment_id: fragment("EXCLUDED.commitment_id"),
+          batch_container: fragment("EXCLUDED.batch_container"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tb.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tb.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.transactions_count, EXCLUDED.start_block, EXCLUDED.end_block, EXCLUDED.before_acc, EXCLUDED.after_acc, EXCLUDED.commitment_id) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.transactions_count, EXCLUDED.start_block, EXCLUDED.end_block, EXCLUDED.before_acc, EXCLUDED.after_acc, EXCLUDED.commitment_id, EXCLUDED.batch_container) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
           tb.transactions_count,
           tb.start_block,
           tb.end_block,
           tb.before_acc,
           tb.after_acc,
-          tb.commitment_id
+          tb.commitment_id,
+          tb.batch_container
         )
     )
   end

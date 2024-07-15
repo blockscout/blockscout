@@ -8,13 +8,20 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       split_list_by_page: 1
     ]
 
+  import BlockScoutWeb.PagingHelper,
+    only: [
+      delete_parameters_from_next_page_params: 1
+    ]
+
   alias Explorer.Chain
-  alias Explorer.Chain.Optimism.{Deposit, DisputeGame, OutputRoot, TxnBatch, Withdrawal}
+  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.Optimism.{Deposit, DisputeGame, FrameSequence, OutputRoot, TxnBatch, Withdrawal}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
-    Function to handle GET requests to `/api/v2/optimism/txn-batches` endpoint.
+    Function to handle GET requests to `/api/v2/optimism/txn-batches` and
+    `/api/v2/optimism/txn-batches/:l2_block_range_start/:l2_block_range_end` endpoints.
   """
   @spec txn_batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def txn_batches(conn, params) do
@@ -22,10 +29,12 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
+      |> Keyword.put(:l2_block_range_start, Map.get(params, "l2_block_range_start"))
+      |> Keyword.put(:l2_block_range_end, Map.get(params, "l2_block_range_end"))
       |> TxnBatch.list()
       |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, batches, params)
+    next_page_params = next_page_params(next_page, batches, delete_parameters_from_next_page_params(params))
 
     conn
     |> put_status(200)
@@ -41,6 +50,96 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   @spec txn_batches_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def txn_batches_count(conn, _params) do
     items_count(conn, TxnBatch)
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/optimism/batches` endpoint.
+  """
+  @spec batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def batches(conn, params) do
+    {batches, next_page} =
+      params
+      |> paging_options()
+      |> Keyword.put(:api?, true)
+      |> Keyword.put(:only_view_ready?, true)
+      |> FrameSequence.list()
+      |> split_list_by_page()
+
+    next_page_params = next_page_params(next_page, batches, params)
+
+    items =
+      batches
+      |> Enum.map(fn fs ->
+        Task.async(fn ->
+          l2_block_number_from = TxnBatch.edge_l2_block_number(fs.id, :min)
+          l2_block_number_to = TxnBatch.edge_l2_block_number(fs.id, :max)
+          tx_count = Transaction.tx_count_for_block_range(l2_block_number_from..l2_block_number_to)
+
+          fs
+          |> Map.put(:l2_block_range, l2_block_number_from..l2_block_number_to)
+          |> Map.put(:tx_count, tx_count)
+        end)
+      end)
+      |> Task.yield_many(:infinity)
+      |> Enum.map(fn {_task, {:ok, item}} -> item end)
+
+    conn
+    |> put_status(200)
+    |> render(:optimism_batches, %{
+      batches: items,
+      next_page_params: next_page_params
+    })
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/optimism/batches/count` endpoint.
+  """
+  @spec batches_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def batches_count(conn, _params) do
+    items_count(conn, FrameSequence)
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment` endpoint.
+  """
+  @spec batch_by_celestia_blob(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def batch_by_celestia_blob(conn, %{"height" => height, "commitment" => commitment}) do
+    {height, ""} = Integer.parse(height)
+
+    commitment =
+      if String.starts_with?(String.downcase(commitment), "0x") do
+        commitment
+      else
+        "0x" <> commitment
+      end
+
+    batch = FrameSequence.batch_by_celestia_blob(commitment, height, api?: true)
+
+    if is_nil(batch) do
+      {:error, :not_found}
+    else
+      conn
+      |> put_status(200)
+      |> render(:optimism_batch, %{batch: batch})
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/optimism/batches/:internal_id` endpoint.
+  """
+  @spec batch_by_internal_id(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def batch_by_internal_id(conn, %{"internal_id" => internal_id}) do
+    {internal_id, ""} = Integer.parse(internal_id)
+
+    batch = FrameSequence.batch_by_internal_id(internal_id, api?: true)
+
+    if is_nil(batch) do
+      {:error, :not_found}
+    else
+      conn
+      |> put_status(200)
+      |> render(:optimism_batch, %{batch: batch})
+    end
   end
 
   @doc """
@@ -100,7 +199,11 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec games_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def games_count(conn, _params) do
-    items_count(conn, DisputeGame)
+    count = DisputeGame.get_last_known_index() + 1
+
+    conn
+    |> put_status(200)
+    |> render(:optimism_items_count, %{count: count})
   end
 
   @doc """

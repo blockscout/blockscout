@@ -37,19 +37,27 @@ defmodule Indexer.Fetcher.PolygonEdge.WithdrawalExit do
 
   @impl GenServer
   def init(_args) do
+    {:ok, %{}, {:continue, :ok}}
+  end
+
+  @impl GenServer
+  def handle_continue(:ok, state) do
     Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
 
-    PolygonEdge.init_l1(
-      WithdrawalExit,
-      env,
-      self(),
-      env[:exit_helper],
-      "Exit Helper",
-      "polygon_edge_withdrawal_exits",
-      "Withdrawals"
-    )
+    case PolygonEdge.init_l1(
+           WithdrawalExit,
+           env,
+           self(),
+           env[:exit_helper],
+           "Exit Helper",
+           "polygon_edge_withdrawal_exits",
+           "Withdrawals"
+         ) do
+      :ignore -> {:stop, :normal, state}
+      {:ok, new_state} -> {:noreply, new_state}
+    end
   end
 
   @impl GenServer

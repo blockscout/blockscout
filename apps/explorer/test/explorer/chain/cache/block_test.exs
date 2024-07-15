@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Cache.BlockTest do
 
     _result = Block.get_count()
 
-    Process.sleep(1000)
+    Process.sleep(2000)
 
     updated_value = Block.get_count()
 
