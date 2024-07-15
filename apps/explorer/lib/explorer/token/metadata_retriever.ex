@@ -699,7 +699,7 @@ defmodule Explorer.Token.MetadataRetriever do
       %URI{path: path} ->
         resource_id = path |> String.split("/") |> List.first()
 
-        if Cid.cid!(resource_id) do
+        if Cid.cid?(resource_id) do
           fetch_from_ipfs(resource_id, hex_token_id)
         else
           json = ExplorerHelper.decode_json(token_uri_string, true)
