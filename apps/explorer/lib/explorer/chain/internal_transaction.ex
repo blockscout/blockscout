@@ -780,7 +780,8 @@ defmodule Explorer.Chain.InternalTransaction do
     from(
       child in query,
       inner_join: transaction in assoc(child, :transaction),
-      where: transaction.hash == ^hash
+      where: transaction.hash == ^hash,
+      where: child.block_hash == transaction.block_hash
     )
   end
 
