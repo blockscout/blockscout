@@ -3,15 +3,13 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
   use Explorer.Schema
 
-  import Explorer.Chain, only: [select_repo: 1]
+  import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
 
   alias Explorer.Application.Constants
   alias Explorer.Chain.{Block, Hash, Transaction}
   alias Explorer.Chain.Cache.OptimismFinalizationPeriod
   alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot, WithdrawalEvent}
   alias Explorer.{Helper, PagingOptions, Repo}
-
-  @default_paging_options %PagingOptions{page_size: 50}
 
   @game_status_defender_wins 2
 
@@ -28,15 +26,14 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
   @required_attrs ~w(msg_nonce hash l2_transaction_hash l2_block_number)a
 
-  @type t :: %__MODULE__{
-          msg_nonce: Decimal.t(),
-          hash: Hash.t(),
-          l2_transaction_hash: Hash.t(),
-          l2_block_number: non_neg_integer()
-        }
-
+  @typedoc """
+    * `msg_nonce` - A nonce of the withdrawal message.
+    * `hash` - A withdrawal hash.
+    * `l2_transaction_hash` - An L2 transaction hash which initiated the withdrawal.
+    * `l2_block_number` - A block number of the L2 transaction.
+  """
   @primary_key false
-  schema "op_withdrawals" do
+  typed_schema "op_withdrawals" do
     field(:msg_nonce, :decimal, primary_key: true)
     field(:hash, Hash.Full)
     field(:l2_transaction_hash, Hash.Full)
@@ -57,7 +54,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   """
   @spec list :: [__MODULE__.t()]
   def list(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
 
     case paging_options do
       %PagingOptions{key: {0}} ->

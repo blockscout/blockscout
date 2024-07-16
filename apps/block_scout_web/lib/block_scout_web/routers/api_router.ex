@@ -126,6 +126,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/arbitrum-batch/:batch_number", V2.TransactionController, :arbitrum_batch)
       end
 
+      if Application.compile_env(:explorer, :chain_type) == :optimism do
+        get("/optimism-batch/:batch_number", V2.TransactionController, :optimism_batch)
+      end
+
       if Application.compile_env(:explorer, :chain_type) == :suave do
         get("/execution-node/:execution_node_hash_param", V2.TransactionController, :execution_node)
       end
@@ -215,6 +219,11 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if Application.compile_env(:explorer, :chain_type) == :optimism do
         get("/txn-batches", V2.OptimismController, :txn_batches)
         get("/txn-batches/count", V2.OptimismController, :txn_batches_count)
+        get("/txn-batches/:l2_block_range_start/:l2_block_range_end", V2.OptimismController, :txn_batches)
+        get("/batches", V2.OptimismController, :batches)
+        get("/batches/count", V2.OptimismController, :batches_count)
+        get("/batches/da/celestia/:height/:commitment", V2.OptimismController, :batch_by_celestia_blob)
+        get("/batches/:internal_id", V2.OptimismController, :batch_by_internal_id)
         get("/output-roots", V2.OptimismController, :output_roots)
         get("/output-roots/count", V2.OptimismController, :output_roots_count)
         get("/deposits", V2.OptimismController, :deposits)

@@ -113,9 +113,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     creation_tx = creator_hash && AddressView.transaction_hash(address)
     token = address.token && TokenView.render("token.json", %{token: address.token})
 
-    # todo: added for backward compatibility, remove when frontend unbound from these props
-    {implementation_address, implementation_name} = single_implementation(implementations)
-
     extended_info =
       Map.merge(base_info, %{
         "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
@@ -137,23 +134,9 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       extended_info
     else
       Map.merge(extended_info, %{
-        # todo: added for backward compatibility, remove when frontend unbound from these props
-        "implementation_address" => implementation_address,
-        "implementation_name" => implementation_name,
         "implementations" => implementations
       })
     end
-  end
-
-  defp single_implementation(implementations) do
-    %{"address" => implementation_address, "name" => implementation_name} =
-      if Enum.empty?(implementations) do
-        %{"address" => nil, "name" => nil}
-      else
-        implementations |> Enum.at(0)
-      end
-
-    {implementation_address, implementation_name}
   end
 
   @spec prepare_token_balance(Chain.Address.TokenBalance.t(), boolean()) :: map()

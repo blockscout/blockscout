@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   use Explorer.Schema
 
   import Ecto.Query
-  import Explorer.Chain, only: [select_repo: 1]
+  import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
 
   alias Explorer.Chain.{Data, Hash}
   alias Explorer.{PagingOptions, Repo}
@@ -12,20 +12,20 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   @required_attrs ~w(index game_type address created_at)a
   @optional_attrs ~w(extra_data resolved_at status)a
 
-  @default_paging_options %PagingOptions{page_size: 50}
-
-  @type t :: %__MODULE__{
-          index: non_neg_integer(),
-          game_type: non_neg_integer(),
-          address: Hash.t(),
-          extra_data: Data.t() | nil,
-          created_at: DateTime.t(),
-          resolved_at: DateTime.t() | nil,
-          status: non_neg_integer() | nil
-        }
-
+  @typedoc """
+    * `index` - A unique index of the dispute game.
+    * `game_type` - A number encoding a type of the dispute game.
+    * `address` - The dispute game contract address.
+    * `extra_data` - An extra data of the dispute game (contains L2 block number).
+      Equals to `nil` when the game is written to database but the rest data is not known yet.
+    * `created_at` - UTC timestamp of when the dispute game was created.
+    * `resolved_at` - UTC timestamp of when the dispute game was resolved.
+      Equals to `nil` if the game is not resolved yet.
+    * `status` - 0 means the game is in progress (not resolved yet), 1 means a challenger wins, 2 means a defender wins.
+      Equals to `nil` when the game is written to database but the rest data is not known yet.
+  """
   @primary_key false
-  schema "op_dispute_games" do
+  typed_schema "op_dispute_games" do
     field(:index, :integer, primary_key: true)
     field(:game_type, :integer)
     field(:address, Hash.Address)
@@ -67,7 +67,7 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   """
   @spec list :: [__MODULE__.t()]
   def list(options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
 
     base_query =
       from(g in __MODULE__,
