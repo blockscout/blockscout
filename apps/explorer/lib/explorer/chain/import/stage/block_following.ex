@@ -1,7 +1,7 @@
 defmodule Explorer.Chain.Import.Stage.BlockFollowing do
   @moduledoc """
   Imports any tables that follows and cannot be imported at the same time as
-  those imported by `Explorer.Chain.Import.Stage.AddressesBlocksCoinBalances` and `Explorer.Chain.Import.Stage.BlockReferencing`
+  those imported by `Explorer.Chain.Import.Stage.BlockRelated` and `Explorer.Chain.Import.Stage.BlockReferencing`
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}

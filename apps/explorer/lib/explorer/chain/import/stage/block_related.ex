@@ -1,7 +1,6 @@
-defmodule Explorer.Chain.Import.Stage.AddressesBlocksCoinBalances do
+defmodule Explorer.Chain.Import.Stage.BlockRelated do
   @moduledoc """
-  Import addresses, blocks and balances.
-  No tables have foreign key to addresses anymore, so it's possible to import addresses along with them.
+  Import blocks along with block related entities.
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
@@ -13,7 +12,9 @@ defmodule Explorer.Chain.Import.Stage.AddressesBlocksCoinBalances do
   @rest_runners [
     Runner.Address.CoinBalances,
     Runner.Blocks,
-    Runner.Address.CoinBalancesDaily
+    Runner.Address.CoinBalancesDaily,
+    Runner.Transactions,
+    Runner.TokenTransfers
   ]
 
   @impl Stage
