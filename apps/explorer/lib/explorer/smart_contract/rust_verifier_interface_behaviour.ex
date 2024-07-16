@@ -158,20 +158,31 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       # https://github.com/PSPDFKit-labs/bypass/issues/122
 
       def solidity_multiple_files_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/solidity/sources%3Averify-multi-part"
+        do: base_api_url() <> "/verifier/solidity/sources%3Averify-multi-part"
 
       def vyper_multiple_files_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/vyper/sources%3Averify-multi-part"
+        do: base_api_url() <> "/verifier/vyper/sources%3Averify-multi-part"
 
       def vyper_standard_json_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/vyper/sources%3Averify-standard-json"
+        do: base_api_url() <> "/verifier/vyper/sources%3Averify-standard-json"
 
-      def solidity_standard_json_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/solidity/sources%3Averify-standard-json"
+      def solidity_standard_json_verification_url do
+        base_api_url() <> verifier_path() <> "/zksync-verifier/solidity/sources%3Averify-standard-json"
+      end
 
-      def versions_list_url, do: "#{base_api_url()}" <> "/verifier/solidity/versions"
+      def versions_list_url do
+        base_api_url() <> verifier_path() <> "/solidity/versions"
+      end
 
-      def vyper_versions_list_url, do: "#{base_api_url()}" <> "/verifier/vyper/versions"
+      defp verifier_path do
+        if Application.get_env(:explorer, :chain_type) == :zksync do
+          "/zksync-verifier"
+        else
+          "/verifier"
+        end
+      end
+
+      def vyper_versions_list_url, do: base_api_url() <> "/verifier/vyper/versions"
 
       def base_api_url, do: "#{base_url()}" <> "/api/v2"
 
