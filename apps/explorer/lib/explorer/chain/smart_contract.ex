@@ -284,11 +284,12 @@ defmodule Explorer.Chain.SmartContract do
   typed_schema "smart_contracts" do
     field(:name, :string, null: false)
     field(:compiler_version, :string, null: false)
+    field(:zk_compiler_version, :string, null: false)
     field(:optimization, :boolean, null: false)
     field(:contract_source_code, :string, null: false)
     field(:constructor_arguments, :string)
     field(:evm_version, :string)
-    field(:optimization_runs, :integer)
+    field(:optimization_runs, :string)
     embeds_many(:external_libraries, ExternalLibrary, on_replace: :delete)
     field(:abi, {:array, :map})
     field(:verified_via_sourcify, :boolean)
