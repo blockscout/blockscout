@@ -296,6 +296,7 @@ defmodule Explorer.ChainSpec.GenesisData do
         address_hash: contract["address"],
         name: contract["name"],
         file_path: nil,
+        # todo: process zksync zk_compiler
         compiler_version: contract["compiler"],
         evm_version: nil,
         optimization_runs: nil,

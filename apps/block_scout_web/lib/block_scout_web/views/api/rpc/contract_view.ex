@@ -174,6 +174,16 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       |> Map.put_new(:EVMVersion, Map.get(contract, :evm_version, ""))
       |> Map.put_new(:FileName, Map.get(contract, :file_path, "") || "")
       |> insert_additional_sources(address)
+      |> add_zksync_info(contract)
+    end
+  end
+
+  defp add_zksync_info(smart_contract_info, contract) do
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      smart_contract_info
+      |> Map.put_new(:ZkCompilerVersion, Map.get(contract, :zk_compiler_version, ""))
+    else
+      smart_contract_info
     end
   end
 
@@ -216,13 +226,26 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
          hash: hash,
          smart_contract: %SmartContract{} = contract
        }) do
-    %{
-      "Address" => to_string(hash),
-      "ABI" => Jason.encode!(contract.abi),
-      "ContractName" => contract.name,
-      "CompilerVersion" => contract.compiler_version,
-      "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
-    }
+    smart_contract_info =
+      %{
+        "Address" => to_string(hash),
+        "ABI" => Jason.encode!(contract.abi),
+        "ContractName" => contract.name,
+        "CompilerVersion" => contract.compiler_version,
+        "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
+      }
+
+    smart_contract_info
+    |> merge_zksync_info(contract)
+  end
+
+  defp merge_zksync_info(smart_contract_info, contract) do
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      smart_contract_info
+      |> Map.merge(%{"ZkCompilerVersion" => contract.zk_compiler_version})
+    else
+      smart_contract_info
+    end
   end
 
   defp latest_decompiled_smart_contract(%NotLoaded{}), do: nil

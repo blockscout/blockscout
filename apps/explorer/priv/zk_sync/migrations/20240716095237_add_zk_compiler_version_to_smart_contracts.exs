@@ -3,7 +3,7 @@ defmodule Explorer.Repo.ZkSync.Migrations.AddZkCompilerVersionToSmartContracts d
 
   def change do
     alter table(:smart_contracts) do
-      add(:zk_compiler_version, :string, null: false)
+      add(:zk_compiler_version, :string, null: true)
       modify(:optimization_runs, :string, null: true)
     end
   end

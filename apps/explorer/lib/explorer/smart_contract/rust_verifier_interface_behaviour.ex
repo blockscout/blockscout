@@ -39,6 +39,18 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata), true)
       end
 
+      def zksync_verify_standard_json_input(
+            %{
+              "code" => _,
+              "solcCompiler" => _,
+              "zkCompiler" => _,
+              "input" => _
+            } = body,
+            metadata
+          ) do
+        http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata), true)
+      end
+
       def vyper_verify_multipart(
             %{
               "bytecode" => _,
@@ -146,13 +158,30 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         {:ok, source}
       end
 
+      # zksync
+      def process_verifier_response(%{"verificationSuccess" => success}, _) do
+        {:ok, success}
+      end
+
+      # zksync
+      def process_verifier_response(%{"verificationFailure" => %{"message" => error}}, _) do
+        {:error, error}
+      end
+
+      # zksync
+      def process_verifier_response(%{"compilationFailure" => %{"message" => error}}, _) do
+        {:error, error}
+      end
+
       def process_verifier_response(%{"status" => "FAILURE", "message" => error}, _) do
         {:error, error}
       end
 
       def process_verifier_response(%{"compilerVersions" => versions}, _), do: {:ok, versions}
 
-      def process_verifier_response(other, _), do: {:error, other}
+      def process_verifier_response(other, res) do
+        {:error, other}
+      end
 
       # Uses url encoded ("%3A") version of ':', as ':' symbol breaks `Bypass` library during tests.
       # https://github.com/PSPDFKit-labs/bypass/issues/122
@@ -167,7 +196,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         do: base_api_url() <> "/verifier/vyper/sources%3Averify-standard-json"
 
       def solidity_standard_json_verification_url do
-        base_api_url() <> verifier_path() <> "/zksync-verifier/solidity/sources%3Averify-standard-json"
+        base_api_url() <> verifier_path() <> "/solidity/sources%3Averify-standard-json"
       end
 
       def versions_list_url do

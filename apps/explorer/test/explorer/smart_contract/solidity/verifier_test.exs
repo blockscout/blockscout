@@ -10,6 +10,12 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
   alias Explorer.SmartContract.Solidity.Verifier
   alias Explorer.Factory
 
+  if Application.compile_env(:explorer, :chain_type) == :zksync do
+    @optimization_runs "200"
+  else
+    @optimization_runs 200
+  end
+
   @code_0_4 """
   pragma solidity ^0.4.0;
   contract Incrementer {
@@ -854,7 +860,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "evm_version" => "default",
         "name" => "TransparentUpgradeableProxy",
         "optimization" => true,
-        "optimization_runs" => 200,
+        "optimization_runs" => @optimization_runs,
         "autodetect_constructor_args" => true
       }
 
@@ -894,7 +900,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "evm_version" => "default",
         "name" => "YESToken",
         "optimization" => true,
-        "optimization_runs" => 200,
+        "optimization_runs" => @optimization_runs,
         "autodetect_constructor_args" => true
       }
 
@@ -934,7 +940,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "evm_version" => "default",
         "name" => "Distribution",
         "optimization" => true,
-        "optimization_runs" => 200,
+        "optimization_runs" => @optimization_runs,
         "autodetect_constructor_args" => true
       }
 
@@ -974,7 +980,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "evm_version" => "default",
         "name" => "ERC1967Proxy",
         "optimization" => true,
-        "optimization_runs" => 200,
+        "optimization_runs" => @optimization_runs,
         "autodetect_constructor_args" => true
       }
 
@@ -1016,7 +1022,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "evm_version" => "default",
         "name" => "TransparentUpgradeableProxy",
         "optimization" => true,
-        "optimization_runs" => 200,
+        "optimization_runs" => @optimization_runs,
         "autodetect_constructor_args" => false,
         "constructor_arguments" =>
           "0000000000000000000000005fbdb2315678afecb367f032d93f642f64180aa3000000000000000000000000e7f1725e7734ce288f8367e1bb143e90bb3f051200000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000"
@@ -1052,7 +1058,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "evm_version" => "default",
         "name" => "CS3_1OnChainShop",
         "optimization" => true,
-        "optimization_runs" => 200,
+        "optimization_runs" => @optimization_runs,
         "autodetect_constructor_args" => true
       }
 
@@ -1225,7 +1231,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "evm_version" => "default",
         "name" => "HomeBridge",
         "optimization" => true,
-        "optimization_runs" => 200,
+        "optimization_runs" => @optimization_runs,
         "autodetect_constructor_args" => true
       }
 
@@ -1265,7 +1271,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         "evm_version" => "default",
         "name" => "ERC677MultiBridgeToken",
         "optimization" => true,
-        "optimization_runs" => 200,
+        "optimization_runs" => @optimization_runs,
         "autodetect_constructor_args" => true
       }
 

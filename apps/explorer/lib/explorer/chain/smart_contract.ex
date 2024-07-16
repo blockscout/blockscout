@@ -1,7 +1,11 @@
 defmodule Explorer.Chain.SmartContract.Schema do
+  @moduledoc """
+    Models smart-contract.
+  """
   alias Explorer.Chain.SmartContract.ExternalLibrary
 
   alias Explorer.Chain.{
+    Address,
     DecompiledSmartContract,
     Hash,
     SmartContractAdditionalSource
@@ -11,12 +15,13 @@ defmodule Explorer.Chain.SmartContract.Schema do
     :zksync ->
       @chain_type_fields quote(
                            do: [
-                             field(:zk_compiler_version, :string, null: false)
+                             field(:optimization_runs, :string),
+                             field(:zk_compiler_version, :string, null: true)
                            ]
                          )
 
     _ ->
-      @chain_type_fields quote(do: [])
+      @chain_type_fields quote(do: [field(:optimization_runs, :integer)])
   end
 
   defmacro generate do
@@ -28,7 +33,6 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:contract_source_code, :string, null: false)
         field(:constructor_arguments, :string)
         field(:evm_version, :string)
-        field(:optimization_runs, :string)
         embeds_many(:external_libraries, ExternalLibrary, on_replace: :delete)
         field(:abi, {:array, :map})
         field(:verified_via_sourcify, :boolean)
@@ -117,9 +121,12 @@ defmodule Explorer.Chain.SmartContract do
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
   @dead_address_hash_string "0x000000000000000000000000000000000000dEaD"
 
-  @required_attrs ~w(compiler_version optimization address_hash contract_code_md5)
+  @required_attrs ~w(compiler_version optimization address_hash contract_code_md5)a
 
-  @optional_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a
+  @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a
+
+  @optional_changeset_attrs ~w(abi compiler_settings)a
+  @optional_invalid_contract_changeset_attrs ~w(autodetect_constructor_args)a
 
   @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
                                 :zksync ->
@@ -386,7 +393,8 @@ defmodule Explorer.Chain.SmartContract do
   def changeset(%__MODULE__{} = smart_contract, attrs) do
     attrs_to_cast =
       @required_attrs ++
-        @optional_attrs ++
+        @optional_common_attrs ++
+        @optional_changeset_attrs ++
         @chain_type_optional_attrs
 
     required_for_validation = [:name, :contract_source_code] ++ @required_attrs
@@ -407,7 +415,8 @@ defmodule Explorer.Chain.SmartContract do
       ) do
     attrs_to_cast =
       @required_attrs ++
-        @optional_attrs ++
+        @optional_common_attrs ++
+        @optional_invalid_contract_changeset_attrs ++
         @chain_type_optional_attrs
 
     validated =
