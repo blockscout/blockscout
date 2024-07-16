@@ -23,6 +23,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   @extra_runners_by_chain_type %{
     optimism: [
       Runner.Optimism.FrameSequences,
+      Runner.Optimism.FrameSequenceBlobs,
       Runner.Optimism.TxnBatches,
       Runner.Optimism.OutputRoots,
       Runner.Optimism.DisputeGames,
@@ -43,17 +44,17 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.PolygonZkevm.BridgeL1Tokens,
       Runner.PolygonZkevm.BridgeOperations
     ],
-    shibarium: [
-      Runner.Shibarium.BridgeOperations
-    ],
-    ethereum: [
-      Runner.Beacon.BlobTransactions
-    ],
     zksync: [
       Runner.ZkSync.LifecycleTransactions,
       Runner.ZkSync.TransactionBatches,
       Runner.ZkSync.BatchTransactions,
       Runner.ZkSync.BatchBlocks
+    ],
+    shibarium: [
+      Runner.Shibarium.BridgeOperations
+    ],
+    ethereum: [
+      Runner.Beacon.BlobTransactions
     ],
     arbitrum: [
       Runner.Arbitrum.Messages,

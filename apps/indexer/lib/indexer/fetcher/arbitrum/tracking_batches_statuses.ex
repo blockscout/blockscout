@@ -90,6 +90,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     finalized_confirmations = config_tracker[:finalized_confirmations]
     confirmation_batches_depth = config_tracker[:confirmation_batches_depth]
     new_batches_limit = config_tracker[:new_batches_limit]
+    node_interface_address = config_tracker[:node_interface_contract]
 
     Process.send(self(), :init_worker, [])
 
@@ -113,7 +114,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
          l1_rollup_init_block: l1_rollup_init_block,
          new_batches_limit: new_batches_limit,
          messages_to_blocks_shift: messages_to_blocks_shift,
-         confirmation_batches_depth: confirmation_batches_depth
+         confirmation_batches_depth: confirmation_batches_depth,
+         node_interface_address: node_interface_address
        },
        data: %{}
      }}
