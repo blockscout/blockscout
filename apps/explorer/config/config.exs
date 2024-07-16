@@ -123,6 +123,8 @@ config :explorer, Explorer.Migrator.SanitizeMissingBlockRanges, enabled: true
 config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, enabled: true
 config :explorer, Explorer.Migrator.TokenTransferTokenType, enabled: true
 config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, enabled: true
+config :explorer, Explorer.Migrator.TransactionBlockConsensus, enabled: true
+config :explorer, Explorer.Migrator.TokenTransferBlockConsensus, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 
