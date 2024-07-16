@@ -51,8 +51,7 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
                      "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
                      "transactionHash" => "0x43bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
                      "transactionIndex" => "0x0",
-                     "transactionLogIndex" => "0x0",
-                     "type" => "mined"
+                     "transactionLogIndex" => "0x0"
                    }
                  ],
                  "logsBloom" =>
@@ -82,8 +81,7 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
                      "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
                      "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
                      "transactionIndex" => "0x0",
-                     "transactionLogIndex" => "0x0",
-                     "type" => "mined"
+                     "transactionLogIndex" => "0x0"
                    }
                  ],
                  "logsBloom" =>

@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.AddressContractVerificationViaJsonController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.Controller
-  alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.ThirdPartyIntegrations.Sourcify
@@ -13,7 +12,7 @@ defmodule BlockScoutWeb.AddressContractVerificationViaJsonController do
       |> address_contract_path(:index, address_hash_string)
       |> Controller.full_path()
 
-    if Chain.smart_contract_fully_verified?(address_hash_string) do
+    if SmartContract.verified_with_full_match?(address_hash_string) do
       redirect(conn, to: address_contract_path)
     else
       case Sourcify.check_by_address(address_hash_string) do

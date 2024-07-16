@@ -64,7 +64,7 @@ interface IERC677MultiBridgeToken {
 * specific functions.
 *
 * This module is used through inheritance. It will make available the modifier
-* `onlyOwner`, which can be aplied to your functions to restrict their use to
+* `onlyOwner`, which can be applied to your functions to restrict their use to
 * the owner.
 */
 contract Ownable {
@@ -579,7 +579,7 @@ contract ERC20 is IERC20 {
     }
 
     /**
-    * @dev Destoys `amount` tokens from `account`, reducing the
+    * @dev Destroys `amount` tokens from `account`, reducing the
     * total supply.
     *
     * Emits a `Transfer` event with `to` set to the zero address.
@@ -619,7 +619,7 @@ contract ERC20 is IERC20 {
     }
 
     /**
-    * @dev Destoys `amount` tokens from `account`.`amount` is then deducted
+    * @dev Destroys `amount` tokens from `account`.`amount` is then deducted
     * from the caller's allowance.
     *
     * See `_burn` and `_approve`.

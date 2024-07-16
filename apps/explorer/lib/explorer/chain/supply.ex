@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Supply do
   """
 
   @doc """
-  The current total number of coins minted minus verifiably burned coins.
+  The current total number of coins minted minus verifiably burnt coins.
   """
   @callback total :: non_neg_integer() | %Decimal{sign: 1}
 

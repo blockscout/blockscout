@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   end
 
   def call(%Conn{params: %{"module" => module, "action" => action}} = conn, translations) do
-    with {:valid_api_request, true} <- {:valid_api_request, valid_api_request_path(conn)},
+    with {:valid_api_v1_request, true} <- {:valid_api_v1_request, valid_api_v1_request_path(conn)},
          {:ok, {controller, write_actions}} <- translate_module(translations, module),
          {:ok, action} <- translate_action(action),
          true <- action_accessed?(action, write_actions),
@@ -42,6 +42,13 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
         |> put_status(400)
         |> put_view(RPCView)
         |> Controller.render(:error, error: "Unknown action")
+        |> halt()
+
+      {:error, :no_module} ->
+        conn
+        |> put_status(400)
+        |> put_view(RPCView)
+        |> Controller.render(:error, error: "Unknown module")
         |> halt()
 
       {:error, error} ->
@@ -58,7 +65,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
       :rate_limit_reached ->
         AccessHelper.handle_rate_limit_deny(conn)
 
-      {:valid_api_request, false} ->
+      {:valid_api_v1_request, false} ->
         conn
         |> put_status(404)
         |> put_view(RPCView)
@@ -89,7 +96,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
 
     case Map.fetch(translations, module_lowercase) do
       {:ok, module} -> {:ok, module}
-      _ -> {:error, :no_action}
+      _ -> {:error, :no_module}
     end
   end
 
@@ -103,7 +110,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   end
 
   defp action_accessed?(action, write_actions) do
-    conf = Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)
+    conf = Application.get_env(:block_scout_web, BlockScoutWeb.Routers.ApiRouter)
 
     if action in write_actions do
       conf[:writing_enabled] || {:error, :no_action}
@@ -125,9 +132,10 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
       {:error, Exception.format(:error, e, __STACKTRACE__)}
   end
 
-  defp valid_api_request_path(conn) do
-    if conn.request_path == "/api" || conn.request_path == "/api/" || conn.request_path == "/api/v1" ||
-         conn.request_path == "/api/v1/" do
+  defp valid_api_v1_request_path(conn) do
+    if String.ends_with?(conn.request_path, "/api") || String.ends_with?(conn.request_path, "/api/") ||
+         String.ends_with?(conn.request_path, "/api/v1") ||
+         String.ends_with?(conn.request_path, "/api/v1/") do
       true
     else
       false

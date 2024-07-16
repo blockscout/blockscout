@@ -6,12 +6,14 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
 
   alias BlockScoutWeb.{AccessHelper, Controller, TransactionView}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Address
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Explorer.Chain.{Address, DenormalizationHelper}
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
   import BlockScoutWeb.Chain,
     only: [current_filter: 1, next_page_params: 3, paging_options: 1, split_list_by_page: 1]
+
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   @transaction_necessity_by_association [
     necessity_by_association: %{
@@ -24,12 +26,11 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
       [token_transfers: :token] => :optional,
       [token_transfers: :to_address] => :optional,
       [token_transfers: :from_address] => :optional,
-      [token_transfers: :token_contract_address] => :optional,
-      :block => :required
+      [token_transfers: :token_contract_address] => :optional
     }
   ]
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   def index(
@@ -139,6 +140,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       options =
         @transaction_necessity_by_association
+        |> DenormalizationHelper.extend_block_necessity(:required)
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 

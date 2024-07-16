@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.Controller
-  alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
@@ -12,7 +11,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
   def new(conn, %{"address_id" => address_hash_string}) do
-    if Chain.smart_contract_fully_verified?(address_hash_string) do
+    if SmartContract.verified_with_full_match?(address_hash_string) do
       address_contract_path =
         conn
         |> address_contract_path(:index, address_hash_string)
@@ -122,7 +121,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     json_file = PublishHelper.get_one_json(files_array)
 
     if json_file do
-      if Chain.smart_contract_fully_verified?(address_hash_string) do
+      if SmartContract.verified_with_full_match?(address_hash_string) do
         EventsPublisher.broadcast(
           PublishHelper.prepare_verification_error(
             "This contract already verified in Blockscout.",

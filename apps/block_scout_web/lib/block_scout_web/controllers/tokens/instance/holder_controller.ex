@@ -9,11 +9,11 @@ defmodule BlockScoutWeb.Tokens.Instance.HolderController do
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
 
-  def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id_str, "type" => "JSON"} = params) do
+  def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(address_hash),
-         false <- Chain.is_erc_20_token?(token),
-         {token_id, ""} <- Integer.parse(token_id_str),
+         false <- Chain.erc_20_token?(token),
+         {token_id, ""} <- Integer.parse(token_id_string),
          token_holders <-
            Chain.fetch_token_holders_from_token_hash_and_token_id(address_hash, token_id, paging_options(params)) do
       {token_holders_paginated, next_page} = split_list_by_page(token_holders)
@@ -53,14 +53,14 @@ defmodule BlockScoutWeb.Tokens.Instance.HolderController do
     end
   end
 
-  def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id_str}) do
+  def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id_string}) do
     options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
 
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
-         false <- Chain.is_erc_20_token?(token),
-         {token_id, ""} <- Integer.parse(token_id_str) do
-      case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(token_id, hash) do
+         false <- Chain.erc_20_token?(token),
+         {token_id, ""} <- Integer.parse(token_id_string) do
+      case Chain.nft_instance_from_token_id_and_token_address(token_id, hash) do
         {:ok, token_instance} -> Helper.render(conn, token_instance, hash, token_id, token)
         {:error, :not_found} -> Helper.render(conn, nil, hash, token_id, token)
       end

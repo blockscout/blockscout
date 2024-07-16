@@ -5,15 +5,15 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
   use GenServer
 
-  alias Explorer.{Chain, Repo}
+  alias EthereumJSONRPC.Utility.RangesHelper
+  alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Utility.{MissingBlockRange, MissingRangesManipulator}
-  alias Indexer.Block.Catchup.Helper
 
   @default_missing_ranges_batch_size 100_000
   @future_check_interval Application.compile_env(:indexer, __MODULE__)[:future_check_interval]
   @past_check_interval 10
+  @increased_past_check_interval :timer.minutes(1)
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -45,16 +45,14 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp default_init do
-    MissingBlockRange.sanitize_missing_block_ranges()
-
     {min_number, max_number} = get_initial_min_max()
 
     clear_to_bounds(min_number, max_number)
 
-    Process.send_after(self(), :update_future, @future_check_interval)
-    Process.send_after(self(), :update_past, @past_check_interval)
+    schedule_future_check()
+    schedule_past_check(false)
 
-    %{min_fetched_block_number: min_number, max_fetched_block_number: max_number}
+    %{min_fetched_block_number: min_number, max_fetched_block_number: max_number, first_check_completed?: false}
   end
 
   defp ranges_init(ranges, max_fetched_block_number \\ nil) do
@@ -66,10 +64,10 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
     |> MissingRangesManipulator.save_batch()
 
     if not is_nil(max_fetched_block_number) do
-      Process.send_after(self(), :update_future, @future_check_interval)
+      schedule_future_check()
     end
 
-    %{max_fetched_block_number: max_fetched_block_number}
+    %{max_fetched_block_number: max_fetched_block_number, first_check_completed?: false}
   end
 
   defp clear_to_bounds(min_number, max_number) do
@@ -133,7 +131,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
     if continue_future_updating?(max_number) do
       {new_max_number, batch} = fetch_missing_ranges_batch(max_number, true)
       MissingRangesManipulator.save_batch(batch)
-      Process.send_after(self(), :update_future, @future_check_interval)
+      schedule_future_check()
       {:noreply, %{state | max_fetched_block_number: new_max_number}}
     else
       {:noreply, state}
@@ -143,19 +141,12 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   def handle_info(:update_past, %{min_fetched_block_number: min_number} = state) do
     if min_number > first_block() do
       {new_min_number, batch} = fetch_missing_ranges_batch(min_number, false)
-      Process.send_after(self(), :update_past, @past_check_interval)
       MissingRangesManipulator.save_batch(batch)
+      schedule_past_check(state.first_check_completed?)
       {:noreply, %{state | min_fetched_block_number: new_min_number}}
     else
-      Process.send_after(self(), :update_past, @past_check_interval * 100)
-      {:noreply, %{state | min_fetched_block_number: reset_min_fetched_block_number(state.max_fetched_block_number)}}
-    end
-  end
-
-  defp reset_min_fetched_block_number(max_fetched_block_number) do
-    case MissingBlockRange.fetch_min_max() do
-      %{min: nil} -> max_fetched_block_number
-      %{min: min} -> min
+      schedule_past_check(true)
+      {:noreply, %{state | min_fetched_block_number: state.max_fetched_block_number, first_check_completed?: true}}
     end
   end
 
@@ -182,27 +173,19 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp first_block do
-    string_value = Application.get_env(:indexer, :first_block)
+    first_block_from_config = Application.get_env(:indexer, :first_block)
 
-    case Integer.parse(string_value) do
-      {integer, ""} ->
-        integer
+    min_missing_block_number =
+      "min_missing_block_number"
+      |> Chain.get_last_fetched_counter()
+      |> Decimal.to_integer()
 
-      _ ->
-        min_missing_block_number =
-          "min_missing_block_number"
-          |> Chain.get_last_fetched_counter()
-          |> Decimal.to_integer()
-
-        min_missing_block_number
-    end
+    max(first_block_from_config, min_missing_block_number)
   end
 
   defp last_block do
-    case Integer.parse(Application.get_env(:indexer, :last_block)) do
-      {block, ""} -> block + 1
-      _ -> fetch_max_block_number()
-    end
+    last_block = Application.get_env(:indexer, :last_block)
+    if last_block, do: last_block + 1, else: fetch_max_block_number()
   end
 
   defp fetch_max_block_number do
@@ -221,10 +204,23 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   end
 
   defp continue_future_updating?(max_fetched_block_number) do
-    case Integer.parse(Application.get_env(:indexer, :last_block)) do
-      {block, ""} -> max_fetched_block_number < block
-      _ -> true
+    last_block = Application.get_env(:indexer, :last_block)
+
+    if last_block do
+      max_fetched_block_number < last_block
+    else
+      true
     end
+  end
+
+  defp schedule_past_check(first_check_completed?) do
+    interval = if first_check_completed?, do: @increased_past_check_interval, else: @past_check_interval
+
+    Process.send_after(self(), :update_past, interval)
+  end
+
+  defp schedule_future_check do
+    Process.send_after(self(), :update_future, @future_check_interval)
   end
 
   defp missing_ranges_batch_size do
@@ -238,7 +234,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       |> Enum.map(fn string_range ->
         case String.split(string_range, "..") do
           [from_string, "latest"] ->
-            ExplorerHelper.parse_integer(from_string)
+            Helper.parse_integer(from_string)
 
           [from_string, to_string] ->
             get_from_to(from_string, to_string)
@@ -247,7 +243,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
             nil
         end
       end)
-      |> Helper.sanitize_ranges()
+      |> RangesHelper.sanitize_ranges()
 
     case List.last(ranges) do
       _from.._to ->

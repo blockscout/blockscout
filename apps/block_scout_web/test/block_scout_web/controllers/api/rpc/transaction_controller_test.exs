@@ -5,6 +5,16 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
   @moduletag capture_log: true
 
+  @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+  @second_topic_hex_string_1 "0x00000000000000000000000098a9dc37d3650b5b30d6c12789b3881ee0b70c16"
+
+  setup :verify_on_exit!
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
+  end
+
   describe "gettxreceiptstatus" do
     test "with missing txhash", %{conn: conn} do
       params = %{
@@ -412,8 +422,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         insert(:log,
           address: address,
           transaction: transaction,
-          first_topic: "first topic",
-          second_topic: "second topic",
+          first_topic: topic(@first_topic_hex_string_1),
+          second_topic: topic(@second_topic_hex_string_1),
           block: block,
           block_number: block.number
         )
@@ -489,8 +499,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         insert(:log,
           address: address,
           transaction: transaction,
-          first_topic: "first topic",
-          second_topic: "second topic",
+          first_topic: topic(@first_topic_hex_string_1),
+          second_topic: topic(@second_topic_hex_string_1),
           block: block,
           block_number: block.number
         )
@@ -518,7 +528,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
           %{
             "address" => "#{address.hash}",
             "data" => "#{log.data}",
-            "topics" => ["first topic", "second topic", nil, nil],
+            "topics" => [@first_topic_hex_string_1, @second_topic_hex_string_1, nil, nil],
             "index" => "#{log.index}"
           }
         ],
@@ -650,11 +660,73 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
       insert(:address)
 
+      # Error("No credit of that type")
+      hex_reason =
+        "0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000164e6f20637265646974206f662074686174207479706500000000000000000000"
+
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn _json, [] ->
-          {:error, %{code: -32015, message: "VM execution error.", data: "revert: No credit of that type"}}
+        fn
+          [%{method: "debug_traceTransaction"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 result: %{
+                   "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                   "gas" => "0x5208",
+                   "gasUsed" => "0x5208",
+                   "input" => "0x01",
+                   "output" => hex_reason,
+                   "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                   "type" => "CALL",
+                   "value" => "0x86b3"
+                 }
+               }
+             ]}
+
+          [%{method: "trace_replayTransaction"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 result: %{
+                   "output" => "0x",
+                   "stateDiff" => nil,
+                   "trace" => [
+                     %{
+                       "action" => %{
+                         "callType" => "call",
+                         "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                         "gas" => "0x5208",
+                         "input" => "0x01",
+                         "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                         "value" => "0x86b3"
+                       },
+                       "error" => "Reverted",
+                       "result" => %{
+                         "gasUsed" => "0x5208",
+                         "output" => hex_reason
+                       },
+                       "subtraces" => 0,
+                       "traceAddress" => [],
+                       "type" => "call"
+                     }
+                   ],
+                   "transactionHash" => "0xdf5574290913659a1ac404ccf2d216c40587f819400a52405b081dda728ac120",
+                   "vmTrace" => nil
+                 }
+               }
+             ]}
+
+          %{method: "eth_call"}, _options ->
+            {:error,
+             %{
+               code: 3,
+               data: hex_reason,
+               message: "execution reverted"
+             }}
         end
       )
 
@@ -669,7 +741,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"]["revertReason"] == "No credit of that type"
+      assert response["result"]["revertReason"] == hex_reason
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
@@ -696,8 +768,65 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn _json, [] ->
-        {:error, %{code: -32015, message: "VM execution error.", data: ""}}
+      fn
+        [%{method: "debug_traceTransaction"}], _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               result: %{
+                 "error" => "Reverted",
+                 "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                 "gas" => "0x5208",
+                 "gasUsed" => "0x5208",
+                 "input" => "0x01",
+                 "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                 "type" => "CALL",
+                 "value" => "0x86b3"
+               }
+             }
+           ]}
+
+        [%{method: "trace_replayTransaction"}], _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               result: %{
+                 "output" => "0x",
+                 "stateDiff" => nil,
+                 "trace" => [
+                   %{
+                     "action" => %{
+                       "callType" => "call",
+                       "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                       "gas" => "0x5208",
+                       "input" => "0x01",
+                       "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                       "value" => "0x86b3"
+                     },
+                     "error" => "Reverted",
+                     "result" => %{
+                       "gasUsed" => "0x5208",
+                       "output" => "0x"
+                     },
+                     "subtraces" => 0,
+                     "traceAddress" => [],
+                     "type" => "call"
+                   }
+                 ],
+                 "transactionHash" => "0xdf5574290913659a1ac404ccf2d216c40587f819400a52405b081dda728ac120",
+                 "vmTrace" => nil
+               }
+             }
+           ]}
+
+        %{method: "eth_call"}, _options ->
+          {:error,
+           %{
+             code: 3,
+             message: "execution reverted"
+           }}
       end
     )
 
@@ -712,49 +841,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
              |> get("/api", params)
              |> json_response(200)
 
-    assert response["result"]["revertReason"] == ""
-    assert response["status"] == "1"
-    assert response["message"] == "OK"
-  end
-
-  test "with a txhash with empty revert reason from DB if eth_call doesn't return an error", %{conn: conn} do
-    block = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
-
-    transaction =
-      :transaction
-      |> insert(
-        error: "Reverted",
-        status: :error,
-        block_hash: block.hash,
-        block_number: block.number,
-        cumulative_gas_used: 884_322,
-        gas_used: 106_025,
-        index: 0,
-        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
-      )
-
-    insert(:address)
-
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn _json, [] ->
-        {:ok, :ok}
-      end
-    )
-
-    params = %{
-      "module" => "transaction",
-      "action" => "gettxinfo",
-      "txhash" => "#{transaction.hash}"
-    }
-
-    assert response =
-             conn
-             |> get("/api", params)
-             |> json_response(200)
-
-    assert response["result"]["revertReason"] == ""
+    assert response["result"]["revertReason"] in ["", "0x"]
     assert response["status"] == "1"
     assert response["message"] == "OK"
   end

@@ -287,7 +287,7 @@ defmodule EthereumJSONRPC.Geth.PolygonTracer do
            calls: calls
          } = ctx
        ) do
-    log_stack = Enum.reverse(log_stack)
+    [_, to | log_stack] = Enum.reverse(log_stack)
 
     {value, [input_length, output_length | _]} =
       case call_type do
@@ -305,13 +305,13 @@ defmodule EthereumJSONRPC.Geth.PolygonTracer do
     input =
       log_memory
       |> IO.iodata_to_binary()
-      |> String.slice(0, quantity_to_integer(input_length) * 2)
+      |> String.slice(0, quantity_to_integer(input_length || 0) * 2)
 
     call = %{
       "type" => "call",
       "callType" => call_type,
       "from" => nil,
-      "to" => @burn_address,
+      "to" => to,
       "traceAddress" => Enum.reverse(trace_address),
       "input" => "0x" <> input,
       "output" => "0x",

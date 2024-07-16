@@ -1,6 +1,6 @@
 defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   @moduledoc """
-    Module for fetching jwt auth0 Management API (https://auth0.com/docs/api/management/v2) jwt
+    Module for fetching jwt Auth0 Management API (https://auth0.com/docs/api/management/v2) jwt
   """
   @redis_key "auth0"
 
@@ -9,7 +9,9 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     Firstly it tries to access cached token and if there is no cached one, token will be requested from Auth0
   """
   @spec get_m2m_jwt() :: nil | String.t()
-  def get_m2m_jwt, do: get_m2m_jwt_inner(Redix.command(:redix, ["GET", @redis_key]))
+  def get_m2m_jwt do
+    get_m2m_jwt_inner(Redix.command(:redix, ["GET", cookie_key(@redis_key)]))
+  end
 
   def get_m2m_jwt_inner({:ok, token}) when not is_nil(token), do: token
 
@@ -40,9 +42,22 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     end
   end
 
-  defp cache_token(token, ttl) do
+  @doc """
+    Generates key from chain_id and cookie hash for storing in Redis
+  """
+  @spec cookie_key(binary) :: String.t()
+  def cookie_key(hash) do
     chain_id = Application.get_env(:block_scout_web, :chain_id)
-    Redix.command(:redix, ["SET", "#{chain_id}_#{@redis_key}", token, "EX", ttl])
+
+    if chain_id do
+      chain_id <> "_" <> hash
+    else
+      hash
+    end
+  end
+
+  defp cache_token(token, ttl) do
+    Redix.command(:redix, ["SET", cookie_key(@redis_key), token, "EX", ttl])
     token
   end
 end

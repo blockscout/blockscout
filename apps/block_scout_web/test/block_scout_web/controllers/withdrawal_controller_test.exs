@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.WithdrawalControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [withdrawal_path: 2, withdrawal_path: 3]
+  import BlockScoutWeb.Routers.WebRouter.Helpers, only: [withdrawal_path: 2, withdrawal_path: 3]
 
   alias Explorer.Chain.Withdrawal
 
@@ -40,11 +40,7 @@ defmodule BlockScoutWeb.WithdrawalControllerTest do
 
       conn = get(conn, withdrawal_path(conn, :index), %{"type" => "JSON"})
 
-      expected_path =
-        withdrawal_path(conn, :index, %{
-          index: index,
-          items_count: "50"
-        })
+      expected_path = withdrawal_path(conn, :index, index: index, items_count: "50")
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path
     end

@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
-  alias Indexer.Fetcher.CoinBalance, as: CoinBalanceFetcher
+  alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
   alias Indexer.Transform.Addresses
 
   @behaviour BufferedTask
@@ -29,11 +29,12 @@ defmodule Indexer.Fetcher.ContractCode do
     metadata: [fetcher: :code]
   ]
 
-  @spec async_fetch([%{required(:block_number) => Block.block_number(), required(:hash) => Hash.Full.t()}]) :: :ok
-  def async_fetch(transactions_fields, timeout \\ 5000) when is_list(transactions_fields) do
+  @spec async_fetch([%{required(:block_number) => Block.block_number(), required(:hash) => Hash.Full.t()}], boolean()) ::
+          :ok
+  def async_fetch(transactions_fields, realtime?, timeout \\ 5000) when is_list(transactions_fields) do
     entries = Enum.map(transactions_fields, &entry/1)
 
-    BufferedTask.buffer(__MODULE__, entries, timeout)
+    BufferedTask.buffer(__MODULE__, entries, realtime?, timeout)
   end
 
   @doc false
@@ -98,6 +99,7 @@ defmodule Indexer.Fetcher.ContractCode do
     Logger.debug("fetching created_contract_code for transactions")
 
     entries
+    |> Enum.uniq()
     |> Enum.map(&params/1)
     |> EthereumJSONRPC.fetch_codes(json_rpc_named_arguments)
     |> case do
@@ -121,7 +123,7 @@ defmodule Indexer.Fetcher.ContractCode do
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments)
     |> case do
       {:ok, fetched_balances} ->
-        balance_addresses_params = CoinBalanceFetcher.balances_params_to_address_params(fetched_balances.params_list)
+        balance_addresses_params = CoinBalanceHelper.balances_params_to_address_params(fetched_balances.params_list)
 
         merged_addresses_params = Addresses.merge_addresses(addresses_params ++ balance_addresses_params)
 

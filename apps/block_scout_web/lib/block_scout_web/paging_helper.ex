@@ -3,17 +3,45 @@ defmodule BlockScoutWeb.PagingHelper do
     Helper for fetching filters and other url query parameters
   """
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
-  alias Explorer.PagingOptions
+  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
+  alias Explorer.Chain.Transaction
+  alias Explorer.{Helper, PagingOptions, SortingHelper}
 
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
-  @allowed_type_labels ["coin_transfer", "contract_call", "contract_creation", "token_transfer", "token_creation"]
-  @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155"]
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :ethereum ->
+      @allowed_type_labels [
+        "coin_transfer",
+        "contract_call",
+        "contract_creation",
+        "token_transfer",
+        "token_creation",
+        "blob_transaction"
+      ]
+
+    _ ->
+      @allowed_type_labels [
+        "coin_transfer",
+        "contract_call",
+        "contract_creation",
+        "token_transfer",
+        "token_creation"
+      ]
+  end
+
+  @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+  @allowed_nft_type_labels ["ERC-721", "ERC-1155", "ERC-404"]
+  @allowed_chain_id [1, 56, 99]
+  @allowed_stability_validators_states ["active", "probation", "inactive"]
+
+  def allowed_stability_validators_states, do: @allowed_stability_validators_states
 
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}, [:validated | _]) do
-    with {block_number, ""} <- Integer.parse(block_number_string),
-         {index, ""} <- Integer.parse(index_string) do
+    with {:ok, block_number} <- Helper.safe_parse_non_negative_integer(block_number_string),
+         {:ok, index} <- Helper.safe_parse_non_negative_integer(index_string) do
       [paging_options: %{@default_paging_options | key: {block_number, index}}]
     else
       _ ->
@@ -33,13 +61,37 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def paging_options(_params, _filter), do: [paging_options: @default_paging_options]
 
+  @spec stability_validators_state_options(map()) :: [{:state, list()}, ...]
+  def stability_validators_state_options(%{"state_filter" => state}) do
+    [state: filters_to_list(state, @allowed_stability_validators_states, :downcase)]
+  end
+
+  def stability_validators_state_options(_), do: [state: []]
+
+  @spec token_transfers_types_options(map()) :: [{:token_type, list}]
   def token_transfers_types_options(%{"type" => filters}) do
     [
-      token_type: filters |> String.upcase() |> parse_filter(@allowed_token_transfer_type_labels)
+      token_type: filters_to_list(filters, @allowed_token_transfer_type_labels)
     ]
   end
 
   def token_transfers_types_options(_), do: [token_type: []]
+
+  @doc """
+    Parse 'type' query parameter from request option map
+  """
+  @spec nft_types_options(map()) :: [{:token_type, list}]
+  def nft_types_options(%{"type" => filters}) do
+    [
+      token_type: filters_to_list(filters, @allowed_nft_type_labels)
+    ]
+  end
+
+  def nft_types_options(_), do: [token_type: []]
+
+  defp filters_to_list(filters, allowed, variant \\ :upcase)
+  defp filters_to_list(filters, allowed, :downcase), do: filters |> String.downcase() |> parse_filter(allowed)
+  defp filters_to_list(filters, allowed, :upcase), do: filters |> String.upcase() |> parse_filter(allowed)
 
   # sobelow_skip ["DOS.StringToAtom"]
   def filter_options(%{"filter" => filter}, fallback) do
@@ -48,6 +100,19 @@ defmodule BlockScoutWeb.PagingHelper do
   end
 
   def filter_options(_params, fallback), do: [fallback]
+
+  def chain_ids_filter_options(%{"chain_ids" => chain_id}) do
+    [
+      chain_ids:
+        chain_id
+        |> String.split(",")
+        |> Enum.uniq()
+        |> Enum.map(&Helper.parse_integer/1)
+        |> Enum.filter(&Enum.member?(@allowed_chain_id, &1))
+    ]
+  end
+
+  def chain_ids_filter_options(_), do: [chain_id: []]
 
   # sobelow_skip ["DOS.StringToAtom"]
   def type_filter_options(%{"type" => type}) do
@@ -93,7 +158,7 @@ defmodule BlockScoutWeb.PagingHelper do
         [
           necessity_by_association: %{
             :transactions => :optional,
-            [miner: :names] => :optional,
+            [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
             :nephews => :required,
             :rewards => :optional
           },
@@ -104,7 +169,7 @@ defmodule BlockScoutWeb.PagingHelper do
         [
           necessity_by_association: %{
             :transactions => :optional,
-            [miner: :names] => :optional,
+            [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
             :rewards => :optional
           },
           block_type: "Reorg"
@@ -119,12 +184,23 @@ defmodule BlockScoutWeb.PagingHelper do
     do: [
       necessity_by_association: %{
         :transactions => :optional,
-        [miner: :names] => :optional,
+        [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
         :rewards => :optional
       },
       block_type: "Block"
     ]
 
+  @doc """
+    Removes redundant parameters from the parameter map used when calling
+    `next_page_params` function.
+
+    ## Parameters
+    - `params`: A map of parameter entries.
+
+    ## Returns
+    - A modified map without redundant parameters needed for `next_page_params` function.
+  """
+  @spec delete_parameters_from_next_page_params(map()) :: map() | nil
   def delete_parameters_from_next_page_params(params) when is_map(params) do
     params
     |> Map.drop([
@@ -136,7 +212,11 @@ defmodule BlockScoutWeb.PagingHelper do
       "filter",
       "q",
       "sort",
-      "order"
+      "order",
+      "state_filter",
+      "l2_block_range_start",
+      "l2_block_range_end",
+      "batch_number"
     ])
   end
 
@@ -170,6 +250,7 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def search_query(_), do: []
 
+  @spec tokens_sorting(%{required(String.t()) => String.t()}) :: [{:sorting, SortingHelper.sorting_params()}]
   def tokens_sorting(%{"sort" => sort_field, "order" => order}) do
     [sorting: do_tokens_sorting(sort_field, order)]
   end
@@ -183,4 +264,74 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_tokens_sorting("circulating_market_cap", "asc"), do: [asc_nulls_first: :circulating_market_cap]
   defp do_tokens_sorting("circulating_market_cap", "desc"), do: [desc_nulls_last: :circulating_market_cap]
   defp do_tokens_sorting(_, _), do: []
+
+  @spec smart_contracts_sorting(%{required(String.t()) => String.t()}) :: [{:sorting, SortingHelper.sorting_params()}]
+  def smart_contracts_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_smart_contracts_sorting(sort_field, order)]
+  end
+
+  def smart_contracts_sorting(_), do: []
+
+  defp do_smart_contracts_sorting("balance", "asc"), do: [{:asc_nulls_first, :fetched_coin_balance, :address}]
+  defp do_smart_contracts_sorting("balance", "desc"), do: [{:desc_nulls_last, :fetched_coin_balance, :address}]
+  defp do_smart_contracts_sorting("txs_count", "asc"), do: [{:asc_nulls_first, :transactions_count, :address}]
+  defp do_smart_contracts_sorting("txs_count", "desc"), do: [{:desc_nulls_last, :transactions_count, :address}]
+  defp do_smart_contracts_sorting(_, _), do: []
+
+  @spec address_transactions_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def address_transactions_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_address_transaction_sorting(sort_field, order)]
+  end
+
+  def address_transactions_sorting(_), do: []
+
+  defp do_address_transaction_sorting("value", "asc"), do: [asc: :value]
+  defp do_address_transaction_sorting("value", "desc"), do: [desc: :value]
+  defp do_address_transaction_sorting("fee", "asc"), do: [{:dynamic, :fee, :asc_nulls_first, Transaction.dynamic_fee()}]
+
+  defp do_address_transaction_sorting("fee", "desc"),
+    do: [{:dynamic, :fee, :desc_nulls_last, Transaction.dynamic_fee()}]
+
+  defp do_address_transaction_sorting(_, _), do: []
+
+  @spec validators_stability_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def validators_stability_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_validators_stability_sorting(sort_field, order)]
+  end
+
+  def validators_stability_sorting(_), do: []
+
+  defp do_validators_stability_sorting("state", "asc"), do: [asc_nulls_first: :state]
+  defp do_validators_stability_sorting("state", "desc"), do: [desc_nulls_last: :state]
+  defp do_validators_stability_sorting("address_hash", "asc"), do: [asc_nulls_first: :address_hash]
+  defp do_validators_stability_sorting("address_hash", "desc"), do: [desc_nulls_last: :address_hash]
+
+  defp do_validators_stability_sorting("blocks_validated", "asc"),
+    do: [{:dynamic, :blocks_validated, :asc_nulls_first, ValidatorStability.dynamic_validated_blocks()}]
+
+  defp do_validators_stability_sorting("blocks_validated", "desc"),
+    do: [{:dynamic, :blocks_validated, :desc_nulls_last, ValidatorStability.dynamic_validated_blocks()}]
+
+  defp do_validators_stability_sorting(_, _), do: []
+
+  @spec mud_records_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def mud_records_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_mud_records_sorting(sort_field, order)]
+  end
+
+  def mud_records_sorting(_), do: []
+
+  defp do_mud_records_sorting("key_bytes", "asc"), do: [asc_nulls_first: :key_bytes]
+  defp do_mud_records_sorting("key_bytes", "desc"), do: [desc_nulls_last: :key_bytes]
+  defp do_mud_records_sorting("key0", "asc"), do: [asc_nulls_first: :key0]
+  defp do_mud_records_sorting("key0", "desc"), do: [desc_nulls_last: :key0]
+  defp do_mud_records_sorting("key1", "asc"), do: [asc_nulls_first: :key1]
+  defp do_mud_records_sorting("key1", "desc"), do: [desc_nulls_last: :key1]
+  defp do_mud_records_sorting(_, _), do: []
 end

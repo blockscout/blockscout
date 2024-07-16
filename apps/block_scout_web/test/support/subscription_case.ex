@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.SubscriptionCase do
     quote do
       # Import conveniences for testing with channels
       use BlockScoutWeb.ChannelCase
-      use Absinthe.Phoenix.SubscriptionTest, schema: BlockScoutWeb.Schema
+      use Absinthe.Phoenix.SubscriptionTest, schema: BlockScoutWeb.GraphQL.Schema
     end
   end
 

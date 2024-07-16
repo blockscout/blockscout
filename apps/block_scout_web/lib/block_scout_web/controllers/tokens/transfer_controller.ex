@@ -8,12 +8,13 @@ defmodule BlockScoutWeb.Tokens.TransferController do
   alias BlockScoutWeb.Tokens.TransferView
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Indexer.Fetcher.TokenTotalSupplyOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do

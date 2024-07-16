@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Cache.Block do
     name: :block_count,
     key: :count,
     key: :async_task,
-    global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
+    global_ttl: :infinity,
     ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
 
@@ -40,15 +40,19 @@ defmodule Explorer.Chain.Cache.Block do
         |> Decimal.to_integer()
 
       if cached_value_from_db === 0 do
-        count = Helper.estimated_count_from("blocks")
-
-        trunc(count * 0.90)
+        estimated_count_from_blocks()
       else
         cached_value_from_db
       end
     else
       cached_value_from_ets
     end
+  end
+
+  defp estimated_count_from_blocks do
+    count = Helper.estimated_count_from("blocks")
+
+    if is_nil(count), do: 0, else: trunc(count * 0.90)
   end
 
   defp handle_fallback(:count) do
@@ -74,7 +78,7 @@ defmodule Explorer.Chain.Cache.Block do
 
           Chain.upsert_last_fetched_counter(params)
 
-          set_count(result)
+          set_count(%ConCache.Item{ttl: Helper.ttl(__MODULE__, "CACHE_BLOCK_COUNT_PERIOD"), value: result})
         rescue
           e ->
             Logger.debug([

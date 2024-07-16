@@ -11,7 +11,7 @@ defmodule EthereumJsonrpc.MixProject do
       deps_path: "../../deps",
       description: "Ethereum JSONRPC client.",
       dialyzer: [
-        plt_add_deps: :transitive,
+        plt_add_deps: :app_tree,
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer-ignore"
       ],
@@ -23,7 +23,7 @@ defmodule EthereumJsonrpc.MixProject do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "5.2.2"
+      version: "6.7.2"
     ]
   end
 
@@ -77,7 +77,9 @@ defmodule EthereumJsonrpc.MixProject do
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.7.1"},
       # Encode/decode function names and arguments
-      {:ex_abi, "~> 0.4"},
+      # todo: return to hex.pm once https://github.com/poanetwork/ex_abi/pull/170 is merged
+      # {:ex_abi, "~> 0.4"},
+      {:ex_abi, git: "https://github.com/fedor-ivn/ex_abi", branch: "fix-type-decoder-huge-lists", override: true},
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
@@ -85,7 +87,8 @@ defmodule EthereumJsonrpc.MixProject do
       {:decimal, "~> 2.0"},
       {:decorator, "~> 1.4"},
       {:hackney, "~> 1.18"},
-      {:poolboy, "~> 1.5.2"}
+      {:poolboy, "~> 1.5.2"},
+      {:logger_json, "~> 5.1"}
     ]
   end
 end

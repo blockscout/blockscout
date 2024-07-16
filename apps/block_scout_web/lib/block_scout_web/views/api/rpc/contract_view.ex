@@ -4,10 +4,15 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   alias BlockScoutWeb.AddressView
   alias BlockScoutWeb.API.RPC.RPCView
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain
   alias Explorer.Chain.{Address, DecompiledSmartContract, SmartContract}
 
   defguardp is_empty_string(input) when input == "" or input == nil
+
+  def render("getcontractcreation.json", %{addresses: addresses}) do
+    contracts = addresses |> Enum.map(&address_to_response/1) |> Enum.reject(&is_nil/1)
+
+    RPCView.render("show.json", data: contracts)
+  end
 
   def render("listcontracts.json", %{contracts: contracts}) do
     contracts = Enum.map(contracts, &prepare_contract/1)
@@ -73,8 +78,13 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   defp set_proxy_info(contract_output, contract) do
     result =
       if contract.is_proxy do
+        implementation_address_hash_string = List.first(contract.implementation_address_hash_strings)
+
+        # todo: `ImplementationAddress` is kept for backward compatibility,
+        # remove when clients unbound from these props
         contract_output
-        |> Map.put_new(:ImplementationAddress, contract.implementation_address_hash_string)
+        |> Map.put_new(:ImplementationAddress, implementation_address_hash_string)
+        |> Map.put_new(:ImplementationAddresses, contract.implementation_address_hash_strings)
       else
         contract_output
       end
@@ -119,7 +129,9 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   defp set_external_libraries(contract_output, contract) do
     external_libraries = Map.get(contract, :external_libraries, [])
 
-    if Enum.count(external_libraries) > 0 do
+    if Enum.empty?(external_libraries) do
+      contract_output
+    else
       external_libraries_without_id =
         Enum.map(external_libraries, fn %{name: name, address_hash: address_hash} ->
           %{"name" => name, "address_hash" => address_hash}
@@ -127,8 +139,6 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
       contract_output
       |> Map.put_new(:ExternalLibraries, external_libraries_without_id)
-    else
-      contract_output
     end
   end
 
@@ -168,12 +178,13 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   end
 
   defp insert_additional_sources(output, address) do
-    additional_sources_from_twin = Chain.get_address_verified_twin_contract(address.hash).additional_sources
+    additional_sources_from_bytecode_twin =
+      SmartContract.get_address_verified_bytecode_twin_contract(address.hash).additional_sources
 
     additional_sources =
       if AddressView.smart_contract_verified?(address),
-        do: address.smart_contract_additional_sources,
-        else: additional_sources_from_twin
+        do: address.smart_contract.smart_contract_additional_sources,
+        else: additional_sources_from_bytecode_twin
 
     additional_sources_array =
       if additional_sources,
@@ -230,4 +241,16 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   defp decompiler_version(nil), do: ""
   defp decompiler_version(%DecompiledSmartContract{decompiler_version: decompiler_version}), do: decompiler_version
+
+  defp address_to_response(address) do
+    creator_hash = AddressView.from_address_hash(address)
+    creation_tx = creator_hash && AddressView.transaction_hash(address)
+
+    creation_tx &&
+      %{
+        "contractAddress" => to_string(address.hash),
+        "contractCreator" => to_string(creator_hash),
+        "txHash" => to_string(creation_tx)
+      }
+  end
 end

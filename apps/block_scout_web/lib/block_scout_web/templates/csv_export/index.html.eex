@@ -10,7 +10,7 @@
       <h1 class="card-title list-title-description"><%= gettext "Export Data" %></h1>
 
       <div>
-        <% filter_text = if Helper.is_valid_filter?(@filter_type, @filter_value, @type), do: " with applied filter by #{@filter_type} (#{@filter_value})", else: ""  %>
+        <% filter_text = if Helper.valid_filter?(@filter_type, @filter_value, @type), do: " with applied filter by #{@filter_type} (#{@filter_value})", else: ""  %>
         <p class="card-subtitle list-title-description"><%= gettext("Export") %> <%= type_display_name(@type) %> <%= gettext("for address") %> <%= link(
               @address_hash_string,
               to: address_path(@conn, :show, @address_hash_string)

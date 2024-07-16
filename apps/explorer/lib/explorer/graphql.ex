@@ -18,19 +18,20 @@ defmodule Explorer.GraphQL do
     Transaction
   }
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
 
   @doc """
   Returns a query to fetch transactions with a matching `to_address_hash`,
   `from_address_hash`, or `created_contract_address_hash` field for a given address hash.
 
-  Orders transactions by `block_number` and `index` according to to `order`
+  Orders transactions by `block_number` and `index` according to `order`
   """
   @spec address_to_transactions_query(Hash.Address.t(), :desc | :asc) :: Ecto.Query.t()
   def address_to_transactions_query(address_hash, order) do
+    dynamic = Transaction.where_transactions_to_from(address_hash)
+
     Transaction
-    |> where([transaction], transaction.to_address_hash == ^address_hash)
-    |> or_where([transaction], transaction.from_address_hash == ^address_hash)
+    |> where([transaction], ^dynamic)
     |> or_where([transaction], transaction.created_contract_address_hash == ^address_hash)
     |> order_by([transaction], [{^order, transaction.block_number}, {^order, transaction.index}])
   end
@@ -67,7 +68,7 @@ defmodule Explorer.GraphQL do
 
     query
     |> InternalTransaction.where_nonpending_block()
-    |> Chain.where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_transaction_has_multiple_internal_transactions()
   end
 
   @doc """
@@ -93,7 +94,7 @@ defmodule Explorer.GraphQL do
       tt in TokenTransfer,
       inner_join: t in assoc(tt, :transaction),
       where: tt.token_contract_address_hash == ^token_contract_address_hash,
-      order_by: [desc: tt.block_number],
+      order_by: [desc: tt.block_number, desc: tt.log_index],
       select: tt
     )
   end

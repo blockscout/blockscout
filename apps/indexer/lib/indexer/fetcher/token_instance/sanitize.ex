@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.TokenInstance.Sanitize do
 
   @behaviour BufferedTask
 
-  @default_max_batch_size 1
+  @default_max_batch_size 10
   @default_max_concurrency 10
   @doc false
   def child_spec([init_options, gen_server_options]) do
@@ -28,7 +28,7 @@ defmodule Indexer.Fetcher.TokenInstance.Sanitize do
   @impl BufferedTask
   def init(initial_acc, reducer, _) do
     {:ok, acc} =
-      Chain.stream_unfetched_token_instances(initial_acc, fn data, acc ->
+      Chain.stream_token_instances_with_unfetched_metadata(initial_acc, fn data, acc ->
         reducer.(data, acc)
       end)
 
@@ -36,10 +36,12 @@ defmodule Indexer.Fetcher.TokenInstance.Sanitize do
   end
 
   @impl BufferedTask
-  def run([%{contract_address_hash: hash, token_id: token_id}], _json_rpc_named_arguments) do
-    if not Chain.token_instance_exists?(token_id, hash) do
-      fetch_instance(hash, token_id)
-    end
+  def run(token_instances, _) when is_list(token_instances) do
+    token_instances
+    |> Enum.filter(fn %{contract_address_hash: hash, token_id: token_id} ->
+      Chain.token_instance_with_unfetched_metadata?(token_id, hash)
+    end)
+    |> batch_fetch_instances()
 
     :ok
   end
@@ -48,7 +50,7 @@ defmodule Indexer.Fetcher.TokenInstance.Sanitize do
     [
       flush_interval: :infinity,
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
-      max_batch_size: @default_max_batch_size,
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
       poll: false,
       task_supervisor: __MODULE__.TaskSupervisor
     ]

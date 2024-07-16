@@ -28,7 +28,7 @@
     <span class="mr-4">
       <span data-test="transaction_count">
         <%= @tx_count %>
-      </span> <%= gettext "Transactions sent" %>
+      </span> <%= gettext "Transactions" %>
     </span>
   </td>
 </tr>

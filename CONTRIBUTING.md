@@ -1,14 +1,13 @@
-## Contributing
+# Contributing
 
 1. Fork it ( <https://github.com/blockscout/blockscout/fork> )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Write tests that cover your work
 4. Commit your changes (`git commit -am 'Add some feature'`)
 5. Push to the branch (`git push origin my-new-feature`)
-6. Create a new Pull Request
-7. Update CHANGELOG.md with the link to PR and description of the changes
+6. Create a new Pull Request. The title of Pull Request should follow [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and should start with `feat:`, `fix:`, `chore:`, `doc:`, `perf:`, `refactor:` prefix.
 
-### General
+## General
 
 * Commits should be one logical change that still allows all tests to pass.  Prefer smaller commits if there could be two levels of logic grouping.  The goal is to allow contributors in the future (including your own future self) to determine your reasoning for making changes and to allow them to cherry-pick, patch or port those changes in isolation to other branches or forks.
 * If during your PR you reveal a pre-existing bug:
@@ -18,14 +17,14 @@
      2. Commit the fix for the bug.
      3. Continue original PR work.
 
-### Enhancements
+## Enhancements
 
 Enhancements cover all changes that make users lives better:
 
 * [feature requests filed as issues](https://github.com/blockscout/blockscout/labels/enhancement) that impact end-user [contributors](https://github.com/blockscout/blockscout/labels/contributor) and [developers](https://github.com/blockscout/blockscout/labels/developer)
 * changes to the [architecture](https://github.com/blockscout/blockscout/labels/architecture) that make it easier for contributors (in the GitHub sense), dev-ops, and deployers to maintain and run blockscout
 
-### Bug Fixes
+## Bug Fixes
 
 For bug fixes, whenever possible, there should be at least 2 commits:
 
@@ -34,7 +33,7 @@ For bug fixes, whenever possible, there should be at least 2 commits:
 
 This format ensures that we can run the test to reproduce the original bug without depending on the new code in the fix, which could lead to the test falsely passing.
 
-### Incompatible Changes
+## Incompatible Changes
 
 Incompatible changes can arise as a side-effect of either Enhancements or Bug Fixes.  During Enhancements, incompatible changes can occur because, as an example, in order to support showing end-users new data, the database schema may need to be changed and the index rebuilt from scratch.  During bug fixes, incompatible changes can occur because in order to fix a bug, the schema had to change, or how certain internal APIs are called changed.
 
@@ -45,7 +44,7 @@ Incompatible changes can arise as a side-effect of either Enhancements or Bug Fi
   **NOTE**: A database reset and re-index is required
   ```
 
-### Pull Request
+## Pull Request
 
 There is a [PULL_REQUEST_TEMPLATE.md](PULL_REQUEST_TEMPLATE.md) for this repository, but since it can't fill in the title for you, please follow the following steps when opening a Pull Request before filling in the template:
 

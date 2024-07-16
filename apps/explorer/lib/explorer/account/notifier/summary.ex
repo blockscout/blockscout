@@ -3,10 +3,14 @@ defmodule Explorer.Account.Notifier.Summary do
     Compose a summary from transactions
   """
 
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   alias Explorer
   alias Explorer.Account.Notifier.Summary
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Transaction, Wei}
+
+  @unknown "Unknown"
 
   defstruct [
     :transaction_hash,
@@ -67,9 +71,9 @@ defmodule Explorer.Account.Notifier.Summary do
     )
   end
 
-  def fetch_summary(%Chain.Transaction{block_number: nil}), do: :nothing
+  defp fetch_summary(%Chain.Transaction{block_number: nil}), do: :nothing
 
-  def fetch_summary(%Chain.Transaction{created_contract_address_hash: nil} = transaction) do
+  defp fetch_summary(%Chain.Transaction{created_contract_address_hash: nil} = transaction) do
     %Summary{
       transaction_hash: transaction.hash,
       method: method(transaction),
@@ -84,7 +88,7 @@ defmodule Explorer.Account.Notifier.Summary do
     }
   end
 
-  def fetch_summary(%Chain.Transaction{to_address_hash: nil} = transaction) do
+  defp fetch_summary(%Chain.Transaction{to_address_hash: nil} = transaction) do
     %Summary{
       transaction_hash: transaction.hash,
       method: "contract_creation",
@@ -99,14 +103,14 @@ defmodule Explorer.Account.Notifier.Summary do
     }
   end
 
-  def fetch_summary(_), do: :nothing
+  defp fetch_summary(_), do: :nothing
 
-  def fetch_summary(%Chain.Transaction{block_number: nil}, _), do: :nothing
+  defp fetch_summary(%Chain.Transaction{block_number: nil}, _), do: :nothing
 
-  def fetch_summary(
-        %Chain.Transaction{} = transaction,
-        %Chain.TokenTransfer{} = transfer
-      ) do
+  defp fetch_summary(
+         %Chain.Transaction{} = transaction,
+         %Chain.TokenTransfer{} = transfer
+       ) do
     case transfer.token.type do
       "ERC-20" ->
         %Summary{
@@ -118,7 +122,7 @@ defmodule Explorer.Account.Notifier.Summary do
           amount: amount(transfer),
           subject: transfer.token.type,
           tx_fee: fee(transaction),
-          name: transfer.token.name,
+          name: token_name(transfer),
           type: transfer.token.type
         }
 
@@ -130,9 +134,9 @@ defmodule Explorer.Account.Notifier.Summary do
           from_address_hash: transfer.from_address_hash,
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
-          subject: to_string(List.first(transfer.token_ids)),
+          subject: to_string(transfer.token_ids && List.first(transfer.token_ids)),
           tx_fee: fee(transaction),
-          name: transfer.token.name,
+          name: token_name(transfer),
           type: transfer.token.type
         }
 
@@ -146,18 +150,32 @@ defmodule Explorer.Account.Notifier.Summary do
           block_number: transfer.block_number,
           subject: token_ids(transfer),
           tx_fee: fee(transaction),
-          name: transfer.token.name,
+          name: token_name(transfer),
+          type: transfer.token.type
+        }
+
+      "ERC-404" ->
+        token_ids_string = token_ids(transfer)
+
+        %Summary{
+          amount: amount(transfer),
+          transaction_hash: transaction.hash,
+          method: method(transfer),
+          from_address_hash: transfer.from_address_hash,
+          to_address_hash: transfer.to_address_hash,
+          block_number: transfer.block_number,
+          subject: if(token_ids_string == "", do: transfer.token.type, else: token_ids_string),
+          tx_fee: fee(transaction),
+          name: token_name(transfer),
           type: transfer.token.type
         }
     end
   end
 
-  def fetch_summary(_, _), do: :nothing
+  defp fetch_summary(_, _), do: :nothing
 
-  @burn_address "0x0000000000000000000000000000000000000000"
-
-  def method(%{from_address_hash: from, to_address_hash: to}) do
-    {:ok, burn_address} = format_address(@burn_address)
+  defp method(%{from_address_hash: from, to_address_hash: to}) do
+    {:ok, burn_address} = format_address(burn_address_hash_string())
 
     cond do
       burn_address == from -> "mint"
@@ -166,17 +184,17 @@ defmodule Explorer.Account.Notifier.Summary do
     end
   end
 
-  def format_address(address_hash_string) do
+  defp format_address(address_hash_string) do
     Chain.string_to_address_hash(address_hash_string)
   end
 
-  def amount(%Chain.Transaction{} = transaction) do
+  defp amount(%Chain.Transaction{} = transaction) do
     Wei.to(transaction.value, :ether)
   end
 
-  def amount(%Chain.TokenTransfer{amount: amount}) when is_nil(amount), do: nil
+  defp amount(%Chain.TokenTransfer{amount: amount}) when is_nil(amount), do: nil
 
-  def amount(%Chain.TokenTransfer{amount: amount} = transfer) do
+  defp amount(%Chain.TokenTransfer{amount: amount} = transfer) do
     decimals =
       Decimal.new(
         Integer.pow(
@@ -191,19 +209,22 @@ defmodule Explorer.Account.Notifier.Summary do
     )
   end
 
-  def token_ids(%Chain.TokenTransfer{token_ids: token_ids}) do
+  defp token_ids(%Chain.TokenTransfer{token_ids: nil}), do: ""
+
+  defp token_ids(%Chain.TokenTransfer{token_ids: token_ids}) do
     Enum.map_join(token_ids, ", ", fn id -> to_string(id) end)
   end
 
-  def token_decimals(%Chain.TokenTransfer{} = transfer) do
-    transfer.token.decimals || Decimal.new(1)
+  defp token_name(%Chain.TokenTransfer{} = transfer) do
+    transfer.token.name || @unknown
   end
 
-  def type(%Chain.Transaction{}), do: :coin
-  def type(%Chain.InternalTransaction{}), do: :coin
+  defp token_decimals(%Chain.TokenTransfer{} = transfer) do
+    transfer.token.decimals || Decimal.new(0)
+  end
 
-  def fee(%Chain.Transaction{} = transaction) do
-    {_, fee} = Chain.fee(transaction, :gwei)
+  defp fee(%Chain.Transaction{} = transaction) do
+    {_, fee} = Transaction.fee(transaction, :gwei)
     fee
   end
 

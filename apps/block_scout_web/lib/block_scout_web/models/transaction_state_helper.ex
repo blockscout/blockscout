@@ -4,13 +4,16 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   """
 
   import BlockScoutWeb.Chain, only: [default_paging_options: 0]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Block, Transaction, Wei}
+  alias Explorer.Chain.{Block, BlockNumberHelper, Transaction, Wei}
   alias Explorer.Chain.Cache.StateChanges
-  alias Indexer.Fetcher.{CoinBalanceOnDemand, TokenBalanceOnDemand}
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   def state_changes(transaction, options \\ [])
@@ -71,9 +74,11 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
         api?: Keyword.get(options, :api?, false)
       )
 
-    from_before_block = coin_balance(transaction.from_address_hash, block.number - 1, options)
-    to_before_block = coin_balance(transaction.to_address_hash, block.number - 1, options)
-    miner_before_block = coin_balance(block.miner_hash, block.number - 1, options)
+    previous_block_number = BlockNumberHelper.previous_block_number(block.number)
+
+    from_before_block = coin_balance(transaction.from_address_hash, previous_block_number, options)
+    to_before_block = coin_balance(transaction.to_address_hash, previous_block_number, options)
+    miner_before_block = coin_balance(block.miner_hash, previous_block_number, options)
 
     {from_before_tx, to_before_tx, miner_before_tx} =
       StateChange.coin_balances_before(transaction, block_txs, from_before_block, to_before_block, miner_before_block)
@@ -110,7 +115,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
 
     token_ids =
       if token.type == "ERC-1155" do
-        token_transfer.token_ids || [token_transfer.token_id]
+        token_transfer.token_ids
       else
         [nil]
       end
@@ -144,7 +149,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
     from = transfer.from_address
     to = transfer.to_address
     token_hash = transfer.token_contract_address_hash
-    prev_block = transfer.block_number - 1
+    prev_block = BlockNumberHelper.previous_block_number(transfer.block_number)
 
     balances
     |> case do

@@ -28,7 +28,7 @@ interface IERC677MultiBridgeToken {
  * specific functions.
  *
  * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be aplied to your functions to restrict their use to
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner.
  */
 contract Ownable {

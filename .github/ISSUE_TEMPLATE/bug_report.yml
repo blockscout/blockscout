@@ -1,0 +1,100 @@
+name: Bug Report
+description: File a bug report
+labels: [ "triage" ]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug 🐛!
+
+        Please search open/closed issues before submitting. Someone might have had the similar problem before 😉!
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A brief description of the issue.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation-type
+    attributes:
+      label: Type of the installation
+      description: How the application has been deployed.
+      options:
+          - Docker-compose
+          - Helm charts (k8s)
+          - Manual from the source code
+          - Docker
+    validations:
+      required: true
+
+  - type: input
+    id: archive-node-type
+    attributes:
+      label: Type of the JSON RPC archive node
+      description: Which type of archive node is used.
+      placeholder: "Erigon/Geth/Nethermind/Reth/PolygonEdge/Besu/OpenEthereum/..."
+    validations:
+      required: true
+
+  - type: input
+    id: chain-type
+    attributes:
+      label: Type of the chain
+      description: Type of the chain.
+      placeholder: L1/L2/... 
+
+  - type: input
+    id: link
+    attributes:
+      label: Link to the page
+      description: The link to the page where the issue occurs.
+      placeholder: https://eth.blockscout.com
+  
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: |
+        Explain how to reproduce the issue in the development environment.
+
+  - type: input
+    id: backend-version
+    attributes:
+      label: Backend version
+      description: The release version of the backend or branch/commit.
+      placeholder: v6.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: frontend-version
+    attributes:
+      label: Frontend version
+      description: The release version of the frontend or branch/commit.
+      placeholder: v1.11.1
+
+  - type: input
+    id: elixir-version
+    attributes:
+      label: Elixir & Erlang/OTP versions
+      description: Elixir & Erlang/OTP versions.
+      placeholder: Elixir 1.16.3 (compiled with Erlang/OTP 26)
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: Operating system
+      description: The operating system this issue occurred with.
+      placeholder: Linux/macOS/Windows
+
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional information
+      description: |
+        Use this section to provide any additional information you might have (e.g screenshots or screencasts).

@@ -12,6 +12,8 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
 
   setup :set_mox_global
 
+  setup :verify_on_exit!
+
   @chain_spec "#{File.cwd!()}/test/support/fixture/chain_spec/foundation.json"
               |> File.read!()
               |> Jason.decode!()

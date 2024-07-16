@@ -1,14 +1,13 @@
-FROM hexpm/elixir:1.14.5-erlang-25.3.2.4-alpine-3.18.2 AS builder
+FROM hexpm/elixir:1.16.3-erlang-26.2.5.1-alpine-3.18.7 AS builder
 
 WORKDIR /app
 
+ENV MIX_ENV="prod"
+
 RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3 file gcompat
 
-ENV PORT=4000 \
-    MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
-
-RUN apk --update add libstdc++ curl ca-certificates gcompat
+RUN set -ex && \
+    apk --update add libstdc++ curl ca-certificates gcompat
 
 ARG CACHE_EXCHANGE_RATES_PERIOD
 ARG API_V1_READ_METHODS_DISABLED
@@ -22,6 +21,12 @@ ARG MIXPANEL_TOKEN
 ARG MIXPANEL_URL
 ARG AMPLITUDE_API_KEY
 ARG AMPLITUDE_URL
+ARG CHAIN_TYPE
+ENV CHAIN_TYPE=${CHAIN_TYPE}
+ARG BRIDGED_TOKENS_ENABLED
+ENV BRIDGED_TOKENS_ENABLED=${BRIDGED_TOKENS_ENABLED}
+ARG MUD_INDEXER_ENABLED
+ENV MUD_INDEXER_ENABLED=${MUD_INDEXER_ENABLED}
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
@@ -53,9 +58,9 @@ RUN cd apps/block_scout_web/assets/ && \
     apk update && \
     apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
 
+
 RUN apk add --update git make 
 
-RUN export "CFLAGS=-I/usr/local/include -L/usr/local/lib" && cd deps/ex_secp256k1 && mix deps.get && mix compile
 RUN mix phx.digest
 
 RUN mkdir -p /opt/release \
@@ -63,14 +68,18 @@ RUN mkdir -p /opt/release \
   && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
 ##############################################################
-FROM hexpm/elixir:1.14.5-erlang-25.3.2.4-alpine-3.18.2
+FROM hexpm/elixir:1.16.3-erlang-26.2.5.1-alpine-3.18.7
 
 ARG RELEASE_VERSION
 ENV RELEASE_VERSION=${RELEASE_VERSION}
+ARG CHAIN_TYPE
+ENV CHAIN_TYPE=${CHAIN_TYPE}
+ARG BRIDGED_TOKENS_ENABLED
+ENV BRIDGED_TOKENS_ENABLED=${BRIDGED_TOKENS_ENABLED}
 ARG BLOCKSCOUT_VERSION
 ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
 
-RUN apk --no-cache --update add jq
+RUN apk --no-cache --update add jq curl
 
 WORKDIR /app
 
@@ -78,3 +87,4 @@ COPY --from=builder /opt/release/blockscout .
 COPY --from=builder /app/apps/explorer/node_modules ./node_modules
 COPY --from=builder /app/config/config_helper.exs ./config/config_helper.exs
 COPY --from=builder /app/config/config_helper.exs /app/releases/${RELEASE_VERSION}/config_helper.exs
+COPY --from=builder /app/config/assets/precompiles-arbitrum.json ./config/assets/precompiles-arbitrum.json

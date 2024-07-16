@@ -3,17 +3,15 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
 
   import Mox
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [transaction_token_transfer_path: 3]
+  import BlockScoutWeb.Routers.WebRouter.Helpers, only: [transaction_token_transfer_path: 3]
 
   alias Explorer.ExchangeRates.Token
+  alias Explorer.TestHelper
+
+  setup :verify_on_exit!
 
   describe "GET index/3" do
     test "load token transfers", %{conn: conn} do
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
-        {:ok, "100"}
-      end)
-
       transaction = insert(:transaction)
       token_transfer = insert(:token_transfer, transaction: transaction)
 
@@ -55,9 +53,17 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     test "includes token transfers for the transaction", %{conn: conn} do
       transaction = insert(:transaction) |> with_block()
 
-      insert(:token_transfer, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
 
-      insert(:token_transfer, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
 
       path = transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash)
 
@@ -71,11 +77,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
-        {:ok, "100"}
-      end)
-
       transaction = insert(:transaction)
 
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
@@ -158,52 +159,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     end
 
     test "preloads to_address smart contract verified", %{conn: conn} do
-      EthereumJSONRPC.Mox
-      |> expect(
-        :json_rpc,
-        fn %{
-             id: _id,
-             method: "eth_getStorageAt",
-             params: [
-               _,
-               "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-               "latest"
-             ]
-           },
-           _options ->
-          {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-        end
-      )
-      |> expect(
-        :json_rpc,
-        fn %{
-             id: _id,
-             method: "eth_getStorageAt",
-             params: [
-               _,
-               "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-               "latest"
-             ]
-           },
-           _options ->
-          {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-        end
-      )
-      |> expect(:json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-        {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-      end)
-      |> expect(:json_rpc, fn %{id: _id, method: "net_version", params: []}, _options ->
-        {:ok, "100"}
-      end)
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       transaction = insert(:transaction_to_verified_contract)
 

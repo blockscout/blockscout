@@ -9,24 +9,19 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
 
   alias Explorer.Chain.Hash
   alias Explorer.{Chain, Repo}
+  alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
+  alias Que.Persistence, as: QuePersistence
 
   @typedoc """
   * `address_hash` - address of the contract which was tried to verify
-  * `status` - try status: :pending | :pass | :fail 
+  * `status` - try status: :pending | :pass | :fail
   * `uid` - unique verification try identifier
   """
-
-  @type t :: %__MODULE__{
-          uid: String.t(),
-          address_hash: Hash.Address.t(),
-          status: non_neg_integer()
-        }
-
   @primary_key false
-  schema "contract_verification_status" do
-    field(:uid, :string, primary_key: true)
-    field(:status, :integer)
-    field(:address_hash, Hash.Address)
+  typed_schema "contract_verification_status" do
+    field(:uid, :string, primary_key: true, null: false)
+    field(:status, :integer, null: false)
+    field(:address_hash, Hash.Address, null: false)
 
     timestamps()
   end
@@ -97,6 +92,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
         |> Repo.get_by(uid: valid_uid)
         |> (&if(is_nil(&1), do: 3, else: Map.get(&1, :status))).()
         |> decode_status()
+        |> mb_find_uid_in_queue(uid)
 
       _ ->
         :unknown_uid
@@ -118,7 +114,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   def validate_uid(<<_address::binary-size(40), timestamp_hex::binary>> = uid) do
     case Integer.parse(timestamp_hex, 16) do
       {timestamp, ""} ->
-        if DateTime.utc_now() |> DateTime.to_unix() > timestamp do
+        if DateTime.utc_now() |> DateTime.to_unix() >= timestamp do
           {:ok, uid}
         else
           :error
@@ -130,4 +126,21 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   end
 
   def validate_uid(_), do: :error
+
+  defp mb_find_uid_in_queue(:unknown_uid, uid) do
+    SolidityPublisherWorker
+    |> QuePersistence.all()
+    |> Enum.find_value(fn
+      %Que.Job{arguments: {"flattened_api", _, _, ^uid}} ->
+        :pending
+
+      %Que.Job{arguments: {"json_api", _, _, ^uid}} ->
+        :pending
+
+      _ ->
+        nil
+    end) || :unknown_uid
+  end
+
+  defp mb_find_uid_in_queue(other_status, _), do: other_status
 end

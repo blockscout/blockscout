@@ -14,15 +14,15 @@ defmodule Explorer.Account.CustomABI do
 
   @max_abis_per_account 15
 
-  schema "account_custom_abis" do
-    field(:abi, {:array, :map})
+  typed_schema "account_custom_abis" do
+    field(:abi, {:array, :map}, null: false)
     field(:given_abi, :string, virtual: true)
     field(:abi_validating_error, :string, virtual: true)
-    field(:address_hash_hash, Cloak.Ecto.SHA256)
-    field(:address_hash, Explorer.Encrypted.AddressHash)
-    field(:name, Explorer.Encrypted.Binary)
+    field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
+    field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:name, Explorer.Encrypted.Binary, null: false)
 
-    belongs_to(:identity, Identity)
+    belongs_to(:identity, Identity, null: false)
 
     timestamps()
   end
@@ -50,8 +50,9 @@ defmodule Explorer.Account.CustomABI do
   end
 
   defp put_hashed_fields(changeset) do
+    # Using force_change instead of put_change due to https://github.com/danielberkompas/cloak_ecto/issues/53
     changeset
-    |> put_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
+    |> force_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
   end
 
   defp check_smart_contract_address(%Changeset{changes: %{address_hash: address_hash}} = custom_abi) do
@@ -65,7 +66,7 @@ defmodule Explorer.Account.CustomABI do
   defp check_smart_contract_address(custom_abi), do: custom_abi
 
   defp check_smart_contract_address_inner(changeset, address_hash) do
-    if Chain.is_address_hash_is_smart_contract?(address_hash) do
+    if Chain.address_hash_is_smart_contract?(address_hash) do
       changeset
     else
       add_error(changeset, :address_hash, "Address is not a smart contract")
@@ -100,7 +101,7 @@ defmodule Explorer.Account.CustomABI do
   defp check_is_abi_valid?(%{abi: abi} = custom_abi, given_abi) when is_list(abi) do
     with true <- length(abi) > 0,
          filtered_abi <- filter_abi(abi),
-         true <- Enum.count(filtered_abi) > 0 do
+         false <- Enum.empty?(filtered_abi) do
       Map.put(custom_abi, :abi, filtered_abi)
     else
       _ ->

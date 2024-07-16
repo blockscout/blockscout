@@ -56,7 +56,6 @@ defmodule Indexer.Fetcher.Withdrawal do
       end
 
       state = %__MODULE__{
-        blocks_to_fetch: first_block |> Helper.parse_integer() |> missing_block_numbers(),
         interval: opts[:interval] || @interval,
         json_rpc_named_arguments: json_rpc_named_arguments,
         max_batch_size: opts[:max_batch_size] || @batch_size,
@@ -65,11 +64,16 @@ defmodule Indexer.Fetcher.Withdrawal do
 
       Process.send_after(self(), :fetch_withdrawals, state.interval)
 
-      {:ok, state}
+      {:ok, state, {:continue, first_block}}
     else
-      Logger.warn("Please, specify the first block of the block range for #{__MODULE__}.")
+      Logger.warning("Please, specify the first block of the block range for #{__MODULE__}.")
       :ignore
     end
+  end
+
+  @impl GenServer
+  def handle_continue(first_block, state) do
+    {:noreply, %{state | blocks_to_fetch: first_block |> Helper.parse_integer() |> missing_block_numbers()}}
   end
 
   @impl GenServer

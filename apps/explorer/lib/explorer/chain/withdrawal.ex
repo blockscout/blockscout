@@ -8,33 +8,26 @@ defmodule Explorer.Chain.Withdrawal do
   alias Explorer.Chain.{Address, Block, Hash, Wei}
   alias Explorer.PagingOptions
 
-  @type t :: %__MODULE__{
-          index: non_neg_integer(),
-          validator_index: non_neg_integer(),
-          amount: Wei.t(),
-          block: %Ecto.Association.NotLoaded{} | Block.t(),
-          block_hash: Hash.Full.t(),
-          address: %Ecto.Association.NotLoaded{} | Address.t(),
-          address_hash: Hash.Address.t()
-        }
-
   @required_attrs ~w(index validator_index amount address_hash block_hash)a
 
-  @primary_key {:index, :integer, autogenerate: false}
-  schema "withdrawals" do
-    field(:validator_index, :integer)
-    field(:amount, Wei)
+  @primary_key false
+  typed_schema "withdrawals" do
+    field(:index, :integer, primary_key: true, null: false)
+    field(:validator_index, :integer, null: false)
+    field(:amount, Wei, null: false)
 
     belongs_to(:address, Address,
       foreign_key: :address_hash,
       references: :hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     belongs_to(:block, Block,
       foreign_key: :block_hash,
       references: :hash,
-      type: Hash.Full
+      type: Hash.Full,
+      null: false
     )
 
     timestamps()

@@ -19,7 +19,9 @@ defmodule Indexer.Fetcher.TokenBalance do
   require Logger
 
   alias Explorer.Chain
+  alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.Hash
+  alias Explorer.Utility.MissingBalanceOfToken
   alias Indexer.{BufferedTask, TokenBalances, Tracer}
   alias Indexer.Fetcher.TokenBalance.Supervisor, as: TokenBalanceSupervisor
 
@@ -28,24 +30,29 @@ defmodule Indexer.Fetcher.TokenBalance do
   @default_max_batch_size 100
   @default_max_concurrency 10
 
+  @timeout :timer.minutes(10)
+
   @max_retries 3
 
-  @spec async_fetch([
-          %{
-            token_contract_address_hash: Hash.Address.t(),
-            address_hash: Hash.Address.t(),
-            block_number: non_neg_integer(),
-            token_type: String.t(),
-            token_id: non_neg_integer()
-          }
-        ]) :: :ok
-  def async_fetch(token_balances) do
+  @spec async_fetch(
+          [
+            %{
+              token_contract_address_hash: Hash.Address.t(),
+              address_hash: Hash.Address.t(),
+              block_number: non_neg_integer(),
+              token_type: String.t(),
+              token_id: non_neg_integer()
+            }
+          ],
+          boolean()
+        ) :: :ok
+  def async_fetch(token_balances, realtime?) do
     if TokenBalanceSupervisor.disabled?() do
       :ok
     else
       formatted_params = Enum.map(token_balances, &entry/1)
 
-      BufferedTask.buffer(__MODULE__, formatted_params, :infinity)
+      BufferedTask.buffer(__MODULE__, formatted_params, realtime?, :infinity)
     end
   end
 
@@ -76,7 +83,8 @@ defmodule Indexer.Fetcher.TokenBalance do
           token_balance
           |> entry()
           |> reducer.(acc)
-        end
+        end,
+        true
       )
 
     final
@@ -91,11 +99,19 @@ defmodule Indexer.Fetcher.TokenBalance do
   @impl BufferedTask
   @decorate trace(name: "fetch", resource: "Indexer.Fetcher.TokenBalance.run/2", tracer: Tracer, service: :indexer)
   def run(entries, _json_rpc_named_arguments) do
+    params = Enum.map(entries, &format_params/1)
+
+    missing_balance_of_tokens =
+      params
+      |> Enum.map(& &1.token_contract_address_hash)
+      |> Enum.uniq()
+      |> MissingBalanceOfToken.get_by_hashes()
+
     result =
-      entries
-      |> Enum.map(&format_params/1)
+      params
+      |> MissingBalanceOfToken.filter_token_balances_params(true, missing_balance_of_tokens)
       |> increase_retries_count()
-      |> fetch_from_blockchain()
+      |> fetch_from_blockchain(missing_balance_of_tokens)
       |> import_token_balances()
 
     if result == :ok do
@@ -105,7 +121,7 @@ defmodule Indexer.Fetcher.TokenBalance do
     end
   end
 
-  def fetch_from_blockchain(params_list) do
+  def fetch_from_blockchain(params_list, missing_balance_of_tokens) do
     retryable_params_list =
       params_list
       |> Enum.filter(&(&1.retries_count <= @max_retries))
@@ -116,17 +132,26 @@ defmodule Indexer.Fetcher.TokenBalance do
     %{fetched_token_balances: fetched_token_balances, failed_token_balances: _failed_token_balances} =
       1..@max_retries
       |> Enum.reduce_while(%{fetched_token_balances: [], failed_token_balances: retryable_params_list}, fn _x, acc ->
-        {:ok,
-         %{fetched_token_balances: _fetched_token_balances, failed_token_balances: failed_token_balances} =
-           token_balances} = TokenBalances.fetch_token_balances_from_blockchain(acc.failed_token_balances)
+        {:ok, %{fetched_token_balances: fetched_token_balances, failed_token_balances: failed_token_balances}} =
+          TokenBalances.fetch_token_balances_from_blockchain(acc.failed_token_balances)
+
+        all_token_balances = %{
+          fetched_token_balances: acc.fetched_token_balances ++ fetched_token_balances,
+          failed_token_balances: failed_token_balances
+        }
+
+        handle_success_balances(fetched_token_balances, missing_balance_of_tokens)
 
         if Enum.empty?(failed_token_balances) do
-          {:halt, token_balances}
+          {:halt, all_token_balances}
         else
-          failed_token_balances = increase_retries_count(failed_token_balances)
+          failed_token_balances =
+            failed_token_balances
+            |> handle_failed_balances()
+            |> increase_retries_count()
 
           token_balances_updated_retries_count =
-            token_balances
+            all_token_balances
             |> Map.put(:failed_token_balances, failed_token_balances)
 
           {:cont, token_balances_updated_retries_count}
@@ -134,6 +159,45 @@ defmodule Indexer.Fetcher.TokenBalance do
       end)
 
     fetched_token_balances
+  end
+
+  defp handle_success_balances(fetched_token_balances, missing_balance_of_tokens) do
+    successful_token_hashes =
+      fetched_token_balances
+      |> Enum.map(&to_string(&1.token_contract_address_hash))
+      |> MapSet.new()
+
+    missing_balance_of_token_hashes =
+      missing_balance_of_tokens
+      |> Enum.map(&to_string(&1.token_contract_address_hash))
+      |> MapSet.new()
+
+    successful_token_hashes
+    |> MapSet.intersection(missing_balance_of_token_hashes)
+    |> MapSet.to_list()
+    |> MissingBalanceOfToken.mark_as_implemented()
+  end
+
+  defp handle_failed_balances(failed_token_balances) do
+    {missing_balance_of_balances, other_failed_balances} =
+      Enum.split_with(failed_token_balances, fn
+        %{error: error} when is_binary(error) -> error =~ "execution reverted"
+        _ -> false
+      end)
+
+    MissingBalanceOfToken.insert_from_params(missing_balance_of_balances)
+
+    missing_balance_of_balances
+    |> Enum.group_by(& &1.token_contract_address_hash, & &1.block_number)
+    |> Enum.map(fn {token_contract_address_hash, block_numbers} ->
+      {token_contract_address_hash, Enum.max(block_numbers)}
+    end)
+    |> Enum.each(fn {token_contract_address_hash, block_number} ->
+      TokenBalance.delete_placeholders_below(token_contract_address_hash, block_number)
+      CurrentTokenBalance.delete_placeholders_below(token_contract_address_hash, block_number)
+    end)
+
+    other_failed_balances
   end
 
   defp increase_retries_count(params_list) do
@@ -151,7 +215,7 @@ defmodule Indexer.Fetcher.TokenBalance do
       address_current_token_balances: %{
         params: TokenBalances.to_address_current_token_balances(formatted_token_balances_params)
       },
-      timeout: :infinity
+      timeout: @timeout
     }
 
     case Chain.import(import_params) do

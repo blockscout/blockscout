@@ -10,9 +10,9 @@ defmodule Indexer.Block.FetcherTest do
   alias Explorer.Chain.{Address, Log, Transaction, Wei}
   alias Indexer.Block.Fetcher
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
 
   alias Indexer.Fetcher.{
-    CoinBalance,
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
@@ -49,7 +49,7 @@ defmodule Indexer.Block.FetcherTest do
 
   describe "import_range/2" do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -375,8 +375,7 @@ defmodule Indexer.Block.FetcherTest do
                          "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
                          "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
                          "transactionIndex" => "0x0",
-                         "transactionLogIndex" => "0x0",
-                         "type" => "mined"
+                         "transactionLogIndex" => "0x0"
                        }
                      ],
                      "logsBloom" =>
@@ -582,7 +581,7 @@ defmodule Indexer.Block.FetcherTest do
                   }} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
           wait_for_tasks(InternalTransaction)
-          wait_for_tasks(CoinBalance)
+          wait_for_tasks(CoinBalanceCatchup)
 
           assert Repo.aggregate(Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 5
@@ -676,7 +675,7 @@ defmodule Indexer.Block.FetcherTest do
                   }} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
           wait_for_tasks(InternalTransaction)
-          wait_for_tasks(CoinBalance)
+          wait_for_tasks(CoinBalanceCatchup)
 
           assert Repo.aggregate(Chain.Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 2

@@ -3,9 +3,10 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   require Logger
 
+  alias BlockScoutWeb.Account.Api.V2.UserView
   alias BlockScoutWeb.API.V2.ApiView
+  alias Ecto.Changeset
 
-  @verification_failed "API v2 smart-contract verification failed"
   @invalid_parameters "Invalid parameter(s)"
   @invalid_address_hash "Invalid address hash"
   @invalid_hash "Invalid hash"
@@ -23,10 +24,18 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @unauthorized "Unauthorized"
   @not_configured_api_key "API key not configured on the server"
   @wrong_api_key "Wrong API key"
+  @address_not_found "Address not found"
+  @address_is_not_smart_contract "Address is not smart-contract"
+  @vyper_smart_contract_is_not_supported "Vyper smart-contracts are not supported by SolidityScan"
+  @unverified_smart_contract "Smart-contract is unverified"
+  @empty_response "Empty response"
+  @tx_interpreter_service_disabled "Transaction Interpretation Service is disabled"
+  @disabled "API endpoint is disabled"
+  @service_disabled "Service is disabled"
 
   def call(conn, {:format, _params}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_parameters}"]
+      ["#{@invalid_parameters}"]
     end)
 
     conn
@@ -37,7 +46,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:format_address, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_address_hash}"]
+      ["#{@invalid_address_hash}"]
     end)
 
     conn
@@ -48,7 +57,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:format_url, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_url}"]
+      ["#{@invalid_url}"]
     end)
 
     conn
@@ -59,7 +68,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:not_found, _, :empty_items_with_next_page_params}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: :empty_items_with_next_page_params"]
+      [":empty_items_with_next_page_params"]
     end)
 
     conn
@@ -68,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:not_found, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@not_found}"]
+      ["#{@not_found}"]
     end)
 
     conn
@@ -79,7 +88,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:contract_interaction_disabled, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@contract_interaction_disabled}"]
+      ["#{@contract_interaction_disabled}"]
     end)
 
     conn
@@ -90,7 +99,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:error, {:invalid, :hash}}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_hash}"]
+      ["#{@invalid_hash}"]
     end)
 
     conn
@@ -101,7 +110,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:error, {:invalid, :number}}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_number}"]
+      ["#{@invalid_number}"]
     end)
 
     conn
@@ -112,16 +121,23 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:error, :not_found}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: :not_found"]
+      [":not_found"]
     end)
 
     conn
     |> call({:not_found, nil})
   end
 
+  def call(conn, {:error, %Changeset{} = changeset}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UserView)
+    |> render(:changeset_errors, changeset: changeset)
+  end
+
   def call(conn, {:restricted_access, true}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@restricted_access}"]
+      ["#{@restricted_access}"]
     end)
 
     conn
@@ -130,9 +146,9 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @restricted_access})
   end
 
-  def call(conn, {:already_verified, true}) do
+  def call(conn, {:already_verified, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@already_verified}"]
+      ["#{@already_verified}"]
     end)
 
     conn
@@ -142,7 +158,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:no_json_file, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@json_not_found}"]
+      ["#{@json_not_found}"]
     end)
 
     conn
@@ -152,7 +168,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:file_error, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@error_while_reading_json}"]
+      ["#{@error_while_reading_json}"]
     end)
 
     conn
@@ -162,7 +178,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:libs_format, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@error_in_libraries}"]
+      ["#{@error_in_libraries}"]
     end)
 
     conn
@@ -172,7 +188,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:lost_consensus, {:ok, block}}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@block_lost_consensus}"]
+      ["#{@block_lost_consensus}"]
     end)
 
     conn
@@ -182,7 +198,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:lost_consensus, {:error, :not_found}}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@block_lost_consensus}"]
+      ["#{@block_lost_consensus}"]
     end)
 
     conn
@@ -191,7 +207,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:recaptcha, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@invalid_captcha_resp}"]
+      ["#{@invalid_captcha_resp}"]
     end)
 
     conn
@@ -202,7 +218,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:auth, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@unauthorized}"]
+      ["#{@unauthorized}"]
     end)
 
     conn
@@ -213,7 +229,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:sensitive_endpoints_api_key, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@not_configured_api_key}"]
+      ["#{@not_configured_api_key}"]
     end)
 
     conn
@@ -224,12 +240,81 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   def call(conn, {:api_key, _}) do
     Logger.error(fn ->
-      ["#{@verification_failed}: #{@wrong_api_key}"]
+      ["#{@wrong_api_key}"]
     end)
 
     conn
     |> put_status(:unauthorized)
     |> put_view(ApiView)
     |> render(:message, %{message: @wrong_api_key})
+  end
+
+  def call(conn, {:address, {:error, :not_found}}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @address_not_found})
+  end
+
+  def call(conn, {:is_smart_contract, result}) when is_nil(result) or result == false do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @address_is_not_smart_contract})
+  end
+
+  def call(conn, {:is_vyper_contract, result}) when result == true do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @vyper_smart_contract_is_not_supported})
+  end
+
+  def call(conn, {:is_verified_smart_contract, result}) when result == false do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @unverified_smart_contract})
+  end
+
+  def call(conn, {:method, _}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @not_found})
+  end
+
+  def call(conn, {:is_empty_response, true}) do
+    conn
+    |> put_status(500)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @empty_response})
+  end
+
+  def call(conn, {:tx_interpreter_enabled, false}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @tx_interpreter_service_disabled})
+  end
+
+  def call(conn, {:disabled, _}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @disabled})
+  end
+
+  def call(conn, {:error, :disabled}) do
+    conn
+    |> put_status(501)
+    |> put_view(ApiView)
+    |> render(:message, %{message: @service_disabled})
+  end
+
+  def call(conn, {code, response}) when is_integer(code) do
+    conn
+    |> put_status(code)
+    |> json(response)
   end
 end

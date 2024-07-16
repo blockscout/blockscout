@@ -12,17 +12,19 @@ defmodule Explorer.Chain.PendingBlockOperation do
   @typedoc """
    * `block_hash` - the hash of the block that has pending operations.
   """
-  @type t :: %__MODULE__{
-          block_hash: Hash.Full.t()
-        }
-
   @primary_key false
-  schema "pending_block_operations" do
+  typed_schema "pending_block_operations" do
     timestamps()
 
-    field(:block_number, :integer)
+    field(:block_number, :integer, null: false)
 
-    belongs_to(:block, Block, foreign_key: :block_hash, primary_key: true, references: :hash, type: Hash.Full)
+    belongs_to(:block, Block,
+      foreign_key: :block_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full,
+      null: false
+    )
   end
 
   def changeset(%__MODULE__{} = pending_ops, attrs) do

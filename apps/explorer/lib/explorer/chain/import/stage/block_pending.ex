@@ -2,9 +2,7 @@ defmodule Explorer.Chain.Import.Stage.BlockPending do
   @moduledoc """
   Imports any tables that uses `Explorer.Chain.PendingBlockOperation` to track
   progress and cannot be imported at the same time as those imported by
-  `Explorer.Chain.Import.Stage.Addresses`,
-  `Explorer.Chain.Import.Stage.AddressReferencing` and
-  `Explorer.Chain.Import.Stage.BlockReferencing`
+  `Explorer.Chain.Import.Stage.BlockRelated` and `Explorer.Chain.Import.Stage.BlockReferencing`
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
@@ -16,6 +14,10 @@ defmodule Explorer.Chain.Import.Stage.BlockPending do
     do: [
       Runner.InternalTransactions
     ]
+
+  @impl Stage
+  def all_runners,
+    do: runners()
 
   @impl Stage
   def multis(runner_to_changes_list, options) do

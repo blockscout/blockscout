@@ -98,7 +98,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     if accounts do
       parse_accounts(accounts)
     else
-      Logger.warn(fn -> "No accounts are defined in chain spec" end)
+      Logger.warning(fn -> "No accounts are defined in chain spec" end)
 
       []
     end
@@ -112,7 +112,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
       |> parse_hex_numbers()
       |> format_ranges()
     else
-      Logger.warn(fn -> "No rewards are defined in chain spec" end)
+      Logger.warning(fn -> "No rewards are defined in chain spec" end)
 
       []
     end
@@ -126,9 +126,9 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     |> Stream.map(fn {address, %{"balance" => value} = params} ->
       formatted_address = if String.starts_with?(address, "0x"), do: address, else: "0x" <> address
       {:ok, address_hash} = AddressHash.cast(formatted_address)
-      balance = parse_number(value)
+      balance = ExplorerHelper.parse_number(value)
 
-      nonce = parse_number(params["nonce"] || "0")
+      nonce = ExplorerHelper.parse_number(params["nonce"] || "0")
       code = params["constructor"]
 
       %{address_hash: address_hash, value: balance, nonce: nonce, contract_code: code}
@@ -162,26 +162,16 @@ defmodule Explorer.ChainSpec.Parity.Importer do
 
   defp parse_hex_numbers(rewards) when is_map(rewards) do
     Enum.map(rewards, fn {hex_block_number, hex_reward} ->
-      block_number = parse_number(hex_block_number)
-      {:ok, reward} = hex_reward |> parse_number() |> Wei.cast()
+      block_number = ExplorerHelper.parse_number(hex_block_number)
+      {:ok, reward} = hex_reward |> ExplorerHelper.parse_number() |> Wei.cast()
 
       {block_number, reward}
     end)
   end
 
   defp parse_hex_numbers(reward) do
-    {:ok, reward} = reward |> parse_number() |> Wei.cast()
+    {:ok, reward} = reward |> ExplorerHelper.parse_number() |> Wei.cast()
 
     [{0, reward}]
-  end
-
-  defp parse_number("0x" <> hex_number) do
-    {number, ""} = Integer.parse(hex_number, 16)
-
-    number
-  end
-
-  defp parse_number(string_number) do
-    ExplorerHelper.parse_integer(string_number)
   end
 end

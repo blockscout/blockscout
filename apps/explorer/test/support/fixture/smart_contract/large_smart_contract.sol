@@ -113,7 +113,7 @@ interface IHomeWork {
    * @param key bytes32 The unique value used to derive the home address.
    * @param owner address The account that will be granted ownership of the
    * ERC721 token.
-   * @dev In order to mint an ERC721 token, the assocated home address cannot be
+   * @dev In order to mint an ERC721 token, the associated home address cannot be
    * in use, or else the token will not be able to deploy to the home address.
    * The controller is set to this contract until the token is redeemed, at
    * which point the redeemer designates a new controller for the home address.
@@ -239,7 +239,7 @@ interface IHomeWork {
    * @param owner address The account that will be granted ownership of the
    * ERC721 token.
    * @return The derived key.
-   * @dev In order to mint an ERC721 token, the assocated home address cannot be
+   * @dev In order to mint an ERC721 token, the associated home address cannot be
    * in use, or else the token will not be able to deploy to the home address.
    * The controller is set to this contract until the token is redeemed, at
    * which point the redeemer designates a new controller for the home address.
@@ -1778,7 +1778,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
    * @param key bytes32 The unique value used to derive the home address.
    * @param owner address The account that will be granted ownership of the
    * ERC721 token.
-   * @dev In order to mint an ERC721 token, the assocated home address cannot be
+   * @dev In order to mint an ERC721 token, the associated home address cannot be
    * in use, or else the token will not be able to deploy to the home address.
    * The controller is set to this contract until the token is redeemed, at
    * which point the redeemer designates a new controller for the home address.
@@ -2011,7 +2011,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
    * @param owner address The account that will be granted ownership of the
    * ERC721 token.
    * @return The derived key.
-   * @dev In order to mint an ERC721 token, the assocated home address cannot be
+   * @dev In order to mint an ERC721 token, the associated home address cannot be
    * in use, or else the token will not be able to deploy to the home address.
    * The controller is set to this contract until the token is redeemed, at
    * which point the redeemer designates a new controller for the home address.
@@ -2763,7 +2763,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
     view
     returns (address holder, uint256 score, bytes32 key)
   {
-    // Get the key and subbmitter holding the current high score.
+    // Get the key and submitter holding the current high score.
     key = _highScoreKey;
     holder = address(bytes20(key));
 
@@ -2886,7 +2886,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
    *
    * data:application/json,{
    *   "name":"Home%20Address%20-%200x********************",
-   *   "description":"< ... HomeWork NFT desription ... >",
+   *   "description":"< ... HomeWork NFT description ... >",
    *   "image":"data:image/svg+xml;charset=utf-8;base64,< ... Image ... >"}
    *
    * where ******************** represents the checksummed home address that the
@@ -3063,7 +3063,7 @@ contract HomeWork is IHomeWork, ERC721Enumerable, IERC721Metadata, IERC1412 {
 
   /**
    * @notice Internal function for deploying arbitrary contract code to the home
-   * address corresponding to a suppied key via metamorphic initialization code.
+   * address corresponding to a supplied key via metamorphic initialization code.
    * @return The home address and the hash of the deployed runtime code.
    * @dev This deployment method uses the "metamorphic delegator" pattern, where
    * it will retrieve the address of the contract that contains the target
@@ -3793,7 +3793,7 @@ contract HomeWorkDeployer {
 
   /**
    * @notice Internal function for deploying arbitrary contract code to the home
-   * address corresponding to a suppied key via metamorphic initialization code.
+   * address corresponding to a supplied key via metamorphic initialization code.
    * @dev This deployment method uses the "metamorphic delegator" pattern, where
    * it will retrieve the address of the contract that contains the target
    * initialization code, then delegatecall into it, which executes the

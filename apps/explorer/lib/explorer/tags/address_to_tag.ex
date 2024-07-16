@@ -11,24 +11,20 @@ defmodule Explorer.Tags.AddressToTag do
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
-  # Notation.import_types(BlockScoutWeb.Schema.Types)
+  # Notation.import_types(BlockScoutWeb.GraphQL.Schema.Types)
 
   @typedoc """
   * `:tag_id` - id of Tag
   * `:address_hash` - hash of Address
   """
-  @type t :: %AddressToTag{
-          tag_id: Decimal.t(),
-          address_hash: Hash.Address.t()
-        }
-
-  schema "address_to_tags" do
+  typed_schema "address_to_tags" do
     belongs_to(
       :tag,
       AddressTag,
       foreign_key: :tag_id,
       references: :id,
-      type: :integer
+      type: :integer,
+      null: false
     )
 
     belongs_to(
@@ -36,7 +32,8 @@ defmodule Explorer.Tags.AddressToTag do
       Address,
       foreign_key: :address_hash,
       references: :hash,
-      type: Hash.Address
+      type: Hash.Address,
+      null: false
     )
 
     timestamps()
@@ -94,7 +91,7 @@ defmodule Explorer.Tags.AddressToTag do
         addresses_to_add
         |> Enum.map(fn address_hash_string ->
           with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-               :ok <- Chain.check_address_exists(address_hash) do
+               :ok <- Address.check_address_exists(address_hash) do
             %{
               tag_id: tag_id,
               address_hash: address_hash,
@@ -108,7 +105,7 @@ defmodule Explorer.Tags.AddressToTag do
         end)
         |> Enum.filter(&(!is_nil(&1)))
 
-      if Enum.count(addresses_to_delete) > 0 do
+      if not Enum.empty?(addresses_to_delete) do
         delete_query_base =
           from(
             att in AddressToTag,

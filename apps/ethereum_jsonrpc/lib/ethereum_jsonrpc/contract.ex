@@ -18,7 +18,7 @@ defmodule EthereumJSONRPC.Contract do
           required(:contract_address) => String.t(),
           required(:method_id) => String.t(),
           required(:args) => [term()],
-          optional(:block_number) => EthereumJSONRPC.block_number()
+          optional(:block_number) => EthereumJSONRPC.block_number() | nil
         }
 
   @typedoc """
@@ -133,9 +133,13 @@ defmodule EthereumJSONRPC.Contract do
 
   defp convert_int_string_to_array_inner(arg) do
     arg
-    |> Enum.map(fn el ->
-      {int, _} = Integer.parse(el)
-      int
+    |> Enum.map(fn
+      el when is_integer(el) ->
+        el
+
+      el ->
+        {int, _} = Integer.parse(el)
+        int
     end)
   end
 

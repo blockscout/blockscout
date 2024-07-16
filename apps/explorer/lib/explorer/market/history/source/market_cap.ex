@@ -14,5 +14,5 @@ defmodule Explorer.Market.History.Source.MarketCap do
   @doc """
   Fetch history for a specified amount of days in the past.
   """
-  @callback fetch_market_cap() :: {:ok, [record()]} | :error
+  @callback fetch_market_cap(previous_days :: non_neg_integer()) :: {:ok, [record()]} | :error
 end

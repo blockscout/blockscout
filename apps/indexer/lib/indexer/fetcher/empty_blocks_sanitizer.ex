@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, PendingBlockOperation, Transaction}
-  alias Explorer.Chain.Import.Runner.Blocks
+  alias Explorer.Chain.Cache.BlockNumber
 
   @interval :timer.seconds(10)
 
@@ -41,9 +41,11 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
   @impl GenServer
   def init(opts) when is_list(opts) do
+    interval = Application.get_env(:indexer, __MODULE__)[:interval]
+
     state = %__MODULE__{
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
-      interval: opts[:interval] || @interval
+      interval: interval || @interval
     }
 
     Process.send_after(self(), :sanitize_empty_blocks, state.interval)
@@ -97,7 +99,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
             fetcher: :empty_blocks_to_refetch
           )
 
-          Blocks.invalidate_consensus_blocks([block_number])
+          Block.set_refetch_needed(block_number)
         else
           Logger.debug(
             "Block with number #{block_number} and hash #{to_string(block_hash)} is empty. We should set is_empty=true for it.",
@@ -131,13 +133,16 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       {:error, %{exception: postgrex_error}}
   end
 
+  @head_offset 1000
   defp consensus_blocks_with_nil_is_empty_query(limit) do
+    safe_block_number = BlockNumber.get_max() - @head_offset
+
     from(block in Block,
       where: is_nil(block.is_empty),
+      where: block.number <= ^safe_block_number,
       where: block.consensus == true,
       order_by: [asc: block.hash],
-      limit: ^limit,
-      offset: 1000
+      limit: ^limit
     )
   end
 

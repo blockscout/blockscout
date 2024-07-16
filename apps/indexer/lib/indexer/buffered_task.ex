@@ -7,7 +7,7 @@ defmodule Indexer.BufferedTask do
   Named arguments are required and are passed in the list that is the second element of the tuple.
 
     * `:flush_interval` - The interval in milliseconds to flush the buffer.
-    * `:max_concurrency` - The maximum number of tasks to run concurrently at any give time.
+    * `:max_concurrency` - The maximum number of tasks to run concurrently at any given time.
     * `:poll` - poll for new records when all records are processed
     * `:max_batch_size` - The maximum batch passed to `c:run/2`.
     * `:memory_monitor` - The `Indexer.Memory.Monitor` `t:GenServer.server/0` to register as
@@ -74,6 +74,7 @@ defmodule Indexer.BufferedTask do
             poll: true,
             metadata: [],
             current_buffer: [],
+            current_front_buffer: [],
             bound_queue: %BoundQueue{},
             task_ref_to_batch: %{}
 
@@ -155,9 +156,9 @@ defmodule Indexer.BufferedTask do
   @doc """
   Buffers list of entries for future async execution.
   """
-  @spec buffer(GenServer.name(), entries(), timeout()) :: :ok
-  def buffer(server, entries, timeout \\ 5000) when is_list(entries) do
-    GenServer.call(server, {:buffer, entries}, timeout)
+  @spec buffer(GenServer.name(), entries(), boolean(), timeout()) :: :ok
+  def buffer(server, entries, front?, timeout \\ 5000) when is_list(entries) do
+    GenServer.call(server, {:buffer, entries, front?}, timeout)
   end
 
   def child_spec([init_arguments]) do
@@ -189,7 +190,7 @@ defmodule Indexer.BufferedTask do
   Named arguments are required and are passed in the list that is the second element of the tuple.
 
     * `:flush_interval` - The interval in milliseconds to flush the buffer.
-    * `:max_concurrency` - The maximum number of tasks to run concurrently at any give time.
+    * `:max_concurrency` - The maximum number of tasks to run concurrently at any given time.
     * `:max_batch_size` - The maximum batch passed to `c:run/2`.
     * `:task_supervisor` - The `Task.Supervisor` name to spawn tasks under.
 
@@ -216,7 +217,6 @@ defmodule Indexer.BufferedTask do
   def start_link({module, base_init_opts}, genserver_opts \\ []) do
     default_opts = Application.get_all_env(:indexer)
     init_opts = Keyword.merge(default_opts, base_init_opts)
-
     GenServer.start_link(__MODULE__, {module, init_opts}, genserver_opts)
   end
 
@@ -278,8 +278,12 @@ defmodule Indexer.BufferedTask do
     {:noreply, drop_task_and_retry(state, ref)}
   end
 
-  def handle_call({:buffer, entries}, _from, state) do
-    {:reply, :ok, buffer_entries(state, entries)}
+  def handle_info({:buffer, entries, front?}, state) do
+    {:noreply, buffer_entries(state, entries, front?)}
+  end
+
+  def handle_call({:buffer, entries, front?}, _from, state) do
+    {:reply, :ok, buffer_entries(state, entries, front?)}
   end
 
   def handle_call(
@@ -287,20 +291,38 @@ defmodule Indexer.BufferedTask do
         _from,
         %BufferedTask{
           current_buffer: current_buffer,
+          current_front_buffer: current_front_buffer,
           bound_queue: bound_queue,
           max_batch_size: max_batch_size,
           task_ref_to_batch: task_ref_to_batch
         } = state
       ) do
-    count = length(current_buffer) + Enum.count(bound_queue) * max_batch_size
+    count = length(current_buffer) + length(current_front_buffer) + Enum.count(bound_queue) * max_batch_size
 
     {:reply, %{buffer: count, tasks: Enum.count(task_ref_to_batch)}, state}
+  end
+
+  def handle_call(
+        :state,
+        _from,
+        state
+      ) do
+    {:reply, state, state}
   end
 
   def handle_call({:push_back, entries}, _from, state) when is_list(entries) do
     new_state =
       state
       |> push_back(entries)
+      |> spawn_next_batch()
+
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call({:push_front, entries}, _from, state) when is_list(entries) do
+    new_state =
+      state
+      |> push_front(entries)
       |> spawn_next_batch()
 
     {:reply, :ok, new_state}
@@ -323,6 +345,10 @@ defmodule Indexer.BufferedTask do
     {:reply, BoundQueue.shrunk?(bound_queue), state}
   end
 
+  def handle_call(:expand, _from, %__MODULE__{bound_queue: bound_queue} = state) do
+    {:reply, :ok, %{state | bound_queue: BoundQueue.expand(bound_queue)}}
+  end
+
   defp drop_task(state, ref) do
     spawn_next_batch(%BufferedTask{state | task_ref_to_batch: Map.delete(state.task_ref_to_batch, ref)})
   end
@@ -335,9 +361,13 @@ defmodule Indexer.BufferedTask do
     |> push_back(new_batch || batch)
   end
 
-  defp buffer_entries(state, []), do: state
+  defp buffer_entries(state, [], _front?), do: state
 
-  defp buffer_entries(state, entries) do
+  defp buffer_entries(state, entries, true) do
+    %{state | current_front_buffer: [entries | state.current_front_buffer]}
+  end
+
+  defp buffer_entries(state, entries, false) do
     %{state | current_buffer: [entries | state.current_buffer]}
   end
 
@@ -393,14 +423,22 @@ defmodule Indexer.BufferedTask do
     GenServer.call(pid, {:push_back, entries})
   end
 
-  defp push_back(%BufferedTask{bound_queue: bound_queue} = state, entries) when is_list(entries) do
+  defp push_back(%BufferedTask{} = state, entries), do: push(state, entries, false)
+
+  defp push_front(pid, entries) when is_pid(pid) and is_list(entries) do
+    GenServer.call(pid, {:push_front, entries})
+  end
+
+  defp push_front(%BufferedTask{} = state, entries), do: push(state, entries, true)
+
+  defp push(%BufferedTask{bound_queue: bound_queue} = state, entries, front?) when is_list(entries) do
     new_bound_queue =
-      case BoundQueue.push_back_until_maximum_size(bound_queue, entries) do
+      case push_until_maximum_size(bound_queue, entries, front?) do
         {new_bound_queue, []} ->
           new_bound_queue
 
         {%BoundQueue{maximum_size: maximum_size} = new_bound_queue, remaining_entries} ->
-          Logger.warn(fn ->
+          Logger.warning(fn ->
             [
               "BufferedTask ",
               process(self()),
@@ -417,6 +455,12 @@ defmodule Indexer.BufferedTask do
 
     %BufferedTask{state | bound_queue: new_bound_queue}
   end
+
+  defp push_until_maximum_size(bound_queue, entries, true),
+    do: BoundQueue.push_front_until_maximum_size(bound_queue, entries)
+
+  defp push_until_maximum_size(bound_queue, entries, false),
+    do: BoundQueue.push_back_until_maximum_size(bound_queue, entries)
 
   defp take_batch(%BufferedTask{bound_queue: bound_queue, max_batch_size: max_batch_size} = state) do
     {batch, new_bound_queue} = take_batch(bound_queue, max_batch_size)
@@ -510,17 +554,19 @@ defmodule Indexer.BufferedTask do
     callback_module.run(batch, callback_module_state)
   end
 
-  defp flush(%BufferedTask{current_buffer: []} = state) do
+  defp flush(%BufferedTask{current_buffer: [], current_front_buffer: []} = state) do
     state
     |> spawn_next_batch()
     |> schedule_next()
   end
 
-  defp flush(%BufferedTask{current_buffer: current} = state) do
-    entries = List.flatten(current)
+  defp flush(%BufferedTask{current_buffer: buffer, current_front_buffer: front_buffer} = state) do
+    back_entries = List.flatten(buffer)
+    front_entries = List.flatten(front_buffer)
 
-    %BufferedTask{state | current_buffer: []}
-    |> push_back(entries)
+    %BufferedTask{state | current_buffer: [], current_front_buffer: []}
+    |> push_back(back_entries)
+    |> push_front(front_entries)
     |> flush()
   end
 end

@@ -3,12 +3,12 @@ defmodule Explorer.SmartContract.Reader do
   Reads Smart Contract functions from the blockchain.
 
   For information on smart contract's Application Binary Interface (ABI), visit the
-  [wiki](https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI).
+  [wiki](https://docs.soliditylang.org/en/develop/abi-spec.html).
   """
 
   alias EthereumJSONRPC.{Contract, Encoder}
-  alias Explorer.Chain
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.Helper
 
   @typedoc """
@@ -62,10 +62,17 @@ defmodule Explorer.SmartContract.Reader do
       )
       # => %{"sum" => {:error, "Data overflow encoding int, data `abc` cannot fit in 256 bits"}}
   """
-  @spec query_verified_contract(Hash.Address.t(), functions(), String.t() | nil, true | false, SmartContract.abi()) ::
+  @spec query_verified_contract(
+          Hash.Address.t(),
+          functions(),
+          String.t() | nil,
+          true | false,
+          SmartContract.abi(),
+          Keyword.t()
+        ) ::
           functions_results()
-  def query_verified_contract(address_hash, functions, from, leave_error_as_map, mabi) do
-    query_verified_contract_inner(address_hash, functions, mabi, from, leave_error_as_map)
+  def query_verified_contract(address_hash, functions, from, leave_error_as_map, mabi, options \\ []) do
+    query_verified_contract_inner(address_hash, functions, mabi, from, leave_error_as_map, options)
   end
 
   @spec query_verified_contract(Hash.Address.t(), functions(), true | false, SmartContract.abi() | nil) ::
@@ -79,20 +86,24 @@ defmodule Explorer.SmartContract.Reader do
           functions(),
           SmartContract.abi() | nil,
           String.t() | nil,
-          true | false
+          true | false,
+          Keyword.t()
         ) ::
           functions_results()
-  defp query_verified_contract_inner(address_hash, functions, mabi, from, leave_error_as_map) do
+  defp query_verified_contract_inner(address_hash, functions, mabi, from, leave_error_as_map, options \\ []) do
     contract_address = Hash.to_string(address_hash)
 
     abi = prepare_abi(mabi, address_hash)
 
-    query_contract(contract_address, from, abi, functions, leave_error_as_map)
+    query_contract(contract_address, from, abi, functions, leave_error_as_map, options)
   end
 
   defp prepare_abi(nil, address_hash) do
-    address_hash
-    |> Chain.address_hash_to_smart_contract()
+    {smart_contract, _} =
+      address_hash
+      |> SmartContract.address_hash_to_smart_contract_with_bytecode_twin()
+
+    smart_contract
     |> Map.get(:abi)
   end
 
@@ -114,10 +125,11 @@ defmodule Explorer.SmartContract.Reader do
           String.t() | nil,
           term(),
           functions(),
-          true | false
+          true | false,
+          Keyword.t()
         ) :: functions_results()
-  def query_contract(contract_address, from \\ nil, abi, functions, leave_error_as_map) do
-    query_contract_inner(contract_address, abi, functions, nil, from, leave_error_as_map)
+  def query_contract(contract_address, from \\ nil, abi, functions, leave_error_as_map, options \\ []) do
+    query_contract_inner(contract_address, abi, functions, nil, from, leave_error_as_map, options)
   end
 
   @spec query_contract_by_block_number(
@@ -130,7 +142,7 @@ defmodule Explorer.SmartContract.Reader do
     query_contract_inner(contract_address, abi, functions, block_number, nil, leave_error_as_map)
   end
 
-  defp query_contract_inner(contract_address, abi, functions, block_number, from, leave_error_as_map) do
+  defp query_contract_inner(contract_address, abi, functions, block_number, from, leave_error_as_map, options \\ []) do
     requests =
       functions
       |> Enum.map(fn {method_id, args} ->
@@ -144,7 +156,7 @@ defmodule Explorer.SmartContract.Reader do
       end)
 
     requests
-    |> query_contracts(abi, [], leave_error_as_map)
+    |> query_contracts(abi, [], leave_error_as_map, options)
     |> Enum.zip(requests)
     |> Enum.into(%{}, fn {response, request} ->
       {request.method_id, response}
@@ -170,9 +182,14 @@ defmodule Explorer.SmartContract.Reader do
     EthereumJSONRPC.execute_contract_functions(requests, abi, json_rpc_named_arguments)
   end
 
-  @spec query_contracts([Contract.call()], term(), true | false) :: [Contract.call_result()]
-  def query_contracts(requests, abi, [], leave_error_as_map) do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+  @spec query_contracts([Contract.call()], term(), contract_call_options(), true | false, Keyword.t()) :: [
+          Contract.call_result()
+        ]
+  def query_contracts(requests, abi, [], leave_error_as_map, options \\ []) do
+    json_rpc_named_arguments =
+      :explorer
+      |> Application.get_env(:json_rpc_named_arguments)
+      |> Keyword.merge(options)
 
     EthereumJSONRPC.execute_contract_functions(requests, abi, json_rpc_named_arguments, leave_error_as_map)
   end
@@ -208,28 +225,30 @@ defmodule Explorer.SmartContract.Reader do
         }
       ]
   """
-  @spec read_only_functions(SmartContract.t(), Hash.t(), String.t() | nil) :: [%{}]
-  def read_only_functions(%SmartContract{abi: abi}, contract_address_hash, from) do
+  @spec read_only_functions(SmartContract.t(), Hash.t(), String.t() | nil, Keyword.t()) :: [%{}]
+  def read_only_functions(smart_contract, contract_address_hash, from, options \\ [])
+
+  def read_only_functions(%SmartContract{abi: abi}, contract_address_hash, from, options) do
     case abi do
       nil ->
         []
 
       _ ->
-        read_only_functions_from_abi_with_sender(abi, contract_address_hash, from)
+        read_only_functions_from_abi_with_sender(abi, contract_address_hash, from, options)
     end
   end
 
-  def read_only_functions(nil, _, _), do: []
+  def read_only_functions(nil, _, _, _), do: []
 
   def read_only_functions_proxy(contract_address_hash, implementation_address_hash_string, from, options \\ []) do
-    implementation_abi = Chain.get_implementation_abi(implementation_address_hash_string, options)
+    implementation_abi = SmartContract.get_smart_contract_abi(implementation_address_hash_string, options)
 
     case implementation_abi do
       nil ->
         []
 
       _ ->
-        read_only_functions_from_abi_with_sender(implementation_abi, contract_address_hash, from)
+        read_only_functions_from_abi_with_sender(implementation_abi, contract_address_hash, from, options)
     end
   end
 
@@ -238,7 +257,7 @@ defmodule Explorer.SmartContract.Reader do
   """
   @spec read_functions_required_wallet_proxy(String.t()) :: [%{}]
   def read_functions_required_wallet_proxy(implementation_address_hash_string) do
-    implementation_abi = Chain.get_implementation_abi(implementation_address_hash_string)
+    implementation_abi = SmartContract.get_smart_contract_abi(implementation_address_hash_string)
 
     case implementation_abi do
       nil ->
@@ -265,20 +284,23 @@ defmodule Explorer.SmartContract.Reader do
 
   def read_functions_required_wallet(nil), do: []
 
-  def read_only_functions_from_abi_with_sender([_ | _] = abi, contract_address_hash, from) do
+  def read_only_functions_from_abi_with_sender(abi, contract_address_hash, from, options \\ [])
+
+  def read_only_functions_from_abi_with_sender([_ | _] = abi, contract_address_hash, from, options) do
     abi_with_method_id = get_abi_with_method_id(abi)
 
     abi_with_method_id
     |> Enum.filter(&Helper.queriable_method?(&1))
-    |> Enum.map(&fetch_current_value_from_blockchain(&1, abi_with_method_id, contract_address_hash, false, [], from))
+    |> fetch_current_values_from_blockchain(abi_with_method_id, contract_address_hash, false, options, from)
   end
 
-  def read_only_functions_from_abi_with_sender(_, _, _), do: []
+  def read_only_functions_from_abi_with_sender(_, _, _, _), do: []
 
   def read_functions_required_wallet_from_abi([_ | _] = abi) do
     abi_with_method_id = get_abi_with_method_id(abi)
 
     abi_with_method_id
+    |> Enum.reject(&Helper.queriable_method?(&1))
     |> Enum.filter(&Helper.read_with_wallet_method?(&1))
   end
 
@@ -332,39 +354,88 @@ defmodule Explorer.SmartContract.Reader do
     "tuple[#{tuple_types}]"
   end
 
-  def fetch_current_value_from_blockchain(
-        function,
+  @spec fetch_current_values_from_blockchain(
+          any(),
+          [%{optional(binary()) => any()}],
+          Explorer.Chain.Hash.t(),
+          boolean(),
+          keyword(),
+          nil | binary()
+        ) :: [SmartContract.function_description()]
+  def fetch_current_values_from_blockchain(
+        functions,
         abi,
         contract_address_hash,
         leave_error_as_map,
         options,
         from \\ nil
       ) do
-    case function do
-      %{"inputs" => []} ->
-        method_id = function["method_id"]
-        args = function["inputs"]
+    initial_methods_id_order = Enum.map(functions, &Map.get(&1, "method_id"))
 
-        %{output: outputs, names: names} =
-          query_function_with_names(
-            contract_address_hash,
-            %{method_id: method_id, args: args},
-            :regular,
-            from,
-            abi,
-            leave_error_as_map,
-            options
-          )
+    %{to_be_fetched: to_be_fetched, method_id_to_outputs: method_id_to_outputs, unchanged: unchanged} =
+      Enum.reduce(
+        functions,
+        %{to_be_fetched: %{}, method_id_to_outputs: %{}, unchanged: %{}},
+        fn function,
+           %{
+             to_be_fetched: to_be_fetched,
+             unchanged: unchanged,
+             method_id_to_outputs: method_id_to_outputs
+           } ->
+          case function do
+            %{"inputs" => []} ->
+              [%ABI.FunctionSelector{returns: returns, method_id: _method_id}] = ABI.parse_specification([function])
 
-        function
-        |> Map.replace!("outputs", outputs)
-        |> Map.put("abi_outputs", Map.get(function, "outputs", []))
-        |> Map.put("names", names)
+              outputs = extract_outputs(returns)
 
-      _ ->
-        function
-        |> Map.put("abi_outputs", Map.get(function, "outputs", []))
-    end
+              %{
+                to_be_fetched: Map.put(to_be_fetched, function["method_id"], function),
+                unchanged: unchanged,
+                method_id_to_outputs: Map.put(method_id_to_outputs, function["method_id"], {outputs, function})
+              }
+
+            _ ->
+              %{
+                to_be_fetched: to_be_fetched,
+                unchanged:
+                  Map.put(
+                    unchanged,
+                    function["method_id"],
+                    Map.put(function, "abi_outputs", Map.get(function, "outputs", []))
+                  ),
+                method_id_to_outputs: method_id_to_outputs
+              }
+          end
+        end
+      )
+
+    methods = to_be_fetched |> Enum.map(fn {method_id, _function} -> {method_id, []} end) |> Enum.into(%{})
+
+    res =
+      contract_address_hash
+      |> query_verified_contract(methods, from, leave_error_as_map, abi, options)
+
+    method_id_to_abi_with_fetched_value =
+      res
+      |> Enum.map(fn {method_id, _result} ->
+        {outputs, function} = method_id_to_outputs[method_id]
+
+        names = outputs_to_list(function["outputs"])
+
+        outputs = link_outputs_and_values(res, outputs, method_id)
+        function = to_be_fetched[method_id]
+
+        {method_id,
+         function
+         |> Map.replace!("outputs", outputs)
+         |> Map.put("abi_outputs", Map.get(function, "outputs", []))
+         |> Map.put("names", names)}
+      end)
+      |> Enum.into(%{})
+
+    Enum.map(initial_methods_id_order, fn method_id ->
+      unchanged[method_id] || method_id_to_abi_with_fetched_value[method_id]
+    end)
   end
 
   @doc """
@@ -389,7 +460,7 @@ defmodule Explorer.SmartContract.Reader do
         from,
         abi,
         leave_error_as_map,
-        _options
+        options
       ) do
     outputs =
       query_function_with_custom_abi_inner(
@@ -398,7 +469,8 @@ defmodule Explorer.SmartContract.Reader do
         args || [],
         from,
         leave_error_as_map,
-        abi
+        abi,
+        options
       )
 
     names = parse_names_from_abi(abi, method_id)
@@ -439,11 +511,25 @@ defmodule Explorer.SmartContract.Reader do
           Hash.t(),
           %{method_id: String.t(), args: [term()] | nil},
           String.t(),
-          [%{}]
+          [%{}],
+          Keyword.t()
         ) :: %{:names => [any()], :output => [%{}]}
-  def query_function_with_names_custom_abi(contract_address_hash, %{method_id: method_id, args: args}, from, custom_abi) do
+  def query_function_with_names_custom_abi(
+        contract_address_hash,
+        %{method_id: method_id, args: args},
+        from,
+        custom_abi,
+        options \\ []
+      ) do
     outputs =
-      query_function_with_custom_abi(contract_address_hash, %{method_id: method_id, args: args}, from, true, custom_abi)
+      query_function_with_custom_abi(
+        contract_address_hash,
+        %{method_id: method_id, args: args},
+        from,
+        true,
+        custom_abi,
+        options
+      )
 
     names = parse_names_from_abi(custom_abi, method_id)
     %{output: outputs, names: names}
@@ -497,7 +583,8 @@ defmodule Explorer.SmartContract.Reader do
           %{method_id: String.t(), args: [term()] | nil | []},
           String.t() | nil,
           true | false,
-          [%{}]
+          [%{}],
+          Keyword.t()
         ) :: [
           %{}
         ]
@@ -506,7 +593,8 @@ defmodule Explorer.SmartContract.Reader do
         %{method_id: method_id, args: args},
         from,
         leave_error_as_map,
-        custom_abi
+        custom_abi,
+        options \\ []
       ) do
     query_function_with_custom_abi_inner(
       contract_address_hash,
@@ -514,11 +602,20 @@ defmodule Explorer.SmartContract.Reader do
       args || [],
       from,
       leave_error_as_map,
-      custom_abi
+      custom_abi,
+      options
     )
   end
 
-  @spec query_function_with_custom_abi_inner(Hash.t(), String.t(), [term()], String.t() | nil, true | false, [%{}]) :: [
+  @spec query_function_with_custom_abi_inner(
+          Hash.t(),
+          String.t(),
+          [term()],
+          String.t() | nil,
+          true | false,
+          [%{}],
+          Keyword.t()
+        ) :: [
           %{}
         ]
   defp query_function_with_custom_abi_inner(
@@ -527,7 +624,8 @@ defmodule Explorer.SmartContract.Reader do
          args,
          from,
          leave_error_as_map,
-         custom_abi
+         custom_abi,
+         options \\ []
        ) do
     parsed_abi =
       custom_abi
@@ -542,7 +640,8 @@ defmodule Explorer.SmartContract.Reader do
           custom_abi,
           outputs,
           method_id,
-          leave_error_as_map
+          leave_error_as_map,
+          options
         )
 
       {:error, message} ->
@@ -565,17 +664,26 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
-  defp query_contract_and_link_outputs(contract_address_hash, args, from, abi, outputs, method_id, leave_error_as_map) do
+  defp query_contract_and_link_outputs(
+         contract_address_hash,
+         args,
+         from,
+         abi,
+         outputs,
+         method_id,
+         leave_error_as_map,
+         options \\ []
+       ) do
     contract_address_hash
-    |> query_verified_contract(%{method_id => normalize_args(args)}, from, leave_error_as_map, abi)
+    |> query_verified_contract(%{method_id => normalize_args(args)}, from, leave_error_as_map, abi, options)
     |> link_outputs_and_values(outputs, method_id)
   end
 
   defp get_abi(contract_address_hash, type, options) do
-    contract = Chain.address_hash_to_smart_contract(contract_address_hash, options)
+    {contract, _} = SmartContract.address_hash_to_smart_contract_with_bytecode_twin(contract_address_hash, options)
 
     if type == :proxy do
-      Chain.get_implementation_abi_from_proxy(contract, options)
+      Proxy.get_implementation_abi_from_proxy(contract, options)
     else
       contract.abi
     end
@@ -754,12 +862,103 @@ defmodule Explorer.SmartContract.Reader do
     Map.put_new(output, "value", Encoder.unescape(value))
   end
 
+  defp new_value(%{"type" => "tuple" <> _types = type} = output, values, index) do
+    value = Enum.at(values, index)
+
+    result =
+      if String.ends_with?(type, "[]") do
+        value
+        |> Enum.map(fn tuple -> new_value(%{"type" => String.slice(type, 0..-3//1)}, [tuple], 0) end)
+        |> flat_arrays_map()
+      else
+        value
+        |> zip_tuple_values_with_types(type)
+        |> Enum.map(fn {type, part_value} ->
+          new_value(%{"type" => type}, [part_value], 0)
+        end)
+        |> flat_arrays_map()
+        |> List.to_tuple()
+      end
+
+    Map.put_new(output, "value", result)
+  end
+
   defp new_value(output, [value], _index) do
     Map.put_new(output, "value", value)
   end
 
   defp new_value(output, values, index) do
     Map.put_new(output, "value", Enum.at(values, index))
+  end
+
+  defp flat_arrays_map(%{"value" => value}) do
+    flat_arrays_map(value)
+  end
+
+  defp flat_arrays_map(value) when is_list(value) do
+    Enum.map(value, &flat_arrays_map/1)
+  end
+
+  defp flat_arrays_map(value) when is_tuple(value) do
+    value
+    |> Tuple.to_list()
+    |> flat_arrays_map()
+    |> List.to_tuple()
+  end
+
+  defp flat_arrays_map(value) do
+    value
+  end
+
+  @spec zip_tuple_values_with_types(tuple, binary | tuple()) :: [{binary, any}]
+  def zip_tuple_values_with_types(value, {:tuple, tuple_types}) do
+    values_list =
+      value
+      |> Tuple.to_list()
+
+    Enum.zip(tuple_types, values_list)
+  end
+
+  def zip_tuple_values_with_types(value, type) do
+    types_string =
+      type
+      |> String.slice(6..-2//1)
+
+    types =
+      if String.trim(types_string) == "" do
+        []
+      else
+        types_string
+        |> String.graphemes()
+      end
+
+    tuple_types =
+      types
+      |> Enum.reduce(
+        {[""], 0},
+        fn
+          ",", {types_acc, 0} ->
+            {["" | types_acc], 0}
+
+          char, {[acc | types_acc], bracket_stack} ->
+            new_bracket_stack =
+              case char do
+                "[" -> bracket_stack + 1
+                "]" -> bracket_stack - 1
+                _ -> bracket_stack
+              end
+
+            {[acc <> char | types_acc], new_bracket_stack}
+        end
+      )
+      |> elem(0)
+      |> Enum.reverse()
+
+    values_list =
+      value
+      |> Tuple.to_list()
+
+    Enum.zip(tuple_types, values_list)
   end
 
   @spec bytes_to_string(<<_::_*8>>) :: String.t()

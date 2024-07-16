@@ -14,9 +14,17 @@ defmodule Explorer.Chain.Import.Stage do
   @type runner_to_changes_list :: %{Runner.t() => Runner.changes_list()}
 
   @doc """
-  The runners consumed by this stage in `c:multis/0`.  The list should be in the order that the runners are executed.
+  The configured runners consumed by this stage in `c:multis/0`.
+  The list should be in the order that the runners are executed and depends on chain type.
   """
   @callback runners() :: [Runner.t(), ...]
+
+  @doc """
+  Returns a list of all possible runners provided by the module.
+  This list is intended to include all runners, irrespective of chain type or
+  other configuration options.
+  """
+  @callback all_runners() :: [Runner.t(), ...]
 
   @doc """
   Chunks `changes_list` into 1 or more `t:Ecto.Multi.t/0` that can be run in separate transactions.

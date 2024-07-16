@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.AccessHelper do
   alias BlockScoutWeb.API.APILogger
   alias BlockScoutWeb.API.RPC.RPCView
   alias BlockScoutWeb.API.V2.ApiView
-  alias BlockScoutWeb.WebRouter.Helpers
+  alias BlockScoutWeb.Routers.WebRouter.Helpers
   alias Explorer.AccessHelper
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Plug.Conn
@@ -53,6 +53,42 @@ defmodule BlockScoutWeb.AccessHelper do
     |> Conn.halt()
   end
 
+  def check_rate_limit(conn, graphql?: true) do
+    rate_limit_config = Application.get_env(:block_scout_web, Api.GraphQL)
+
+    if rate_limit_config[:rate_limit_disabled?] do
+      :ok
+    else
+      check_graphql_rate_limit_inner(conn, rate_limit_config)
+    end
+  end
+
+  defp check_graphql_rate_limit_inner(conn, rate_limit_config) do
+    global_limit = rate_limit_config[:global_limit]
+    limit_by_key = rate_limit_config[:limit_by_key]
+    time_interval_limit = rate_limit_config[:time_interval_limit]
+    static_api_key = rate_limit_config[:static_api_key]
+    limit_by_ip = rate_limit_config[:limit_by_ip]
+    time_interval_by_ip = rate_limit_config[:time_interval_limit_by_ip]
+
+    ip_string = conn_to_ip_string(conn)
+    plan = get_plan(conn.query_params)
+
+    cond do
+      check_api_key(conn) && get_api_key(conn) == static_api_key ->
+        rate_limit(static_api_key, limit_by_key, time_interval_limit)
+
+      check_api_key(conn) && !is_nil(plan) ->
+        conn
+        |> get_api_key()
+        |> rate_limit(min(plan.max_req_per_second, limit_by_key), time_interval_limit)
+
+      true ->
+        rate_limit("graphql_#{ip_string}", limit_by_ip, time_interval_by_ip) == :ok &&
+          rate_limit("graphql", global_limit, time_interval_limit) == :ok
+    end
+  end
+
   def check_rate_limit(conn) do
     rate_limit_config = Application.get_env(:block_scout_web, :api_rate_limit)
 
@@ -93,10 +129,10 @@ defmodule BlockScoutWeb.AccessHelper do
       Enum.member?(whitelisted_ips(rate_limit_config), ip_string) ->
         rate_limit(ip_string, limit_by_whitelisted_ip, time_interval_limit)
 
-      is_api_v2_request?(conn) && !is_nil(token) && !is_nil(user_agent) ->
+      api_v2_request?(conn) && !is_nil(token) && !is_nil(user_agent) ->
         rate_limit(token, api_v2_ui_limit, time_interval_limit)
 
-      is_api_v2_request?(conn) && !is_nil(user_agent) ->
+      api_v2_request?(conn) && !is_nil(user_agent) ->
         rate_limit(ip_string, limit_by_ip, time_interval_by_ip)
 
       true ->
@@ -155,8 +191,8 @@ defmodule BlockScoutWeb.AccessHelper do
     end
   end
 
-  defp is_api_v2_request?(%Plug.Conn{request_path: "/api/v2/" <> _}), do: true
-  defp is_api_v2_request?(_), do: false
+  defp api_v2_request?(%Plug.Conn{request_path: "/api/v2/" <> _}), do: true
+  defp api_v2_request?(_), do: false
 
   def conn_to_ip_string(conn) do
     is_blockscout_behind_proxy = Application.get_env(:block_scout_web, :api_rate_limit)[:is_blockscout_behind_proxy]
@@ -171,7 +207,7 @@ defmodule BlockScoutWeb.AccessHelper do
     api_v2_temp_token_key = Application.get_env(:block_scout_web, :api_v2_temp_token_key)
     conn = Conn.fetch_cookies(conn, signed: [api_v2_temp_token_key])
 
-    case is_api_v2_request?(conn) && conn.cookies[api_v2_temp_token_key] do
+    case api_v2_request?(conn) && conn.cookies[api_v2_temp_token_key] do
       %{ip: ^ip_string} ->
         conn.req_cookies[api_v2_temp_token_key]
 

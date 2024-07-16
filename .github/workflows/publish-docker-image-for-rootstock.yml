@@ -1,0 +1,48 @@
+name: Rootstock Publish Docker image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - production-rsk
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
+      DOCKER_CHAIN_NAME: rsk
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup repo
+        uses: ./.github/actions/setup-repo
+        id: setup
+        with:
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          docker-remote-multi-platform: true
+          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            API_V1_READ_METHODS_DISABLED=false
+            DISABLE_WEBAPP=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=rsk

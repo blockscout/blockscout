@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.RPC.Helper do
   @moduledoc """
   Small helpers for RPC api controllers.
   """
-  alias Explorer.Etherscan
+  alias Explorer.{Chain, Etherscan}
 
   def put_pagination_options(options, params) do
     options
@@ -38,5 +38,23 @@ defmodule BlockScoutWeb.API.RPC.Helper do
 
   defp validate_max_page_size(page_size) do
     if page_size <= Etherscan.page_size_max(), do: :ok, else: :error
+  end
+
+  @doc """
+    Parses addresses list (delimiter is `,`) from a string and validates them.
+  """
+  @spec parse_and_validate_addresses(binary(), integer()) :: list()
+  def parse_and_validate_addresses(string, limit) do
+    string
+    |> String.split(",")
+    |> Enum.take(limit)
+    |> Enum.uniq()
+    |> Enum.map(fn address ->
+      case Chain.string_to_address_hash(address) do
+        {:ok, address_hash} -> address_hash
+        _ -> nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
   end
 end

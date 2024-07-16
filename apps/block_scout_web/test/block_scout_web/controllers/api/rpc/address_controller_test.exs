@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias Explorer.Chain
   alias Explorer.Chain.{Events.Subscriber, Transaction, Wei}
   alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Explorer.Repo
 
   setup :set_mox_global
@@ -131,24 +131,24 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       mining_address =
         insert(:address,
           fetched_coin_balance: 0,
-          fetched_coin_balance_block_number: 102,
+          fetched_coin_balance_block_number: 103,
           inserted_at: Timex.shift(now, minutes: -10)
         )
 
       mining_address_hash = to_string(mining_address.hash)
       # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
       # back we'd need to go to get 24 hours in the past)
-      Enum.each(0..100, fn i ->
-        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(102 - i) * 25), miner: mining_address)
+      Enum.each(0..101, fn i ->
+        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(103 - i) * 25), miner: mining_address)
       end)
 
-      insert(:block, number: 101, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
+      insert(:block, number: 102, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
       AverageBlockTime.refresh()
 
       address =
         insert(:address,
           fetched_coin_balance: 100,
-          fetched_coin_balance_block_number: 100,
+          fetched_coin_balance_block_number: 101,
           inserted_at: Timex.shift(now, minutes: -5)
         )
 
@@ -158,20 +158,20 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^mining_address_hash, "0x65"]
+                                                       params: [^mining_address_hash, "0x66"]
                                                      }
                                                    ],
                                                    _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
       end)
 
-      res = eth_block_number_fake_response("0x65")
+      res = eth_block_number_fake_response("0x66")
 
       expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
                                                      %{
                                                        id: 0,
                                                        method: "eth_getBlockByNumber",
-                                                       params: ["0x65", true]
+                                                       params: ["0x66", true]
                                                      }
                                                    ],
                                                    _ ->
@@ -182,7 +182,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^address_hash, "0x65"]
+                                                       params: [^address_hash, "0x66"]
                                                      }
                                                    ],
                                                    _options ->
@@ -193,7 +193,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: 0,
                                                        method: "eth_getBlockByNumber",
-                                                       params: ["0x65", true]
+                                                       params: ["0x66", true]
                                                      }
                                                    ],
                                                    _ ->
@@ -229,7 +229,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       assert received_address.hash == address.hash
       assert received_address.fetched_coin_balance == expected_wei
-      assert received_address.fetched_coin_balance_block_number == 101
+      assert received_address.fetched_coin_balance_block_number == 102
     end
   end
 
@@ -1090,7 +1090,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
     end
 
-    test "with start_block and end_block params", %{conn: conn} do
+    test "with startblock and endblock params", %{conn: conn} do
       blocks = [_, second_block, third_block, _] = insert_list(4, :block)
       address = insert(:address)
 
@@ -1104,8 +1104,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "module" => "account",
         "action" => "txlist",
         "address" => "#{address.hash}",
-        "start_block" => "#{second_block.number}",
-        "end_block" => "#{third_block.number}"
+        "startblock" => "#{second_block.number}",
+        "endblock" => "#{third_block.number}"
       }
 
       expected_block_numbers = [
@@ -1129,7 +1129,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
     end
 
-    test "with start_block but without end_block", %{conn: conn} do
+    test "with startblock but without endblock", %{conn: conn} do
       blocks = [_, _, third_block, fourth_block] = insert_list(4, :block)
       address = insert(:address)
 
@@ -1143,7 +1143,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "module" => "account",
         "action" => "txlist",
         "address" => "#{address.hash}",
-        "start_block" => "#{third_block.number}"
+        "startblock" => "#{third_block.number}"
       }
 
       expected_block_numbers = [
@@ -1167,7 +1167,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
     end
 
-    test "with end_block but without start_block", %{conn: conn} do
+    test "with endblock but without startblock", %{conn: conn} do
       blocks = [first_block, second_block, _, _] = insert_list(4, :block)
       address = insert(:address)
 
@@ -1181,7 +1181,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "module" => "account",
         "action" => "txlist",
         "address" => "#{address.hash}",
-        "end_block" => "#{second_block.number}"
+        "endblock" => "#{second_block.number}"
       }
 
       expected_block_numbers = [
@@ -1205,7 +1205,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
     end
 
-    test "ignores invalid start_block and end_block", %{conn: conn} do
+    test "ignores invalid startblock and endblock", %{conn: conn} do
       blocks = [_, _, _, _] = insert_list(4, :block)
       address = insert(:address)
 
@@ -1219,8 +1219,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "module" => "account",
         "action" => "txlist",
         "address" => "#{address.hash}",
-        "start_block" => "invalidstart",
-        "end_block" => "invalidend"
+        "startblock" => "invalidstart",
+        "endblock" => "invalidend"
       }
 
       assert response =
@@ -1246,7 +1246,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       for block <- Enum.concat([blocks1, blocks2, blocks3]) do
         2
-        |> insert_list(:transaction, from_address: address)
+        |> insert_list(:transaction, from_address: address, block_timestamp: block.timestamp)
         |> with_block(block)
       end
 
@@ -1294,7 +1294,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       for block <- Enum.concat([blocks1, blocks2, blocks3]) do
         2
-        |> insert_list(:transaction, from_address: address)
+        |> insert_list(:transaction, from_address: address, block_timestamp: block.timestamp)
         |> with_block(block)
       end
 
@@ -1342,7 +1342,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       for block <- Enum.concat([blocks1, blocks2, blocks3]) do
         2
-        |> insert_list(:transaction, from_address: address)
+        |> insert_list(:transaction, from_address: address, block_timestamp: block.timestamp)
         |> with_block(block)
       end
 
@@ -2368,6 +2368,284 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
   end
 
+  describe "tokennfttx" do
+    setup do
+      %{params: %{"module" => "account", "action" => "tokennfttx"}}
+    end
+
+    test "with missing address and contract address hash", %{conn: conn, params: params} do
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] == "Query parameter address or contractaddress is required"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
+    end
+
+    test "with an invalid address hash", %{conn: conn, params: params} do
+      params = Map.merge(params, %{"address" => "badhash"})
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "Invalid address format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
+    end
+
+    test "with an address that doesn't exist", %{conn: conn, params: params} do
+      params = Map.merge(params, %{"address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"})
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "0"
+      assert response["message"] == "No token transfers found"
+      assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
+    end
+
+    test "has correct value for ERC-721", %{conn: conn, params: params} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_address = insert(:contract_address)
+      insert(:token, %{contract_address: token_address, type: "ERC-721"})
+
+      token_transfer =
+        insert(:token_transfer, %{
+          token_contract_address: token_address,
+          token_ids: [666],
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number
+        })
+
+      {:ok, _} = Chain.token_from_address_hash(token_transfer.token_contract_address_hash)
+
+      params = Map.merge(params, %{"address" => to_string(token_transfer.from_address.hash)})
+
+      assert response =
+               %{"result" => [result]} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert result["tokenID"] == to_string(List.first(token_transfer.token_ids))
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
+    end
+
+    test "returns all the required fields", %{conn: conn, params: params} do
+      transaction =
+        %{block: block} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_address, type: "ERC-721")
+
+      token_transfer =
+        insert(:token_transfer,
+          block: transaction.block,
+          transaction: transaction,
+          block_number: block.number,
+          token_ids: [1010],
+          token_contract_address: token_address
+        )
+
+      params = Map.merge(params, %{"address" => to_string(token_transfer.from_address.hash)})
+
+      expected_result = [
+        %{
+          "blockNumber" => to_string(transaction.block_number),
+          "timeStamp" => to_string(DateTime.to_unix(block.timestamp)),
+          "hash" => to_string(token_transfer.transaction_hash),
+          "nonce" => to_string(transaction.nonce),
+          "blockHash" => to_string(block.hash),
+          "from" => to_string(token_transfer.from_address_hash),
+          "contractAddress" => to_string(token_transfer.token_contract_address_hash),
+          "to" => to_string(token_transfer.to_address_hash),
+          "tokenName" => token.name,
+          "tokenSymbol" => token.symbol,
+          "tokenDecimal" => to_string(token.decimals),
+          "transactionIndex" => to_string(transaction.index),
+          "gas" => to_string(transaction.gas),
+          "gasPrice" => to_string(transaction.gas_price.value),
+          "gasUsed" => to_string(transaction.gas_used),
+          "cumulativeGasUsed" => to_string(transaction.cumulative_gas_used),
+          "logIndex" => to_string(token_transfer.log_index),
+          "input" => "deprecated",
+          "confirmations" => "0",
+          "tokenID" => "1010"
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
+    end
+
+    test "with an invalid contract address", %{conn: conn, params: params} do
+      params =
+        Map.merge(params, %{"address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b", "contractaddress" => "invalid"})
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "Invalid contract address format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
+    end
+
+    test "filters results by contract address", %{conn: conn, params: params} do
+      address = insert(:address)
+
+      contract_address = insert(:contract_address)
+
+      insert(:token, contract_address: contract_address, type: "ERC-721")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        from_address: address,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
+
+      insert(:token_transfer,
+        from_address: address,
+        token_contract_address: contract_address,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_ids: [123]
+      )
+
+      params =
+        Map.merge(params, %{"address" => to_string(address.hash), "contractaddress" => to_string(contract_address.hash)})
+
+      assert response =
+               %{"result" => [result]} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert result["contractAddress"] == to_string(contract_address.hash)
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
+    end
+
+    test "Check pagination and ordering (page, offset, sort parameters)", %{conn: conn, params: params} do
+      address = insert(:address)
+
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      erc_721_tt =
+        for x <- 0..50 do
+          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address,
+            token_contract_address: erc_721_token.contract_address,
+            token_ids: [x]
+          )
+        end
+
+      # sort: asc
+      params = Map.merge(params, %{"address" => to_string(address.hash), "offset" => 25, "page" => 1, "sort" => "asc"})
+
+      assert %{"result" => token_transfers_1} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      params = Map.merge(params, %{"address" => to_string(address.hash), "offset" => 25, "page" => 2, "sort" => "asc"})
+
+      assert %{"result" => token_transfers_2} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      params = Map.merge(params, %{"address" => to_string(address.hash), "offset" => 25, "page" => 3, "sort" => "asc"})
+
+      assert %{"result" => token_transfers_3} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert Enum.at(token_transfers_1, 0)["hash"] == to_string(Enum.at(erc_721_tt, 0).transaction_hash)
+      assert Enum.at(token_transfers_1, 24)["hash"] == to_string(Enum.at(erc_721_tt, 24).transaction_hash)
+      assert Enum.at(token_transfers_2, 0)["hash"] == to_string(Enum.at(erc_721_tt, 25).transaction_hash)
+      assert Enum.at(token_transfers_2, 24)["hash"] == to_string(Enum.at(erc_721_tt, 49).transaction_hash)
+      assert Enum.at(token_transfers_3, 0)["hash"] == to_string(Enum.at(erc_721_tt, 50).transaction_hash)
+      assert Enum.count(token_transfers_3) == 1
+
+      # sort: desc
+      erc_721_tt_reversed = Enum.reverse(erc_721_tt)
+
+      params = Map.merge(params, %{"address" => to_string(address.hash), "offset" => 25, "page" => 1, "sort" => "desc"})
+
+      assert %{"result" => token_transfers_1} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      params = Map.merge(params, %{"address" => to_string(address.hash), "offset" => 25, "page" => 2, "sort" => "desc"})
+
+      assert %{"result" => token_transfers_2} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      params = Map.merge(params, %{"address" => to_string(address.hash), "offset" => 25, "page" => 3, "sort" => "desc"})
+
+      assert %{"result" => token_transfers_3} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert Enum.at(token_transfers_1, 0)["hash"] == to_string(Enum.at(erc_721_tt_reversed, 0).transaction_hash)
+      assert Enum.at(token_transfers_1, 24)["hash"] == to_string(Enum.at(erc_721_tt_reversed, 24).transaction_hash)
+      assert Enum.at(token_transfers_2, 0)["hash"] == to_string(Enum.at(erc_721_tt_reversed, 25).transaction_hash)
+      assert Enum.at(token_transfers_2, 24)["hash"] == to_string(Enum.at(erc_721_tt_reversed, 49).transaction_hash)
+      assert Enum.at(token_transfers_3, 0)["hash"] == to_string(Enum.at(erc_721_tt_reversed, 50).transaction_hash)
+      assert Enum.count(token_transfers_3) == 1
+    end
+  end
+
   describe "tokenbalance" do
     test "without required params", %{conn: conn} do
       params = %{
@@ -2830,8 +3108,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   describe "optional_params/1" do
     test "includes valid optional params in the required format" do
       params = %{
-        "start_block" => "100",
-        "end_block" => "120",
+        "startblock" => "100",
+        "endblock" => "120",
         "sort" => "asc",
         # page number
         "page" => "1",
@@ -2850,8 +3128,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert optional_params.page_number == 1
       assert optional_params.page_size == 2
       assert optional_params.order_by_direction == :asc
-      assert optional_params.start_block == 100
-      assert optional_params.end_block == 120
+      assert optional_params.startblock == 100
+      assert optional_params.endblock == 120
       assert optional_params.filter_by == "to"
       assert optional_params.start_timestamp == expected_timestamp
       assert optional_params.end_timestamp == expected_timestamp
@@ -2899,8 +3177,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
     test "ignores invalid optional params, keeps valid ones" do
       params1 = %{
-        "start_block" => "invalid",
-        "end_block" => "invalid",
+        "startblock" => "invalid",
+        "endblock" => "invalid",
         "sort" => "invalid",
         "page" => "invalid",
         "offset" => "invalid",
@@ -2911,8 +3189,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert AddressController.optional_params(params1) == %{}
 
       params2 = %{
-        "start_block" => "4",
-        "end_block" => "10",
+        "startblock" => "4",
+        "endblock" => "10",
         "sort" => "invalid",
         "page" => "invalid",
         "offset" => "invalid",
@@ -2922,8 +3200,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       optional_params = AddressController.optional_params(params2)
 
-      assert optional_params.start_block == 4
-      assert optional_params.end_block == 10
+      assert optional_params.startblock == 4
+      assert optional_params.endblock == 10
     end
 
     test "ignores 'page' if less than 1" do

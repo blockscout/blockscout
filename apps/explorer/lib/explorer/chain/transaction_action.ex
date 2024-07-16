@@ -18,18 +18,10 @@ defmodule Explorer.Chain.TransactionAction do
   * `type` - type of the action protocol (see possible values for Enum of the db table field)
   * `log_index` - index of the action for sorting (taken from log.index)
   """
-  @type t :: %__MODULE__{
-          hash: Hash.t(),
-          protocol: String.t(),
-          data: map(),
-          type: String.t(),
-          log_index: non_neg_integer()
-        }
-
   @primary_key false
-  schema "transaction_actions" do
-    field(:protocol, Ecto.Enum, values: @supported_protocols)
-    field(:data, :map)
+  typed_schema "transaction_actions" do
+    field(:protocol, Ecto.Enum, values: @supported_protocols, null: false)
+    field(:data, :map, null: false)
 
     field(:type, Ecto.Enum,
       values: [
@@ -54,12 +46,19 @@ defmodule Explorer.Chain.TransactionAction do
         :enable_collateral,
         :disable_collateral,
         :liquidation_call
-      ]
+      ],
+      null: false
     )
 
-    field(:log_index, :integer, primary_key: true)
+    field(:log_index, :integer, primary_key: true, null: false)
 
-    belongs_to(:transaction, Transaction, foreign_key: :hash, primary_key: true, references: :hash, type: Hash.Full)
+    belongs_to(:transaction, Transaction,
+      foreign_key: :hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full,
+      null: false
+    )
 
     timestamps()
   end

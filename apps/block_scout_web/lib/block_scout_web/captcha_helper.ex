@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
     case HTTPoison.post("https://www.google.com/recaptcha/api/siteverify", body, headers, []) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         case Jason.decode!(body) do
-          %{"success" => true} = resp -> is_success?(resp)
+          %{"success" => true} = resp -> success?(resp)
           _ -> false
         end
 
@@ -27,11 +27,11 @@ defmodule BlockScoutWeb.CaptchaHelper do
     end
   end
 
-  defp is_success?(%{"score" => score}) do
+  defp success?(%{"score" => score}) do
     check_recaptcha_v3_score(score)
   end
 
-  defp is_success?(_resp), do: true
+  defp success?(_resp), do: true
 
   defp check_recaptcha_v3_score(score) do
     if score >= 0.5 do

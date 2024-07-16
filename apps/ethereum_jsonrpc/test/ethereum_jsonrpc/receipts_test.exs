@@ -23,7 +23,6 @@ defmodule EthereumJSONRPC.ReceiptsTest do
         index: index,
         first_topic: first_topic,
         status: status,
-        type: type,
         transaction_hash: transaction_hash,
         transaction_index: transaction_index
       } =
@@ -41,7 +40,6 @@ defmodule EthereumJSONRPC.ReceiptsTest do
               first_topic: "0xf6db2bace4ac8277384553ad9603d045220a91fb2448ab6130d7a6f044f9a8cf",
               gas_used: 106_025,
               status: nil,
-              type: nil,
               transaction_hash: "0xd3efddbbeb6ad8d8bb3f6b8c8fb6165567e9dd868013146bdbeb60953c82822a",
               transaction_index: 17
             }
@@ -58,7 +56,6 @@ defmodule EthereumJSONRPC.ReceiptsTest do
               index: 0,
               first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
               status: :ok,
-              type: "mined",
               transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
               transaction_index: 0
             }
@@ -89,8 +86,7 @@ defmodule EthereumJSONRPC.ReceiptsTest do
                      "data" => data,
                      "logIndex" => integer_to_quantity(index),
                      "topics" => [first_topic],
-                     "transactionHash" => transaction_hash,
-                     "type" => type
+                     "transactionHash" => transaction_hash
                    }
                  ],
                  "status" => native_status,

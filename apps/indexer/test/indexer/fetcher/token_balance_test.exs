@@ -5,6 +5,8 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
   import Mox
 
   alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Repo
+  alias Explorer.Utility.MissingBalanceOfToken
   alias Indexer.Fetcher.TokenBalance
 
   @moduletag :capture_log
@@ -62,7 +64,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
                nil
              ) == :ok
 
-      token_balance_updated = Explorer.Repo.get_by(Address.TokenBalance, address_hash: address_hash)
+      token_balance_updated = Repo.get_by(Address.TokenBalance, address_hash: address_hash)
 
       assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
       assert token_balance_updated.value_fetched_at != nil
@@ -110,7 +112,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
                nil
              ) == :ok
 
-      token_balance_updated = Explorer.Repo.get_by(Address.TokenBalance, address_hash: address_hash)
+      token_balance_updated = Repo.get_by(Address.TokenBalance, address_hash: address_hash)
 
       assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
       assert token_balance_updated.value_fetched_at != nil
@@ -180,7 +182,95 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
       assert 1 =
                from(tb in Address.TokenBalance, where: tb.address_hash == ^address_hash)
-               |> Explorer.Repo.aggregate(:count, :id)
+               |> Repo.aggregate(:count, :id)
+    end
+
+    test "filters out params with tokens that doesn't implement balanceOf function" do
+      address = insert(:address)
+      missing_balance_of_token = insert(:missing_balance_of_token, currently_implemented: true)
+
+      assert TokenBalance.run(
+               [
+                 {address.hash.bytes, missing_balance_of_token.token_contract_address_hash.bytes,
+                  missing_balance_of_token.block_number, "ERC-20", nil, 0}
+               ],
+               nil
+             ) == :ok
+
+      assert Repo.all(Address.TokenBalance) == []
+    end
+
+    test "set currently_implemented: true for missing balanceOf token if balance was successfully fetched" do
+      address = insert(:address)
+      missing_balance_of_token = insert(:missing_balance_of_token)
+      window_size = Application.get_env(:explorer, MissingBalanceOfToken)[:window_size]
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
+             }
+           ]}
+        end
+      )
+
+      refute missing_balance_of_token.currently_implemented
+
+      assert TokenBalance.run(
+               [
+                 {address.hash.bytes, missing_balance_of_token.token_contract_address_hash.bytes,
+                  missing_balance_of_token.block_number + window_size + 1, "ERC-20", nil, 0}
+               ],
+               nil
+             ) == :ok
+
+      assert %{currently_implemented: true} = Repo.one(MissingBalanceOfToken)
+    end
+
+    test "in case of error deletes token balance placeholders below the given number and inserts new missing balanceOf tokens" do
+      address = insert(:address)
+      %{contract_address_hash: token_contract_address_hash} = insert(:token)
+
+      insert(:token_balance,
+        token_contract_address_hash: token_contract_address_hash,
+        address: address,
+        block_number: 0,
+        value_fetched_at: nil,
+        value: nil
+      )
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               error: %{code: "-32000", message: "execution reverted"}
+             }
+           ]}
+        end
+      )
+
+      assert TokenBalance.run(
+               [
+                 {address.hash.bytes, token_contract_address_hash.bytes, 1, "ERC-20", nil, 0}
+               ],
+               nil
+             ) == :ok
+
+      assert %{token_contract_address_hash: ^token_contract_address_hash, block_number: 1} =
+               Repo.one(MissingBalanceOfToken)
+
+      assert Repo.all(Address.TokenBalance) == []
     end
   end
 
@@ -261,7 +351,8 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
           address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
           block_number: 19999,
           token_contract_address_hash: to_string(contract.contract_address_hash),
-          token_id: 11,
+          token_id: nil,
+          value: 100_500,
           token_type: "ERC-20"
         },
         %{
@@ -270,6 +361,31 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
           token_contract_address_hash: to_string(contract2.contract_address_hash),
           token_id: 11,
           token_type: "ERC-1155"
+        }
+      ]
+
+      assert TokenBalance.import_token_balances(token_balances_params) == :ok
+    end
+
+    test "import ERC-404 token balances and return :ok" do
+      contract = insert(:token)
+      insert(:block, number: 19999)
+
+      token_balances_params = [
+        %{
+          address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          block_number: 19999,
+          token_contract_address_hash: to_string(contract.contract_address_hash),
+          token_id: 11,
+          token_type: "ERC-404"
+        },
+        %{
+          address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          block_number: 19999,
+          token_contract_address_hash: to_string(contract.contract_address_hash),
+          token_id: nil,
+          value: 100_500,
+          token_type: "ERC-404"
         }
       ]
 

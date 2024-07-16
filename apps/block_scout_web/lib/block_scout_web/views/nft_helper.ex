@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.NFTHelper do
 
   def get_media_src(nil, _), do: nil
 
+  # credo:disable-for-next-line /Complexity/
   def get_media_src(metadata, high_quality_media?) do
     result =
       cond do
@@ -18,8 +19,8 @@ defmodule BlockScoutWeb.NFTHelper do
         metadata["image"] ->
           retrieve_image(metadata["image"])
 
-        metadata["properties"]["image"]["description"] ->
-          metadata["properties"]["image"]["description"]
+        image = metadata["properties"]["image"] ->
+          if is_map(image), do: image["description"], else: image
 
         true ->
           nil
@@ -54,6 +55,7 @@ defmodule BlockScoutWeb.NFTHelper do
 
   def retrieve_image(image_url) do
     image_url
+    |> URI.decode()
     |> URI.encode()
     |> compose_ipfs_url()
   end
@@ -80,7 +82,8 @@ defmodule BlockScoutWeb.NFTHelper do
   end
 
   defp ipfs_link(image_url, prefix) do
-    ipfs_uid = String.slice(image_url, String.length(prefix)..-1)
+    ipfs_uid = String.slice(image_url, String.length(prefix)..-1//1)
+
     "https://ipfs.io/ipfs/" <> ipfs_uid
   end
 end

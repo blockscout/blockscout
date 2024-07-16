@@ -13,7 +13,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   alias Indexer.Block
   alias Indexer.Block.Catchup.Fetcher
   alias Indexer.Block.Catchup.MissingRangesCollector
-  alias Indexer.Fetcher.{BlockReward, CoinBalance, InternalTransaction, Token, TokenBalance, UncleBlock}
+  alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
+  alias Indexer.Fetcher.{BlockReward, InternalTransaction, Token, TokenBalance, UncleBlock}
 
   @moduletag capture_log: true
 
@@ -38,7 +39,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   describe "import/1" do
     setup do
       configuration = Application.get_env(:indexer, :last_block)
-      Application.put_env(:indexer, :last_block, "0")
+      Application.put_env(:indexer, :last_block, 0)
 
       on_exit(fn ->
         Application.put_env(:indexer, :last_block, configuration)
@@ -46,7 +47,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     end
 
     test "fetches uncles asynchronously", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -58,7 +59,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, uncles}} ->
+            {:"$gen_call", from, {:buffer, uncles, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:uncles, uncles})
           end
@@ -148,7 +149,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       Application.put_env(:indexer, Indexer.Block.Catchup.Fetcher, batch_size: 1, concurrency: 10)
       Application.put_env(:indexer, :block_ranges, "0..1")
       start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -308,7 +309,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       Application.put_env(:indexer, Indexer.Block.Catchup.Fetcher, batch_size: 1, concurrency: 10)
       Application.put_env(:indexer, :block_ranges, "0..1")
       start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -433,7 +434,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, block_numbers}} ->
+            {:"$gen_call", from, {:buffer, block_numbers, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:block_numbers, block_numbers})
           end
@@ -465,7 +466,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       Application.put_env(:indexer, Indexer.Block.Catchup.Fetcher, batch_size: 1, concurrency: 10)
       Application.put_env(:indexer, :block_ranges, "0..1")
       start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -583,7 +584,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, block_numbers}} ->
+            {:"$gen_call", from, {:buffer, block_numbers, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:block_numbers, block_numbers})
           end

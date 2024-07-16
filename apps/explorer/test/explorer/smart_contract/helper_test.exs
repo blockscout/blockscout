@@ -124,4 +124,30 @@ defmodule Explorer.SmartContract.HelperTest do
       refute Helper.nonpayable?(function)
     end
   end
+
+  describe "read_with_wallet_method?" do
+    test "doesn't return payable method with output in the read tab" do
+      function = %{
+        "type" => "function",
+        "stateMutability" => "payable",
+        "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+        "name" => "returnaddress",
+        "inputs" => []
+      }
+
+      refute Helper.read_with_wallet_method?(function)
+    end
+
+    test "doesn't return payable method with no output in the read tab" do
+      function = %{
+        "type" => "function",
+        "stateMutability" => "payable",
+        "outputs" => [],
+        "name" => "returnaddress",
+        "inputs" => []
+      }
+
+      refute Helper.read_with_wallet_method?(function)
+    end
+  end
 end

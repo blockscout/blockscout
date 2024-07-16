@@ -120,5 +120,5 @@ for chain in $CHAINS; do
     i=$((i+1))
 done
 
-log "Deployment task has succesfully completed!"
+log "Deployment task has successfully completed!"
 exit 0

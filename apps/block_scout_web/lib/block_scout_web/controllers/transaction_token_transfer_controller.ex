@@ -5,12 +5,13 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
   import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresses_tags: 2]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias BlockScoutWeb.{AccessHelper, Controller, TransactionController, TransactionTokenTransferView}
   alias Explorer.{Chain, Market}
   alias Phoenix.View
 
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
 
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do

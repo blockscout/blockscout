@@ -20,8 +20,8 @@ defmodule Indexer.Fetcher.BlockReward do
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.BlockReward.Supervisor, as: BlockRewardSupervisor
-  alias Indexer.Fetcher.CoinBalance
-  alias Indexer.Transform.{AddressCoinBalances, AddressCoinBalancesDaily, Addresses}
+  alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
+  alias Indexer.Transform.{AddressCoinBalances, Addresses}
 
   @behaviour BufferedTask
 
@@ -31,12 +31,12 @@ defmodule Indexer.Fetcher.BlockReward do
   @doc """
   Asynchronously fetches block rewards for each `t:Explorer.Chain.Explorer.block_number/0`` in `block_numbers`.
   """
-  @spec async_fetch([Block.block_number()]) :: :ok
-  def async_fetch(block_numbers) when is_list(block_numbers) do
+  @spec async_fetch([Block.block_number()], boolean()) :: :ok
+  def async_fetch(block_numbers, realtime?) when is_list(block_numbers) do
     if BlockRewardSupervisor.disabled?() do
       :ok
     else
-      BufferedTask.buffer(__MODULE__, block_numbers)
+      BufferedTask.buffer(__MODULE__, block_numbers, realtime?)
     end
   end
 
@@ -133,7 +133,7 @@ defmodule Indexer.Fetcher.BlockReward do
           {:ok, %{address_coin_balances: address_coin_balances, addresses: addresses}} ->
             Accounts.drop(addresses)
 
-            CoinBalance.async_fetch_balances(address_coin_balances)
+            CoinBalanceCatchup.async_fetch_balances(address_coin_balances)
 
             retry_errors(errors)
 
@@ -274,28 +274,9 @@ defmodule Indexer.Fetcher.BlockReward do
     addresses_params = Addresses.extract_addresses(%{block_reward_contract_beneficiaries: block_rewards_params})
     address_coin_balances_params_set = AddressCoinBalances.params_set(%{beneficiary_params: block_rewards_params})
 
-    address_coin_balances_params_with_block_timestamp =
-      block_rewards_params
-      |> Enum.map(fn block_rewards_param ->
-        %{
-          address_hash: block_rewards_param.address_hash,
-          block_number: block_rewards_param.block_number,
-          block_timestamp: block_rewards_param.block_timestamp
-        }
-      end)
-      |> Enum.into(MapSet.new())
-
-    address_coin_balances_params_with_block_timestamp_set = %{
-      address_coin_balances_params_with_block_timestamp: address_coin_balances_params_with_block_timestamp
-    }
-
-    address_coin_balances_daily_params_set =
-      AddressCoinBalancesDaily.params_set(address_coin_balances_params_with_block_timestamp_set)
-
     Chain.import(%{
       addresses: %{params: addresses_params},
       address_coin_balances: %{params: address_coin_balances_params_set},
-      address_coin_balances_daily: %{params: address_coin_balances_daily_params_set},
       block_rewards: %{params: block_rewards_params}
     })
   end
@@ -344,7 +325,7 @@ defmodule Indexer.Fetcher.BlockReward do
 
   defp fetched_beneficiary_error_to_iodata(%{code: code, message: message, data: %{block_quantity: block_quantity}})
        when is_integer(code) and is_binary(message) and is_binary(block_quantity) do
-    ["@", quantity_to_integer(block_quantity), ": (", to_string(code), ") ", message, ?\n]
+    ["@", block_quantity |> quantity_to_integer() |> to_string(), ": (", to_string(code), ") ", message, ?\n]
   end
 
   defp defaults do

@@ -28,7 +28,7 @@ defmodule Explorer.Chain.Cache.PendingBlockOperation do
     if is_nil(cached_value) do
       count = Helper.estimated_count_from("pending_block_operations")
 
-      max(count, 0)
+      if is_nil(count), do: 0, else: max(count, 0)
     else
       cached_value
     end

@@ -69,6 +69,9 @@
       <input id="js-re-captcha-disabled" class="d-none" value="<%= Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] %>" />
       <input id="js-network-path" class="d-none" value="<%= Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path] %>" />
       <!-- -->
+      <div class="alert alert-warning text-center mb-0 p-3">
+          <%= raw("The new Blockscout UI is now open source! Learn how to <a href='https://docs.blockscout.com/for-developers/deployment/frontend-migration' target='_blank'>deploy it here</a>") %>
+      </div>
       <% show_maintenance_alert = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:show_maintenance_alert] %>
       <%= if show_maintenance_alert do %>
         <div class="alert alert-warning text-center mb-0 p-3">
@@ -94,7 +97,7 @@
       <% session = Explorer.Account.enabled?() && Plug.Conn.get_session(@conn, :current_user) %>
       <%= render BlockScoutWeb.LayoutView, "_topnav.html", current_user: session, conn: @conn %>
       <%= if session && !session[:email_verified] do %>
-        <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Please confirm your email address to use the My Account feature.") %> <%= gettext("A confirmation email was sent to") %> <a href="mailto:<%= session[:email] %>"><%=session[:email] %></a> <%= gettext "on sign up. Didn’t receive?" %> <a href="/api/account/v1/email/resend" class="ajax"><%= gettext "Resend verification email" %></a>.</p>
+        <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Please confirm your email address to use the My Account feature.") %> <%= gettext("A confirmation email was sent to") %> <a href="mailto:<%= session[:email] %>"><%=session[:email] %></a> <%= gettext "on sign up. Didn’t receive?" %> <a href="/api/account/v2/email/resend" class="ajax"><%= gettext "Resend verification email" %></a>.</p>
       <% else %>
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
       <% end %>

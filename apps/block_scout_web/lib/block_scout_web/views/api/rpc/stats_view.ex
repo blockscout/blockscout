@@ -19,8 +19,12 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
     RPCView.render("show_value.json", data: total_supply)
   end
 
+  def render("ethprice.json", %{rates: rates}) do
+    RPCView.render("show.json", data: prepare_rates(rates, "eth"))
+  end
+
   def render("coinprice.json", %{rates: rates}) do
-    RPCView.render("show.json", data: prepare_rates(rates))
+    RPCView.render("show.json", data: prepare_rates(rates, "coin_"))
   end
 
   def render("totalfees.json", %{total_fees: total_fees}) do
@@ -31,22 +35,22 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
     RPCView.render("error.json", assigns)
   end
 
-  defp prepare_rates(rates) do
+  defp prepare_rates(rates, prefix) do
     if rates do
-      timestamp = rates.last_updated |> DateTime.to_unix() |> to_string()
+      timestamp = rates.last_updated && rates.last_updated |> DateTime.to_unix() |> to_string()
 
       %{
-        "coin_btc" => to_string(rates.btc_value),
-        "coin_btc_timestamp" => timestamp,
-        "coin_usd" => to_string(rates.usd_value),
-        "coin_usd_timestamp" => timestamp
+        (prefix <> "btc") => rates.btc_value && to_string(rates.btc_value),
+        (prefix <> "btc_timestamp") => timestamp,
+        (prefix <> "usd") => rates.usd_value && to_string(rates.usd_value),
+        (prefix <> "usd_timestamp") => timestamp
       }
     else
       %{
-        "coin_btc" => nil,
-        "coin_btc_timestamp" => nil,
-        "coin_usd" => nil,
-        "coin_usd_timestamp" => nil
+        (prefix <> "btc") => nil,
+        (prefix <> "btc_timestamp") => nil,
+        (prefix <> "usd") => nil,
+        (prefix <> "usd_timestamp") => nil
       }
     end
   end

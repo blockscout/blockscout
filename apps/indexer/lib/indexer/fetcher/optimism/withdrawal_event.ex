@@ -1,0 +1,301 @@
+defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
+  @moduledoc """
+  Fills op_withdrawal_events DB table.
+  """
+
+  use GenServer
+  use Indexer.Fetcher
+
+  require Logger
+
+  import Ecto.Query
+
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+
+  alias EthereumJSONRPC.Block.ByNumber
+  alias EthereumJSONRPC.Blocks
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Optimism.WithdrawalEvent
+  alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
+  alias Indexer.Helper
+
+  @fetcher_name :optimism_withdrawal_events
+
+  # 32-byte signature of the event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
+  @withdrawal_proven_event "0x67a6208cfcc0801d50f6cbe764733f4fddf66ac0b04442061a8a8c0cb6b63f62"
+
+  # 32-byte signature of the Blast chain event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to, uint256 requestId)
+  @withdrawal_proven_event_blast "0x5d5446905f1f582d57d04ced5b1bed0f1a6847bcee57f7dd9d6f2ec12ab9ec2e"
+
+  # 32-byte signature of the event WithdrawalFinalized(bytes32 indexed withdrawalHash, bool success)
+  @withdrawal_finalized_event "0xdb5c7652857aa163daadd670e116628fb42e869d8ac4251ef8971d9e5727df1b"
+
+  # 32-byte signature of the Blast chain event WithdrawalFinalized(bytes32 indexed withdrawalHash, uint256 indexed hintId, bool success)
+  @withdrawal_finalized_event_blast "0x36d89e6190aa646d1a48286f8ad05e60a144483f42fd7e0ea08baba79343645b"
+
+  def child_spec(start_link_arguments) do
+    spec = %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, start_link_arguments},
+      restart: :transient,
+      type: :worker
+    }
+
+    Supervisor.child_spec(spec, [])
+  end
+
+  def start_link(args, gen_server_options \\ []) do
+    GenServer.start_link(__MODULE__, args, Keyword.put_new(gen_server_options, :name, __MODULE__))
+  end
+
+  @impl GenServer
+  def init(_args) do
+    {:ok, %{}, {:continue, :ok}}
+  end
+
+  @impl GenServer
+  def handle_continue(:ok, _state) do
+    Logger.metadata(fetcher: @fetcher_name)
+
+    Optimism.init_continue(nil, __MODULE__)
+  end
+
+  @impl GenServer
+  def handle_info(
+        :continue,
+        %{
+          contract_address: optimism_portal,
+          block_check_interval: block_check_interval,
+          start_block: start_block,
+          end_block: end_block,
+          json_rpc_named_arguments: json_rpc_named_arguments
+        } = state
+      ) do
+    # credo:disable-for-next-line
+    time_before = Timex.now()
+
+    chunks_number = ceil((end_block - start_block + 1) / Optimism.get_logs_range_size())
+    chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
+
+    last_written_block =
+      chunk_range
+      |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
+        chunk_start = start_block + Optimism.get_logs_range_size() * current_chunk
+        chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
+
+        if chunk_end >= chunk_start do
+          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
+
+          {:ok, result} =
+            Optimism.get_logs(
+              chunk_start,
+              chunk_end,
+              optimism_portal,
+              [
+                @withdrawal_proven_event,
+                @withdrawal_proven_event_blast,
+                @withdrawal_finalized_event,
+                @withdrawal_finalized_event_blast
+              ],
+              json_rpc_named_arguments,
+              Helper.infinite_retries_number()
+            )
+
+          withdrawal_events = prepare_events(result, json_rpc_named_arguments)
+
+          {:ok, _} =
+            Chain.import(%{
+              optimism_withdrawal_events: %{params: withdrawal_events},
+              timeout: :infinity
+            })
+
+          Helper.log_blocks_chunk_handling(
+            chunk_start,
+            chunk_end,
+            start_block,
+            end_block,
+            "#{Enum.count(withdrawal_events)} WithdrawalProven/WithdrawalFinalized event(s)",
+            :L1
+          )
+        end
+
+        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+
+        if !is_nil(reorg_block) && reorg_block > 0 do
+          {deleted_count, _} = Repo.delete_all(from(we in WithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
+
+          log_deleted_rows_count(reorg_block, deleted_count)
+
+          {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
+        else
+          {:cont, chunk_end}
+        end
+      end)
+
+    new_start_block = last_written_block + 1
+
+    {:ok, new_end_block} =
+      Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+
+    delay =
+      if new_end_block == last_written_block do
+        # there is no new block, so wait for some time to let the chain issue the new block
+        max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
+      else
+        0
+      end
+
+    Process.send_after(self(), :continue, delay)
+
+    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
+  end
+
+  @impl GenServer
+  def handle_info({ref, _result}, state) do
+    Process.demonitor(ref, [:flush])
+    {:noreply, state}
+  end
+
+  defp log_deleted_rows_count(reorg_block, count) do
+    if count > 0 do
+      Logger.warning(
+        "As L1 reorg was detected, all rows with l1_block_number >= #{reorg_block} were removed from the op_withdrawal_events table. Number of removed rows: #{count}."
+      )
+    end
+  end
+
+  defp get_transaction_input_by_hash(blocks, tx_hashes) do
+    Enum.reduce(blocks, %{}, fn block, acc ->
+      block
+      |> Map.get("transactions", [])
+      |> Enum.filter(fn tx ->
+        Enum.member?(tx_hashes, tx["hash"])
+      end)
+      |> Enum.map(fn tx ->
+        {tx["hash"], tx["input"]}
+      end)
+      |> Enum.into(%{})
+      |> Map.merge(acc)
+    end)
+  end
+
+  defp prepare_events(events, json_rpc_named_arguments) do
+    blocks =
+      events
+      |> get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
+
+    tx_hashes =
+      events
+      |> Enum.reduce([], fn event, acc ->
+        if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
+          [event["transactionHash"] | acc]
+        else
+          acc
+        end
+      end)
+
+    input_by_hash = get_transaction_input_by_hash(blocks, tx_hashes)
+
+    timestamps =
+      blocks
+      |> Enum.reduce(%{}, fn block, acc ->
+        block_number = quantity_to_integer(Map.get(block, "number"))
+        {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
+        Map.put(acc, block_number, timestamp)
+      end)
+
+    events
+    |> Enum.map(fn event ->
+      tx_hash = event["transactionHash"]
+
+      {l1_event_type, game_index} =
+        if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
+          game_index =
+            input_by_hash
+            |> Map.get(tx_hash)
+            |> input_to_game_index()
+
+          {"WithdrawalProven", game_index}
+        else
+          {"WithdrawalFinalized", nil}
+        end
+
+      l1_block_number = quantity_to_integer(event["blockNumber"])
+
+      %{
+        withdrawal_hash: Enum.at(event["topics"], 1),
+        l1_event_type: l1_event_type,
+        l1_timestamp: Map.get(timestamps, l1_block_number),
+        l1_transaction_hash: tx_hash,
+        l1_block_number: l1_block_number,
+        game_index: game_index
+      }
+    end)
+    |> Enum.reduce(%{}, fn e, acc ->
+      key = {e.withdrawal_hash, e.l1_event_type}
+      prev_game_index = Map.get(acc, key, %{game_index: 0}).game_index
+
+      if prev_game_index < e.game_index or is_nil(prev_game_index) do
+        Map.put(acc, key, e)
+      else
+        acc
+      end
+    end)
+    |> Map.values()
+  end
+
+  def get_last_l1_item do
+    query =
+      from(we in WithdrawalEvent,
+        select: {we.l1_block_number, we.l1_transaction_hash},
+        order_by: [desc: we.l1_timestamp],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||({0, nil})
+  end
+
+  defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
+    request =
+      events
+      |> Enum.reduce(%{}, fn event, acc ->
+        Map.put(acc, event["blockNumber"], 0)
+      end)
+      |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
+      |> Stream.with_index()
+      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+      |> Blocks.requests(&ByNumber.request(&1, true, false))
+
+    error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
+
+    case Optimism.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
+      {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
+      {:error, _} -> []
+    end
+  end
+
+  defp input_to_game_index(input) do
+    method_signature = String.slice(input, 0..9)
+
+    if method_signature == "0x4870496f" do
+      # the signature of `proveWithdrawalTransaction(tuple _tx, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+
+      # to get (slice) `_disputeGameIndex` from the tx input, we need to know its offset in the input string (represented as 0x...):
+      # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_tx` tuple offset, totally is 74
+      game_index_offset = String.length(method_signature) + 32 * 2
+      game_index_length = 32 * 2
+
+      game_index_range_start = game_index_offset
+      game_index_range_end = game_index_range_start + game_index_length - 1
+
+      {game_index, ""} =
+        input
+        |> String.slice(game_index_range_start..game_index_range_end)
+        |> Integer.parse(16)
+
+      game_index
+    end
+  end
+end

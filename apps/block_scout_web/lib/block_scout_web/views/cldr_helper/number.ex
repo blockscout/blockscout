@@ -17,6 +17,8 @@ defmodule BlockScoutWeb.CldrHelper.Number do
     end
   end
 
+  def to_string!(nil), do: ""
+
   def to_string!(decimal) do
     # We do this to trick Dialyzer to not complain about non-local returns caused by bug in Cldr.Number.to_string! spec
     case :erlang.phash2(1, 1) do

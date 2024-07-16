@@ -4,11 +4,12 @@ defmodule Explorer.Utility.MissingBlockRange do
   """
   use Explorer.Schema
 
+  alias Explorer.Chain.{Block, BlockNumberHelper}
   alias Explorer.Repo
 
   @default_returning_batch_size 10
 
-  schema "missing_block_ranges" do
+  typed_schema "missing_block_ranges" do
     field(:from_number, :integer)
     field(:to_number, :integer)
   end
@@ -26,9 +27,22 @@ defmodule Explorer.Utility.MissingBlockRange do
     size
     |> get_latest_ranges_query()
     |> Repo.all()
-    |> Enum.map(fn %{from_number: from, to_number: to} ->
-      %Range{first: from, last: to, step: if(from > to, do: -1, else: 1)}
+    |> Enum.reduce_while({size, []}, fn %{from_number: from, to_number: to}, {remaining_count, ranges} ->
+      range_size = from - to + 1
+
+      cond do
+        range_size < remaining_count ->
+          {:cont, {remaining_count - range_size, [Range.new(from, to, -1) | ranges]}}
+
+        range_size > remaining_count ->
+          {:halt, {0, [Range.new(from, from - remaining_count + 1, -1) | ranges]}}
+
+        range_size == remaining_count ->
+          {:halt, {0, [Range.new(from, to, -1) | ranges]}}
+      end
     end)
+    |> elem(1)
+    |> Enum.reverse()
   end
 
   def add_ranges_by_block_numbers(numbers) do
@@ -76,21 +90,29 @@ defmodule Explorer.Utility.MissingBlockRange do
     case {lower_range, higher_range} do
       {%__MODULE__{} = same_range, %__MODULE__{} = same_range} ->
         Repo.delete(same_range)
-        insert_if_needed(%{from_number: same_range.from_number, to_number: max_number + 1})
-        insert_if_needed(%{from_number: min_number - 1, to_number: same_range.to_number})
+
+        insert_if_needed(%{
+          from_number: same_range.from_number,
+          to_number: BlockNumberHelper.next_block_number(max_number)
+        })
+
+        insert_if_needed(%{
+          from_number: BlockNumberHelper.previous_block_number(min_number),
+          to_number: same_range.to_number
+        })
 
       {%__MODULE__{} = range, nil} ->
         delete_ranges_between(max_number, range.from_number)
-        update_from_number_or_delete_range(range, min_number - 1)
+        update_from_number_or_delete_range(range, BlockNumberHelper.previous_block_number(min_number))
 
       {nil, %__MODULE__{} = range} ->
         delete_ranges_between(range.to_number, min_number)
-        update_to_number_or_delete_range(range, max_number + 1)
+        update_to_number_or_delete_range(range, BlockNumberHelper.next_block_number(max_number))
 
       {%__MODULE__{} = range_1, %__MODULE__{} = range_2} ->
         delete_ranges_between(range_2.to_number, range_1.from_number)
-        update_from_number_or_delete_range(range_1, min_number - 1)
-        update_to_number_or_delete_range(range_2, max_number + 1)
+        update_from_number_or_delete_range(range_1, BlockNumberHelper.previous_block_number(min_number))
+        update_to_number_or_delete_range(range_2, BlockNumberHelper.next_block_number(max_number))
 
       _ ->
         delete_ranges_between(max_number, min_number)
@@ -105,6 +127,38 @@ defmodule Explorer.Utility.MissingBlockRange do
     batch
     |> List.wrap()
     |> Enum.map(&save_range/1)
+  end
+
+  @doc """
+    Finds the first range in the table where the set, consisting of numbers from `lower_number` to `higher_number`, intersects.
+
+    ## Parameters
+    - `lower_number`: The lower bound of the range to check.
+    - `higher_number`: The upper bound of the range to check.
+
+    ## Returns
+    - Returns `nil` if no intersecting ranges are found, or an `Explorer.Utility.MissingBlockRange` instance of the first intersecting range otherwise.
+  """
+  @spec intersects_with_range(Block.block_number(), Block.block_number()) :: nil | Explorer.Utility.MissingBlockRange
+  def intersects_with_range(lower_number, higher_number)
+      when is_integer(lower_number) and lower_number >= 0 and
+             is_integer(higher_number) and lower_number <= higher_number do
+    query =
+      from(
+        r in __MODULE__,
+        # Note: from_number is higher than to_number, so in fact the range is to_number..from_number
+        # The first case: lower_number..to_number..higher_number
+        # The second case: lower_number..from_number..higher_number
+        # The third case: to_number..lower_number..higher_number..from_number
+        where:
+          (^lower_number <= r.to_number and ^higher_number >= r.to_number) or
+            (^lower_number <= r.from_number and ^higher_number >= r.from_number) or
+            (^lower_number >= r.to_number and ^higher_number <= r.from_number),
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
   end
 
   defp insert_range(params) do
@@ -145,7 +199,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     __MODULE__
     |> where([r], r.from_number < r.to_number)
     |> update([r], set: [from_number: r.to_number, to_number: r.from_number])
-    |> Repo.update_all([])
+    |> Repo.update_all([], timeout: :infinity)
 
     {last_range, merged_ranges} = delete_and_merge_ranges()
 
@@ -175,7 +229,7 @@ defmodule Explorer.Utility.MissingBlockRange do
              (r.to_number <= r1.from_number and r.to_number >= r1.to_number)) and r1.id != r.id
       )
       |> select([r, r1], r)
-      |> Repo.delete_all()
+      |> Repo.delete_all(timeout: :infinity)
 
     intersecting_ranges
   end

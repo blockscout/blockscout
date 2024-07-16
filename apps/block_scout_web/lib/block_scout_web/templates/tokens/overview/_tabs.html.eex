@@ -1,5 +1,5 @@
 <% address_hash = Address.checksum(@token.contract_address_hash) %>
-<% is_proxy = BlockScoutWeb.Tokens.OverviewView.smart_contract_is_proxy?(@token) %>
+<% is_proxy = BlockScoutWeb.Tokens.OverviewView.token_smart_contract_is_proxy?(@token) %>
 <div class="card-tabs js-card-tabs">
   <%= link(
         gettext("Token Transfers"),

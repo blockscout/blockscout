@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  visualizer:
+    extends:
+      file: ./services/visualizer.yml
+      service: visualizer
+
+  sig-provider:
+    extends:
+      file: ./services/sig-provider.yml
+      service: sig-provider
+    ports:
+      - 8083:8050
+    
+
+  sc-verifier:
+    extends:
+      file: ./services/smart-contract-verifier.yml
+      service: smart-contract-verifier
+    ports:
+      - 8082:8050
+
+  stats-db-init:
+    extends:
+      file: ./services/stats.yml
+      service: stats-db-init
+
+  stats-db:
+    depends_on:
+      stats-db-init:
+        condition: service_completed_successfully
+    extends:
+      file: ./services/stats.yml
+      service: stats-db
+
+  stats:
+    depends_on:
+      - stats-db
+    extends:
+      file: ./services/stats.yml
+      service: stats
+
+  user-ops-indexer:
+    extends:
+      file: ./services/user-ops-indexer.yml
+      service: user-ops-indexer
+
+  proxy:
+    depends_on:
+      - visualizer
+      - stats
+    extends:
+      file: ./services/nginx.yml
+      service: proxy
+    volumes:
+      - "./proxy/microservices.conf.template:/etc/nginx/templates/default.conf.template"

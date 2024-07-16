@@ -27,18 +27,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
        given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_coin_balance` will match this value.
    * `value_fetched_at` - when `value` was fetched.
   """
-  @type t :: %__MODULE__{
-          address: %Ecto.Association.NotLoaded{} | Address.t(),
-          address_hash: Hash.Address.t(),
-          block_number: Block.block_number(),
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t(),
-          value: Wei.t() | nil
-        }
-
   @primary_key false
-  schema "address_coin_balances" do
-    field(:block_number, :integer)
+  typed_schema "address_coin_balances" do
+    field(:block_number, :integer) :: Block.block_number()
     field(:value, Wei)
     field(:value_fetched_at, :utc_datetime_usec)
     field(:delta, Wei, virtual: true)
@@ -47,7 +38,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
     timestamps()
 
-    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
+    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address, null: false)
   end
 
   @doc """
@@ -156,5 +147,20 @@ defmodule Explorer.Chain.Address.CoinBalance do
     |> cast(params, @allowed_fields)
     |> validate_required(@required_fields)
     |> unique_constraint(:block_number, name: :address_coin_balances_address_hash_block_number_index)
+  end
+
+  @doc """
+  Query to fetch latest coin balance for the given address
+  """
+  @spec latest_coin_balance_query(Hash.Address.t(), non_neg_integer() | {:error, :empty_database}) :: Ecto.Query.t()
+  def latest_coin_balance_query(address_hash, stale_balance_window) do
+    from(
+      cb in __MODULE__,
+      where: cb.address_hash == ^address_hash,
+      where: cb.block_number >= ^stale_balance_window,
+      where: is_nil(cb.value_fetched_at),
+      order_by: [desc: :block_number],
+      limit: 1
+    )
   end
 end

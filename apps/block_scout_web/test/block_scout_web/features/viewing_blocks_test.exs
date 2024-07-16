@@ -174,7 +174,8 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
 
   describe "viewing reorg blocks list" do
     test "lists uncle blocks", %{session: session} do
-      [reorg | _] = insert_list(10, :block, consensus: false)
+      [reorg | _] = blocks = insert_list(10, :block, consensus: false)
+      Enum.each(blocks, fn b -> insert(:block, number: b.number, consensus: true) end)
 
       session
       |> BlockListPage.visit_reorgs_page()

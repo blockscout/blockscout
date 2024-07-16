@@ -4,6 +4,16 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
   alias Explorer.Chain.Address
   alias Explorer.Chain.CSVExport.AddressLogCsvExporter
 
+  @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+  @second_topic_hex_string_1 "0x00000000000000000000000098a9dc37d3650b5b30d6c12789b3881ee0b70c16"
+  @third_topic_hex_string_1 "0x0000000000000000000000005079fc00f00f30000e0c8c083801cfde000008b6"
+  @fourth_topic_hex_string_1 "0x8c9b7729443a4444242342b2ca385a239a5c1d76a88473e1cd2ab0c70dd1b9c7"
+
+  defp topic(topic_hex_string) do
+    {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
+    topic
+  end
+
   describe "export/3" do
     test "exports address logs to csv" do
       address = insert(:address)
@@ -21,10 +31,10 @@ defmodule Explorer.Chain.AddressLogCsvExporterTest do
           block: transaction.block,
           block_number: transaction.block_number,
           data: "0x12",
-          first_topic: "0x13",
-          second_topic: "0x14",
-          third_topic: "0x15",
-          fourth_topic: "0x16"
+          first_topic: topic(@first_topic_hex_string_1),
+          second_topic: topic(@second_topic_hex_string_1),
+          third_topic: topic(@third_topic_hex_string_1),
+          fourth_topic: topic(@fourth_topic_hex_string_1)
         )
 
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)

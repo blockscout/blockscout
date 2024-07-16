@@ -1,8 +1,8 @@
 defmodule EthereumJSONRPC.Transactions do
   @moduledoc """
   List of transactions format as included in return from
-  [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash) and
-  [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber).
+  [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbyhash) and
+  [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbynumber).
   """
 
   alias EthereumJSONRPC.Transaction
@@ -151,9 +151,9 @@ defmodule EthereumJSONRPC.Transactions do
       ]
 
   """
-  def to_elixir(transactions) when is_list(transactions) do
+  def to_elixir(transactions, block_timestamp \\ nil) when is_list(transactions) do
     transactions
-    |> Enum.map(&Transaction.to_elixir/1)
+    |> Enum.map(&Transaction.to_elixir(&1, block_timestamp))
     |> Enum.filter(&(!is_nil(&1)))
   end
 end

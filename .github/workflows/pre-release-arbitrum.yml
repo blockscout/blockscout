@@ -1,0 +1,97 @@
+name: Pre-release for Arbitrum
+
+on:
+  workflow_dispatch:
+    inputs:
+      number:
+        type: number
+        required: true
+
+env:
+  OTP_VERSION: ${{ vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup repo
+        uses: ./.github/actions/setup-repo
+        id: setup
+        with:
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          docker-remote-multi-platform: true
+          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
+
+      - name: Build and push Docker image for Arbitrum (indexer + API)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-arbitrum:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            DISABLE_WEBAPP=false
+            API_V1_READ_METHODS_DISABLED=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_EXCHANGE_RATES_PERIOD=
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=false
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=arbitrum
+
+      - name: Build and push Docker image for Arbitrum (indexer)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-arbitrum:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            DISABLE_API=true
+            DISABLE_WEBAPP=true
+            CACHE_EXCHANGE_RATES_PERIOD=
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=false
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=arbitrum
+
+      - name: Build and push Docker image for Arbitrum (API)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-arbitrum:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-api
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            DISABLE_INDEXER=true
+            DISABLE_WEBAPP=true
+            CACHE_EXCHANGE_RATES_PERIOD=
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=false
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=arbitrum

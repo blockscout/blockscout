@@ -20,22 +20,14 @@ defmodule Explorer.Chain.Transaction.Fork do
    * `uncle` - the block in which this transaction was mined/validated.
    * `uncle_hash` - `uncle` foreign key.
   """
-  @type t :: %__MODULE__{
-          hash: Hash.t(),
-          index: Transaction.transaction_index(),
-          transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
-          uncle: %Ecto.Association.NotLoaded{} | Block.t(),
-          uncle_hash: Hash.t()
-        }
-
   @primary_key false
-  schema "transaction_forks" do
-    field(:index, :integer)
+  typed_schema "transaction_forks" do
+    field(:index, :integer, null: false)
 
     timestamps()
 
-    belongs_to(:transaction, Transaction, foreign_key: :hash, references: :hash, type: Hash.Full)
-    belongs_to(:uncle, Block, foreign_key: :uncle_hash, references: :hash, type: Hash.Full)
+    belongs_to(:transaction, Transaction, foreign_key: :hash, references: :hash, type: Hash.Full, null: false)
+    belongs_to(:uncle, Block, foreign_key: :uncle_hash, references: :hash, type: Hash.Full, null: false)
   end
 
   @doc """

@@ -10,11 +10,11 @@ defmodule Explorer.Account.Identity do
   alias Explorer.Account.Api.Plan
   alias Explorer.Account.{TagAddress, Watchlist}
 
-  schema "account_identities" do
-    field(:uid_hash, Cloak.Ecto.SHA256)
-    field(:uid, Explorer.Encrypted.Binary)
-    field(:email, Explorer.Encrypted.Binary)
-    field(:name, Explorer.Encrypted.Binary)
+  typed_schema "account_identities" do
+    field(:uid_hash, Cloak.Ecto.SHA256) :: binary() | nil
+    field(:uid, Explorer.Encrypted.Binary, null: false)
+    field(:email, Explorer.Encrypted.Binary, null: false)
+    field(:name, Explorer.Encrypted.Binary, null: false)
     field(:nickname, Explorer.Encrypted.Binary)
     field(:avatar, Explorer.Encrypted.Binary)
     field(:verification_email_sent_at, :utc_datetime_usec)
@@ -36,7 +36,8 @@ defmodule Explorer.Account.Identity do
   end
 
   defp put_hashed_fields(changeset) do
+    # Using force_change instead of put_change due to https://github.com/danielberkompas/cloak_ecto/issues/53
     changeset
-    |> put_change(:uid_hash, get_field(changeset, :uid))
+    |> force_change(:uid_hash, get_field(changeset, :uid))
   end
 end

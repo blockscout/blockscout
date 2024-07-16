@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
       result = RPCTranslator.call(conn, %{})
       assert result.halted
       assert response = json_response(result, 400)
-      assert response["message"] =~ "Unknown action"
+      assert response["message"] =~ "Unknown module"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
@@ -74,6 +74,13 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
 
     test "with a valid request", %{conn: conn} do
       conn = %Conn{conn | params: %{"module" => "test", "action" => "test_action"}, request_path: "/api"}
+
+      result = RPCTranslator.call(conn, %{"test" => {TestController, []}})
+      assert json_response(result, 200) == %{}
+    end
+
+    test "allow multiple '/' before api", %{conn: conn} do
+      conn = %Conn{conn | params: %{"module" => "test", "action" => "test_action"}, request_path: "//api"}
 
       result = RPCTranslator.call(conn, %{"test" => {TestController, []}})
       assert json_response(result, 200) == %{}

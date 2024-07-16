@@ -9,9 +9,12 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   """
 
   import Explorer.SmartContract.Helper,
-    only: [cast_libraries: 1, prepare_bytecode_for_microservice: 3, contract_creation_input: 1]
+    only: [
+      cast_libraries: 1,
+      fetch_data_for_verification: 1,
+      prepare_bytecode_for_microservice: 3
+    ]
 
-  # import  Explorer.Chain.SmartContract, only: [:function_description]
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
   alias Explorer.Chain.{Data, Hash, SmartContract}
@@ -40,9 +43,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   defp evaluate_authenticity_inner(true, address_hash, params) do
-    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
-
-    creation_tx_input = contract_creation_input(address_hash)
+    {creation_tx_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
     %{}
     |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
@@ -54,7 +55,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
     |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
     |> Map.put("compilerVersion", params["compiler_version"])
-    |> RustVerifierInterface.verify_multi_part(address_hash)
+    |> RustVerifierInterface.verify_multi_part(verifier_metadata)
   end
 
   defp evaluate_authenticity_inner(false, address_hash, params) do
@@ -124,14 +125,12 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   def evaluate_authenticity_via_standard_json_input_inner(true, address_hash, params, json_input) do
-    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
-
-    creation_tx_input = contract_creation_input(address_hash)
+    {creation_tx_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
     %{"compilerVersion" => params["compiler_version"]}
     |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
     |> Map.put("input", json_input)
-    |> RustVerifierInterface.verify_standard_json_input(address_hash)
+    |> RustVerifierInterface.verify_standard_json_input(verifier_metadata)
   end
 
   def evaluate_authenticity_via_standard_json_input_inner(false, address_hash, params, json_input) do
@@ -139,9 +138,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   def evaluate_authenticity_via_multi_part_files(address_hash, params, files) do
-    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
-
-    creation_tx_input = contract_creation_input(address_hash)
+    {creation_tx_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
     %{}
     |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
@@ -150,7 +147,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
     |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
     |> Map.put("compilerVersion", params["compiler_version"])
-    |> RustVerifierInterface.verify_multi_part(address_hash)
+    |> RustVerifierInterface.verify_multi_part(verifier_metadata)
   end
 
   defp verify(address_hash, params, json_input) do
@@ -447,9 +444,9 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp extract_meta_from_deployed_bytecode(code_unknown_case) do
     with true <- is_binary(code_unknown_case),
          code <- String.downcase(code_unknown_case),
-         last_2_bytes <- code |> String.slice(-4..-1),
+         last_2_bytes <- code |> String.slice(-4..-1//1),
          {meta_length, ""} <- last_2_bytes |> Integer.parse(16),
-         meta <- String.slice(code, (-(meta_length + 2) * 2)..-5) do
+         meta <- String.slice(code, (-(meta_length + 2) * 2)..-5//1) do
       {meta, last_2_bytes}
     else
       _ ->

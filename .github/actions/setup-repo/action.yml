@@ -1,0 +1,88 @@
+name: 'Setup repo'
+description: 'Setup repo: checkout/login/extract metadata, Set up Docker Buildx'
+inputs:
+  docker-username:
+    description: 'Docker username'
+    required: true
+  docker-password:
+    description: 'Docker password'
+    required: true
+  docker-remote-multi-platform:
+    description: 'Docker remote multi-platform builder'
+    required: true
+    default: 'false'
+  docker-arm-host:
+    description: 'Docker remote arm builder'
+    required: false
+  docker-arm-host-key:
+    description: 'Docker remote arm builder ssh private key'
+    required: false
+  docker-image:
+    description: 'Docker image'
+    required: true
+    default: blockscout/blockscout
+outputs:
+  docker-builder:
+    description: 'Docker builder'
+    value: ${{ steps.builder_local.outputs.name || steps.builder_multi.outputs.name }}
+  docker-tags:
+    description: 'Docker metadata tags'
+    value: ${{ steps.meta.outputs.tags }}
+  docker-labels:
+    description: 'Docker metadata labels'
+    value: ${{ steps.meta.outputs.labels }}
+  docker-platforms:
+    description: 'Docker build platforms'
+    value: ${{ steps.builder_local.outputs.platforms || steps.builder_multi.outputs.platforms }}
+runs:
+  using: "composite"
+  steps:
+    - name: Set up SSH key
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ inputs.docker-arm-host-key }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa  
+    - name: Find builder
+      if: ${{ inputs.docker-remote-multi-platform }}
+      shell: bash
+      run: echo "BUILDER_IP=$(./.github/scripts/select-builder.sh ${{ inputs.docker-arm-host }} root ~/.ssh/id_rsa)" >> $GITHUB_ENV
+    - name: Set up SSH
+      if: ${{ inputs.docker-remote-multi-platform }}
+      uses: MrSquaare/ssh-setup-action@523473d91581ccbf89565e12b40faba93f2708bd # v1.1.0
+      with:
+        host: ${{ env.BUILDER_IP }}
+        private-key: ${{ inputs.docker-arm-host-key }}
+
+    - name: Set up Docker Buildx
+      if: ${{ !inputs.docker-remote-multi-platform }}
+      uses: docker/setup-buildx-action@v3
+      id: builder_local
+      with:
+        platforms: linux/amd64
+
+    - name: Set up Multi-platform Docker Buildx
+      if: ${{ inputs.docker-remote-multi-platform }}
+      uses: docker/setup-buildx-action@v3
+      id: builder_multi
+      with:
+        platforms: linux/amd64
+        append: |
+          - endpoint: ssh://root@${{ env.BUILDER_IP }}
+            platforms: linux/arm64/v8
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ inputs.docker-username }}
+        password: ${{ inputs.docker-password }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ inputs.docker-image }}
+
+    - name: Add SHORT_SHA env property with commit short sha
+      shell: bash
+      run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV

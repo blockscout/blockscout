@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  stats-db-init:
+    image: postgres:15
+    volumes:
+      - ./stats-db-data:/var/lib/postgresql/data
+    entrypoint:
+      - sh
+      - -c
+      - |
+        chown -R 2000:2000 /var/lib/postgresql/data
+
+  stats-db:
+    image: postgres:15
+    user: 2000:2000
+    shm_size: 256m
+    restart: always
+    container_name: 'stats-db'
+    command: postgres -c 'max_connections=200'
+    environment:
+        POSTGRES_DB: 'stats'
+        POSTGRES_USER: 'stats'
+        POSTGRES_PASSWORD: 'n0uejXPl61ci6ldCuE2gQU5Y'
+    ports:
+      - target: 5432
+        published: 7433
+    volumes:
+      - ./stats-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stats -d stats"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  stats:
+    image: ghcr.io/blockscout/stats:${STATS_DOCKER_TAG:-latest}
+    pull_policy: always
+    platform: linux/amd64
+    restart: always
+    container_name: 'stats'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ../envs/common-stats.env
+    environment:
+      - STATS__DB_URL=${STATS__DB_URL:-postgres://stats:n0uejXPl61ci6ldCuE2gQU5Y@stats-db:5432/stats}
+      - STATS__BLOCKSCOUT_DB_URL=${STATS__BLOCKSCOUT_DB_URL:-postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@db:5432/blockscout}
+      - STATS__CREATE_DATABASE=${STATS__CREATE_DATABASE:-true}
+      - STATS__RUN_MIGRATIONS=${STATS__RUN_MIGRATIONS:-true}
