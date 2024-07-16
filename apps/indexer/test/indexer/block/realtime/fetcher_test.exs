@@ -97,6 +97,11 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       # the TokenInstance fetcher is called. However, for simplicity, we disable
       # it in this test.
       Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor, disabled?: true)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor, disabled?: false)
+      end)
+
       celo_token_address_hash = Factory.address_hash()
 
       Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
@@ -598,6 +603,11 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       # the TokenInstance fetcher is called. However, for simplicity, we disable
       # it in this test.
       Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor, disabled?: true)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor, disabled?: false)
+      end)
+
       celo_token_address_hash = Factory.address_hash()
 
       Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
