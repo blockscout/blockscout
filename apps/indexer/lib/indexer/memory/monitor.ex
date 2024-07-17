@@ -221,7 +221,9 @@ defmodule Indexer.Memory.Monitor do
   end
 
   defp on_demand_fetchers do
-    Enum.flat_map([Indexer.Application, Indexer.Supervisor, Explorer.Supervisor], fn supervisor ->
+    [Indexer.Application, Indexer.Supervisor, Explorer.Supervisor]
+    |> Enum.reject(&is_nil(Process.whereis(&1)))
+    |> Enum.flat_map(fn supervisor ->
       supervisor
       |> Supervisor.which_children()
       |> Enum.filter(fn {name, _, _, _} -> is_atom(name) and String.contains?(to_string(name), "OnDemand") end)
