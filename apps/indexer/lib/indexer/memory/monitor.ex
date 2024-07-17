@@ -208,7 +208,7 @@ defmodule Indexer.Memory.Monitor do
   @megabytes_divisor 2 ** 20
   defp set_metrics(%__MODULE__{shrinkable_set: shrinkable_set}) do
     total_memory =
-      Enum.reduce(shrinkable_set ++ on_demand_fetchers(), 0, fn pid, acc ->
+      Enum.reduce(Enum.to_list(shrinkable_set) ++ on_demand_fetchers(), 0, fn pid, acc ->
         memory = memory(pid) / @megabytes_divisor
         name = name(pid)
 
