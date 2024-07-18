@@ -285,8 +285,8 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     alter_address(address, address.hash, names, field_to_put_info)
   end
 
-  defp alter_address(_, nil, _names, _field) do
-    nil
+  defp alter_address(address, nil, _names, _field) do
+    address
   end
 
   defp alter_address(%NotLoaded{}, address_hash, names, field) do
