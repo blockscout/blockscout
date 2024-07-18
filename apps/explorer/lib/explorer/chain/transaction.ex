@@ -327,7 +327,7 @@ defmodule Explorer.Chain.Transaction do
                                 :suave ->
                                   ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
 
-                               :arbitrum ->
+                                :arbitrum ->
                                   ~w(gas_used_for_l1)a
 
                                 :celo ->

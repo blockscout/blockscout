@@ -176,7 +176,11 @@ defmodule Indexer.Block.Fetcher do
              do: DepositExecutes.parse(logs),
              else: []
            ),
-         scroll_l1_fee_params = ScrollL1FeeParams.parse(logs),
+         scroll_l1_fee_params =
+           if(callback_module == Indexer.Block.Realtime.Fetcher,
+             do: ScrollL1FeeParams.parse(logs),
+             else: []
+           ),
          shibarium_bridge_operations =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
              do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
