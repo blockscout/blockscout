@@ -116,6 +116,8 @@ defmodule BlockScoutWeb.Chain do
 
   def next_page_params([], _list, _params, _), do: nil
 
+  def next_page_params(_next_page, [], _params, _), do: nil
+
   def next_page_params(_, list, params, paging_function) do
     paging_params = paging_function.(List.last(list))
 
