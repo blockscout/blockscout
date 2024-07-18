@@ -394,7 +394,7 @@ defmodule EthereumJSONRPC.Geth.Call do
     }
     |> put_if_present(params, [
       {"error", :error},
-      {"createdContractAddressHash", :created_contract_address_hash},
+      {"createdContractAddressHash", :created_contract_address_hash, %{validation: :address_hash}},
       {"createdContractCode", :created_contract_code}
     ])
   end
