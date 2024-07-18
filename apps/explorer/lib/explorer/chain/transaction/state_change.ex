@@ -45,27 +45,9 @@ defmodule Explorer.Chain.Transaction.StateChange do
   def update_coin_balances_from_tx(coin_balances, tx, block) do
     coin_balances =
       coin_balances
-      |> (&if(Map.has_key?(coin_balances, tx.from_address_hash),
-            do:
-              Map.update(&1, tx.from_address_hash, @zero_wei, fn {address, balance} ->
-                {address, Wei.sub(balance, from_loss(tx))}
-              end),
-            else: &1
-          )).()
-      |> (&if(tx.to_address_hash && Map.has_key?(coin_balances, tx.to_address_hash),
-            do:
-              Map.update(&1, tx.to_address_hash, @zero_wei, fn {address, balance} ->
-                {address, Wei.sum(balance, to_profit(tx))}
-              end),
-            else: &1
-          )).()
-      |> (&if(Map.has_key?(coin_balances, block.miner_hash),
-            do:
-              Map.update(&1, block.miner_hash, @zero_wei, fn {address, balance} ->
-                {address, Wei.sum(balance, miner_profit(tx, block))}
-              end),
-            else: &1
-          )).()
+      |> update_balance(tx.from_address_hash, &Wei.sub(&1, from_loss(tx)))
+      |> update_balance(tx.to_address_hash, &Wei.sum(&1, to_profit(tx)))
+      |> update_balance(block.miner_hash, &Wei.sum(&1, miner_profit(tx, block)))
 
     if error?(tx) do
       coin_balances
@@ -78,20 +60,8 @@ defmodule Explorer.Chain.Transaction.StateChange do
 
   defp update_coin_balances_from_internal_tx(internal_tx, coin_balances) do
     coin_balances
-    |> (&if(Map.has_key?(coin_balances, internal_tx.from_address_hash),
-          do:
-            Map.update(&1, internal_tx.from_address_hash, @zero_wei, fn {address, balance} ->
-              {address, Wei.sub(balance, from_loss(internal_tx))}
-            end),
-          else: &1
-        )).()
-    |> (&if(internal_tx.to_address_hash && Map.has_key?(coin_balances, internal_tx.to_address_hash),
-          do:
-            Map.update(&1, internal_tx.to_address_hash, @zero_wei, fn {address, balance} ->
-              {address, Wei.sum(balance, to_profit(internal_tx))}
-            end),
-          else: &1
-        )).()
+    |> update_balance(internal_tx.from_address_hash, &Wei.sub(&1, from_loss(internal_tx)))
+    |> update_balance(internal_tx.to_address_hash, &Wei.sum(&1, to_profit(internal_tx)))
   end
 
   def token_balances_before(balances_before, tx, block_txs) do
@@ -294,6 +264,19 @@ defmodule Explorer.Chain.Transaction.StateChange do
         balance_diff: diff,
         miner?: miner?
       }
+    end
+  end
+
+  defp update_balance(coin_balances, address_hash, _update_function) when is_nil(address_hash),
+    do: coin_balances
+
+  defp update_balance(coin_balances, address_hash, update_function) do
+    if Map.has_key?(coin_balances, address_hash) do
+      Map.update(coin_balances, address_hash, @zero_wei, fn {address, balance} ->
+        {address, update_function.(balance)}
+      end)
+    else
+      coin_balances
     end
   end
 
