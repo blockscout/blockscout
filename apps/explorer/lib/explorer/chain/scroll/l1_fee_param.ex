@@ -3,6 +3,8 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
 
   use Explorer.Schema
 
+  import Explorer.Chain, only: [select_repo: 1]
+
   @required_attrs ~w(block_number tx_index name value)a
 
   @typedoc """
@@ -15,7 +17,7 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
   typed_schema "scroll_l1_fee_params" do
     field(:block_number, :integer, primary_key: true)
     field(:tx_index, :integer, primary_key: true)
-    field(:name, Ecto.Enum, values: [:overhead, :scalar])
+    field(:name, Ecto.Enum, values: [:overhead, :scalar], primary_key: true)
     field(:value, :integer)
 
     timestamps()
@@ -26,5 +28,20 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> unique_constraint([:block_number, :tx_index])
+  end
+
+  def get_for_transaction(name, transaction, options \\ []) when name in [:overhead, :scalar] do
+    query =
+      from(p in __MODULE__,
+        select: p.value,
+        where:
+          p.name == ^name and
+            (p.block_number < ^transaction.block_number or
+               (p.block_number == ^transaction.block_number and p.tx_index < ^transaction.index)),
+        order_by: [desc: p.block_number, desc: p.tx_index],
+        limit: 1
+      )
+
+    select_repo(options).one(query) || 0
   end
 end

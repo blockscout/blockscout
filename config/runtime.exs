@@ -1086,6 +1086,10 @@ config :indexer, Indexer.Fetcher.Filecoin.AddressInfo.Supervisor,
 config :indexer, Indexer.Fetcher.Filecoin.AddressInfo,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_FILECOIN_ADDRESS_INFO_CONCURRENCY", 1)
 
+config :indexer, Indexer.Fetcher.Scroll.L1FeeParam, gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
+
+config :indexer, Indexer.Fetcher.Scroll.L1FeeParam.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
