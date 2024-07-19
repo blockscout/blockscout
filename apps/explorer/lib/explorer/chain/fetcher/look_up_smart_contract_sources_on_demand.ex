@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   end
 
   def trigger_fetch(address, %SmartContract{partially_verified: true}) do
-    GenServer.cast(__MODULE__, {:fetch, address})
+    GenServer.cast(__MODULE__, {:check_eligibility, address})
   end
 
   def trigger_fetch(_address, %SmartContract{}) do
@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   end
 
   def trigger_fetch(address, _) do
-    GenServer.cast(__MODULE__, {:fetch, address})
+    GenServer.cast(__MODULE__, {:check_eligibility, address})
   end
 
   defp fetch_sources(address, only_full?) do
@@ -68,8 +68,15 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
      %{
        current_concurrency: 0,
        max_concurrency:
-         Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)[:max_concurrency]
+         Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)[:max_concurrency],
+       need_to_check_and_partially_verified: nil,
+       eligibility_for_sources_fetching: false
      }}
+  end
+
+  @impl true
+  def handle_cast({:check_eligibility, address}, state) do
+    check_eligibility_for_sources_fetching(address, state)
   end
 
   @impl true
@@ -81,8 +88,12 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   @impl true
   def handle_cast({:fetch, _address} = request, %{current_concurrency: _counter} = state) do
     Process.send_after(self(), request, @cooldown_timeout)
-
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:check_eligibility, address}, state) do
+    check_eligibility_for_sources_fetching(address, state)
   end
 
   @impl true
@@ -146,14 +157,18 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   defp check_match_type("PARTIAL", true), do: :full_match_required
   defp check_match_type(_, _), do: :ok
 
-  defp handle_fetch_request(address, %{current_concurrency: counter} = state) do
-    need_to_check_and_partially_verified? =
-      check_interval(to_lowercase_string(address.hash)) && partially_verified?(address)
-
+  defp handle_fetch_request(
+         address,
+         %{
+           current_concurrency: counter,
+           need_to_check_and_partially_verified: need_to_check_and_partially_verified,
+           eligibility_for_sources_fetching: eligibility_for_sources_fetching
+         } = state
+       ) do
     diff =
-      if is_nil(need_to_check_and_partially_verified?) || need_to_check_and_partially_verified? do
+      if eligibility_for_sources_fetching do
         Task.Supervisor.async_nolink(Explorer.GenesisDataTaskSupervisor, fn ->
-          fetch_sources(address, need_to_check_and_partially_verified?)
+          fetch_sources(address, need_to_check_and_partially_verified)
         end)
 
         :ets.insert(@cache_name, {to_lowercase_string(address.hash), DateTime.utc_now()})
@@ -164,6 +179,32 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
       end
 
     {:noreply, %{state | current_concurrency: counter + diff}}
+  end
+
+  defp eligible_for_sources_fetching?(need_to_check_and_partially_verified?) do
+    is_nil(need_to_check_and_partially_verified?) || need_to_check_and_partially_verified?
+  end
+
+  @spec stale_and_partially_verified?(Address.Hash) :: boolean() | nil
+  defp stale_and_partially_verified?(address) do
+    check_interval(to_lowercase_string(address.hash)) && partially_verified?(address)
+  end
+
+  defp check_eligibility_for_sources_fetching(address, state) do
+    need_to_check_and_partially_verified? = stale_and_partially_verified?(address)
+
+    eligibility_for_sources_fetching = eligible_for_sources_fetching?(need_to_check_and_partially_verified?)
+
+    if eligibility_for_sources_fetching do
+      GenServer.cast(__MODULE__, {:fetch, address})
+    end
+
+    {:noreply,
+     %{
+       state
+       | need_to_check_and_partially_verified: need_to_check_and_partially_verified?,
+         eligibility_for_sources_fetching: eligibility_for_sources_fetching
+     }}
   end
 
   defp to_lowercase_string(hash), do: hash |> to_string() |> String.downcase()
