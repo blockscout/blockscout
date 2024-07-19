@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.ScrollView do
   use BlockScoutWeb, :view
 
+  alias BlockScoutWeb.API.V2.TransactionView
   alias Explorer.Chain.Scroll.L1FeeParam
   alias Explorer.Chain.Transaction
 
@@ -14,10 +15,16 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
     l1_fee_scalar = L1FeeParam.get_for_transaction(:scalar, transaction, @api_true)
     l1_fee_overhead = L1FeeParam.get_for_transaction(:overhead, transaction, @api_true)
 
+    l2_fee =
+      transaction
+      |> Transaction.l2_fee(:wei)
+      |> TransactionView.format_fee()
+
     out_json
     |> add_optional_transaction_field(transaction, :l1_fee)
     |> Map.put("l1_fee_scalar", l1_fee_scalar)
     |> Map.put("l1_fee_overhead", l1_fee_overhead)
+    |> Map.put("l2_fee", l2_fee)
   end
 
   defp add_optional_transaction_field(out_json, transaction, field) do
