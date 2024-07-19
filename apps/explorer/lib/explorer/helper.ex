@@ -8,6 +8,7 @@ defmodule Explorer.Helper do
   alias Explorer.Chain.Data
 
   import Ecto.Query, only: [where: 3]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   @max_safe_integer round(:math.pow(2, 63)) - 1
 
@@ -180,5 +181,11 @@ defmodule Explorer.Helper do
       a > b -> :gt
       true -> :eq
     end
+  end
+
+  def truncate_address_hash(nil), do: burn_address_hash_string()
+
+  def truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
+    "0x#{truncated_hash}"
   end
 end

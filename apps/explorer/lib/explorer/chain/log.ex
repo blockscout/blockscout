@@ -7,8 +7,9 @@ defmodule Explorer.Chain.Log do
 
   alias ABI.{Event, FunctionSelector}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Log, Transaction}
+  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Repo
   alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
@@ -352,5 +353,23 @@ defmodule Explorer.Chain.Log do
     |> limit(^min(user_op["user_logs_count"], limit))
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
+  end
+
+  def stream_unfetched_weth_token_transfers(reducer) do
+    env = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
+
+    __MODULE__
+    |> where([log], log.address_hash in ^env[:whitelisted_weth_contracts])
+    |> where(
+      [log],
+      log.first_topic == ^TokenTransfer.weth_deposit_signature() or
+        log.first_topic == ^TokenTransfer.weth_withdrawal_signature()
+    )
+    |> join(:left, [log], tt in TokenTransfer,
+      on: log.block_hash == tt.block_hash and log.transaction_hash == tt.transaction_hash and log.index == tt.log_index
+    )
+    |> where([log, tt], is_nil(tt.transaction_hash))
+    |> select([log], log)
+    |> Repo.stream_each(reducer)
   end
 end

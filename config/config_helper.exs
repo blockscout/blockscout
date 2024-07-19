@@ -263,6 +263,7 @@ defmodule ConfigHelper do
   @spec parse_list_env_var(String.t(), String.t() | nil) :: list()
   def parse_list_env_var(env_var, default_value \\ nil) do
     addresses_var = safe_get_env(env_var, default_value)
+    env_var |> dbg()
 
     if addresses_var !== "" do
       addresses_list = (addresses_var && String.split(addresses_var, ",")) || []
@@ -277,6 +278,7 @@ defmodule ConfigHelper do
     else
       []
     end
+    |> dbg()
   end
 
   @supported_chain_types [
