@@ -44,4 +44,23 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
 
     select_repo(options).one(query) || 0
   end
+
+  def l1_gas_used(transaction, l1_fee_overhead) do
+    if transaction.block_number > Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll.L1FeeParam][:curie_upgrade_block] do
+      0
+    else
+      total =
+        transaction.input.bytes
+        |> :binary.bin_to_list()
+        |> Enum.reduce(0, fn byte, acc ->
+          if byte == 0 do
+            acc + 4
+          else
+            acc + 16
+          end
+        end)
+
+      total + l1_fee_overhead + 4 * 16
+    end
+  end
 end
