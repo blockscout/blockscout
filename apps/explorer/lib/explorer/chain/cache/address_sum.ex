@@ -28,7 +28,7 @@ defmodule Explorer.Chain.Cache.AddressSum do
     # If this gets called it means an async task was requested, but none exists
     # so a new one needs to be launched
     {:ok, task} =
-      Task.start(fn ->
+      Task.start_link(fn ->
         try do
           result = Etherscan.fetch_sum_coin_total_supply()
 

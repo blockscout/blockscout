@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Cache.TransactionTest do
 
     _result = Transaction.get_count()
 
-    Process.sleep(2000)
+    Process.sleep(1000)
 
     updated_value = Transaction.get_count()
 
