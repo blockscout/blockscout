@@ -141,6 +141,7 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers),
         configure(Explorer.Migrator.TransactionBlockConsensus),
         configure(Explorer.Migrator.TokenTransferBlockConsensus),
+        configure(Explorer.Migrator.RestoreOmittedWETHTransfers),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability)
       ]
       |> List.flatten()

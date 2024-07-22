@@ -3776,8 +3776,8 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec token_from_address_hash_exists?(Hash.Address.t(), [api?]) :: boolean()
-  def token_from_address_hash_exists?(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash, options) do
+  @spec token_from_address_hash_exists?(Hash.Address.t() | String.t(), [api?]) :: boolean()
+  def token_from_address_hash_exists?(hash, options) do
     query =
       from(
         t in Token,

@@ -1,12 +1,14 @@
 defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
   @moduledoc """
-
+  Inserts missed WETH token transfers
   """
 
   use GenServer, restart: :transient
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Log, TokenTransfer}
   alias Explorer.Helper
+  alias Explorer.Migrator.MigrationStatus
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
@@ -14,6 +16,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
 
   @enqueue_busy_waiting_timeout 500
   @migration_timeout 250
+  @migration_name "restore_omitted_weth_transfers"
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -21,19 +24,32 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
 
   @impl true
   def init(_) do
-    GenServer.cast(__MODULE__, :migrate)
-    {:ok, %{queue: [], current_concurrency: 0}, {:continue, :ok}}
+    {:ok, %{}, {:continue, :ok}}
   end
 
-  # check here if all tokens which logs we are looking for exists
   @impl true
   def handle_continue(:ok, state) do
-    Log.stream_unfetched_weth_token_transfers(&enqueue_if_queue_is_not_full/1)
+    case MigrationStatus.get_status(@migration_name) do
+      "completed" ->
+        {:stop, :normal, state}
+
+      _ ->
+        MigrationStatus.set_status(@migration_name, "started")
+        {:noreply, %{}, {:continue, :ok}}
+    end
+  end
+
+  @impl true
+  def handle_continue(:ok, _state) do
+    %{ref: ref} =
+      Task.async(fn ->
+        Log.stream_unfetched_weth_token_transfers(&enqueue_if_queue_is_not_full/1)
+      end)
 
     to_insert =
       Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:whitelisted_weth_contracts]
-      |> Enum.each(fn contract_address_hash_string ->
-        if !Chain.token_from_address_hash_exists?(contract_address_hash_string) do
+      |> Enum.map(fn contract_address_hash_string ->
+        if !Chain.token_from_address_hash_exists?(contract_address_hash_string, []) do
           %{
             contract_address_hash: contract_address_hash_string,
             type: "ERC-20"
@@ -46,9 +62,9 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
       Chain.import(%{tokens: %{params: to_insert}})
     end
 
-    # {:stop, :normal, state}
+    Process.send_after(self(), :migrate, @migration_timeout)
 
-    {:noreply, state}
+    {:noreply, %{queue: [], current_concurrency: 0, stream_ref: ref, stream_is_over: false}}
   end
 
   defp enqueue_if_queue_is_not_full(log) do
@@ -71,7 +87,19 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
     {:noreply, %{state | queue: [log | queue]}}
   end
 
-  def handle_cast(:migrate, %{queue: queue, current_concurrency: current_concurrency} = state) do
+  @impl true
+  def handle_info(:migrate, %{queue: [], stream_is_over: true, current_concurrency: current_concurrency} = state) do
+    if current_concurrency > 0 do
+      {:noreply, state}
+    else
+      MigrationStatus.set_status(@migration_name, "completed")
+      {:stop, :normal, state}
+    end
+  end
+
+  # fetch token balances
+  @impl true
+  def handle_info(:migrate, %{queue: queue, current_concurrency: current_concurrency} = state) do
     if Enum.count(queue) > 0 and current_concurrency < concurrency() do
       to_take = batch_size() * (concurrency() - current_concurrency)
       {to_process, remainder} = Enum.split(queue, to_take)
@@ -85,21 +113,39 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
           end)
         end)
 
+      if Enum.empty?(remainder) do
+        Process.send_after(self(), :migrate, migration_timeout())
+      else
+        Process.send(self(), :migrate, [])
+      end
+
       {:noreply, %{state | queue: remainder, current_concurrency: current_concurrency + Enum.count(spawned_tasks)}}
     else
-      Process.send_after(self(), :migrate, @migration_timeout)
+      Process.send_after(self(), :migrate, migration_timeout())
       {:noreply, state}
     end
   end
 
   @impl true
+  def handle_info({ref, _answer}, %{stream_ref: ref} = state) do
+    {:noreply, %{state | stream_is_over: true}}
+  end
+
+  @impl true
   def handle_info({ref, _answer}, %{current_concurrency: counter} = state) do
     Process.demonitor(ref, [:flush])
+    Process.send(self(), :migrate, [])
     {:noreply, %{state | current_concurrency: counter - 1}}
   end
 
   @impl true
+  def handle_info({:DOWN, ref, :process, _pid, _reason}, %{stream_ref: ref} = state) do
+    {:noreply, %{state | stream_is_over: true}}
+  end
+
+  @impl true
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, %{current_concurrency: counter} = state) do
+    Process.send(self(), :migrate, [])
     {:noreply, %{state | current_concurrency: counter - 1}}
   end
 
@@ -113,9 +159,9 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
              [amount] <- Helper.decode_data(data, [{:uint, 256}]) do
           {from_address_hash, to_address_hash} =
             if log.first_topic == TokenTransfer.weth_deposit_signature() do
-              {burn_address_hash_string(), Helper.truncate_address_hash(second_topic)}
+              {burn_address_hash_string(), Helper.truncate_address_hash(to_string(second_topic))}
             else
-              {Helper.truncate_address_hash(second_topic), burn_address_hash_string()}
+              {Helper.truncate_address_hash(to_string(second_topic)), burn_address_hash_string()}
             end
 
           token_transfer = %{
@@ -151,6 +197,8 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
   def concurrency, do: Application.get_env(:explorer, __MODULE__)[:concurrency]
 
   def batch_size, do: Application.get_env(:explorer, __MODULE__)[:batch_size]
+
+  def migration_timeout, do: Application.get_env(:explorer, __MODULE__)[:timeout]
 
   def max_queue_size, do: concurrency() * batch_size() * 2
 end
