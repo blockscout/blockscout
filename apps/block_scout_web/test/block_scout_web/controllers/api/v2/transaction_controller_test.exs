@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account.WatchlistAddress
-  alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Repo
 
   setup do
@@ -964,6 +964,142 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 3
+    end
+
+    test "does not include internal transaction with index 0", %{conn: conn} do
+      block_before = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      internal_transaction_from = insert(:address)
+      internal_transaction_to = insert(:address)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        value: %Wei{value: Decimal.new(7)},
+        from_address_hash: internal_transaction_from.hash,
+        from_address: internal_transaction_from,
+        to_address_hash: internal_transaction_to.hash,
+        to_address: internal_transaction_to
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number
+      )
+
+      insert(:address_coin_balance,
+        address: internal_transaction_from,
+        address_hash: internal_transaction_from.hash,
+        block_number: block_before.number
+      )
+
+      insert(:address_coin_balance,
+        address: internal_transaction_to,
+        address_hash: internal_transaction_to.hash,
+        block_number: block_before.number
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 3
+    end
+
+    test "return entries from internal transaction", %{conn: conn} do
+      block_before = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      internal_transaction_from = insert(:address)
+      internal_transaction_to = insert(:address)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        value: %Wei{value: Decimal.new(7)},
+        from_address_hash: internal_transaction_from.hash,
+        from_address: internal_transaction_from,
+        to_address_hash: internal_transaction_to.hash,
+        to_address: internal_transaction_to
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        block_hash: transaction.block_hash,
+        block_index: 1,
+        value: %Wei{value: Decimal.new(7)},
+        from_address_hash: internal_transaction_from.hash,
+        from_address: internal_transaction_from,
+        to_address_hash: internal_transaction_to.hash,
+        to_address: internal_transaction_to
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number
+      )
+
+      insert(:address_coin_balance,
+        address: internal_transaction_from,
+        address_hash: internal_transaction_from.hash,
+        block_number: block_before.number
+      )
+
+      insert(:address_coin_balance,
+        address: internal_transaction_to,
+        address_hash: internal_transaction_to.hash,
+        block_number: block_before.number
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 5
     end
   end
 
