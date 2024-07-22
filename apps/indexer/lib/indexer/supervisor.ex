@@ -74,7 +74,6 @@ defmodule Indexer.Supervisor do
     Supervisor.start_link(__MODULE__, arguments, Keyword.put_new(gen_server_options, :name, __MODULE__))
   end
 
-  #TODO: Add internal transactions and pending transactions supervisors
   @impl Supervisor
   def init(%{memory_monitor: memory_monitor}) do
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
@@ -111,6 +110,8 @@ defmodule Indexer.Supervisor do
 
     basic_fetchers =
       [
+        # Root fetchers
+        {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         # Async catchup fetchers
         {UncleBlock.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor]]},
         {BlockReward.Supervisor,
