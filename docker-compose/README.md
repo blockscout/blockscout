@@ -10,6 +10,8 @@ Runs Blockscout locally in Docker containers with [docker-compose](https://githu
 
 ## Building Docker containers from source
 
+**Note**: in all below examples, you can use `docker compose` instead of `docker-compose`, if compose v2 plugin is installed in Docker.
+
 ```bash
 cd ./docker-compose
 docker-compose up --build
@@ -37,8 +39,6 @@ and 5 containers for microservices (written in Rust):
 ## Configs for different Ethereum clients
 
 The repo contains built-in configs for different JSON RPC clients without need to build the image.
-
-**Note**: in all below examples, you can use `docker compose` instead of `docker-compose`, if compose v2 plugin is installed in Docker.
 
 | __JSON RPC Client__    | __Docker compose launch command__ |
 | -------- | ------- |

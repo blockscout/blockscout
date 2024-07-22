@@ -290,7 +290,7 @@ defmodule Explorer.Chain.OrderedCache do
         # Different updates cannot interfere with the removed element because
         # if this was scheduled for removal it means it is too old, so following
         # updates cannot insert it in the future.
-        Task.start(fn ->
+        Task.start_link(fn ->
           Process.sleep(100)
 
           if is_list(key) do

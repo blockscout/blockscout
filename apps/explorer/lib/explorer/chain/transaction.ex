@@ -1857,4 +1857,22 @@ defmodule Explorer.Chain.Transaction do
         )
     end
   end
+
+  @doc """
+    Returns the number of transactions included into the blocks of the specified block range.
+    Only consensus blocks are taken into account.
+  """
+  @spec tx_count_for_block_range(Range.t()) :: non_neg_integer()
+  def tx_count_for_block_range(from..to) do
+    Repo.replica().aggregate(
+      from(
+        t in Transaction,
+        inner_join: b in Block,
+        on: b.number == t.block_number and b.consensus == true,
+        where: t.block_number >= ^from and t.block_number <= ^to
+      ),
+      :count,
+      timeout: :infinity
+    )
+  end
 end

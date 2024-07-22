@@ -802,29 +802,22 @@ config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, enabled: C
 
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
-  optimism_l1_portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT")
+  optimism_l1_system_config: System.get_env("INDEXER_OPTIMISM_L1_SYSTEM_CONFIG_CONTRACT")
 
-config :indexer, Indexer.Fetcher.Optimism.Deposit,
-  start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_DEPOSITS_START_BLOCK"),
-  batch_size: System.get_env("INDEXER_OPTIMISM_L1_DEPOSITS_BATCH_SIZE")
+config :indexer, Indexer.Fetcher.Optimism.Deposit, batch_size: System.get_env("INDEXER_OPTIMISM_L1_DEPOSITS_BATCH_SIZE")
 
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot,
-  start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_OUTPUT_ROOTS_START_BLOCK"),
   output_oracle: System.get_env("INDEXER_OPTIMISM_L1_OUTPUT_ORACLE_CONTRACT")
 
 config :indexer, Indexer.Fetcher.Optimism.Withdrawal,
-  start_block_l2: System.get_env("INDEXER_OPTIMISM_L2_WITHDRAWALS_START_BLOCK"),
-  message_passer: System.get_env("INDEXER_OPTIMISM_L2_MESSAGE_PASSER_CONTRACT")
-
-config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent,
-  start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_WITHDRAWALS_START_BLOCK")
+  start_block_l2: System.get_env("INDEXER_OPTIMISM_L2_WITHDRAWALS_START_BLOCK", "1"),
+  message_passer:
+    System.get_env("INDEXER_OPTIMISM_L2_MESSAGE_PASSER_CONTRACT", "0x4200000000000000000000000000000000000016")
 
 config :indexer, Indexer.Fetcher.Optimism.TxnBatch,
-  start_block_l1: System.get_env("INDEXER_OPTIMISM_L1_BATCH_START_BLOCK"),
-  batch_inbox: System.get_env("INDEXER_OPTIMISM_L1_BATCH_INBOX"),
-  batch_submitter: System.get_env("INDEXER_OPTIMISM_L1_BATCH_SUBMITTER"),
   blocks_chunk_size: System.get_env("INDEXER_OPTIMISM_L1_BATCH_BLOCKS_CHUNK_SIZE", "4"),
-  blobs_api_url: System.get_env("INDEXER_OPTIMISM_L1_BATCH_BLOCKSCOUT_BLOBS_API_URL"),
+  eip4844_blobs_api_url: System.get_env("INDEXER_OPTIMISM_L1_BATCH_BLOCKSCOUT_BLOBS_API_URL", ""),
+  celestia_blobs_api_url: System.get_env("INDEXER_OPTIMISM_L1_BATCH_CELESTIA_BLOBS_API_URL", ""),
   genesis_block_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_BATCH_GENESIS_BLOCK_NUMBER")
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,

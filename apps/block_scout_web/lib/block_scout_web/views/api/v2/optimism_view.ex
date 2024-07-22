@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
-  alias Explorer.Chain.Optimism.Withdrawal
+  alias Explorer.Chain.Optimism.{FrameSequenceBlob, Withdrawal}
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
@@ -48,6 +48,42 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       items: items,
       next_page_params: next_page_params
     }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/batches` endpoint.
+  """
+  def render("optimism_batches.json", %{
+        batches: batches,
+        next_page_params: next_page_params
+      }) do
+    items =
+      batches
+      |> Enum.map(fn batch ->
+        from..to = batch.l2_block_range
+
+        %{
+          "internal_id" => batch.id,
+          "l1_timestamp" => batch.l1_timestamp,
+          "l2_block_start" => from,
+          "l2_block_end" => to,
+          "tx_count" => batch.tx_count,
+          "l1_tx_hashes" => batch.l1_transaction_hashes
+        }
+      end)
+
+    %{
+      items: items,
+      next_page_params: next_page_params
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment`
+    and `/api/v2/optimism/batches/:internal_id` endpoints.
+  """
+  def render("optimism_batch.json", %{batch: batch}) do
+    batch
   end
 
   @doc """
@@ -210,10 +246,65 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   @doc """
-    Extends the json output with a sub-map containing information related
-    zksync: batch number and associated L1 transactions and their timestmaps.
+    Extends the json output for a block using Optimism frame sequence (bound
+    with the provided L2 block) - adds info about L1 batch to the output.
+
+    ## Parameters
+    - `out_json`: A map defining output json which will be extended.
+    - `block`: block structure containing frame sequence info related to the block.
+
+    ## Returns
+    An extended map containing `optimism` item with the Optimism batch info
+    (L1 transaction hashes, timestamp, related blobs).
   """
-  @spec extend_transaction_json_response(map(), map()) :: map()
+  @spec extend_block_json_response(map(), %{
+          :__struct__ => Explorer.Chain.Block,
+          :op_frame_sequence => any(),
+          optional(any()) => any()
+        }) :: map()
+  def extend_block_json_response(out_json, %Block{} = block) do
+    frame_sequence = Map.get(block, :op_frame_sequence)
+
+    if is_nil(frame_sequence) do
+      out_json
+    else
+      {batch_data_container, blobs} = FrameSequenceBlob.list(frame_sequence.id, api?: true)
+
+      batch_info =
+        %{
+          "internal_id" => frame_sequence.id,
+          "l1_timestamp" => frame_sequence.l1_timestamp,
+          "l1_tx_hashes" => frame_sequence.l1_transaction_hashes,
+          "batch_data_container" => batch_data_container
+        }
+        |> extend_batch_info_by_blobs(blobs, "blobs")
+
+      Map.put(out_json, "optimism", batch_info)
+    end
+  end
+
+  defp extend_batch_info_by_blobs(batch_info, blobs, field_name) do
+    if Enum.empty?(blobs) do
+      batch_info
+    else
+      Map.put(batch_info, field_name, blobs)
+    end
+  end
+
+  @doc """
+    Extends the json output for a transaction adding Optimism-related info to the output.
+
+    ## Parameters
+    - `out_json`: A map defining output json which will be extended.
+    - `transaction`: transaction structure containing extra Optimism-related info.
+
+    ## Returns
+    An extended map containing `l1_*` and `op_withdrawals` items related to Optimism.
+  """
+  @spec extend_transaction_json_response(map(), %{
+          :__struct__ => Explorer.Chain.Transaction,
+          optional(any()) => any()
+        }) :: map()
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     out_json
     |> add_optional_transaction_field(transaction, :l1_fee)

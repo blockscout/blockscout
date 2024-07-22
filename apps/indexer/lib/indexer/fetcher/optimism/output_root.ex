@@ -53,7 +53,7 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
       {:stop, :normal, %{}}
     else
       env = Application.get_all_env(:indexer)[__MODULE__]
-      Optimism.init_continue(env, env[:output_oracle], __MODULE__)
+      Optimism.init_continue(env[:output_oracle], __MODULE__)
     end
   end
 

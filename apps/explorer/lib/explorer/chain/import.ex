@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Import do
   require Logger
 
   @stages [
-    Import.Stage.AddressesBlocksCoinBalances,
+    Import.Stage.BlockRelated,
     Import.Stage.BlockReferencing,
     Import.Stage.BlockFollowing,
     Import.Stage.BlockPending

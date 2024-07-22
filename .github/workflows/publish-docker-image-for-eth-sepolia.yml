@@ -36,7 +36,6 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            CHAIN_TYPE=ethereum
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false
@@ -46,6 +45,7 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=ethereum
 
       - name: Build and push Docker image (indexer)
         uses: docker/build-push-action@v5
@@ -59,7 +59,6 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            CHAIN_TYPE=ethereum
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_WEBAPP=true
             DISABLE_API=true
@@ -68,6 +67,7 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=ethereum
 
       - name: Build and push Docker image (API)
         uses: docker/build-push-action@v5
@@ -81,7 +81,6 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            CHAIN_TYPE=ethereum
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_WEBAPP=true
             DISABLE_INDEXER=true
@@ -90,3 +89,4 @@ jobs:
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=ethereum

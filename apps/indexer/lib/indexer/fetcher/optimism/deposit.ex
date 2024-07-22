@@ -66,18 +66,16 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
     Logger.metadata(fetcher: @fetcher_name)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
-    optimism_env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
-    optimism_portal = optimism_env[:optimism_l1_portal]
+    optimism_env = Application.get_all_env(:indexer)[Optimism]
+    system_config = optimism_env[:optimism_l1_system_config]
     optimism_l1_rpc = optimism_env[:optimism_l1_rpc]
 
-    with {:start_block_l1_undefined, false} <- {:start_block_l1_undefined, is_nil(env[:start_block_l1])},
-         {:optimism_portal_valid, true} <- {:optimism_portal_valid, Helper.address_correct?(optimism_portal)},
+    with {:system_config_valid, true} <- {:system_config_valid, Helper.address_correct?(system_config)},
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         start_block_l1 <- parse_integer(env[:start_block_l1]),
-         false <- is_nil(start_block_l1),
+         json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
+         {optimism_portal, start_block_l1} <- Optimism.read_system_config(system_config, json_rpc_named_arguments),
          true <- start_block_l1 > 0,
          {last_l1_block_number, last_l1_tx_hash} <- get_last_l1_item(),
-         json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
          {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
          {safe_block, _} = Optimism.get_safe_block(json_rpc_named_arguments),
@@ -102,10 +100,6 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
          batch_size: parse_integer(env[:batch_size]) || @batch_size
        }}
     else
-      {:start_block_l1_undefined, true} ->
-        # the process shouldn't start if the start block is not defined
-        {:stop, :normal, state}
-
       {:start_block_l1_valid, false} ->
         Logger.error("Invalid L1 Start Block value. Please, check the value and op_deposits table.")
         {:stop, :normal, state}
@@ -114,8 +108,8 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
         Logger.error("L1 RPC URL is not defined.")
         {:stop, :normal, state}
 
-      {:optimism_portal_valid, false} ->
-        Logger.error("OptimismPortal contract address is invalid or undefined.")
+      {:system_config_valid, false} ->
+        Logger.error("SystemConfig contract address is invalid or undefined.")
         {:stop, :normal, state}
 
       {:error, error_data} ->
@@ -128,6 +122,10 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check op_deposits table."
         )
 
+        {:stop, :normal, state}
+
+      nil ->
+        Logger.error("Cannot read SystemConfig contract.")
         {:stop, :normal, state}
 
       _ ->
