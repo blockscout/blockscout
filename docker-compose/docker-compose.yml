@@ -41,8 +41,8 @@ services:
     links:
       - db:database
     environment:
-        ETHEREUM_JSONRPC_HTTP_URL: http://bbnrpc.testnet.bharatblockchain.io
-        ETHEREUM_JSONRPC_TRACE_URL: http://bbnrpc.testnet.bharatblockchain.io
+        ETHEREUM_JSONRPC_HTTP_URL: https://bbnrpc.testnet.bharatblockchain.io
+        ETHEREUM_JSONRPC_TRACE_URL: https://bbnrpc.testnet.bharatblockchain.io
         ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
         CHAIN_ID: '1996'
 
