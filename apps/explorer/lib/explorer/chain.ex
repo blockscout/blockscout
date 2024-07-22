@@ -2281,15 +2281,15 @@ defmodule Explorer.Chain do
       iex> insert(:block, number: 0)
       iex> insert(:block, number: 2)
       iex> insert(:block, number: 5)
-      iex> Explorer.Chain.missing_block_number_ranges(5..0)
-      [4..3, 1..1]
+      iex> Explorer.Chain.missing_block_number_ranges(5..0//-1)
+      [4..3//-1, 1..1]
 
   If only non-consensus blocks exist for a number, the number still counts as missing.
 
       iex> insert(:block, number: 0)
       iex> insert(:block, number: 1, consensus: false)
       iex> insert(:block, number: 2)
-      iex> Explorer.Chain.missing_block_number_ranges(2..0)
+      iex> Explorer.Chain.missing_block_number_ranges(2..0//-1)
       [1..1]
 
   if range starts with non-consensus block in the middle of the chain, it returns missing numbers.
