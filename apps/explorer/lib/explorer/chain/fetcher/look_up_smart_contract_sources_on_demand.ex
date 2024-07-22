@@ -72,9 +72,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
      %{
        current_concurrency: 0,
        max_concurrency:
-         Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)[:max_concurrency],
-       need_to_check_and_partially_verified: nil,
-       eligibility_for_sources_fetching: false
+         Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)[:max_concurrency]
      }}
   end
 
@@ -85,16 +83,16 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
 
   @impl true
   def handle_cast(
-        {:fetch, address_hash_string, address_contract_code},
+        {:fetch, address_hash_string, address_contract_code, need_to_check_and_partially_verified?},
         %{current_concurrency: counter, max_concurrency: max_concurrency} = state
       )
       when counter < max_concurrency do
-    handle_fetch_request(address_hash_string, address_contract_code, state)
+    handle_fetch_request(address_hash_string, address_contract_code, need_to_check_and_partially_verified?, state)
   end
 
   @impl true
   def handle_cast(
-        {:fetch, _address_hash_string, _address_contract_code} = request,
+        {:fetch, _address_hash_string, _address_contract_code, _need_to_check_and_partially_verified?} = request,
         %{current_concurrency: _counter} = state
       ) do
     Process.send_after(self(), request, @cooldown_timeout)
@@ -108,15 +106,18 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
 
   @impl true
   def handle_info(
-        {:fetch, address_hash_string, address_contract_code},
+        {:fetch, address_hash_string, address_contract_code, need_to_check_and_partially_verified?},
         %{current_concurrency: counter, max_concurrency: max_concurrency} = state
       )
       when counter < max_concurrency do
-    handle_fetch_request(address_hash_string, address_contract_code, state)
+    handle_fetch_request(address_hash_string, address_contract_code, need_to_check_and_partially_verified?, state)
   end
 
   @impl true
-  def handle_info({:fetch, _address_hash_string, _address_contract_code} = request, state) do
+  def handle_info(
+        {:fetch, _address_hash_string, _address_contract_code, _need_to_check_and_partially_verified?} = request,
+        state
+      ) do
     Process.send_after(self(), request, @cooldown_timeout)
     {:noreply, state}
   end
@@ -173,24 +174,18 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   defp handle_fetch_request(
          address_hash_string,
          address_contract_code,
+         need_to_check_and_partially_verified?,
          %{
-           current_concurrency: counter,
-           need_to_check_and_partially_verified: need_to_check_and_partially_verified,
-           eligibility_for_sources_fetching: eligibility_for_sources_fetching
+           current_concurrency: counter
          } = state
        ) do
-    diff =
-      if eligibility_for_sources_fetching do
-        Task.Supervisor.async_nolink(Explorer.GenesisDataTaskSupervisor, fn ->
-          fetch_sources(address_hash_string, address_contract_code, need_to_check_and_partially_verified)
-        end)
+    Task.Supervisor.async_nolink(Explorer.GenesisDataTaskSupervisor, fn ->
+      fetch_sources(address_hash_string, address_contract_code, need_to_check_and_partially_verified?)
+    end)
 
-        :ets.insert(@cache_name, {to_lowercase_string(address_hash_string), DateTime.utc_now()})
+    :ets.insert(@cache_name, {to_lowercase_string(address_hash_string), DateTime.utc_now()})
 
-        1
-      else
-        0
-      end
+    diff = 1
 
     {:noreply, %{state | current_concurrency: counter + diff}}
   end
@@ -211,15 +206,13 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
     eligibility_for_sources_fetching = eligible_for_sources_fetching?(need_to_check_and_partially_verified?)
 
     if eligibility_for_sources_fetching do
-      GenServer.cast(__MODULE__, {:fetch, address_hash_string, address_contract_code})
+      GenServer.cast(
+        __MODULE__,
+        {:fetch, address_hash_string, address_contract_code, need_to_check_and_partially_verified?}
+      )
     end
 
-    {:noreply,
-     %{
-       state
-       | need_to_check_and_partially_verified: need_to_check_and_partially_verified?,
-         eligibility_for_sources_fetching: eligibility_for_sources_fetching
-     }}
+    {:noreply, state}
   end
 
   defp to_lowercase_string(address_hash_string), do: address_hash_string |> String.downcase()
