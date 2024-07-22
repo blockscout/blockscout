@@ -74,19 +74,30 @@ defmodule Explorer.Chain.AdvancedFilter do
           | token_contract_address_hashes()
           | Chain.paging_options()
           | Chain.api?()
+          | {:timeout, timeout()}
         ]
 
   @spec list(options()) :: [__MODULE__.t()]
   def list(options \\ []) do
     paging_options = Keyword.get(options, :paging_options)
 
+    timeout = Keyword.get(options, :timeout, :timer.seconds(60))
+
+    age = Keyword.get(options, :age)
+
+    block_numbers_age = [
+      from: age[:from] && Chain.timestamp_to_block_number(age[:from], :before, Keyword.get(options, :api?, false)),
+      to: age[:to] && Chain.timestamp_to_block_number(age[:to], :after, Keyword.get(options, :api?, false))
+    ]
+
     tasks =
       options
+      |> Keyword.put(:block_numbers_age, block_numbers_age)
       |> queries(paging_options)
-      |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query) end) end)
+      |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query, timeout: timeout) end) end)
 
     tasks
-    |> Task.yield_many(:timer.seconds(60))
+    |> Task.yield_many(timeout: timeout, on_timeout: :kill_task)
     |> Enum.flat_map(fn {_task, res} ->
       case res do
         {:ok, result} ->
@@ -102,6 +113,12 @@ defmodule Explorer.Chain.AdvancedFilter do
     |> Enum.map(&to_advanced_filter/1)
     |> Enum.sort(&sort_function/2)
     |> take_page_size(paging_options)
+    |> Chain.select_repo(options).preload(
+      token_transfer: [:token],
+      from_address: [:names, :smart_contract, :proxy_implementations],
+      to_address: [:names, :smart_contract, :proxy_implementations],
+      created_contract_address: [:names, :smart_contract, :proxy_implementations]
+    )
   end
 
   defp queries(options, paging_options) do
@@ -144,11 +161,8 @@ defmodule Explorer.Chain.AdvancedFilter do
       type: "coin_transfer",
       input: transaction.input,
       timestamp: transaction.block_timestamp,
-      from_address: transaction.from_address,
       from_address_hash: transaction.from_address_hash,
-      to_address: transaction.to_address,
       to_address_hash: transaction.to_address_hash,
-      created_contract_address: transaction.created_contract_address,
       created_contract_address_hash: transaction.created_contract_address_hash,
       value: transaction.value.value,
       fee: transaction |> Transaction.fee(:wei) |> elem(1),
@@ -163,11 +177,8 @@ defmodule Explorer.Chain.AdvancedFilter do
       type: "coin_transfer",
       input: internal_transaction.input,
       timestamp: internal_transaction.transaction.block_timestamp,
-      from_address: internal_transaction.from_address,
       from_address_hash: internal_transaction.from_address_hash,
-      to_address: internal_transaction.to_address,
       to_address_hash: internal_transaction.to_address_hash,
-      created_contract_address: internal_transaction.created_contract_address,
       created_contract_address_hash: internal_transaction.created_contract_address_hash,
       value: internal_transaction.value.value,
       fee:
@@ -185,11 +196,8 @@ defmodule Explorer.Chain.AdvancedFilter do
       type: token_transfer.token_type,
       input: token_transfer.transaction.input,
       timestamp: token_transfer.transaction.block_timestamp,
-      from_address: token_transfer.from_address,
       from_address_hash: token_transfer.from_address_hash,
-      to_address: token_transfer.to_address,
       to_address_hash: token_transfer.to_address_hash,
-      created_contract_address: nil,
       created_contract_address_hash: nil,
       fee: token_transfer.transaction |> Transaction.fee(:wei) |> elem(1),
       token_transfer: %TokenTransfer{
@@ -249,12 +257,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     query =
       from(transaction in Transaction,
         as: :transaction,
-        preload: [
-          :block,
-          from_address: [:names, :smart_contract, :proxy_implementations],
-          to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-          created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
-        ],
+        where: transaction.block_consensus == true,
         order_by: [
           desc: transaction.block_number,
           desc: transaction.index
@@ -291,11 +294,9 @@ defmodule Explorer.Chain.AdvancedFilter do
         join: transaction in assoc(internal_transaction, :transaction),
         as: :transaction,
         preload: [
-          from_address: [:names, :smart_contract, :proxy_implementations],
-          to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-          created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
           transaction: transaction
         ],
+        where: transaction.block_consensus == true,
         order_by: [
           desc: transaction.block_number,
           desc: transaction.index,
@@ -373,6 +374,7 @@ defmodule Explorer.Chain.AdvancedFilter do
               fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
             token_decimals: token.decimals
         },
+        where: transaction.block_consensus == true,
         order_by: [
           desc: token_transfer.block_number,
           desc: token_transfer.log_index
@@ -533,23 +535,22 @@ defmodule Explorer.Chain.AdvancedFilter do
     query
     |> filter_by_transaction_type(options[:transaction_types])
     |> filter_token_transfers_by_methods(options[:methods])
-    |> filter_by_token(options[:token_contract_address_hashes][:include], :include)
-    |> filter_by_token(options[:token_contract_address_hashes][:exclude], :exclude)
-    |> apply_common_filters(options)
+    |> filter_by_token(options[:token_contract_address_hashes])
+    |> filter_token_transfers_by_addresses(
+      options[:from_address_hashes],
+      options[:to_address_hashes],
+      options[:address_relation]
+    )
+    |> filter_by_age(options)
   end
 
   defp apply_transactions_filters(query, options) do
     query
     |> filter_transactions_by_amount(options[:amount][:from], options[:amount][:to])
     |> filter_transactions_by_methods(options[:methods])
-    |> apply_common_filters(options)
-  end
-
-  defp apply_common_filters(query, options) do
-    query
     |> only_collated_transactions()
-    |> filter_by_timestamp(options[:age][:from], options[:age][:to])
     |> filter_by_addresses(options[:from_address_hashes], options[:to_address_hashes], options[:address_relation])
+    |> filter_by_age(options)
   end
 
   defp only_collated_transactions(query) do
@@ -589,15 +590,35 @@ defmodule Explorer.Chain.AdvancedFilter do
     end)
   end
 
-  defp filter_by_timestamp(query, %DateTime{} = from, %DateTime{} = to) do
-    query |> where(as(:transaction).block_timestamp >= ^from and as(:transaction).block_timestamp <= ^to)
+  defp filter_by_age(query, options) do
+    query
+    |> do_filter_by_age(options[:block_numbers_age][:from], options[:age][:from], :from)
+    |> do_filter_by_age(options[:block_numbers_age][:to], options[:age][:to], :to)
   end
 
-  defp filter_by_timestamp(query, %DateTime{} = from, _to) do
+  defp do_filter_by_age(query, {:ok, block_number}, _timestamp, direction) do
+    filter_by_block_number(query, block_number, direction)
+  end
+
+  defp do_filter_by_age(query, _block_number, timestamp, direction) do
+    filter_by_timestamp(query, timestamp, direction)
+  end
+
+  defp filter_by_block_number(query, from, :from) when not is_nil(from) do
+    query |> where(as(:transaction).block_number >= ^from)
+  end
+
+  defp filter_by_block_number(query, to, :to) when not is_nil(to) do
+    query |> where(as(:transaction).block_number <= ^to)
+  end
+
+  defp filter_by_block_number(query, _, _), do: query
+
+  defp filter_by_timestamp(query, %DateTime{} = from, :from) do
     query |> where(as(:transaction).block_timestamp >= ^from)
   end
 
-  defp filter_by_timestamp(query, _from, %DateTime{} = to) do
+  defp filter_by_timestamp(query, %DateTime{} = to, :to) do
     query |> where(as(:transaction).block_timestamp <= ^to)
   end
 
@@ -656,6 +677,163 @@ defmodule Explorer.Chain.AdvancedFilter do
     dynamic([t], ^from_addresses_dynamic and ^to_addresses_dynamic)
   end
 
+  defp filter_token_transfers_by_addresses(query, from_addresses, to_addresses, relation) do
+    case {process_address_inclusion(from_addresses), process_address_inclusion(to_addresses)} do
+      {nil, nil} -> query
+      {from, nil} -> do_filter_token_transfers_by_address(query, from, :from_address_hash)
+      {nil, to} -> do_filter_token_transfers_by_address(query, to, :to_address_hash)
+      {from, to} -> do_filter_token_transfers_by_both_addresses(query, from, to, relation)
+    end
+  end
+
+  defp do_filter_token_transfers_by_address(query, {:include, addresses}, field) do
+    queries =
+      addresses
+      |> Enum.map(fn address -> query |> where([t], field(t, ^field) == ^address) |> exclude(:order_by) end)
+      |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+
+    from(token_transfer in subquery(queries),
+      as: :unnested_token_transfer,
+      preload: [:transaction],
+      select_merge: %{
+        token_ids: [token_transfer.token_id],
+        amounts: [token_transfer.amount]
+      },
+      order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+    )
+  end
+
+  defp do_filter_token_transfers_by_address(query, {:exclude, addresses}, field) do
+    query |> where([t], field(t, ^field) not in ^addresses)
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query, {:include, from}, {:include, to}, relation) do
+    from_queries =
+      from
+      |> Enum.map(fn from_address -> query |> where([t], t.from_address_hash == ^from_address) |> exclude(:order_by) end)
+
+    to_queries =
+      to
+      |> Enum.map(fn to_address -> query |> where([t], t.to_address_hash == ^to_address) |> exclude(:order_by) end)
+
+    case relation do
+      :and ->
+        united_from_queries = from_queries |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+
+        united_to_queries = to_queries |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+
+        from(token_transfer in subquery(intersect_all(united_from_queries, ^united_to_queries)),
+          as: :unnested_token_transfer,
+          preload: [:transaction],
+          select_merge: %{
+            token_ids: [token_transfer.token_id],
+            amounts: [token_transfer.amount]
+          },
+          order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+        )
+
+      _ ->
+        union_query =
+          from_queries
+          |> Kernel.++(to_queries)
+          |> Enum.reduce(fn query, acc -> union(query, ^acc) end)
+
+        from(token_transfer in subquery(union_query),
+          as: :unnested_token_transfer,
+          preload: [:transaction],
+          select_merge: %{
+            token_ids: [token_transfer.token_id],
+            amounts: [token_transfer.amount]
+          },
+          order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+        )
+    end
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query, {:include, from}, {:exclude, to}, :and) do
+    from_queries =
+      from
+      |> Enum.map(fn from_address ->
+        query |> where([t], t.from_address_hash == ^from_address and t.to_address_hash not in ^to) |> exclude(:order_by)
+      end)
+      |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+
+    from(token_transfer in subquery(from_queries),
+      as: :unnested_token_transfer,
+      preload: [:transaction],
+      select_merge: %{
+        token_ids: [token_transfer.token_id],
+        amounts: [token_transfer.amount]
+      },
+      order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+    )
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query, {:include, from}, {:exclude, to}, _relation) do
+    from_queries =
+      from
+      |> Enum.map(fn from_address ->
+        query |> where([t], t.from_address_hash == ^from_address or t.to_address_hash not in ^to) |> exclude(:order_by)
+      end)
+      |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+
+    from(token_transfer in subquery(from_queries),
+      as: :unnested_token_transfer,
+      preload: [:transaction],
+      select_merge: %{
+        token_ids: [token_transfer.token_id],
+        amounts: [token_transfer.amount]
+      },
+      order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+    )
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query, {:exclude, from}, {:include, to}, :and) do
+    to_queries =
+      to
+      |> Enum.map(fn to_address ->
+        query |> where([t], t.to_address_hash == ^to_address and t.from_address_hash not in ^from) |> exclude(:order_by)
+      end)
+      |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+
+    from(token_transfer in subquery(to_queries),
+      as: :unnested_token_transfer,
+      preload: [:transaction],
+      select_merge: %{
+        token_ids: [token_transfer.token_id],
+        amounts: [token_transfer.amount]
+      },
+      order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+    )
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query, {:exclude, from}, {:include, to}, _relation) do
+    to_queries =
+      to
+      |> Enum.map(fn to_address ->
+        query |> where([t], t.to_address_hash == ^to_address or t.from_address_hash not in ^from) |> exclude(:order_by)
+      end)
+      |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+
+    from(token_transfer in subquery(to_queries),
+      as: :unnested_token_transfer,
+      preload: [:transaction],
+      select_merge: %{
+        token_ids: [token_transfer.token_id],
+        amounts: [token_transfer.amount]
+      },
+      order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+    )
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query, {:exclude, from}, {:exclude, to}, :and) do
+    query |> where([t], t.from_address_hash not in ^from and t.to_address_hash not in ^to)
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query, {:exclude, from}, {:exclude, to}, _relation) do
+    query |> where([t], t.from_address_hash not in ^from or t.to_address_hash not in ^to)
+  end
+
   @eth_decimals 1000_000_000_000_000_000
 
   defp filter_transactions_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) and from < to do
@@ -711,12 +889,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     else
       from(token_transfer in subquery(query),
         as: :unnested_token_transfer,
-        preload: [
-          :transaction,
-          :token,
-          from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-          to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
-        ],
+        preload: [:transaction],
         select_merge: %{
           token_ids: [token_transfer.token_id],
           amounts: [token_transfer.amount]
@@ -725,15 +898,44 @@ defmodule Explorer.Chain.AdvancedFilter do
     end
   end
 
-  defp filter_by_token(query, [_ | _] = token_contract_address_hashes, :include) do
-    filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
-    query |> where([token_transfer], token_transfer.token_contract_address_hash in ^filtered)
+  defp filter_by_token(query, token_contract_address_hashes) when is_list(token_contract_address_hashes) do
+    case process_address_inclusion(token_contract_address_hashes) do
+      {:include, token_contract_address_hashes} ->
+        to_include_filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
+
+        from(token_transfer in query,
+          inner_join: to_include in fragment("UNNEST(?)", type(^to_include_filtered, {:array, Hash.Address})),
+          on: token_transfer.token_contract_address_hash == to_include
+        )
+
+      {:exclude, token_contract_address_hashes} ->
+        to_exclude_filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
+
+        from(token_transfer in query,
+          left_join: to_exclude in fragment("UNNEST(?)", type(^to_exclude_filtered, {:array, Hash.Address})),
+          on: token_transfer.token_contract_address_hash == to_exclude,
+          where: is_nil(to_exclude)
+        )
+
+      _ ->
+        query
+    end
   end
 
-  defp filter_by_token(query, [_ | _] = token_contract_address_hashes, :exclude) do
-    filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
-    query |> where([token_transfer], token_transfer.token_contract_address_hash not in ^filtered)
+  defp filter_by_token(query, _), do: query
+
+  defp process_address_inclusion(addresses) when is_list(addresses) do
+    case {Keyword.get(addresses, :include, []), Keyword.get(addresses, :exclude, [])} do
+      {to_include, to_exclude} when to_include in [nil, []] and to_exclude in [nil, []] ->
+        nil
+
+      {to_include, to_exclude} when to_include in [nil, []] and is_list(to_exclude) ->
+        {:exclude, to_exclude}
+
+      {to_include, to_exclude} when is_list(to_include) ->
+        {:include, to_include -- (to_exclude || [])}
+    end
   end
 
-  defp filter_by_token(query, _, _), do: query
+  defp process_address_inclusion(_), do: nil
 end
