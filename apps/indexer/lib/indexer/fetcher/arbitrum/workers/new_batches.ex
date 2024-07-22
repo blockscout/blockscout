@@ -122,12 +122,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         Rpc.get_resend_attempts()
       )
 
-    {:ok, safe_chain_block} =
-      IndexerHelper.get_block_number_by_tag(
-        "safe",
-        l1_rpc_config.json_rpc_named_arguments,
-        Rpc.get_resend_attempts()
-      )
+    {safe_chain_block, _} = IndexerHelper.get_safe_block(l1_rpc_config.json_rpc_named_arguments)
 
     # max() cannot be used here since l1_rpc_config.logs_block_range must not
     # be taken into account to identify if it is L3 or not
