@@ -26,7 +26,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   require Logger
 
   @doc """
-    Initiates the discovery process for historical messages sent from L2 to L1 up  to a specified block number.
+    Initiates the discovery process for historical messages sent from L2 to L1 up to a specified block number.
 
     This function orchestrates the discovery of historical messages from L2 to L1
     by analyzing the rollup logs representing the `L2ToL1Tx` event. It determines
