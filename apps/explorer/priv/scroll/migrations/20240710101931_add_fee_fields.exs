@@ -7,7 +7,7 @@ defmodule Explorer.Repo.Scroll.Migrations.AddFeeFields do
     end
 
     execute(
-      "CREATE TYPE scroll_l1_fee_param_names AS ENUM ('overhead', 'scalar')",
+      "CREATE TYPE scroll_l1_fee_param_names AS ENUM ('overhead', 'scalar', 'commit_scalar', 'blob_scalar', 'l1_base_fee', 'l1_blob_base_fee')",
       "DROP TYPE scroll_l1_fee_param_names"
     )
 

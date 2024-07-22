@@ -27,6 +27,18 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   # 32-byte signature of the event ScalarUpdated(uint256 scalar)
   @scalar_updated_event "0x3336cd9708eaf2769a0f0dc0679f30e80f15dcd88d1921b5a16858e8b85c591a"
 
+  # 32-byte signature of the event CommitScalarUpdated(uint256 scalar)
+  @commit_scalar_updated_event "0x2ab3f5a4ebbcbf3c24f62f5454f52f10e1a8c9dcc5acac8f19199ce881a6a108"
+
+  # 32-byte signature of the event BlobScalarUpdated(uint256 scalar)
+  @blob_scalar_updated_event "0x6b332a036d8c3ead57dcb06c87243bd7a2aed015ddf2d0528c2501dae56331aa"
+
+  # 32-byte signature of the event L1BaseFeeUpdated(uint256 l1BaseFee)
+  @l1_base_fee_updated_event "0x351fb23757bb5ea0546c85b7996ddd7155f96b939ebaa5ff7bc49c75f27f2c44"
+
+  # 32-byte signature of the event L1BlobBaseFeeUpdated(uint256 l1BlobBaseFee)
+  @l1_blob_base_fee_updated_event "0x9a14bfb5d18c4c3cf14cae19c23d7cf1bcede357ea40ca1f75cd49542c71c214"
+
   def child_spec(start_link_arguments) do
     spec = %{
       id: __MODULE__,
@@ -117,12 +129,22 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   end
 
   def event_to_param(first_topic, data, block_number, tx_index)
-      when first_topic in [@overhead_updated_event, @scalar_updated_event] do
+      when first_topic in [
+             @overhead_updated_event,
+             @scalar_updated_event,
+             @commit_scalar_updated_event,
+             @blob_scalar_updated_event,
+             @l1_base_fee_updated_event,
+             @l1_blob_base_fee_updated_event
+           ] do
     name =
-      if first_topic == @overhead_updated_event do
-        :overhead
-      else
-        :scalar
+      case first_topic do
+        @overhead_updated_event -> :overhead
+        @scalar_updated_event -> :scalar
+        @commit_scalar_updated_event -> :commit_scalar
+        @blob_scalar_updated_event -> :blob_scalar
+        @l1_base_fee_updated_event -> :l1_base_fee
+        @l1_blob_base_fee_updated_event -> :l1_blob_base_fee
       end
 
     [value] = decode_data(data, [{:uint, 256}])
@@ -136,7 +158,14 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   end
 
   def event_signatures do
-    [@overhead_updated_event, @scalar_updated_event]
+    [
+      @overhead_updated_event,
+      @scalar_updated_event,
+      @commit_scalar_updated_event,
+      @blob_scalar_updated_event,
+      @l1_base_fee_updated_event,
+      @l1_blob_base_fee_updated_event
+    ]
   end
 
   defp scan_block_range(l2_block_start, l2_block_end, gas_oracle, json_rpc_named_arguments) do
@@ -162,7 +191,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
         chunk_end,
         l2_block_start,
         l2_block_end,
-        "#{count} OverheadUpdated or ScalarUpdated event(s)",
+        "#{count} event(s) for parameters update",
         :L2
       )
 
@@ -181,7 +210,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
         block_start,
         block_end,
         gas_oracle,
-        [[@overhead_updated_event, @scalar_updated_event]],
+        [event_signatures()],
         json_rpc_named_arguments
       )
 

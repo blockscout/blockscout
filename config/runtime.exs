@@ -1047,9 +1047,16 @@ config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
   enabled: celo_epoch_fetchers_enabled?,
   disabled?: not celo_epoch_fetchers_enabled?
 
-config :indexer, Indexer.Fetcher.Scroll.L1FeeParam,
-  gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT"),
-  curie_upgrade_block: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L2_CURIE_UPGRADE_BLOCK", 0)
+config :indexer, Indexer.Fetcher.Scroll.L1FeeParam, gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
+
+config :explorer, Explorer.Chain.Scroll.L1FeeParam,
+  curie_upgrade_block: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L2_CURIE_UPGRADE_BLOCK", 0),
+  scalar_init: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L1_SCALAR_INIT", 0),
+  overhead_init: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L1_OVERHEAD_INIT", 0),
+  commit_scalar_init: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L1_COMMIT_SCALAR_INIT", 0),
+  blob_scalar_init: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L1_BLOB_SCALAR_INIT", 0),
+  l1_base_fee_init: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L1_BASE_FEE_INIT", 0),
+  l1_blob_base_fee_init: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L1_BLOB_BASE_FEE_INIT", 0)
 
 config :indexer, Indexer.Fetcher.Scroll.L1FeeParam.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
 

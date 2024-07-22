@@ -28,7 +28,7 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
             String.downcase(Helper.address_hash_to_string(log.address_hash)) == gas_oracle
         end)
         |> Enum.map(fn log ->
-          Logger.info("OverheadUpdated or ScalarUpdated event found.")
+          Logger.info("Event for parameter update found.")
           ScrollL1FeeParam.event_to_param(log.first_topic, log.data, log.block_number, log.transaction_index)
         end)
       else
