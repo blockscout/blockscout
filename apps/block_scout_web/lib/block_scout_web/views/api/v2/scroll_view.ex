@@ -12,8 +12,15 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   """
   @spec extend_transaction_json_response(map(), map()) :: map()
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
-    l1_fee_scalar = L1FeeParam.get_for_transaction(:scalar, transaction, @api_true)
-    l1_fee_overhead = L1FeeParam.get_for_transaction(:overhead, transaction, @api_true)
+    config = Application.get_all_env(:explorer)[L1FeeParam]
+
+    l1_fee_scalar = get_param(:scalar, transaction, config)
+    l1_fee_commit_scalar = get_param(:commit_scalar, transaction, config)
+    l1_fee_blob_scalar = get_param(:blob_scalar, transaction, config)
+    l1_fee_overhead = get_param(:overhead, transaction, config)
+    l1_base_fee = get_param(:l1_base_fee, transaction, config)
+    l1_blob_base_fee = get_param(:l1_blob_base_fee, transaction, config)
+
     l1_gas_used = L1FeeParam.l1_gas_used(transaction, l1_fee_overhead)
 
     l2_fee =
@@ -24,7 +31,11 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
     out_json
     |> add_optional_transaction_field(transaction, :l1_fee)
     |> Map.put("l1_fee_scalar", l1_fee_scalar)
+    |> Map.put("l1_fee_commit_scalar", l1_fee_commit_scalar)
+    |> Map.put("l1_fee_blob_scalar", l1_fee_blob_scalar)
     |> Map.put("l1_fee_overhead", l1_fee_overhead)
+    |> Map.put("l1_base_fee", l1_base_fee)
+    |> Map.put("l1_blob_base_fee", l1_blob_base_fee)
     |> Map.put("l1_gas_used", l1_gas_used)
     |> Map.put("l2_fee", l2_fee)
   end
@@ -33,6 +44,15 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
     case Map.get(transaction, field) do
       nil -> out_json
       value -> Map.put(out_json, Atom.to_string(field), value)
+    end
+  end
+
+  defp get_param(name, transaction, config) do
+    name_init = String.to_atom(to_string(name) <> "_init")
+
+    case L1FeeParam.get_for_transaction(name, transaction, @api_true) do
+      nil -> config[name_init]
+      value -> value
     end
   end
 end

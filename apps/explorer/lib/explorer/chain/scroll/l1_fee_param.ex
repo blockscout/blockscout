@@ -17,7 +17,12 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
   typed_schema "scroll_l1_fee_params" do
     field(:block_number, :integer, primary_key: true)
     field(:tx_index, :integer, primary_key: true)
-    field(:name, Ecto.Enum, values: [:overhead, :scalar], primary_key: true)
+
+    field(:name, Ecto.Enum,
+      values: [:overhead, :scalar, :commit_scalar, :blob_scalar, :l1_base_fee, :l1_blob_base_fee],
+      primary_key: true
+    )
+
     field(:value, :integer)
 
     timestamps()
@@ -30,7 +35,8 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
     |> unique_constraint([:block_number, :tx_index])
   end
 
-  def get_for_transaction(name, transaction, options \\ []) when name in [:overhead, :scalar] do
+  def get_for_transaction(name, transaction, options \\ [])
+      when name in [:overhead, :scalar, :commit_scalar, :blob_scalar, :l1_base_fee, :l1_blob_base_fee] do
     query =
       from(p in __MODULE__,
         select: p.value,
@@ -42,11 +48,11 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
         limit: 1
       )
 
-    select_repo(options).one(query) || 0
+    select_repo(options).one(query)
   end
 
   def l1_gas_used(transaction, l1_fee_overhead) do
-    if transaction.block_number > Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll.L1FeeParam][:curie_upgrade_block] do
+    if transaction.block_number > Application.get_all_env(:explorer)[__MODULE__][:curie_upgrade_block] do
       0
     else
       total =
