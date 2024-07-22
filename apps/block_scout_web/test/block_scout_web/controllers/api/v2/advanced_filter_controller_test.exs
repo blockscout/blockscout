@@ -908,6 +908,60 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       assert Enum.count(response["items"]) == 3
     end
+
+    test "correct query with all filters and 'or' address relation", %{conn: conn} do
+      method_id_string = "0xa9059cbb"
+      {:ok, method} = Data.cast(method_id_string <> "ab0ba0")
+      timestamp = ~U[2023-12-12 00:00:00.000000Z]
+      transaction = insert(:transaction, input: method) |> with_block(block_timestamp: timestamp)
+      token_transfer = insert(:token_transfer, transaction: transaction)
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "tx_types" => "coin_transfer,ERC-20",
+          "methods" => method_id_string,
+          "age_from" => "2023-12-11T00:00:00Z",
+          "age_to" => "2023-12-13T00:00:00Z",
+          "from_address_hashes_to_include" => "#{transaction.from_address_hash},#{token_transfer.from_address_hash}",
+          "to_address_hashes_to_include" => "#{transaction.to_address_hash},#{token_transfer.to_address_hash}",
+          "address_relation" => "or",
+          "amount_from" => "0",
+          "amount_to" => "1000000",
+          "token_contract_address_hashes_to_include" => "native,#{token_transfer.token_contract_address_hash}",
+          "token_contract_address_hashes_to_exclude" => "0x0000000000000000000000000000000000000000"
+        })
+
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 2
+    end
+
+    test "correct query with all filters and 'and' address relation", %{conn: conn} do
+      method_id_string = "0xa9059cbb"
+      {:ok, method} = Data.cast(method_id_string <> "ab0ba0")
+      timestamp = ~U[2023-12-12 00:00:00.000000Z]
+      transaction = insert(:transaction, input: method) |> with_block(block_timestamp: timestamp)
+      token_transfer = insert(:token_transfer, transaction: transaction, transaction_hash: transaction.hash)
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "tx_types" => "coin_transfer,ERC-20",
+          "methods" => method_id_string,
+          "age_from" => "2023-12-11T00:00:00Z",
+          "age_to" => "2023-12-13T00:00:00Z",
+          "from_address_hashes_to_include" => "#{transaction.from_address_hash},#{token_transfer.from_address_hash}",
+          "to_address_hashes_to_include" => "#{transaction.to_address_hash},#{token_transfer.to_address_hash}",
+          "address_relation" => "and",
+          "amount_from" => "0",
+          "amount_to" => "1000000",
+          "token_contract_address_hashes_to_include" => "native,#{token_transfer.token_contract_address_hash}",
+          "token_contract_address_hashes_to_exclude" => "0x0000000000000000000000000000000000000000"
+        })
+
+      assert response = json_response(request, 200) |> dbg()
+
+      assert Enum.count(response["items"]) == 2
+    end
   end
 
   describe "/advanced_filters/methods?q=" do
