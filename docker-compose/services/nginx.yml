@@ -19,4 +19,9 @@ services:
         published: ${PROXY_PORT:-80}
       - target: 8080
         published: ${STATS_PORT:-8080}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 

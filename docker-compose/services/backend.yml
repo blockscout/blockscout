@@ -19,3 +19,8 @@ services:
     volumes:
       - ${SCHAIN_DATA_DIR:-./blockscout-data/${SCHAIN_NAME}}/logs/:/app/logs/
       - ${CONFIG_PATH:-./}:/opt/app/config.json
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
