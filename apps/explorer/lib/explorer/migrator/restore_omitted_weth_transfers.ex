@@ -5,9 +5,8 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
 
   use GenServer, restart: :transient
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Helper}
   alias Explorer.Chain.{Log, TokenTransfer}
-  alias Explorer.Helper
   alias Explorer.Migrator.MigrationStatus
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -110,9 +109,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
         to_process
         |> Enum.chunk_every(batch_size())
         |> Enum.map(fn batch ->
-          Task.Supervisor.async_nolink(Explorer.WETHMigratorSupervisor, fn ->
-            migrate_batch(batch)
-          end)
+          run_task(batch)
         end)
 
       if Enum.empty?(remainder) do
@@ -224,6 +221,12 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
         }
       })
     end
+  end
+
+  defp run_task(batch) do
+    Task.Supervisor.async_nolink(Explorer.WETHMigratorSupervisor, fn ->
+      migrate_batch(batch)
+    end)
   end
 
   def concurrency, do: Application.get_env(:explorer, __MODULE__)[:concurrency]

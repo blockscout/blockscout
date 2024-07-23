@@ -6,10 +6,9 @@ defmodule Explorer.Chain.Log do
   require Logger
 
   alias ABI.{Event, FunctionSelector}
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Repo
   alias Explorer.SmartContract.SigProviderInterface
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
