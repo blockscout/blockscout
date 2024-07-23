@@ -67,7 +67,7 @@ defmodule Explorer.Chain.Cache.Block do
     # If this gets called it means an async task was requested, but none exists
     # so a new one needs to be launched
     {:ok, task} =
-      Task.start(fn ->
+      Task.start_link(fn ->
         try do
           result = fetch_count_consensus_block()
 
