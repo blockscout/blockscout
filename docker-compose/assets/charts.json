@@ -1,0 +1,202 @@
+{
+    "template_values": {
+        "native_coin_symbol": "sFUEL"
+    },
+    "counters": {
+        "total_blocks": {
+            "title": "Total blocks",
+            "description": "Number of blocks over all time",
+            "update_schedule": "0 0 */3 * * * *"
+        },
+        "total_addresses": {
+            "title": "Total addresses",
+            "description": "Number of addresses that participated in the blockchain",
+            "update_schedule": "0 0 */3 * * * *"
+        },
+        "average_block_time": {
+            "title": "Average block time",
+            "description": "Average time taken in seconds for a block to be included in the blockchain",
+            "units": "s",
+            "update_schedule": "0 0 15 * * * *"
+        },
+        "completed_txns": {
+            "title": "Completed txns",
+            "description": "Number of transactions with success status",
+            "update_schedule": "0 5 */3 * * * *"
+        },
+        "total_accounts": {
+            "title": "Total accounts",
+            "description": "Number of EOAs that sent at least 1 transaction",
+            "update_schedule": "0 0 16 * * * *"
+        },
+        "total_native_coin_transfers": {
+            "title": "Total {{native_coin_symbol}} transfers",
+            "description": "Number of transactions with the transfer of the {{native_coin_symbol}}",
+            "update_schedule": "0 0 13 * * * *"
+        },
+        "total_tokens": {
+            "title": "Total tokens",
+            "description": "Number of all token contracts",
+            "update_schedule": "0 0 18 * * * *"
+        },
+        "total_txns": {
+            "title": "Total txns",
+            "description": "All transactions including pending, dropped, replaced, failed transactions",
+            "update_schedule": "0 10 */3 * * * *"
+        },
+        "last_new_contracts": {
+            "title": "Number of deployed contracts today",
+            "description": "Number of deployed contracts today",
+            "update_schedule": "0 15 */3 * * * *"
+        },
+        "total_contracts": {
+            "title": "Total contracts",
+            "description": "Number of contracts",
+            "update_schedule": "0 20 */3 * * * *"
+        },
+        "last_new_verified_contracts": {
+            "title": "Number of verified contracts today",
+            "description": "Number of contracts verified today",
+            "update_schedule": "0 25 */3 * * * *"
+        },
+        "total_verified_contracts": {
+            "title": "Total verified contracts",
+            "description": "Number of verified contracts",
+            "update_schedule": "0 30 */3 * * * *"
+        },
+        "total_native_coin_holders": {
+            "enabled": false,
+            "title": "Total {{native_coin_symbol}} holders",
+            "description": "Number of accounts with {{native_coin_symbol}}",
+            "update_schedule": "0 0 17 * * * *"
+        }
+    },
+    "lines": {
+        "accounts": {
+            "title": "Accounts",
+            "order": 1,
+            "charts": {
+                "active_accounts": {
+                    "title": "Active accounts",
+                    "description": "Active accounts number per period",
+                    "update_schedule": "0 0 4 * * * *"
+                },
+                "accounts_growth": {
+                    "title": "Accounts growth",
+                    "description": "Cumulative accounts number per period",
+                    "update_schedule": "0 0 5 * * * *"
+                },
+                "new_accounts": {
+                    "title": "New accounts",
+                    "description": "New accounts number per day",
+                    "update_schedule": "0 0 21 * * * *"
+                }
+            }
+        },
+        "transactions": {
+            "title": "Transactions",
+            "order": 2,
+            "charts": {
+                "new_txns": {
+                    "title": "New transactions",
+                    "description": "New transactions number",
+                    "update_schedule": "0 0 1 * * * *"
+                },
+                "txns_growth": {
+                    "title": "Transactions growth",
+                    "description": "Cumulative transactions number",
+                    "update_schedule": "0 0 2 * * * *"
+                },
+                "txns_success_rate": {
+                    "title": "Transactions success rate",
+                    "description": "Successful transactions rate per day",
+                    "update_schedule": "0 0 19 * * * *"
+                }
+            }
+        },
+        "blocks": {
+            "title": "Blocks",
+            "order": 3,
+            "charts": {
+                "new_blocks": {
+                    "title": "New blocks",
+                    "description": "New blocks number",
+                    "update_schedule": "0 0 8 * * * *"
+                },
+                "average_block_size": {
+                    "title": "Average block size",
+                    "description": "Average size of blocks in bytes",
+                    "units": "Bytes",
+                    "update_schedule": "0 0 9 * * * *"
+                }
+            }
+        },
+        "tokens": {
+            "title": "Tokens",
+            "order": 4,
+            "charts": {
+                "new_native_coin_transfers": {
+                    "title": "New {{native_coin_symbol}} transfers",
+                    "description": "New token transfers number for the period",
+                    "update_schedule": "0 0 3 * * * *"
+                },
+                "native_coin_holders_growth": {
+                    "enabled": false,
+                    "title": "{{native_coin_symbol}} holders growth",
+                    "description": "Cumulative token holders number for the period",
+                    "update_schedule": "0 0 10 * * * *"
+                },
+                "new_native_coin_holders": {
+                    "enabled": false,
+                    "title": "New {{native_coin_symbol}} holders",
+                    "description": "New token holders number per day",
+                    "update_schedule": "0 0 22 * * * *"
+                },
+                "native_coin_supply": {
+                    "enabled": false,
+                    "title": "{{native_coin_symbol}} circulating supply",
+                    "description": "Amount of token circulating supply for the period",
+                    "units": "{{native_coin_symbol}}",
+                    "update_schedule": "0 0 11 * * * *"
+                }
+            }
+        },
+        "gas": {
+            "title": "Gas",
+            "order": 5,
+            "charts": {
+                "gas_used_growth": {
+                    "title": "Gas used growth",
+                    "description": "Cumulative gas used for the period",
+                    "update_schedule": "0 0 13 * * * *"
+                }
+            }
+        },
+        "contracts": {
+            "title": "Contracts",
+            "order": 6,
+            "charts": {
+                "new_verified_contracts": {
+                    "title": "New verified contracts",
+                    "description": "New verified contracts number for the period",
+                    "update_schedule": "0 0 15 * * * *"
+                },
+                "verified_contracts_growth": {
+                    "title": "Verified contracts growth",
+                    "description": "Cumulative number verified contracts for the period",
+                    "update_schedule": "0 0 7 * * * *"
+                },
+                "new_contracts": {
+                    "title": "New contracts",
+                    "description": "New contracts number for the period",
+                    "update_schedule": "0 0 16 * * * *"
+                },
+                "contracts_growth": {
+                    "title": "Contracts growth",
+                    "description": "Cumulative number of contracts for the period",
+                    "update_schedule": "0 0 8 * * * *"
+                }
+            }
+        }
+    }
+}
