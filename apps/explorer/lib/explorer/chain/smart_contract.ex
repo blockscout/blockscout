@@ -513,11 +513,11 @@ defmodule Explorer.Chain.SmartContract do
   Returns SmartContract by the given smart-contract address hash, if it is partially verified
   """
   @spec select_partially_verified_by_address_hash(binary() | Hash.t(), keyword) :: boolean() | nil
-  def select_partially_verified_by_address_hash(address_hash, options \\ []) do
+  def select_partially_verified_by_address_hash(address_hash_string, options \\ []) do
     query =
       from(
         smart_contract in __MODULE__,
-        where: smart_contract.address_hash == ^address_hash,
+        where: smart_contract.address_hash == ^address_hash_string,
         select: smart_contract.partially_verified
       )
 

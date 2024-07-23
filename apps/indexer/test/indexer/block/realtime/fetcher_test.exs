@@ -6,7 +6,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
   alias Explorer.{Chain, Factory}
   alias Explorer.Chain.{Address, Transaction, Wei}
-  alias Indexer.Block.Catchup.Sequence
   alias Indexer.Block.Realtime
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
 
@@ -76,9 +75,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       block_fetcher: %Indexer.Block.Fetcher{} = block_fetcher,
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
-      {:ok, sequence} = Sequence.start_link(ranges: [], step: 2)
-      Sequence.cap(sequence)
-
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -582,9 +578,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     } do
       Application.put_env(:indexer, :fetch_rewards_way, "manual")
 
-      {:ok, sequence} = Sequence.start_link(ranges: [], step: 2)
-      Sequence.cap(sequence)
-
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -849,9 +842,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       Application.put_env(:indexer, :fetch_rewards_way, "manual")
       Application.put_env(:indexer, InternalTransaction.Supervisor, disabled?: true)
       Application.put_env(:indexer, UncleBlock.Supervisor, disabled?: true)
-
-      {:ok, sequence} = Sequence.start_link(ranges: [], step: 2)
-      Sequence.cap(sequence)
 
       start_supervised!({Task.Supervisor, name: Realtime.TaskSupervisor})
 
