@@ -24,11 +24,11 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
 
   @impl true
   def init(_) do
-    {:ok, %{}, {:continue, :ok}}
+    {:ok, %{}, {:continue, :check_migration_status}}
   end
 
   @impl true
-  def handle_continue(:ok, state) do
+  def handle_continue(:check_migration_status, state) do
     case MigrationStatus.get_status(@migration_name) do
       "completed" ->
         {:stop, :normal, state}
@@ -92,6 +92,8 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
     if current_concurrency > 0 do
       {:noreply, state}
     else
+      Logger.info("RestoreOmittedWETHTransfers migration is complete.")
+
       MigrationStatus.set_status(@migration_name, "completed")
       {:stop, :normal, state}
     end
@@ -150,18 +152,20 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
   end
 
   defp migrate_batch(batch) do
-    token_transfers =
+    {token_transfers, token_balances} =
       batch
       |> Enum.map(fn log ->
         with %{second_topic: second_topic, third_topic: nil, fourth_topic: nil, data: data}
              when not is_nil(second_topic) <-
                log,
              [amount] <- Helper.decode_data(data, [{:uint, 256}]) do
-          {from_address_hash, to_address_hash} =
+          {from_address_hash, to_address_hash, balance_address} =
             if log.first_topic == TokenTransfer.weth_deposit_signature() do
-              {burn_address_hash_string(), Helper.truncate_address_hash(to_string(second_topic))}
+              to_address = Helper.truncate_address_hash(to_string(second_topic))
+              {burn_address_hash_string(), to_address, to_address}
             else
-              {Helper.truncate_address_hash(to_string(second_topic)), burn_address_hash_string()}
+              from_address = Helper.truncate_address_hash(to_string(second_topic))
+              {from_address, burn_address_hash_string(), from_address}
             end
 
           token_transfer = %{
@@ -177,7 +181,15 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
             token_type: "ERC-20"
           }
 
-          token_transfer
+          token_balance = %{
+            address_hash: balance_address,
+            token_contract_address_hash: log.address_hash,
+            block_number: log.block_number,
+            token_id: nil,
+            token_type: "ERC-20"
+          }
+
+          {token_transfer, token_balance}
         else
           _ ->
             Logger.error(
@@ -188,9 +200,29 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
         end
       end)
       |> Enum.reject(&is_nil/1)
+      |> Enum.unzip()
+
+    current_token_balances =
+      token_balances
+      |> Enum.group_by(fn %{
+                            address_hash: address_hash,
+                            token_contract_address_hash: token_contract_address_hash
+                          } ->
+        {address_hash, token_contract_address_hash}
+      end)
+      |> Enum.map(fn {_, grouped_address_token_balances} ->
+        Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
+      end)
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
 
     if !Enum.empty?(token_transfers) do
-      Chain.import(%{token_transfers: %{params: token_transfers}})
+      Chain.import(%{
+        token_transfers: %{params: token_transfers},
+        address_token_balances: %{params: token_balances},
+        address_current_token_balances: %{
+          params: current_token_balances
+        }
+      })
     end
   end
 
