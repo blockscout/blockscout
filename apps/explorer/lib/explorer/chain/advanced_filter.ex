@@ -376,7 +376,7 @@ defmodule Explorer.Chain.AdvancedFilter do
         },
         where: transaction.block_consensus == true,
         order_by: [
-          desc: transaction.block_number,
+          desc: token_transfer.block_number,
           desc: token_transfer.log_index
         ]
       )
