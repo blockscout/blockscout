@@ -10,8 +10,11 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
   import BlockScoutWeb.PagingHelper, only: [mud_records_sorting: 1]
 
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+
   alias Explorer.Chain
-  alias Explorer.Chain.{Data, Hash, Mud, Mud.Schema.FieldSchema, Mud.Table}
+  alias Explorer.Chain.{Address, Data, Hash, Mud, Mud.Schema.FieldSchema, Mud.Table}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -45,7 +48,14 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
     conn
     |> put_status(200)
-    |> render(:worlds, %{worlds: worlds, world_addresses: world_addresses, next_page_params: next_page_params})
+    |> render(:worlds, %{
+      worlds:
+        worlds
+        |> Enum.map(fn world -> Map.get(world_addresses, world, %Address{hash: world}) end)
+        |> maybe_preload_ens()
+        |> maybe_preload_metadata(),
+      next_page_params: next_page_params
+    })
   end
 
   @doc """

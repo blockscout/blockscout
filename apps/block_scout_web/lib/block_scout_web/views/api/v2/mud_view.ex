@@ -8,9 +8,9 @@ defmodule BlockScoutWeb.API.V2.MudView do
     Function to render GET requests to `/api/v2/mud/worlds` endpoint.
   """
   @spec render(String.t(), map()) :: map()
-  def render("worlds.json", %{worlds: worlds, world_addresses: world_addresses, next_page_params: next_page_params}) do
+  def render("worlds.json", %{worlds: worlds, next_page_params: next_page_params}) do
     %{
-      items: worlds |> Enum.map(fn world -> world_addresses |> Map.get(world) |> prepare_world_for_list(world) end),
+      items: worlds |> Enum.map(&prepare_world_for_list/1),
       next_page_params: next_page_params
     }
   end
@@ -61,19 +61,11 @@ defmodule BlockScoutWeb.API.V2.MudView do
     }
   end
 
-  defp prepare_world_for_list(%Address{} = address, address_hash) do
+  defp prepare_world_for_list(%Address{} = address) do
     %{
-      "address" => Helper.address_with_info(address, address_hash),
+      "address" => Helper.address_with_info(address, address.hash),
       "tx_count" => address.transactions_count,
       "coin_balance" => if(address.fetched_coin_balance, do: address.fetched_coin_balance.value)
-    }
-  end
-
-  defp prepare_world_for_list(nil, address_hash) do
-    %{
-      "address" => Helper.address_with_info(nil, address_hash),
-      "tx_count" => nil,
-      "coin_balance" => nil
     }
   end
 
