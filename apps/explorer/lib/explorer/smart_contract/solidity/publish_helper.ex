@@ -4,9 +4,9 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
   """
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
+  alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Solidity.Publisher
   alias Explorer.ThirdPartyIntegrations.Sourcify
 
@@ -149,7 +149,7 @@ defmodule Explorer.SmartContract.Solidity.PublishHelper do
 
   def check_and_verify(address_hash_string) do
     if Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)[:eth_bytecode_db?] do
-      LookUpSmartContractSourcesOnDemand.trigger_fetch(%Address{hash: address_hash_string}, nil)
+      LookUpSmartContractSourcesOnDemand.trigger_fetch(address_hash_string, nil, nil)
     else
       if Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled] do
         check_by_address_in_sourcify(
