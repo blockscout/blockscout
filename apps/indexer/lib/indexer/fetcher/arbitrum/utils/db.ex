@@ -689,6 +689,134 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
+    Retrieves L1 block ranges that could be used to re-discover missing batches
+    within a specified range of batch numbers.
+
+    This function identifies the L1 block ranges corresponding to missing L1 batches
+    within the given range of batch numbers. It first finds the missing batches,
+    then determines their neighboring ranges, and finally maps these ranges to the
+    corresponding L1 block numbers.
+
+    ## Parameters
+    - `start_batch_number`: The starting batch number of the search range.
+    - `end_batch_number`: The ending batch number of the search range.
+    - `block_for_batch_0`: The L1 block number corresponding to the batch number 0.
+
+    ## Returns
+    - A list of tuples, each containing a start and end L1 block number for the
+      ranges corresponding to the missing batches.
+
+    ## Examples
+
+    Example #1
+    - Within the range from 1 to 10, the missing batch is 2. The L1 block for the
+      batch #1 is 10, and the L1 block for the batch #3 is 31.
+    - The output will be `[{11, 30}]`.
+
+    Example #2
+    - Within the range from 1 to 10, the missing batches are 2 and 6, and
+      - The L1 block for the batch #1 is 10.
+      - The L1 block for the batch #3 is 31.
+      - The L1 block for the batch #5 is 64.
+      - The L1 block for the batch #7 is 90.
+    - The output will be `[{11, 30}, {65, 89}]`.
+
+    Example #3
+    - Within the range from 1 to 10, the missing batches are 2 and 4, and
+      - The L1 block for the batch #1 is 10.
+      - The L1 block for the batch #3 is 31.
+      - The L1 block for the batch #5 is 64.
+    - The output will be `[{11, 30}, {32, 63}]`.
+  """
+  @spec get_l1_block_ranges_for_missing_batches(non_neg_integer(), non_neg_integer(), FullBlock.block_number()) :: [
+          {FullBlock.block_number(), FullBlock.block_number()}
+        ]
+  def get_l1_block_ranges_for_missing_batches(start_batch_number, end_batch_number, block_for_batch_0)
+      when is_integer(start_batch_number) and is_integer(end_batch_number) and end_batch_number >= start_batch_number do
+    # credo:disable-for-lines:4 Credo.Check.Refactor.PipeChainStart
+    neighbors_of_missing_batches =
+      Reader.find_missing_batches(start_batch_number, end_batch_number)
+      |> list_to_chunks()
+      |> chunks_to_neighbor_ranges()
+
+    if neighbors_of_missing_batches == [] do
+      []
+    else
+      l1_blocks =
+        neighbors_of_missing_batches
+        |> Enum.reduce(MapSet.new(), fn {start_batch, end_batch}, acc ->
+          acc
+          |> MapSet.put(start_batch)
+          |> MapSet.put(end_batch)
+        end)
+        # To avoid error in getting L1 block for the batch 0
+        |> MapSet.delete(0)
+        |> MapSet.to_list()
+        |> Reader.get_l1_blocks_of_batches_by_numbers()
+        # It is safe to add the block for the batch 0 even if the batch 1 is missing
+        |> Map.put(0, block_for_batch_0)
+
+      neighbors_of_missing_batches
+      |> Enum.map(fn {start_batch, end_batch} ->
+        {l1_blocks[start_batch] + 1, l1_blocks[end_batch] - 1}
+      end)
+    end
+  end
+
+  # Splits a list into chunks of consecutive numbers, e.g., [1, 2, 3, 5, 6, 8] becomes [[1, 2, 3], [5, 6], [8]].
+  @spec list_to_chunks([non_neg_integer()]) :: [[non_neg_integer()]]
+  defp list_to_chunks(list) do
+    chunk_fun = fn current, acc ->
+      case acc do
+        [] ->
+          {:cont, [current]}
+
+        [last | _] = acc when current == last + 1 ->
+          {:cont, [current | acc]}
+
+        acc ->
+          {:cont, Enum.reverse(acc), [current]}
+      end
+    end
+
+    after_fun = fn acc ->
+      case acc do
+        # Special case to handle the situation when the initial list is empty
+        [] -> {:cont, []}
+        _ -> {:cont, Enum.reverse(acc), []}
+      end
+    end
+
+    list
+    |> Enum.chunk_while([], chunk_fun, after_fun)
+  end
+
+  # Converts chunks of elements into neighboring ranges, e.g., [[1, 2], [4]] becomes [{0, 3}, {3, 5}].
+  @spec chunks_to_neighbor_ranges([[non_neg_integer()]]) :: [{non_neg_integer(), non_neg_integer()}]
+  defp chunks_to_neighbor_ranges([]), do: []
+
+  defp chunks_to_neighbor_ranges(list_of_chunks) do
+    list_of_chunks
+    |> Enum.map(fn current ->
+      case current do
+        [one_element] -> {one_element - 1, one_element + 1}
+        chunk -> {List.first(chunk) - 1, List.last(chunk) + 1}
+      end
+    end)
+  end
+
+  @doc """
+    Retrieves the minimum and maximum batch numbers of L1 batches.
+
+    ## Returns
+    - A tuple containing the minimum and maximum batch numbers or `{nil, nil}` if no batches are found.
+  """
+  @spec get_min_max_batch_numbers() :: {non_neg_integer(), non_neg_integer()} | {nil | nil}
+  def get_min_max_batch_numbers do
+    Reader.get_min_max_batch_numbers()
+  end
+
+  @doc """
     Returns 32-byte signature of the event `L2ToL1Tx`
   """
   @spec l2_to_l1_event() :: <<_::528>>

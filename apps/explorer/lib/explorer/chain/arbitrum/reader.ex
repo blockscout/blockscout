@@ -1061,4 +1061,92 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       keyset -> {:ok, {keyset.batch_number, keyset.data}}
     end
   end
+
+  @doc """
+    Retrieves the batch numbers of missing L1 batches within a specified range.
+
+    This function constructs a query to find the batch numbers of L1 batches that
+    are missing within the given range of batch numbers. It uses a right join with
+    a generated series to identify batch numbers that do not exist in the
+    `arbitrum_l1_batches` table.
+
+    ## Parameters
+    - `start_batch_number`: The starting batch number of the search range.
+    - `end_batch_number`: The ending batch number of the search range.
+
+    ## Returns
+    - A list of batch numbers in ascending order that are missing within the specified range.
+  """
+  @spec find_missing_batches(non_neg_integer(), non_neg_integer()) :: [non_neg_integer()]
+  def find_missing_batches(start_batch_number, end_batch_number)
+      when is_integer(start_batch_number) and is_integer(end_batch_number) and end_batch_number >= start_batch_number do
+    query =
+      from(batch in L1Batch,
+        right_join:
+          missing_range in fragment(
+            """
+            (
+              SELECT distinct b1.number
+              FROM generate_series((?)::integer, (?)::integer) AS b1(number)
+              WHERE NOT EXISTS
+                (SELECT 1 FROM arbitrum_l1_batches b2 WHERE b2.number=b1.number)
+              ORDER BY b1.number DESC
+            )
+            """,
+            ^start_batch_number,
+            ^end_batch_number
+          ),
+        on: batch.number == missing_range.number,
+        select: missing_range.number,
+        order_by: missing_range.number,
+        distinct: missing_range.number
+      )
+
+    query
+    |> Repo.all(timeout: :infinity)
+  end
+
+  @doc """
+    Retrieves L1 block numbers for the given list of batch numbers.
+
+    This function finds the numbers of L1 blocks that include L1 transactions
+    associated with batches within the specified list of batch numbers.
+
+    ## Parameters
+    - `batch_numbers`: A list of batch numbers for which to retrieve the L1 block numbers.
+
+    ## Returns
+    - A map where the keys are batch numbers and the values are corresponding L1 block numbers.
+  """
+  @spec get_l1_blocks_of_batches_by_numbers([non_neg_integer()]) :: %{non_neg_integer() => FullBlock.block_number()}
+  def get_l1_blocks_of_batches_by_numbers(batch_numbers) when is_list(batch_numbers) do
+    query =
+      from(batch in L1Batch,
+        join: l1tx in assoc(batch, :commitment_transaction),
+        where: batch.number in ^batch_numbers,
+        select: {batch.number, l1tx.block_number}
+      )
+
+    query
+    |> Repo.all(timeout: :infinity)
+    |> Enum.reduce(%{}, fn {batch_number, l1_block_number}, acc ->
+      Map.put(acc, batch_number, l1_block_number)
+    end)
+  end
+
+  @doc """
+    Retrieves the minimum and maximum batch numbers of L1 batches.
+
+    ## Returns
+    - A tuple containing the minimum and maximum batch numbers or `{nil, nil}` if no batches are found.
+  """
+  @spec get_min_max_batch_numbers() :: {non_neg_integer(), non_neg_integer()} | {nil | nil}
+  def get_min_max_batch_numbers do
+    query =
+      from(batch in L1Batch,
+        select: {min(batch.number), max(batch.number)}
+      )
+
+    Repo.one(query)
+  end
 end

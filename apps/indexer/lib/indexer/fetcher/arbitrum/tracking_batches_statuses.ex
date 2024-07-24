@@ -1,11 +1,12 @@
 defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   @moduledoc """
-    Manages the tracking and updating of the statuses of rollup batches, confirmations, and cross-chain message executions for an Arbitrum rollup.
+    Manages the tracking and updating of the statuses of rollup batches,
+    confirmations, and cross-chain message executions for an Arbitrum rollup.
 
     This module orchestrates the workflow for discovering new and historical
-    batches of rollup transactions, confirmations of rollup blocks, and
-    executions of L2-to-L1 messages. It ensures the accurate tracking and
-    updating of the rollup process stages.
+    batches of rollup transactions, confirmations of rollup blocks, and executions
+    of L2-to-L1 messages. It ensures the accurate tracking and updating of the
+    rollup process stages.
 
     The fetcher's operation cycle begins with the `:init_worker` message, which
     establishes the initial state with the necessary configuration.
@@ -14,12 +15,13 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     specific messages:
     - `:check_new_batches`: Discovers new batches of rollup transactions and
       updates their statuses.
-    - `:check_new_confirmations`: Identifies new confirmations of rollup blocks
-      to update their statuses.
-    - `:check_new_executions`: Finds new executions of L2-to-L1 messages to
+    - `:check_new_confirmations`: Identifies new confirmations of rollup blocks to
       update their statuses.
+    - `:check_new_executions`: Finds new executions of L2-to-L1 messages to update
+      their statuses.
     - `:check_historical_batches`: Processes historical batches of rollup
       transactions.
+    - `:check_missing_batches`: Inspects for missing batches of rollup transactions.
     - `:check_historical_confirmations`: Handles historical confirmations of
       rollup blocks.
     - `:check_historical_executions`: Manages historical executions of L2-to-L1
@@ -28,12 +30,12 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       transactions, confirming the blocks and messages involved.
 
     Discovery of rollup transaction batches is executed by requesting logs on L1
-    that correspond to the `SequencerBatchDelivered` event emitted by the
-    Arbitrum `SequencerInbox` contract.
+    that correspond to the `SequencerBatchDelivered` event emitted by the Arbitrum
+    `SequencerInbox` contract.
 
     Discovery of rollup block confirmations is executed by requesting logs on L1
-    that correspond to the `SendRootUpdated` event emitted by the Arbitrum
-    `Outbox` contract.
+    that correspond to the `SendRootUpdated` event emitted by the Arbitrum `Outbox`
+    contract.
 
     Discovery of the L2-to-L1 message executions occurs by requesting logs on L1
     that correspond to the `OutBoxTransactionExecuted` event emitted by the
@@ -90,6 +92,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     finalized_confirmations = config_tracker[:finalized_confirmations]
     confirmation_batches_depth = config_tracker[:confirmation_batches_depth]
     new_batches_limit = config_tracker[:new_batches_limit]
+    missing_batches_range = config_tracker[:missing_batches_range]
     node_interface_address = config_tracker[:node_interface_contract]
 
     Process.send(self(), :init_worker, [])
@@ -113,6 +116,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
          l1_start_block: l1_start_block,
          l1_rollup_init_block: l1_rollup_init_block,
          new_batches_limit: new_batches_limit,
+         missing_batches_range: missing_batches_range,
          messages_to_blocks_shift: messages_to_blocks_shift,
          confirmation_batches_depth: confirmation_batches_depth,
          node_interface_address: node_interface_address
@@ -179,6 +183,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     new_executions_start_block = Db.l1_block_to_discover_latest_execution(l1_start_block)
     historical_executions_end_block = Db.l1_block_to_discover_earliest_execution(l1_start_block - 1)
 
+    {lowest_batch, missing_batches_end_batch} = Db.get_min_max_batch_numbers()
+
     Process.send(self(), :check_new_batches, [])
 
     new_state =
@@ -188,7 +194,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         Map.merge(state.config, %{
           l1_start_block: l1_start_block,
           l1_outbox_address: outbox_address,
-          l1_sequencer_inbox_address: sequencer_inbox_address
+          l1_sequencer_inbox_address: sequencer_inbox_address,
+          lowest_batch: lowest_batch
         })
       )
       |> Map.put(
@@ -200,7 +207,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
           historical_confirmations_end_block: nil,
           historical_confirmations_start_block: nil,
           new_executions_start_block: new_executions_start_block,
-          historical_executions_end_block: historical_executions_end_block
+          historical_executions_end_block: historical_executions_end_block,
+          missing_batches_end_batch: missing_batches_end_batch
         })
       )
 
@@ -320,8 +328,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # status of the L2-to-L1 messages included in the  corresponding rollup blocks is
   # also updated.
   #
-  # After processing, it immediately transitions to checking historical
-  # confirmations of rollup blocks by sending the `:check_historical_confirmations`
+  # After processing, it immediately transitions to inspecting for missing batches
+  # of rollup blocks by sending the `:check_missing_batches`
   # message.
   #
   # ## Parameters
@@ -336,13 +344,55 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   def handle_info(:check_historical_batches, state) do
     {handle_duration, {:ok, start_block}} = :timer.tc(&NewBatches.discover_historical_batches/1, [state])
 
-    Process.send(self(), :check_historical_confirmations, [])
+    Process.send(self(), :check_missing_batches, [])
 
     new_data =
       Map.merge(state.data, %{
         duration: increase_duration(state.data, handle_duration),
         historical_batches_end_block: start_block - 1
       })
+
+    {:noreply, %{state | data: new_data}}
+  end
+
+  # Initiates the process of inspecting for missing batches of rollup transactions.
+  #
+  # This function inspects the database for missing batches within the calculated
+  # batch range. If a missing batch is identified, the L1 block range to look up
+  # for the transaction that committed the batch is built based on the neighboring
+  # batches. Then logs within the block range are fetched to get the batch data.
+  # After discovery, the linkage between batches and the corresponding rollup
+  # blocks and transactions is built. The status of the L2-to-L1 messages included
+  # in the corresponding rollup blocks is also updated.
+  #
+  # After processing, it immediately transitions to checking historical
+  # confirmations of rollup blocks by sending the `:check_historical_confirmations`
+  # message.
+  #
+  # ## Parameters
+  # - `:check_missing_batches`: The message that triggers the function.
+  # - `state`: The current state of the fetcher, containing configuration and data
+  #            needed for inspection of the missed batches.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}`: Where `new_state` is updated with the new end batch
+  #   for the next iteration of missing batches inspection.
+  @impl GenServer
+  def handle_info(:check_missing_batches, state) do
+    # At the moment of the very first fetcher running, no batches were found yet
+    new_data =
+      if is_nil(state.config.lowest_batch) do
+        state.data
+      else
+        {handle_duration, {:ok, start_batch}} = :timer.tc(&NewBatches.inspect_for_missing_batches/1, [state])
+
+        Map.merge(state.data, %{
+          duration: increase_duration(state.data, handle_duration),
+          missing_batches_end_batch: start_batch - 1
+        })
+      end
+
+    Process.send(self(), :check_historical_confirmations, [])
 
     {:noreply, %{state | data: new_data}}
   end
