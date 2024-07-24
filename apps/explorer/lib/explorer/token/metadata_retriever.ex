@@ -255,7 +255,8 @@ defmodule Explorer.Token.MetadataRetriever do
 
       case erc_1155_name_uri do
         %{:name => name} when is_binary(name) ->
-          uri = {:ok, [name]}
+          sanitized_name = String.trim(name)
+          uri = {:ok, [sanitized_name]}
 
           with {:ok, %{metadata: metadata}} <- fetch_json(uri, nil, nil, false),
                true <- Map.has_key?(metadata, "name"),
