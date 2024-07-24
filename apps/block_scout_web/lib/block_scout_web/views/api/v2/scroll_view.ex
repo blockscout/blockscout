@@ -9,8 +9,22 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
 
   @doc """
     Extends the json output with a sub-map containing information related Scroll.
+
+    ## Parameters
+    - `out_json`: A map defining output json which will be extended.
+    - `transaction`: Transaction structure containing Scroll related data
+
+    ## Returns
+    - A map extended with the data related to Scroll rollup.
   """
-  @spec extend_transaction_json_response(map(), map()) :: map()
+  @spec extend_transaction_json_response(map(), %{
+          :__struct__ => Transaction,
+          :l1_fee => Wei.t(),
+          :block_number => non_neg_integer(),
+          :index => non_neg_integer(),
+          :input => Data.t(),
+          optional(any()) => any()
+        }) :: map()
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     config = Application.get_all_env(:explorer)[L1FeeParam]
 

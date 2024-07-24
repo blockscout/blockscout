@@ -1766,7 +1766,7 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  The fee a `transaction` paid for the `t:Explorer.Transaction.t/0` `gas`
+  The fee a `transaction` paid for the `t:Explorer.Chain.Transaction.t/0` `gas`.
 
   If the transaction is pending, then the fee will be a range of `unit`
 
@@ -1828,6 +1828,10 @@ defmodule Explorer.Chain.Transaction do
     |> Wei.to(unit)
   end
 
+  @doc """
+    The fee a `transaction` paid for the `t:Explorer.Chain.Transaction.t/0` `gas`.
+    Doesn't include L1 fee. See the description for the `fee` function for parameters and return values.
+  """
   def l2_fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
   def l2_fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
