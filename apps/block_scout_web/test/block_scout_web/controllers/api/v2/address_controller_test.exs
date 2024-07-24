@@ -47,8 +47,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
     %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
 
-    Subscriber.to(:fetched_bytecode, :on_demand)
-
     :ok
   end
 
