@@ -2500,18 +2500,21 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Finds the block number closest to a given timestamp, with a one-minute buffer, optionally
-    adjusting based on whether the block should be before or after the timestamp.
+    Finds the block number closest to a given timestamp, optionally adjusting
+    based on whether the block should be before or after the timestamp.
 
     ## Parameters
-    - `given_timestamp`: The timestamp for which the closest block number is being sought.
-    - `closest`: A direction indicator (`:before` or `:after`) specifying whether the block number
-                returned should be before or after the given timestamp.
-    - `from_api`: A boolean flag indicating whether to use the replica database or the primary one
-                  for the query.
+    - `given_timestamp`: The timestamp for which the closest block number is
+      being sought.
+    - `closest`: A direction indicator (`:before` or `:after`) specifying
+                whether the block number returned should be before or after the
+                given timestamp.
+    - `from_api`: A boolean flag indicating whether to use the replica database
+                  or the primary one for the query.
 
     ## Returns
-    - `{:ok, block_number}` where `block_number` is the block number closest to the specified timestamp.
+    - `{:ok, block_number}` where `block_number` is the block number closest to
+      the specified timestamp.
     - `{:error, :not_found}` if no block is found within the specified criteria.
   """
   @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
@@ -2519,19 +2522,10 @@ defmodule Explorer.Chain do
   def timestamp_to_block_number(given_timestamp, closest, from_api) do
     {:ok, t} = Timex.format(given_timestamp, "%Y-%m-%d %H:%M:%S", :strftime)
 
-    inner_query =
+    query =
       from(
         block in Block,
         where: block.consensus == true,
-        where:
-          fragment("? <= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS') + (1 * interval '1 minute')", block.timestamp, ^t),
-        where:
-          fragment("? >= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS') - (1 * interval '1 minute')", block.timestamp, ^t)
-      )
-
-    query =
-      from(
-        block in subquery(inner_query),
         select: block,
         order_by:
           fragment("abs(extract(epoch from (? - TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS'))))", block.timestamp, ^t),
