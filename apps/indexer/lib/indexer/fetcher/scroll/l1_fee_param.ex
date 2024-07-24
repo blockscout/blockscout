@@ -1,6 +1,19 @@
 defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   @moduledoc """
     Fills scroll_l1_fee_params DB table.
+
+    The table stores points in the chain (block number and transaction index within it)
+    when L1 Gas Oracle contract parameters were changed (and the new values of the changed
+    parameters). These points and values are then used by API to correctly display L1 fee
+    parameters of L2 transaction (such as `overhead`, `scalar`, etc.)
+
+    Example:
+
+    Let's assume that the `scalar` parameter is initially set to 100. An owner decided
+    to change it to 200. It initiates a transaction that is included into block number 800
+    under index 3. All transactions starting from block number 800 and index 4 will have
+    the scalar equal to 200. All transactions before index 3 of the block 800 (and preceding
+    blocks) will have the scalar equal to 100.
   """
 
   use GenServer
@@ -14,6 +27,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   import Explorer.Helper, only: [decode_data: 2]
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Data
   alias Explorer.Chain.Scroll.L1FeeParam, as: ScrollL1FeeParam
   alias Indexer.Helper
 
@@ -60,6 +74,21 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     {:ok, %{}, {:continue, json_rpc_named_arguments}}
   end
 
+  # Validates L1 Gas Oracle contract address and initiates searching of gas oracle events.
+  #
+  # When first launch, the events searching will start from the first block of the chain
+  # and end on the `safe` block (or `latest` one if `safe` is not available).
+  # If this is not the first launch, the process will start from the block which was
+  # the last on the previous launch (plus one). The block from the previous launch
+  # is stored in the `last_fetched_counters` database table.
+  #
+  # ## Parameters
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection on L2.
+  # - `state`: The current state of the fetcher.
+  #
+  # ## Returns
+  # - `{:noreply, new_state}` where the searching parameters are defined.
+  # - `{:stop, :normal, state}` in case of invalid L1 Gas Oracle contract address.
   @impl GenServer
   def handle_continue(json_rpc_named_arguments, state) do
     Logger.metadata(fetcher: @fetcher_name)
@@ -87,6 +116,21 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     end
   end
 
+  # Scans the L1 Gas Oracle contract for the events and saves the found parameter changes
+  # into `scroll_l1_fee_params` database table.
+  #
+  # The scanning process starts from the `start_block` defined by `handle_continue` function
+  # and ends with the latest one. The `safe_block` can be the latest block if the `safe` one
+  # is not available on the chain (in this case `safe_block_is_latest` is true). So the process
+  # works in the following block ranges: `start_block..safe_block` and `(safe_block + 1)..latest_block`
+  # or `start_block..latest`.
+  #
+  # ## Parameters
+  # - `:find_events`: The message that triggers the event scanning process.
+  # - `state`: The current state of the fetcher containing the searching parameters.
+  #
+  # ## Returns
+  # - `{:stop, :normal, state}` as a signal for the fether to stop working after all blocks are handled.
   @impl GenServer
   def handle_info(
         :find_events,
@@ -117,6 +161,18 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     {:noreply, state}
   end
 
+  @doc """
+    Handles L2 block reorg: removes all rows from the `scroll_l1_fee_params`
+    created beginning from the reorged block, and accordingly reduces the last
+    block number defined in the `last_fetched_counters` database table.
+
+    ## Parameters
+    - `starting_block`: the block number where reorg has occured.
+
+    ## Returns
+    - nothing
+  """
+  @spec handle_l2_reorg(non_neg_integer()) :: any()
   def handle_l2_reorg(starting_block) do
     Repo.delete_all(from(p in ScrollL1FeeParam, where: p.block_number >= ^starting_block))
 
@@ -128,6 +184,20 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     end
   end
 
+  @doc """
+    Converts event parameters and data into the map which can be
+    used to write a new row to the `scroll_l1_fee_params` table.
+
+    ## Parameters
+    - `first_topic`: The 32-byte hash of an event signature (in the form of `0x` prefixed hex string).
+    - `data`: The event data containing a changed parameter.
+    - `block_number`: The number of the block when the event transaction appeared.
+    - `tx_index`: The event transaction index withing the `block_number` block.
+
+    ## Returns
+    - A map for one row for `Chain.import` function.
+  """
+  @spec event_to_param([binary()], Data.t(), non_neg_integer(), non_neg_integer()) :: map()
   def event_to_param(first_topic, data, block_number, tx_index)
       when first_topic in [
              @overhead_updated_event,
@@ -157,6 +227,11 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     }
   end
 
+  @doc """
+    Returns a list of signatures of the events that can be emitted
+    by L1 Gas Oracle contract.
+  """
+  @spec event_signatures() :: list()
   def event_signatures do
     [
       @overhead_updated_event,
