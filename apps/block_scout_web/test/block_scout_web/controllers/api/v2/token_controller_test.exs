@@ -5,8 +5,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   import Mox
 
-  alias BlockScoutWeb.Notifier
-
   alias Explorer.{Repo, TestHelper}
 
   alias Explorer.Chain.{Address, Token, Token.Instance, TokenTransfer}

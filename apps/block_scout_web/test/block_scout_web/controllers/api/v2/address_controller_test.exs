@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Events.Subscriber
 
   alias Explorer.Chain.{
     Address,
@@ -24,6 +25,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   alias Explorer.Account.WatchlistAddress
   alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Plug.Conn
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
@@ -35,6 +37,18 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   setup :set_mox_global
 
   setup :verify_on_exit!
+
+  setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+    start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
+    start_supervised!({ContractCodeOnDemand, [mocked_json_rpc_named_arguments, [name: ContractCodeOnDemand]]})
+
+    %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
+
+    :ok
+  end
 
   defp topic(topic_hex_string) do
     {:ok, topic} = Explorer.Chain.Hash.Full.cast(topic_hex_string)
@@ -283,6 +297,44 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
 
       assert response["watchlist_address_id"] == watchlist_address.id
+    end
+
+    test "broadcasts fetched_bytecode event", %{conn: conn} do
+      address = insert(:address)
+      address_hash = address.hash
+      string_address_hash = to_string(address.hash)
+
+      contract_code = "0x6080"
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_getCode",
+                                  params: [^string_address_hash, "latest"]
+                                }
+                              ],
+                              _ ->
+        {:ok, [%{id: id, result: contract_code}]}
+      end)
+
+      topic = "addresses:#{address_hash}"
+
+      {:ok, _reply, _socket} =
+        BlockScoutWeb.UserSocketV2
+        |> socket("no_id", %{})
+        |> subscribe_and_join(topic)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}")
+      assert _response = json_response(request, 200)
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{fetched_bytecode: ^contract_code},
+                       event: "fetched_bytecode",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
     end
   end
 
