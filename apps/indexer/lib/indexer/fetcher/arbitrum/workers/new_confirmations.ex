@@ -620,6 +620,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
            discover_rollup_blocks__check_consecutive_rollup_blocks(
              raw_unconfirmed_rollup_blocks,
              first_unconfirmed_block,
+             rollup_block_num,
              batch.number
            ) do
       if first_unconfirmed_block == batch.start_block do
@@ -751,7 +752,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     # This function might look like over-engineered, but confirmations are not always
     # aligned with the boundaries of a batch unfortunately.
 
-    {status, block?, new_cache} = check_if_batch_confirmed(batch, confirmation_desc, outbox_config, cache)
+    {status, block?, new_cache} =
+      check_if_batch_confirmed(batch, confirmation_desc, outbox_config, rollup_block_num, cache)
 
     case {status, block? == rollup_block_num} do
       {:error, _} ->
@@ -790,6 +792,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # - `confirmation_desc`: Description of the latest confirmation details.
   # - `l1_outbox_config`: Configuration for the L1 outbox contract, including block
   #   range for logs retrieval.
+  # - `highest_unconfirmed_block`: The batch's highest rollup block number which is
+  #    considered as unconfirmed.
   # - `cache`: A cache for the logs to reduce the number of `eth_getLogs` calls.
   #
   # ## Returns
@@ -812,11 +816,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             optional(any()) => any()
           },
+          non_neg_integer(),
           __MODULE__.cached_logs()
         ) :: {:ok, nil | non_neg_integer(), __MODULE__.cached_logs()} | {:error, nil, __MODULE__.cached_logs()}
-  defp check_if_batch_confirmed(batch, confirmation_desc, l1_outbox_config, cache) do
+  defp check_if_batch_confirmed(batch, confirmation_desc, l1_outbox_config, highest_unconfirmed_block, cache) do
     log_info(
-      "Use L1 blocks #{batch.commitment_transaction.block_number}..#{confirmation_desc.l1_block_num - 1} to look for a rollup block confirmation within #{batch.start_block}..#{batch.end_block} of ##{batch.number}"
+      "Use L1 blocks #{batch.commitment_transaction.block_number}..#{confirmation_desc.l1_block_num - 1} to look for a rollup block confirmation within #{batch.start_block}..#{highest_unconfirmed_block} of ##{batch.number}"
     )
 
     block_pairs =
@@ -1046,20 +1051,37 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     l2_block_hash
   end
 
-  # Returns consecutive rollup blocks equal to or higher than the given lowest confirmed block.
+  # Returns consecutive rollup blocks within the range of lowest_confirmed_block..highest_confirmed_block
+  # assuming that the list of unconfirmed rollup blocks finishes on highest_confirmed_block and
+  # is sorted by block number
   @spec discover_rollup_blocks__check_consecutive_rollup_blocks(
           [Arbitrum.BatchBlock.to_import()],
+          non_neg_integer(),
           non_neg_integer(),
           non_neg_integer()
         ) :: {:ok, [Arbitrum.BatchBlock.to_import()]} | {:error, []}
   defp discover_rollup_blocks__check_consecutive_rollup_blocks(
          all_unconfirmed_rollup_blocks,
          lowest_confirmed_block,
+         highest_confirmed_block,
          batch_number
        ) do
-    case check_consecutive_rollup_blocks_and_cut(all_unconfirmed_rollup_blocks, lowest_confirmed_block) do
-      {true, unconfirmed_rollup_blocks} ->
+    {status, unconfirmed_rollup_blocks} =
+      check_consecutive_rollup_blocks_and_cut(all_unconfirmed_rollup_blocks, lowest_confirmed_block)
+
+    unconfirmed_rollup_blocks_length = length(unconfirmed_rollup_blocks)
+    expected_blocks_range_length = highest_confirmed_block - lowest_confirmed_block + 1
+
+    case {status, unconfirmed_rollup_blocks_length == expected_blocks_range_length} do
+      {true, true} ->
         {:ok, unconfirmed_rollup_blocks}
+
+      {true, false} ->
+        log_warning(
+          "Only #{unconfirmed_rollup_blocks_length} of #{expected_blocks_range_length} blocks found. Skipping the blocks from the batch #{batch_number}"
+        )
+
+        {:error, []}
 
       _ ->
         # The case when there is a gap in the blocks range is possible when there is
