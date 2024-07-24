@@ -37,10 +37,14 @@ services:
   stats:
     depends_on:
       - stats-db
-      - backend
     extends:
       file: ./services/stats.yml
       service: stats
+
+  user-ops-indexer:
+    extends:
+      file: ./services/user-ops-indexer.yml
+      service: user-ops-indexer
 
   proxy:
     depends_on:

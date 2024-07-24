@@ -62,7 +62,7 @@
                     @address.hash),
                     "data-test":
                     "token_hash_link"
-                  ) 
+                  )
                   %>
                 </dd>
               </dl>
@@ -123,7 +123,9 @@
           <% end %>
           <!-- Implementation -->
           <%= if @is_proxy do %>
-            <% {implementation_address_, name} = SmartContract.get_implementation_address_hash(@address.smart_contract) %>
+            <% {implementation_addresses, implementation_names} = Implementation.get_implementation(@address.smart_contract) %>
+            <% implementation_address_ = Enum.at(implementation_addresses, 0) %>
+            <% name = Enum.at(implementation_names, 0) %>
             <% implementation_address = implementation_address_ || "0x0000000000000000000000000000000000000000" %>
             <dl class="row">
               <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">
@@ -136,7 +138,7 @@
                   (if name, do: name <> " | " <> implementation_address, else: implementation_address),
                   to: address_path(@conn, :show, implementation_address),
                   class: "contract-address"
-                ) 
+                )
                 %>
               </dd>
             </dl>
@@ -150,6 +152,20 @@
             </dt>
             <dd data-selector="current-coin-balance" class="col-sm-8 col-md-8 col-lg-9" data-test="address_balance">
               <%= balance(@address) %>
+              <%= if !match?({:pending, _}, @coin_balance_status) && !empty_exchange_rate?(@exchange_rate) do %>
+                <% usd_value = to_string(@exchange_rate.usd_value) %>
+                <span class="address-current-balance">
+                  (<span
+                    data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
+                    data-usd-exchange-rate="<%= @exchange_rate.usd_value %>"
+                    data-placement="top"
+                    data-toggle="tooltip"
+                    data-html="true"
+                    title='<%= "@ " <> usd_value <> "/" <> Explorer.coin_name() %>'
+                  >
+                  </span>)
+                </span>
+              <% end %>
             </dd>
           </dl>
           <!-- Tokens -->
@@ -273,4 +289,4 @@
 <!-- Modal QR -->
 <%= render BlockScoutWeb.CommonComponentsView, "_modal_qr_code.html", qr_code: qr_code(@address), title: @address %>
 
-<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %> 
+<%= render BlockScoutWeb.Advertisement.BannersAdView, "_banner_728.html", conn: @conn %>

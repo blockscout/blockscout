@@ -17,7 +17,7 @@
               </p>
             </div>
 
-            <button id="run-create-contract-methods" data-api_path="<%= BlockScoutWeb.AdminRouter.Helpers.create_contract_methods_path(@conn, :create_contract_methods) %>" class="btn btn-primary">
+            <button id="run-create-contract-methods" data-api_path="<%= BlockScoutWeb.Routers.AdminRouter.Helpers.create_contract_methods_path(@conn, :create_contract_methods) %>" class="btn btn-primary">
               <%= gettext("Run") %>
 
               <span data-loading-message class="loading-spinner-small mr-2 d-none">

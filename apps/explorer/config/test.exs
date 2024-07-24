@@ -3,10 +3,15 @@ import Config
 # Lower hashing rounds for faster tests
 config :bcrypt_elixir, log_rounds: 4
 
+database_url = System.get_env("TEST_DATABASE_URL")
+database = if database_url, do: nil, else: "explorer_test"
+hostname = if database_url, do: nil, else: "localhost"
+
 # Configure your database
 config :explorer, Explorer.Repo,
-  database: "explorer_test",
-  hostname: "localhost",
+  database: database,
+  hostname: hostname,
+  url: database_url,
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
   ownership_timeout: :timer.minutes(7),
@@ -17,8 +22,9 @@ config :explorer, Explorer.Repo,
 
 # Configure API database
 config :explorer, Explorer.Repo.Replica1,
-  database: "explorer_test",
-  hostname: "localhost",
+  database: database,
+  hostname: hostname,
+  url: database_url,
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
   ownership_timeout: :timer.minutes(1),
@@ -32,10 +38,14 @@ config :explorer, :proxy,
   fallback_cached_implementation_data_ttl: :timer.seconds(20),
   implementation_data_fetching_timeout: :timer.seconds(20)
 
+account_database_url = System.get_env("TEST_DATABASE_READ_ONLY_API_URL") || database_url
+account_database = if account_database_url, do: nil, else: "explorer_test_account"
+
 # Configure API database
 config :explorer, Explorer.Repo.Account,
-  database: "explorer_test_account",
-  hostname: "localhost",
+  database: account_database,
+  hostname: hostname,
+  url: account_database_url,
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
   ownership_timeout: :timer.minutes(1),
@@ -48,16 +58,20 @@ for repo <- [
       Explorer.Repo.Optimism,
       Explorer.Repo.PolygonEdge,
       Explorer.Repo.PolygonZkevm,
+      Explorer.Repo.ZkSync,
       Explorer.Repo.RSK,
       Explorer.Repo.Shibarium,
       Explorer.Repo.Suave,
+      Explorer.Repo.Arbitrum,
       Explorer.Repo.BridgedTokens,
       Explorer.Repo.Filecoin,
-      Explorer.Repo.Stability
+      Explorer.Repo.Stability,
+      Explorer.Repo.Mud
     ] do
   config :explorer, repo,
-    database: "explorer_test",
-    hostname: "localhost",
+    database: database,
+    hostname: hostname,
+    url: database_url,
     pool: Ecto.Adapters.SQL.Sandbox,
     # Default of `5_000` was too low for `BlockFetcher` test
     ownership_timeout: :timer.minutes(1),
@@ -68,8 +82,9 @@ for repo <- [
 end
 
 config :explorer, Explorer.Repo.PolygonZkevm,
-  database: "explorer_test",
-  hostname: "localhost",
+  database: database,
+  hostname: hostname,
+  url: database_url,
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
   ownership_timeout: :timer.minutes(1),
@@ -85,4 +100,3 @@ config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: false
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: false
-config :explorer, Explorer.Tags.AddressTag.Cataloger, enabled: false

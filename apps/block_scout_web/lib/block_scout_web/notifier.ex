@@ -105,7 +105,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
-    last_broadcasted_block_number = Helper.fetch_from_cache(:number, :last_broadcasted_block)
+    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:number, :last_broadcasted_block)
 
     blocks
     |> Enum.sort_by(& &1.number, :asc)
@@ -172,7 +172,12 @@ defmodule BlockScoutWeb.Notifier do
       |> Enum.map(
         &(&1
           |> Repo.preload(
-            DenormalizationHelper.extend_transaction_preload([:from_address, :to_address, :token, :transaction])
+            DenormalizationHelper.extend_transaction_preload([
+              :token,
+              :transaction,
+              from_address: [:names, :smart_contract, :proxy_implementations],
+              to_address: [:names, :smart_contract, :proxy_implementations]
+            ])
           ))
       )
 
@@ -193,7 +198,13 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :transactions, :realtime, transactions}) do
-    base_preloads = [:block, created_contract_address: :names, from_address: :names, to_address: :names]
+    base_preloads = [
+      :block,
+      created_contract_address: [:names, :smart_contract, :proxy_implementations],
+      from_address: [:names, :smart_contract, :proxy_implementations],
+      to_address: [:names, :smart_contract, :proxy_implementations]
+    ]
+
     preloads = if API_V2.enabled?(), do: [:token_transfers | base_preloads], else: base_preloads
 
     transactions
@@ -226,6 +237,21 @@ defmodule BlockScoutWeb.Notifier do
       )
       when not is_nil(total_supply) do
     Endpoint.broadcast("tokens:#{to_string(contract_address_hash)}", "token_total_supply", %{token: token})
+  end
+
+  def handle_event({:chain_event, :fetched_bytecode, :on_demand, [address_hash, fetched_bytecode]}) do
+    Endpoint.broadcast("addresses:#{to_string(address_hash)}", "fetched_bytecode", %{fetched_bytecode: fetched_bytecode})
+  end
+
+  def handle_event(
+        {:chain_event, :fetched_token_instance_metadata, :on_demand,
+         [token_contract_address_hash_string, token_id, fetched_token_instance_metadata]}
+      ) do
+    Endpoint.broadcast(
+      "token_instances:#{token_contract_address_hash_string}",
+      "fetched_token_instance_metadata",
+      %{token_id: token_id, fetched_metadata: fetched_token_instance_metadata}
+    )
   end
 
   def handle_event({:chain_event, :changed_bytecode, :on_demand, [address_hash]}) do
@@ -327,7 +353,7 @@ defmodule BlockScoutWeb.Notifier do
 
   defp schedule_broadcasting(block) do
     :timer.sleep(@check_broadcast_sequence_period)
-    last_broadcasted_block_number = Helper.fetch_from_cache(:number, :last_broadcasted_block)
+    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:number, :last_broadcasted_block)
 
     if last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) do
       broadcast_block(block)
@@ -433,7 +459,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_transactions_websocket_v2_inner(transactions, default_channel, event) do
-    if Enum.count(transactions) > 0 do
+    if not Enum.empty?(transactions) do
       Endpoint.broadcast(default_channel, event, %{
         transactions: transactions
       })

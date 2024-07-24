@@ -24,7 +24,7 @@ defmodule Indexer.Fetcher.CoinBalance.Realtime do
   def async_fetch_balances(balance_fields) when is_list(balance_fields) do
     entries = Enum.map(balance_fields, &Helper.entry/1)
 
-    BufferedTask.buffer(__MODULE__, entries)
+    BufferedTask.buffer(__MODULE__, entries, true)
   end
 
   def child_spec(params) do
@@ -44,7 +44,7 @@ defmodule Indexer.Fetcher.CoinBalance.Realtime do
               tracer: Tracer
             )
   def run(entries, json_rpc_named_arguments) do
-    Helper.run(entries, json_rpc_named_arguments, false)
+    Helper.run(entries, json_rpc_named_arguments, :realtime)
   end
 
   defp defaults do

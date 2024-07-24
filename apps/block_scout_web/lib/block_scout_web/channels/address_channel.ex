@@ -146,6 +146,7 @@ defmodule BlockScoutWeb.AddressChannel do
     {:noreply, socket}
   end
 
+  # TODO: fix or remove, "internal_transaction.json" clause does not exist
   def handle_out(
         "internal_transaction",
         %{address: _address, internal_transaction: internal_transaction},
@@ -193,11 +194,13 @@ defmodule BlockScoutWeb.AddressChannel do
       ) do
     coin_balance = Chain.get_coin_balance(socket.assigns.address_hash, block_number)
 
-    rendered_coin_balance = AddressViewAPI.render("coin_balance.json", %{coin_balance: coin_balance})
+    if coin_balance.value && coin_balance.delta do
+      rendered_coin_balance = AddressViewAPI.render("coin_balance.json", %{coin_balance: coin_balance})
 
-    push(socket, "coin_balance", %{coin_balance: rendered_coin_balance})
+      push(socket, "coin_balance", %{coin_balance: rendered_coin_balance})
 
-    push_current_coin_balance(socket, block_number, coin_balance)
+      push_current_coin_balance(socket, block_number, coin_balance)
+    end
 
     {:noreply, socket}
   end
@@ -207,19 +210,21 @@ defmodule BlockScoutWeb.AddressChannel do
 
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
-    rendered_coin_balance =
-      View.render_to_string(
-        AddressCoinBalanceView,
-        "_coin_balances.html",
-        conn: socket,
-        coin_balance: coin_balance
-      )
+    if coin_balance.value && coin_balance.delta do
+      rendered_coin_balance =
+        View.render_to_string(
+          AddressCoinBalanceView,
+          "_coin_balances.html",
+          conn: socket,
+          coin_balance: coin_balance
+        )
 
-    push(socket, "coin_balance", %{
-      coin_balance_html: rendered_coin_balance
-    })
+      push(socket, "coin_balance", %{
+        coin_balance_html: rendered_coin_balance
+      })
 
-    push_current_coin_balance(socket, block_number, coin_balance)
+      push_current_coin_balance(socket, block_number, coin_balance)
+    end
 
     {:noreply, socket}
   end
@@ -237,6 +242,7 @@ defmodule BlockScoutWeb.AddressChannel do
     push_current_token_balances(socket, address_current_token_balances, "erc_20", "ERC-20")
     push_current_token_balances(socket, address_current_token_balances, "erc_721", "ERC-721")
     push_current_token_balances(socket, address_current_token_balances, "erc_1155", "ERC-1155")
+    push_current_token_balances(socket, address_current_token_balances, "erc_404", "ERC-404")
 
     {:noreply, socket}
   end
@@ -325,7 +331,19 @@ defmodule BlockScoutWeb.AddressChannel do
         event
       )
       when is_list(transactions) do
-    transaction_json = TransactionViewAPI.render("transactions.json", %{transactions: transactions, conn: nil})
+    transaction_json =
+      TransactionViewAPI.render("transactions.json", %{
+        transactions:
+          transactions
+          |> Repo.preload([
+            [
+              from_address: [:names, :smart_contract, :proxy_implementations],
+              to_address: [:names, :smart_contract, :proxy_implementations],
+              created_contract_address: [:names, :smart_contract, :proxy_implementations]
+            ]
+          ]),
+        conn: nil
+      })
 
     push(socket, event, %{transactions: transaction_json})
 
@@ -370,7 +388,17 @@ defmodule BlockScoutWeb.AddressChannel do
       )
       when is_list(token_transfers) do
     token_transfer_json =
-      TransactionViewAPI.render("token_transfers.json", %{token_transfers: token_transfers, conn: nil})
+      TransactionViewAPI.render("token_transfers.json", %{
+        token_transfers:
+          token_transfers
+          |> Repo.preload([
+            [
+              from_address: [:names, :smart_contract, :proxy_implementations],
+              to_address: [:names, :smart_contract, :proxy_implementations]
+            ]
+          ]),
+        conn: nil
+      })
 
     push(socket, event, %{token_transfers: token_transfer_json})
 

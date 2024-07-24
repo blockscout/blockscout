@@ -7,7 +7,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.MasterCopy do
   alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract.Proxy
 
-  import Explorer.Chain.SmartContract, only: [is_burn_signature: 1]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [is_burn_signature: 1]
 
   @doc """
   Gets implementation address hash string for proxy contract from master-copy pattern
@@ -29,7 +29,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.MasterCopy do
         when is_burn_signature(empty_address) ->
           {:ok, "0x"}
 
-        {:ok, logic_contract_address} ->
+        {:ok, "0x" <> storage_value} ->
+          logic_contract_address = Proxy.extract_address_hex_from_storage_pointer(storage_value)
           {:ok, logic_contract_address}
 
         _ ->

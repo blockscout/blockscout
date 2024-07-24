@@ -19,8 +19,8 @@ defmodule Indexer.Transform.Optimism.Withdrawals do
     Logger.metadata(fetcher: :optimism_withdrawals_realtime)
 
     items =
-      with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:start_block_l2]),
-           message_passer = Application.get_env(:indexer, Indexer.Fetcher.OptimismWithdrawal)[:message_passer],
+      with false <- is_nil(Application.get_env(:indexer, OptimismWithdrawal)[:start_block_l2]),
+           message_passer = Application.get_env(:indexer, OptimismWithdrawal)[:message_passer],
            true <- Helper.address_correct?(message_passer) do
         message_passer = String.downcase(message_passer)
 

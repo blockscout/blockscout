@@ -6,9 +6,9 @@ defmodule Explorer.Chain.PolygonZkevm.TransactionBatch do
   alias Explorer.Chain.Hash
   alias Explorer.Chain.PolygonZkevm.{BatchTransaction, LifecycleTransaction}
 
-  @optional_attrs ~w(sequence_id verify_id)a
+  @optional_attrs ~w(timestamp sequence_id verify_id)a
 
-  @required_attrs ~w(number timestamp l2_transactions_count global_exit_root acc_input_hash state_root)a
+  @required_attrs ~w(number l2_transactions_count global_exit_root acc_input_hash state_root)a
 
   @primary_key false
   typed_schema "polygon_zkevm_transaction_batches" do

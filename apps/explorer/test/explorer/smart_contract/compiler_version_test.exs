@@ -6,6 +6,15 @@ defmodule Explorer.SmartContract.CompilerVersionTest do
   alias Explorer.SmartContract.CompilerVersion
   alias Plug.Conn
 
+  setup do
+    configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+    Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
+    end)
+  end
+
   describe "fetch_versions/1" do
     setup do
       bypass = Bypass.open()

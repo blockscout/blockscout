@@ -18,11 +18,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup repo
         uses: ./.github/actions/setup-repo
+        id: setup
         with:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          docker-remote-multi-platform: true
+          docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
+          docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
-      - name: Build & Push Core Docker image
+      - name: Build & Push Core Docker image (indexer + API)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -31,79 +35,95 @@ jobs:
           cache-from: type=registry,ref=blockscout/blockscout:buildcache
           cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
           tags: blockscout/blockscout:latest, blockscout/blockscout:${{ env.RELEASE_VERSION }}
+          labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false
+            API_V1_READ_METHODS_DISABLED=false
             API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_EXCHANGE_RATES_PERIOD=
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
             AMPLITUDE_URL=
             AMPLITUDE_API_KEY=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
-      - name: Build and push Docker image for zkEVM
+      - name: Build & Push Core Docker image (indexer)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-zkevm:latest, blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-indexer
+          labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
+            DISABLE_API=true
+            DISABLE_WEBAPP=true
             CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=false
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=polygon_zkevm
 
-      - name: Build and push Docker image for SUAVE
+      - name: Build & Push Core Docker image (API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-suave:latest, blockscout/blockscout-suave:${{ env.RELEASE_VERSION }}
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-api
+          labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
-            CACHE_EXCHANGE_RATES_PERIOD=
+            DISABLE_INDEXER=true
+            DISABLE_WEBAPP=true
             API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
             API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_EXCHANGE_RATES_PERIOD=
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=false
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=suave
-      - name: Send release announcement to Slack workflow
-        id: slack
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          payload: |
-            {
-              "release-version": "${{ env.RELEASE_VERSION }}",
-              "release-link": "https://github.com/blockscout/blockscout/releases/tag/v${{ env.RELEASE_VERSION }}-beta"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      # - name: Send release announcement to Slack workflow
+      #   id: slack
+      #   uses: slackapi/slack-github-action@v1.24.0
+      #   with:
+      #     payload: |
+      #       {
+      #         "release-version": "${{ env.RELEASE_VERSION }}",
+      #         "release-link": "https://github.com/blockscout/blockscout/releases/tag/v${{ env.RELEASE_VERSION }}-beta"
+      #       }
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   # merge-master-after-release:
   #   name: Merge 'master' to specific branch after release

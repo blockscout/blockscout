@@ -20,7 +20,7 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
 
   @impl true
   def init(_args) do
-    create_cache_table()
+    Helper.create_cache_table(@cache_name)
 
     {:ok, %{consolidate?: enable_consolidation?()}, {:continue, :ok}}
   end
@@ -76,21 +76,13 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
   end
 
   defp update_cache(address_hash_string, token_balances) do
-    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
+    Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
     new_data = address_tokens_fiat_sum(token_balances)
-    put_into_cache("hash_#{address_hash_string}", new_data)
+    Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}", new_data)
   end
 
   defp fetch_from_cache(key) do
-    Helper.fetch_from_cache(key, @cache_name)
-  end
-
-  defp put_into_cache(key, value) do
-    :ets.insert(@cache_name, {key, value})
-  end
-
-  defp create_cache_table do
-    Helper.create_cache_table(@cache_name)
+    Helper.fetch_from_ets_cache(key, @cache_name)
   end
 
   defp enable_consolidation?, do: @enable_consolidation

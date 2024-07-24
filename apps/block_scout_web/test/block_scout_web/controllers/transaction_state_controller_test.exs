@@ -3,13 +3,13 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
 
   import Mox
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [transaction_state_path: 3]
+  import BlockScoutWeb.Routers.WebRouter.Helpers, only: [transaction_state_path: 3]
   import BlockScoutWeb.WeiHelper, only: [format_wei_value: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   alias Explorer.Chain.Wei
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
-  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   setup :set_mox_global
 

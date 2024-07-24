@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.PagingHelper do
   @allowed_filter_labels ["validated", "pending"]
 
   case Application.compile_env(:explorer, :chain_type) do
-    "ethereum" ->
+    :ethereum ->
       @allowed_type_labels [
         "coin_transfer",
         "contract_call",
@@ -32,16 +32,16 @@ defmodule BlockScoutWeb.PagingHelper do
       ]
   end
 
-  @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155"]
-  @allowed_nft_token_type_labels ["ERC-721", "ERC-1155"]
+  @allowed_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+  @allowed_nft_type_labels ["ERC-721", "ERC-1155", "ERC-404"]
   @allowed_chain_id [1, 56, 99]
   @allowed_stability_validators_states ["active", "probation", "inactive"]
 
   def allowed_stability_validators_states, do: @allowed_stability_validators_states
 
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}, [:validated | _]) do
-    with {block_number, ""} <- Integer.parse(block_number_string),
-         {index, ""} <- Integer.parse(index_string) do
+    with {:ok, block_number} <- Helper.safe_parse_non_negative_integer(block_number_string),
+         {:ok, index} <- Helper.safe_parse_non_negative_integer(index_string) do
       [paging_options: %{@default_paging_options | key: {block_number, index}}]
     else
       _ ->
@@ -80,14 +80,14 @@ defmodule BlockScoutWeb.PagingHelper do
   @doc """
     Parse 'type' query parameter from request option map
   """
-  @spec nft_token_types_options(map()) :: [{:token_type, list}]
-  def nft_token_types_options(%{"type" => filters}) do
+  @spec nft_types_options(map()) :: [{:token_type, list}]
+  def nft_types_options(%{"type" => filters}) do
     [
-      token_type: filters_to_list(filters, @allowed_nft_token_type_labels)
+      token_type: filters_to_list(filters, @allowed_nft_type_labels)
     ]
   end
 
-  def nft_token_types_options(_), do: [token_type: []]
+  def nft_types_options(_), do: [token_type: []]
 
   defp filters_to_list(filters, allowed, variant \\ :upcase)
   defp filters_to_list(filters, allowed, :downcase), do: filters |> String.downcase() |> parse_filter(allowed)
@@ -158,7 +158,7 @@ defmodule BlockScoutWeb.PagingHelper do
         [
           necessity_by_association: %{
             :transactions => :optional,
-            [miner: :names] => :optional,
+            [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
             :nephews => :required,
             :rewards => :optional
           },
@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.PagingHelper do
         [
           necessity_by_association: %{
             :transactions => :optional,
-            [miner: :names] => :optional,
+            [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
             :rewards => :optional
           },
           block_type: "Reorg"
@@ -184,7 +184,7 @@ defmodule BlockScoutWeb.PagingHelper do
     do: [
       necessity_by_association: %{
         :transactions => :optional,
-        [miner: :names] => :optional,
+        [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
         :rewards => :optional
       },
       block_type: "Block"
@@ -303,4 +303,21 @@ defmodule BlockScoutWeb.PagingHelper do
     do: [{:dynamic, :blocks_validated, :desc_nulls_last, ValidatorStability.dynamic_validated_blocks()}]
 
   defp do_validators_stability_sorting(_, _), do: []
+
+  @spec mud_records_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def mud_records_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_mud_records_sorting(sort_field, order)]
+  end
+
+  def mud_records_sorting(_), do: []
+
+  defp do_mud_records_sorting("key_bytes", "asc"), do: [asc_nulls_first: :key_bytes]
+  defp do_mud_records_sorting("key_bytes", "desc"), do: [desc_nulls_last: :key_bytes]
+  defp do_mud_records_sorting("key0", "asc"), do: [asc_nulls_first: :key0]
+  defp do_mud_records_sorting("key0", "desc"), do: [desc_nulls_last: :key0]
+  defp do_mud_records_sorting("key1", "asc"), do: [asc_nulls_first: :key1]
+  defp do_mud_records_sorting("key1", "desc"), do: [desc_nulls_last: :key1]
+  defp do_mud_records_sorting(_, _), do: []
 end

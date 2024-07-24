@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
   import Mox
 
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.Factory
+  alias Explorer.{Factory, TestHelper}
 
   setup :set_mox_from_context
 
@@ -86,7 +86,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         contract_code_md5: "123"
       )
 
-      get_eip1967_implementation_zero_addresses()
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       path =
         smart_contract_path(BlockScoutWeb.Endpoint, :index,
@@ -278,99 +278,15 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
   end
 
   defp blockchain_get_implementation_mock do
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                id: 0,
-                                                method: "eth_getStorageAt",
-                                                params: [
-                                                  _,
-                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                  "latest"
-                                                ]
-                                              },
-                                              _options ->
-      {:ok, "0xcebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
-    end)
+    EthereumJSONRPC.Mox
+    |> TestHelper.mock_logic_storage_pointer_request(false, "0xcebb2CCCFe291F0c442841cBE9C1D06EED61Ca02")
   end
 
   defp blockchain_get_implementation_mock_2 do
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                id: 0,
-                                                method: "eth_getStorageAt",
-                                                params: [
-                                                  _,
-                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                  "latest"
-                                                ]
-                                              },
-                                              _options ->
-      {:ok, "0x000000000000000000000000cebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
-    end)
-  end
-
-  defp mock_empty_logic_storage_pointer_request do
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                id: 0,
-                                                method: "eth_getStorageAt",
-                                                params: [
-                                                  _,
-                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                  "latest"
-                                                ]
-                                              },
-                                              _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-  end
-
-  defp mock_empty_beacon_storage_pointer_request(mox) do
-    expect(mox, :json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-  end
-
-  defp mock_empty_eip_1822_storage_pointer_request(mox) do
-    expect(mox, :json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-  end
-
-  defp mock_empty_oz_storage_pointer_request(mox) do
-    expect(mox, :json_rpc, fn %{
-                                id: 0,
-                                method: "eth_getStorageAt",
-                                params: [
-                                  _,
-                                  "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                                  "latest"
-                                ]
-                              },
-                              _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-  end
-
-  def get_eip1967_implementation_zero_addresses do
-    mock_empty_logic_storage_pointer_request()
-    |> mock_empty_beacon_storage_pointer_request()
-    |> mock_empty_oz_storage_pointer_request()
-    |> mock_empty_eip_1822_storage_pointer_request()
+    EthereumJSONRPC.Mox
+    |> TestHelper.mock_logic_storage_pointer_request(
+      false,
+      "0x000000000000000000000000cebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"
+    )
   end
 end

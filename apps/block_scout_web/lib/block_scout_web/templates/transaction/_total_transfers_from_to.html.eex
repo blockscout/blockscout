@@ -40,7 +40,7 @@ style: "position: relative;"%>
   <td valign="top" style="width: 1%;">
     <b>For</b>
   </td>
-<% end %>       
+<% end %>
 <td class="address-mobile" style="word-break: break-all; white-space: nowrap;">
   <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", transfer: @transfer %>
 </td>

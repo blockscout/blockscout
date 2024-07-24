@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
   alias BlockScoutWeb.Tokens.TransferView
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Indexer.Fetcher.TokenTotalSupplyOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]

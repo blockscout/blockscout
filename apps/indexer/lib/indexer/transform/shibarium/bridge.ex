@@ -24,7 +24,7 @@ defmodule Indexer.Transform.Shibarium.Bridge do
 
     items =
       with false <- is_nil(Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:start_block]),
-           false <- Application.get_env(:explorer, :chain_type) != "shibarium",
+           false <- Application.get_env(:explorer, :chain_type) != :shibarium,
            child_chain = Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:child_chain],
            weth = Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:weth],
            bone_withdraw = Application.get_env(:indexer, Indexer.Fetcher.Shibarium.L2)[:bone_withdraw],

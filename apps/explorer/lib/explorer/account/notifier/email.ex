@@ -5,7 +5,6 @@ defmodule Explorer.Account.Notifier.Email do
 
   require Logger
 
-  alias BlockScoutWeb.WebRouter.Helpers
   alias Explorer.Account.{Identity, Watchlist, WatchlistAddress, WatchlistNotification}
   alias Explorer.Repo
 
@@ -58,6 +57,9 @@ defmodule Explorer.Account.Notifier.Email do
         "Token ID: " <> subject <> " of "
 
       "ERC-1155" ->
+        "Token ID: " <> subject <> " of "
+
+      "ERC-404" ->
         "Token ID: " <> subject <> " of "
     end
   end
@@ -118,15 +120,15 @@ defmodule Explorer.Account.Notifier.Email do
   end
 
   defp address_url(address_hash) do
-    Helpers.address_url(uri(), :show, address_hash)
+    uri() |> URI.append_path("/address/#{address_hash}") |> to_string()
   end
 
   defp block_url(notification) do
-    Helpers.block_url(uri(), :show, Integer.to_string(notification.block_number))
+    uri() |> URI.append_path("/block/#{notification.block_number}") |> to_string()
   end
 
   defp transaction_url(notification) do
-    Helpers.transaction_url(uri(), :show, notification.transaction_hash)
+    uri() |> URI.append_path("/tx/#{notification.transaction_hash}") |> to_string()
   end
 
   defp url_params do
@@ -153,7 +155,7 @@ defmodule Explorer.Account.Notifier.Email do
     raw_path = url_params()[:path]
 
     if raw_path |> String.ends_with?("/") do
-      raw_path |> String.slice(0..-2)
+      raw_path |> String.slice(0..-2//1)
     else
       raw_path
     end

@@ -166,7 +166,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
   defp import_chunk(transactions_params) do
     addresses_params = Addresses.extract_addresses(%{transactions: transactions_params}, pending: true)
 
-    # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
+    # There's no need to queue up fetching the address balance since these are pending transactions and cannot have
     # affected the address balance yet since address balance is a balance at a given block and these transactions are
     # blockless.
     case Chain.import(%{

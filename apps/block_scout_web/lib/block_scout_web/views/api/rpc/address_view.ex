@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   end
 
   def render("tokennfttx.json", %{token_transfers: token_transfers, max_block_number: max_block_number}) do
-    data = Enum.map(token_transfers, &prepare_nft_token_transfer(&1, max_block_number))
+    data = Enum.map(token_transfers, &prepare_nft_transfer(&1, max_block_number))
     RPCView.render("show.json", data: data)
   end
 
@@ -192,6 +192,13 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     |> Map.put_new(:values, token_transfer.amounts)
   end
 
+  defp prepare_token_transfer(%{token_type: "ERC-404"} = token_transfer) do
+    token_transfer
+    |> prepare_common_token_transfer()
+    |> Map.put_new(:tokenIDs, token_transfer.token_ids)
+    |> Map.put_new(:values, token_transfer.amounts)
+  end
+
   defp prepare_token_transfer(%{token_type: "ERC-20"} = token_transfer) do
     token_transfer
     |> prepare_common_token_transfer()
@@ -202,7 +209,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     prepare_common_token_transfer(token_transfer)
   end
 
-  defp prepare_nft_token_transfer(token_transfer, max_block_number) do
+  defp prepare_nft_transfer(token_transfer, max_block_number) do
     %{
       "blockNumber" => to_string(token_transfer.block_number),
       "timeStamp" => to_string(DateTime.to_unix(token_transfer.block.timestamp)),

@@ -126,7 +126,7 @@ defmodule Explorer.SmartContract.HelperTest do
   end
 
   describe "read_with_wallet_method?" do
-    test "returns payable method with output in the read tab" do
+    test "doesn't return payable method with output in the read tab" do
       function = %{
         "type" => "function",
         "stateMutability" => "payable",
@@ -135,7 +135,7 @@ defmodule Explorer.SmartContract.HelperTest do
         "inputs" => []
       }
 
-      assert Helper.read_with_wallet_method?(function)
+      refute Helper.read_with_wallet_method?(function)
     end
 
     test "doesn't return payable method with no output in the read tab" do

@@ -1,11 +1,65 @@
 defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Chain.Address
-  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
-  alias Explorer.Chain.Cache.StabilityValidatorsCounters
+  if Application.compile_env(:explorer, :chain_type) == :stability do
+    alias Explorer.Chain.Address
+    alias Explorer.Chain.Cache.StabilityValidatorsCounters
+    alias Explorer.Chain.Stability.Validator, as: ValidatorStability
+    alias Explorer.Helper
 
-  if Application.compile_env(:explorer, :chain_type) == "stability" do
+    defp check_paginated_response(first_page_resp, second_page_resp, list) do
+      assert Enum.count(first_page_resp["items"]) == 50
+      assert first_page_resp["next_page_params"] != nil
+      compare_item(Enum.at(list, 50), Enum.at(first_page_resp["items"], 0))
+      compare_item(Enum.at(list, 1), Enum.at(first_page_resp["items"], 49))
+
+      assert Enum.count(second_page_resp["items"]) == 1
+      assert second_page_resp["next_page_params"] == nil
+      compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
+    end
+
+    defp compare_default_sorting_for_asc({validator_1, blocks_count_1}, {validator_2, blocks_count_2}) do
+      case {
+        Helper.compare(blocks_count_1, blocks_count_2),
+        Helper.compare(
+          Keyword.fetch!(ValidatorStability.state_enum(), validator_1.state),
+          Keyword.fetch!(ValidatorStability.state_enum(), validator_2.state)
+        ),
+        Helper.compare(validator_1.address_hash.bytes, validator_2.address_hash.bytes)
+      } do
+        {:lt, _, _} -> false
+        {:eq, :lt, _} -> false
+        {:eq, :eq, :lt} -> false
+        _ -> true
+      end
+    end
+
+    defp compare_default_sorting_for_desc({validator_1, blocks_count_1}, {validator_2, blocks_count_2}) do
+      case {
+        Helper.compare(blocks_count_1, blocks_count_2),
+        Helper.compare(
+          Keyword.fetch!(ValidatorStability.state_enum(), validator_1.state),
+          Keyword.fetch!(ValidatorStability.state_enum(), validator_2.state)
+        ),
+        Helper.compare(validator_1.address_hash.bytes, validator_2.address_hash.bytes)
+      } do
+        {:gt, _, _} -> false
+        {:eq, :lt, _} -> false
+        {:eq, :eq, :lt} -> false
+        _ -> true
+      end
+    end
+
+    defp compare_item(%ValidatorStability{} = validator, json) do
+      assert Address.checksum(validator.address_hash) == json["address"]["hash"]
+      assert to_string(validator.state) == json["state"]
+    end
+
+    defp compare_item({%ValidatorStability{} = validator, count}, json) do
+      assert json["blocks_validated_count"] == count + 1
+      assert compare_item(validator, json)
+    end
+
     describe "/validators/stability" do
       test "get paginated list of the validators", %{conn: conn} do
         validators =
@@ -139,67 +193,6 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
                  "validators_counter" => "9"
                } = json_response(request, 200)
       end
-    end
-  end
-
-  defp compare_item(%ValidatorStability{} = validator, json) do
-    assert Address.checksum(validator.address_hash) == json["address"]["hash"]
-    assert to_string(validator.state) == json["state"]
-  end
-
-  defp compare_item({%ValidatorStability{} = validator, count}, json) do
-    assert json["blocks_validated_count"] == count + 1
-    assert compare_item(validator, json)
-  end
-
-  defp check_paginated_response(first_page_resp, second_page_resp, list) do
-    assert Enum.count(first_page_resp["items"]) == 50
-    assert first_page_resp["next_page_params"] != nil
-    compare_item(Enum.at(list, 50), Enum.at(first_page_resp["items"], 0))
-    compare_item(Enum.at(list, 1), Enum.at(first_page_resp["items"], 49))
-
-    assert Enum.count(second_page_resp["items"]) == 1
-    assert second_page_resp["next_page_params"] == nil
-    compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
-  end
-
-  defp compare_default_sorting_for_asc({validator_1, blocks_count_1}, {validator_2, blocks_count_2}) do
-    case {
-      compare(blocks_count_1, blocks_count_2),
-      compare(
-        Keyword.fetch!(ValidatorStability.state_enum(), validator_1.state),
-        Keyword.fetch!(ValidatorStability.state_enum(), validator_2.state)
-      ),
-      compare(validator_1.address_hash.bytes, validator_2.address_hash.bytes)
-    } do
-      {:lt, _, _} -> false
-      {:eq, :lt, _} -> false
-      {:eq, :eq, :lt} -> false
-      _ -> true
-    end
-  end
-
-  defp compare_default_sorting_for_desc({validator_1, blocks_count_1}, {validator_2, blocks_count_2}) do
-    case {
-      compare(blocks_count_1, blocks_count_2),
-      compare(
-        Keyword.fetch!(ValidatorStability.state_enum(), validator_1.state),
-        Keyword.fetch!(ValidatorStability.state_enum(), validator_2.state)
-      ),
-      compare(validator_1.address_hash.bytes, validator_2.address_hash.bytes)
-    } do
-      {:gt, _, _} -> false
-      {:eq, :lt, _} -> false
-      {:eq, :eq, :lt} -> false
-      _ -> true
-    end
-  end
-
-  defp compare(a, b) do
-    cond do
-      a < b -> :lt
-      a > b -> :gt
-      true -> :eq
     end
   end
 end

@@ -86,9 +86,12 @@ defmodule Indexer.Fetcher.ContractCodeTest do
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       assert :ok =
-               ContractCode.async_fetch([
-                 %{created_contract_address_hash: address, block_number: block_number, hash: hash}
-               ])
+               ContractCode.async_fetch(
+                 [
+                   %{created_contract_address_hash: address, block_number: block_number, hash: hash}
+                 ],
+                 false
+               )
 
       fetched_address =
         wait(fn ->

@@ -4,10 +4,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP930 do
   """
 
   alias Explorer.Chain.SmartContract
-  alias Explorer.Chain.SmartContract.Proxy.Basic
+  alias Explorer.Chain.SmartContract.Proxy.{Basic, EIP1967}
   alias Explorer.SmartContract.Reader
-
-  @storage_slot_logic_contract_address "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
 
   @doc """
   Gets implementation hash string of proxy contract from getter.
@@ -19,7 +17,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP930 do
              proxy_address_hash,
              abi,
              %{
-               "#{signature}" => [@storage_slot_logic_contract_address]
+               "#{signature}" => [EIP1967.storage_slot_logic_contract_address()]
              },
              false
            ) do

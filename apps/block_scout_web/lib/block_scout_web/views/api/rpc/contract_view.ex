@@ -78,8 +78,13 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   defp set_proxy_info(contract_output, contract) do
     result =
       if contract.is_proxy do
+        implementation_address_hash_string = List.first(contract.implementation_address_hash_strings)
+
+        # todo: `ImplementationAddress` is kept for backward compatibility,
+        # remove when clients unbound from these props
         contract_output
-        |> Map.put_new(:ImplementationAddress, contract.implementation_address_hash_string)
+        |> Map.put_new(:ImplementationAddress, implementation_address_hash_string)
+        |> Map.put_new(:ImplementationAddresses, contract.implementation_address_hash_strings)
       else
         contract_output
       end
@@ -124,7 +129,9 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   defp set_external_libraries(contract_output, contract) do
     external_libraries = Map.get(contract, :external_libraries, [])
 
-    if Enum.count(external_libraries) > 0 do
+    if Enum.empty?(external_libraries) do
+      contract_output
+    else
       external_libraries_without_id =
         Enum.map(external_libraries, fn %{name: name, address_hash: address_hash} ->
           %{"name" => name, "address_hash" => address_hash}
@@ -132,8 +139,6 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
       contract_output
       |> Map.put_new(:ExternalLibraries, external_libraries_without_id)
-    else
-      contract_output
     end
   end
 
@@ -173,12 +178,13 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   end
 
   defp insert_additional_sources(output, address) do
-    additional_sources_from_twin = SmartContract.get_address_verified_twin_contract(address.hash).additional_sources
+    additional_sources_from_bytecode_twin =
+      SmartContract.get_address_verified_bytecode_twin_contract(address.hash).additional_sources
 
     additional_sources =
       if AddressView.smart_contract_verified?(address),
         do: address.smart_contract.smart_contract_additional_sources,
-        else: additional_sources_from_twin
+        else: additional_sources_from_bytecode_twin
 
     additional_sources_array =
       if additional_sources,

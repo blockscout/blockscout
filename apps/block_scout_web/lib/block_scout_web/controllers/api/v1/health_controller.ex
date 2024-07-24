@@ -1,5 +1,7 @@
 defmodule BlockScoutWeb.API.V1.HealthController do
-  use BlockScoutWeb, :controller
+  use Phoenix.Controller, namespace: BlockScoutWeb
+
+  import Plug.Conn
 
   alias Explorer.Chain
   alias Timex.Duration

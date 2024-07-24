@@ -63,16 +63,22 @@ defmodule Explorer.Chain.Optimism.Deposit do
   def list(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    base_query =
-      from(d in __MODULE__,
-        order_by: [desc: d.l1_block_number, desc: d.l2_transaction_hash]
-      )
+    case paging_options do
+      %PagingOptions{key: {0, _l2_tx_hash}} ->
+        []
 
-    base_query
-    |> join_association(:l2_transaction, :required)
-    |> page_deposits(paging_options)
-    |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
+      _ ->
+        base_query =
+          from(d in __MODULE__,
+            order_by: [desc: d.l1_block_number, desc: d.l2_transaction_hash]
+          )
+
+        base_query
+        |> join_association(:l2_transaction, :required)
+        |> page_deposits(paging_options)
+        |> limit(^paging_options.page_size)
+        |> select_repo(options).all()
+    end
   end
 
   defp page_deposits(query, %PagingOptions{key: nil}), do: query

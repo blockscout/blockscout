@@ -1,0 +1,21 @@
+{
+    "message": "OK",
+    "status": "SUCCESS",
+    "source": {
+        "fileName": "Test.vy",
+        "contractName": "Test",
+        "compilerVersion": "v0.3.10+commit.91361694",
+        "compilerSettings": "{\"outputSelection\":{\"*\":[\"abi\",\"evm.bytecode\",\"evm.deployedBytecode\",\"evm.methodIdentifiers\"]}}",
+        "sourceType": "VYPER",
+        "sourceFiles": {
+            "Test.vy": "initialized: public(bool)\nvalue: public(uint256)\n\n@external\ndef __init__(_value: uint256):\n    self.value = _value\n    self.initialized = False"
+        },
+        "abi": "[{\"inputs\":[{\"name\":\"_value\",\"type\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"initialized\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"value\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+        "constructorArguments": null,
+        "matchType": "PARTIAL",
+        "compilationArtifacts": "{\"abi\":[{\"inputs\":[{\"name\":\"_value\",\"type\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"initialized\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"value\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"sources\":{\"Test.vy\":{\"id\":0}}}",
+        "creationInputArtifacts": "{}",
+        "deployedBytecodeArtifacts": "{\"sourceMap\":\"-1:-1:0:-;;;;;;;;;;;;;;;;:::-;:::-;;;;;:::-;;;:::-;;;;;;20:4;;-1:-1;:::-;:::-;;;;;:::-;;;:::-;;;;;;40:7;;-1:-1::-;;;;:::-;;;\"}",
+        "isBlueprint": true
+    }
+}

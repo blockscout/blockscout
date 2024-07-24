@@ -14,6 +14,8 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   @behaviour :websocket_client
   @behaviour WebSocket
 
+  @reconnect_interval :timer.minutes(1)
+
   @enforce_keys ~w(url)a
   defstruct connected: false,
             request_id_to_registration: %{},
@@ -139,7 +141,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   def ondisconnect(_reason, %__MODULE__{request_id_to_registration: request_id_to_registration} = state) do
     final_state = Enum.reduce(request_id_to_registration, state, &disconnect_request_id_registration/2)
 
-    {:reconnect, %__MODULE__{final_state | connected: false}}
+    {:reconnect, @reconnect_interval, %__MODULE__{final_state | connected: false}}
   end
 
   @impl :websocket_client

@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressWithdrawalControllerTest do
   use BlockScoutWeb.ConnCase, async: true
   use ExUnit.Case, async: false
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [address_withdrawal_path: 3, address_withdrawal_path: 4]
+  import BlockScoutWeb.Routers.WebRouter.Helpers, only: [address_withdrawal_path: 3, address_withdrawal_path: 4]
   import BlockScoutWeb.WeiHelper, only: [format_wei_value: 2]
   import Mox
 

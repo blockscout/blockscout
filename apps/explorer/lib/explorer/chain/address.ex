@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Address do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, PagingOptions, Repo}
 
   alias Explorer.Chain.{
     Address,
@@ -26,6 +26,7 @@ defmodule Explorer.Chain.Address do
   }
 
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
   @required_attrs ~w(hash)a
@@ -58,6 +59,8 @@ defmodule Explorer.Chain.Address do
              :names
            ]}
 
+  @timeout :timer.minutes(1)
+
   @typedoc """
    * `fetched_coin_balance` - The last fetched balance from Nethermind
    * `fetched_coin_balance_block_number` - the `t:Explorer.Chain.Block.t/0` `t:Explorer.Chain.Block.block_number/0` for
@@ -89,9 +92,12 @@ defmodule Explorer.Chain.Address do
     field(:token_transfers_count, :integer)
     field(:gas_used, :integer)
     field(:ens_domain_name, :string, virtual: true)
+    field(:metadata, :any, virtual: true)
+    field(:implementation, :any, virtual: true)
 
     has_one(:smart_contract, SmartContract, references: :hash)
     has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)
+    has_one(:proxy_implementations, Implementation, foreign_key: :proxy_address_hash, references: :hash)
 
     has_one(
       :contracts_creation_internal_transaction,
@@ -136,6 +142,17 @@ defmodule Explorer.Chain.Address do
     |> unique_constraint(:hash)
   end
 
+  @spec get(Hash.Address.t(), [Chain.necessity_by_association_option() | Chain.api?()]) :: t() | nil
+  def get(hash, options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    query = from(address in Address, where: address.hash == ^hash)
+
+    query
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).one()
+  end
+
   def checksum(address_or_hash, iodata? \\ false)
 
   def checksum(nil, _iodata?), do: ""
@@ -175,7 +192,7 @@ defmodule Explorer.Chain.Address do
     |> stream_binary()
     |> Stream.zip(match_byte_stream)
     |> Enum.map(fn
-      {digit, _} when digit in '0123456789' ->
+      {digit, _} when digit in ~c"0123456789" ->
         digit
 
       {alpha, 1} ->
@@ -203,7 +220,7 @@ defmodule Explorer.Chain.Address do
     |> stream_binary()
     |> Stream.zip(match_byte_stream)
     |> Enum.map(fn
-      {digit, _} when digit in '0123456789' ->
+      {digit, _} when digit in ~c"0123456789" ->
         digit
 
       {alpha, 1} ->
@@ -346,18 +363,24 @@ defmodule Explorer.Chain.Address do
   defp fetch_top_addresses(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    base_query =
-      from(a in Address,
-        where: a.fetched_coin_balance > ^0,
-        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        preload: [:names, :smart_contract],
-        select: {a, a.transactions_count}
-      )
+    case paging_options do
+      %PagingOptions{key: {0, _hash}} ->
+        []
 
-    base_query
-    |> page_addresses(paging_options)
-    |> limit(^paging_options.page_size)
-    |> Chain.select_repo(options).all()
+      _ ->
+        base_query =
+          from(a in Address,
+            where: a.fetched_coin_balance > ^0,
+            order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+            preload: [:names, :smart_contract, :proxy_implementations],
+            select: {a, a.transactions_count}
+          )
+
+        base_query
+        |> page_addresses(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Chain.select_repo(options).all()
+    end
   end
 
   defp page_addresses(query, %PagingOptions{key: nil}), do: query
@@ -422,5 +445,19 @@ defmodule Explorer.Chain.Address do
       )
 
     Chain.select_repo(options).exists?(query)
+  end
+
+  @doc """
+  Sets contract_code for the given Explorer.Chain.Address
+  """
+  @spec set_contract_code(Hash.Address.t(), binary()) :: {non_neg_integer(), nil}
+  def set_contract_code(address_hash, contract_code) when not is_nil(address_hash) and is_binary(contract_code) do
+    now = DateTime.utc_now()
+
+    Repo.update_all(
+      from(address in __MODULE__, where: address.hash == ^address_hash),
+      [set: [contract_code: contract_code, updated_at: now]],
+      timeout: @timeout
+    )
   end
 end

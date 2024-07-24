@@ -1,4 +1,6 @@
 defmodule ConfigHelper do
+  require Logger
+
   import Bitwise
   alias Explorer.ExchangeRates.Source
   alias Explorer.Market.History.Source.{MarketCap, Price, TVL}
@@ -8,24 +10,30 @@ defmodule ConfigHelper do
     base_repos = [Explorer.Repo, Explorer.Repo.Account]
 
     repos =
-      case System.get_env("CHAIN_TYPE") do
-        "ethereum" -> base_repos ++ [Explorer.Repo.Beacon]
-        "optimism" -> base_repos ++ [Explorer.Repo.Optimism]
-        "polygon_edge" -> base_repos ++ [Explorer.Repo.PolygonEdge]
-        "polygon_zkevm" -> base_repos ++ [Explorer.Repo.PolygonZkevm]
-        "rsk" -> base_repos ++ [Explorer.Repo.RSK]
-        "shibarium" -> base_repos ++ [Explorer.Repo.Shibarium]
-        "suave" -> base_repos ++ [Explorer.Repo.Suave]
-        "filecoin" -> base_repos ++ [Explorer.Repo.Filecoin]
-        "stability" -> base_repos ++ [Explorer.Repo.Stability]
+      case chain_type() do
+        :ethereum -> base_repos ++ [Explorer.Repo.Beacon]
+        :optimism -> base_repos ++ [Explorer.Repo.Optimism]
+        :polygon_edge -> base_repos ++ [Explorer.Repo.PolygonEdge]
+        :polygon_zkevm -> base_repos ++ [Explorer.Repo.PolygonZkevm]
+        :rsk -> base_repos ++ [Explorer.Repo.RSK]
+        :shibarium -> base_repos ++ [Explorer.Repo.Shibarium]
+        :suave -> base_repos ++ [Explorer.Repo.Suave]
+        :filecoin -> base_repos ++ [Explorer.Repo.Filecoin]
+        :stability -> base_repos ++ [Explorer.Repo.Stability]
+        :zksync -> base_repos ++ [Explorer.Repo.ZkSync]
+        :arbitrum -> base_repos ++ [Explorer.Repo.Arbitrum]
         _ -> base_repos
       end
 
-    if System.get_env("BRIDGED_TOKENS_ENABLED") do
-      repos ++ [Explorer.Repo.BridgedTokens]
-    else
-      repos
-    end
+    ext_repos =
+      [
+        {parse_bool_env_var("BRIDGED_TOKENS_ENABLED"), Explorer.Repo.BridgedTokens},
+        {parse_bool_env_var("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud}
+      ]
+      |> Enum.filter(&elem(&1, 0))
+      |> Enum.map(&elem(&1, 1))
+
+    repos ++ ext_repos
   end
 
   @spec hackney_options() :: any()
@@ -61,6 +69,17 @@ defmodule ConfigHelper do
     end
   end
 
+  @spec parse_float_env_var(String.t(), float()) :: float()
+  def parse_float_env_var(env_var, default_value) do
+    env_var
+    |> safe_get_env(to_string(default_value))
+    |> Float.parse()
+    |> case do
+      {float, _} -> float
+      _ -> 0
+    end
+  end
+
   @spec parse_integer_or_nil_env_var(String.t()) :: non_neg_integer() | nil
   def parse_integer_or_nil_env_var(env_var) do
     env_var
@@ -81,6 +100,35 @@ defmodule ConfigHelper do
       {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
       _ -> 0
     end
+  end
+
+  @doc """
+  Parses value of env var through catalogued values list. If a value is not in the list, nil is returned.
+  Also, the application shutdown option is supported, if a value is wrong.
+  """
+  @spec parse_catalog_value(String.t(), List.t(), bool(), String.t() | nil) :: atom() | nil
+  def parse_catalog_value(env_var, catalog, shutdown_on_wrong_value?, default_value \\ nil) do
+    value = env_var |> safe_get_env(default_value)
+
+    if value !== "" do
+      if value in catalog do
+        String.to_atom(value)
+      else
+        if shutdown_on_wrong_value? do
+          Logger.error(wrong_value_error(value, env_var, catalog))
+          exit(:shutdown)
+        else
+          Logger.warning(wrong_value_error(value, env_var, catalog))
+          nil
+        end
+      end
+    else
+      nil
+    end
+  end
+
+  defp wrong_value_error(value, env_var, catalog) do
+    "Invalid value \"#{value}\" of #{env_var} environment variable is provided. Supported values are #{inspect(catalog)}"
   end
 
   def safe_get_env(env_var, default_value) do
@@ -122,20 +170,22 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap
+  @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap | Source.Mobula
   def exchange_rates_source do
     case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
       "coin_gecko" -> Source.CoinGecko
       "coin_market_cap" -> Source.CoinMarketCap
+      "mobula" -> Source.Mobula
       _ -> Source.CoinGecko
     end
   end
 
-  @spec exchange_rates_market_cap_source() :: MarketCap.CoinGecko | MarketCap.CoinMarketCap
+  @spec exchange_rates_market_cap_source() :: MarketCap.CoinGecko | MarketCap.CoinMarketCap | MarketCap.Mobula
   def exchange_rates_market_cap_source do
     case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
       "coin_gecko" -> MarketCap.CoinGecko
       "coin_market_cap" -> MarketCap.CoinMarketCap
+      "mobula" -> MarketCap.Mobula
       _ -> MarketCap.CoinGecko
     end
   end
@@ -148,13 +198,31 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec exchange_rates_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare
+  @spec exchange_rates_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare | Price.Mobula
   def exchange_rates_price_source do
     case System.get_env("EXCHANGE_RATES_PRICE_SOURCE") do
       "coin_gecko" -> Price.CoinGecko
       "coin_market_cap" -> Price.CoinMarketCap
       "crypto_compare" -> Price.CryptoCompare
+      "mobula" -> Price.Mobula
       _ -> Price.CryptoCompare
+    end
+  end
+
+  @spec exchange_rates_secondary_coin_price_source() ::
+          Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare | Price.Mobula
+  def exchange_rates_secondary_coin_price_source do
+    cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
+    cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_ID")
+    cc_secondary_coin_symbol = System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL")
+    mobula_secondary_coin_id = System.get_env("EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID")
+
+    cond do
+      cg_secondary_coin_id && cg_secondary_coin_id !== "" -> Price.CoinGecko
+      cmc_secondary_coin_id && cmc_secondary_coin_id !== "" -> Price.CoinMarketCap
+      cc_secondary_coin_symbol && cc_secondary_coin_symbol !== "" -> Price.CryptoCompare
+      mobula_secondary_coin_id && mobula_secondary_coin_id !== "" -> Price.Mobula
+      true -> Price.CryptoCompare
     end
   end
 
@@ -192,8 +260,43 @@ defmodule ConfigHelper do
     err -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(err)}"
   end
 
-  @spec chain_type() :: String.t()
-  def chain_type, do: System.get_env("CHAIN_TYPE") || "default"
+  @spec parse_list_env_var(String.t(), String.t() | nil) :: list()
+  def parse_list_env_var(env_var, default_value \\ nil) do
+    addresses_var = safe_get_env(env_var, default_value)
+
+    if addresses_var !== "" do
+      addresses_list = (addresses_var && String.split(addresses_var, ",")) || []
+
+      formatted_addresses_list =
+        addresses_list
+        |> Enum.map(fn addr ->
+          String.downcase(addr)
+        end)
+
+      formatted_addresses_list
+    else
+      []
+    end
+  end
+
+  @supported_chain_types [
+    "default",
+    "arbitrum",
+    "ethereum",
+    "filecoin",
+    "optimism",
+    "polygon_edge",
+    "polygon_zkevm",
+    "rsk",
+    "shibarium",
+    "stability",
+    "suave",
+    "zetachain",
+    "zksync"
+  ]
+
+  @spec chain_type() :: atom() | nil
+  def chain_type, do: parse_catalog_value("CHAIN_TYPE", @supported_chain_types, true, "default")
 
   @spec eth_call_url(String.t() | nil) :: String.t() | nil
   def eth_call_url(default \\ nil) do

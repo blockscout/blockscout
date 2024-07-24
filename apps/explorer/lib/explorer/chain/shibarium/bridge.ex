@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Shibarium.Bridge do
   @typedoc """
   * `user_address` - address of the user that initiated operation
   * `user` - foreign key of `user_address`
-  * `amount_or_id` - amount of the operation or NTF id (in case of ERC-721 token)
+  * `amount_or_id` - amount of the operation or NFT id (in case of ERC-721 token)
   * `erc1155_ids` - an array of ERC-1155 token ids (when batch ERC-1155 token transfer)
   * `erc1155_amounts` - an array of corresponding ERC-1155 token amounts (when batch ERC-1155 token transfer)
   * `l1_transaction_hash` - transaction hash for L1 side

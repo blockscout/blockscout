@@ -26,7 +26,7 @@ defmodule Explorer.ChainTest do
     Wei
   }
 
-  alias Explorer.{Chain, Etherscan}
+  alias Explorer.{Chain, Etherscan, TestHelper}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
@@ -148,8 +148,8 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "ERC721_or_ERC1155_token_instance_from_token_id_and_token_address/2" do
-    test "return ERC721 token instance" do
+  describe "nft_instance_from_token_id_and_token_address/2" do
+    test "return NFT instance" do
       token = insert(:token)
 
       token_id = 10
@@ -160,7 +160,7 @@ defmodule Explorer.ChainTest do
       )
 
       assert {:ok, result} =
-               Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(
+               Chain.nft_instance_from_token_id_and_token_address(
                  token_id,
                  token.contract_address_hash
                )
@@ -896,7 +896,7 @@ defmodule Explorer.ChainTest do
       address = insert(:address)
       insert(:decompiled_smart_contract, address_hash: address.hash)
 
-      {:ok, found_address} = Chain.hash_to_address(address.hash)
+      {:ok, found_address} = Chain.hash_to_address(address.hash, [], true)
 
       assert found_address.has_decompiled_code?
     end
@@ -1384,7 +1384,7 @@ defmodule Explorer.ChainTest do
       }
     }
 
-    test "with valid data", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    test "with valid data", %{json_rpc_named_arguments: _json_rpc_named_arguments} do
       {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
@@ -2226,548 +2226,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "transaction_to_internal_transactions/1" do
-    test "with transaction without internal transactions" do
-      transaction = insert(:transaction)
-
-      assert [] = Chain.transaction_to_internal_transactions(transaction.hash)
-    end
-
-    test "with transaction with internal transactions returns all internal transactions for a given transaction hash excluding parent trace" do
-      block = insert(:block)
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(block)
-
-      first =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 0,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      second =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 1,
-          block_hash: transaction.block_hash,
-          block_index: 1,
-          block_number: transaction.block_number,
-          transaction_index: transaction.index
-        )
-
-      results = [internal_transaction | _] = Chain.transaction_to_internal_transactions(transaction.hash)
-
-      # excluding of internal transactions with type=call and index=0
-      assert 1 == length(results)
-
-      assert Enum.all?(
-               results,
-               &({&1.transaction_hash, &1.index} in [
-                   {first.transaction_hash, first.index},
-                   {second.transaction_hash, second.index}
-                 ])
-             )
-
-      assert internal_transaction.block_number == block.number
-    end
-
-    test "with transaction with internal transactions loads associations with in necessity_by_association" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:internal_transaction_create,
-        transaction: transaction,
-        index: 0,
-        block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
-        block_index: 0,
-        transaction_index: transaction.index
-      )
-
-      assert [
-               %InternalTransaction{
-                 from_address: %Ecto.Association.NotLoaded{},
-                 to_address: %Ecto.Association.NotLoaded{},
-                 transaction: %Ecto.Association.NotLoaded{}
-               }
-             ] = Chain.transaction_to_internal_transactions(transaction.hash)
-
-      assert [
-               %InternalTransaction{
-                 from_address: %Address{},
-                 to_address: nil,
-                 transaction: %Transaction{block: %Block{}}
-               }
-             ] =
-               Chain.transaction_to_internal_transactions(
-                 transaction.hash,
-                 necessity_by_association: %{
-                   :from_address => :optional,
-                   :to_address => :optional,
-                   [transaction: :block] => :optional
-                 }
-               )
-    end
-
-    test "excludes internal transaction of type call with no siblings in the transaction" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:internal_transaction,
-        transaction: transaction,
-        index: 0,
-        block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
-        block_index: 0,
-        transaction_index: transaction.index
-      )
-
-      result = Chain.transaction_to_internal_transactions(transaction.hash)
-
-      assert Enum.empty?(result)
-    end
-
-    test "includes internal transactions of type `create` even when they are alone in the parent transaction" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      expected =
-        insert(:internal_transaction_create,
-          index: 0,
-          transaction: transaction,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction.hash), 0)
-
-      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
-    end
-
-    test "includes internal transactions of type `reward` even when they are alone in the parent transaction" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      expected =
-        insert(:internal_transaction,
-          index: 0,
-          transaction: transaction,
-          type: :reward,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction.hash), 0)
-
-      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
-    end
-
-    test "includes internal transactions of type `selfdestruct` even when they are alone in the parent transaction" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      expected =
-        insert(:internal_transaction,
-          index: 0,
-          transaction: transaction,
-          gas: nil,
-          type: :selfdestruct,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction.hash), 0)
-
-      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
-    end
-
-    test "returns the internal transactions in ascending index order" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %InternalTransaction{transaction_hash: _, index: _} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 0,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      %InternalTransaction{transaction_hash: transaction_hash_1, index: index_1} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 1,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 1,
-          transaction_index: transaction.index
-        )
-
-      %InternalTransaction{transaction_hash: transaction_hash_2, index: index_2} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 2,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 2,
-          transaction_index: transaction.index
-        )
-
-      result =
-        transaction.hash
-        |> Chain.transaction_to_internal_transactions()
-        |> Enum.map(&{&1.transaction_hash, &1.index})
-
-      # excluding of internal transactions with type=call and index=0
-      assert [{transaction_hash_1, index_1}, {transaction_hash_2, index_2}] == result
-    end
-
-    test "pages by index" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %InternalTransaction{transaction_hash: _, index: _} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 0,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 1,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 1,
-          transaction_index: transaction.index
-        )
-
-      %InternalTransaction{transaction_hash: third_transaction_hash, index: third_index} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 2,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 2,
-          transaction_index: transaction.index
-        )
-
-      assert [{second_transaction_hash, second_index}, {third_transaction_hash, third_index}] ==
-               transaction.hash
-               |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {-1}, page_size: 2})
-               |> Enum.map(&{&1.transaction_hash, &1.index})
-
-      assert [{second_transaction_hash, second_index}] ==
-               transaction.hash
-               |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {-1}, page_size: 1})
-               |> Enum.map(&{&1.transaction_hash, &1.index})
-
-      assert [{third_transaction_hash, third_index}] ==
-               transaction.hash
-               |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {1}, page_size: 2})
-               |> Enum.map(&{&1.transaction_hash, &1.index})
-    end
-  end
-
-  describe "all_transaction_to_internal_transactions/1" do
-    test "with transaction without internal transactions" do
-      transaction = insert(:transaction)
-
-      assert [] = Chain.all_transaction_to_internal_transactions(transaction.hash)
-    end
-
-    test "with transaction with internal transactions returns all internal transactions for a given transaction hash" do
-      block = insert(:block)
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(block)
-
-      first =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 0,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      second =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 1,
-          block_hash: transaction.block_hash,
-          block_index: 1,
-          block_number: transaction.block_number,
-          transaction_index: transaction.index
-        )
-
-      results = [internal_transaction | _] = Chain.all_transaction_to_internal_transactions(transaction.hash)
-
-      assert 2 == length(results)
-
-      assert Enum.all?(
-               results,
-               &({&1.transaction_hash, &1.index} in [
-                   {first.transaction_hash, first.index},
-                   {second.transaction_hash, second.index}
-                 ])
-             )
-
-      assert internal_transaction.block_number == block.number
-    end
-
-    test "with transaction with internal transactions loads associations with in necessity_by_association" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:internal_transaction_create,
-        transaction: transaction,
-        index: 0,
-        block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
-        block_index: 0,
-        transaction_index: transaction.index
-      )
-
-      assert [
-               %InternalTransaction{
-                 from_address: %Ecto.Association.NotLoaded{},
-                 to_address: %Ecto.Association.NotLoaded{},
-                 transaction: %Ecto.Association.NotLoaded{}
-               }
-             ] = Chain.all_transaction_to_internal_transactions(transaction.hash)
-
-      assert [
-               %InternalTransaction{
-                 from_address: %Address{},
-                 to_address: nil,
-                 transaction: %Transaction{block: %Block{}}
-               }
-             ] =
-               Chain.all_transaction_to_internal_transactions(
-                 transaction.hash,
-                 necessity_by_association: %{
-                   :from_address => :optional,
-                   :to_address => :optional,
-                   [transaction: :block] => :optional
-                 }
-               )
-    end
-
-    test "not excludes internal transaction of type call with no siblings in the transaction" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:internal_transaction,
-        transaction: transaction,
-        index: 0,
-        block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
-        block_index: 0,
-        transaction_index: transaction.index
-      )
-
-      result = Chain.all_transaction_to_internal_transactions(transaction.hash)
-
-      assert Enum.empty?(result) == false
-    end
-
-    test "includes internal transactions of type `create` even when they are alone in the parent transaction" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      expected =
-        insert(:internal_transaction_create,
-          index: 0,
-          transaction: transaction,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      actual = Enum.at(Chain.all_transaction_to_internal_transactions(transaction.hash), 0)
-
-      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
-    end
-
-    test "includes internal transactions of type `reward` even when they are alone in the parent transaction" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      expected =
-        insert(:internal_transaction,
-          index: 0,
-          transaction: transaction,
-          type: :reward,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      actual = Enum.at(Chain.all_transaction_to_internal_transactions(transaction.hash), 0)
-
-      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
-    end
-
-    test "includes internal transactions of type `selfdestruct` even when they are alone in the parent transaction" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      expected =
-        insert(:internal_transaction,
-          index: 0,
-          transaction: transaction,
-          gas: nil,
-          type: :selfdestruct,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      actual = Enum.at(Chain.all_transaction_to_internal_transactions(transaction.hash), 0)
-
-      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
-    end
-
-    test "returns the internal transactions in ascending index order" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %InternalTransaction{transaction_hash: transaction_hash, index: index} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 0,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 1,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 1,
-          transaction_index: transaction.index
-        )
-
-      result =
-        transaction.hash
-        |> Chain.all_transaction_to_internal_transactions()
-        |> Enum.map(&{&1.transaction_hash, &1.index})
-
-      assert [{transaction_hash, index}, {second_transaction_hash, second_index}] == result
-    end
-
-    test "pages by index" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %InternalTransaction{transaction_hash: transaction_hash, index: index} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 0,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
-          transaction_index: transaction.index
-        )
-
-      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 1,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 1,
-          transaction_index: transaction.index
-        )
-
-      %InternalTransaction{transaction_hash: third_transaction_hash, index: third_index} =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 2,
-          block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 2,
-          transaction_index: transaction.index
-        )
-
-      assert [{transaction_hash, index}, {second_transaction_hash, second_index}] ==
-               transaction.hash
-               |> Chain.all_transaction_to_internal_transactions(
-                 paging_options: %PagingOptions{key: {-1}, page_size: 2}
-               )
-               |> Enum.map(&{&1.transaction_hash, &1.index})
-
-      assert [{transaction_hash, index}] ==
-               transaction.hash
-               |> Chain.all_transaction_to_internal_transactions(
-                 paging_options: %PagingOptions{key: {-1}, page_size: 1}
-               )
-               |> Enum.map(&{&1.transaction_hash, &1.index})
-
-      assert [{third_transaction_hash, third_index}] ==
-               transaction.hash
-               |> Chain.all_transaction_to_internal_transactions(paging_options: %PagingOptions{key: {1}, page_size: 2})
-               |> Enum.map(&{&1.transaction_hash, &1.index})
-    end
-  end
-
   describe "transaction_to_logs/3" do
     test "without logs" do
       transaction = insert(:transaction)
@@ -2875,7 +2333,11 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      insert(:token_transfer, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
 
       assert [%TokenTransfer{token: %Token{}, transaction: %Transaction{}}] =
                Chain.transaction_to_token_transfers(
@@ -3143,6 +2605,8 @@ defmodule Explorer.ChainTest do
           :contracts_creation_transaction => :optional
         }
       ]
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       response = Chain.find_contract_address(address.hash, options, true)
 
@@ -3476,7 +2940,9 @@ defmodule Explorer.ChainTest do
 
       decompiled_smart_contracts =
         Repo.all(
-          from(ds in DecompiledSmartContract, where: ds.address_hash == ^inserted_decompiled_smart_contract.address_hash)
+          from(ds in DecompiledSmartContract,
+            where: ds.address_hash == ^inserted_decompiled_smart_contract.address_hash
+          )
         )
 
       assert Enum.count(decompiled_smart_contracts) == 2
@@ -4031,13 +3497,14 @@ defmodule Explorer.ChainTest do
     assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [uncatalog_address]}
   end
 
-  describe "stream_cataloged_token_contract_address_hashes/2" do
+  describe "stream_cataloged_tokens/2" do
     test "reduces with given reducer and accumulator" do
       today = DateTime.utc_now()
       yesterday = Timex.shift(today, days: -1)
-      %Token{contract_address_hash: catalog_address} = insert(:token, cataloged: true, updated_at: yesterday)
+      token = insert(:token, cataloged: true, updated_at: yesterday)
       insert(:token, cataloged: false)
-      assert Chain.stream_cataloged_token_contract_address_hashes([], &[&1 | &2], 1) == {:ok, [catalog_address]}
+      {:ok, [token_from_func]} = Chain.stream_cataloged_tokens([], &[&1 | &2], 1)
+      assert token_from_func.contract_address_hash == token.contract_address_hash
     end
 
     test "sorts the tokens by updated_at in ascending order" do
@@ -4053,7 +3520,14 @@ defmodule Explorer.ChainTest do
         |> Enum.sort(&(Timex.to_unix(&1.updated_at) < Timex.to_unix(&2.updated_at)))
         |> Enum.map(& &1.contract_address_hash)
 
-      assert Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1]), 12) == {:ok, expected_response}
+      {:ok, response} = Chain.stream_cataloged_tokens([], &(&2 ++ [&1]), 12)
+
+      formatted_response =
+        response
+        |> Enum.sort(&(Timex.to_unix(&1.updated_at) < Timex.to_unix(&2.updated_at)))
+        |> Enum.map(& &1.contract_address_hash)
+
+      assert formatted_response == expected_response
     end
   end
 
@@ -4191,33 +3665,6 @@ defmodule Explorer.ChainTest do
         |> Enum.count()
 
       assert token_holders_count == 2
-    end
-  end
-
-  describe "count_token_holders_from_token_hash" do
-    test "returns the most current count about token holders" do
-      address_a = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
-      address_b = insert(:address, hash: "0x5f26097334b6a32b7951df61fd0c5803ec5d8354")
-
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      insert(
-        :address_current_token_balance,
-        address: address_a,
-        block_number: 1000,
-        token_contract_address_hash: contract_address_hash,
-        value: 5000
-      )
-
-      insert(
-        :address_current_token_balance,
-        address: address_b,
-        block_number: 1002,
-        token_contract_address_hash: contract_address_hash,
-        value: 1000
-      )
-
-      assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 2
     end
   end
 
@@ -4784,8 +4231,12 @@ defmodule Explorer.ChainTest do
 
   describe "transaction_to_revert_reason/1" do
     test "returns correct revert_reason from DB" do
-      transaction = insert(:transaction, revert_reason: "No credit of that type")
-      assert Chain.transaction_to_revert_reason(transaction) == "No credit of that type"
+      # Error("No credit of that type")
+      hex_reason =
+        "0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000164e6f20637265646974206f662074686174207479706500000000000000000000"
+
+      transaction = insert(:transaction, revert_reason: hex_reason)
+      assert Chain.transaction_to_revert_reason(transaction) == hex_reason
     end
 
     test "returns correct revert_reason from the archive node" do
@@ -4798,15 +4249,84 @@ defmodule Explorer.ChainTest do
         )
         |> with_block(insert(:block, number: 1))
 
+      # Error("No credit of that type")
+      hex_reason =
+        "0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000164e6f20637265646974206f662074686174207479706500000000000000000000"
+
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn _json, [] ->
-          {:error, %{code: -32015, message: "VM execution error.", data: "revert: No credit of that type"}}
+        fn
+          [%{method: "debug_traceTransaction"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 result: %{
+                   "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                   "gas" => "0x5208",
+                   "gasUsed" => "0x5208",
+                   "input" => "0x01",
+                   "output" => hex_reason,
+                   "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                   "type" => "CALL",
+                   "value" => "0x86b3"
+                 }
+               }
+             ]}
+
+          [%{method: "trace_replayTransaction"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: 0,
+                 result: %{
+                   "output" => "0x",
+                   "stateDiff" => nil,
+                   "trace" => [
+                     %{
+                       "action" => %{
+                         "callType" => "call",
+                         "from" => "0x6a17ca3bbf83764791f4a9f2b4dbbaebbc8b3e0d",
+                         "gas" => "0x5208",
+                         "input" => "0x01",
+                         "to" => "0x7ed1e469fcb3ee19c0366d829e291451be638e59",
+                         "value" => "0x86b3"
+                       },
+                       "error" => "Reverted",
+                       "result" => %{
+                         "gasUsed" => "0x5208",
+                         "output" => hex_reason
+                       },
+                       "subtraces" => 0,
+                       "traceAddress" => [],
+                       "type" => "call"
+                     }
+                   ],
+                   "transactionHash" => "0xdf5574290913659a1ac404ccf2d216c40587f819400a52405b081dda728ac120",
+                   "vmTrace" => nil
+                 }
+               }
+             ]}
+
+          %{method: "eth_call"}, _options ->
+            {:error,
+             %{
+               code: 3,
+               data: hex_reason,
+               message: "execution reverted"
+             }}
         end
       )
 
-      assert Chain.transaction_to_revert_reason(transaction) == "No credit of that type"
+      assert Chain.transaction_to_revert_reason(transaction) == hex_reason
+
+      assert Transaction.decoded_revert_reason(transaction, hex_reason) == {
+               :ok,
+               "08c379a0",
+               "Error(string reason)",
+               [{"reason", "string", "No credit of that type"}]
+             }
     end
   end
 end
