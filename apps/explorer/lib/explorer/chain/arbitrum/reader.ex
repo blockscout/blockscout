@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   Contains read functions for Arbitrum modules.
   """
 
-  import Ecto.Query, only: [from: 2, limit: 2, order_by: 2, subquery: 1, where: 2, where: 3]
+  import Ecto.Query, only: [dynamic: 2, from: 2, limit: 2, order_by: 2, select: 3, subquery: 1, where: 2, where: 3]
   import Explorer.Chain, only: [select_repo: 1]
 
   alias Explorer.Chain.Arbitrum.{
@@ -19,7 +19,9 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   alias Explorer.{Chain, PagingOptions, Repo}
 
   alias Explorer.Chain.Block, as: FullBlock
-  alias Explorer.Chain.{Hash, Transaction}
+  alias Explorer.Chain.{Hash, Log, Transaction}
+
+  @to_l2_messages_transaction_types [100, 105]
 
   @doc """
     Retrieves the number of the latest L1 block where an L1-to-L2 message was discovered.
@@ -62,50 +64,49 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
-    Retrieves the number of the earliest rollup block where an L2-to-L1 message was discovered.
+    Retrieves the rollup block number of the first missed L2-to-L1 message.
+
+    The function identifies missing messages by checking logs for the specified
+    L2-to-L1 event and verifying if there are corresponding entries in the messages
+    table. A message is considered missed if there is a log entry without a
+    matching message record.
+
+    ## Parameters
+    - `arbsys_contract`: The address of the Arbitrum system contract.
+    - `l2_to_l1_event`: The event identifier for L2-to-L1 messages.
 
     ## Returns
-    - The number of rollup block, or `nil` if no L2-to-L1 messages are found.
+    - The block number of the first missed L2-to-L1 message, or `nil` if no missed
+      messages are found.
   """
-  @spec rollup_block_of_earliest_discovered_message_from_l2() :: FullBlock.block_number() | nil
-  def rollup_block_of_earliest_discovered_message_from_l2 do
-    query =
-      from(msg in Message,
-        select: msg.originating_transaction_block_number,
-        where: msg.direction == :from_l2 and not is_nil(msg.originating_transaction_block_number),
-        order_by: [asc: msg.originating_transaction_block_number],
-        limit: 1
-      )
-
-    query
+  @spec rollup_block_of_first_missed_message_from_l2(binary(), binary()) :: FullBlock.block_number() | nil
+  def rollup_block_of_first_missed_message_from_l2(arbsys_contract, l2_to_l1_event) do
+    # credo:disable-for-lines:5 Credo.Check.Refactor.PipeChainStart
+    missed_messages_from_l2_query(arbsys_contract, l2_to_l1_event)
+    |> order_by(desc: :block_number)
+    |> limit(1)
+    |> select([log], log.block_number)
     |> Repo.one()
   end
 
   @doc """
-    Retrieves the number of the earliest rollup block where a completed L1-to-L2 message was discovered.
+    Retrieves the rollup block number of the first missed L1-to-L2 message.
+
+    The function identifies missing messages by checking transactions of specific
+    types that are supposed to contain L1-to-L2 messages and verifying if there are
+    corresponding entries in the messages table. A message is considered missed if
+    there is a transaction without a matching message record.
 
     ## Returns
-    - The block number of the rollup block, or `nil` if no completed L1-to-L2 messages are found,
-      or if the rollup transaction that emitted the corresponding message has not been indexed yet.
+    - The block number of the first missed L1-to-L2 message, or `nil` if no missed
+      messages are found.
   """
-  @spec rollup_block_of_earliest_discovered_message_to_l2() :: FullBlock.block_number() | nil
-  def rollup_block_of_earliest_discovered_message_to_l2 do
-    completion_tx_subquery =
-      from(msg in Message,
-        select: msg.completion_transaction_hash,
-        where: msg.direction == :to_l2 and not is_nil(msg.completion_transaction_hash),
-        order_by: [asc: msg.message_id],
-        limit: 1
-      )
-
-    query =
-      from(tx in Transaction,
-        select: tx.block_number,
-        where: tx.hash == subquery(completion_tx_subquery),
-        limit: 1
-      )
-
-    query
+  @spec rollup_block_of_first_missed_message_to_l2() :: FullBlock.block_number() | nil
+  def rollup_block_of_first_missed_message_to_l2 do
+    missed_messages_to_l2_query()
+    |> order_by(desc: :block_number)
+    |> limit(1)
+    |> select([rollup_tx], rollup_tx.block_number)
     |> Repo.one()
   end
 
@@ -797,6 +798,125 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     select_repo(options).all(query)
+  end
+
+  @doc """
+    Retrieves the transaction hashes for missed L1-to-L2 messages within a specified
+    block range.
+
+    The function identifies missed messages by checking transactions of specific
+    types that are supposed to contain L1-to-L2 messages and verifying if there are
+    corresponding entries in the messages table. A message is considered missed if
+    there is a transaction without a matching message record within the specified
+    block range.
+
+    ## Parameters
+    - `start_block`: The starting block number of the range.
+    - `end_block`: The ending block number of the range.
+
+    ## Returns
+    - A list of transaction hashes for missed L1-to-L2 messages.
+  """
+  @spec transactions_for_missed_messages_to_l2(non_neg_integer(), non_neg_integer()) :: [Hash.t()]
+  def transactions_for_missed_messages_to_l2(start_block, end_block) do
+    missed_messages_to_l2_query()
+    |> where([rollup_tx], rollup_tx.block_number >= ^start_block and rollup_tx.block_number <= ^end_block)
+    |> order_by(desc: :block_timestamp)
+    |> select([rollup_tx], rollup_tx.hash)
+    |> Repo.all()
+  end
+
+  # Constructs a query to retrieve missed L1-to-L2 messages.
+  #
+  # The function constructs a query to identify missing messages by checking
+  # transactions of specific types that are supposed to contain L1-to-L2
+  # messages and verifying if there are corresponding entries in the messages
+  # table. A message is considered missed if there is a transaction without a
+  # matching message record.
+  #
+  # ## Returns
+  #   - A query to retrieve missed L1-to-L2 messages.
+  @spec missed_messages_to_l2_query() :: Ecto.Query.t()
+  defp missed_messages_to_l2_query do
+    from(rollup_tx in Transaction,
+      left_join: msg in Message,
+      on: rollup_tx.hash == msg.completion_transaction_hash and msg.direction == :to_l2,
+      where: rollup_tx.type in @to_l2_messages_transaction_types and is_nil(msg.completion_transaction_hash)
+    )
+  end
+
+  @doc """
+    Retrieves the logs for missed L2-to-L1 messages within a specified block range.
+
+    The function identifies missed messages by checking logs for the specified
+    L2-to-L1 event and verifying if there are corresponding entries in the messages
+    table. A message is considered missed if there is a log entry without a
+    matching message record within the specified block range.
+
+    ## Parameters
+    - `start_block`: The starting block number of the range.
+    - `end_block`: The ending block number of the range.
+    - `arbsys_contract`: The address of the Arbitrum system contract.
+    - `l2_to_l1_event`: The event identifier for L2-to-L1 messages.
+
+    ## Returns
+    - A list of logs for missed L2-to-L1 messages.
+  """
+  @spec logs_for_missed_messages_from_l2(non_neg_integer(), non_neg_integer(), binary(), binary()) :: [Log.t()]
+  def logs_for_missed_messages_from_l2(start_block, end_block, arbsys_contract, l2_to_l1_event) do
+    # credo:disable-for-lines:5 Credo.Check.Refactor.PipeChainStart
+    missed_messages_from_l2_query(arbsys_contract, l2_to_l1_event, start_block, end_block)
+    |> where([log, msg], log.block_number >= ^start_block and log.block_number <= ^end_block)
+    |> order_by(desc: :block_number, desc: :index)
+    |> select([log], log)
+    |> Repo.all()
+  end
+
+  # Constructs a query to retrieve missed L2-to-L1 messages.
+  #
+  # The function constructs a query to identify missing messages by checking logs
+  # for the specified L2-to-L1 and verifying if there are corresponding entries
+  # in the messages table within a given block range, or among all messages if no
+  # block range is provided. A message is considered missed if there is a log
+  # entry without a matching message record.
+  #
+  # ## Parameters
+  # - `arbsys_contract`: The address hash of the Arbitrum system contract.
+  # - `l2_to_l1_event`: The event identifier for L2 to L1 messages.
+  # - `start_block`: The starting block number for the search range (optional).
+  # - `end_block`: The ending block number for the search range (optional).
+  #
+  # ## Returns
+  # - A query to retrieve missed L2-to-L1 messages.
+  @spec missed_messages_from_l2_query(binary(), binary(), non_neg_integer() | nil, non_neg_integer() | nil) ::
+          Ecto.Query.t()
+  defp missed_messages_from_l2_query(arbsys_contract, l2_to_l1_event, start_block \\ nil, end_block \\ nil) do
+    # It is assumed that all the messages from the same transaction are handled
+    # atomically so there is no need to check the message_id for each log entry.
+    # Otherwise, the join condition must be extended with
+    # fragment("encode(l0.fourth_topic, 'hex') = LPAD(TO_HEX(a1.message_id::BIGINT), 64, '0')")
+    base_condition =
+      dynamic([log, msg], log.transaction_hash == msg.originating_transaction_hash and msg.direction == :from_l2)
+
+    join_condition =
+      if is_nil(start_block) or is_nil(end_block) do
+        base_condition
+      else
+        dynamic(
+          [_, msg],
+          ^base_condition and
+            msg.originating_transaction_block_number >= ^start_block and
+            msg.originating_transaction_block_number <= ^end_block
+        )
+      end
+
+    from(log in Log,
+      left_join: msg in Message,
+      on: ^join_condition,
+      where:
+        log.address_hash == ^arbsys_contract and log.first_topic == ^l2_to_l1_event and
+          is_nil(msg.originating_transaction_hash)
+    )
   end
 
   @doc """

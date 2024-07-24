@@ -5,13 +5,13 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
   import Ecto.Query, only: [from: 2]
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Arbitrum
   alias Explorer.Chain.Arbitrum.Reader
   alias Explorer.Chain.Block, as: FullBlock
-  alias Explorer.Chain.{Data, Hash, Log}
+  alias Explorer.Chain.{Data, Hash}
 
   alias Explorer.Utility.MissingBlockRange
 
@@ -218,52 +218,79 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
-    Determines the rollup block number to start searching for missed messages originating from L2.
+    Determines the rollup block number to discover missed L2-to-L1 messages within
+    a specified range.
+
+    The function checks for the first missed L2-to-L1 message and whether historical
+    block fetching is still in progress. If no missed messages are found and
+    historical fetching is complete, it returns the block number just before the
+    first rollup block. Otherwise, it returns the appropriate block number based on
+    the findings.
 
     ## Parameters
-    - `value_if_nil`: The default value to return if no messages originating from L2 have been found.
+    - `initial_value`: The initial block number to start the further search of the
+      missed messages from if no missed messages are found and historical blocks
+      are not fetched yet.
+    - `rollup_first_block`: The block number of the first rollup block.
 
     ## Returns
-    - The rollup block number just before the earliest discovered message from L2,
-      or `value_if_nil` if no messages from L2 are found.
+    - The block number of the first missed L2-to-L1 message.
   """
-  @spec rollup_block_to_discover_missed_messages_from_l2(nil | FullBlock.block_number()) ::
+  @spec rollup_block_to_discover_missed_messages_from_l2(FullBlock.block_number(), FullBlock.block_number()) ::
           nil | FullBlock.block_number()
-  def rollup_block_to_discover_missed_messages_from_l2(value_if_nil \\ nil)
-      when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
-    case Reader.rollup_block_of_earliest_discovered_message_from_l2() do
-      nil ->
-        log_warning("No messages from L2 found in DB")
-        value_if_nil
+  def rollup_block_to_discover_missed_messages_from_l2(initial_value, rollup_first_block) do
+    arbsys_contract = Application.get_env(:indexer, Indexer.Fetcher.Arbitrum.Messaging)[:arbsys_contract]
 
-      value ->
-        value - 1
+    with {:block, nil} <-
+           {:block, Reader.rollup_block_of_first_missed_message_from_l2(arbsys_contract, @l2_to_l1_event)},
+         {:synced, true} <- {:synced, rollup_synced?()} do
+      log_info("No missed messages from L2 found")
+      rollup_first_block - 1
+    else
+      {:block, value} ->
+        log_info("First missed message from L2 found in block #{value}")
+        value
+
+      {:synced, false} ->
+        log_info("No missed messages from L2 found but historical blocks fetching still in progress")
+        initial_value
     end
   end
 
   @doc """
-    Determines the rollup block number to start searching for missed messages originating to L2.
+    Determines the rollup block number to discover missed L1-to-L2 messages within
+    a specified range.
+
+    The function checks for the first missed L1-to-L2 message and whether historical
+    block fetching is still in progress. If no missed messages are found and
+    historical fetching is complete, it returns the block number just before the
+    first rollup block. Otherwise, it returns the appropriate block number based on
+    the findings.
 
     ## Parameters
-    - `value_if_nil`: The default value to return if no messages originating to L2 have been found.
+    - `initial_value`: The initial block number to start the further search of the
+      missed messages from if no missed messages are found and historical blocks
+      are not fetched yet.
+    - `rollup_first_block`: The block number of the first rollup block.
 
     ## Returns
-    - The rollup block number just before the earliest discovered message to L2,
-      or `value_if_nil` if no messages to L2 are found.
+    - The block number of the first missed L1-to-L2 message.
   """
-  @spec rollup_block_to_discover_missed_messages_to_l2(nil | FullBlock.block_number()) :: nil | FullBlock.block_number()
-  def rollup_block_to_discover_missed_messages_to_l2(value_if_nil \\ nil)
-      when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
-    case Reader.rollup_block_of_earliest_discovered_message_to_l2() do
-      nil ->
-        # In theory it could be a situation when when the earliest message points
-        # to a completion transaction which is not indexed yet. In this case, this
-        # warning will occur.
-        log_warning("No completed messages to L2 found in DB")
-        value_if_nil
+  @spec rollup_block_to_discover_missed_messages_to_l2(FullBlock.block_number(), FullBlock.block_number()) ::
+          nil | FullBlock.block_number()
+  def rollup_block_to_discover_missed_messages_to_l2(initial_value, rollup_first_block) do
+    with {:block, nil} <- {:block, Reader.rollup_block_of_first_missed_message_to_l2()},
+         {:synced, true} <- {:synced, rollup_synced?()} do
+      log_info("No missed messages to L2 found")
+      rollup_first_block - 1
+    else
+      {:block, value} ->
+        log_info("First missed message to L2 found in block #{value}")
+        value
 
-      value ->
-        value - 1
+      {:synced, false} ->
+        log_info("No missed messages to L2 found but historical blocks fetching still in progress")
+        initial_value
     end
   end
 
@@ -371,7 +398,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     - A list of `Explorer.Chain.Block` instances containing detailed information for each
       block number in the input list. Returns an empty list if no blocks are found for the given numbers.
   """
-  @spec rollup_blocks(maybe_improper_list(FullBlock.block_number(), [])) :: [FullBlock.t()]
+  @spec rollup_blocks([FullBlock.block_number()]) :: [FullBlock.t()]
+  def rollup_blocks(list_of_block_numbers)
+
+  def rollup_blocks([]), do: []
+
   def rollup_blocks(list_of_block_numbers)
       when is_list(list_of_block_numbers) do
     query =
@@ -641,50 +672,64 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
-    Retrieves all rollup logs in the range of blocks from `start_block` to `end_block`
-    corresponding to the `L2ToL1Tx` event emitted by the ArbSys contract.
+    Retrieves the transaction hashes as strings for missed L1-to-L2 messages within
+    a specified block range.
+
+    The function identifies missed messages by checking transactions of specific
+    types that are supposed to contain L1-to-L2 messages and verifying if there are
+    corresponding entries in the messages table. A message is considered missed if
+    there is a transaction without a matching message record within the specified
+    block range.
 
     ## Parameters
-    - `start_block`: The starting block number of the range from which to
-                     retrieve the transaction logs containing L2-to-L1 messages.
+    - `start_block`: The starting block number of the range.
     - `end_block`: The ending block number of the range.
 
     ## Returns
-    - A list of log maps for the `L2ToL1Tx` event where binary values for hashes
-      and data are decoded into hex strings, containing detailed information about
-      each event within the specified block range. Returns an empty list if no
-      relevant logs are found.
+    - A list of transaction hashes as strings for missed L1-to-L2 messages.
   """
-  @spec l2_to_l1_logs(FullBlock.block_number(), FullBlock.block_number()) :: [
+  @spec transactions_for_missed_messages_to_l2(non_neg_integer(), non_neg_integer()) :: [String.t()]
+  def transactions_for_missed_messages_to_l2(start_block, end_block) do
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
+    Reader.transactions_for_missed_messages_to_l2(start_block, end_block)
+    |> Enum.map(&Hash.to_string/1)
+  end
+
+  @doc """
+    Retrieves the logs for missed L2-to-L1 messages within a specified block range
+    and converts them to maps.
+
+    The function identifies missed messages by checking logs for the specified
+    L2-to-L1 event and verifying if there are corresponding entries in the messages
+    table. A message is considered missed if there is a log entry without a
+    matching message record within the specified block range.
+
+    ## Parameters
+    - `start_block`: The starting block number of the range.
+    - `end_block`: The ending block number of the range.
+
+    ## Returns
+    - A list of maps representing the logs for missed L2-to-L1 messages.
+  """
+  @spec logs_for_missed_messages_from_l2(non_neg_integer(), non_neg_integer()) :: [
           %{
-            data: String,
+            data: String.t(),
             index: non_neg_integer(),
-            first_topic: String,
-            second_topic: String,
-            third_topic: String,
-            fourth_topic: String,
-            address_hash: String,
-            transaction_hash: String,
-            block_hash: String,
+            first_topic: String.t(),
+            second_topic: String.t(),
+            third_topic: String.t(),
+            fourth_topic: String.t(),
+            address_hash: String.t(),
+            transaction_hash: String.t(),
+            block_hash: String.t(),
             block_number: FullBlock.block_number()
           }
         ]
-  def l2_to_l1_logs(start_block, end_block)
-      when is_integer(start_block) and start_block >= 0 and
-             is_integer(end_block) and start_block <= end_block do
+  def logs_for_missed_messages_from_l2(start_block, end_block) do
     arbsys_contract = Application.get_env(:indexer, Indexer.Fetcher.Arbitrum.Messaging)[:arbsys_contract]
 
-    query =
-      from(log in Log,
-        where:
-          log.block_number >= ^start_block and
-            log.block_number <= ^end_block and
-            log.address_hash == ^arbsys_contract and
-            log.first_topic == ^@l2_to_l1_event
-      )
-
-    query
-    |> Repo.all(timeout: :infinity)
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
+    Reader.logs_for_missed_messages_from_l2(start_block, end_block, arbsys_contract, @l2_to_l1_event)
     |> Enum.map(&logs_to_map/1)
   end
 
@@ -870,9 +915,40 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     not Enum.empty?(Reader.get_anytrust_keyset(keyset_hash))
   end
 
-  @spec get_da_info_by_batch_number(non_neg_integer()) :: map() | nil
+  @doc """
+    Retrieves Data Availability (DA) information for a specific Arbitrum batch number.
+
+    This function queries the database for DA information stored in the
+    `DaMultiPurposeRecord`. It specifically looks for records where
+    the `data_type` is 0, which corresponds to batch-specific DA information.
+
+    ## Parameters
+    - `batch_number`: The Arbitrum batch number.
+
+    ## Returns
+    - A map containing the DA information for the specified batch number. This map
+      corresponds to the `data` field of the `DaMultiPurposeRecord`.
+    - An empty map (`%{}`) if no DA information is found for the given batch number.
+  """
+  @spec get_da_info_by_batch_number(non_neg_integer()) :: map()
   def get_da_info_by_batch_number(batch_number) do
     Reader.get_da_info_by_batch_number(batch_number)
+  end
+
+  # Checks if the rollup is synced by verifying if the block after the first block exists in the database.
+  @spec rollup_synced?() :: boolean()
+  defp rollup_synced? do
+    # Since zero block does not have any useful data, it make sense to consider
+    # the block just after it
+    rollup_tail = Application.get_all_env(:indexer)[:first_block] + 1
+
+    query =
+      from(
+        block in FullBlock,
+        where: block.number == ^rollup_tail and block.consensus == true
+      )
+
+    if(is_nil(query |> Repo.one()), do: false, else: true)
   end
 
   @spec lifecycle_transaction_to_map(Arbitrum.LifecycleTransaction.t()) :: Arbitrum.LifecycleTransaction.to_import()
@@ -918,6 +994,25 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     |> db_record_to_map(log, true)
   end
 
+  # Converts an Arbitrum-related database record to a map with specified keys and optional encoding.
+  #
+  # This function is used to transform various Arbitrum-specific database records
+  # (such as LifecycleTransaction, BatchBlock, or Message) into maps containing
+  # only the specified keys. It's particularly useful for preparing data for
+  # import or further processing of Arbitrum blockchain data.
+  #
+  # Parameters:
+  #   - `required_keys`: A list of atoms representing the keys to include in the
+  #     output map.
+  #   - `record`: The database record or struct to be converted.
+  #   - `encode`: Boolean flag to determine if Hash and Data types should be
+  #     encoded to strings (default: false). When true, Hash and Data are
+  #     converted to string representations; otherwise, their raw bytes are used.
+  #
+  # Returns:
+  #   - A map containing only the required keys from the input record. Hash and
+  #     Data types are either encoded to strings or left as raw bytes based on
+  #     the `encode` parameter.  @spec db_record_to_map([atom()], map(), boolean()) :: map()
   defp db_record_to_map(required_keys, record, encode \\ false) do
     required_keys
     |> Enum.reduce(%{}, fn key, record_as_map ->

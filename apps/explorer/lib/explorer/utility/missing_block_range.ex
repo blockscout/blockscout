@@ -9,6 +9,10 @@ defmodule Explorer.Utility.MissingBlockRange do
 
   @default_returning_batch_size 10
 
+  @typedoc """
+  * `from_number`: The lower bound of the block range.
+  * `to_number`: The upper bound of the block range.
+  """
   typed_schema "missing_block_ranges" do
     field(:from_number, :integer)
     field(:to_number, :integer)
@@ -139,7 +143,8 @@ defmodule Explorer.Utility.MissingBlockRange do
     ## Returns
     - Returns `nil` if no intersecting ranges are found, or an `Explorer.Utility.MissingBlockRange` instance of the first intersecting range otherwise.
   """
-  @spec intersects_with_range(Block.block_number(), Block.block_number()) :: nil | Explorer.Utility.MissingBlockRange
+  @spec intersects_with_range(Block.block_number(), Block.block_number()) ::
+          nil | Explorer.Utility.MissingBlockRange.t()
   def intersects_with_range(lower_number, higher_number)
       when is_integer(lower_number) and lower_number >= 0 and
              is_integer(higher_number) and lower_number <= higher_number do
@@ -182,7 +187,19 @@ defmodule Explorer.Utility.MissingBlockRange do
   defp update_to_number_or_delete_range(%{from_number: from} = range, to) when to > from, do: Repo.delete(range)
   defp update_to_number_or_delete_range(range, to), do: update_range(range, %{to_number: to})
 
-  defp get_range_by_block_number(number) do
+  @doc """
+    Fetches the range of blocks that includes the given block number if it falls
+    within any of the ranges that need to be (re)fetched.
+
+    ## Parameters
+    - `number`: The block number to check against the missing block ranges.
+
+    ## Returns
+    - A single range record of `Explorer.Utility.MissingBlockRange` that includes
+      the given block number, or `nil` if no such range is found.
+  """
+  @spec get_range_by_block_number(Block.block_number()) :: nil | Explorer.Utility.MissingBlockRange.t()
+  def get_range_by_block_number(number) do
     number
     |> include_bound_query()
     |> Repo.one()
@@ -250,6 +267,18 @@ defmodule Explorer.Utility.MissingBlockRange do
     from(r in query, where: r.to_number > ^upper_bound)
   end
 
+  @doc """
+    Constructs a query to check if a given block number falls within any of the
+    ranges of blocks that need to be (re)fetched.
+
+    ## Parameters
+    - `bound`: The block number to check against the missing block ranges.
+
+    ## Returns
+    - A query that can be used to find ranges where the given block number is
+      within the `from_number` and `to_number` bounds.
+  """
+  @spec include_bound_query(Block.block_number()) :: Ecto.Query.t()
   def include_bound_query(bound) do
     from(r in __MODULE__, where: r.from_number >= ^bound, where: r.to_number <= ^bound)
   end

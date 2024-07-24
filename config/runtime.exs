@@ -907,10 +907,8 @@ config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses.Supervisor,
 
 config :indexer, Indexer.Fetcher.Arbitrum.RollupMessagesCatchup,
   recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_RECHECK_INTERVAL", "1h"),
-  messages_to_l2_blocks_depth:
-    ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_TO_L2_BLOCK_DEPTH", 50),
-  messages_to_l1_blocks_depth:
-    ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_TO_L1_BLOCK_DEPTH", 1000)
+  missed_messages_blocks_depth:
+    ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_MISSED_MESSAGES_BLOCKS_DEPTH", 10000)
 
 config :indexer, Indexer.Fetcher.Arbitrum.RollupMessagesCatchup.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BRIDGE_MESSAGES_TRACKING_ENABLED")
