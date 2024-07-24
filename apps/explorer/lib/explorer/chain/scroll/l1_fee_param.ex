@@ -53,7 +53,7 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
     ## Returns
     - The parameter value, or `nil` if not defined.
   """
-  @spec get_for_transaction(atom(), %Transaction{}, list()) :: non_neg_integer() | nil
+  @spec get_for_transaction(atom(), Transaction.t(), list()) :: non_neg_integer() | nil
   def get_for_transaction(name, transaction, options \\ [])
       when name in [:overhead, :scalar, :commit_scalar, :blob_scalar, :l1_base_fee, :l1_blob_base_fee] do
     query =
@@ -83,7 +83,7 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
     ## Returns
     - Calculated L1 gas used value (can be 0).
   """
-  @spec l1_gas_used(%Transaction{}, non_neg_integer()) :: non_neg_integer()
+  @spec l1_gas_used(Transaction.t(), non_neg_integer()) :: non_neg_integer()
   def l1_gas_used(transaction, l1_fee_overhead) do
     if transaction.block_number > Application.get_all_env(:explorer)[__MODULE__][:curie_upgrade_block] do
       0
@@ -92,6 +92,7 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
         transaction.input.bytes
         |> :binary.bin_to_list()
         |> Enum.reduce(0, fn byte, acc ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           if byte == 0 do
             acc + 4
           else
