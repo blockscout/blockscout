@@ -197,7 +197,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     ## Returns
     - A map for one row for `Chain.import` function.
   """
-  @spec event_to_param([binary()], Data.t(), non_neg_integer(), non_neg_integer()) :: map()
+  @spec event_to_param(binary(), Data.t(), non_neg_integer(), non_neg_integer()) :: map()
   def event_to_param(first_topic, data, block_number, tx_index)
       when first_topic in [
              @overhead_updated_event,

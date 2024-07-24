@@ -1,6 +1,7 @@
 defmodule Indexer.Transform.Scroll.L1FeeParams do
   @moduledoc """
-    Helper functions for transforming data for Scroll L1 fee parameters.
+    Helper functions for transforming data for Scroll L1 fee parameters
+    in realtime block fetcher.
   """
 
   require Logger
@@ -9,7 +10,17 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
   alias Indexer.Helper
 
   @doc """
-  Returns a list of params given a list of logs.
+    Takes logs from the realtime fetcher, filters them
+    by signatures (L1 Gas Oracle events), and prepares an output for
+    `Chain.import` function. It doesn't work if L1 Gas Oracle contract
+    address is not configured or the chain type is not :scroll. In this case
+    the returned value is an empty list.
+
+    ## Parameters
+    - `logs`: A list of log entries to filter for L1 Gas Oracle events.
+
+    ## Returns
+    - A list of items ready for database import.
   """
   def parse(logs) do
     prev_metadata = Logger.metadata()

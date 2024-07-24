@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
 
   alias BlockScoutWeb.API.V2.TransactionView
   alias Explorer.Chain.Scroll.L1FeeParam
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Data, Transaction, Wei}
 
   @api_true [api?: true]
 
@@ -19,7 +19,6 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   """
   @spec extend_transaction_json_response(map(), %{
           :__struct__ => Transaction,
-          :l1_fee => Wei.t(),
           :block_number => non_neg_integer(),
           :index => non_neg_integer(),
           :input => Data.t(),
