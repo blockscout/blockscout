@@ -62,6 +62,7 @@ defmodule EthereumJsonrpc.MixProject do
       {:credo, "~> 1.5", only: :test, runtime: false},
       # Static Type Checking
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:ex_keccak, "~> 0.7.5"},
       # JSONRPC HTTP Post calls
       {:httpoison, "~> 2.0"},
       # Decode/Encode JSON for JSONRPC

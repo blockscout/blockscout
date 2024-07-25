@@ -97,6 +97,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_cldr, "~> 2.38"},
       {:ex_cldr_numbers, "~> 2.33"},
       {:ex_cldr_units, "~> 3.17"},
+      {:ex_keccak, "~> 0.7.5"},
       {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       {:explorer, in_umbrella: true},
