@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
 
   alias BlockScoutWeb.API.V2.TransactionView
   alias Explorer.Chain.Scroll.L1FeeParam
-  alias Explorer.Chain.{Data, Transaction, Wei}
+  alias Explorer.Chain.{Data, Transaction}
 
   @api_true [api?: true]
 
