@@ -313,12 +313,7 @@ defmodule Explorer.Chain.Address do
   end
 
   def checksum(hash, iodata?) do
-    checksum_formatted =
-      if Application.get_env(:explorer, :chain_type) == :rsk do
-        rsk_checksum(hash)
-      else
-        eth_checksum(hash)
-      end
+    checksum_formatted = address_checksum(hash)
 
     if iodata? do
       ["0x" | checksum_formatted]
@@ -327,55 +322,57 @@ defmodule Explorer.Chain.Address do
     end
   end
 
-  def eth_checksum(hash) do
-    string_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0x")
+  if Application.compile_env(:explorer, :chain_type) == :rsk do
+    # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
+    def address_checksum(hash) do
+      chain_id = NetVersion.get_version()
 
-    match_byte_stream = stream_every_four_bytes_of_sha256(string_hash)
+      string_hash =
+        hash
+        |> to_string()
+        |> String.trim_leading("0x")
 
-    string_hash
-    |> stream_binary()
-    |> Stream.zip(match_byte_stream)
-    |> Enum.map(fn
-      {digit, _} when digit in ~c"0123456789" ->
-        digit
+      prefix = "#{chain_id}0x"
 
-      {alpha, 1} ->
-        alpha - 32
+      match_byte_stream = stream_every_four_bytes_of_sha256("#{prefix}#{string_hash}")
 
-      {alpha, _} ->
-        alpha
-    end)
-  end
+      string_hash
+      |> stream_binary()
+      |> Stream.zip(match_byte_stream)
+      |> Enum.map(fn
+        {digit, _} when digit in ~c"0123456789" ->
+          digit
 
-  # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
-  def rsk_checksum(hash) do
-    chain_id = NetVersion.get_version()
+        {alpha, 1} ->
+          alpha - 32
 
-    string_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0x")
+        {alpha, _} ->
+          alpha
+      end)
+    end
+  else
+    def address_checksum(hash) do
+      string_hash =
+        hash
+        |> to_string()
+        |> String.trim_leading("0x")
 
-    prefix = "#{chain_id}0x"
+      match_byte_stream = stream_every_four_bytes_of_sha256(string_hash)
 
-    match_byte_stream = stream_every_four_bytes_of_sha256("#{prefix}#{string_hash}")
+      string_hash
+      |> stream_binary()
+      |> Stream.zip(match_byte_stream)
+      |> Enum.map(fn
+        {digit, _} when digit in ~c"0123456789" ->
+          digit
 
-    string_hash
-    |> stream_binary()
-    |> Stream.zip(match_byte_stream)
-    |> Enum.map(fn
-      {digit, _} when digit in ~c"0123456789" ->
-        digit
+        {alpha, 1} ->
+          alpha - 32
 
-      {alpha, 1} ->
-        alpha - 32
-
-      {alpha, _} ->
-        alpha
-    end)
+        {alpha, _} ->
+          alpha
+      end)
+    end
   end
 
   defp stream_every_four_bytes_of_sha256(value) do
