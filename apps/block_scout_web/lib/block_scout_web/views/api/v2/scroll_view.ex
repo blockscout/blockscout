@@ -60,6 +60,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
     end
   end
 
+  # sobelow_skip ["DOS.BinToAtom"]
   defp get_param(name, transaction, config)
        when name in [:scalar, :commit_scalar, :blob_scalar, :overhead, :l1_base_fee, :l1_blob_base_fee] do
     name_init = :"#{name}#{:_init}"
