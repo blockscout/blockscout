@@ -130,7 +130,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   # - `state`: The current state of the fetcher containing the searching parameters.
   #
   # ## Returns
-  # - `{:stop, :normal, state}` as a signal for the fether to stop working after all blocks are handled.
+  # - `{:stop, :normal, state}` as a signal for the fetcher to stop working after all blocks are handled.
   @impl GenServer
   def handle_info(
         :find_events,
@@ -167,7 +167,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     block number defined in the `last_fetched_counters` database table.
 
     ## Parameters
-    - `starting_block`: the block number where reorg has occured.
+    - `starting_block`: the block number where reorg has occurred.
 
     ## Returns
     - nothing
