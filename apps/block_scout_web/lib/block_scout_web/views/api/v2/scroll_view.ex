@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   end
 
   defp get_param(name, transaction, config) do
-    name_init = String.to_atom(to_string(name) <> "_init")
+    name_init = :"#{name}#{:_init}"
 
     case L1FeeParam.get_for_transaction(name, transaction, @api_true) do
       nil -> config[name_init]
