@@ -97,8 +97,7 @@ defmodule BlockScout.Mixfile do
       {:tesla, "~> 1.11.1"},
       # Documentation
       {:ex_doc, "~> 0.34.1", only: :dev, runtime: false},
-      {:number, "~> 1.0.3"},
-      {:recon, "~> 2.5"}
+      {:number, "~> 1.0.3"}
     ]
   end
 end

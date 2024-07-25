@@ -120,7 +120,8 @@ defmodule Explorer.Mixfile do
       {:hammer_backend_redis, "~> 6.1"},
       {:logger_json, "~> 5.1"},
       {:typed_ecto_schema, "~> 0.4.1", runtime: false},
-      {:ueberauth, "~> 0.7"}
+      {:ueberauth, "~> 0.7"},
+      {:recon, "~> 2.5"}
     ]
   end
 
