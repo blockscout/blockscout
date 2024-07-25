@@ -25,7 +25,7 @@ defmodule Explorer.Chain.Transaction.History.HistorianTest do
         insert(:block, timestamp: DateTime.from_unix!(days_to_secs(2) + 60)),
 
         # 1970-01-03 04:00:00
-        insert(:block, timestamp: DateTime.from_unix!(days_to_secs(2) + 4 * 60 * 60)),
+        insert(:block, timestamp: DateTime.from_unix!(days_to_secs(2) + 4 * 60 * 60))
       ]
 
       transaction_1 = insert(:transaction) |> with_block(Enum.at(blocks, 0), status: :ok)
