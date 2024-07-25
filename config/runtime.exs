@@ -457,6 +457,7 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
 
 config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
+  platform_id: System.get_env("SOLIDITYSCAN_PLATFORM_ID", "16"),
   chain_id: System.get_env("SOLIDITYSCAN_CHAIN_ID"),
   api_key: System.get_env("SOLIDITYSCAN_API_TOKEN")
 
