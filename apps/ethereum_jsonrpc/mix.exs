@@ -62,6 +62,7 @@ defmodule EthereumJsonrpc.MixProject do
       {:credo, "~> 1.5", only: :test, runtime: false},
       # Static Type Checking
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:ex_keccak, "~> 0.7.5"},
       # JSONRPC HTTP Post calls
       {:httpoison, "~> 2.0"},
       # Decode/Encode JSON for JSONRPC
@@ -77,9 +78,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.7.1"},
       # Encode/decode function names and arguments
-      # todo: return to hex.pm once https://github.com/poanetwork/ex_abi/pull/170 is merged
-      # {:ex_abi, "~> 0.4"},
-      {:ex_abi, git: "https://github.com/fedor-ivn/ex_abi", branch: "fix-type-decoder-huge-lists", override: true},
+      {:ex_abi, "~> 0.8"},
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
