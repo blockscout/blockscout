@@ -79,15 +79,17 @@ defmodule EthereumJSONRPC.Receipt do
           transaction_index: non_neg_integer()
         }
 
+  @type status :: String.t() | nil
+
   @doc """
   Get `t:EthereumJSONRPC.Logs.elixir/0` from `t:elixir/0`
   """
   @spec elixir_to_logs(elixir) :: Logs.elixir()
   def elixir_to_logs(%{"logs" => logs}), do: logs
 
-  @spec elixir_to_params(elixir) :: %{
-          cumulative_gas_used: non_neg_integer,
-          gas_used: non_neg_integer,
+  @spec elixir_to_params(map) :: %{
+          cumulative_gas_used: non_neg_integer(),
+          gas_used: non_neg_integer(),
           created_contract_address_hash: String.t() | nil,
           status: status(),
           transaction_hash: String.t(),
