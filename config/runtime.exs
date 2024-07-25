@@ -709,6 +709,9 @@ config :indexer, Indexer.Block.Realtime.Supervisor,
 
 config :indexer, Indexer.Block.Catchup.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_CATCHUP_INDEXER")
 
+config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_REPLACED_TRANSACTION_FETCHER")
+
 config :indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_REALTIME_FETCHER")
 
