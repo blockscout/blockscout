@@ -4561,6 +4561,18 @@ defmodule Explorer.Chain do
     |> TypeDecoder.decode_raw(types)
   end
 
+  @spec get_token_types([String.t()]) :: [{Hash.Address.t(), String.t()}]
+  def get_token_types(hashes) do
+    query =
+      from(
+        token in Token,
+        where: token.contract_address_hash in ^hashes,
+        select: {token.contract_address_hash, token.type}
+      )
+
+    Repo.all(query)
+  end
+
   @spec get_token_type(Hash.Address.t()) :: String.t() | nil
   def get_token_type(hash) do
     query =

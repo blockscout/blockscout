@@ -23,7 +23,24 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
 
   @impl true
   def init(_) do
-    {:ok, %{}, {:continue, :check_migration_status}}
+    {:ok, %{}, {:continue, :check_env}}
+  end
+
+  @impl true
+  def handle_continue(:check_env, state) do
+    list = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)[:whitelisted_weth_contracts]
+
+    cond do
+      Enum.empty?(list) ->
+        {:stop, :normal, state}
+
+      check_token_types(list) ->
+        {:noreply, %{}, {:continue, :check_migration_status}}
+
+      true ->
+        Logger.error("Stopping")
+        {:stop, :normal, state}
+    end
   end
 
   @impl true
@@ -156,13 +173,13 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
              when not is_nil(second_topic) <-
                log,
              [amount] <- Helper.decode_data(data, [{:uint, 256}]) do
-          {from_address_hash, to_address_hash, balance_address} =
+          {from_address_hash, to_address_hash, balance_address_hash} =
             if log.first_topic == TokenTransfer.weth_deposit_signature() do
-              to_address = Helper.truncate_address_hash(to_string(second_topic))
-              {burn_address_hash_string(), to_address, to_address}
+              to_address_hash = Helper.truncate_address_hash(to_string(second_topic))
+              {burn_address_hash_string(), to_address_hash, to_address_hash}
             else
-              from_address = Helper.truncate_address_hash(to_string(second_topic))
-              {from_address, burn_address_hash_string(), from_address}
+              from_address_hash = Helper.truncate_address_hash(to_string(second_topic))
+              {from_address_hash, burn_address_hash_string(), from_address_hash}
             end
 
           token_transfer = %{
@@ -179,7 +196,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
           }
 
           token_balance = %{
-            address_hash: balance_address,
+            address_hash: balance_address_hash,
             token_contract_address_hash: log.address_hash,
             block_number: log.block_number,
             token_id: nil,
@@ -226,6 +243,19 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
   defp run_task(batch) do
     Task.Supervisor.async_nolink(Explorer.WETHMigratorSupervisor, fn ->
       migrate_batch(batch)
+    end)
+  end
+
+  defp check_token_types(token_address_hashes) do
+    token_address_hashes
+    |> Chain.get_token_types()
+    |> Enum.reduce(true, fn {token_hash, token_type}, acc ->
+      if token_type == "ERC-20" do
+        acc
+      else
+        Logger.error("Wrong token type of #{to_string(token_hash)}: #{token_type}")
+        false
+      end
     end)
   end
 

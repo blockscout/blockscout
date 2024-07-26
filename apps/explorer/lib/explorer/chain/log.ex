@@ -354,7 +354,13 @@ defmodule Explorer.Chain.Log do
     |> Chain.select_repo(options).all()
   end
 
-  def stream_unfetched_weth_token_transfers(reducer) do
+  @doc """
+  Streams unfetched WETH token transfers.
+  Returns `{:ok, any()} | {:error, any()}` (return spec taken from Ecto.Repo.transaction/2)
+  Expects each_fun, a function to be called on each fetched log. It should accept log and return anything (return value will be discarded anyway)
+  """
+  @spec stream_unfetched_weth_token_transfers((Log.t() -> any())) :: {:ok, any()} | {:error, any()}
+  def stream_unfetched_weth_token_transfers(each_fun) do
     env = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
 
     __MODULE__
@@ -369,6 +375,6 @@ defmodule Explorer.Chain.Log do
     )
     |> where([log, tt], is_nil(tt.transaction_hash))
     |> select([log], log)
-    |> Repo.stream_each(reducer)
+    |> Repo.stream_each(each_fun)
   end
 end
