@@ -41,6 +41,16 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPayments do
   ]
   @get_payment_delegation_method_id @get_payment_delegation_abi |> abi_to_method_id()
 
+  @spec fetch(
+          [EthereumJSONRPC.address()],
+          %{
+            :block_hash => EthereumJSONRPC.hash(),
+            :block_number => EthereumJSONRPC.block_number()
+          },
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) ::
+          {:ok, list()}
+          | {:error, any()}
   def fetch(
         validator_addresses,
         %{block_number: block_number, block_hash: block_hash} = _pending_operation,

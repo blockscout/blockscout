@@ -16,6 +16,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.Distributions do
 
   @mint_address_hash_string burn_address_hash_string()
 
+  @spec fetch(%{
+          :block_hash => EthereumJSONRPC.hash(),
+          :block_number => EthereumJSONRPC.block_number()
+        }) ::
+          {:ok, map()}
+          | {:error, :multiple_transfers_to_same_address}
   def fetch(%{block_number: block_number, block_hash: block_hash} = _pending_operation) do
     {:ok, celo_token_contract_address_hash} = CeloCoreContracts.get_address(:celo_token, block_number)
     {:ok, reserve_contract_address_hash} = CeloCoreContracts.get_address(:reserve, block_number)
