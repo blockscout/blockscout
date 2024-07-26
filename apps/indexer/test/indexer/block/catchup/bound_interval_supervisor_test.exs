@@ -35,23 +35,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       initial_env = Application.get_env(:indexer, :block_ranges)
       on_exit(fn -> Application.put_env(:indexer, :block_ranges, initial_env) end)
 
-      Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
-        contracts: %{
-          "addresses" => %{
-            "Accounts" => [],
-            "Election" => [],
-            "EpochRewards" => [],
-            "FeeHandler" => [],
-            "GasPriceMinimum" => [],
-            "GoldToken" => [],
-            "Governance" => [],
-            "LockedGold" => [],
-            "Reserve" => [],
-            "StableToken" => [],
-            "Validators" => []
-          }
-        }
-      )
+      set_celo_core_contracts_env_var()
     end
 
     # See https://github.com/poanetwork/blockscout/issues/597
@@ -435,23 +419,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       initial_env = Application.get_env(:indexer, :block_ranges)
       on_exit(fn -> Application.put_env(:indexer, :block_ranges, initial_env) end)
 
-      Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
-        contracts: %{
-          "addresses" => %{
-            "Accounts" => [],
-            "Election" => [],
-            "EpochRewards" => [],
-            "FeeHandler" => [],
-            "GasPriceMinimum" => [],
-            "GoldToken" => [],
-            "Governance" => [],
-            "LockedGold" => [],
-            "Reserve" => [],
-            "StableToken" => [],
-            "Validators" => []
-          }
-        }
-      )
+      set_celo_core_contracts_env_var()
 
       # force to use `Mox`, so we can manipulate `latest_block_number`
       put_in(context.json_rpc_named_arguments[:transport], EthereumJSONRPC.Mox)
@@ -628,5 +596,25 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       )
 
     {:ok, %{pid: pid}}
+  end
+
+  defp set_celo_core_contracts_env_var do
+    Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
+      contracts: %{
+        "addresses" => %{
+          "Accounts" => [],
+          "Election" => [],
+          "EpochRewards" => [],
+          "FeeHandler" => [],
+          "GasPriceMinimum" => [],
+          "GoldToken" => [],
+          "Governance" => [],
+          "LockedGold" => [],
+          "Reserve" => [],
+          "StableToken" => [],
+          "Validators" => []
+        }
+      }
+    )
   end
 end
