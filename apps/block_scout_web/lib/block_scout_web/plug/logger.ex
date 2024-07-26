@@ -22,6 +22,17 @@ defmodule BlockScoutWeb.Plug.Logger do
 
     start = System.monotonic_time()
 
+    Logger.log(
+      level,
+      fn ->
+        ["Received at #{DateTime.to_string(DateTime.now!("Etc/UTC"))}", conn.method, ?\s, endpoint(conn)]
+      end,
+      Keyword.merge(
+        [endpoint: endpoint(conn), method: conn.method],
+        opts
+      )
+    )
+
     Conn.register_before_send(conn, fn conn ->
       stop = System.monotonic_time()
       diff = System.convert_time_unit(stop - start, :native, :microsecond)

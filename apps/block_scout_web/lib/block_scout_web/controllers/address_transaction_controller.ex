@@ -179,9 +179,11 @@ defmodule BlockScoutWeb.AddressTransactionController do
          csv_export_module
        )
        when is_binary(address_hash_string) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)},
-         {:recaptcha, true} <- {:recaptcha, CSVHelper.captcha_helper().recaptcha_passed?(recaptcha_response)} do
+    dbg()
+
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) |> dbg(),
+         {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)} |> dbg(),
+         {:recaptcha, true} <- {:recaptcha, CSVHelper.captcha_helper().recaptcha_passed?(recaptcha_response)} |> dbg() do
       filter_type = Map.get(params, "filter_type")
       filter_value = Map.get(params, "filter_value")
 
