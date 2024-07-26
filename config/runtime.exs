@@ -993,6 +993,19 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,
     ConfigHelper.chain_type() == :polygon_zkevm &&
       ConfigHelper.parse_bool_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED")
 
+config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CELO_VALIDATOR_GROUP_VOTES_BATCH_SIZE", 200_000)
+
+celo_epoch_fetchers_enabled? =
+  ConfigHelper.chain_type() == :celo and
+    not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CELO_EPOCH_FETCHER")
+
+config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor, enabled: celo_epoch_fetchers_enabled?
+
+config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
+  enabled: celo_epoch_fetchers_enabled?,
+  disabled?: not celo_epoch_fetchers_enabled?
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do

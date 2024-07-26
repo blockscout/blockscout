@@ -46,6 +46,26 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     CoinBalanceRealtime.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
+    Application.put_env(:indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, disabled?: true)
+
+    Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
+      contracts: %{
+        "addresses" => %{
+          "Accounts" => [],
+          "Election" => [],
+          "EpochRewards" => [],
+          "FeeHandler" => [],
+          "GasPriceMinimum" => [],
+          "GoldToken" => [],
+          "Governance" => [],
+          "LockedGold" => [],
+          "Reserve" => [],
+          "StableToken" => [],
+          "Validators" => []
+        }
+      }
+    )
+
     %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
   end
 
@@ -73,6 +93,11 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       # the TokenInstance fetcher is called. However, for simplicity, we disable
       # it in this test.
       Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor, disabled?: true)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor, disabled?: false)
+      end)
+
       celo_token_address_hash = Factory.address_hash()
 
       Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
@@ -571,6 +596,11 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       # the TokenInstance fetcher is called. However, for simplicity, we disable
       # it in this test.
       Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor, disabled?: true)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor, disabled?: false)
+      end)
+
       celo_token_address_hash = Factory.address_hash()
 
       Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,

@@ -30,7 +30,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     usd_token: "StableToken",
     validators: "Validators",
     governance: "Governance",
-    fee_handler: "FeeHandler"
+    fee_handler: "FeeHandler",
+    gas_price_minimum: "GasPriceMinimum"
   }
 
   @atom_to_contract_event_names %{
@@ -57,6 +58,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   @spec atom_to_contract_event_names() :: %{atom() => %{atom() => contract_name}}
   def atom_to_contract_event_names, do: @atom_to_contract_event_names
 
+  defp core_contracts, do: Application.get_env(:explorer, __MODULE__)[:contracts]
+
   @doc """
   Gets the specified event for a core contract at a given block number.
 
@@ -76,11 +79,10 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
              | :event_atom_not_found
              | :contract_name_not_found
              | :event_name_not_found
-             | :contract_address_not_found}
+             | :contract_address_not_found
+             | :event_does_not_exist}
   def get_event(contract_atom, event_atom, block_number) do
-    core_contracts = Application.get_env(:explorer, __MODULE__)[:contracts]
-
-    with {:ok, address} when not is_nil(address) <- get_address(contract_atom, block_number),
+    with {:ok, address} <- get_address(contract_atom, block_number),
          {:contract_atom, {:ok, contract_name}} <-
            {:contract_atom, Map.fetch(@atom_to_contract_name, contract_atom)},
          {:event_atom, {:ok, event_name}} <-
@@ -91,19 +93,17 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
              |> Map.fetch(event_atom)
            },
          {:events, {:ok, contract_name_to_addresses}} <-
-           {:events, Map.fetch(core_contracts, "events")},
+           {:events, Map.fetch(core_contracts(), "events")},
          {:contract_name, {:ok, contract_addresses}} <-
            {:contract_name, Map.fetch(contract_name_to_addresses, contract_name)},
          {:contract_address, {:ok, contract_events}} <-
            {:contract_address, Map.fetch(contract_addresses, address)},
          {:event_name, {:ok, event_updates}} <-
-           {:event_name, Map.fetch(contract_events, event_name)} do
-      current_event =
-        event_updates
-        |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
-        |> Enum.take(-1)
-        |> List.first()
-
+           {:event_name, Map.fetch(contract_events, event_name)},
+         current_event when not is_nil(current_event) <-
+           event_updates
+           |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
+           |> List.last() do
       {:ok, current_event}
     else
       nil ->
@@ -142,6 +142,9 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
 
         {:error, :event_name_not_found}
 
+      nil ->
+        {:error, :event_does_not_exist}
+
       {:contract_address, :error} ->
         Logger.error(fn ->
           [
@@ -158,47 +161,14 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     end
   end
 
-  @doc """
-  Gets the address of a core contract at a given block number.
-
-  ## Parameters
-  - `contract_atom`: The atom representing the contract.
-  - `block_number`: The block number at which to fetch the address.
-
-  ## Returns (one of the following)
-  - `{:ok, EthereumJSONRPC.address() | nil}`: The address of the contract, or `nil` if not found.
-  - `{:error, reason}`: An error tuple with the reason for the failure.
-  """
-  @spec get_address(atom(), Block.block_number()) ::
-          {:ok, EthereumJSONRPC.address() | nil}
-          | {:error,
-             :contract_atom_not_found
-             | :contract_name_not_found}
-  def get_address(
-        contract_atom,
-        block_number
-      ) do
-    core_contracts = Application.get_env(:explorer, __MODULE__)[:contracts]
-
+  defp get_address_updates(contract_atom) do
     with {:atom, {:ok, contract_name}} <-
            {:atom, Map.fetch(@atom_to_contract_name, contract_atom)},
          {:addresses, {:ok, contract_name_to_addresses}} <-
-           {:addresses, Map.fetch(core_contracts, "addresses")},
+           {:addresses, Map.fetch(core_contracts(), "addresses")},
          {:name, {:ok, address_updates}} <-
            {:name, Map.fetch(contract_name_to_addresses, contract_name)} do
-      current_address =
-        address_updates
-        |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
-        |> Enum.take(-1)
-        |> case do
-          [%{"address" => address}] ->
-            address
-
-          _ ->
-            nil
-        end
-
-      {:ok, current_address}
+      {:ok, address_updates}
     else
       {:atom, :error} ->
         Logger.error("Unknown contract atom: #{inspect(contract_atom)}")
@@ -217,6 +187,49 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
         end)
 
         {:error, :contract_name_not_found}
+    end
+  end
+
+  @doc """
+  Gets the address of a core contract at a given block number.
+
+  ## Parameters
+  - `contract_atom`: The atom representing the contract.
+  - `block_number`: The block number at which to fetch the address.
+
+  ## Returns (one of the following)
+  - `{:ok, EthereumJSONRPC.address() | nil}`: The address of the contract, or `nil` if not found.
+  - `{:error, reason}`: An error tuple with the reason for the failure.
+  """
+  @spec get_address(atom(), Block.block_number()) ::
+          {:ok, EthereumJSONRPC.address() | nil}
+          | {:error,
+             :contract_atom_not_found
+             | :contract_name_not_found
+             | :address_does_not_exist}
+  def get_address(contract_atom, block_number) do
+    with {:ok, address_updates} <- get_address_updates(contract_atom),
+         %{"address" => current_address} <-
+           address_updates
+           |> Enum.take_while(&(&1["updated_at_block_number"] <= block_number))
+           |> List.last() do
+      {:ok, current_address}
+    else
+      nil ->
+        {:error, :address_does_not_exist}
+
+      error ->
+        error
+    end
+  end
+
+  def get_first_update_block_number(contract_atom) do
+    with {:ok, address_updates} <- get_address_updates(contract_atom),
+         %{"updated_at_block_number" => updated_at_block_number} <-
+           address_updates
+           |> Enum.sort_by(& &1["updated_at_block_number"])
+           |> List.first() do
+      {:ok, updated_at_block_number}
     end
   end
 end

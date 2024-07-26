@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContractsTest do
         }
       )
 
-      assert {:ok, nil} = CeloCoreContracts.get_address(:epoch_rewards, 99)
+      assert {:error, :address_does_not_exist} = CeloCoreContracts.get_address(:epoch_rewards, 99)
       assert {:ok, ^first_address} = CeloCoreContracts.get_address(:epoch_rewards, 100)
       assert {:ok, ^first_address} = CeloCoreContracts.get_address(:epoch_rewards, 10_000)
     end
@@ -60,7 +60,8 @@ defmodule Explorer.Chain.Cache.CeloCoreContractsTest do
         }
       )
 
-      assert {:ok, nil} = CeloCoreContracts.get_event(:epoch_rewards, :carbon_offsetting_fund_set, 99)
+      assert {:error, :address_does_not_exist} =
+               CeloCoreContracts.get_event(:epoch_rewards, :carbon_offsetting_fund_set, 99)
 
       assert {:ok, %{"address" => ^first_address, "updated_at_block_number" => 598}} =
                CeloCoreContracts.get_event(:epoch_rewards, :carbon_offsetting_fund_set, 598)

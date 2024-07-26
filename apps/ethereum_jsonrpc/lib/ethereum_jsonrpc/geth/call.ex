@@ -3,8 +3,7 @@ defmodule EthereumJSONRPC.Geth.Call do
   A single call returned from [debug_traceTransaction](https://github.com/ethereum/go-ethereum/wiki/Management-APIs#debug_tracetransaction)
   using a custom tracer (`priv/js/ethereum_jsonrpc/geth/debug_traceTransaction/tracer.js`).
   """
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
-  import EthereumJSONRPC.Transaction, only: [put_if_present: 3]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1, put_if_present: 3]
 
   @doc """
   A call can call another another contract:

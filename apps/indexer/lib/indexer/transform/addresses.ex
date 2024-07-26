@@ -155,6 +155,19 @@ defmodule Indexer.Transform.Addresses do
       [
         %{from: :l2_token_address, to: :hash}
       ]
+    ],
+    celo_election_rewards: [
+      [
+        %{from: :account_address_hash, to: :hash}
+      ]
+    ],
+    celo_validator_group_votes: [
+      [
+        %{from: :account_address_hash, to: :hash}
+      ],
+      [
+        %{from: :group_address_hash, to: :hash}
+      ]
     ]
   }
 
@@ -176,7 +189,7 @@ defmodule Indexer.Transform.Addresses do
 
   Blocks have their `miner_hash` extracted.
 
-      iex> Indexer.Addresses.extract_addresses(
+      iex> Indexer.Transform.Addresses.extract_addresses(
       ...>   %{
       ...>     blocks: [
       ...>       %{
@@ -196,7 +209,7 @@ defmodule Indexer.Transform.Addresses do
   Internal transactions can have their `from_address_hash`, `to_address_hash` and/or `created_contract_address_hash`
   extracted.
 
-      iex> Indexer.Addresses.extract_addresses(
+      iex> Indexer.Transform.Addresses.extract_addresses(
       ...>   %{
       ...>     internal_transactions: [
       ...>       %{
@@ -233,7 +246,7 @@ defmodule Indexer.Transform.Addresses do
 
   Transactions can have their `from_address_hash` and/or `to_address_hash` extracted.
 
-      iex> Indexer.Addresses.extract_addresses(
+      iex> Indexer.Transform.Addresses.extract_addresses(
       ...>   %{
       ...>     transactions: [
       ...>       %{
@@ -269,7 +282,7 @@ defmodule Indexer.Transform.Addresses do
 
   Logs can have their `address_hash` extracted.
 
-      iex> Indexer.Addresses.extract_addresses(
+      iex> Indexer.Transform.Addresses.extract_addresses(
       ...>   %{
       ...>     logs: [
       ...>       %{
@@ -288,7 +301,7 @@ defmodule Indexer.Transform.Addresses do
 
   When the same address is mentioned multiple times, the greatest `block_number` is used
 
-      iex> Indexer.Addresses.extract_addresses(
+      iex> Indexer.Transform.Addresses.extract_addresses(
       ...>   %{
       ...>     blocks: [
       ...>       %{
@@ -341,7 +354,7 @@ defmodule Indexer.Transform.Addresses do
   When a contract is created and then used in internal transactions and transaction in the same fetched data, the
   `created_contract_code` is merged with the greatest `block_number`
 
-      iex> Indexer.Addresses.extract_addresses(
+      iex> Indexer.Transform.Addresses.extract_addresses(
       ...>   %{
       ...>     internal_transactions: [
       ...>       %{
@@ -466,6 +479,17 @@ defmodule Indexer.Transform.Addresses do
           optional(:polygon_zkevm_bridge_operations) => [
             %{
               optional(:l2_token_address) => String.t()
+            }
+          ],
+          optional(:celo_election_rewards) => [
+            %{
+              required(:account_address_hash) => String.t()
+            }
+          ],
+          optional(:celo_validator_group_votes) => [
+            %{
+              required(:account_address_hash) => String.t(),
+              required(:group_address_hash) => String.t()
             }
           ]
         }) :: [params]
