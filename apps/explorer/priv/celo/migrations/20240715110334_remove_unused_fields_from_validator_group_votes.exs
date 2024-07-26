@@ -3,8 +3,8 @@ defmodule Explorer.Repo.Celo.Migrations.RemoveUnusedFieldsFromValidatorGroupVote
 
   def change do
     alter table(:celo_validator_group_votes) do
-      remove(:value)
-      remove(:units)
+      remove(:value, :numeric, precision: 100, null: false, default: 0)
+      remove(:units, :numeric, precision: 100, null: false, default: 0)
     end
   end
 end
