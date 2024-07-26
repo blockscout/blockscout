@@ -23,8 +23,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
-  alias Indexer.Transform.{AddressTokenBalances, Addresses}
   alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
+  alias Indexer.Transform.{Addresses, AddressTokenBalances}
 
   @behaviour BufferedTask
 
