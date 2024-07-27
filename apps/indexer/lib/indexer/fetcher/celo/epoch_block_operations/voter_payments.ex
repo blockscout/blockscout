@@ -44,6 +44,13 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   @get_active_votes_for_group_by_account_method_id @get_active_votes_for_group_by_account_abi
                                                    |> abi_to_method_id()
 
+  @spec fetch(
+          %{
+            :block_hash => EthereumJSONRPC.hash(),
+            :block_number => EthereumJSONRPC.block_number()
+          },
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:error, list()} | {:ok, list()}
   def fetch(
         %{block_number: block_number, block_hash: block_hash} = pending_operation,
         json_rpc_named_arguments
@@ -145,7 +152,11 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
     {ok_or_error, rewards}
   end
 
-  def validate_voter_rewards(pending_operation, voter_rewards) do
+  # Validates voter rewards by comparing the sum of what we got from the
+  # `EpochRewardsDistributedToVoters` event and the sum of what we calculated
+  # manually by fetching the votes for each account that has or had an activated
+  # vote.
+  defp validate_voter_rewards(pending_operation, voter_rewards) do
     manual_voters_total = voter_rewards |> Enum.map(& &1.amount) |> Enum.sum()
     {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, pending_operation.block_number)
 

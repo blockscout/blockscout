@@ -208,7 +208,7 @@ defmodule Indexer.Memory.Monitor do
   @megabytes_divisor 2 ** 20
   defp set_metrics(%__MODULE__{shrinkable_set: shrinkable_set}) do
     total_memory =
-      Enum.reduce(shrinkable_set, 0, fn pid, acc ->
+      Enum.reduce(Enum.to_list(shrinkable_set) ++ on_demand_fetchers(), 0, fn pid, acc ->
         memory = memory(pid) / @megabytes_divisor
         name = name(pid)
 
@@ -218,6 +218,17 @@ defmodule Indexer.Memory.Monitor do
       end)
 
     Instrumenter.set_memory_consumed(:total, total_memory)
+  end
+
+  defp on_demand_fetchers do
+    [Indexer.Application, Indexer.Supervisor, Explorer.Supervisor]
+    |> Enum.reject(&is_nil(Process.whereis(&1)))
+    |> Enum.flat_map(fn supervisor ->
+      supervisor
+      |> Supervisor.which_children()
+      |> Enum.filter(fn {name, _, _, _} -> is_atom(name) and String.contains?(to_string(name), "OnDemand") end)
+      |> Enum.map(fn {_, pid, _, _} -> pid end)
+    end)
   end
 
   defp name(pid) do

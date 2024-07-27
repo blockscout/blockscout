@@ -1167,11 +1167,20 @@ defmodule Explorer.Chain do
         %{smart_contract: smart_contract} ->
           if smart_contract do
             CheckBytecodeMatchingOnDemand.trigger_check(address_result, smart_contract)
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, smart_contract)
+
+            LookUpSmartContractSourcesOnDemand.trigger_fetch(
+              to_string(address_result.hash),
+              address_result.contract_code,
+              smart_contract
+            )
 
             SmartContract.check_and_update_constructor_args(address_result)
           else
-            LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
+            LookUpSmartContractSourcesOnDemand.trigger_fetch(
+              to_string(address_result.hash),
+              address_result.contract_code,
+              nil
+            )
 
             {implementation_address_hashes, _} =
               Implementation.get_implementation(
@@ -1190,7 +1199,13 @@ defmodule Explorer.Chain do
           end
 
         _ ->
-          LookUpSmartContractSourcesOnDemand.trigger_fetch(address_result, nil)
+          if address_result do
+            LookUpSmartContractSourcesOnDemand.trigger_fetch(
+              to_string(address_result.hash),
+              address_result.contract_code,
+              nil
+            )
+          end
 
           address_result
       end

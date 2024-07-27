@@ -1,52 +1,38 @@
 defmodule Explorer.Chain.Celo.ValidatorGroupVote do
   @moduledoc """
-  Stores the information about a vote for a validator group made by an account.
+  Represents the information about a vote for a validator group made by an
+  account.
   """
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Transaction}
+
   @types_enum ~w(activated revoked)a
-  @required_attrs [
-    :account_address_hash,
-    :group_address_hash,
-    :value,
-    :units,
-    :type,
-    :transaction_hash,
-    :block_hash,
-    :block_number
-  ]
+  @required_attrs ~w(account_address_hash group_address_hash type transaction_hash block_hash block_number)a
 
   @typedoc """
   * `account_address_hash` - the address of the account that made the vote.
   * `group_address_hash` - the address of the validator group that
      was voted for.
-  * `value` - the amount of votes.
-  * `units` - the number of units of the vote.
   * `type` - whether this vote is `activated` or `revoked`.
+  * `block_number` - the block number of the vote.
+  * `block_hash` - the hash of the block that contains the vote.
   * `transaction_hash` - the hash of the transaction that made the vote.
   """
   @primary_key false
   typed_schema "celo_validator_group_votes" do
-    belongs_to(
-      :account_address,
-      Address,
+    belongs_to(:account_address, Address,
       foreign_key: :account_address_hash,
       references: :hash,
       type: Hash.Address
     )
 
-    belongs_to(
-      :group_address,
-      Address,
+    belongs_to(:group_address, Address,
       foreign_key: :group_address_hash,
       references: :hash,
       type: Hash.Address
     )
-
-    field(:value, Wei, null: false)
-    field(:units, Wei, null: false)
 
     field(:type, Ecto.Enum,
       values: @types_enum,
@@ -54,9 +40,22 @@ defmodule Explorer.Chain.Celo.ValidatorGroupVote do
     )
 
     field(:block_number, :integer, null: false)
-    field(:block_hash, Hash.Full, null: false)
 
-    field(:transaction_hash, Hash.Full, primary_key: true)
+    belongs_to(:block, Block,
+      foreign_key: :block_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full,
+      null: false
+    )
+
+    belongs_to(:transaction, Transaction,
+      foreign_key: :transaction_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full,
+      null: false
+    )
 
     timestamps()
   end
@@ -71,6 +70,8 @@ defmodule Explorer.Chain.Celo.ValidatorGroupVote do
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:account_address_hash)
     |> foreign_key_constraint(:group_address_hash)
+    |> foreign_key_constraint(:block_hash)
+    |> foreign_key_constraint(:transaction_hash)
 
     # todo: is it needed?
     # |> unique_constraint(

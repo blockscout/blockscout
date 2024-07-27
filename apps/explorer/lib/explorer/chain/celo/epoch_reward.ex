@@ -1,6 +1,9 @@
 defmodule Explorer.Chain.Celo.EpochReward do
-  # todo: write doc
-  @moduledoc false
+  @moduledoc """
+  Represents the distributions in the Celo epoch. Each log index points to a
+  token transfer event in the `TokenTransfer` relation. These include the
+  reserve bolster, community, and carbon offsetting transfers.
+  """
   use Explorer.Schema
 
   import Ecto.Query, only: [from: 2]

@@ -47,7 +47,7 @@ defmodule Explorer.Chain.Cache.Transaction do
     # If this gets called it means an async task was requested, but none exists
     # so a new one needs to be launched
     {:ok, task} =
-      Task.start(fn ->
+      Task.start_link(fn ->
         try do
           result = Repo.aggregate(Transaction, :count, :hash, timeout: :infinity)
 

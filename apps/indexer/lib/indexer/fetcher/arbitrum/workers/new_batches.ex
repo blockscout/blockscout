@@ -42,7 +42,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   require Logger
 
   # keccak256("SequencerBatchDelivered(uint256,bytes32,bytes32,bytes32,uint256,(uint64,uint64,uint64,uint64),uint8)")
-  @message_sequencer_batch_delivered "0x7394f4a19a13c7b92b5bb71033245305946ef78452f7b4986ac1390b5df4ebd7"
+  @event_sequencer_batch_delivered "0x7394f4a19a13c7b92b5bb71033245305946ef78452f7b4986ac1390b5df4ebd7"
 
   @doc """
     Discovers and imports new batches of rollup transactions within the current L1 block range.
@@ -88,6 +88,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               :chunk_size => non_neg_integer(),
               optional(any()) => any()
             },
+            :node_interface_address => binary(),
             optional(any()) => any()
           },
           :data => %{:new_batches_start_block => non_neg_integer(), optional(any()) => any()},
@@ -100,7 +101,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             rollup_rpc: rollup_rpc_config,
             l1_sequencer_inbox_address: sequencer_inbox_address,
             messages_to_blocks_shift: messages_to_blocks_shift,
-            new_batches_limit: new_batches_limit
+            new_batches_limit: new_batches_limit,
+            node_interface_address: node_interface_address
           },
           data: %{new_batches_start_block: start_block}
         } = _state
@@ -126,6 +128,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         new_batches_limit,
         messages_to_blocks_shift,
         l1_rpc_config,
+        node_interface_address,
         rollup_rpc_config
       )
 
@@ -181,6 +184,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               :chunk_size => non_neg_integer(),
               optional(any()) => any()
             },
+            :node_interface_address => binary(),
             optional(any()) => any()
           },
           :data => %{:historical_batches_end_block => any(), optional(any()) => any()},
@@ -194,7 +198,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             l1_sequencer_inbox_address: sequencer_inbox_address,
             messages_to_blocks_shift: messages_to_blocks_shift,
             l1_rollup_init_block: l1_rollup_init_block,
-            new_batches_limit: new_batches_limit
+            new_batches_limit: new_batches_limit,
+            node_interface_address: node_interface_address
           },
           data: %{historical_batches_end_block: end_block}
         } = _state
@@ -211,6 +216,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         new_batches_limit,
         messages_to_blocks_shift,
         l1_rpc_config,
+        node_interface_address,
         rollup_rpc_config
       )
 
@@ -232,6 +238,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # - `new_batches_limit`: Limit of new batches to process in one iteration.
   # - `messages_to_blocks_shift`: Shift value for message to block number mapping.
   # - `l1_rpc_config`: Configuration for L1 RPC calls.
+  # - `node_interface_address`: The address of the NodeInterface contract on the rollup.
   # - `rollup_rpc_config`: Configuration for rollup RPC calls.
   #
   # ## Returns
@@ -243,6 +250,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
          new_batches_limit,
          messages_to_blocks_shift,
          l1_rpc_config,
+         node_interface_address,
          rollup_rpc_config
        ) do
     do_discover(
@@ -252,6 +260,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       new_batches_limit,
       messages_to_blocks_shift,
       l1_rpc_config,
+      node_interface_address,
       rollup_rpc_config
     )
   end
@@ -268,6 +277,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # - `new_batches_limit`: Limit of new batches to process in one iteration.
   # - `messages_to_blocks_shift`: Shift value for message to block number mapping.
   # - `l1_rpc_config`: Configuration for L1 RPC calls.
+  # - `node_interface_address`: The address of the NodeInterface contract on the rollup.
   # - `rollup_rpc_config`: Configuration for rollup RPC calls.
   #
   # ## Returns
@@ -279,6 +289,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
          new_batches_limit,
          messages_to_blocks_shift,
          l1_rpc_config,
+         node_interface_address,
          rollup_rpc_config
        ) do
     do_discover(
@@ -288,6 +299,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       new_batches_limit,
       messages_to_blocks_shift,
       l1_rpc_config,
+      node_interface_address,
       rollup_rpc_config
     )
   end
@@ -312,6 +324,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # - `messages_to_blocks_shift`: The value used to align message counts with rollup block
   #   numbers.
   # - `l1_rpc_config`: RPC configuration parameters for L1.
+  # - `node_interface_address`: The address of the NodeInterface contract on the rollup.
   # - `rollup_rpc_config`: RPC configuration parameters for rollup data.
   #
   # ## Returns
@@ -327,6 +340,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             :chunk_size => non_neg_integer(),
             optional(any()) => any()
           },
+          binary(),
           %{
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             :chunk_size => non_neg_integer(),
@@ -340,6 +354,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
          new_batches_limit,
          messages_to_blocks_shift,
          l1_rpc_config,
+         node_interface_address,
          rollup_rpc_config
        ) do
     raw_logs =
@@ -372,6 +387,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           messages_to_blocks_shift,
           l1_rpc_config,
           sequencer_inbox_address,
+          node_interface_address,
           rollup_rpc_config
         )
 
@@ -417,7 +433,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         start_block,
         end_block,
         sequencer_inbox_address,
-        [@message_sequencer_batch_delivered],
+        [@event_sequencer_batch_delivered],
         json_rpc_named_arguments
       )
 
@@ -445,6 +461,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # - `msg_to_block_shift`: The shift value for mapping batch messages to block numbers.
   # - `l1_rpc_config`: The RPC configuration for L1 requests.
   # - `sequencer_inbox_address`: The address of the SequencerInbox contract.
+  # - `node_interface_address`: The address of the NodeInterface contract on the rollup.
   # - `rollup_rpc_config`: The RPC configuration for rollup data requests.
   #
   # ## Returns
@@ -460,18 +477,30 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             optional(any()) => any()
           },
           binary(),
+          binary(),
           %{
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             :chunk_size => non_neg_integer(),
             optional(any()) => any()
           }
-        ) ::
-          {[Arbitrum.L1Batch.to_import()], [Arbitrum.LifecycleTransaction.to_import()],
-           [Arbitrum.BatchBlock.to_import()], [Arbitrum.BatchTransaction.to_import()], [Arbitrum.Message.to_import()],
-           [Arbitrum.DaMultiPurposeRecord.to_import()]}
-  defp handle_batches_from_logs(logs, msg_to_block_shift, l1_rpc_config, sequencer_inbox_address, rollup_rpc_config)
+        ) :: {
+          [Arbitrum.L1Batch.to_import()],
+          [Arbitrum.LifecycleTransaction.to_import()],
+          [Arbitrum.BatchBlock.to_import()],
+          [Arbitrum.BatchTransaction.to_import()],
+          [Arbitrum.Message.to_import()],
+          [Arbitrum.DaMultiPurposeRecord.to_import()]
+        }
+  defp handle_batches_from_logs(
+         logs,
+         msg_to_block_shift,
+         l1_rpc_config,
+         sequencer_inbox_address,
+         node_interface_address,
+         rollup_rpc_config
+       )
 
-  defp handle_batches_from_logs([], _, _, _, _), do: {[], [], [], [], [], []}
+  defp handle_batches_from_logs([], _, _, _, _, _), do: {[], [], [], [], [], []}
 
   defp handle_batches_from_logs(
          logs,
@@ -481,6 +510,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
            chunk_size: chunk_size
          } = l1_rpc_config,
          sequencer_inbox_address,
+         node_interface_address,
          rollup_rpc_config
        ) do
     existing_batches =
@@ -494,7 +524,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     blocks_to_ts = Rpc.execute_blocks_requests_and_get_ts(blocks_requests, json_rpc_named_arguments, chunk_size)
 
     {initial_lifecycle_txs, batches_to_import, da_info} =
-      execute_tx_requests_parse_txs_calldata(txs_requests, msg_to_block_shift, blocks_to_ts, batches, l1_rpc_config)
+      execute_tx_requests_parse_txs_calldata(
+        txs_requests,
+        msg_to_block_shift,
+        blocks_to_ts,
+        batches,
+        l1_rpc_config,
+        %{
+          node_interface_address: node_interface_address,
+          json_rpc_named_arguments: rollup_rpc_config.json_rpc_named_arguments
+        }
+      )
 
     # Check if the commitment transactions for the batches which are already in the database
     # needs to be updated in case of reorgs
@@ -675,15 +715,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # - `blocks_to_ts`: A map of block numbers to their timestamps, required to complete
   #                   data for corresponding lifecycle transactions.
   # - `batches`: The current batch data to be updated.
-  # - A configuration map containing:
-  #   - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #   - `track_finalization`: A boolean flag indicating if finalization tracking is needed.
-  #   - `chunk_size`: The size of chunks for batch processing.
+  # - A configuration map containing L1 JSON RPC arguments, a track finalization flag,
+  #   and a chunk size for batch processing.
+  # - A configuration map containing the rollup RPC arguments and the address of the
+  #   NodeInterface contract.
   #
   # ## Returns
   # - A tuple containing:
-  #   - A map of lifecycle (L1) transactions, including their hashes, block numbers,
-  #     timestamps, and statuses (finalized or unfinalized).
+  #   - A map of lifecycle (L1) transactions, which are not yet compatible with
+  #     database import and require further processing.
   #   - An updated map of batch descriptions with block ranges and data availability
   #     information.
   #   - A list of data availability information structs for Anytrust or Celestia.
@@ -696,6 +736,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             :chunk_size => non_neg_integer(),
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             :track_finalization => boolean(),
+            optional(any()) => any()
+          },
+          %{
+            :node_interface_address => binary(),
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             optional(any()) => any()
           }
         ) ::
@@ -715,11 +760,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
                optional(any()) => any()
              }
            }, [Anytrust.t() | Celestia.t()]}
-  defp execute_tx_requests_parse_txs_calldata(txs_requests, msg_to_block_shift, blocks_to_ts, batches, %{
-         json_rpc_named_arguments: json_rpc_named_arguments,
-         track_finalization: track_finalization?,
-         chunk_size: chunk_size
-       }) do
+  defp execute_tx_requests_parse_txs_calldata(
+         txs_requests,
+         msg_to_block_shift,
+         blocks_to_ts,
+         batches,
+         %{
+           json_rpc_named_arguments: json_rpc_named_arguments,
+           track_finalization: track_finalization?,
+           chunk_size: chunk_size
+         },
+         rollup_config
+       ) do
     txs_requests
     |> Enum.chunk_every(chunk_size)
     |> Enum.reduce({%{}, batches, []}, fn chunk, {l1_txs, updated_batches, da_info} ->
@@ -736,22 +788,32 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         {batch_num, prev_message_count, new_message_count, extra_data} =
           add_sequencer_l2_batch_from_origin_calldata_parse(resp["input"])
 
+        # For the case when the rollup blocks range is not discovered on the previous
+        # step due to handling of legacy events, it is required to make more
+        # sophisticated lookup based on the previously discovered batches and requests
+        # to the NodeInterface contract on the rollup.
+        {batch_start_block, batch_end_block} =
+          determine_batch_block_range(
+            batch_num,
+            prev_message_count,
+            new_message_count,
+            msg_to_block_shift,
+            rollup_config
+          )
+
         {da_type, da_data} =
           case DataAvailabilityInfo.examine_batch_accompanying_data(batch_num, extra_data) do
             {:ok, t, d} -> {t, d}
             {:error, _, _} -> {nil, nil}
           end
 
-        # In some cases extracted numbers for messages does not linked directly
-        # with rollup blocks, for this, the numbers are shifted by a value specific
-        # for particular rollup
         updated_batches_map =
           Map.put(
             batches_map,
             batch_num,
             Map.merge(batches_map[batch_num], %{
-              start_block: prev_message_count + msg_to_block_shift,
-              end_block: new_message_count + msg_to_block_shift - 1,
+              start_block: batch_start_block,
+              end_block: batch_end_block,
               batch_container: da_type
             })
           )
@@ -785,7 +847,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # Parses calldata of `addSequencerL2BatchFromOrigin` or `addSequencerL2BatchFromBlobs`
   # functions to extract batch information.
   @spec add_sequencer_l2_batch_from_origin_calldata_parse(binary()) ::
-          {non_neg_integer(), non_neg_integer(), non_neg_integer(), binary() | nil}
+          {non_neg_integer(), non_neg_integer() | nil, non_neg_integer() | nil, binary() | nil}
   defp add_sequencer_l2_batch_from_origin_calldata_parse(calldata) do
     case calldata do
       "0x8f111f3c" <> encoded_params ->
@@ -826,6 +888,115 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           )
 
         {sequence_number, prev_message_count, new_message_count, nil}
+
+      "0x6f12b0c9" <> encoded_params ->
+        # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder)
+        [sequence_number, data, _after_delayed_messages_read, _gas_refunder] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            %FunctionSelector{
+              function: "addSequencerL2BatchFromOrigin",
+              types: [
+                {:uint, 256},
+                :bytes,
+                {:uint, 256},
+                :address
+              ]
+            }
+          )
+
+        {sequence_number, nil, nil, data}
+    end
+  end
+
+  # Determines the block range for a batch based on provided message counts and
+  # previously discovered batches. If the message counts are nil, it attempts to
+  # find the block range by inspecting neighboring batches.
+  #
+  # Parameters:
+  # - `batch_number`: The batch number for which the block range is determined.
+  # - `prev_message_count`: The message count of the previous batch, or nil if not
+  #   available.
+  # - `new_message_count`: The message count of the current batch, or nil if not
+  #   available.
+  # - `msg_to_block_shift`: A shift value used to adjust the block numbers based
+  #   on message counts.
+  # - `rollup_config`: A map containing the `NodeInterface` contract address and
+  #   configuration parameters for the JSON RPC connection.
+  #
+  # Returns:
+  # - A tuple `{start_block, end_block}` representing the range of blocks included
+  #   in the specified batch.
+  #
+  # If both `prev_message_count` and `new_message_count` are nil, the function logs
+  # an attempt to determine the block range based on already discovered batches.
+  # It calculates the highest and lowest blocks for the neighboring batches and
+  # uses them to infer the block range for the current batch. If only one neighbor
+  # provides a block, it performs a binary search to find the opposite block.
+  #
+  # If the message counts are provided, it adjusts them by the specific shift value
+  # `msg_to_block_shift` and returns the adjusted block range.
+  @spec determine_batch_block_range(
+          non_neg_integer(),
+          non_neg_integer() | nil,
+          non_neg_integer() | nil,
+          non_neg_integer(),
+          %{
+            node_interface_address: EthereumJSONRPC.address(),
+            json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments()
+          }
+        ) :: {non_neg_integer(), non_neg_integer()}
+  defp determine_batch_block_range(batch_number, prev_message_count, new_message_count, _, rollup_config)
+       when is_nil(prev_message_count) and is_nil(new_message_count) do
+    log_info("No blocks range for batch ##{batch_number}. Trying to find it based on already discovered batches.")
+
+    {highest_block, step_highest_to_lowest} = get_expected_highest_block_and_step(batch_number + 1)
+    {lowest_block, step_lowest_to_highest} = get_expected_lowest_block_and_step(batch_number - 1)
+
+    {start_block, end_block} =
+      case {lowest_block, highest_block} do
+        {nil, nil} -> raise "Impossible to determine the block range for batch #{batch_number}"
+        {lowest, nil} -> Rpc.get_block_range_for_batch(lowest, step_lowest_to_highest, batch_number, rollup_config)
+        {nil, highest} -> Rpc.get_block_range_for_batch(highest, step_highest_to_lowest, batch_number, rollup_config)
+        {lowest, highest} -> {lowest, highest}
+      end
+
+    log_info("Blocks range for batch ##{batch_number} is determined as #{start_block}..#{end_block}")
+    {start_block, end_block}
+  end
+
+  defp determine_batch_block_range(_, prev_message_count, new_message_count, msg_to_block_shift, _) do
+    # In some cases extracted numbers for messages does not linked directly
+    # with rollup blocks, for this, the numbers are shifted by a value specific
+    # for particular rollup
+    {prev_message_count + msg_to_block_shift, new_message_count + msg_to_block_shift - 1}
+  end
+
+  # Calculates the expected highest block and step required for the lowest block look up for a given batch number.
+  @spec get_expected_highest_block_and_step(non_neg_integer()) :: {non_neg_integer(), non_neg_integer()} | {nil, nil}
+  defp get_expected_highest_block_and_step(batch_number) do
+    # since the default direction for the block range exploration is chosen to be from the highest to lowest
+    # the step is calculated to be positive
+    case Db.get_batch_by_number(batch_number) do
+      nil ->
+        {nil, nil}
+
+      %Arbitrum.L1Batch{start_block: start_block, end_block: end_block} ->
+        {start_block - 1, div(end_block - start_block, 2)}
+    end
+  end
+
+  # Calculates the expected lowest block and step required for the highest block look up for a given batch number.
+  @spec get_expected_lowest_block_and_step(non_neg_integer()) :: {non_neg_integer(), integer()} | {nil, nil}
+  defp get_expected_lowest_block_and_step(batch_number) do
+    # since the default direction for the block range exploration is chosen to be from the highest to lowest
+    # the step is calculated to be negative
+    case Db.get_batch_by_number(batch_number) do
+      nil ->
+        {nil, nil}
+
+      %Arbitrum.L1Batch{start_block: start_block, end_block: end_block} ->
+        {end_block + 1, div(start_block - end_block, 2)}
     end
   end
 

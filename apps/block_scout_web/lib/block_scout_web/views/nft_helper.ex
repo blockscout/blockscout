@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.NFTHelper do
 
   def get_media_src(nil, _), do: nil
 
+  # credo:disable-for-next-line /Complexity/
   def get_media_src(metadata, high_quality_media?) do
     result =
       cond do
@@ -18,8 +19,8 @@ defmodule BlockScoutWeb.NFTHelper do
         metadata["image"] ->
           retrieve_image(metadata["image"])
 
-        metadata["properties"]["image"]["description"] ->
-          metadata["properties"]["image"]["description"]
+        image = metadata["properties"]["image"] ->
+          if is_map(image), do: image["description"], else: image
 
         true ->
           nil

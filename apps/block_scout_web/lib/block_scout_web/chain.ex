@@ -48,6 +48,7 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
+  alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
 
   alias Explorer.Chain.PolygonZkevm.TransactionBatch
@@ -439,6 +440,7 @@ defmodule BlockScoutWeb.Chain do
 
   # clause for pagination of entities:
   # - Account's entities
+  # - Optimism frame sequences
   # - Polygon Edge Deposits
   # - Polygon Edge Withdrawals
   # - Arbitrum cross chain messages
@@ -454,6 +456,7 @@ defmodule BlockScoutWeb.Chain do
 
   # clause for pagination of entities:
   # - Account's entities
+  # - Optimism frame sequences
   # - Polygon Edge Deposits
   # - Polygon Edge Withdrawals
   # - Arbitrum cross chain messages
@@ -675,6 +678,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params({%Token{} = token, _}) do
     paging_params(token)
+  end
+
+  defp paging_params(%OptimismFrameSequence{id: id}) do
+    %{"id" => id}
   end
 
   defp paging_params(%TagAddress{id: id}) do

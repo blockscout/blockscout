@@ -30,6 +30,10 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     :delegated_payment => :usd_token
   }
 
+  alias Explorer.Chain.{Address, Block, Hash, Wei}
+
+  @types_enum ~w(voter validator group delegated_payment)a
+
   @required_attrs ~w(amount type block_hash account_address_hash associated_account_address_hash)a
 
   @primary_key false

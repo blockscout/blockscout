@@ -12,7 +12,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   import Indexer.Block.Fetcher,
     only: [
-      async_import_coin_balances: 2
+      async_import_coin_balances: 2,
+      async_import_token_balances: 2,
+      token_transfers_merge_token: 2
     ]
 
   alias EthereumJSONRPC.Utility.RangesHelper
@@ -21,8 +23,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
-  alias Indexer.Transform.Addresses
   alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
+  alias Indexer.Transform.{Addresses, AddressTokenBalances}
 
   @behaviour BufferedTask
 
@@ -439,17 +441,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
     ]
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :celo do
-    import Indexer.Block.Fetcher,
-      only: [
-        token_transfers_merge_token: 2,
-        async_import_token_balances: 2
-      ]
-
-    # credo:disable-for-next-line Credo.Check.Consistency.MultiAliasImportRequireUse
-    alias Indexer.Transform.AddressTokenBalances
-
-    defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: tokens}) do
+  defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: tokens}) do
+    if Application.get_env(:explorer, :chain_type) == :celo do
       token_transfers_with_token = token_transfers_merge_token(token_transfers, tokens)
 
       address_token_balances =
@@ -467,8 +460,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
         end)
 
       async_import_token_balances(%{address_token_balances: address_token_balances}, false)
+    else
+      :ok
     end
-  else
-    defp async_import_celo_token_balances(_token_transfers), do: :ok
   end
 end

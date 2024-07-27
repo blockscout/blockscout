@@ -127,6 +127,8 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     end)
   end
 
+  defp item_to_address_hash_strings(nil), do: []
+
   defp item_to_address_hash_strings(%Transaction{
          to_address_hash: to_address_hash,
          created_contract_address_hash: created_contract_address_hash,
@@ -285,11 +287,13 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     alter_address(address, address.hash, names, field_to_put_info)
   end
 
-  defp alter_address(_, nil, _names, _field) do
-    nil
-  end
+  defp alter_address(address, nil, _names, _field), do: address
 
   defp alter_address(%NotLoaded{}, address_hash, names, field) do
+    %{field => names[Address.checksum(address_hash)]}
+  end
+
+  defp alter_address(nil, address_hash, names, field) do
     %{field => names[Address.checksum(address_hash)]}
   end
 

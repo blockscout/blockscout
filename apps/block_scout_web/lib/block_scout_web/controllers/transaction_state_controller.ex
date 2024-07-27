@@ -25,14 +25,7 @@ defmodule BlockScoutWeb.TransactionStateController do
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
          {:ok, transaction} <-
-           Chain.hash_to_transaction(
-             transaction_hash,
-             necessity_by_association: %{
-               [block: :miner] => :optional,
-               from_address: :optional,
-               to_address: :optional
-             }
-           ),
+           Chain.hash_to_transaction(transaction_hash),
          {:ok, false} <-
            AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <-

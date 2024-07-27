@@ -1,7 +1,7 @@
 defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   @moduledoc """
   Imports any tables that reference `t:Explorer.Chain.Block.t/0` and that were
-  imported by `Explorer.Chain.Import.Stage.AddressesBlocksCoinBalances`.
+  imported by `Explorer.Chain.Import.Stage.BlockRelated`.
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
@@ -9,11 +9,9 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   @behaviour Stage
 
   @default_runners [
-    Runner.Transactions,
     Runner.Transaction.Forks,
     Runner.Logs,
     Runner.Tokens,
-    Runner.TokenTransfers,
     Runner.TokenInstances,
     Runner.Address.TokenBalances,
     Runner.TransactionActions,
@@ -23,6 +21,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   @extra_runners_by_chain_type %{
     optimism: [
       Runner.Optimism.FrameSequences,
+      Runner.Optimism.FrameSequenceBlobs,
       Runner.Optimism.TxnBatches,
       Runner.Optimism.OutputRoots,
       Runner.Optimism.DisputeGames,
@@ -43,17 +42,17 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.PolygonZkevm.BridgeL1Tokens,
       Runner.PolygonZkevm.BridgeOperations
     ],
-    shibarium: [
-      Runner.Shibarium.BridgeOperations
-    ],
-    ethereum: [
-      Runner.Beacon.BlobTransactions
-    ],
     zksync: [
       Runner.ZkSync.LifecycleTransactions,
       Runner.ZkSync.TransactionBatches,
       Runner.ZkSync.BatchTransactions,
       Runner.ZkSync.BatchBlocks
+    ],
+    shibarium: [
+      Runner.Shibarium.BridgeOperations
+    ],
+    ethereum: [
+      Runner.Beacon.BlobTransactions
     ],
     arbitrum: [
       Runner.Arbitrum.Messages,
