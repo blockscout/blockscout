@@ -3,7 +3,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
   import Mox
 
-  alias Explorer.Chain.{AdvancedFilter, Data}
+  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.{AdvancedFilter, Data, Hash}
   alias Explorer.{Factory, TestHelper}
 
   describe "/advanced_filters" do
@@ -909,58 +910,96 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert Enum.count(response["items"]) == 3
     end
 
-    test "correct query with all filters and 'or' address relation", %{conn: conn} do
-      method_id_string = "0xa9059cbb"
-      {:ok, method} = Data.cast(method_id_string <> "ab0ba0")
-      timestamp = ~U[2023-12-12 00:00:00.000000Z]
-      transaction = insert(:transaction, input: method) |> with_block(block_timestamp: timestamp)
-      token_transfer = insert(:token_transfer, transaction: transaction)
+    test "correct query with all filters and pagination", %{conn: conn} do
+      for address_relation <- [:or, :and] do
+        method_id_string = "0xa9059cbb"
+        {:ok, method} = Data.cast(method_id_string <> "ab0ba0")
+        timestamp = ~U[2023-12-12 00:00:00.000000Z]
+        transaction_from_address = insert(:address)
+        transaction_to_address = insert(:address)
+        token_transfer_from_address = insert(:address)
+        token_transfer_to_address = insert(:address)
+        token = insert(:token)
+        {:ok, burn_address_hash} = Hash.Address.cast(SmartContract.burn_address_hash_string())
 
-      request =
-        get(conn, "/api/v2/advanced-filters", %{
+        insert_list(5, :transaction)
+
+        for i <- 1..30 do
+          transaction =
+            insert(:transaction,
+              from_address: transaction_from_address,
+              from_address_hash: transaction_from_address.hash,
+              to_address: transaction_to_address,
+              to_address_hash: transaction_to_address.hash,
+              value: Enum.random(0..1_000_000),
+              input: method
+            )
+            |> with_block(block_timestamp: timestamp)
+
+          token_transfer =
+            insert(:token_transfer,
+              transaction: transaction,
+              amount: Enum.random(0..1_000_000),
+              from_address: token_transfer_from_address,
+              from_address_hash: token_transfer_from_address.hash,
+              to_address: token_transfer_to_address,
+              to_address_hash: token_transfer_to_address.hash,
+              token_contract_address: token.contract_address,
+              token_contract_address_hash: token.contract_address_hash
+            )
+        end
+
+        insert_list(5, :transaction)
+
+        params = %{
           "tx_types" => "coin_transfer,ERC-20",
           "methods" => method_id_string,
           "age_from" => "2023-12-11T00:00:00Z",
           "age_to" => "2023-12-13T00:00:00Z",
-          "from_address_hashes_to_include" => "#{transaction.from_address_hash},#{token_transfer.from_address_hash}",
-          "to_address_hashes_to_include" => "#{transaction.to_address_hash},#{token_transfer.to_address_hash}",
-          "address_relation" => "or",
+          "from_address_hashes_to_include" => "#{transaction_from_address.hash},#{token_transfer_from_address.hash}",
+          "to_address_hashes_to_include" => "#{transaction_to_address.hash},#{token_transfer_to_address.hash}",
+          "address_relation" => to_string(address_relation),
           "amount_from" => "0",
           "amount_to" => "1000000",
-          "token_contract_address_hashes_to_include" => "native,#{token_transfer.token_contract_address_hash}",
-          "token_contract_address_hashes_to_exclude" => "0x0000000000000000000000000000000000000000"
-        })
+          "token_contract_address_hashes_to_include" => "native,#{token.contract_address_hash}",
+          "token_contract_address_hashes_to_exclude" => "#{burn_address_hash}"
+        }
 
-      assert response = json_response(request, 200)
+        request =
+          get(conn, "/api/v2/advanced-filters", params)
 
-      assert Enum.count(response["items"]) == 2
-    end
+        assert response = json_response(request, 200)
+        request_2nd_page = get(conn, "/api/v2/advanced-filters", Map.merge(params, response["next_page_params"]))
+        assert response_2nd_page = json_response(request_2nd_page, 200)
 
-    test "correct query with all filters and 'and' address relation", %{conn: conn} do
-      method_id_string = "0xa9059cbb"
-      {:ok, method} = Data.cast(method_id_string <> "ab0ba0")
-      timestamp = ~U[2023-12-12 00:00:00.000000Z]
-      transaction = insert(:transaction, input: method) |> with_block(block_timestamp: timestamp)
-      token_transfer = insert(:token_transfer, transaction: transaction, transaction_hash: transaction.hash)
-
-      request =
-        get(conn, "/api/v2/advanced-filters", %{
-          "tx_types" => "coin_transfer,ERC-20",
-          "methods" => method_id_string,
-          "age_from" => "2023-12-11T00:00:00Z",
-          "age_to" => "2023-12-13T00:00:00Z",
-          "from_address_hashes_to_include" => "#{transaction.from_address_hash},#{token_transfer.from_address_hash}",
-          "to_address_hashes_to_include" => "#{transaction.to_address_hash},#{token_transfer.to_address_hash}",
-          "address_relation" => "and",
-          "amount_from" => "0",
-          "amount_to" => "1000000",
-          "token_contract_address_hashes_to_include" => "native,#{token_transfer.token_contract_address_hash}",
-          "token_contract_address_hashes_to_exclude" => "0x0000000000000000000000000000000000000000"
-        })
-
-      assert response = json_response(request, 200) |> dbg()
-
-      assert Enum.count(response["items"]) == 2
+        check_paginated_response(
+          AdvancedFilter.list(
+            tx_types: ["COIN_TRANSFER", "ERC-20"],
+            methods: ["0xa9059cbb"],
+            age: [from: ~U[2023-12-11 00:00:00Z], to: ~U[2023-12-13 00:00:00Z]],
+            from_address_hashes: [
+              include: [transaction_from_address.hash, token_transfer_from_address.hash],
+              exclude: nil
+            ],
+            to_address_hashes: [
+              include: [transaction_to_address.hash, token_transfer_to_address.hash],
+              exclude: nil
+            ],
+            address_relation: address_relation,
+            amount: [from: Decimal.new("0"), to: Decimal.new("1000000")],
+            token_contract_address_hashes: [
+              include: [
+                "native",
+                token.contract_address_hash
+              ],
+              exclude: [burn_address_hash]
+            ],
+            api?: true
+          ),
+          response["items"],
+          response_2nd_page["items"]
+        )
+      end
     end
   end
 

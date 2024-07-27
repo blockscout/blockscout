@@ -383,8 +383,9 @@ defmodule Explorer.Chain.AdvancedFilter do
 
     token_transfer_query
     |> limit_query(paging_options)
-    |> apply_token_transfers_filters(options)
+    |> apply_token_transfers_filters_before_subquery(options)
     |> page_token_transfers(paging_options)
+    |> apply_token_transfers_filters_after_subquery(options)
     |> filter_token_transfers_by_amount(options[:amount][:from], options[:amount][:to])
     |> make_token_transfer_query_unnested()
     |> limit_query(paging_options)
@@ -532,11 +533,15 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp limit_query(query, _), do: query
 
-  defp apply_token_transfers_filters(query, options) do
+  defp apply_token_transfers_filters_before_subquery(query, options) do
     query
     |> filter_by_transaction_type(options[:transaction_types])
     |> filter_token_transfers_by_methods(options[:methods])
     |> filter_by_age(:token_transfer, options)
+  end
+
+  defp apply_token_transfers_filters_after_subquery(query, options) do
+    query
     |> filter_token_transfers_by_addresses(
       options[:from_address_hashes],
       options[:to_address_hashes],
@@ -690,8 +695,9 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp do_filter_token_transfers_by_address(query, {:include, addresses}, field) do
     queries =
       addresses
-      |> Enum.map(fn address -> query |> where([t], field(t, ^field) == ^address) |> exclude(:order_by) end)
-      |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+      |> Enum.map(fn address -> query |> where([t], field(t, ^field) == ^address) end)
+      |> map_first(&subquery/1)
+      |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
     from(token_transfer in subquery(queries),
       as: :unnested_token_transfer,
@@ -706,17 +712,19 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp do_filter_token_transfers_by_both_addresses(query, {:include, from}, {:include, to}, relation) do
     from_queries =
       from
-      |> Enum.map(fn from_address -> query |> where([t], t.from_address_hash == ^from_address) |> exclude(:order_by) end)
+      |> Enum.map(fn from_address -> query |> where([t], t.from_address_hash == ^from_address) end)
 
     to_queries =
       to
-      |> Enum.map(fn to_address -> query |> where([t], t.to_address_hash == ^to_address) |> exclude(:order_by) end)
+      |> Enum.map(fn to_address -> query |> where([t], t.to_address_hash == ^to_address) end)
 
     case relation do
       :and ->
-        united_from_queries = from_queries |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+        united_from_queries =
+          from_queries |> map_first(&subquery/1) |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
-        united_to_queries = to_queries |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+        united_to_queries =
+          to_queries |> map_first(&subquery/1) |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
         from(token_transfer in subquery(intersect_all(united_from_queries, ^united_to_queries)),
           as: :unnested_token_transfer,
@@ -727,7 +735,8 @@ defmodule Explorer.Chain.AdvancedFilter do
         union_query =
           from_queries
           |> Kernel.++(to_queries)
-          |> Enum.reduce(fn query, acc -> union(query, ^acc) end)
+          |> map_first(&subquery/1)
+          |> Enum.reduce(fn query, acc -> union(acc, ^query) end)
 
         from(token_transfer in subquery(union_query),
           as: :unnested_token_transfer,
@@ -740,9 +749,10 @@ defmodule Explorer.Chain.AdvancedFilter do
     from_queries =
       from
       |> Enum.map(fn from_address ->
-        query |> where([t], t.from_address_hash == ^from_address and t.to_address_hash not in ^to) |> exclude(:order_by)
+        query |> where([t], t.from_address_hash == ^from_address and t.to_address_hash not in ^to)
       end)
-      |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+      |> map_first(&subquery/1)
+      |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
     from(token_transfer in subquery(from_queries),
       as: :unnested_token_transfer,
@@ -754,9 +764,10 @@ defmodule Explorer.Chain.AdvancedFilter do
     from_queries =
       from
       |> Enum.map(fn from_address ->
-        query |> where([t], t.from_address_hash == ^from_address or t.to_address_hash not in ^to) |> exclude(:order_by)
+        query |> where([t], t.from_address_hash == ^from_address or t.to_address_hash not in ^to)
       end)
-      |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+      |> map_first(&subquery/1)
+      |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
     from(token_transfer in subquery(from_queries),
       as: :unnested_token_transfer,
@@ -768,9 +779,10 @@ defmodule Explorer.Chain.AdvancedFilter do
     to_queries =
       to
       |> Enum.map(fn to_address ->
-        query |> where([t], t.to_address_hash == ^to_address and t.from_address_hash not in ^from) |> exclude(:order_by)
+        query |> where([t], t.to_address_hash == ^to_address and t.from_address_hash not in ^from)
       end)
-      |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+      |> map_first(&subquery/1)
+      |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
     from(token_transfer in subquery(to_queries),
       as: :unnested_token_transfer,
@@ -782,9 +794,10 @@ defmodule Explorer.Chain.AdvancedFilter do
     to_queries =
       to
       |> Enum.map(fn to_address ->
-        query |> where([t], t.to_address_hash == ^to_address or t.from_address_hash not in ^from) |> exclude(:order_by)
+        query |> where([t], t.to_address_hash == ^to_address or t.from_address_hash not in ^from)
       end)
-      |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+      |> map_first(&subquery/1)
+      |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
     from(token_transfer in subquery(to_queries),
       as: :unnested_token_transfer,
@@ -878,9 +891,10 @@ defmodule Explorer.Chain.AdvancedFilter do
         queries =
           to_include_filtered
           |> Enum.map(fn address ->
-            query |> where([t], t.token_contract_address_hash == ^address) |> exclude(:order_by)
+            query |> where([t], t.token_contract_address_hash == ^address)
           end)
-          |> Enum.reduce(fn query, acc -> union_all(query, ^acc) end)
+          |> map_first(&subquery/1)
+          |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
         from(token_transfer in subquery(queries),
           as: :unnested_token_transfer,
@@ -917,4 +931,7 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp process_address_inclusion(_), do: nil
+
+  defp map_first([h | t], f), do: [f.(h) | t]
+  defp map_first([], _f), do: []
 end
