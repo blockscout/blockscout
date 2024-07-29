@@ -72,8 +72,6 @@ defmodule EthereumJSONRPC.RequestCoordinator do
           {:ok, Transport.result()} | {:error, term()}
   @spec perform(Transport.batch_request(), Transport.t(), Transport.options(), non_neg_integer()) ::
           {:ok, Transport.batch_response()} | {:error, term()}
-  def perform(request, transport, transport_options, throttle_timeout)
-
   def perform(request, transport, transport_options, throttle_timeout) do
     request_method = request_method(request)
 
