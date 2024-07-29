@@ -85,10 +85,11 @@ defmodule Explorer.Chain.AdvancedFilter do
 
     age = Keyword.get(options, :age)
 
-    block_numbers_age = [
-      from: age[:from] && Chain.timestamp_to_block_number(age[:from], :before, Keyword.get(options, :api?, false)),
-      to: age[:to] && Chain.timestamp_to_block_number(age[:to], :after, Keyword.get(options, :api?, false))
-    ]
+    block_numbers_age =
+      [
+        from: age[:from] && Chain.timestamp_to_block_number(age[:from], :after, Keyword.get(options, :api?, false)),
+        to: age[:to] && Chain.timestamp_to_block_number(age[:to], :before, Keyword.get(options, :api?, false))
+      ]
 
     tasks =
       options
@@ -386,9 +387,10 @@ defmodule Explorer.Chain.AdvancedFilter do
     |> apply_token_transfers_filters_before_subquery(options)
     |> page_token_transfers(paging_options)
     |> apply_token_transfers_filters_after_subquery(options)
-    |> filter_token_transfers_by_amount(options[:amount][:from], options[:amount][:to])
     |> make_token_transfer_query_unnested()
     |> limit_query(paging_options)
+    |> preload([:transaction])
+    |> select_merge([token_transfer], %{token_ids: [token_transfer.token_id], amounts: [token_transfer.amount]})
   end
 
   defp page_token_transfers(query, %PagingOptions{
@@ -542,6 +544,7 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp apply_token_transfers_filters_after_subquery(query, options) do
     query
+    |> filter_token_transfers_by_amount(options[:amount][:from], options[:amount][:to])
     |> filter_token_transfers_by_addresses(
       options[:from_address_hashes],
       options[:to_address_hashes],
@@ -863,24 +866,11 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp filter_token_transfers_by_amount(query, _, _), do: query
 
   defp make_token_transfer_query_unnested(query) do
-    if has_named_binding?(query, :unnested_token_transfer) do
-      from(token_transfer in query,
-        preload: [:transaction],
-        select_merge: %{
-          token_ids: [token_transfer.token_id],
-          amounts: [token_transfer.amount]
-        }
-      )
-    else
+    with_named_binding(query, :unnested_token_transfer, fn query, binding ->
       from(token_transfer in subquery(query),
-        as: :unnested_token_transfer,
-        preload: [:transaction],
-        select_merge: %{
-          token_ids: [token_transfer.token_id],
-          amounts: [token_transfer.amount]
-        }
+        as: ^binding
       )
-    end
+    end)
   end
 
   defp filter_by_token(query, token_contract_address_hashes) when is_list(token_contract_address_hashes) do

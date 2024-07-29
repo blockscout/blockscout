@@ -258,25 +258,35 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
     end
 
     test "filter by age", %{conn: conn} do
-      first_timestamp = ~U[2023-12-12 00:00:00.000000Z]
+      [_, tx_a, _, tx_b, _] =
+        for i <- 0..4 do
+          tx = :transaction |> insert() |> with_block(status: :ok)
 
-      for i <- 0..4 do
-        transaction = :transaction |> insert() |> with_block(block_timestamp: Timex.shift(first_timestamp, days: i))
+          internal_tx =
+            insert(:internal_transaction,
+              transaction: tx,
+              index: i,
+              block_index: i,
+              block_hash: tx.block_hash,
+              block: tx.block
+            )
 
-        insert(:internal_transaction,
-          transaction: transaction,
-          block_hash: transaction.block_hash,
-          index: i,
-          block_index: i
-        )
+          token_transfer =
+            insert(:token_transfer,
+              transaction: tx,
+              block_number: tx.block_number,
+              log_index: i,
+              block_hash: tx.block_hash,
+              block: tx.block
+            )
 
-        insert(:token_transfer, transaction: transaction, block_number: transaction.block_number, log_index: i)
-      end
+          tx
+        end
 
       request =
         get(conn, "/api/v2/advanced-filters", %{
-          "age_from" => "2023-12-14T00:00:00Z",
-          "age_to" => "2023-12-16T00:00:00Z"
+          "age_from" => DateTime.to_iso8601(tx_a.block.timestamp),
+          "age_to" => DateTime.to_iso8601(tx_b.block.timestamp)
         })
 
       assert response = json_response(request, 200)
@@ -914,7 +924,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       for address_relation <- [:or, :and] do
         method_id_string = "0xa9059cbb"
         {:ok, method} = Data.cast(method_id_string <> "ab0ba0")
-        timestamp = ~U[2023-12-12 00:00:00.000000Z]
         transaction_from_address = insert(:address)
         transaction_to_address = insert(:address)
         token_transfer_from_address = insert(:address)
@@ -924,21 +933,22 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
         insert_list(5, :transaction)
 
-        for i <- 1..30 do
-          transaction =
-            insert(:transaction,
-              from_address: transaction_from_address,
-              from_address_hash: transaction_from_address.hash,
-              to_address: transaction_to_address,
-              to_address_hash: transaction_to_address.hash,
-              value: Enum.random(0..1_000_000),
-              input: method
-            )
-            |> with_block(block_timestamp: timestamp)
+        transactions =
+          for i <- 0..29 do
+            transaction =
+              insert(:transaction,
+                from_address: transaction_from_address,
+                from_address_hash: transaction_from_address.hash,
+                to_address: transaction_to_address,
+                to_address_hash: transaction_to_address.hash,
+                value: Enum.random(0..1_000_000),
+                input: method
+              )
+              |> with_block()
 
-          token_transfer =
             insert(:token_transfer,
               transaction: transaction,
+              block_number: transaction.block_number,
               amount: Enum.random(0..1_000_000),
               from_address: token_transfer_from_address,
               from_address_hash: token_transfer_from_address.hash,
@@ -947,15 +957,20 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
               token_contract_address: token.contract_address,
               token_contract_address_hash: token.contract_address_hash
             )
-        end
+
+            transaction
+          end
 
         insert_list(5, :transaction)
+
+        from_timestamp = List.first(transactions).block.timestamp
+        to_timestamp = List.last(transactions).block.timestamp
 
         params = %{
           "tx_types" => "coin_transfer,ERC-20",
           "methods" => method_id_string,
-          "age_from" => "2023-12-11T00:00:00Z",
-          "age_to" => "2023-12-13T00:00:00Z",
+          "age_from" => from_timestamp |> DateTime.to_iso8601(),
+          "age_to" => to_timestamp |> DateTime.to_iso8601(),
           "from_address_hashes_to_include" => "#{transaction_from_address.hash},#{token_transfer_from_address.hash}",
           "to_address_hashes_to_include" => "#{transaction_to_address.hash},#{token_transfer_to_address.hash}",
           "address_relation" => to_string(address_relation),
@@ -976,7 +991,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
           AdvancedFilter.list(
             tx_types: ["COIN_TRANSFER", "ERC-20"],
             methods: ["0xa9059cbb"],
-            age: [from: ~U[2023-12-11 00:00:00Z], to: ~U[2023-12-13 00:00:00Z]],
+            age: [from: from_timestamp, to: to_timestamp],
             from_address_hashes: [
               include: [transaction_from_address.hash, token_transfer_from_address.hash],
               exclude: nil
