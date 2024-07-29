@@ -95,7 +95,8 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
           internal_transaction.input,
           internal_transaction.output,
           internal_transaction.error,
-          gas_price && gas_price |> Wei.mult(internal_transaction.gas_used) |> Wei.to(:wei)
+          gas_price && internal_transaction.gas_used &&
+            gas_price |> Wei.mult(internal_transaction.gas_used) |> Wei.to(:wei)
         ]
       end)
 
