@@ -38,16 +38,41 @@ defmodule Explorer.Chain.Celo.EpochReward do
     timestamps()
   end
 
+  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = rewards, attrs) do
     rewards
     |> cast(attrs, @allowed_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:block_hash)
-    |> foreign_key_constraint(:reserve_bolster_transfer_log_index)
-    |> foreign_key_constraint(:community_transfer_log_index)
-    |> foreign_key_constraint(:carbon_offsetting_transfer_log_index)
   end
+
+  @doc """
+  Loads the token transfers for the given epoch reward.
+
+  This function retrieves token transfers related to the specified epoch reward
+  by knowing the index of the log of the token transfer and populates the
+  virtual fields in the `EpochReward` struct. We manually preload token
+  transfers since Ecto does not support automatically preloading objects by
+  composite key (i.e., `log_index` and `block_hash`).
+
+  ## Parameters
+  - `epoch_reward` (`EpochReward.t()`): The epoch reward struct.
+  - `options` (`Keyword.t()`): Optional parameters for selecting the repository.
+
+  ## Returns
+  - `EpochReward.t()`: The epoch reward struct with the token transfers loaded.
+
+  ## Example
+
+      iex> epoch_reward = %Explorer.Chain.Celo.EpochReward{block_hash: "some_hash", reserve_bolster_transfer_log_index: 1}
+      iex> Explorer.Chain.Celo.EpochReward.load_token_transfers(epoch_reward)
+      %Explorer.Chain.Celo.EpochReward{
+        block_hash: "some_hash",
+        reserve_bolster_transfer_log_index: 1,
+        reserve_bolster_transfer: %Explorer.Chain.TokenTransfer{log_index: 1, ...}
+      }
+  """
 
   @spec load_token_transfers(EpochReward.t()) :: EpochReward.t()
   def load_token_transfers(

@@ -1,14 +1,34 @@
 defmodule Explorer.Chain.Celo.ElectionReward do
   @moduledoc """
-  Represents the rewards distributed in an epoch election.
+  Represents the rewards distributed in an epoch election. Each reward has a
+  type, and each type of reward is paid in a specific token. The rewards are
+  paid to an account address and are also associated with another account
+  address.
+
+  ## Reward Types and Addresses
+
+  Here is the breakdown of what each address means for each type of reward:
+
+  - `voter`:
+    - Account address: The voter address.
+    - Associated account address: The group address.
+  - `validator`:
+    - Account address: The validator address.
+    - Associated account address: The validator group address.
+  - `group`:
+    - Account address: The validator group address.
+    - Associated account address: The validator address that the reward was paid
+      on behalf of.
+  - `delegated_payment`:
+    - Account address: The beneficiary receiving the part of the reward on
+      behalf of the validator.
+    - Associated account address: The validator that set the delegation of a
+      part of their reward to some external address.
   """
+
   use Explorer.Schema
 
-  import Ecto.Query,
-    only: [
-      from: 2,
-      where: 3
-    ]
+  import Ecto.Query, only: [from: 2, where: 3]
 
   alias Explorer.Chain.{Address, Block, Hash, Wei}
   alias Explorer.PagingOptions
@@ -29,10 +49,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     :group => :usd_token,
     :delegated_payment => :usd_token
   }
-
-  alias Explorer.Chain.{Address, Block, Hash, Wei}
-
-  @types_enum ~w(voter validator group delegated_payment)a
 
   @required_attrs ~w(amount type block_hash account_address_hash associated_account_address_hash)a
 
@@ -87,6 +103,10 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     timestamps()
   end
 
+  @spec changeset(
+          Explorer.Chain.Celo.ElectionReward.t(),
+          map()
+        ) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = rewards, attrs) do
     rewards
     |> cast(attrs, @required_attrs)
@@ -102,16 +122,56 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     # )
   end
 
+  @doc """
+  Returns the list of election reward types.
+  """
   def types, do: @types_enum
 
+  @doc """
+  Converts a reward type string to its corresponding atom.
+
+  ## Parameters
+  - `type_string` (`String.t()`): The string representation of the reward type.
+
+  ## Returns
+  - `{:ok, type}` if the string is valid, `:error` otherwise.
+
+  ## Examples
+
+      iex> ElectionReward.type_from_string("voter")
+      {:ok, :voter}
+
+      iex> ElectionReward.type_from_string("invalid")
+      :error
+  """
   @spec type_from_string(String.t()) :: {:ok, type} | :error
   def type_from_string(type_string) do
     Map.fetch(@reward_type_string_to_atom, type_string)
   end
 
+  @doc """
+  Returns a map of reward type atoms to their corresponding token atoms.
+
+  ## Returns
+  - A map where the keys are reward type atoms and the values are token atoms.
+
+  ## Examples
+
+      iex> ElectionReward.reward_type_atom_to_token_atom()
+      %{voter: :celo_token, validator: :usd_token, group: :usd_token, delegated_payment: :usd_token}
+  """
   @spec reward_type_atom_to_token_atom() :: %{type => atom()}
   def reward_type_atom_to_token_atom, do: @reward_type_atom_to_token_atom
 
+  @doc """
+  Builds a query to aggregate rewards by type for a given block hash.
+
+  ## Parameters
+  - `block_hash` (`Hash.Full.t()`): The block hash to filter rewards.
+
+  ## Returns
+  - An Ecto query.
+  """
   def block_hash_to_aggregated_rewards_by_type_query(block_hash) do
     from(
       r in __MODULE__,
@@ -121,6 +181,16 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
   end
 
+  @doc """
+  Builds a query to get rewards by type for a given block hash.
+
+  ## Parameters
+  - `block_hash` (`Hash.Full.t()`): The block hash to filter rewards.
+  - `reward_type` (`type`): The type of reward to filter.
+
+  ## Returns
+  - An Ecto query.
+  """
   def block_hash_to_rewards_by_type_query(block_hash, reward_type) do
     from(
       r in __MODULE__,
@@ -134,6 +204,16 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
   end
 
+  @doc """
+  Builds a query to get rewards by account address hash.
+
+  ## Parameters
+  - `address_hash` (`Hash.Address.t()`): The account address hash to filter
+    rewards.
+
+  ## Returns
+  - An Ecto query.
+  """
   def address_hash_to_rewards_query(address_hash) do
     from(
       r in __MODULE__,
@@ -152,9 +232,18 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
   end
 
+  @doc """
+  Paginates the given query based on the provided `PagingOptions`.
+
+  ## Parameters
+  - `query` (`Ecto.Query.t()`): The query to paginate.
+  - `paging_options` (`PagingOptions.t()`): The pagination options.
+
+  ## Returns
+  - An Ecto query with pagination applied.
+  """
   def paginate(query, %PagingOptions{key: nil}), do: query
 
-  # Clause to paginate election rewards on block's page
   def paginate(query, %PagingOptions{key: {amount, account_address_hash, associated_account_address_hash}}) do
     where(
       query,
@@ -168,7 +257,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
   end
 
-  # Clause to paginate election rewards on a page of address
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def paginate(query, %PagingOptions{key: {block_number, amount, associated_account_address_hash, type}}) do
     where(
@@ -187,6 +275,20 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
   end
 
+  @doc """
+  Converts an `ElectionReward` struct to paging parameters on the block view.
+
+  ## Parameters
+  - `reward` (`%__MODULE__{}`): The election reward struct.
+
+  ## Returns
+  - A map representing the block paging parameters.
+
+  ## Examples
+
+      iex> ElectionReward.to_block_paging_params(%ElectionReward{amount: 1000, account_address_hash: "0x123", associated_account_address_hash: "0x456"})
+      %{"amount" => 1000, "account_address_hash" => "0x123", "associated_account_address_hash" => "0x456"}
+  """
   def to_block_paging_params(%__MODULE__{
         amount: amount,
         account_address_hash: account_address_hash,
@@ -199,6 +301,20 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     }
   end
 
+  @doc """
+  Converts an `ElectionReward` struct to paging parameters on the address view.
+
+  ## Parameters
+  - `reward` (`%__MODULE__{}`): The election reward struct.
+
+  ## Returns
+  - A map representing the address paging parameters.
+
+  ## Examples
+
+      iex> ElectionReward.to_address_paging_params(%ElectionReward{block_number: 1, amount: 1000, associated_account_address_hash: "0x456", type: :voter})
+      %{"block_number" => 1, "amount" => 1000, "associated_account_address_hash" => "0x456", "type" => :voter}
+  """
   def to_address_paging_params(%__MODULE__{
         block_number: block_number,
         amount: amount,

@@ -556,6 +556,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Function to handle GET requests to `/api/v2/addresses/:address_hash_param/election-rewards` endpoint.
+  """
   def celo_election_rewards(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash, _address} <- validate_address(address_hash_string, params) do
       full_options =

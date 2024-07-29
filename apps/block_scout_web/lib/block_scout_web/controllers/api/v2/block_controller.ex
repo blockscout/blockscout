@@ -301,7 +301,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @doc """
   Function to handle GET requests to `/api/v2/blocks/:block_hash_or_number/epoch` endpoint.
   """
-  @spec celo_election_rewards(Plug.Conn.t(), map()) ::
+  @spec celo_epoch(Plug.Conn.t(), map()) ::
           {:error, :not_found | {:invalid, :hash | :number | :celo_election_reward_type}}
           | {:lost_consensus, {:error, :not_found} | {:ok, Explorer.Chain.Block.t()}}
           | Plug.Conn.t()
