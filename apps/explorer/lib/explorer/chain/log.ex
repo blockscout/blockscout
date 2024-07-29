@@ -6,8 +6,8 @@ defmodule Explorer.Chain.Log do
   require Logger
 
   alias ABI.{Event, FunctionSelector}
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Log, Transaction}
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.SigProviderInterface
 
@@ -352,5 +352,29 @@ defmodule Explorer.Chain.Log do
     |> limit(^min(user_op["user_logs_count"], limit))
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
+  end
+
+  @doc """
+  Streams unfetched WETH token transfers.
+  Returns `{:ok, any()} | {:error, any()}` (return spec taken from Ecto.Repo.transaction/2)
+  Expects each_fun, a function to be called on each fetched log. It should accept log and return anything (return value will be discarded anyway)
+  """
+  @spec stream_unfetched_weth_token_transfers((Log.t() -> any())) :: {:ok, any()} | {:error, any()}
+  def stream_unfetched_weth_token_transfers(each_fun) do
+    env = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
+
+    __MODULE__
+    |> where([log], log.address_hash in ^env[:whitelisted_weth_contracts])
+    |> where(
+      [log],
+      log.first_topic == ^TokenTransfer.weth_deposit_signature() or
+        log.first_topic == ^TokenTransfer.weth_withdrawal_signature()
+    )
+    |> join(:left, [log], tt in TokenTransfer,
+      on: log.block_hash == tt.block_hash and log.transaction_hash == tt.transaction_hash and log.index == tt.log_index
+    )
+    |> where([log, tt], is_nil(tt.transaction_hash))
+    |> select([log], log)
+    |> Repo.stream_each(each_fun)
   end
 end
