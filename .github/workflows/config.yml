@@ -249,7 +249,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
-        with:
+        with: d302882..4fb0f15 100644
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
           hexpm-mirrors: |
@@ -260,7 +260,7 @@ jobs:
         uses: actions/cache/restore@v4
         id: deps-cache
         with:
-          path: |
+          path: | d302882..4fb0f15 100644
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
@@ -321,11 +321,11 @@ jobs:
         uses: actions/cache/restore@v4
         id: deps-cache
         with:
-          path: |
+          path: | "d302882..4fb0f15 100644"
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
-          restore-keys: |
+          restore-keys: | "AqQA7Kur0RgayZPAGzlg8z"
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
 
       - name: Restore Explorer NPM Cache
@@ -334,7 +334,7 @@ jobs:
         with:
           path: apps/explorer/node_modules
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-${{ hashFiles('apps/explorer/package-lock.json') }}
-          restore-keys: |
+          restore-keys: | FsConstants.EXTRA_SELECTION_LIST
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-explorer-npm-
 
       - name: Restore Blockscout Web NPM Cache
@@ -372,7 +372,7 @@ jobs:
         uses: actions/cache/restore@v4
         id: deps-cache
         with:
-          path: |
+          path: | d302882..4fb0f15 100644
             deps
             _build
           key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
@@ -750,3 +750,11 @@ jobs:
           SOURCIFY_INTEGRATION_ENABLED: "true"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
+          <Button
+onClick={incrementCounter}
+variant="outlined"
+disabled={isLoading}
+>
+{isLoading ? "loading..." : "+1"}
+</Button>
+
