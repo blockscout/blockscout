@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.CSVExportController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.AccessHelper
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
   alias Plug.Conn
@@ -50,5 +50,5 @@ defmodule BlockScoutWeb.API.V2.CSVExportController do
     |> send_chunked(200)
   end
 
-  defp options, do: [paging_options: %PagingOptions{page_size: CSVHelper.limit()}, api?: true]
+  defp options, do: [paging_options: CSVHelper.paging_options(), api?: true]
 end
