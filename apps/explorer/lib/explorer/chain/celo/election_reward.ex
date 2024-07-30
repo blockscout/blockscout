@@ -255,6 +255,17 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   """
   def paginate(query, %PagingOptions{key: nil}), do: query
 
+  def paginate(query, %PagingOptions{key: {0 = _amount, account_address_hash, associated_account_address_hash}}) do
+    where(
+      query,
+      [reward],
+      reward.amount == 0 and
+        (reward.account_address_hash > ^account_address_hash or
+           (reward.account_address_hash == ^account_address_hash and
+              reward.associated_account_address_hash > ^associated_account_address_hash))
+    )
+  end
+
   def paginate(query, %PagingOptions{key: {amount, account_address_hash, associated_account_address_hash}}) do
     where(
       query,
@@ -265,6 +276,45 @@ defmodule Explorer.Chain.Celo.ElectionReward do
         (reward.amount == ^amount and
            reward.account_address_hash == ^account_address_hash and
            reward.associated_account_address_hash > ^associated_account_address_hash)
+    )
+  end
+
+  def paginate(query, %PagingOptions{key: {0 = _block_number, 0 = _amount, associated_account_address_hash, type}}) do
+    where(
+      query,
+      [reward],
+      reward.block_number == 0 and reward.amount == 0 and
+        (reward.associated_account_address_hash > ^associated_account_address_hash or
+           (reward.associated_account_address_hash == ^associated_account_address_hash and
+              reward.type > ^type))
+    )
+  end
+
+  def paginate(query, %PagingOptions{key: {0 = _block_number, amount, associated_account_address_hash, type}}) do
+    where(
+      query,
+      [reward],
+      reward.block_number == 0 and
+        (reward.amount < ^amount or
+           (reward.amount == ^amount and
+              reward.associated_account_address_hash > ^associated_account_address_hash) or
+           (reward.amount == ^amount and
+              reward.associated_account_address_hash == ^associated_account_address_hash and
+              reward.type > ^type))
+    )
+  end
+
+  def paginate(query, %PagingOptions{key: {block_number, 0 = _amount, associated_account_address_hash, type}}) do
+    where(
+      query,
+      [reward],
+      reward.amount == 0 and
+        (reward.block_number < ^block_number or
+           (reward.block_number == ^block_number and
+              reward.associated_account_address_hash > ^associated_account_address_hash) or
+           (reward.block_number == ^block_number and
+              reward.associated_account_address_hash == ^associated_account_address_hash and
+              reward.type > ^type))
     )
   end
 
