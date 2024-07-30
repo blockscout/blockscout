@@ -483,20 +483,35 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   def tabs_counters(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash, _address} <- validate_address(address_hash_string, params) do
-      {validations, transactions, token_transfers, token_balances, logs, withdrawals, internal_txs} =
-        Counters.address_limited_counters(address_hash, @api_true)
+      counter_name_to_json_field_name = %{
+        validations: :validations_count,
+        txs: :transactions_count,
+        token_transfers: :token_transfers_count,
+        token_balances: :token_balances_count,
+        logs: :logs_count,
+        withdrawals: :withdrawals_count,
+        internal_txs: :internal_txs_count,
+        celo_election_rewards: :celo_election_rewards_count
+      }
+
+      counters_json =
+        address_hash
+        |> Counters.address_limited_counters(@api_true)
+        |> Enum.reduce(%{}, fn {counter_name, counter_value}, acc ->
+          counter_name_to_json_field_name
+          |> Map.fetch(counter_name)
+          |> case do
+            {:ok, json_field_name} ->
+              Map.put(acc, json_field_name, counter_value)
+
+            :error ->
+              acc
+          end
+        end)
 
       conn
       |> put_status(200)
-      |> json(%{
-        validations_count: validations,
-        transactions_count: transactions,
-        token_transfers_count: token_transfers,
-        token_balances_count: token_balances,
-        logs_count: logs,
-        withdrawals_count: withdrawals,
-        internal_txs_count: internal_txs
-      })
+      |> json(counters_json)
     end
   end
 

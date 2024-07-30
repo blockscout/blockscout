@@ -206,6 +206,17 @@ defmodule Explorer.Chain.Celo.ElectionReward do
 
   @doc """
   Builds a query to get rewards by account address hash.
+  """
+  def address_hash_to_rewards_query(address_hash) do
+    from(
+      r in __MODULE__,
+      where: r.account_address_hash == ^address_hash,
+      select: r
+    )
+  end
+
+  @doc """
+  Builds a query to get ordered rewards by account address hash.
 
   ## Parameters
   - `address_hash` (`Hash.Address.t()`): The account address hash to filter
@@ -214,7 +225,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   ## Returns
   - An Ecto query.
   """
-  def address_hash_to_rewards_query(address_hash) do
+  def address_hash_to_ordered_rewards_query(address_hash) do
     from(
       r in __MODULE__,
       join: b in assoc(r, :block),

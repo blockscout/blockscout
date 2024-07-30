@@ -49,7 +49,7 @@ defmodule Explorer.Chain.Celo.Reader do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     address_hash
-    |> ElectionReward.address_hash_to_rewards_query()
+    |> ElectionReward.address_hash_to_ordered_rewards_query()
     |> ElectionReward.paginate(paging_options)
     |> limit(^paging_options.page_size)
     |> join_associations(necessity_by_association)

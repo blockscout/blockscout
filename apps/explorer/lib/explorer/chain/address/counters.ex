@@ -31,6 +31,7 @@ defmodule Explorer.Chain.Address.Counters do
 
   alias Explorer.Chain.Cache.AddressesTabsCounters
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
 
   require Logger
 
@@ -327,8 +328,7 @@ defmodule Explorer.Chain.Address.Counters do
     AddressTransactionsGasUsageCounter.fetch(address)
   end
 
-  @spec address_limited_counters(Hash.t(), Keyword.t()) ::
-          {counter(), counter(), counter(), counter(), counter(), counter(), counter()}
+  @spec address_limited_counters(Hash.t(), Keyword.t()) :: %{atom() => counter}
   def address_limited_counters(address_hash, options) do
     cached_counters =
       Enum.reduce(@types, %{}, fn type, acc ->
@@ -464,6 +464,19 @@ defmodule Explorer.Chain.Address.Counters do
         options
       )
 
+    celo_election_rewards_count_task =
+      if Application.get_env(:explorer, :chain_type) == :celo do
+        configure_task(
+          :celo_election_rewards,
+          cached_counters,
+          CeloElectionReward.address_hash_to_rewards_query(address_hash),
+          address_hash,
+          options
+        )
+      else
+        nil
+      end
+
     map =
       [
         validations_count_task,
@@ -474,7 +487,8 @@ defmodule Explorer.Chain.Address.Counters do
         token_balances_count_task,
         logs_count_task,
         withdrawals_count_task,
-        internal_txs_count_task
+        internal_txs_count_task,
+        celo_election_rewards_count_task
       ]
       |> Enum.reject(&is_nil/1)
       |> Task.yield_many(:timer.seconds(1))
@@ -512,8 +526,7 @@ defmodule Explorer.Chain.Address.Counters do
       end)
       |> process_txs_counter()
 
-    {map[:validations], map[:txs], map[:token_transfers], map[:token_balances], map[:logs], map[:withdrawals],
-     map[:internal_txs]}
+    map
   end
 
   defp run_or_ignore({ok, _counter}, _type, _address_hash, _fun) when ok in [:up_to_date, :limit_value], do: nil
