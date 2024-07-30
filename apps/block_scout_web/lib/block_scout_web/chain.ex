@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.Chain do
   Converts the `param` to the corresponding resource that uses that format of param.
   """
 
+  require Logger
+
   import Explorer.Chain,
     only: [
       find_or_insert_address_from_hash: 1,
@@ -116,7 +118,7 @@ defmodule BlockScoutWeb.Chain do
 
   def next_page_params([], _list, _params, _), do: nil
 
-  def next_page_params(_, list, params, paging_function) do
+  def next_page_params(_, list, params, paging_function) when is_list(list) and length(list) > 0 do
     paging_params = paging_function.(List.last(list))
 
     next_page_params = Map.merge(params, paging_params)
@@ -131,6 +133,15 @@ defmodule BlockScoutWeb.Chain do
       end
 
     Map.put(next_page_params, "items_count", items_count)
+  end
+
+  def next_page_params(next_page, list, params, _function) do
+    Logger.error("""
+    Missing BlockScoutWeb.Chain.next_page_params/4 clause:
+    next_page: #{inspect(next_page)}
+    list: #{inspect(list)}
+    params: #{inspect(params)}
+    """)
   end
 
   @doc """
