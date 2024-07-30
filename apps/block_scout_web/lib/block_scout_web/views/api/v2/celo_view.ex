@@ -5,14 +5,16 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   require Logger
 
-  alias Explorer.Chain.Hash
   # alias Ecto.Association.NotLoaded
+
+  import Explorer.Chain.SmartContract, only: [dead_address_hash_string: 0]
 
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
   alias Explorer.Chain.Celo.{ElectionReward, EpochReward}
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.{Block, Transaction}
 
   @address_params [
@@ -270,7 +272,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       carbon_offsetting_amount = Decimal.sub(base_fee, burnt_amount)
       carbon_offsetting_percentage = Decimal.sub(100, burnt_percentage)
 
-      celo_burn_address_hash_string = CeloHelper.burn_address_hash_string()
+      celo_burn_address_hash_string = dead_address_hash_string()
 
       address_hashes_to_fetch_from_db = [
         fee_handler_contract_address_hash,

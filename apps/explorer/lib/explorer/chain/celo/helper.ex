@@ -7,11 +7,8 @@ defmodule Explorer.Chain.Celo.Helper do
 
   alias Explorer.Chain.Block
 
-  @burn_address_hash_string "0x000000000000000000000000000000000000dead"
   @blocks_per_epoch 17_280
   @core_contract_atoms atom_to_contract_name() |> Map.keys()
-
-  def burn_address_hash_string, do: @burn_address_hash_string
 
   @doc """
   Returns the number of blocks per epoch in the Celo network.
