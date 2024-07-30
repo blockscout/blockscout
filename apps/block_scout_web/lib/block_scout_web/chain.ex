@@ -118,7 +118,16 @@ defmodule BlockScoutWeb.Chain do
 
   def next_page_params([], _list, _params, _), do: nil
 
-  def next_page_params(_, list, params, paging_function) when is_list(list) and length(list) > 0 do
+  def next_page_params(next_page, list, params, paging_function) when is_list(list) and length(list) > 0 do
+    if is_nil(List.last(list)) do
+      Logger.error("""
+      nil in BlockScoutWeb.Chain.next_page_params/4 params:
+      next_page: #{inspect(next_page)}
+      list: #{inspect(list)}
+      params: #{inspect(params)}
+      """)
+    end
+
     paging_params = paging_function.(List.last(list))
 
     next_page_params = Map.merge(params, paging_params)
