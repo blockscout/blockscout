@@ -55,11 +55,17 @@ defmodule BlockScoutWeb.AccessHelper do
 
   def check_rate_limit(conn, graphql?: true) do
     rate_limit_config = Application.get_env(:block_scout_web, Api.GraphQL)
+    no_rate_limit_api_key = rate_limit_config[:no_rate_limit_api_key]
 
-    if rate_limit_config[:rate_limit_disabled?] do
-      :ok
-    else
-      check_graphql_rate_limit_inner(conn, rate_limit_config)
+    cond do
+      rate_limit_config[:rate_limit_disabled?] ->
+        :ok
+
+      check_api_key(conn) && get_api_key(conn) == no_rate_limit_api_key ->
+        :ok
+
+      true ->
+        check_graphql_rate_limit_inner(conn, rate_limit_config)
     end
   end
 
@@ -91,11 +97,17 @@ defmodule BlockScoutWeb.AccessHelper do
 
   def check_rate_limit(conn) do
     rate_limit_config = Application.get_env(:block_scout_web, :api_rate_limit)
+    no_rate_limit_api_key = rate_limit_config[:no_rate_limit_api_key]
 
-    if rate_limit_config[:disabled] do
-      :ok
-    else
-      check_rate_limit_inner(conn, rate_limit_config)
+    cond do
+      rate_limit_config[:disabled] ->
+        :ok
+
+      check_api_key(conn) && get_api_key(conn) == no_rate_limit_api_key ->
+        :ok
+
+      true ->
+        check_rate_limit_inner(conn, rate_limit_config)
     end
   end
 
