@@ -353,11 +353,11 @@ defmodule Explorer.Etherscan.Logs do
         topic_value
 
       _ ->
-        string_string_topic_value(topic_value)
+        sanitize_string_topic_value(topic_value)
     end
   end
 
-  defp string_string_topic_value(topic_value) do
+  defp sanitize_string_topic_value(topic_value) do
     case Chain.string_to_block_hash(topic_value) do
       {:ok, _} ->
         topic_value
