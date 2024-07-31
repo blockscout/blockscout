@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Arbitrum.DaMultiPurposeRecord do
   @allowed_attrs @optional_attrs ++ @required_attrs
 
   @typedoc """
-  Descriptor of the a multi purpose record related to Data Availability for Arbitrum rollups:
+  Descriptor of the multi purpose record related to Data Availability for Arbitrum rollups:
     * `data_key` - The hash of the data key.
     * `data_type` - The type of the data.
     * `data` - The data
