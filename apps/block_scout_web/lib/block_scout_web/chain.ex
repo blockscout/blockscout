@@ -14,11 +14,13 @@ defmodule BlockScoutWeb.Chain do
       string_to_transaction_hash: 1
     ]
 
-  import Explorer.Helper,
+  import Explorer.PagingOptions,
     only: [
-      parse_integer: 1,
-      safe_parse_non_negative_integer: 1
+      default_paging_options: 0,
+      page_size: 0
     ]
+
+  import Explorer.Helper, only: [parse_integer: 1]
 
   alias BlockScoutWeb.PagingHelper
   alias Ecto.Association.NotLoaded
@@ -46,7 +48,6 @@ defmodule BlockScoutWeb.Chain do
     Wei
   }
 
-  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
@@ -63,14 +64,10 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @page_size 50
-  @default_paging_options %PagingOptions{page_size: @page_size + 1}
+  @page_size page_size()
+  @default_paging_options default_paging_options()
   @address_hash_len 40
   @full_hash_len 64
-
-  def default_paging_options do
-    @default_paging_options
-  end
 
   def current_filter(%{paging_options: paging_options} = params) do
     params
@@ -502,58 +499,6 @@ defmodule BlockScoutWeb.Chain do
       {index, ""} ->
         [paging_options: %{@default_paging_options | key: %{block_index: index}}]
 
-      _ ->
-        [paging_options: @default_paging_options]
-    end
-  end
-
-  # Clauses for `Explorer.Chain.Celo.ElectionReward`:
-  def paging_options(%{
-        "amount" => amount_string,
-        "account_address_hash" => account_address_hash_string,
-        "associated_account_address_hash" => associated_account_address_hash_string
-      })
-      when is_binary(amount_string) and
-             is_binary(account_address_hash_string) and
-             is_binary(associated_account_address_hash_string) do
-    with {amount, ""} <- Decimal.parse(amount_string),
-         {:ok, account_address_hash} <- Hash.Address.cast(account_address_hash_string),
-         {:ok, associated_account_address_hash} <-
-           Hash.Address.cast(associated_account_address_hash_string) do
-      [
-        paging_options: %{
-          @default_paging_options
-          | key: {amount, account_address_hash, associated_account_address_hash}
-        }
-      ]
-    else
-      _ ->
-        [paging_options: @default_paging_options]
-    end
-  end
-
-  def paging_options(%{
-        "block_number" => block_number_string,
-        "amount" => amount_string,
-        "associated_account_address_hash" => associated_account_address_hash_string,
-        "type" => type_string
-      })
-      when is_binary(block_number_string) and
-             is_binary(amount_string) and
-             is_binary(associated_account_address_hash_string) and
-             is_binary(type_string) do
-    with {:ok, block_number} <- safe_parse_non_negative_integer(block_number_string),
-         {amount, ""} <- Decimal.parse(amount_string),
-         {:ok, associated_account_address_hash} <-
-           Hash.Address.cast(associated_account_address_hash_string),
-         {:ok, type} <- CeloElectionReward.type_from_string(type_string) do
-      [
-        paging_options: %{
-          @default_paging_options
-          | key: {block_number, amount, associated_account_address_hash, type}
-        }
-      ]
-    else
       _ ->
         [paging_options: @default_paging_options]
     end

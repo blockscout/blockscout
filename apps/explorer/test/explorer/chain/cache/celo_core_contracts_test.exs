@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContractsTest do
           }
         }
       )
+
       on_exit(fn ->
         Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
       end)
@@ -62,6 +63,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContractsTest do
           }
         }
       )
+
       on_exit(fn ->
         Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
       end)

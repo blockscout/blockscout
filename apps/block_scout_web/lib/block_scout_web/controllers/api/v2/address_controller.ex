@@ -578,7 +578,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:ok, address_hash, _address} <- validate_address(address_hash_string, params) do
       full_options =
         @celo_election_rewards_options
-        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(CeloElectionReward.paging_options(params))
 
       results_plus_one = CeloReader.address_hash_to_election_rewards(address_hash, full_options)
 

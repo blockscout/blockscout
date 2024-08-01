@@ -28,7 +28,9 @@ defmodule Explorer.Chain.Celo.ElectionReward do
 
   use Explorer.Schema
 
+  import Explorer.PagingOptions, only: [default_paging_options: 0]
   import Ecto.Query, only: [from: 2, where: 3]
+  import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
   alias Explorer.Chain.{Address, Block, Hash, Wei}
   alias Explorer.PagingOptions
@@ -249,6 +251,68 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   end
 
   @doc """
+  Makes Explorer.PagingOptions map for election rewards.
+  """
+  @spec paging_options(map()) ::
+          [
+            {:paging_options, Explorer.PagingOptions.t()},
+            ...
+          ]
+          | Explorer.PagingOptions.t()
+  # when is_binary(amount_string) and[map()]
+  #        is_binary(account_address_hash_string) and
+  #        is_binary(associated_account_address_hash_string)
+  def paging_options(%{
+        "amount" => amount_string,
+        "account_address_hash" => account_address_hash_string,
+        "associated_account_address_hash" => associated_account_address_hash_string
+      }) do
+    with {amount, ""} <- Decimal.parse(amount_string),
+         {:ok, account_address_hash} <- Hash.Address.cast(account_address_hash_string),
+         {:ok, associated_account_address_hash} <-
+           Hash.Address.cast(associated_account_address_hash_string) do
+      [
+        paging_options: %{
+          default_paging_options()
+          | key: {amount, account_address_hash, associated_account_address_hash}
+        }
+      ]
+    else
+      _ ->
+        [paging_options: default_paging_options()]
+    end
+  end
+
+  def paging_options(%{
+        "block_number" => block_number_string,
+        "amount" => amount_string,
+        "associated_account_address_hash" => associated_account_address_hash_string,
+        "type" => type_string
+      })
+      when is_binary(block_number_string) and
+             is_binary(amount_string) and
+             is_binary(associated_account_address_hash_string) and
+             is_binary(type_string) do
+    with {:ok, block_number} <- safe_parse_non_negative_integer(block_number_string),
+         {amount, ""} <- Decimal.parse(amount_string),
+         {:ok, associated_account_address_hash} <-
+           Hash.Address.cast(associated_account_address_hash_string),
+         {:ok, type} <- type_from_string(type_string) do
+      [
+        paging_options: %{
+          default_paging_options()
+          | key: {block_number, amount, associated_account_address_hash, type}
+        }
+      ]
+    else
+      _ ->
+        [paging_options: default_paging_options()]
+    end
+  end
+
+  def paging_options(_params), do: [paging_options: default_paging_options()]
+
+  @doc """
   Paginates the given query based on the provided `PagingOptions`.
 
   ## Parameters
@@ -309,6 +373,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def paginate(query, %PagingOptions{key: {block_number, 0 = _amount, associated_account_address_hash, type}}) do
     where(
       query,

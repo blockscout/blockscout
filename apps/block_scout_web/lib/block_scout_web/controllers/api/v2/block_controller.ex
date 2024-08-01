@@ -368,7 +368,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
             [associated_account_address: address_associations] => :optional
           }
         ]
-        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(CeloElectionReward.paging_options(params))
         |> Keyword.merge(@api_true)
 
       rewards_plus_one =
