@@ -125,6 +125,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @doc """
   Returns the list of election reward types.
   """
+  @spec types() :: [type]
   def types, do: @types_enum
 
   @doc """
@@ -172,6 +173,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   ## Returns
   - An Ecto query.
   """
+  @spec block_hash_to_aggregated_rewards_by_type_query(Hash.Full.t()) :: Ecto.Query.t()
   def block_hash_to_aggregated_rewards_by_type_query(block_hash) do
     from(
       r in __MODULE__,
@@ -191,6 +193,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   ## Returns
   - An Ecto query.
   """
+  @spec block_hash_to_rewards_by_type_query(Hash.Full.t(), type) :: Ecto.Query.t()
   def block_hash_to_rewards_by_type_query(block_hash, reward_type) do
     from(
       r in __MODULE__,
@@ -207,6 +210,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @doc """
   Builds a query to get rewards by account address hash.
   """
+  @spec address_hash_to_rewards_query(Hash.Address.t()) :: Ecto.Query.t()
   def address_hash_to_rewards_query(address_hash) do
     from(
       r in __MODULE__,
@@ -225,6 +229,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   ## Returns
   - An Ecto query.
   """
+  @spec address_hash_to_ordered_rewards_query(Hash.Address.t()) :: Ecto.Query.t()
   def address_hash_to_ordered_rewards_query(address_hash) do
     from(
       r in __MODULE__,

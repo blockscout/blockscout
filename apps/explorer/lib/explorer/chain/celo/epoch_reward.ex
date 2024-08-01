@@ -21,9 +21,9 @@ defmodule Explorer.Chain.Celo.EpochReward do
     field(:reserve_bolster_transfer_log_index, :integer)
     field(:community_transfer_log_index, :integer)
     field(:carbon_offsetting_transfer_log_index, :integer)
-    field(:reserve_bolster_transfer, :any, virtual: true)
-    field(:community_transfer, :any, virtual: true)
-    field(:carbon_offsetting_transfer, :any, virtual: true)
+    field(:reserve_bolster_transfer, :any, virtual: true) :: TokenTransfer.t() | nil
+    field(:community_transfer, :any, virtual: true) :: TokenTransfer.t() | nil
+    field(:carbon_offsetting_transfer, :any, virtual: true) :: TokenTransfer.t() | nil
 
     belongs_to(
       :block,
