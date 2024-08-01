@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   import Explorer.Chain.SmartContract, only: [dead_address_hash_string: 0]
 
-  alias Ecto.Association.NotLoaded
+  # alias Ecto.Association.NotLoaded
 
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
   alias Explorer.Chain
@@ -165,8 +165,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
         Map.get(transaction, :gas_token_contract_address),
         Map.get(transaction, :gas_token)
       } do
-        {_, %NotLoaded{}} ->
-          nil
+        # {_, %NotLoaded{}} ->
+        #   nil
 
         {nil, _} ->
           nil
