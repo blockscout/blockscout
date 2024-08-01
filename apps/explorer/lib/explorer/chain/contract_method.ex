@@ -72,6 +72,7 @@ defmodule Explorer.Chain.ContractMethod do
     from(
       contract_method in __MODULE__,
       where: contract_method.identifier == ^method_id,
+      order_by: [asc: contract_method.inserted_at],
       limit: ^limit
     )
   end
