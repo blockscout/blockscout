@@ -313,13 +313,16 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     where(
       query,
       [reward],
-      reward.amount == 0 and
-        (reward.block_number < ^block_number or
-           (reward.block_number == ^block_number and
-              reward.associated_account_address_hash > ^associated_account_address_hash) or
-           (reward.block_number == ^block_number and
-              reward.associated_account_address_hash == ^associated_account_address_hash and
-              reward.type > ^type))
+      reward.block_number < ^block_number or
+        (reward.block_number == ^block_number and
+           reward.amount == 0) or
+        (reward.block_number == ^block_number and
+           reward.amount == 0 and
+           reward.associated_account_address_hash > ^associated_account_address_hash) or
+        (reward.block_number == ^block_number and
+           reward.amount == 0 and
+           reward.associated_account_address_hash == ^associated_account_address_hash and
+           reward.type > ^type)
     )
   end
 
