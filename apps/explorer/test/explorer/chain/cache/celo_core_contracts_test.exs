@@ -19,6 +19,9 @@ defmodule Explorer.Chain.Cache.CeloCoreContractsTest do
           }
         }
       )
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
+      end)
 
       assert {:error, :address_does_not_exist} = CeloCoreContracts.get_address(:epoch_rewards, 99)
       assert {:ok, ^first_address} = CeloCoreContracts.get_address(:epoch_rewards, 100)
@@ -59,6 +62,9 @@ defmodule Explorer.Chain.Cache.CeloCoreContractsTest do
           }
         }
       )
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
+      end)
 
       assert {:error, :address_does_not_exist} =
                CeloCoreContracts.get_event(:epoch_rewards, :carbon_offsetting_fund_set, 99)

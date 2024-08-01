@@ -1241,5 +1241,9 @@ defmodule Indexer.Block.FetcherTest do
         }
       }
     )
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
+    end)
   end
 end

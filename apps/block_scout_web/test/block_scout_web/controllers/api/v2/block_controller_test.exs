@@ -27,6 +27,10 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       }
     )
 
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
+    end)
+
     :ok
   end
 
