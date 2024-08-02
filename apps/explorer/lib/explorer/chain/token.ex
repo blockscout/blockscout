@@ -290,4 +290,9 @@ defmodule Explorer.Chain.Token do
     |> Changeset.change(%{is_verified_via_admin_panel: false, icon_url: nil, symbol: nil, name: nil})
     |> Repo.update()
   end
+
+  def token_by_contract_address_hash_query(contract_address_hash) do
+    __MODULE__
+    |> where([token], token.contract_address_hash == ^contract_address_hash)
+  end
 end
