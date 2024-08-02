@@ -96,12 +96,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       null: false
     )
 
-    field(
-      :block_number,
-      :integer,
-      virtual: true
-    ) :: Block.block_number()
-
     timestamps()
   end
 
@@ -236,11 +230,10 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     from(
       r in __MODULE__,
       join: b in assoc(r, :block),
+      as: :block,
+      preload: [block: b],
       where: r.account_address_hash == ^address_hash,
       select: r,
-      select_merge: %{
-        block_number: b.number
-      },
       order_by: [
         desc: b.number,
         desc: r.amount,
@@ -253,21 +246,22 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @doc """
   Makes Explorer.PagingOptions map for election rewards.
   """
-  @spec paging_options(map()) ::
+  @spec block_paging_options(map()) ::
           [
             {:paging_options, Explorer.PagingOptions.t()},
             ...
           ]
           | Explorer.PagingOptions.t()
-  # when is_binary(amount_string) and[map()]
-  #        is_binary(account_address_hash_string) and
-  #        is_binary(associated_account_address_hash_string)
-  def paging_options(%{
-        "amount" => amount_string,
-        "account_address_hash" => account_address_hash_string,
-        "associated_account_address_hash" => associated_account_address_hash_string
-      }) do
-    with {amount, ""} <- Decimal.parse(amount_string),
+  def block_paging_options(params) do
+    with %{
+           "amount" => amount_string,
+           "account_address_hash" => account_address_hash_string,
+           "associated_account_address_hash" => associated_account_address_hash_string
+         }
+         when is_binary(amount_string) and
+                is_binary(account_address_hash_string) and
+                is_binary(associated_account_address_hash_string) <- params,
+         {amount, ""} <- Decimal.parse(amount_string),
          {:ok, account_address_hash} <- Hash.Address.cast(account_address_hash_string),
          {:ok, associated_account_address_hash} <-
            Hash.Address.cast(associated_account_address_hash_string) do
@@ -283,17 +277,27 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     end
   end
 
-  def paging_options(%{
-        "block_number" => block_number_string,
-        "amount" => amount_string,
-        "associated_account_address_hash" => associated_account_address_hash_string,
-        "type" => type_string
-      })
-      when is_binary(block_number_string) and
-             is_binary(amount_string) and
-             is_binary(associated_account_address_hash_string) and
-             is_binary(type_string) do
-    with {:ok, block_number} <- safe_parse_non_negative_integer(block_number_string),
+  @doc """
+  Makes Explorer.PagingOptions map for election rewards.
+  """
+  @spec address_paging_options(map()) ::
+          [
+            {:paging_options, Explorer.PagingOptions.t()},
+            ...
+          ]
+          | Explorer.PagingOptions.t()
+  def address_paging_options(params) do
+    with %{
+           "block_number" => block_number_string,
+           "amount" => amount_string,
+           "associated_account_address_hash" => associated_account_address_hash_string,
+           "type" => type_string
+         }
+         when is_binary(block_number_string) and
+                is_binary(amount_string) and
+                is_binary(associated_account_address_hash_string) and
+                is_binary(type_string) <- params,
+         {:ok, block_number} <- safe_parse_non_negative_integer(block_number_string),
          {amount, ""} <- Decimal.parse(amount_string),
          {:ok, associated_account_address_hash} <-
            Hash.Address.cast(associated_account_address_hash_string),
@@ -309,8 +313,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
         [paging_options: default_paging_options()]
     end
   end
-
-  def paging_options(_params), do: [paging_options: default_paging_options()]
 
   @doc """
   Paginates the given query based on the provided `PagingOptions`.
@@ -351,8 +353,8 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   def paginate(query, %PagingOptions{key: {0 = _block_number, 0 = _amount, associated_account_address_hash, type}}) do
     where(
       query,
-      [reward],
-      reward.block_number == 0 and reward.amount == 0 and
+      [reward, block],
+      block.number == 0 and reward.amount == 0 and
         (reward.associated_account_address_hash > ^associated_account_address_hash or
            (reward.associated_account_address_hash == ^associated_account_address_hash and
               reward.type > ^type))
@@ -362,8 +364,8 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   def paginate(query, %PagingOptions{key: {0 = _block_number, amount, associated_account_address_hash, type}}) do
     where(
       query,
-      [reward],
-      reward.block_number == 0 and
+      [reward, block],
+      block.number == 0 and
         (reward.amount < ^amount or
            (reward.amount == ^amount and
               reward.associated_account_address_hash > ^associated_account_address_hash) or
@@ -377,14 +379,14 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   def paginate(query, %PagingOptions{key: {block_number, 0 = _amount, associated_account_address_hash, type}}) do
     where(
       query,
-      [reward],
-      reward.block_number < ^block_number or
-        (reward.block_number == ^block_number and
+      [reward, block],
+      block.number < ^block_number or
+        (block.number == ^block_number and
            reward.amount == 0) or
-        (reward.block_number == ^block_number and
+        (block.number == ^block_number and
            reward.amount == 0 and
            reward.associated_account_address_hash > ^associated_account_address_hash) or
-        (reward.block_number == ^block_number and
+        (block.number == ^block_number and
            reward.amount == 0 and
            reward.associated_account_address_hash == ^associated_account_address_hash and
            reward.type > ^type)
@@ -395,14 +397,14 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   def paginate(query, %PagingOptions{key: {block_number, amount, associated_account_address_hash, type}}) do
     where(
       query,
-      [reward],
-      reward.block_number < ^block_number or
-        (reward.block_number == ^block_number and
+      [reward, block],
+      block.number < ^block_number or
+        (block.number == ^block_number and
            reward.amount < ^amount) or
-        (reward.block_number == ^block_number and
+        (block.number == ^block_number and
            reward.amount == ^amount and
            reward.associated_account_address_hash > ^associated_account_address_hash) or
-        (reward.block_number == ^block_number and
+        (block.number == ^block_number and
            reward.amount == ^amount and
            reward.associated_account_address_hash == ^associated_account_address_hash and
            reward.type > ^type)
@@ -450,7 +452,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       %{"block_number" => 1, "amount" => 1000, "associated_account_address_hash" => "0x456", "type" => :voter}
   """
   def to_address_paging_params(%__MODULE__{
-        block_number: block_number,
+        block: %Block{number: block_number},
         amount: amount,
         associated_account_address_hash: associated_account_address_hash,
         type: type

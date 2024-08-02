@@ -7,9 +7,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   import Explorer.Chain.SmartContract, only: [dead_address_hash_string: 0]
 
-  # alias Ecto.Association.NotLoaded
-
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
+  alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
@@ -200,7 +199,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           optional(:epoch_number) => non_neg_integer(),
           optional(:type) => ElectionReward.type()
         }
-  defp prepare_election_reward(%ElectionReward{block_number: nil} = reward) do
+  defp prepare_election_reward(%ElectionReward{block: %NotLoaded{}} = reward) do
     %{
       amount: reward.amount,
       account:
@@ -219,9 +218,9 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   defp prepare_election_reward(%ElectionReward{} = reward) do
     %{
       amount: reward.amount,
-      block_number: reward.block_number,
+      block_number: reward.block.number,
       block_hash: reward.block_hash,
-      epoch_number: reward.block_number |> CeloHelper.block_number_to_epoch_number(),
+      epoch_number: reward.block.number |> CeloHelper.block_number_to_epoch_number(),
       account:
         Helper.address_with_info(
           reward.account_address,
