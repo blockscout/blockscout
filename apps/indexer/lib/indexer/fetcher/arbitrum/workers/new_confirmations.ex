@@ -23,6 +23,35 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     the latest confirmation, and blocks from X+1 to N are linked to the earlier
     confirmation (where X is the rollup block mentioned in an even earlier
     confirmation).
+
+    Since the confirmations discovery process is asynchronous with respect to the
+    block fetching process and the batches discovery process, there could be
+    situations when the information about rollup blocks or their linkage with a
+    batch is not available yet. Here is a list of possible scenarios and expected
+    behavior:
+    1. A rollup block required to proceed with the new confirmation discovery is
+      not indexed yet, or the batch where this block is included is not indexed
+      yet.
+      - The new confirmation discovery process will proceed with discovering new
+        confirmations and the L1 blocks range where the confirmation handling is
+        aborted will be passed to the historical confirmations discovery process.
+    2. A rollup block required to proceed with the historical confirmation discovery
+      is not indexed yet, or the batch where this block is included is not indexed
+      yet.
+      - The historical confirmation discovery process will proceed with the same
+        L1 blocks range where the confirmation handling is aborted until this
+        confirmation is handled properly.
+
+    As it is clear from the above, the historical confirmation discovery process
+    could be interrupted by the new confirmation discovery process. As soon as the
+    historical confirmation discovery process reaches the lower end of the L1 block
+    range where the new confirmation discovery process is aborted, the historical
+    confirmation discovery process will request the database to provide the next L1
+    block range of missing confirmations. Such a range could be closed when there
+    are end and start L1 blocks in which a missing confirmation is expected, or
+    open-ended where the start block is not defined and the end block is the block
+    preceding the L1 block where a confirmation was already handled by the discovery
+    process.
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
