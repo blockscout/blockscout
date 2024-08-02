@@ -935,7 +935,6 @@ defmodule Explorer.EthRPC do
         address_or_topic_params
         |> Map.put(:from_block, from_block)
         |> Map.put(:to_block, to_block)
-        |> Map.put(:allow_non_consensus, true)
 
       logs =
         filter
