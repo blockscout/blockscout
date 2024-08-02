@@ -86,8 +86,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     Discovers and processes new confirmations of rollup blocks within a calculated block range.
 
     This function identifies the appropriate L1 block range for discovering new
-    rollup confirmations. It fetches logs representing `SendRootUpdated` events
-    within this range to identify the new tops of rollup block confirmations. The
+    rollup confirmations. In order to make sure that no confirmation is missed due
+    to re-orgs, it adjusts the range to re-inspect some L1 blocks in the past.
+    Therefore the lower bound of the L1 blocks range is identified based on the
+    safe block or the block which is considered as safest if RPC does not support
+    "safe" block retrieval.
+
+    Then the function fetches logs representing `SendRootUpdated` events within
+    the found range to identify the new tops of rollup block confirmations. The
     discovered confirmations are processed to update the status of rollup blocks
     and L2-to-L1 messages accordingly. Eventually, updated rollup blocks, cross-chain
     messages, and newly constructed lifecycle transactions are imported into the
