@@ -382,8 +382,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       [reward, block],
       block.number < ^block_number or
         (block.number == ^block_number and
-           reward.amount == 0) or
-        (block.number == ^block_number and
            reward.amount == 0 and
            reward.associated_account_address_hash > ^associated_account_address_hash) or
         (block.number == ^block_number and
