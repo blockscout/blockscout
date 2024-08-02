@@ -25,7 +25,7 @@ defmodule Explorer.Utility.AddressContractCodeFetchAttempt do
   @doc """
   Gets retries number and updated_at for the Explorer.Chain.Address
   """
-  @spec get_retries_number(Hash.Address.t()) :: {non_neg_integer(), DateTime.t()}
+  @spec get_retries_number(Hash.Address.t()) :: {non_neg_integer(), DateTime.t()} | nil
   def get_retries_number(address_hash) do
     __MODULE__
     |> where([address_contract_code_fetch_attempt], address_contract_code_fetch_attempt.address_hash == ^address_hash)

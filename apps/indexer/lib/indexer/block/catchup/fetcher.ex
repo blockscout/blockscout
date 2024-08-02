@@ -56,8 +56,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
         }
 
       missing_ranges ->
-        first.._ = List.first(missing_ranges)
-        _..last = List.last(missing_ranges)
+        first.._//_ = List.first(missing_ranges)
+        _..last//_ = List.last(missing_ranges)
 
         Logger.metadata(first_block_number: first, last_block_number: last)
 
@@ -161,7 +161,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
             )
   defp fetch_and_import_missing_range(
          %__MODULE__{block_fetcher: %Block.Fetcher{} = block_fetcher},
-         first..last = range
+         first..last//_ = range
        ) do
     Logger.metadata(fetcher: :block_catchup, first_block_number: first, last_block_number: last)
     Process.flag(:trap_exit, true)
@@ -266,7 +266,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
         number, nil ->
           {:cont, number..number}
 
-        number, first..last when number == last - 1 ->
+        number, first..last//_ when number == last - 1 ->
           {:cont, first..number}
 
         number, range ->

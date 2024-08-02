@@ -55,7 +55,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     |> save_batch()
   end
 
-  def save_range(from..to) do
+  def save_range(from..to//_) do
     min_number = min(from, to)
     max_number = max(from, to)
 
@@ -84,7 +84,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     end
   end
 
-  def delete_range(from..to) do
+  def delete_range(from..to//_) do
     min_number = min(from, to)
     max_number = max(from, to)
 
@@ -294,7 +294,7 @@ defmodule Explorer.Utility.MissingBlockRange do
         number, nil ->
           {:cont, number..number}
 
-        number, first..last when number == last + 1 ->
+        number, first..last//_ when number == last + 1 ->
           {:cont, first..number}
 
         number, range ->

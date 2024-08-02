@@ -95,17 +95,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
         render(conn, :error, error: "#{@smth_went_wrong}: #{inspect(error.errors)}")
 
-      {:publish, error} ->
-        Logger.error(fn ->
-          [
-            @smth_went_wrong,
-            ": ",
-            inspect(error)
-          ]
-        end)
-
-        render(conn, :error, error: @smth_went_wrong)
-
       {:format, :error} ->
         render(conn, :error, error: @invalid_address)
 
@@ -136,9 +125,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           else
             {:error, error} ->
               render(conn, :error, error: error)
-
-            _ ->
-              render(conn, :error, error: "Invalid body")
           end
       end
     end

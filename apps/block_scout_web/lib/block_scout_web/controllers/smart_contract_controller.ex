@@ -217,7 +217,7 @@ defmodule BlockScoutWeb.SmartContractController do
       :error ->
         unprocessable_entity(conn)
 
-      :not_found ->
+      {:error, :not_found} ->
         not_found(conn)
 
       _ ->

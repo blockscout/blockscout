@@ -73,9 +73,6 @@ defmodule BlockScoutWeb.TransactionStateController do
 
       {:error, :not_found} ->
         TransactionController.set_not_found_view(conn, transaction_hash_string)
-
-      :not_found ->
-        TransactionController.set_not_found_view(conn, transaction_hash_string)
     end
   end
 
@@ -115,9 +112,6 @@ defmodule BlockScoutWeb.TransactionStateController do
         current_user: current_user(conn)
       )
     else
-      :not_found ->
-        TransactionController.set_not_found_view(conn, transaction_hash_string)
-
       :error ->
         unprocessable_entity(conn)
 

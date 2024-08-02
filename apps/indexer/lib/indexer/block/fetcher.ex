@@ -130,7 +130,7 @@ defmodule Indexer.Block.Fetcher do
           callback_module: callback_module,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state,
-        _.._ = range,
+        _.._//_ = range,
         additional_options \\ %{}
       )
       when callback_module != nil do

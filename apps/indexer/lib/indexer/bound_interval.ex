@@ -8,7 +8,7 @@ defmodule Indexer.BoundInterval do
             current: 1,
             maximum: nil
 
-  def within(minimum..maximum) when is_integer(minimum) and is_integer(maximum) and minimum <= maximum do
+  def within(minimum..maximum//_) when is_integer(minimum) and is_integer(maximum) and minimum <= maximum do
     %__MODULE__{minimum: minimum, current: minimum, maximum: maximum}
   end
 
