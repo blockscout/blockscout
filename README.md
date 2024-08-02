@@ -1,3 +1,10 @@
+[Transactions.csv](https://github.com/user-attachments/files/16465922/Transactions.csv)
+[README.md](https://github.com/user-attachments/files/16465921/README.md)
+[8454be40-6b48-4ce6-aa9b-3417b17e8536.pdf](https://github.com/user-attachments/files/16465920/8454be40-6b48-4ce6-aa9b-3417b17e8536.pdf)
+[Aave_Protocol_Whitepaper_v1_0.pdf](https://github.com/user-attachments/files/16465919/Aave_Protocol_Whitepaper_v1_0.pdf)
+[LICENSE.md](https://github.com/user-attachments/files/16465918/LICENSE.md)
+[CONTRIBUTING.md](https://github.com/user-attachments/files/16465917/CONTRIBUTING.md)
+![polygon-pos-chain-daily](https://github.com/user-attachments/assets/ccbc97d3-4720-4dba-aaa2-30de04b3e48d)
 <h1 align="center">Blockscout</h1>
 <p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
 <div align="center">
