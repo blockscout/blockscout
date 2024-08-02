@@ -402,7 +402,7 @@ config :explorer, Explorer.ExchangeRates.Source.Cryptorank,
   limit: ConfigHelper.parse_integer_env_var("EXCHANGE_RATES_CRYPTORANK_LIMIT", 1000)
 
 config :explorer, Explorer.Market.History.Cataloger,
-  enabled: true,
+  enabled: !disable_indexer? && !disable_exchange_rates?,
   history_fetch_interval: ConfigHelper.parse_time_env_var("MARKET_HISTORY_FETCH_INTERVAL", "1h"),
   secondary_coin_enabled:
     cmc_secondary_coin_id || cg_secondary_coin_id || cc_secondary_coin_symbol || cryptorank_secondary_coin_id
