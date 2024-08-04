@@ -861,6 +861,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # For the existing batches, the function prepares a map of commitment transactions
   # assuming that they must be updated if reorgs occur.
   #
+  # The function skips the batch with number 0, as this batch does not contain any
+  # rollup blocks and transactions.
+  #
   # ## Parameters
   # - `logs`: A list of event logs to be processed.
   # - `existing_batches`: A list of batch numbers already processed.
@@ -893,49 +896,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp parse_logs_for_new_batches(logs, existing_batches) do
     {batches, txs_requests, blocks_requests, existing_commitment_txs} =
       logs
-      |> Enum.reduce({%{}, [], %{}, %{}}, fn event, {batches, txs_requests, blocks_requests, existing_commitment_txs} ->
-        {batch_num, before_acc, after_acc} = sequencer_batch_delivered_event_parse(event)
-
+      |> Enum.reduce({%{}, [], %{}, %{}}, fn event, acc ->
         tx_hash_raw = event["transactionHash"]
-        tx_hash = Rpc.string_hash_to_bytes_hash(tx_hash_raw)
         blk_num = quantity_to_integer(event["blockNumber"])
 
-        {updated_batches, updated_txs_requests, updated_existing_commitment_txs} =
-          if batch_num in existing_batches do
-            {batches, txs_requests, Map.put(existing_commitment_txs, tx_hash, blk_num)}
-          else
-            log_info("New batch #{batch_num} found in #{tx_hash_raw}")
-
-            updated_batches =
-              Map.put(
-                batches,
-                batch_num,
-                %{
-                  number: batch_num,
-                  before_acc: before_acc,
-                  after_acc: after_acc,
-                  tx_hash: tx_hash
-                }
-              )
-
-            updated_txs_requests = [
-              Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash_raw})
-              | txs_requests
-            ]
-
-            {updated_batches, updated_txs_requests, existing_commitment_txs}
-          end
-
-        # In order to have an ability to update commitment transaction for the existing batches
-        # in case of reorgs, we need to re-execute the block requests
-        updated_blocks_requests =
-          Map.put(
-            blocks_requests,
-            blk_num,
-            BlockByNumber.request(%{id: 0, number: blk_num}, false, true)
-          )
-
-        {updated_batches, updated_txs_requests, updated_blocks_requests, updated_existing_commitment_txs}
+        handle_new_batch_data(
+          {sequencer_batch_delivered_event_parse(event), tx_hash_raw, blk_num},
+          existing_batches,
+          acc
+        )
       end)
 
     {batches, txs_requests, Map.values(blocks_requests), existing_commitment_txs}
@@ -947,6 +916,102 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     [_, batch_sequence_number, before_acc, after_acc] = event["topics"]
 
     {quantity_to_integer(batch_sequence_number), before_acc, after_acc}
+  end
+
+  # Handles the new batch data to assemble a map of new batch descriptions.
+  #
+  # This function processes the new batch data by assembling a map of new batch
+  # descriptions and preparing RPC `eth_getTransactionByHash` and `eth_getBlockByNumber`
+  # requests to fetch details not present in the received batch data. To minimize
+  # subsequent RPC calls, requests to get the transaction details are only made for
+  # batches not previously known. For existing batches, the function prepares a map
+  # of commitment transactions, assuming that they must be updated if reorgs occur.
+  # If the batch number is zero, the function does nothing.
+  #
+  # ## Parameters
+  # - `batch_data`: A tuple containing the batch number, before and after accumulators,
+  #   transaction hash, and block number.
+  # - `existing_batches`: A list of batch numbers that are already processed.
+  # - `acc`: A tuple containing new batch descriptions, transaction requests,
+  #   block requests, and existing commitment transactions maps.
+  #
+  # ## Returns
+  # - A tuple containing:
+  #   - A map of new batch descriptions, which are not yet ready for database import.
+  #   - A list of RPC `eth_getTransactionByHash` requests for fetching details of
+  #     the L1 transactions associated with these batches.
+  #   - A map of RPC requests to fetch details of the L1 blocks where these batches
+  #     were included. The keys of the map are L1 block numbers.
+  #   - A map of commitment transactions for the existing batches where the value is
+  #     the block number of the transaction.
+  @spec handle_new_batch_data(
+          {{non_neg_integer(), binary(), binary()}, binary(), non_neg_integer()},
+          [non_neg_integer()],
+          {map(), list(), map(), map()}
+        ) :: {
+          %{
+            non_neg_integer() => %{
+              :number => non_neg_integer(),
+              :before_acc => binary(),
+              :after_acc => binary(),
+              :tx_hash => binary()
+            }
+          },
+          [EthereumJSONRPC.Transport.request()],
+          %{non_neg_integer() => EthereumJSONRPC.Transport.request()},
+          %{binary() => non_neg_integer()}
+        }
+  defp handle_new_batch_data(
+         batch_data,
+         existing_batches,
+         acc
+       )
+
+  defp handle_new_batch_data({{batch_num, _, _}, _, _}, _, acc) when batch_num == 0, do: acc
+
+  defp handle_new_batch_data(
+         {{batch_num, before_acc, after_acc}, tx_hash_raw, blk_num},
+         existing_batches,
+         {batches, txs_requests, blocks_requests, existing_commitment_txs}
+       ) do
+    tx_hash = Rpc.string_hash_to_bytes_hash(tx_hash_raw)
+
+    {updated_batches, updated_txs_requests, updated_existing_commitment_txs} =
+      if batch_num in existing_batches do
+        {batches, txs_requests, Map.put(existing_commitment_txs, tx_hash, blk_num)}
+      else
+        log_info("New batch #{batch_num} found in #{tx_hash_raw}")
+
+        updated_batches =
+          Map.put(
+            batches,
+            batch_num,
+            %{
+              number: batch_num,
+              before_acc: before_acc,
+              after_acc: after_acc,
+              tx_hash: tx_hash
+            }
+          )
+
+        updated_txs_requests = [
+          Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash_raw})
+          | txs_requests
+        ]
+
+        {updated_batches, updated_txs_requests, existing_commitment_txs}
+      end
+
+    # In order to have an ability to update commitment transaction for the existing batches
+    # in case of reorgs, we need to re-execute the block requests
+    updated_blocks_requests =
+      Map.put(
+        blocks_requests,
+        blk_num,
+        BlockByNumber.request(%{id: 0, number: blk_num}, false, true)
+      )
+
+    {updated_batches, updated_txs_requests, updated_blocks_requests, updated_existing_commitment_txs}
   end
 
   # Executes transaction requests and parses the calldata to extract batch data.
