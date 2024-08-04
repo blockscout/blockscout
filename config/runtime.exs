@@ -606,6 +606,9 @@ config :explorer, Explorer.Chain.Metrics,
   enabled: ConfigHelper.parse_bool_env_var("PUBLIC_METRICS_ENABLED", "false"),
   update_period_hours: ConfigHelper.parse_integer_env_var("PUBLIC_METRICS_UPDATE_PERIOD_HOURS", 24)
 
+config :explorer, Explorer.Chain.Filecoin.NativeAddress,
+  network_prefix: ConfigHelper.parse_catalog_value("FILECOIN_NETWORK_PREFIX", ["f", "t"], true, "f")
+
 ###############
 ### Indexer ###
 ###############
@@ -999,6 +1002,10 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,
   enabled:
     ConfigHelper.chain_type() == :polygon_zkevm &&
       ConfigHelper.parse_bool_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED")
+
+config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
+  base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3"),
+  api_token: System.get_env("BERYX_API_TOKEN")
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
