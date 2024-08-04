@@ -6,6 +6,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
   alias Explorer.Chain.Filecoin.NativeAddress
 
   doctest NativeAddress
+  doctest NativeAddress.ID
 
   @test_cases %{
     # The following test cases are taken from the filecoin spec:
