@@ -8,24 +8,33 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   Details about f4 addresses are provided in
   [FIP-0048](https://github.com/filecoin-project/FIPs/blob/master/FIPS/fip-0048.md).
 
-  Internally, addresses are stored as a binary with the following structure:
+  Internally, f0/f1/f2/f3 addresses are stored as a binary with the following structure:
 
-  ```
   |--------------------|---------|
   | protocol indicator | payload |
   |--------------------|---------|
   |       1 byte       | n bytes |
-  ```
+  |--------------------|---------|
 
-  1. The first byte is the protocol indicator encoded as a LEB128 integer. The
-     values are:
+  1. The first byte is the protocol indicator. The values are:
      - `0` for f0 addresses
      - `1` for f1 addresses
      - `2` for f2 addresses
      - `3` for f3 addresses
-     - `actor_id` for f4 addresses (see FIP-0048)
 
   2. The remaining bytes are the payload.
+
+  f4 addresses are stored as a binary with the following structure:
+
+  |--------------------|----------|---------|
+  | protocol indicator | actor id | payload |
+  |--------------------|----------|---------|
+  |       1 byte       |  1 byte  | n bytes |
+  |--------------------|----------|---------|
+
+  1. The first byte is the protocol indicator. The value is `4`.
+  2. The second byte is the actor id.
+  3. The remaining bytes are the payload.
   """
 
   import Explorer.Helper, only: [parse_integer: 1]
@@ -36,7 +45,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
 
   use Ecto.Type
 
-  defstruct ~w(protocol_indicator payload checksum)a
+  defstruct ~w(protocol_indicator actor_id payload checksum)a
 
   @checksum_bytes_count 4
 
@@ -51,7 +60,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   # f3 -- 48 bytes
   @protocol_indicator_to_payload_byte_count %{
     1 => 20,
-    # todo: WTF? Should be 32. Docs are lying
+    # todo: WTF? Should be 32. Specs are lying
     2 => 20,
     3 => 48
   }
@@ -59,6 +68,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
 
   @type t :: %__MODULE__{
           protocol_indicator: non_neg_integer(),
+          actor_id: non_neg_integer() | nil,
           payload: binary(),
           checksum: binary() | nil
         }
@@ -78,6 +88,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       iex> Explorer.Chain.Filecoin.NativeAddress.cast(
       ...>   %Explorer.Chain.Filecoin.NativeAddress{
       ...>     protocol_indicator: 0,
+      ...>     actor_id: nil,
       ...>     payload: <<193, 13>>,
       ...>     checksum: nil
       ...>   }
@@ -86,6 +97,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
         :ok,
         %Explorer.Chain.Filecoin.NativeAddress{
           protocol_indicator: 0,
+          actor_id: nil,
           payload: <<193, 13>>,
           checksum: nil
         }
@@ -98,6 +110,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
         :ok,
         %Explorer.Chain.Filecoin.NativeAddress{
           protocol_indicator: 0,
+          actor_id: nil,
           payload: <<193, 13>>,
           checksum: nil
         }
@@ -107,9 +120,10 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       {
         :ok,
         %Explorer.Chain.Filecoin.NativeAddress{
-          protocol_indicator: 1,
-          payload: <<253, 29, 15, 77, 252, 215, 233, 154, 252, 185, 154, 131, 38, 183, 220, 69, 157, 50, 198, 40>>,
-          checksum: <<148, 236, 248, 227>>
+          protocol_indicator: 0,
+          actor_id: nil,
+          payload: <<193, 13>>,
+          checksum: nil
         }
       }
 
@@ -117,21 +131,25 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       {
         :ok,
         %Explorer.Chain.Filecoin.NativeAddress{
-          protocol_indicator: 10,
+          protocol_indicator: 4,
+          actor_id: 10,
           payload: <<0, 94, 2, 164, 169, 52, 20, 45, 141, 212, 118, 241, 146, 208, 221, 156, 56, 27, 22, 180>>,
           checksum: <<60, 137, 107, 165>>
         }
       }
   """
-
   @impl Ecto.Type
-  @spec cast(term()) :: {:ok, t()} | :error
-  def cast(term) when is_binary(term) do
+  @spec cast(t() | String.t()) :: {:ok, t()} | :error
+  def cast(%__MODULE__{} = address), do: {:ok, address}
+
+  def cast(address_string) when is_binary(address_string) do
     network = network_prefix()
 
-    with true <- String.length(term) >= @min_address_string_length,
-         ^network <> protocol_indicator_and_payload <- term do
-      cast_protocol_indicator_and_payload(protocol_indicator_and_payload)
+    with true <- String.length(address_string) >= @min_address_string_length,
+         ^network <> protocol_indicator_and_payload <- address_string,
+         {:ok, address} <- cast_protocol_indicator_and_payload(protocol_indicator_and_payload),
+         :ok <- verify_checksum(address) do
+      {:ok, address}
     else
       _ ->
         :error
@@ -148,6 +166,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
         {:ok,
          %__MODULE__{
            protocol_indicator: 0,
+           actor_id: nil,
            payload: payload,
            checksum: nil
          }}
@@ -163,7 +182,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
          {:ok, {payload, checksum}} <- cast_base32_digits(base32_digits) do
       {:ok,
        %__MODULE__{
-         protocol_indicator: actor_id,
+         protocol_indicator: 4,
+         actor_id: actor_id,
          payload: payload,
          checksum: checksum
        }}
@@ -189,6 +209,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       {:ok,
        %__MODULE__{
          protocol_indicator: protocol_indicator,
+         actor_id: nil,
          payload: payload,
          checksum: checksum
        }}
@@ -202,7 +223,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
          <<
            payload::binary-size(byte_size(bytes) - @checksum_bytes_count),
            checksum::binary-size(@checksum_bytes_count)
-         >> = bytes do
+         >> <- bytes do
       {:ok, {payload, checksum}}
     else
       _ -> :error
@@ -224,13 +245,20 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   """
   @impl Ecto.Type
   @spec dump(t()) :: {:ok, binary()} | :error
+  def dump(%__MODULE__{protocol_indicator: 4, actor_id: actor_id, payload: payload})
+      when is_integer(actor_id) and
+             is_binary(payload) and
+             actor_id >= 0 and
+             actor_id <= @max_protocol_indicator do
+    {:ok, <<4, actor_id, payload::binary>>}
+  end
+
   def dump(%__MODULE__{protocol_indicator: protocol_indicator, payload: payload})
       when is_integer(protocol_indicator) and
              is_binary(payload) and
              protocol_indicator >= 0 and
              protocol_indicator <= @max_protocol_indicator do
-    protocol_indicator_bytes = LEB128.encode(protocol_indicator)
-    {:ok, <<protocol_indicator_bytes::binary, payload::binary>>}
+    {:ok, <<protocol_indicator, payload::binary>>}
   end
 
   def dump(_), do: :error
@@ -240,22 +268,37 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   """
   @impl Ecto.Type
   @spec load(binary()) :: {:ok, t()} | :error
-  def load(
-        <<
-          protocol_indicator_byte::unquote(Hash.bits_per_byte()),
-          payload::binary
-        >> = bytes
-      ) do
-    <<protocol_indicator_byte>>
-    |> LEB128.decode()
-    |> case do
-      {protocol_indicator, <<>>} ->
+  def load(<<protocol_indicator, rest::binary>> = bytes) do
+    case protocol_indicator do
+      0 ->
+        {:ok,
+         %__MODULE__{
+           protocol_indicator: 0,
+           actor_id: nil,
+           payload: rest,
+           checksum: nil
+         }}
+
+      4 ->
+        checksum = to_checksum(bytes)
+        <<actor_id, payload::binary>> = rest
+
+        {:ok,
+         %__MODULE__{
+           protocol_indicator: 4,
+           actor_id: actor_id,
+           payload: payload,
+           checksum: checksum
+         }}
+
+      protocol_indicator when protocol_indicator in @standard_protocol_indicators ->
         checksum = to_checksum(bytes)
 
         {:ok,
          %__MODULE__{
            protocol_indicator: protocol_indicator,
-           payload: payload,
+           actor_id: nil,
+           payload: rest,
            checksum: checksum
          }}
 
@@ -272,6 +315,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       iex> Explorer.Chain.Filecoin.NativeAddress.to_string(
       ...>   %Explorer.Chain.Filecoin.NativeAddress{
       ...>     protocol_indicator: 0,
+      ...>     actor_id: nil,
       ...>     payload: <<193, 13>>,
       ...>     checksum: nil
       ...>   }
@@ -280,7 +324,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
 
       iex> Explorer.Chain.Filecoin.NativeAddress.to_string(
       ...>   %Explorer.Chain.Filecoin.NativeAddress{
-      ...>     protocol_indicator: 10,
+      ...>     protocol_indicator: 4,
+      ...>     actor_id: 10,
       ...>     payload: <<0, 94, 2, 164, 169, 52, 20, 45, 141, 212, 118, 241, 146, 208, 221, 156, 56, 27, 22, 180>>,
       ...>     checksum: <<60, 137, 107, 165>>
       ...>   }
@@ -297,6 +342,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   def to_string(%__MODULE__{
         protocol_indicator: protocol_indicator,
         payload: payload,
+        actor_id: actor_id,
         checksum: checksum
       }) do
     payload_with_checksum =
@@ -312,18 +358,27 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
         indicator when indicator in @standard_protocol_indicators ->
           Integer.to_string(indicator)
 
-        indicator ->
-          "4" <> Integer.to_string(indicator) <> "f"
+        4 ->
+          "4" <> Integer.to_string(actor_id) <> "f"
       end
 
     network_prefix() <> protocol_indicator_part <> payload_with_checksum
   end
 
-  defp to_checksum(bytes) do
-    :blake2b
-    |> :crypto.hash(bytes)
-    |> :binary.part(0, @checksum_bytes_count)
+  defp verify_checksum(%__MODULE__{protocol_indicator: 0, checksum: nil}), do: :ok
+
+  defp verify_checksum(%__MODULE__{checksum: checksum} = address)
+       when not is_nil(checksum) do
+    with {:ok, bytes} <- dump(address),
+         ^checksum <- to_checksum(bytes) do
+      :ok
+    else
+      _ -> :error
+    end
   end
+
+  defp to_checksum(bytes),
+    do: Blake2.Blake2b.hash(bytes, "", @checksum_bytes_count)
 
   defimpl String.Chars do
     def to_string(hash) do

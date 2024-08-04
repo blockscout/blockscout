@@ -50,6 +50,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
         assert {:ok,
                 %NativeAddress{
                   protocol_indicator: ^protocol_indicator,
+                  actor_id: nil,
                   payload: ^payload
                 }} = NativeAddress.cast(address)
       end
@@ -62,7 +63,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
 
       assert {:ok,
               %NativeAddress{
-                protocol_indicator: 10,
+                protocol_indicator: 4,
+                actor_id: 10,
                 payload: ^evm_address_bytes
               }} = NativeAddress.cast(address)
     end
@@ -84,7 +86,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
     test "converts f4 addresses" do
       address = "f410fabpafjfjgqkc3douo3yzfug5tq4bwfvuhsewxji"
       {:ok, evm_address} = Address.cast("0x005E02A4A934142D8DD476F192D0DD9C381B16B4")
-      bytes = <<10::size(8), evm_address.bytes::binary-size(20)>>
+      bytes = <<4, 10, evm_address.bytes::binary>>
 
       assert {:ok, ^bytes} =
                address
@@ -104,6 +106,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
         assert {:ok,
                 %NativeAddress{
                   protocol_indicator: ^protocol_indicator,
+                  actor_id: nil,
                   payload: ^payload
                 }} =
                  address
@@ -121,7 +124,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
 
       assert {:ok,
               %NativeAddress{
-                protocol_indicator: 10,
+                protocol_indicator: 4,
+                actor_id: 10,
                 payload: ^payload
               }} =
                address
@@ -140,6 +144,10 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
                  address
                  |> NativeAddress.cast()
                  |> elem(1)
+                 |> NativeAddress.dump()
+                 |> elem(1)
+                 |> NativeAddress.load()
+                 |> elem(1)
                  |> NativeAddress.to_string()
       end
     end
@@ -150,6 +158,10 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
       assert ^address =
                address
                |> NativeAddress.cast()
+               |> elem(1)
+               |> NativeAddress.dump()
+               |> elem(1)
+               |> NativeAddress.load()
                |> elem(1)
                |> NativeAddress.to_string()
     end

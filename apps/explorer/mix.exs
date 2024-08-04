@@ -123,7 +123,8 @@ defmodule Explorer.Mixfile do
       {:typed_ecto_schema, "~> 0.4.1", runtime: false},
       {:ueberauth, "~> 0.7"},
       {:recon, "~> 2.5"},
-      {:varint, "~> 1.4"}
+      {:varint, "~> 1.4"},
+      {:blake2_elixir, "~> 0.8.1"}
     ]
   end
 
