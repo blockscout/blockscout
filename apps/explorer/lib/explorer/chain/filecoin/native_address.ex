@@ -39,6 +39,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
 
   import Explorer.Helper, only: [parse_integer: 1]
 
+  alias Blake2.Blake2b
   alias Explorer.Chain.Hash
   alias Poison.Encoder.BitString
   alias Varint.LEB128
@@ -378,7 +379,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   end
 
   defp to_checksum(bytes),
-    do: Blake2.Blake2b.hash(bytes, "", @checksum_bytes_count)
+    do: Blake2b.hash(bytes, "", @checksum_bytes_count)
 
   defimpl String.Chars do
     def to_string(hash) do
