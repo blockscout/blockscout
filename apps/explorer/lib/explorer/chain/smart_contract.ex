@@ -585,7 +585,7 @@ defmodule Explorer.Chain.SmartContract do
       refetch_necessity_checked?: false
     }
 
-    {implementation_address_hash, _} =
+    {implementation_address_hash, _names, _proxy_type} =
       Implementation.get_implementation(
         smart_contract,
         Keyword.put(options, :proxy_without_abi?, true)
@@ -609,7 +609,7 @@ defmodule Explorer.Chain.SmartContract do
   def compose_address_for_unverified_smart_contract(address_result, _hash, _options), do: address_result
 
   def single_implementation_smart_contract_from_proxy(proxy_hash, options) do
-    {implementation_address_hashes, _} = Implementation.get_implementation(proxy_hash, options)
+    {implementation_address_hashes, _names, _proxy_type} = Implementation.get_implementation(proxy_hash, options)
 
     if implementation_address_hashes && Enum.count(implementation_address_hashes) == 1 do
       implementation_address_hashes
@@ -730,21 +730,6 @@ defmodule Explorer.Chain.SmartContract do
     address_result
     |> Map.put(:smart_contract, address_verified_bytecode_twin_contract_updated)
   end
-
-  def add_implementation_info_to_contract(address_result, nil), do: address_result
-
-  def add_implementation_info_to_contract(
-        %Address{smart_contract: smart_contract} = address_result,
-        implementation_address_hash
-      )
-      when not is_nil(smart_contract) do
-    implementation = Map.put(smart_contract, :address_hash, implementation_address_hash)
-
-    address_result
-    |> Map.put(:implementation, implementation)
-  end
-
-  def add_implementation_info_to_contract(address_result, _), do: address_result
 
   @doc """
     Inserts a new smart contract and associated data into the database.

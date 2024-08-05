@@ -85,6 +85,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "creation_tx_hash" => nil,
         "token" => nil,
         "coin_balance" => nil,
+        "proxy_type" => nil,
         "implementations" => [],
         "block_number_balance_updated_at" => nil,
         "has_decompiled_code" => false,
@@ -220,6 +221,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
                "creation_tx_hash" => ^tx_hash,
+               "proxy_type" => "eip1167",
                "implementations" => [
                  %{"address" => ^checksummed_implementation_contract_address_hash, "name" => ^name}
                ]
@@ -265,6 +267,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
                "creation_tx_hash" => ^tx_hash,
+               "proxy_type" => "eip1967",
                "implementations" => [%{"address" => ^implementation_address_hash_string, "name" => nil}]
              } = json_response(request, 200)
     end

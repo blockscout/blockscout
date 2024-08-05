@@ -95,15 +95,15 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
     is_proxy = AddressView.smart_contract_is_proxy?(address_with_smart_contract, @api_true)
 
-    implementations =
+    {implementations, proxy_type} =
       with true <- is_proxy,
-           {addresses, names} <-
+           {addresses, names, proxy_type} <-
              Implementation.get_implementation(address_with_smart_contract.smart_contract, @api_true),
            false <- addresses && Enum.empty?(addresses) do
-        Helper.proxy_object_info(addresses, names)
+        {Helper.proxy_object_info(addresses, names), proxy_type}
       else
         _ ->
-          []
+          {[], nil}
       end
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
@@ -134,6 +134,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       extended_info
     else
       Map.merge(extended_info, %{
+        "proxy_type" => proxy_type,
         "implementations" => implementations
       })
     end
