@@ -69,8 +69,9 @@ defmodule Explorer.Chain.Mud do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
     Mud
-    |> select([r], r.address)
     |> distinct(true)
+    |> select([r], r.address)
+    |> where([r], r.table_id == ^@store_tables_table_id)
     |> page_worlds(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.Mud.all()
