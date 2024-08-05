@@ -18,7 +18,7 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
   @required_attrs ~w(id hash block_number timestamp status)a
 
   @typedoc """
-  Descriptor of the a L1 transaction changing state of transactions and blocks of Arbitrum rollups:
+  Descriptor of the L1 transaction changing state of transactions and blocks of Arbitrum rollups:
     * `id` - The ID of the transaction used for referencing.
     * `hash` - The hash of the L1 transaction.
     * `block_number` - The number of the L1 block where the transaction is included.

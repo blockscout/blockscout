@@ -3,12 +3,10 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
   Exports transactions to a csv file.
   """
 
-  alias Explorer.{Market, PagingOptions}
+  alias Explorer.Market
   alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
-
-  @paging_options %PagingOptions{page_size: Helper.limit()}
 
   @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
   def export(address_hash, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
@@ -16,7 +14,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
     exchange_rate = Market.get_coin_exchange_rate()
 
     address_hash
-    |> fetch_transactions(from_block, to_block, filter_type, filter_value, @paging_options)
+    |> fetch_transactions(from_block, to_block, filter_type, filter_value, Helper.paging_options())
     |> to_csv_format(address_hash, exchange_rate)
     |> Helper.dump_to_stream()
   end

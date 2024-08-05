@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Arbitrum.Message do
   @allowed_attrs @optional_attrs ++ @required_attrs
 
   @typedoc """
-  Descriptor of the a L1<->L2 message on Arbitrum rollups:
+  Descriptor of the L1<->L2 message on Arbitrum rollups:
     * `direction` - The direction of the message: `:to_l2` or `:from_l2`.
     * `message_id` - The ID of the message used for referencing.
     * `originator_address` - The address of the message originator. The fields

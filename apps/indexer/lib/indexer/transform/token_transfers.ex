@@ -6,6 +6,7 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Helper, only: [truncate_address_hash: 1]
 
   alias Explorer.{Helper, Repo}
   alias Explorer.Chain.{Hash, Token, TokenTransfer}
@@ -481,12 +482,6 @@ defmodule Indexer.Transform.TokenTransfers do
 
       {token, token_transfer}
     end
-  end
-
-  defp truncate_address_hash(nil), do: burn_address_hash_string()
-
-  defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
-    "0x#{truncated_hash}"
   end
 
   defp encode_address_hash(binary) do

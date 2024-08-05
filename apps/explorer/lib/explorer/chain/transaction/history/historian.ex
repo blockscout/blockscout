@@ -38,7 +38,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       from_api = false
 
       with {:ok, min_block} <- Chain.timestamp_to_block_number(earliest, :after, from_api),
-           {:ok, max_block} <- Chain.timestamp_to_block_number(latest, :after, from_api) do
+           {:ok, max_block} <- Chain.timestamp_to_block_number(latest, :before, from_api) do
         record =
           min_block
           |> compile_records_in_range(max_block)

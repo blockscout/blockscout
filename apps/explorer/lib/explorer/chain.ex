@@ -377,26 +377,15 @@ defmodule Explorer.Chain do
         to_block = to_block(options)
 
         base =
-          if DenormalizationHelper.transactions_denormalization_finished?() do
-            from(log in Log,
-              order_by: [desc: log.block_number, desc: log.index],
-              where: log.address_hash == ^address_hash,
-              limit: ^paging_options.page_size,
-              select: log,
-              inner_join: transaction in assoc(log, :transaction),
-              where: transaction.block_consensus == true
-            )
-          else
-            from(log in Log,
-              order_by: [desc: log.block_number, desc: log.index],
-              where: log.address_hash == ^address_hash,
-              limit: ^paging_options.page_size,
-              select: log,
-              inner_join: block in Block,
-              on: block.hash == log.block_hash,
-              where: block.consensus == true
-            )
-          end
+          from(log in Log,
+            order_by: [desc: log.block_number, desc: log.index],
+            where: log.address_hash == ^address_hash,
+            limit: ^paging_options.page_size,
+            select: log,
+            inner_join: block in Block,
+            on: block.hash == log.block_hash,
+            where: block.consensus == true
+          )
 
         preloaded_query =
           if csv_export? do
@@ -2284,7 +2273,7 @@ defmodule Explorer.Chain do
                 (SELECT b1.number
                 FROM generate_series((?)::integer, (?)::integer) AS b1(number)
                 WHERE NOT EXISTS
-                  (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus))
+                  (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus AND NOT b2.refetch_needed))
               """,
               ^from_block_number,
               ^to_block_number
@@ -2500,18 +2489,21 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Finds the block number closest to a given timestamp, with a one-minute buffer, optionally
-    adjusting based on whether the block should be before or after the timestamp.
+    Finds the block number closest to a given timestamp, optionally adjusting
+    based on whether the block should be before or after the timestamp.
 
     ## Parameters
-    - `given_timestamp`: The timestamp for which the closest block number is being sought.
-    - `closest`: A direction indicator (`:before` or `:after`) specifying whether the block number
-                returned should be before or after the given timestamp.
-    - `from_api`: A boolean flag indicating whether to use the replica database or the primary one
-                  for the query.
+    - `given_timestamp`: The timestamp for which the closest block number is
+      being sought.
+    - `closest`: A direction indicator (`:before` or `:after`) specifying
+                whether the block number returned should be before or after the
+                given timestamp.
+    - `from_api`: A boolean flag indicating whether to use the replica database
+                  or the primary one for the query.
 
     ## Returns
-    - `{:ok, block_number}` where `block_number` is the block number closest to the specified timestamp.
+    - `{:ok, block_number}` where `block_number` is the block number closest to
+      the specified timestamp.
     - `{:error, :not_found}` if no block is found within the specified criteria.
   """
   @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
@@ -2519,19 +2511,35 @@ defmodule Explorer.Chain do
   def timestamp_to_block_number(given_timestamp, closest, from_api) do
     {:ok, t} = Timex.format(given_timestamp, "%Y-%m-%d %H:%M:%S", :strftime)
 
-    inner_query =
+    consensus_blocks_query =
       from(
         block in Block,
-        where: block.consensus == true,
-        where:
-          fragment("? <= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS') + (1 * interval '1 minute')", block.timestamp, ^t),
-        where:
-          fragment("? >= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS') - (1 * interval '1 minute')", block.timestamp, ^t)
+        where: block.consensus == true
       )
+
+    gt_timestamp_query =
+      from(
+        block in consensus_blocks_query,
+        where: fragment("? >= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS')", block.timestamp, ^t),
+        order_by: [asc: block.timestamp],
+        limit: 1,
+        select: block
+      )
+
+    lt_timestamp_query =
+      from(
+        block in consensus_blocks_query,
+        where: fragment("? <= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS')", block.timestamp, ^t),
+        order_by: [desc: block.timestamp],
+        limit: 1,
+        select: block
+      )
+
+    union_query = lt_timestamp_query |> subquery() |> union(^gt_timestamp_query)
 
     query =
       from(
-        block in subquery(inner_query),
+        block in subquery(union_query),
         select: block,
         order_by:
           fragment("abs(extract(epoch from (? - TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS'))))", block.timestamp, ^t),
@@ -2564,11 +2572,11 @@ defmodule Explorer.Chain do
         end
 
       :after ->
-        if DateTime.compare(timestamp, given_timestamp) == :lt ||
+        if DateTime.compare(timestamp, given_timestamp) == :gt ||
              DateTime.compare(timestamp, given_timestamp) == :eq do
-          BlockNumberHelper.next_block_number(number)
-        else
           number
+        else
+          BlockNumberHelper.next_block_number(number)
         end
     end
   end
@@ -3791,8 +3799,8 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec token_from_address_hash_exists?(Hash.Address.t(), [api?]) :: boolean()
-  def token_from_address_hash_exists?(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash, options) do
+  @spec token_from_address_hash_exists?(Hash.Address.t() | String.t(), [api?]) :: boolean()
+  def token_from_address_hash_exists?(hash, options) do
     query =
       from(
         t in Token,
@@ -4574,6 +4582,18 @@ defmodule Explorer.Chain do
     params
     |> Base.decode16!(case: :mixed)
     |> TypeDecoder.decode_raw(types)
+  end
+
+  @spec get_token_types([String.t()]) :: [{Hash.Address.t(), String.t()}]
+  def get_token_types(hashes) do
+    query =
+      from(
+        token in Token,
+        where: token.contract_address_hash in ^hashes,
+        select: {token.contract_address_hash, token.type}
+      )
+
+    Repo.all(query)
   end
 
   @spec get_token_type(Hash.Address.t()) :: String.t() | nil

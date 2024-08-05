@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.V2.MudView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.{Mud, Mud.Table}
+  alias BlockScoutWeb.API.V2.Helper
+  alias Explorer.Chain.{Address, Mud, Mud.Table}
 
   @doc """
     Function to render GET requests to `/api/v2/mud/worlds` endpoint.
@@ -9,7 +10,7 @@ defmodule BlockScoutWeb.API.V2.MudView do
   @spec render(String.t(), map()) :: map()
   def render("worlds.json", %{worlds: worlds, next_page_params: next_page_params}) do
     %{
-      items: worlds,
+      items: worlds |> Enum.map(&prepare_world_for_list/1),
       next_page_params: next_page_params
     }
   end
@@ -18,9 +19,7 @@ defmodule BlockScoutWeb.API.V2.MudView do
     Function to render GET requests to `/api/v2/mud/worlds/count` endpoint.
   """
   def render("count.json", %{count: count}) do
-    %{
-      count: count
-    }
+    count
   end
 
   @doc """
@@ -59,6 +58,14 @@ defmodule BlockScoutWeb.API.V2.MudView do
       record: record |> format_record(schema, blocks),
       table: table_id |> Table.from(),
       schema: schema
+    }
+  end
+
+  defp prepare_world_for_list(%Address{} = address) do
+    %{
+      "address" => Helper.address_with_info(address, address.hash),
+      "tx_count" => address.transactions_count,
+      "coin_balance" => if(address.fetched_coin_balance, do: address.fetched_coin_balance.value)
     }
   end
 

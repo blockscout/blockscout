@@ -3,11 +3,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Common functions to simplify DB routines for Indexer.Fetcher.Arbitrum fetchers
   """
 
-  import Ecto.Query, only: [from: 2]
-
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1]
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
   alias Explorer.Chain.Arbitrum.Reader
   alias Explorer.Chain.Block, as: FullBlock
@@ -388,8 +386,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
-    Retrieves full details of rollup blocks, including associated transactions, for each
-    block number specified in the input list.
+    Retrieves full details of rollup blocks, including associated transactions, for each block number specified in the input list.
 
     ## Parameters
     - `list_of_block_numbers`: A list of block numbers for which full block details are to be retrieved.
@@ -399,23 +396,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       block number in the input list. Returns an empty list if no blocks are found for the given numbers.
   """
   @spec rollup_blocks([FullBlock.block_number()]) :: [FullBlock.t()]
-  def rollup_blocks(list_of_block_numbers)
-
-  def rollup_blocks([]), do: []
-
-  def rollup_blocks(list_of_block_numbers)
-      when is_list(list_of_block_numbers) do
-    query =
-      from(
-        block in FullBlock,
-        where: block.number in ^list_of_block_numbers
-      )
-
-    query
-    # :optional is used since a block may not have any transactions
-    |> Chain.join_associations(%{:transactions => :optional})
-    |> Repo.all(timeout: :infinity)
-  end
+  def rollup_blocks(list_of_block_numbers), do: Reader.rollup_blocks(list_of_block_numbers)
 
   @doc """
     Retrieves unfinalized L1 transactions that are involved in changing the statuses
@@ -942,13 +923,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     # the block just after it
     rollup_tail = Application.get_all_env(:indexer)[:first_block] + 1
 
-    query =
-      from(
-        block in FullBlock,
-        where: block.number == ^rollup_tail and block.consensus == true
-      )
-
-    if(is_nil(query |> Repo.one()), do: false, else: true)
+    Reader.rollup_block_exists?(rollup_tail)
   end
 
   @spec lifecycle_transaction_to_map(Arbitrum.LifecycleTransaction.t()) :: Arbitrum.LifecycleTransaction.to_import()
