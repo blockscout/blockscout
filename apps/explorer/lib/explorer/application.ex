@@ -57,6 +57,7 @@ defmodule Explorer.Application do
       Supervisor.child_spec({Task.Supervisor, name: Explorer.LookUpSmartContractSourcesTaskSupervisor},
         id: LookUpSmartContractSourcesTaskSupervisor
       ),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.WETHMigratorSupervisor}, id: WETHMigratorSupervisor),
       Explorer.SmartContract.SolcDownloader,
       Explorer.SmartContract.VyperDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
@@ -140,6 +141,7 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers),
         configure(Explorer.Migrator.TransactionBlockConsensus),
         configure(Explorer.Migrator.TokenTransferBlockConsensus),
+        configure(Explorer.Migrator.RestoreOmittedWETHTransfers),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability)
       ]
       |> List.flatten()

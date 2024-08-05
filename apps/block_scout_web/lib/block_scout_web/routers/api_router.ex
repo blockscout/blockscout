@@ -107,6 +107,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/config" do
       get("/backend-version", V2.ConfigController, :backend_version)
+      get("/csv-export", V2.ConfigController, :csv_export)
     end
 
     scope "/transactions" do

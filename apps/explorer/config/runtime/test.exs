@@ -47,6 +47,7 @@ config :explorer, Explorer.Migrator.TokenTransferTokenType, enabled: false
 config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, enabled: false
 config :explorer, Explorer.Migrator.TransactionBlockConsensus, enabled: false
 config :explorer, Explorer.Migrator.TokenTransferBlockConsensus, enabled: false
+config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers, enabled: false
 
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender

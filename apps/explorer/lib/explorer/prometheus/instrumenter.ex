@@ -14,45 +14,45 @@ defmodule Explorer.Prometheus.Instrumenter do
   ]
 
   @gauge [
-    name: :weekly_success_transactions_number,
-    help: "Number of successful transactions in the last 7 days",
+    name: :success_transactions_number,
+    help: "Number of successful transactions in the period (default is 1 day)",
     registry: :public
   ]
 
   @gauge [
-    name: :weekly_deployed_smart_contracts_number,
+    name: :deployed_smart_contracts_number,
     help:
-      "Number of deployed smart-contracts (smart-contracts from internal transactions are not accounted) in the last 7 days",
+      "Number of deployed smart-contracts (smart-contracts from internal transactions are not accounted) in the period (default is 1 day)",
     registry: :public
   ]
 
   @gauge [
-    name: :weekly_verified_smart_contracts_number,
-    help: "Number of verified smart-contracts in the last 7 days",
+    name: :verified_smart_contracts_number,
+    help: "Number of verified smart-contracts in the period (default is 1 day)",
     registry: :public
   ]
 
   @gauge [
-    name: :weekly_new_addresses_number,
-    help: "Number of new wallet addresses in the last 7 days",
+    name: :new_addresses_number,
+    help: "Number of new wallet addresses in the period (default is 1 day)",
     registry: :public
   ]
 
   @gauge [
-    name: :weekly_new_tokens_number,
-    help: "Number of new tokens detected in the last 7 days",
+    name: :new_tokens_number,
+    help: "Number of new tokens detected in the period (default is 1 day)",
     registry: :public
   ]
 
   @gauge [
-    name: :weekly_new_token_transfers_number,
-    help: "Number of new token transfers detected in the last 7 days",
+    name: :new_token_transfers_number,
+    help: "Number of new token transfers detected in the period (default is 1 day)",
     registry: :public
   ]
 
   @gauge [
-    name: :weekly_active_addresses_number,
-    help: "Number of active EOA addresses (participated in transactions in to/from) in the last 7 days",
+    name: :active_addresses_number,
+    help: "Number of active EOA addresses (participated in transactions in to/from) in the period (default is 1 day)",
     registry: :public
   ]
 
@@ -64,31 +64,31 @@ defmodule Explorer.Prometheus.Instrumenter do
     result
   end
 
-  def weekly_success_transactions_number(number) do
-    Gauge.set([name: :weekly_success_transactions_number, registry: :public], number)
+  def success_transactions_number(number) do
+    Gauge.set([name: :success_transactions_number, registry: :public], number)
   end
 
-  def weekly_deployed_smart_contracts_number(number) do
-    Gauge.set([name: :weekly_deployed_smart_contracts_number, registry: :public], number)
+  def deployed_smart_contracts_number(number) do
+    Gauge.set([name: :deployed_smart_contracts_number, registry: :public], number)
   end
 
-  def weekly_verified_smart_contracts_number(number) do
-    Gauge.set([name: :weekly_verified_smart_contracts_number, registry: :public], number)
+  def verified_smart_contracts_number(number) do
+    Gauge.set([name: :verified_smart_contracts_number, registry: :public], number)
   end
 
-  def weekly_new_addresses_number(number) do
-    Gauge.set([name: :weekly_new_addresses_number, registry: :public], number)
+  def new_addresses_number(number) do
+    Gauge.set([name: :new_addresses_number, registry: :public], number)
   end
 
-  def weekly_new_tokens_number(number) do
-    Gauge.set([name: :weekly_new_tokens_number, registry: :public], number)
+  def new_tokens_number(number) do
+    Gauge.set([name: :new_tokens_number, registry: :public], number)
   end
 
-  def weekly_new_token_transfers_number(number) do
-    Gauge.set([name: :weekly_new_token_transfers_number, registry: :public], number)
+  def new_token_transfers_number(number) do
+    Gauge.set([name: :new_token_transfers_number, registry: :public], number)
   end
 
-  def weekly_simplified_active_addresses_number(number) do
-    Gauge.set([name: :weekly_active_addresses_number, registry: :public], number)
+  def simplified_active_addresses_number(number) do
+    Gauge.set([name: :active_addresses_number, registry: :public], number)
   end
 end

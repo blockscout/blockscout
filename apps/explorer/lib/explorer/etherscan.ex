@@ -4,7 +4,7 @@ defmodule Explorer.Etherscan do
   """
 
   import Ecto.Query,
-    only: [from: 2, where: 3, union: 2, subquery: 1, order_by: 3, limit: 2, offset: 2, preload: 3]
+    only: [from: 2, where: 3, union: 2, subquery: 1, order_by: 3, limit: 2, offset: 2, preload: 3, select_merge: 3]
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
@@ -555,13 +555,19 @@ defmodule Explorer.Etherscan do
             token_name: tkn.name,
             token_symbol: tkn.symbol,
             token_decimals: tkn.decimals,
-            token_type: tkn.type,
             token_log_index: tt.log_index
           })
       )
 
+    tt_query_with_token_type =
+      if DenormalizationHelper.tt_denormalization_finished?() do
+        select_merge(tt_query, [tt, _tkn], %{token_type: tt.token_type})
+      else
+        select_merge(tt_query, [_tt, tkn], %{token_type: tkn.type})
+      end
+
     tt_specific_token_query =
-      tt_query
+      tt_query_with_token_type
       |> where_start_block_match_tt(options)
       |> where_end_block_match_tt(options)
       |> where_contract_address_match(contract_address_hash)

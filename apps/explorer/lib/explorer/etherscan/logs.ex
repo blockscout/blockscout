@@ -88,7 +88,8 @@ defmodule Explorer.Etherscan.Logs do
       all_transaction_logs_query =
         from(log in subquery(logs_query),
           join: transaction in Transaction,
-          on: log.transaction_hash == transaction.hash,
+          on: log.transaction_hash == transaction.hash and log.block_hash == transaction.block_hash,
+          where: transaction.block_consensus == true,
           select: map(log, ^@log_fields),
           select_merge: %{
             gas_price: transaction.gas_price,
@@ -101,24 +102,7 @@ defmodule Explorer.Etherscan.Logs do
           }
         )
 
-      query_with_blocks =
-        from(log_transaction_data in subquery(all_transaction_logs_query),
-          where: log_transaction_data.address_hash == ^address_hash,
-          select_merge: %{
-            block_consensus: log_transaction_data.block_consensus
-          }
-        )
-
-      query_with_consensus =
-        if Map.get(filter, :allow_non_consensus) do
-          query_with_blocks
-        else
-          from([transaction] in query_with_blocks,
-            where: transaction.block_consensus == true
-          )
-        end
-
-      query_with_consensus
+      all_transaction_logs_query
       |> order_by([log], asc: log.block_number, asc: log.index)
       |> Repo.replica().all()
     else
@@ -176,6 +160,7 @@ defmodule Explorer.Etherscan.Logs do
           join: block in Block,
           on: block.number == log_transaction_data.block_number,
           where: log_transaction_data.address_hash == ^address_hash,
+          where: block.consensus == true,
           order_by: block.number,
           limit: 1000,
           select_merge: %{
@@ -187,16 +172,7 @@ defmodule Explorer.Etherscan.Logs do
           }
         )
 
-      query_with_consensus =
-        if Map.get(filter, :allow_non_consensus) do
-          query_with_blocks
-        else
-          from([_, block] in query_with_blocks,
-            where: block.consensus == true
-          )
-        end
-
-      query_with_consensus
+      query_with_blocks
       |> order_by([log], asc: log.index)
       |> page_logs(paging_options)
       |> Repo.replica().all()
@@ -217,6 +193,7 @@ defmodule Explorer.Etherscan.Logs do
         from(transaction in Transaction,
           where: transaction.block_number >= ^prepared_filter.from_block,
           where: transaction.block_number <= ^prepared_filter.to_block,
+          where: transaction.block_consensus == true,
           select: %{
             transaction_hash: transaction.hash,
             gas_price: transaction.gas_price,
@@ -229,19 +206,12 @@ defmodule Explorer.Etherscan.Logs do
           }
         )
 
-      query_with_consensus =
-        if Map.get(filter, :allow_non_consensus) do
-          block_transaction_query
-        else
-          from([transaction] in block_transaction_query,
-            where: transaction.block_consensus == true
-          )
-        end
-
       query_with_block_transaction_data =
         from(log in logs_query,
-          join: block_transaction_data in subquery(query_with_consensus),
-          on: block_transaction_data.transaction_hash == log.transaction_hash,
+          join: block_transaction_data in subquery(block_transaction_query),
+          on:
+            block_transaction_data.transaction_hash == log.transaction_hash and
+              block_transaction_data.block_hash == log.block_hash,
           order_by: block_transaction_data.block_number,
           limit: 1000,
           select: block_transaction_data,
@@ -258,6 +228,7 @@ defmodule Explorer.Etherscan.Logs do
           join: block in assoc(transaction, :block),
           where: block.number >= ^prepared_filter.from_block,
           where: block.number <= ^prepared_filter.to_block,
+          where: block.consensus == true,
           select: %{
             transaction_hash: transaction.hash,
             gas_price: transaction.gas_price,
@@ -270,18 +241,9 @@ defmodule Explorer.Etherscan.Logs do
           }
         )
 
-      query_with_consensus =
-        if Map.get(filter, :allow_non_consensus) do
-          block_transaction_query
-        else
-          from([_, block] in block_transaction_query,
-            where: block.consensus == true
-          )
-        end
-
       query_with_block_transaction_data =
         from(log in logs_query,
-          join: block_transaction_data in subquery(query_with_consensus),
+          join: block_transaction_data in subquery(block_transaction_query),
           on: block_transaction_data.transaction_hash == log.transaction_hash,
           order_by: block_transaction_data.block_number,
           limit: 1000,

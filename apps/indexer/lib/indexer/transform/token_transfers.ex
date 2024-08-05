@@ -6,6 +6,7 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Helper, only: [truncate_address_hash: 1]
 
   alias Explorer.{Helper, Repo}
   alias Explorer.Chain.{Hash, Token, TokenTransfer}

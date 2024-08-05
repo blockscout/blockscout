@@ -1,24 +1,27 @@
 defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   @moduledoc """
-  Handles the discovery and processing of historical messages between Layer 1 (L1) and Layer 2 (L2) within an Arbitrum rollup.
+  Handles the discovery and processing of historical messages between Layer 1 (L1)  and Layer 2 (L2) within an Arbitrum rollup.
 
-  L1-to-L2 messages are discovered by requesting rollup transactions through RPC.
-  This is necessary because some Arbitrum-specific fields are not included in the
-  already indexed transactions within the database.
+  ## L1-to-L2 Messages
+  L1-to-L2 messages are discovered by first inspecting the database to identify
+  potentially missed messages. Then, rollup transactions are requested through RPC
+  to fetch the necessary data. This is required because some Arbitrum-specific fields,
+  such as the `requestId`, are not included in the already indexed transactions within
+  the database.
 
+  ## L2-to-L1 Messages
   L2-to-L1 messages are discovered by analyzing the logs of already indexed rollup
   transactions.
   """
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1, log_debug: 1]
 
-  alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
   alias EthereumJSONRPC.Transaction, as: TransactionByRPC
 
   alias Explorer.Chain
 
   alias Indexer.Fetcher.Arbitrum.Messaging
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
   require Logger
 
@@ -34,25 +37,31 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
 
     ## Parameters
     - `end_block`: The ending block number up to which the discovery should occur.
-                   If `nil` or lesser than the indexer first block, the function
-                   returns with no action taken.
+      If `nil` or less than the indexer's first block, the function returns with no
+      action taken.
     - `state`: Contains the operational configuration, including the depth of
-               blocks to consider for the starting point of message discovery.
+      blocks to consider for the starting point of message discovery and the
+      first block of the rollup chain.
 
     ## Returns
-    - `{:ok, nil}`: If `end_block` is `nil`, indicating no discovery action was required.
-    - `{:ok, rollup_first_block}`: If `end_block` is lesser than the indexer first block,
-      indicating that the "genesis" of the block chain was reached.
+    - `{:ok, nil}`: If `end_block` is `nil`, indicating no discovery action was
+      required.
+    - `{:ok, rollup_first_block}`: If `end_block` is less than the indexer's first
+      block, indicating that the "genesis" of the blockchain was reached.
     - `{:ok, start_block}`: Upon successful discovery of historical messages, where
-      `start_block` indicates the necessity to consider another block range in the next
-      iteration of message discovery.
+      `start_block` indicates the necessity to consider another block range in the
+      next iteration of message discovery.
     - `{:ok, end_block + 1}`: If the required block range is not fully indexed,
-      indicating that the next iteration of message discovery should start with the same
-      block range.
+      indicating that the next iteration of message discovery should start with the
+      same block range.
   """
   @spec discover_historical_messages_from_l2(nil | integer(), %{
           :config => %{
-            :messages_to_l2_blocks_depth => non_neg_integer(),
+            :missed_messages_blocks_depth => non_neg_integer(),
+            :rollup_rpc => %{
+              :first_block => non_neg_integer(),
+              optional(any()) => any()
+            },
             optional(any()) => any()
           },
           optional(any()) => any()
@@ -72,13 +81,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
         end_block,
         %{
           config: %{
-            messages_from_l2_blocks_depth: messages_from_l2_blocks_depth,
+            missed_messages_blocks_depth: missed_messages_blocks_depth,
             rollup_rpc: %{first_block: rollup_first_block}
           }
         } = _state
       )
       when is_integer(end_block) do
-    start_block = max(rollup_first_block, end_block - messages_from_l2_blocks_depth + 1)
+    start_block = max(rollup_first_block, end_block - missed_messages_blocks_depth + 1)
 
     if Db.indexed_blocks?(start_block, end_block) do
       do_discover_historical_messages_from_l2(start_block, end_block)
@@ -106,11 +115,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   #
   # ## Returns
   # - `{:ok, start_block}`: A tuple indicating successful processing, returning the initial
-  #                         starting block number.
+  #   starting block number.
+  @spec do_discover_historical_messages_from_l2(non_neg_integer(), non_neg_integer()) :: {:ok, non_neg_integer()}
   defp do_discover_historical_messages_from_l2(start_block, end_block) do
     log_info("Block range for discovery historical messages from L2: #{start_block}..#{end_block}")
 
-    logs = Db.l2_to_l1_logs(start_block, end_block)
+    logs = Db.logs_for_missed_messages_from_l2(start_block, end_block)
 
     unless logs == [] do
       messages =
@@ -126,35 +136,40 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   @doc """
     Initiates the discovery of historical messages sent from L1 to L2 up to a specified block number.
 
-    This function orchestrates the process of discovering historical L1-to-L2 messages within
-    a given rollup block range, based on the existence of the `requestId` field in the rollup
-    transaction body. Transactions are requested through RPC because already indexed
-    transactions from the database cannot be utilized; the `requestId` field is not included
-    in the transaction model. The function ensures that the block range has been indexed
-    before proceeding with message discovery and import. The imported messages are marked as
-    `:relayed`, as they represent completed actions from L1 to L2.
+    This function orchestrates the process of discovering historical L1-to-L2
+    messages within a given rollup block range, based on the existence of the
+    `requestId` field in the rollup transaction body. The initial list of
+    transactions that could contain the messages is received from the database, and
+    then their bodies are re-requested through RPC because already indexed
+    transactions from the database cannot be utilized; the `requestId` field is not
+    included in the transaction model. The function ensures that the block range
+    has been indexed before proceeding with message discovery and import. The
+    imported messages are marked as `:relayed`, as they represent completed actions
+    from L1 to L2.
 
     ## Parameters
-    - `end_block`: The ending block number for the discovery operation.
-                   If `nil` or lesser than the indexer first block, the function
-                   returns with no action taken.
-    - `state`: The current state of the operation, containing configuration parameters
-               including `messages_to_l2_blocks_depth`, `chunk_size`, and JSON RPC connection
-               settings.
+    - `end_block`: The ending block number for the discovery operation. If `nil` or
+      less than the indexer's first block, the function returns with no action
+      taken.
+    - `state`: The current state of the operation, containing configuration
+      parameters including the depth of blocks to consider for the starting point
+      of message discovery, size of chunk to make request to RPC, and JSON RPC
+      connection settings.
 
     ## Returns
     - `{:ok, nil}`: If `end_block` is `nil`, indicating no action was necessary.
-    - `{:ok, rollup_first_block}`: If `end_block` is lesser than the indexer first block,
-      indicating that the "genesis" of the block chain was reached.
-    - `{:ok, start_block}`: On successful completion of historical message discovery, where
-      `start_block` indicates the necessity to consider another block range in the next
-      iteration of message discovery.
-    - `{:ok, end_block + 1}`: If the required block range is not fully indexed, indicating
-      that the next iteration of message discovery should start with the same block range.
+    - `{:ok, rollup_first_block}`: If `end_block` is less than the indexer's first
+      block, indicating that the "genesis" of the blockchain was reached.
+    - `{:ok, start_block}`: On successful completion of historical message
+      discovery, where `start_block` indicates the necessity to consider another
+      block range in the next iteration of message discovery.
+    - `{:ok, end_block + 1}`: If the required block range is not fully indexed,
+      indicating that the next iteration of message discovery should start with the
+      same block range.
   """
   @spec discover_historical_messages_to_l2(nil | integer(), %{
           :config => %{
-            :messages_to_l2_blocks_depth => non_neg_integer(),
+            :missed_messages_blocks_depth => non_neg_integer(),
             :rollup_rpc => %{
               :chunk_size => non_neg_integer(),
               :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
@@ -177,10 +192,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
 
   def discover_historical_messages_to_l2(
         end_block,
-        %{config: %{messages_to_l2_blocks_depth: _, rollup_rpc: %{first_block: _}} = config} = _state
+        %{config: %{missed_messages_blocks_depth: _, rollup_rpc: %{first_block: _}} = config} = _state
       )
       when is_integer(end_block) do
-    start_block = max(config.rollup_rpc.first_block, end_block - config.messages_to_l2_blocks_depth + 1)
+    start_block = max(config.rollup_rpc.first_block, end_block - config.missed_messages_blocks_depth + 1)
 
     # Although indexing blocks is not necessary to determine the completion of L1-to-L2 messages,
     # for database consistency, it is preferable to delay marking these messages as completed.
@@ -195,22 +210,36 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     end
   end
 
-  # The function iterates through the block range in chunks, making RPC calls to fetch rollup block
-  # data and extract transactions. Each transaction is filtered for L1-to-L2 messages based on
-  # existence of `requestId` field in the transaction body, and then imported into the database.
-  # The imported messages are marked as `:relayed` as they represent completed actions from L1 to L2.
+  # Discovers and processes historical messages sent from L1 to L2 within a
+  # specified rollup block range.
   #
-  # Already indexed transactions from the database cannot be used because the `requestId` field is
-  # not included in the transaction model.
+  # This function identifies which of already indexed transactions within the
+  # block range contains L1-to-L2 messages and makes RPC calls to fetch
+  # transaction data. These transactions are then processed to construct proper
+  # message structures, which are imported into the database. The imported
+  # messages are marked as `:relayed` as they represent completed actions from L1
+  # to L2.
+  #
+  # Note: Already indexed transactions from the database cannot be used because
+  # the `requestId` field is not included in the transaction model.
   #
   # ## Parameters
   # - `start_block`: The starting block number for the discovery range.
   # - `end_block`: The ending block number for the discovery range.
-  # - `config`: The configuration map containing settings for RPC communication and chunk size.
+  # - `config`: The configuration map containing settings for RPC communication
+  #   and chunk size.
   #
   # ## Returns
-  # - `{:ok, start_block}`: A tuple indicating successful processing, returning the initial
-  #                         starting block number.
+  # - `{:ok, start_block}`: A tuple indicating successful processing, returning
+  #                         the initial starting block number.
+  @spec do_discover_historical_messages_to_l2(non_neg_integer(), non_neg_integer(), %{
+          :rollup_rpc => %{
+            :chunk_size => non_neg_integer(),
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            optional(any()) => any()
+          },
+          optional(any()) => any()
+        }) :: {:ok, non_neg_integer()}
   defp do_discover_historical_messages_to_l2(
          start_block,
          end_block,
@@ -218,68 +247,56 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
        ) do
     log_info("Block range for discovery historical messages to L2: #{start_block}..#{end_block}")
 
-    {messages, _} =
-      start_block..end_block
-      |> Enum.chunk_every(chunk_size)
-      |> Enum.reduce({[], 0}, fn chunk, {messages_acc, chunks_counter} ->
-        Logging.log_details_chunk_handling(
-          "Collecting rollup data",
-          {"block", "blocks"},
-          chunk,
-          chunks_counter,
-          end_block - start_block + 1
-        )
+    transactions = Db.transactions_for_missed_messages_to_l2(start_block, end_block)
+    transactions_length = length(transactions)
 
-        # Since DB does not contain the field RequestId specific to Arbitrum
-        # all transactions will be requested from the rollup RPC endpoint.
-        # The catchup process intended to be run once and only for the BS instance
-        # which are already exist, so it does not make sense to introduce
-        # the new field in DB
-        requests = build_block_by_number_requests(chunk)
+    if transactions_length > 0 do
+      log_debug("#{transactions_length} historical messages to L2 discovered")
 
-        messages =
-          requests
-          |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getBlockByNumber")
-          |> get_transactions()
-          |> Enum.map(fn tx ->
-            tx
-            |> TransactionByRPC.to_elixir()
-            |> TransactionByRPC.elixir_to_params()
-          end)
-          |> Messaging.filter_l1_to_l2_messages(false)
+      messages =
+        transactions
+        |> Enum.chunk_every(chunk_size)
+        |> Enum.reduce([], fn chunk, messages_acc ->
+          # Since DB does not contain the field RequestId specific to Arbitrum
+          # all transactions will be requested from the rollup RPC endpoint.
+          # The catchup process intended to be run once and only for the BS instance
+          # which are already exist, so it does not make sense to introduce
+          # the new field in DB
+          requests = build_transaction_requests(chunk)
 
-        {messages ++ messages_acc, chunks_counter + length(chunk)}
-      end)
+          messages =
+            requests
+            |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
+            |> Enum.map(&transaction_json_to_map/1)
+            |> Messaging.filter_l1_to_l2_messages(false)
 
-    unless messages == [] do
+          messages ++ messages_acc
+        end)
+
       log_info("#{length(messages)} completions of L1-to-L2 messages will be imported")
+      import_to_db(messages)
     end
-
-    import_to_db(messages)
 
     {:ok, start_block}
   end
 
-  # Constructs a list of `eth_getBlockByNumber` requests for a given list of block numbers.
-  defp build_block_by_number_requests(block_numbers) do
-    block_numbers
-    |> Enum.reduce([], fn block_num, requests_list ->
+  # Constructs a list of `eth_getTransactionByHash` requests for a given list of transaction hashes.
+  defp build_transaction_requests(tx_hashes) do
+    tx_hashes
+    |> Enum.reduce([], fn tx_hash, requests_list ->
       [
-        BlockByNumber.request(%{
-          id: block_num,
-          number: block_num
-        })
+        Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash})
         | requests_list
       ]
     end)
   end
 
-  # Aggregates transactions from a list of blocks, combining them into a single list.
-  defp get_transactions(blocks_by_rpc) do
-    blocks_by_rpc
-    |> Enum.reduce([], fn block_by_rpc, txs ->
-      block_by_rpc["transactions"] ++ txs
-    end)
+  # Transforms a JSON transaction object into a map.
+  @spec transaction_json_to_map(%{String.t() => any()}) :: map()
+  defp transaction_json_to_map(transaction_json) do
+    transaction_json
+    |> TransactionByRPC.to_elixir()
+    |> TransactionByRPC.elixir_to_params()
   end
 
   # Imports a list of messages into the database.
