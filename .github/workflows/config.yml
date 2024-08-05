@@ -29,8 +29,6 @@ on:
     types: [opened, synchronize, reopened, labeled]
     branches:
       - master
-      # todo: remove before merge
-      - fi-celo
 
 env:
   MIX_ENV: test
