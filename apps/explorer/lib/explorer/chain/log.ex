@@ -85,7 +85,7 @@ defmodule Explorer.Chain.Log do
 
   alias ABI.{Event, FunctionSelector}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{ContractMethod, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.SigProviderInterface
 

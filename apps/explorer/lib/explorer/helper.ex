@@ -212,10 +212,4 @@ defmodule Explorer.Helper do
       true -> :eq
     end
   end
-
-  def truncate_address_hash(nil), do: burn_address_hash_string()
-
-  def truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
-    "0x#{truncated_hash}"
-  end
 end

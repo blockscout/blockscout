@@ -487,12 +487,6 @@ defmodule Indexer.Transform.TokenTransfers do
     |> Enum.uniq()
   end
 
-  defp truncate_address_hash(nil), do: burn_address_hash_string()
-
-  defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
-    "0x#{truncated_hash}"
-  end
-
   defp encode_address_hash(binary) do
     "0x" <> Base.encode16(binary, case: :lower)
   end

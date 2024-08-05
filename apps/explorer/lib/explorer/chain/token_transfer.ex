@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.TokenTransfer.Schema do
   @moduledoc """
-    Models token trasfers.
+    Models token transfers.
 
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.TokenTransfers
