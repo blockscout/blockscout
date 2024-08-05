@@ -3,18 +3,16 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter do
   Exports internal transactions to a csv file.
   """
 
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
-
-  @paging_options %PagingOptions{page_size: Helper.limit()}
 
   @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
   def export(address_hash, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
     address_hash
-    |> fetch_all_internal_transactions(from_block, to_block, filter_type, filter_value, @paging_options)
+    |> fetch_all_internal_transactions(from_block, to_block, filter_type, filter_value, Helper.paging_options())
     |> Enum.sort_by(&{&1.block_number, &1.index, &1.transaction_index}, :desc)
     |> to_csv_format()
     |> Helper.dump_to_stream()

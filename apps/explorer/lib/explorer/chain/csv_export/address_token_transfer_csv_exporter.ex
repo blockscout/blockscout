@@ -15,14 +15,14 @@ defmodule Explorer.Chain.CSVExport.AddressTokenTransferCsvExporter do
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.CSVExport.Helper
 
-  @paging_options %PagingOptions{page_size: Helper.limit(), asc_order: true}
-
   @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
   def export(address_hash, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
+    paging_options = %PagingOptions{Helper.paging_options() | asc_order: true}
+
     address_hash
-    |> fetch_all_token_transfers(from_block, to_block, filter_type, filter_value, @paging_options)
+    |> fetch_all_token_transfers(from_block, to_block, filter_type, filter_value, paging_options)
     |> to_csv_format(address_hash)
     |> Helper.dump_to_stream()
   end

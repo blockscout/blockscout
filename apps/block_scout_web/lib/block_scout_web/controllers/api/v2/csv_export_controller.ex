@@ -2,14 +2,13 @@ defmodule BlockScoutWeb.API.V2.CSVExportController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.AccessHelper
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
   alias Plug.Conn
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
-  @options [paging_options: %PagingOptions{page_size: CSVHelper.limit()}, api?: true]
   @api_true [api?: true]
 
   @doc """
@@ -25,7 +24,7 @@ defmodule BlockScoutWeb.API.V2.CSVExportController do
             Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] ||
               CSVHelper.captcha_helper().recaptcha_passed?(params["recaptcha_response"])},
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
-      token_holders = Chain.fetch_token_holders_from_token_hash_for_csv(address_hash, @options)
+      token_holders = Chain.fetch_token_holders_from_token_hash_for_csv(address_hash, options())
 
       token_holders
       |> CurrentTokenBalance.to_csv_format(token)
@@ -50,4 +49,6 @@ defmodule BlockScoutWeb.API.V2.CSVExportController do
     |> put_resp_cookie("csv-downloaded", "true", max_age: 86_400, http_only: false)
     |> send_chunked(200)
   end
+
+  defp options, do: [paging_options: CSVHelper.paging_options(), api?: true]
 end
