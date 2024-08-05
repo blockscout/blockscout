@@ -456,7 +456,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
                |> post("/api/eth-rpc", params)
                |> json_response(200)
 
-      assert [%{"data" => "0x030303"}] = response["result"]
+      assert [%{"data" => "0x020202"}] = response["result"]
     end
 
     test "numerical fields are hexadecimals with 0x prefix",
