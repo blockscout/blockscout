@@ -32,6 +32,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   import Ecto.Query, only: [from: 2, where: 3]
   import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Hash, Wei}
   alias Explorer.PagingOptions
 
@@ -246,12 +247,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @doc """
   Makes Explorer.PagingOptions map for election rewards.
   """
-  @spec block_paging_options(map()) ::
-          [
-            {:paging_options, Explorer.PagingOptions.t()},
-            ...
-          ]
-          | Explorer.PagingOptions.t()
+  @spec address_paging_options(map()) :: [Chain.paging_options()]
   def block_paging_options(params) do
     with %{
            "amount" => amount_string,
@@ -280,12 +276,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @doc """
   Makes Explorer.PagingOptions map for election rewards.
   """
-  @spec address_paging_options(map()) ::
-          [
-            {:paging_options, Explorer.PagingOptions.t()},
-            ...
-          ]
-          | Explorer.PagingOptions.t()
+  @spec address_paging_options(map()) :: [Chain.paging_options()]
   def address_paging_options(params) do
     with %{
            "block_number" => block_number_string,
