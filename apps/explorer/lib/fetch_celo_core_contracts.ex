@@ -135,7 +135,7 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
                 [fraction] = decode_data(log.data, [{:int, 256}])
 
                 %{
-                  value: fraction / 10 ** 24,
+                  value: fraction,
                   updated_at_block_number: log.block_number
                 }
               end)

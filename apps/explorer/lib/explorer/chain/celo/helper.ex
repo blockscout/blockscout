@@ -25,6 +25,30 @@ defmodule Explorer.Chain.Celo.Helper do
            when atom in @core_contract_atoms
 
   @doc """
+  Validates if a block number is an epoch block number.
+
+  ## Parameters
+  - `block_number` (`Block.block_number()`): The block number to validate.
+
+  ## Returns
+  - `:ok` if the block number is an epoch block number.
+  - `{:error, :not_found}` if the block number is not an epoch block number.
+
+  ## Examples
+
+      iex> Explorer.Chain.Celo.Helper.validate_epoch_block_number(17280)
+      :ok
+
+      iex> Explorer.Chain.Celo.Helper.validate_epoch_block_number(17281)
+      {:error, :not_found}
+  """
+  @spec validate_epoch_block_number(Block.block_number()) :: :ok | {:error, :not_found}
+  def validate_epoch_block_number(block_number) when is_epoch_block_number(block_number),
+    do: :ok
+
+  def validate_epoch_block_number(_block_number), do: {:error, :not_found}
+
+  @doc """
   Checks if a block number belongs to a block that finalized an epoch.
 
   ## Parameters
@@ -57,11 +81,11 @@ defmodule Explorer.Chain.Celo.Helper do
 
   ## Examples
 
-    iex> Explorer.Chain.Celo.Helper.block_number_to_epoch_number(17280)
-    1
+      iex> Explorer.Chain.Celo.Helper.block_number_to_epoch_number(17280)
+      1
 
-    iex> Explorer.Chain.Celo.Helper.block_number_to_epoch_number(17281)
-    2
+      iex> Explorer.Chain.Celo.Helper.block_number_to_epoch_number(17281)
+      2
   """
   @spec block_number_to_epoch_number(block_number :: Block.block_number()) :: non_neg_integer()
   def block_number_to_epoch_number(block_number) when is_integer(block_number) do

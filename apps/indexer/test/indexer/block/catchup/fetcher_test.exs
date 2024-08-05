@@ -161,6 +161,10 @@ defmodule Indexer.Block.Catchup.FetcherTest do
           }
         }
       )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
+      end)
     end
 
     test "ignores fetched beneficiaries with different hash for same number", %{

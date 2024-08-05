@@ -37,13 +37,22 @@ defmodule Explorer.Chain.SmartContract do
   @typep api? :: {:api?, true | false}
 
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
+  @dead_address_hash_string "0x000000000000000000000000000000000000dEaD"
 
   @doc """
     Returns burn address hash
   """
-  @spec burn_address_hash_string() :: String.t()
+  @spec burn_address_hash_string() :: EthereumJSONRPC.address()
   def burn_address_hash_string do
     @burn_address_hash_string
+  end
+
+  @doc """
+    Returns dead address hash
+  """
+  @spec dead_address_hash_string() :: EthereumJSONRPC.address()
+  def dead_address_hash_string do
+    @dead_address_hash_string
   end
 
   @default_sorting [desc: :id]

@@ -5,10 +5,19 @@ defmodule Explorer.Chain.Block.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Blocks
   """
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Hash,
+    PendingBlockOperation,
+    Transaction,
+    Wei,
+    Withdrawal
+  }
 
-  alias Explorer.Chain.{Address, Block, Hash, PendingBlockOperation, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
+  alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
   alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
@@ -55,6 +64,19 @@ defmodule Explorer.Chain.Block.Schema do
                               has_one(:zksync_commit_transaction, through: [:zksync_batch, :commit_transaction])
                               has_one(:zksync_prove_transaction, through: [:zksync_batch, :prove_transaction])
                               has_one(:zksync_execute_transaction, through: [:zksync_batch, :execute_transaction])
+                            end,
+                            2
+                          )
+
+                        :celo ->
+                          elem(
+                            quote do
+                              has_one(:celo_epoch_reward, CeloEpochReward, foreign_key: :block_hash, references: :hash)
+
+                              has_many(:celo_epoch_election_rewards, CeloEpochReward,
+                                foreign_key: :block_hash,
+                                references: :hash
+                              )
                             end,
                             2
                           )

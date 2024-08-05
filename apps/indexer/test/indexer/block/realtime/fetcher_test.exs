@@ -66,6 +66,10 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       }
     )
 
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
+    end)
+
     %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
   end
 
@@ -112,6 +116,10 @@ defmodule Indexer.Block.Realtime.FetcherTest do
           }
         }
       )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
+      end)
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
@@ -615,6 +623,10 @@ defmodule Indexer.Block.Realtime.FetcherTest do
           }
         }
       )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
+      end)
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
