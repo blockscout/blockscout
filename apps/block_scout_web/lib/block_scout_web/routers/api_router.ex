@@ -164,6 +164,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/:block_hash_or_number/epoch", V2.BlockController, :celo_epoch)
         get("/:block_hash_or_number/election-rewards/:reward_type", V2.BlockController, :celo_election_rewards)
       end
+
+      if Application.compile_env(:explorer, :chain_type) == :optimism do
+        get("/optimism-batch/:batch_number", V2.BlockController, :optimism_batch)
+      end
     end
 
     scope "/addresses" do
