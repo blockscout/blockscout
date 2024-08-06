@@ -119,14 +119,27 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :valid_internal_transactions_without_first_traces_of_trivial_transactions
       )
     end)
+    |> Multi.run(:shrink_internal_transactions_params, fn _,
+                                                          %{
+                                                            valid_internal_transactions_without_first_traces_of_trivial_transactions:
+                                                              valid_internal_transactions_without_first_traces_of_trivial_transactions
+                                                          } ->
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          shrink_internal_transactions_params(valid_internal_transactions_without_first_traces_of_trivial_transactions)
+        end,
+        :block_pending,
+        :internal_transactions,
+        :shrink_internal_transactions_params
+      )
+    end)
     |> Multi.run(:internal_transactions, fn repo,
                                             %{
-                                              valid_internal_transactions_without_first_traces_of_trivial_transactions:
-                                                valid_internal_transactions_without_first_traces_of_trivial_transactions
+                                              shrink_internal_transactions_params: shrink_internal_transactions_params
                                             } ->
       Instrumenter.block_import_stage_runner(
         fn ->
-          insert(repo, valid_internal_transactions_without_first_traces_of_trivial_transactions, insert_options)
+          insert(repo, shrink_internal_transactions_params, insert_options)
         end,
         :block_pending,
         :internal_transactions,
@@ -431,6 +444,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       {:ok, valid_internal_transactions_without_first_trace}
     else
       {:ok, valid_internal_transactions}
+    end
+  end
+
+  defp shrink_internal_transactions_params(internal_transactions) do
+    if Application.get_env(:explorer, :shrink_internal_transactions_enabled) do
+      shrunk_internal_transactions =
+        Enum.map(internal_transactions, fn it ->
+          it
+          |> Map.delete(:output)
+          |> Map.replace(:input, it[:input] && binary_slice(it[:input], 0, 4))
+        end)
+
+      {:ok, shrunk_internal_transactions}
+    else
+      {:ok, internal_transactions}
     end
   end
 

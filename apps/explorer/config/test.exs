@@ -67,7 +67,8 @@ for repo <- [
       Explorer.Repo.BridgedTokens,
       Explorer.Repo.Filecoin,
       Explorer.Repo.Stability,
-      Explorer.Repo.Mud
+      Explorer.Repo.Mud,
+      Explorer.Repo.ShrunkInternalTransactions
     ] do
   config :explorer, repo,
     database: database,

@@ -113,6 +113,23 @@ defmodule EthereumJSONRPC.Geth do
     end
   end
 
+  @doc """
+  Fetches the raw traces from the Geth trace URL.
+  """
+  @impl EthereumJSONRPC.Variant
+  def fetch_transaction_raw_traces(%{hash: transaction_hash}, json_rpc_named_arguments) do
+    request = debug_trace_transaction_request(%{id: 0, hash_data: to_string(transaction_hash)}, false)
+
+    case json_rpc(request, json_rpc_named_arguments) do
+      {:ok, traces} ->
+        {:ok, traces}
+
+      {:error, error} ->
+        Logger.error(inspect(error))
+        {:error, error}
+    end
+  end
+
   @spec check_errors_exist(list(), %{non_neg_integer() => any()}) :: :ok | {:error, list()}
   def check_errors_exist(blocks_responses, id_to_params) do
     blocks_responses
