@@ -33,6 +33,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
   alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
@@ -43,8 +44,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   # keccak256("SequencerBatchDelivered(uint256,bytes32,bytes32,bytes32,uint256,(uint64,uint64,uint64,uint64),uint8)")
   @event_sequencer_batch_delivered "0x7394f4a19a13c7b92b5bb71033245305946ef78452f7b4986ac1390b5df4ebd7"
-
-  @max_depth_for_safe_block 1000
 
   @doc """
     Discovers and imports new batches of rollup transactions within the current L1 block range.
@@ -115,31 +114,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       ) do
     # Requesting the "latest" block instead of "safe" allows to catch new batches
     # without latency.
-    {:ok, latest_block} =
-      IndexerHelper.get_block_number_by_tag(
-        "latest",
-        l1_rpc_config.json_rpc_named_arguments,
-        Rpc.get_resend_attempts()
-      )
-
-    {safe_chain_block, _} = IndexerHelper.get_safe_block(l1_rpc_config.json_rpc_named_arguments)
-
-    # max() cannot be used here since l1_rpc_config.logs_block_range must not
-    # be taken into account to identify if it is L3 or not
-    safe_block =
-      if safe_chain_block < latest_block + 1 - @max_depth_for_safe_block do
-        # The case of L3, the safe block is too far behind the latest block,
-        # therefore it is assumed that there is no so deep re-orgs there.
-        latest_block + 1 - min(@max_depth_for_safe_block, l1_rpc_config.logs_block_range)
-      else
-        safe_chain_block
-      end
 
     # It is necessary to re-visit some amount of the previous blocks to ensure that
     # no batches are missed due to reorgs. The amount of blocks to re-visit depends
-    # either on the current safe block but must not exceed @max_depth_for_safe_block
-    # (or L1 RPC max block range for getting logs) since on L3 chains the safe block
-    # could be too far behind the latest block.
+    # on the current safe block or the block which is considered as safest in case
+    # of L3 (where the safe block could be too far behind the latest block) or if
+    # RPC does not support "safe" block.
+    {safe_block, latest_block} =
+      Rpc.get_safe_and_latest_l1_blocks(l1_rpc_config.json_rpc_named_arguments, l1_rpc_config.logs_block_range)
+
     # At the same time it does not make sense to re-visit blocks that will be
     # re-visited by the historical batches discovery process.
     # If the new batches discovery process does not reach the chain head previously
@@ -154,30 +137,23 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       # Since with taking the safe block into account, the range safe_start_block..end_block
       # could be larger than L1 RPC max block range for getting logs, it is necessary to
       # divide the range into the chunks
-      safe_start_block
-      |> Stream.unfold(fn
-        current when current > end_block ->
-          nil
-
-        current ->
-          next = min(current + l1_rpc_config.logs_block_range - 1, end_block)
-          {current, next + 1}
-      end)
-      |> Stream.each(fn chunk_start ->
-        chunk_end = min(chunk_start + l1_rpc_config.logs_block_range - 1, end_block)
-
-        discover(
-          sequencer_inbox_address,
-          chunk_start,
-          chunk_end,
-          new_batches_limit,
-          messages_to_blocks_shift,
-          l1_rpc_config,
-          node_interface_address,
-          rollup_rpc_config
-        )
-      end)
-      |> Stream.run()
+      ArbitrumHelper.execute_for_block_range_in_chunks(
+        safe_start_block,
+        end_block,
+        l1_rpc_config.logs_block_range,
+        fn chunk_start, chunk_end ->
+          discover(
+            sequencer_inbox_address,
+            chunk_start,
+            chunk_end,
+            new_batches_limit,
+            messages_to_blocks_shift,
+            l1_rpc_config,
+            node_interface_address,
+            rollup_rpc_config
+          )
+        end
+      )
 
       {:ok, end_block}
     else
@@ -532,25 +508,25 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
          rollup_rpc_config
        ) do
     Enum.each(l1_block_ranges, fn {start_block, end_block} ->
-      Enum.each(0..div(end_block - start_block, l1_rpc_config.logs_block_range), fn i ->
-        start_block = start_block + i * l1_rpc_config.logs_block_range
-        end_block = min(start_block + l1_rpc_config.logs_block_range - 1, end_block)
-
-        log_info("Block range for missing batches discovery: #{start_block}..#{end_block}")
-
-        # `do_discover` is not used here to demonstrate the need to fetch batches
-        # which are already historical
-        discover_historical(
-          sequencer_inbox_address,
-          start_block,
-          end_block,
-          new_batches_limit,
-          messages_to_blocks_shift,
-          l1_rpc_config,
-          node_interface_address,
-          rollup_rpc_config
-        )
-      end)
+      ArbitrumHelper.execute_for_block_range_in_chunks(
+        start_block,
+        end_block,
+        l1_rpc_config.logs_block_range,
+        fn chunk_start, chunk_end ->
+          # `do_discover` is not used here to demonstrate the need to fetch batches
+          # which are already historical
+          discover_historical(
+            sequencer_inbox_address,
+            chunk_start,
+            chunk_end,
+            new_batches_limit,
+            messages_to_blocks_shift,
+            l1_rpc_config,
+            node_interface_address,
+            rollup_rpc_config
+          )
+        end
+      )
     end)
   end
 
@@ -699,9 +675,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # This function analyzes SequencerBatchDelivered event logs to identify new batches
   # and retrieves their details, avoiding the reprocessing of batches already known
   # in the database. It enriches the details of new batches with data from corresponding
-  # L1 transactions and blocks, including timestamps and block ranges. The function
-  # then prepares batches, associated rollup blocks and transactions, lifecycle
-  # transactions and Data Availability related records for database import.
+  # L1 transactions and blocks, including timestamps and block ranges. The lifecycle
+  # transactions for already known batches are updated with actual block numbers and
+  # timestamps. The function then prepares batches, associated rollup blocks and
+  # transactions, lifecycle transactions and Data Availability related records for
+  # database import.
   # Additionally, L2-to-L1 messages initiated in the rollup blocks associated with the
   # discovered batches are retrieved from the database, marked as `:sent`, and prepared
   # for database import.
@@ -1341,21 +1319,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       block_num = existing_commitment_txs[tx.hash]
       ts = block_to_ts[block_num]
 
-      if tx.block_number == block_num and DateTime.compare(tx.timestamp, ts) == :eq do
-        txs
-      else
-        log_info(
-          "The commitment transaction 0x#{tx.hash |> Base.encode16(case: :lower)} will be updated with the new block number and timestamp"
-        )
+      case ArbitrumHelper.compare_lifecycle_tx_and_update(tx, {block_num, ts}, "commitment") do
+        {:updated, updated_tx} ->
+          Map.put(txs, tx.hash, updated_tx)
 
-        Map.put(
-          txs,
-          tx.hash,
-          Map.merge(tx, %{
-            block_number: block_num,
-            timestamp: ts
-          })
-        )
+        _ ->
+          txs
       end
     end)
   end

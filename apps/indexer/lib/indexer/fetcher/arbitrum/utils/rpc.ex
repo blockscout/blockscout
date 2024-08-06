@@ -423,6 +423,57 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   end
 
   @doc """
+    Retrieves the safe and latest L1 block numbers.
+
+    This function fetches the latest block number from the chain and tries to determine
+    the safe block number. If the RPC node does not support the safe block feature or
+    if the safe block is too far behind the latest block, the safe block is determined
+    based on the finalization threshold. In both cases, it steps back from the latest
+    block to mark some blocks as unfinalized.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: The named arguments for the JSON RPC call.
+    - `hard_limit`: The maximum number of blocks to step back when determining the safe block.
+
+    ## Returns
+    - A tuple containing the safe block number and the latest block number.
+  """
+  @spec get_safe_and_latest_l1_blocks(EthereumJSONRPC.json_rpc_named_arguments(), non_neg_integer()) ::
+          {EthereumJSONRPC.block_number(), EthereumJSONRPC.block_number()}
+  def get_safe_and_latest_l1_blocks(json_rpc_named_arguments, hard_limit) do
+    finalization_threshold = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum][:l1_finalization_threshold]
+
+    {safe_chain_block, is_latest?} = IndexerHelper.get_safe_block(json_rpc_named_arguments)
+
+    latest_chain_block =
+      case is_latest? do
+        true ->
+          safe_chain_block
+
+        false ->
+          {:ok, latest_block} =
+            IndexerHelper.get_block_number_by_tag("latest", json_rpc_named_arguments, get_resend_attempts())
+
+          latest_block
+      end
+
+    safe_block =
+      if safe_chain_block < latest_chain_block + 1 - finalization_threshold or is_latest? do
+        # The first condition handles the case when the safe block is too far behind
+        # the latest block (L3 case).
+        # The second condition handles the case when the L1 RPC node does not support
+        # the safe block feature (non standard Arbitrum deployments).
+        # In both cases, it is necessary to step back a bit from the latest block to
+        # suspect these blocks as unfinalized.
+        latest_chain_block + 1 - min(finalization_threshold, hard_limit)
+      else
+        safe_chain_block
+      end
+
+    {safe_block, latest_chain_block}
+  end
+
+  @doc """
     Identifies the block range for a batch by using the block number located on one end of the range.
 
     The function verifies suspicious block numbers by using the
