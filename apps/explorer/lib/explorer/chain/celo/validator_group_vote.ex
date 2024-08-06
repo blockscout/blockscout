@@ -72,11 +72,5 @@ defmodule Explorer.Chain.Celo.ValidatorGroupVote do
     |> foreign_key_constraint(:group_address_hash)
     |> foreign_key_constraint(:block_hash)
     |> foreign_key_constraint(:transaction_hash)
-
-    # todo: is it needed?
-    # |> unique_constraint(
-    #   [:account_address_hash, :group_address_hash, :block_hash],
-    #   name: :activated_validator_group_votes_pkey
-    # )
   end
 end
