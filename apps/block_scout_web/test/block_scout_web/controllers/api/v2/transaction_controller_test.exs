@@ -1103,6 +1103,185 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
+  if Application.compile_env(:explorer, :chain_type) == :celo do
+    describe "celo gas token" do
+      test "when gas is paid with token and token is present in db", %{conn: conn} do
+        token = insert(:token)
+
+        tx =
+          :transaction
+          |> insert(gas_token_contract_address: token.contract_address)
+          |> with_block()
+
+        request = get(conn, "/api/v2/transactions")
+
+        token_address_hash = Address.checksum(token.contract_address_hash)
+        token_type = token.type
+        token_name = token.name
+        token_symbol = token.symbol
+
+        assert %{
+                 "items" => [
+                   %{
+                     "celo" => %{
+                       "gas_token" => %{
+                         "address" => ^token_address_hash,
+                         "name" => ^token_name,
+                         "symbol" => ^token_symbol,
+                         "type" => ^token_type
+                       }
+                     }
+                   }
+                 ]
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
+
+        assert %{
+                 "celo" => %{
+                   "gas_token" => %{
+                     "address" => ^token_address_hash,
+                     "name" => ^token_name,
+                     "symbol" => ^token_symbol,
+                     "type" => ^token_type
+                   }
+                 }
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/addresses/#{to_string(tx.from_address_hash)}/transactions")
+
+        assert %{
+                 "items" => [
+                   %{
+                     "celo" => %{
+                       "gas_token" => %{
+                         "address" => ^token_address_hash,
+                         "name" => ^token_name,
+                         "symbol" => ^token_symbol,
+                         "type" => ^token_type
+                       }
+                     }
+                   }
+                 ]
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/main-page/transactions")
+
+        assert [
+                 %{
+                   "celo" => %{
+                     "gas_token" => %{
+                       "address" => ^token_address_hash,
+                       "name" => ^token_name,
+                       "symbol" => ^token_symbol,
+                       "type" => ^token_type
+                     }
+                   }
+                 }
+               ] = json_response(request, 200)
+      end
+
+      test "when gas is paid with token and token is not present in db", %{conn: conn} do
+        unknown_token_address = insert(:address)
+
+        tx =
+          :transaction
+          |> insert(gas_token_contract_address: unknown_token_address)
+          |> with_block()
+
+        unknown_token_address_hash = Address.checksum(unknown_token_address.hash)
+
+        request = get(conn, "/api/v2/transactions")
+
+        assert %{
+                 "items" => [
+                   %{
+                     "celo" => %{
+                       "gas_token" => %{
+                         "address" => ^unknown_token_address_hash
+                       }
+                     }
+                   }
+                 ]
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
+
+        assert %{
+                 "celo" => %{
+                   "gas_token" => %{
+                     "address" => ^unknown_token_address_hash
+                   }
+                 }
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/addresses/#{to_string(tx.from_address_hash)}/transactions")
+
+        assert %{
+                 "items" => [
+                   %{
+                     "celo" => %{
+                       "gas_token" => %{
+                         "address" => ^unknown_token_address_hash
+                       }
+                     }
+                   }
+                 ]
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/main-page/transactions")
+
+        assert [
+                 %{
+                   "celo" => %{
+                     "gas_token" => %{
+                       "address" => ^unknown_token_address_hash
+                     }
+                   }
+                 }
+               ] = json_response(request, 200)
+      end
+
+      test "when gas is paid in native coin", %{conn: conn} do
+        tx = :transaction |> insert() |> with_block()
+
+        request = get(conn, "/api/v2/transactions")
+
+        assert %{
+                 "items" => [
+                   %{
+                     "celo" => %{"gas_token" => nil}
+                   }
+                 ]
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
+
+        assert %{
+                 "celo" => %{"gas_token" => nil}
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/addresses/#{to_string(tx.from_address_hash)}/transactions")
+
+        assert %{
+                 "items" => [
+                   %{
+                     "celo" => %{"gas_token" => nil}
+                   }
+                 ]
+               } = json_response(request, 200)
+
+        request = get(conn, "/api/v2/main-page/transactions")
+
+        assert [
+                 %{
+                   "celo" => %{"gas_token" => nil}
+                 }
+               ] = json_response(request, 200)
+      end
+    end
+  end
+
   if Application.compile_env(:explorer, :chain_type) == :stability do
     @first_topic_hex_string_1 "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
 

@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [default_paging_options: 0, split_list_by_page: 1, next_page_params: 4]
+  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 4]
+  import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.API.V2.{AdvancedFilterView, CSVExportController, TransactionView}
   alias Explorer.{Chain, PagingOptions}

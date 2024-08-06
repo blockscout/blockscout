@@ -90,15 +90,39 @@ defmodule Indexer.Transform.AddressCoinBalances do
        )
        when is_integer(block_number) and is_binary(from_address_hash) do
     # a transaction MUST have a `from_address_hash`
-    acc = MapSet.put(initial, %{address_hash: from_address_hash, block_number: block_number})
+    initial
+    |> MapSet.put(%{address_hash: from_address_hash, block_number: block_number})
+    |> (&(case transaction_params do
+            %{to_address_hash: to_address_hash} when is_binary(to_address_hash) ->
+              MapSet.put(&1, %{address_hash: to_address_hash, block_number: block_number})
 
-    # `to_address_hash` is optional
-    case transaction_params do
-      %{to_address_hash: to_address_hash} when is_binary(to_address_hash) ->
-        MapSet.put(acc, %{address_hash: to_address_hash, block_number: block_number})
+            _ ->
+              &1
+          end)).()
+    |> (&transactions_params_chain_type_fields_reducer(transaction_params, &1)).()
+  end
 
-      _ ->
-        acc
+  if Application.compile_env(:explorer, :chain_type) == :celo do
+    import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
+    @burn_address_hash_string burn_address_hash_string()
+
+    # todo: subject for deprecation, since celo transactions with
+    # gatewayFeeRecipient are deprecated
+    defp transactions_params_chain_type_fields_reducer(
+           %{
+             block_number: block_number,
+             gas_fee_recipient_address_hash: recipient_address_hash,
+             gas_token_contract_address_hash: nil
+           },
+           initial
+         )
+         when is_integer(block_number) and
+                is_binary(recipient_address_hash) and
+                recipient_address_hash != @burn_address_hash_string do
+      MapSet.put(initial, %{address_hash: recipient_address_hash, block_number: block_number})
     end
   end
+
+  defp transactions_params_chain_type_fields_reducer(_, acc), do: acc
 end

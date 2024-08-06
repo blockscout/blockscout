@@ -24,6 +24,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     Transaction
   }
 
+  alias Explorer.Chain.Celo.Helper, as: CeloHelper
+  alias Explorer.Chain.Celo.PendingEpochBlockOperation, as: CeloPendingEpochBlockOperation
+
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
@@ -207,10 +210,31 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :blocks_update_token_holder_counts
       )
     end)
+    |> chain_type_dependent_import(
+      :celo,
+      &Multi.run(&1, :celo_pending_epoch_block_operations, fn repo, %{blocks: blocks} ->
+        Instrumenter.block_import_stage_runner(
+          fn ->
+            celo_pending_epoch_block_operations(repo, blocks, insert_options)
+          end,
+          :address_referencing,
+          :blocks,
+          :celo_pending_epoch_block_operations
+        )
+      end)
+    )
   end
 
   @impl Runner
   def timeout, do: @timeout
+
+  def chain_type_dependent_import(multi, chain_type, multi_run) do
+    if Application.get_env(:explorer, :chain_type) == chain_type do
+      multi_run.(multi)
+    else
+      multi
+    end
+  end
 
   defp fork_transactions(%{
          repo: repo,
@@ -915,5 +939,25 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     else
       blocks
     end
+  end
+
+  defp celo_pending_epoch_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
+    ordered_epoch_blocks =
+      inserted_blocks
+      |> Enum.filter(fn block -> CeloHelper.epoch_block_number?(block.number) && block.consensus end)
+      |> Enum.map(&%{block_hash: &1.hash})
+      |> Enum.sort_by(& &1.block_hash)
+      |> Enum.dedup_by(& &1.block_hash)
+
+    Import.insert_changes_list(
+      repo,
+      ordered_epoch_blocks,
+      conflict_target: :block_hash,
+      on_conflict: :nothing,
+      for: CeloPendingEpochBlockOperation,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 end

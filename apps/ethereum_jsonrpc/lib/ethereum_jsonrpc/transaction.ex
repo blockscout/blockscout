@@ -7,7 +7,13 @@ defmodule EthereumJSONRPC.Transaction do
   [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblockhashandindex),
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblocknumberandindex)
   """
-  import EthereumJSONRPC, only: [quantity_to_integer: 1, integer_to_quantity: 1, request: 1]
+  import EthereumJSONRPC,
+    only: [
+      quantity_to_integer: 1,
+      integer_to_quantity: 1,
+      request: 1,
+      put_if_present: 3
+    ]
 
   alias EthereumJSONRPC
 
@@ -45,6 +51,15 @@ defmodule EthereumJSONRPC.Transaction do
                              wrapped_r: non_neg_integer(),
                              wrapped_s: non_neg_integer(),
                              wrapped_hash: EthereumJSONRPC.hash()
+                           ]
+                         )
+
+    :celo ->
+      @chain_type_fields quote(
+                           do: [
+                             gas_token_contract_address_hash: EthereumJSONRPC.address(),
+                             gas_fee_recipient_address_hash: EthereumJSONRPC.address(),
+                             gateway_fee: non_neg_integer()
                            ]
                          )
 
@@ -103,6 +118,11 @@ defmodule EthereumJSONRPC.Transaction do
        * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).
        * `"requestRecord"` - map of wrapped transaction data (used by Suave).
       """
+    :celo -> """
+          * `"feeCurrency"` - `t:EthereumJSONRPC.address/0` of the currency used to pay for gas.
+          * `"gatewayFee"` - `t:EthereumJSONRPC.quantity/0` of the gateway fee.
+          * `"gatewayFeeRecipient"` - `t:EthereumJSONRPC.address/0` of the gateway fee recipient.
+      """
     _ -> ""
   end}
   """
@@ -134,7 +154,7 @@ defmodule EthereumJSONRPC.Transaction do
         }
 
   @doc """
-  Geth `elixir` can be converted to `params`.  Geth does not supply `"publicKey"` or `"standardV"`, unlike Nethermind.
+  Geth `elixir` can be converted to `params`. Geth does not supply `"publicKey"` or `"standardV"`, unlike Nethermind.
 
       iex> EthereumJSONRPC.Transaction.elixir_to_params(
       ...>   %{
@@ -516,6 +536,13 @@ defmodule EthereumJSONRPC.Transaction do
           })
         end
 
+      :celo ->
+        put_if_present(params, elixir, [
+          {"feeCurrency", :gas_token_contract_address_hash},
+          {"gatewayFee", :gateway_fee},
+          {"gatewayFeeRecipient", :gas_fee_recipient_address_hash}
+        ])
+
       :arbitrum ->
         put_if_present(params, elixir, [
           {"requestId", :request_id}
@@ -673,19 +700,17 @@ defmodule EthereumJSONRPC.Transaction do
     end
   end
 
-  defp entry_to_elixir(_) do
-    {:ignore, :ignore}
+  # Celo-specific fields
+  if Application.compile_env(:explorer, :chain_type) == :celo do
+    defp entry_to_elixir({key, value})
+         when key in ~w(feeCurrency gatewayFeeRecipient),
+         do: {key, value}
+
+    defp entry_to_elixir({"gatewayFee" = key, quantity_or_nil}),
+      do: {key, quantity_or_nil && quantity_to_integer(quantity_or_nil)}
   end
 
-  def put_if_present(result, transaction, keys) do
-    Enum.reduce(keys, result, fn {from_key, to_key}, acc ->
-      value = transaction[from_key]
-
-      if value do
-        Map.put(acc, to_key, value)
-      else
-        acc
-      end
-    end)
+  defp entry_to_elixir(_) do
+    {:ignore, :ignore}
   end
 end

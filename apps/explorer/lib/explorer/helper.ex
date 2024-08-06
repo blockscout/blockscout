@@ -33,6 +33,36 @@ defmodule Explorer.Helper do
     |> TypeDecoder.decode_raw(types)
   end
 
+  @doc """
+  Takes an Ethereum hash and converts it to a standard 20-byte address by
+  truncating the leading zeroes. If the input is `nil`, it returns the burn
+  address.
+
+  ## Parameters
+  - `address_hash` (`EthereumJSONRPC.hash()` | `nil`): The full address hash to
+    be truncated, or `nil`.
+
+  ## Returns
+  - `EthereumJSONRPC.address()`: The truncated address or the burn address if
+    the input is `nil`.
+
+  ## Examples
+
+      iex> truncate_address_hash("0x000000000000000000000000abcdef1234567890abcdef1234567890abcdef")
+      "0xabcdef1234567890abcdef1234567890abcdef"
+
+      iex> truncate_address_hash(nil)
+      "0x0000000000000000000000000000000000000000"
+  """
+  @spec truncate_address_hash(EthereumJSONRPC.hash() | nil) :: EthereumJSONRPC.address()
+  def truncate_address_hash(address_hash)
+
+  def truncate_address_hash(nil), do: burn_address_hash_string()
+
+  def truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
+    "0x#{truncated_hash}"
+  end
+
   def parse_integer(integer_string) when is_binary(integer_string) do
     case Integer.parse(integer_string) do
       {integer, ""} -> integer
@@ -181,11 +211,5 @@ defmodule Explorer.Helper do
       a > b -> :gt
       true -> :eq
     end
-  end
-
-  def truncate_address_hash(nil), do: burn_address_hash_string()
-
-  def truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
-    "0x#{truncated_hash}"
   end
 end

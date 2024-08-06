@@ -31,4 +31,14 @@ defmodule Explorer.PagingOptions do
     asc_order: false,
     batch_key: nil
   ]
+
+  @page_size 50
+
+  def page_size do
+    @page_size
+  end
+
+  def default_paging_options do
+    %__MODULE__{page_size: @page_size + 1}
+  end
 end

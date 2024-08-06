@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   alias Explorer.Chain.{Block, PendingBlockOperation}
   alias Explorer.Chain.Import.Runner.Blocks
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
-  alias Indexer.Fetcher.{InternalTransaction, PendingTransaction}
+  alias Indexer.Fetcher.{InternalTransaction, PendingTransaction, TokenBalance}
 
   # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
   # it to use expectations and stubs from test's pid.
@@ -68,6 +68,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
     CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     PendingTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+    start_token_balance_fetcher(json_rpc_named_arguments)
 
     wait_for_results(fn ->
       Repo.one!(from(transaction in Explorer.Chain.Transaction, where: is_nil(transaction.block_hash), limit: 1))
@@ -105,6 +106,8 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     block_number = 1_000_006
     block = insert(:block, number: block_number)
     insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+    start_token_balance_fetcher(json_rpc_named_arguments)
 
     assert :ok = InternalTransaction.run([block_number], json_rpc_named_arguments)
 
@@ -173,6 +176,8 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       block = insert(:block)
       block_hash = block.hash
       insert(:pending_block_operation, block_hash: block_hash, block_number: block.number)
+
+      start_token_balance_fetcher(json_rpc_named_arguments)
 
       assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
 
@@ -278,6 +283,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       end
 
       CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      start_token_balance_fetcher(json_rpc_named_arguments)
 
       assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
 
@@ -607,5 +613,16 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       assert last_int_tx.type == :call
       assert last_int_tx.call_type == :invalid
     end
+  end
+
+  # Due to token-duality feature in Celo network (native coin transfers are
+  # treated as token transfers), we need to fetch updated token balances after
+  # parsing the internal transactions
+  if Application.compile_env(:explorer, :chain_type) == :celo do
+    defp start_token_balance_fetcher(json_rpc_named_arguments) do
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+    end
+  else
+    defp start_token_balance_fetcher(_json_rpc_named_arguments), do: :ok
   end
 end

@@ -54,6 +54,11 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         :beacon_blob_transaction => :optional
       }
 
+    :celo ->
+      @chain_type_transaction_necessity_by_association %{
+        :gas_token => :optional
+      }
+
     _ ->
       @chain_type_transaction_necessity_by_association %{}
   end

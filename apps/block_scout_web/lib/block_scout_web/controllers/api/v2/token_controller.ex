@@ -17,8 +17,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       next_page_params: 3,
       token_transfers_next_page_params: 3,
       unique_tokens_paging_options: 1,
-      unique_tokens_next_page: 3,
-      default_paging_options: 0
+      unique_tokens_next_page: 3
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -31,6 +30,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+  import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 

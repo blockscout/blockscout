@@ -8,8 +8,11 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.{Address, Block, Transaction, PendingBlockOperation}
+  alias Explorer.Chain.Celo.PendingEpochBlockOperation
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.MissingBlockRange
+
+  alias Explorer.Chain.Celo.Helper, as: CeloHelper
 
   describe "run/1" do
     setup do
@@ -409,6 +412,60 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       |> Repo.transaction()
 
       assert %{block_number: ^number, block_hash: ^hash} = Repo.one(PendingBlockOperation)
+    end
+
+    if Application.compile_env(:explorer, :chain_type) == :celo do
+      test "inserts pending_epoch_block_operations only for epoch blocks",
+           %{consensus_block: %{miner_hash: miner_hash}, options: options} do
+        epoch_block_number = CeloHelper.blocks_per_epoch()
+
+        %{hash: hash} =
+          epoch_block_params =
+          params_for(
+            :block,
+            miner_hash: miner_hash,
+            consensus: true,
+            number: epoch_block_number
+          )
+
+        non_epoch_block_params =
+          params_for(
+            :block,
+            miner_hash: miner_hash,
+            consensus: true,
+            number: epoch_block_number + 1
+          )
+
+        insert_block(epoch_block_params, options)
+        insert_block(non_epoch_block_params, options)
+
+        assert %{block_hash: ^hash} = Repo.one(PendingEpochBlockOperation)
+      end
+
+      test "inserts pending_epoch_block_operations only for consensus epoch blocks",
+           %{consensus_block: %{miner_hash: miner_hash}, options: options} do
+        %{hash: hash} =
+          first_epoch_block_params =
+          params_for(
+            :block,
+            miner_hash: miner_hash,
+            consensus: true,
+            number: CeloHelper.blocks_per_epoch()
+          )
+
+        second_epoch_block_params =
+          params_for(
+            :block,
+            miner_hash: miner_hash,
+            consensus: false,
+            number: CeloHelper.blocks_per_epoch() * 2
+          )
+
+        insert_block(first_epoch_block_params, options)
+        insert_block(second_epoch_block_params, options)
+
+        assert %{block_hash: ^hash} = Repo.one(PendingEpochBlockOperation)
+      end
     end
 
     test "change instance owner if was token transfer in older blocks",

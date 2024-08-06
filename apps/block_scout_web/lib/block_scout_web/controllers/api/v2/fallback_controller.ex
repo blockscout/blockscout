@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @invalid_hash "Invalid hash"
   @invalid_number "Invalid number"
   @invalid_url "Invalid URL"
+  @invalid_celo_election_reward_type "Invalid Celo reward type, allowed types are: validator, group, voter, delegated-payment"
   @not_found "Not found"
   @contract_interaction_disabled "Contract interaction disabled"
   @restricted_access "Restricted access"
@@ -97,26 +98,23 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @contract_interaction_disabled})
   end
 
-  def call(conn, {:error, {:invalid, :hash}}) do
+  def call(conn, {:error, {:invalid, entity}})
+      when entity in ~w(hash number celo_election_reward_type)a do
+    message =
+      case entity do
+        :hash -> @invalid_hash
+        :number -> @invalid_number
+        :celo_election_reward_type -> @invalid_celo_election_reward_type
+      end
+
     Logger.error(fn ->
-      ["#{@invalid_hash}"]
+      ["#{message}"]
     end)
 
     conn
     |> put_status(:unprocessable_entity)
     |> put_view(ApiView)
-    |> render(:message, %{message: @invalid_hash})
-  end
-
-  def call(conn, {:error, {:invalid, :number}}) do
-    Logger.error(fn ->
-      ["#{@invalid_number}"]
-    end)
-
-    conn
-    |> put_status(:unprocessable_entity)
-    |> put_view(ApiView)
-    |> render(:message, %{message: @invalid_number})
+    |> render(:message, %{message: message})
   end
 
   def call(conn, {:error, :not_found}) do

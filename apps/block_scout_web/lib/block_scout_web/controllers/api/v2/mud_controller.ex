@@ -4,11 +4,11 @@ defmodule BlockScoutWeb.API.V2.MudController do
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 4,
-      split_list_by_page: 1,
-      default_paging_options: 0
+      split_list_by_page: 1
     ]
 
   import BlockScoutWeb.PagingHelper, only: [mud_records_sorting: 1]
+  import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]

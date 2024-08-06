@@ -30,17 +30,33 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
 
+  alias BlockScoutWeb.API.V2.CeloView
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+  alias Explorer.Chain.Celo.Reader, as: CeloReader
+
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
+  case Application.compile_env(:explorer, :chain_type) do
+    :celo ->
+      @chain_type_transaction_necessity_by_association %{
+        :gas_token => :optional
+      }
+
+    _ ->
+      @chain_type_transaction_necessity_by_association %{}
+  end
+
   @transaction_necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-      [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-      :block => :optional
-    },
+    necessity_by_association:
+      %{
+        [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        :block => :optional
+      }
+      |> Map.merge(@chain_type_transaction_necessity_by_association),
     api?: true
   ]
 
@@ -78,6 +94,26 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   ]
 
   @api_true [api?: true]
+
+  @celo_election_rewards_options [
+    necessity_by_association: %{
+      [
+        account_address: [
+          :names,
+          :smart_contract,
+          :proxy_implementations
+        ]
+      ] => :optional,
+      [
+        associated_account_address: [
+          :names,
+          :smart_contract,
+          :proxy_implementations
+        ]
+      ] => :optional
+    },
+    api?: true
+  ]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -447,20 +483,35 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   def tabs_counters(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash, _address} <- validate_address(address_hash_string, params) do
-      {validations, transactions, token_transfers, token_balances, logs, withdrawals, internal_txs} =
-        Counters.address_limited_counters(address_hash, @api_true)
+      counter_name_to_json_field_name = %{
+        validations: :validations_count,
+        txs: :transactions_count,
+        token_transfers: :token_transfers_count,
+        token_balances: :token_balances_count,
+        logs: :logs_count,
+        withdrawals: :withdrawals_count,
+        internal_txs: :internal_txs_count,
+        celo_election_rewards: :celo_election_rewards_count
+      }
+
+      counters_json =
+        address_hash
+        |> Counters.address_limited_counters(@api_true)
+        |> Enum.reduce(%{}, fn {counter_name, counter_value}, acc ->
+          counter_name_to_json_field_name
+          |> Map.fetch(counter_name)
+          |> case do
+            {:ok, json_field_name} ->
+              Map.put(acc, json_field_name, counter_value)
+
+            :error ->
+              acc
+          end
+        end)
 
       conn
       |> put_status(200)
-      |> json(%{
-        validations_count: validations,
-        transactions_count: transactions,
-        token_transfers_count: token_transfers,
-        token_balances_count: token_balances,
-        logs_count: logs,
-        withdrawals_count: withdrawals,
-        internal_txs_count: internal_txs
-      })
+      |> json(counters_json)
     end
   end
 
@@ -517,6 +568,37 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> render(:nft_collections, %{collections: collections, next_page_params: next_page_params})
+    end
+  end
+
+  @doc """
+  Function to handle GET requests to `/api/v2/addresses/:address_hash_param/election-rewards` endpoint.
+  """
+  def celo_election_rewards(conn, %{"address_hash_param" => address_hash_string} = params) do
+    with {:ok, address_hash, _address} <- validate_address(address_hash_string, params) do
+      full_options =
+        @celo_election_rewards_options
+        |> Keyword.merge(CeloElectionReward.address_paging_options(params))
+
+      results_plus_one = CeloReader.address_hash_to_election_rewards(address_hash, full_options)
+
+      {rewards, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params =
+        next_page_params(
+          next_page,
+          rewards,
+          delete_parameters_from_next_page_params(params),
+          &CeloElectionReward.to_address_paging_params/1
+        )
+
+      conn
+      |> put_status(200)
+      |> put_view(CeloView)
+      |> render(:celo_election_rewards, %{
+        rewards: rewards,
+        next_page_params: next_page_params
+      })
     end
   end
 

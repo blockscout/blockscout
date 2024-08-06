@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   alias Explorer.Chain.Import.{Runner, Stage}
 
   @behaviour Stage
+
   @default_runners [
     Runner.Transaction.Forks,
     Runner.Logs,
@@ -17,92 +18,74 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Withdrawals
   ]
 
-  @optimism_runners [
-    Runner.Optimism.FrameSequences,
-    Runner.Optimism.FrameSequenceBlobs,
-    Runner.Optimism.TxnBatches,
-    Runner.Optimism.OutputRoots,
-    Runner.Optimism.DisputeGames,
-    Runner.Optimism.Deposits,
-    Runner.Optimism.Withdrawals,
-    Runner.Optimism.WithdrawalEvents
-  ]
-
-  @polygon_edge_runners [
-    Runner.PolygonEdge.Deposits,
-    Runner.PolygonEdge.DepositExecutes,
-    Runner.PolygonEdge.Withdrawals,
-    Runner.PolygonEdge.WithdrawalExits
-  ]
-
-  @polygon_zkevm_runners [
-    Runner.PolygonZkevm.LifecycleTransactions,
-    Runner.PolygonZkevm.TransactionBatches,
-    Runner.PolygonZkevm.BatchTransactions,
-    Runner.PolygonZkevm.BridgeL1Tokens,
-    Runner.PolygonZkevm.BridgeOperations
-  ]
-
-  @zksync_runners [
-    Runner.ZkSync.LifecycleTransactions,
-    Runner.ZkSync.TransactionBatches,
-    Runner.ZkSync.BatchTransactions,
-    Runner.ZkSync.BatchBlocks
-  ]
-
-  @shibarium_runners [
-    Runner.Shibarium.BridgeOperations
-  ]
-
-  @ethereum_runners [
-    Runner.Beacon.BlobTransactions
-  ]
-
-  @arbitrum_runners [
-    Runner.Arbitrum.Messages,
-    Runner.Arbitrum.LifecycleTransactions,
-    Runner.Arbitrum.L1Executions,
-    Runner.Arbitrum.L1Batches,
-    Runner.Arbitrum.BatchBlocks,
-    Runner.Arbitrum.BatchTransactions,
-    Runner.Arbitrum.DaMultiPurposeRecords
-  ]
+  @extra_runners_by_chain_type %{
+    optimism: [
+      Runner.Optimism.FrameSequences,
+      Runner.Optimism.FrameSequenceBlobs,
+      Runner.Optimism.TxnBatches,
+      Runner.Optimism.OutputRoots,
+      Runner.Optimism.DisputeGames,
+      Runner.Optimism.Deposits,
+      Runner.Optimism.Withdrawals,
+      Runner.Optimism.WithdrawalEvents
+    ],
+    polygon_edge: [
+      Runner.PolygonEdge.Deposits,
+      Runner.PolygonEdge.DepositExecutes,
+      Runner.PolygonEdge.Withdrawals,
+      Runner.PolygonEdge.WithdrawalExits
+    ],
+    polygon_zkevm: [
+      Runner.PolygonZkevm.LifecycleTransactions,
+      Runner.PolygonZkevm.TransactionBatches,
+      Runner.PolygonZkevm.BatchTransactions,
+      Runner.PolygonZkevm.BridgeL1Tokens,
+      Runner.PolygonZkevm.BridgeOperations
+    ],
+    zksync: [
+      Runner.ZkSync.LifecycleTransactions,
+      Runner.ZkSync.TransactionBatches,
+      Runner.ZkSync.BatchTransactions,
+      Runner.ZkSync.BatchBlocks
+    ],
+    shibarium: [
+      Runner.Shibarium.BridgeOperations
+    ],
+    ethereum: [
+      Runner.Beacon.BlobTransactions
+    ],
+    arbitrum: [
+      Runner.Arbitrum.Messages,
+      Runner.Arbitrum.LifecycleTransactions,
+      Runner.Arbitrum.L1Executions,
+      Runner.Arbitrum.L1Batches,
+      Runner.Arbitrum.BatchBlocks,
+      Runner.Arbitrum.BatchTransactions,
+      Runner.Arbitrum.DaMultiPurposeRecords
+    ],
+    celo: [
+      Runner.Celo.ValidatorGroupVotes,
+      Runner.Celo.ElectionRewards,
+      Runner.Celo.EpochRewards
+    ]
+  }
 
   @impl Stage
   def runners do
-    case Application.get_env(:explorer, :chain_type) do
-      :optimism ->
-        @default_runners ++ @optimism_runners
+    chain_type = Application.get_env(:explorer, :chain_type)
+    chain_type_runners = Map.get(@extra_runners_by_chain_type, chain_type, [])
 
-      :polygon_edge ->
-        @default_runners ++ @polygon_edge_runners
-
-      :polygon_zkevm ->
-        @default_runners ++ @polygon_zkevm_runners
-
-      :shibarium ->
-        @default_runners ++ @shibarium_runners
-
-      :ethereum ->
-        @default_runners ++ @ethereum_runners
-
-      :zksync ->
-        @default_runners ++ @zksync_runners
-
-      :arbitrum ->
-        @default_runners ++ @arbitrum_runners
-
-      _ ->
-        @default_runners
-    end
+    @default_runners ++ chain_type_runners
   end
 
   @impl Stage
   def all_runners do
-    @default_runners ++
-      @ethereum_runners ++
-      @optimism_runners ++
-      @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners ++ @zksync_runners ++ @arbitrum_runners
+    all_extra_runners =
+      @extra_runners_by_chain_type
+      |> Map.values()
+      |> Enum.concat()
+
+    @default_runners ++ all_extra_runners
   end
 
   @impl Stage

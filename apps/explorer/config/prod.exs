@@ -39,6 +39,11 @@ config :explorer, Explorer.Repo.ZkSync,
   timeout: :timer.seconds(60),
   ssl_opts: [verify: :verify_none]
 
+config :explorer, Explorer.Repo.Celo,
+  prepare: :unnamed,
+  timeout: :timer.seconds(60),
+  ssl_opts: [verify: :verify_none]
+
 config :explorer, Explorer.Repo.RSK,
   prepare: :unnamed,
   timeout: :timer.seconds(60),
