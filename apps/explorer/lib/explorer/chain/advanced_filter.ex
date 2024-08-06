@@ -383,6 +383,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       )
 
     token_transfer_query
+    |> limit_query(paging_options)
     |> apply_token_transfers_filters_before_subquery(options)
     |> page_token_transfers(paging_options)
     |> apply_token_transfers_filters_after_subquery(options)
@@ -539,11 +540,12 @@ defmodule Explorer.Chain.AdvancedFilter do
     |> filter_by_transaction_type(options[:transaction_types])
     |> filter_token_transfers_by_methods(options[:methods])
     |> filter_by_age(:token_transfer, options)
+    |> filter_token_transfers_by_amount_before_subquery(options[:amount][:from], options[:amount][:to])
   end
 
   defp apply_token_transfers_filters_after_subquery(query, options) do
     query
-    |> filter_token_transfers_by_amount(options[:amount][:from], options[:amount][:to])
+    |> filter_token_transfers_by_amount_after_subquery(options[:amount][:from], options[:amount][:to])
     |> filter_token_transfers_by_addresses(
       options[:from_address_hashes],
       options[:to_address_hashes],
@@ -831,7 +833,40 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp filter_transactions_by_amount(query, _, _), do: query
 
-  defp filter_token_transfers_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) and from < to do
+  defp filter_token_transfers_by_amount_before_subquery(query, from, to)
+       when not is_nil(from) and not is_nil(to) and from < to do
+    query
+    |> where(
+      [tt, token: token],
+      ^to * fragment("10 ^ COALESCE(?, 0)", token.decimals) >=
+        fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount) and
+        ^from * fragment("10 ^ COALESCE(?, 0)", token.decimals) <=
+          fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount)
+    )
+  end
+
+  defp filter_token_transfers_by_amount_before_subquery(query, _from, to) when not is_nil(to) do
+    query
+    |> where(
+      [tt, token: token],
+      ^to * fragment("10 ^ COALESCE(?, 0)", token.decimals) >=
+        fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount)
+    )
+  end
+
+  defp filter_token_transfers_by_amount_before_subquery(query, from, _to) when not is_nil(from) do
+    query
+    |> where(
+      [tt, token: token],
+      ^from * fragment("10 ^ COALESCE(?, 0)", token.decimals) <=
+        fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount)
+    )
+  end
+
+  defp filter_token_transfers_by_amount_before_subquery(query, _, _), do: query
+
+  defp filter_token_transfers_by_amount_after_subquery(query, from, to)
+       when not is_nil(from) and not is_nil(to) and from < to do
     unnested_query = make_token_transfer_query_unnested(query)
 
     unnested_query
@@ -842,7 +877,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     )
   end
 
-  defp filter_token_transfers_by_amount(query, _from, to) when not is_nil(to) do
+  defp filter_token_transfers_by_amount_after_subquery(query, _from, to) when not is_nil(to) do
     unnested_query = make_token_transfer_query_unnested(query)
 
     unnested_query
@@ -852,7 +887,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     )
   end
 
-  defp filter_token_transfers_by_amount(query, from, _to) when not is_nil(from) do
+  defp filter_token_transfers_by_amount_after_subquery(query, from, _to) when not is_nil(from) do
     unnested_query = make_token_transfer_query_unnested(query)
 
     unnested_query
@@ -862,7 +897,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     )
   end
 
-  defp filter_token_transfers_by_amount(query, _, _), do: query
+  defp filter_token_transfers_by_amount_after_subquery(query, _, _), do: query
 
   defp make_token_transfer_query_unnested(query) do
     with_named_binding(query, :unnested_token_transfer, fn query, binding ->
