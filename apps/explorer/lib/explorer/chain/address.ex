@@ -168,9 +168,10 @@ defmodule Explorer.Chain.Address do
 
   def checksum(hash, iodata?) do
     checksum_formatted =
-      case Application.get_env(:explorer, :checksum_function) || :eth do
-        :eth -> eth_checksum(hash)
-        :rsk -> rsk_checksum(hash)
+      if Application.get_env(:explorer, :chain_type) == :rsk do
+        rsk_checksum(hash)
+      else
+        eth_checksum(hash)
       end
 
     if iodata? do
