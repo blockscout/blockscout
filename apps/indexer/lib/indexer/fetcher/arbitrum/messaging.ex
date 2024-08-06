@@ -62,10 +62,10 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   @doc """
     Filters a list of rollup transactions to identify L1-to-L2 messages and composes a map for each with the related message information.
 
-    This function filters through a list of rollup transactions, selecting those
-    with a non-nil `request_id`, indicating they are L1-to-L2 message completions.
-    These filtered transactions are then processed to construct a detailed message
-    structure for each.
+    This function filters a list of rollup transactions, selecting those where
+    `request_id` is not nil and is below 2^31, indicating they are L1-to-L2
+    message completions. These filtered transactions are then processed to
+    construct a detailed message structure for each.
 
     ## Parameters
     - `transactions`: A list of rollup transaction entries.
@@ -78,14 +78,14 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       this context are considered `:relayed` as they represent completed actions from
       L1 to L2.
   """
-  @spec filter_l1_to_l2_messages(maybe_improper_list(min_transaction, [])) :: [arbitrum_message]
-  @spec filter_l1_to_l2_messages(maybe_improper_list(min_transaction, []), boolean()) :: [arbitrum_message]
+  @spec filter_l1_to_l2_messages([min_transaction()]) :: [arbitrum_message]
+  @spec filter_l1_to_l2_messages([min_transaction()], boolean()) :: [arbitrum_message]
   def filter_l1_to_l2_messages(transactions, report \\ true)
       when is_list(transactions) and is_boolean(report) do
     messages =
       transactions
       |> Enum.filter(fn tx ->
-        tx[:request_id] != nil
+        tx[:request_id] != nil and Bitwise.bsr(tx[:request_id], 31) == 0
       end)
       |> handle_filtered_l1_to_l2_messages()
 

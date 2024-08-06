@@ -273,6 +273,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
           messages ++ messages_acc
         end)
 
+      # Logging of zero messages is left by intent to reveal potential cases when
+      # not all transactions are recognized as completed L1-to-L2 messages.
       log_info("#{length(messages)} completions of L1-to-L2 messages will be imported")
       import_to_db(messages)
     end
