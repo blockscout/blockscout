@@ -158,6 +158,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if Application.compile_env(:explorer, :chain_type) == :arbitrum do
         get("/arbitrum-batch/:batch_number", V2.BlockController, :arbitrum_batch)
       end
+
+      if Application.compile_env(:explorer, :chain_type) == :optimism do
+        get("/optimism-batch/:batch_number", V2.BlockController, :optimism_batch)
+      end
     end
 
     scope "/addresses" do
