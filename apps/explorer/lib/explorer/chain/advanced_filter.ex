@@ -297,7 +297,7 @@ defmodule Explorer.Chain.AdvancedFilter do
         preload: [
           transaction: transaction
         ],
-        where: transaction.block_consensus == true,
+        where: transaction.block_consensus == true and internal_transaction.index > 0,
         order_by: [
           desc: transaction.block_number,
           desc: transaction.index,
