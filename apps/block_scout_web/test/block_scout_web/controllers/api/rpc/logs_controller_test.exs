@@ -296,7 +296,13 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         |> insert(to_address: contract_address)
         |> with_block()
 
-      log = insert(:log, address: contract_address, transaction: transaction, block_number: transaction.block_number)
+      log =
+        insert(:log,
+          address: contract_address,
+          transaction: transaction,
+          block: block,
+          block_number: transaction.block_number
+        )
 
       params = %{
         "module" => "logs",
@@ -353,12 +359,14 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       insert(:log,
         address: contract_address,
         transaction: transaction_block1,
+        block: transaction_block1.block,
         block_number: transaction_block1.block_number
       )
 
       insert(:log,
         address: contract_address,
         transaction: transaction_block2,
+        block: transaction_block2.block,
         block_number: transaction_block2.block_number
       )
 
@@ -406,12 +414,14 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       insert(:log,
         address: contract_address,
         transaction: transaction_block1,
+        block: transaction_block1.block,
         block_number: transaction_block1.block_number
       )
 
       insert(:log,
         address: contract_address,
         transaction: transaction_block2,
+        block: transaction_block2.block,
         block_number: transaction_block2.block_number
       )
 
@@ -450,12 +460,16 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
+        block: block,
+        block_number: block.number,
         first_topic: topic(@first_topic_hex_string_1)
       ]
 
       log2_details = [
         address: contract_address,
         transaction: transaction,
+        block: block,
+        block_number: block.number,
         first_topic: topic(@first_topic_hex_string_2)
       ]
 
@@ -508,6 +522,8 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
+        block: block,
+        block_number: block.number,
         first_topic: topic(@first_topic_hex_string_1),
         second_topic: topic(@second_topic_hex_string_1)
       ]
@@ -515,6 +531,8 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log2_details = [
         address: contract_address,
         transaction: transaction,
+        block: block,
+        block_number: block.number,
         first_topic: topic(@first_topic_hex_string_2),
         second_topic: topic(@second_topic_hex_string_2)
       ]
@@ -557,6 +575,8 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
+        block: block,
+        block_number: block.number,
         first_topic: topic(@first_topic_hex_string_1),
         second_topic: topic(@second_topic_hex_string_1)
       ]
@@ -564,6 +584,8 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log2_details = [
         address: contract_address,
         transaction: transaction,
+        block: block,
+        block_number: block.number,
         first_topic: topic(@first_topic_hex_string_2),
         second_topic: topic(@second_topic_hex_string_2)
       ]
@@ -605,6 +627,8 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log1_details = [
         address: contract_address,
         transaction: transaction,
+        block: block,
+        block_number: block.number,
         first_topic: topic(@first_topic_hex_string_1),
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
@@ -614,6 +638,8 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       log2_details = [
         address: contract_address,
         transaction: transaction,
+        block: block,
+        block_number: block.number,
         first_topic: topic(@first_topic_hex_string_1),
         second_topic: topic(@second_topic_hex_string_1),
         third_topic: topic(@third_topic_hex_string_1),
