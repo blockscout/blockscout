@@ -262,23 +262,21 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         for i <- 0..4 do
           tx = :transaction |> insert() |> with_block(status: :ok)
 
-          internal_tx =
-            insert(:internal_transaction,
-              transaction: tx,
-              index: i,
-              block_index: i,
-              block_hash: tx.block_hash,
-              block: tx.block
-            )
+          insert(:internal_transaction,
+            transaction: tx,
+            index: i,
+            block_index: i,
+            block_hash: tx.block_hash,
+            block: tx.block
+          )
 
-          token_transfer =
-            insert(:token_transfer,
-              transaction: tx,
-              block_number: tx.block_number,
-              log_index: i,
-              block_hash: tx.block_hash,
-              block: tx.block
-            )
+          insert(:token_transfer,
+            transaction: tx,
+            block_number: tx.block_number,
+            log_index: i,
+            block_hash: tx.block_hash,
+            block: tx.block
+          )
 
           tx
         end
@@ -934,7 +932,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         insert_list(5, :transaction)
 
         transactions =
-          for i <- 0..29 do
+          for _ <- 0..29 do
             transaction =
               insert(:transaction,
                 from_address: transaction_from_address,

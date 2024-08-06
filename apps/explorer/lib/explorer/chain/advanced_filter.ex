@@ -383,7 +383,6 @@ defmodule Explorer.Chain.AdvancedFilter do
       )
 
     token_transfer_query
-    |> limit_query(paging_options)
     |> apply_token_transfers_filters_before_subquery(options)
     |> page_token_transfers(paging_options)
     |> apply_token_transfers_filters_after_subquery(options)
@@ -874,38 +873,47 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp filter_by_token(query, token_contract_address_hashes) when is_list(token_contract_address_hashes) do
-    case process_address_inclusion(token_contract_address_hashes) do
-      {:include, token_contract_address_hashes} ->
-        to_include_filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
-
-        queries =
-          to_include_filtered
-          |> Enum.map(fn address ->
-            query |> where([t], t.token_contract_address_hash == ^address)
-          end)
-          |> map_first(&subquery/1)
-          |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
-
-        from(token_transfer in subquery(queries),
-          as: :unnested_token_transfer,
-          order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
-        )
-
-      {:exclude, token_contract_address_hashes} ->
-        to_exclude_filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
-
-        from(token_transfer in query,
-          left_join: to_exclude in fragment("UNNEST(?)", type(^to_exclude_filtered, {:array, Hash.Address})),
-          on: token_transfer.token_contract_address_hash == to_exclude,
-          where: is_nil(to_exclude)
-        )
-
-      _ ->
-        query
-    end
+    do_filter_by_token(query, process_address_inclusion(token_contract_address_hashes))
   end
 
   defp filter_by_token(query, _), do: query
+
+  defp do_filter_by_token(query, {:include, token_contract_address_hashes}) do
+    to_include_filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
+
+    if Enum.empty?(to_include_filtered) do
+      query
+    else
+      queries =
+        to_include_filtered
+        |> Enum.map(fn address ->
+          query |> where([t], t.token_contract_address_hash == ^address)
+        end)
+        |> map_first(&subquery/1)
+        |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
+
+      from(token_transfer in subquery(queries),
+        as: :unnested_token_transfer,
+        order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+      )
+    end
+  end
+
+  defp do_filter_by_token(query, {:exclude, token_contract_address_hashes}) do
+    to_exclude_filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
+
+    if Enum.empty?(to_exclude_filtered) do
+      query
+    else
+      from(token_transfer in query,
+        left_join: to_exclude in fragment("UNNEST(?)", type(^to_exclude_filtered, {:array, Hash.Address})),
+        on: token_transfer.token_contract_address_hash == to_exclude,
+        where: is_nil(to_exclude)
+      )
+    end
+  end
+
+  defp do_filter_by_token(query, _), do: query
 
   defp process_address_inclusion(addresses) when is_list(addresses) do
     case {Keyword.get(addresses, :include, []), Keyword.get(addresses, :exclude, [])} do
