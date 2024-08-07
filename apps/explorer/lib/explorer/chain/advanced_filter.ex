@@ -382,18 +382,20 @@ defmodule Explorer.Chain.AdvancedFilter do
         ]
       )
 
+    query_function =
+      (&make_token_transfer_query_unnested/2)
+      |> apply_token_transfers_filters(options)
+      |> page_token_transfers(paging_options)
+
     token_transfer_query
     |> limit_query(paging_options)
-    |> apply_token_transfers_filters_before_subquery(options)
-    |> page_token_transfers(paging_options)
-    |> apply_token_transfers_filters_after_subquery(options)
-    |> make_token_transfer_query_unnested()
+    |> query_function.(false)
     |> limit_query(paging_options)
     |> preload([:transaction])
     |> select_merge([token_transfer], %{token_ids: [token_transfer.token_id], amounts: [token_transfer.amount]})
   end
 
-  defp page_token_transfers(query, %PagingOptions{
+  defp page_token_transfers(query_function, %PagingOptions{
          key: %{
            block_number: block_number,
            transaction_index: transaction_index,
@@ -403,29 +405,41 @@ defmodule Explorer.Chain.AdvancedFilter do
        }) do
     case {block_number, transaction_index} do
       {0, 0} ->
-        query |> where(as(:transaction).block_number == ^block_number and as(:transaction).index == ^transaction_index)
+        fn query, unnested? ->
+          query
+          |> where(as(:transaction).block_number == ^block_number and as(:transaction).index == ^transaction_index)
+          |> query_function.(unnested?)
+        end
 
       {0, transaction_index} ->
-        query
-        |> where(
-          [token_transfer],
-          token_transfer.block_number == ^block_number and as(:transaction).index < ^transaction_index
-        )
+        fn query, unnested? ->
+          query
+          |> where(
+            [token_transfer],
+            token_transfer.block_number == ^block_number and as(:transaction).index < ^transaction_index
+          )
+          |> query_function.(unnested?)
+        end
 
       {block_number, 0} ->
-        query |> where([token_transfer], token_transfer.block_number < ^block_number)
+        fn query, unnested? ->
+          query |> where([token_transfer], token_transfer.block_number < ^block_number) |> query_function.(unnested?)
+        end
 
       {block_number, transaction_index} ->
-        query
-        |> where(
-          [token_transfer],
-          token_transfer.block_number < ^block_number or
-            (token_transfer.block_number == ^block_number and as(:transaction).index <= ^transaction_index)
-        )
+        fn query, unnested? ->
+          query
+          |> where(
+            [token_transfer],
+            token_transfer.block_number < ^block_number or
+              (token_transfer.block_number == ^block_number and as(:transaction).index <= ^transaction_index)
+          )
+          |> query_function.(unnested?)
+        end
     end
   end
 
-  defp page_token_transfers(query, %PagingOptions{
+  defp page_token_transfers(query_function, %PagingOptions{
          key: %{
            block_number: block_number,
            transaction_index: transaction_index,
@@ -438,10 +452,12 @@ defmodule Explorer.Chain.AdvancedFilter do
           ^page_transaction_index_dynamic(block_number, transaction_index)
       )
 
-    query |> where(^dynamic_condition)
+    fn query, unnested? ->
+      query |> where(^dynamic_condition) |> query_function.(unnested?)
+    end
   end
 
-  defp page_token_transfers(query, %PagingOptions{
+  defp page_token_transfers(query_function, %PagingOptions{
          key: %{
            block_number: block_number,
            token_transfer_index: tt_index,
@@ -454,20 +470,21 @@ defmodule Explorer.Chain.AdvancedFilter do
           ^page_tt_index_dynamic(:token_transfer, block_number, tt_index, tt_batch_index)
       )
 
-    paged_query = query |> where(^dynamic_condition)
-
-    paged_query
-    |> make_token_transfer_query_unnested()
-    |> where(
-      ^page_tt_batch_index_dynamic(
-        block_number,
-        tt_index,
-        tt_batch_index
+    fn query, unnested? ->
+      query
+      |> where(^dynamic_condition)
+      |> query_function.(unnested?)
+      |> where(
+        ^page_tt_batch_index_dynamic(
+          block_number,
+          tt_index,
+          tt_batch_index
+        )
       )
-    )
+    end
   end
 
-  defp page_token_transfers(query, _), do: query
+  defp page_token_transfers(query_function, _), do: query_function
 
   defp page_block_number_dynamic(binding, block_number) when block_number > 0 do
     dynamic(as(^binding).block_number < ^block_number)
@@ -535,23 +552,19 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp limit_query(query, _), do: query
 
-  defp apply_token_transfers_filters_before_subquery(query, options) do
-    query
+
+  defp apply_token_transfers_filters(query_function, options) do
+    query_function
     |> filter_by_transaction_type(options[:transaction_types])
     |> filter_token_transfers_by_methods(options[:methods])
-    |> filter_by_age(:token_transfer, options)
-    |> filter_token_transfers_by_amount_before_subquery(options[:amount][:from], options[:amount][:to])
-  end
-
-  defp apply_token_transfers_filters_after_subquery(query, options) do
-    query
-    |> filter_token_transfers_by_amount_after_subquery(options[:amount][:from], options[:amount][:to])
+    |> filter_token_transfers_by_age(options)
+    |> filter_by_token(options[:token_contract_address_hashes])
     |> filter_token_transfers_by_addresses(
       options[:from_address_hashes],
       options[:to_address_hashes],
       options[:address_relation]
     )
-    |> filter_by_token(options[:token_contract_address_hashes])
+    |> filter_token_transfers_by_amount(options[:amount][:from], options[:amount][:to])
   end
 
   defp apply_transactions_filters(query, options) do
@@ -567,11 +580,13 @@ defmodule Explorer.Chain.AdvancedFilter do
     query |> where(not is_nil(as(:transaction).block_number) and not is_nil(as(:transaction).index))
   end
 
-  defp filter_by_transaction_type(query, [_ | _] = transaction_types) do
-    query |> where([token_transfer], token_transfer.token_type in ^transaction_types)
+  defp filter_by_transaction_type(query_function, [_ | _] = transaction_types) do
+    fn query, unnested? ->
+      query |> where([token_transfer], token_transfer.token_type in ^transaction_types) |> query_function.(unnested?)
+    end
   end
 
-  defp filter_by_transaction_type(query, _), do: query
+  defp filter_by_transaction_type(query_function, _), do: query_function
 
   defp filter_transactions_by_methods(query, [_ | _] = methods) do
     prepared_methods = prepare_methods(methods)
@@ -581,13 +596,17 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp filter_transactions_by_methods(query, _), do: query
 
-  defp filter_token_transfers_by_methods(query, [_ | _] = methods) do
+  defp filter_token_transfers_by_methods(query_function, [_ | _] = methods) do
     prepared_methods = prepare_methods(methods)
 
-    query |> where(fragment("substring(? FOR 4)", as(:transaction).input) in ^prepared_methods)
+    fn query, unnested? ->
+      query
+      |> where(fragment("substring(? FOR 4)", as(:transaction).input) in ^prepared_methods)
+      |> query_function.(unnested?)
+    end
   end
 
-  defp filter_token_transfers_by_methods(query, _), do: query
+  defp filter_token_transfers_by_methods(query_function, _), do: query_function
 
   defp prepare_methods(methods) do
     methods
@@ -598,6 +617,10 @@ defmodule Explorer.Chain.AdvancedFilter do
           _ -> []
         end
     end)
+  end
+
+  defp filter_token_transfers_by_age(query_function, options) do
+    fn query, unnested? -> query |> filter_by_age(:token_transfer, options) |> query_function.(unnested?) end
   end
 
   defp filter_by_age(query, entity, options) do
@@ -687,41 +710,161 @@ defmodule Explorer.Chain.AdvancedFilter do
     dynamic([t], ^from_addresses_dynamic and ^to_addresses_dynamic)
   end
 
-  defp filter_token_transfers_by_addresses(query, from_addresses, to_addresses, relation) do
+  defp filter_token_transfers_by_addresses(query_function, from_addresses, to_addresses, relation) do
     case {process_address_inclusion(from_addresses), process_address_inclusion(to_addresses)} do
-      {nil, nil} -> query
-      {from, nil} -> do_filter_token_transfers_by_address(query, from, :from_address_hash)
-      {nil, to} -> do_filter_token_transfers_by_address(query, to, :to_address_hash)
-      {from, to} -> do_filter_token_transfers_by_both_addresses(query, from, to, relation)
+      {nil, nil} -> query_function
+      {from, nil} -> do_filter_token_transfers_by_address(query_function, from, :from_address_hash)
+      {nil, to} -> do_filter_token_transfers_by_address(query_function, to, :to_address_hash)
+      {from, to} -> do_filter_token_transfers_by_both_addresses(query_function, from, to, relation)
     end
   end
 
-  defp do_filter_token_transfers_by_address(query, {:include, addresses}, field) do
-    queries =
-      addresses
-      |> Enum.map(fn address -> query |> where([t], field(t, ^field) == ^address) end)
-      |> map_first(&subquery/1)
-      |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
+  defp do_filter_token_transfers_by_address(query_function, {:include, addresses}, field) do
+    fn query, _unnested? ->
+      queries =
+        addresses
+        |> Enum.map(fn address ->
+          query |> where([token_transfer], field(token_transfer, ^field) == ^address) |> query_function.(true)
+        end)
+        |> map_first(&subquery/1)
+        |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
-    from(token_transfer in subquery(queries),
-      as: :unnested_token_transfer,
-      order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
-    )
+      from(token_transfer in subquery(queries),
+        as: :unnested_token_transfer,
+        order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+      )
+    end
   end
 
-  defp do_filter_token_transfers_by_address(query, {:exclude, addresses}, field) do
-    query |> where([t], field(t, ^field) not in ^addresses)
+  defp do_filter_token_transfers_by_address(query_function, {:exclude, addresses}, field) do
+    fn query, unnested? ->
+      query |> where([t], field(t, ^field) not in ^addresses) |> query_function.(unnested?)
+    end
   end
 
-  defp do_filter_token_transfers_by_both_addresses(query, {:include, from}, {:include, to}, relation) do
-    from_queries =
-      from
-      |> Enum.map(fn from_address -> query |> where([t], t.from_address_hash == ^from_address) end)
+  defp do_filter_token_transfers_by_both_addresses(query_function, {:include, from}, {:include, to}, relation) do
+    fn query, _unnested? ->
+      from_queries =
+        from
+        |> Enum.map(fn from_address ->
+          query |> where([token_transfer], token_transfer.from_address_hash == ^from_address) |> query_function.(true)
+        end)
 
-    to_queries =
-      to
-      |> Enum.map(fn to_address -> query |> where([t], t.to_address_hash == ^to_address) end)
+      to_queries =
+        to
+        |> Enum.map(fn to_address ->
+          query |> where([token_transfer], token_transfer.to_address_hash == ^to_address) |> query_function.(true)
+        end)
 
+      do_filter_token_transfers_by_both_addresses_to_include(from_queries, to_queries, relation)
+    end
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query_function, {:include, from}, {:exclude, to}, :and) do
+    fn query, _unnested? ->
+      from_queries =
+        from
+        |> Enum.map(fn from_address ->
+          query
+          |> where(
+            [token_transfer],
+            token_transfer.from_address_hash == ^from_address and token_transfer.to_address_hash not in ^to
+          )
+          |> query_function.(true)
+        end)
+        |> map_first(&subquery/1)
+        |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
+
+      from(token_transfer in subquery(from_queries),
+        as: :unnested_token_transfer,
+        order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+      )
+    end
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query_function, {:include, from}, {:exclude, to}, _relation) do
+    fn query, _unnested? ->
+      from_queries =
+        from
+        |> Enum.map(fn from_address ->
+          query
+          |> where(
+            [token_transfer],
+            token_transfer.from_address_hash == ^from_address or token_transfer.to_address_hash not in ^to
+          )
+          |> query_function.(true)
+        end)
+        |> map_first(&subquery/1)
+        |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
+
+      from(token_transfer in subquery(from_queries),
+        as: :unnested_token_transfer,
+        order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+      )
+    end
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query_function, {:exclude, from}, {:include, to}, :and) do
+    fn query, _unnested? ->
+      to_queries =
+        to
+        |> Enum.map(fn to_address ->
+          query
+          |> where(
+            [token_transfer],
+            token_transfer.to_address_hash == ^to_address and token_transfer.from_address_hash not in ^from
+          )
+          |> query_function.(true)
+        end)
+        |> map_first(&subquery/1)
+        |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
+
+      from(token_transfer in subquery(to_queries),
+        as: :unnested_token_transfer,
+        order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+      )
+    end
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query_function, {:exclude, from}, {:include, to}, _relation) do
+    fn query, _unnested? ->
+      to_queries =
+        to
+        |> Enum.map(fn to_address ->
+          query
+          |> where(
+            [token_transfer],
+            token_transfer.to_address_hash == ^to_address or token_transfer.from_address_hash not in ^from
+          )
+          |> query_function.(true)
+        end)
+        |> map_first(&subquery/1)
+        |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
+
+      from(token_transfer in subquery(to_queries),
+        as: :unnested_token_transfer,
+        order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
+      )
+    end
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query_function, {:exclude, from}, {:exclude, to}, :and) do
+    fn query, unnested? ->
+      query
+      |> where([t], t.from_address_hash not in ^from and t.to_address_hash not in ^to)
+      |> query_function.(unnested?)
+    end
+  end
+
+  defp do_filter_token_transfers_by_both_addresses(query_function, {:exclude, from}, {:exclude, to}, _relation) do
+    fn query, unnested? ->
+      query
+      |> where([t], t.from_address_hash not in ^from or t.to_address_hash not in ^to)
+      |> query_function.(unnested?)
+    end
+  end
+
+  defp do_filter_token_transfers_by_both_addresses_to_include(from_queries, to_queries, relation) do
     case relation do
       :and ->
         united_from_queries =
@@ -749,74 +892,6 @@ defmodule Explorer.Chain.AdvancedFilter do
     end
   end
 
-  defp do_filter_token_transfers_by_both_addresses(query, {:include, from}, {:exclude, to}, :and) do
-    from_queries =
-      from
-      |> Enum.map(fn from_address ->
-        query |> where([t], t.from_address_hash == ^from_address and t.to_address_hash not in ^to)
-      end)
-      |> map_first(&subquery/1)
-      |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
-
-    from(token_transfer in subquery(from_queries),
-      as: :unnested_token_transfer,
-      order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
-    )
-  end
-
-  defp do_filter_token_transfers_by_both_addresses(query, {:include, from}, {:exclude, to}, _relation) do
-    from_queries =
-      from
-      |> Enum.map(fn from_address ->
-        query |> where([t], t.from_address_hash == ^from_address or t.to_address_hash not in ^to)
-      end)
-      |> map_first(&subquery/1)
-      |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
-
-    from(token_transfer in subquery(from_queries),
-      as: :unnested_token_transfer,
-      order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
-    )
-  end
-
-  defp do_filter_token_transfers_by_both_addresses(query, {:exclude, from}, {:include, to}, :and) do
-    to_queries =
-      to
-      |> Enum.map(fn to_address ->
-        query |> where([t], t.to_address_hash == ^to_address and t.from_address_hash not in ^from)
-      end)
-      |> map_first(&subquery/1)
-      |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
-
-    from(token_transfer in subquery(to_queries),
-      as: :unnested_token_transfer,
-      order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
-    )
-  end
-
-  defp do_filter_token_transfers_by_both_addresses(query, {:exclude, from}, {:include, to}, _relation) do
-    to_queries =
-      to
-      |> Enum.map(fn to_address ->
-        query |> where([t], t.to_address_hash == ^to_address or t.from_address_hash not in ^from)
-      end)
-      |> map_first(&subquery/1)
-      |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
-
-    from(token_transfer in subquery(to_queries),
-      as: :unnested_token_transfer,
-      order_by: [desc: token_transfer.block_number, desc: token_transfer.log_index]
-    )
-  end
-
-  defp do_filter_token_transfers_by_both_addresses(query, {:exclude, from}, {:exclude, to}, :and) do
-    query |> where([t], t.from_address_hash not in ^from and t.to_address_hash not in ^to)
-  end
-
-  defp do_filter_token_transfers_by_both_addresses(query, {:exclude, from}, {:exclude, to}, _relation) do
-    query |> where([t], t.from_address_hash not in ^from or t.to_address_hash not in ^to)
-  end
-
   @eth_decimals 1000_000_000_000_000_000
 
   defp filter_transactions_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) and from < to do
@@ -832,6 +907,15 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp filter_transactions_by_amount(query, _, _), do: query
+
+  defp filter_token_transfers_by_amount(query_function, from, to) do
+    fn query, unnested? ->
+      query
+      |> filter_token_transfers_by_amount_before_subquery(from, to)
+      |> query_function.(unnested?)
+      |> filter_token_transfers_by_amount_after_subquery(from, to)
+    end
+  end
 
   defp filter_token_transfers_by_amount_before_subquery(query, from, to)
        when not is_nil(from) and not is_nil(to) and from < to do
@@ -865,10 +949,8 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp filter_token_transfers_by_amount_before_subquery(query, _, _), do: query
 
-  defp filter_token_transfers_by_amount_after_subquery(query, from, to)
+  defp filter_token_transfers_by_amount_after_subquery(unnested_query, from, to)
        when not is_nil(from) and not is_nil(to) and from < to do
-    unnested_query = make_token_transfer_query_unnested(query)
-
     unnested_query
     |> where(
       [unnested_token_transfer: tt],
@@ -877,9 +959,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     )
   end
 
-  defp filter_token_transfers_by_amount_after_subquery(query, _from, to) when not is_nil(to) do
-    unnested_query = make_token_transfer_query_unnested(query)
-
+  defp filter_token_transfers_by_amount_after_subquery(unnested_query, _from, to) when not is_nil(to) do
     unnested_query
     |> where(
       [unnested_token_transfer: tt],
@@ -887,9 +967,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     )
   end
 
-  defp filter_token_transfers_by_amount_after_subquery(query, from, _to) when not is_nil(from) do
-    unnested_query = make_token_transfer_query_unnested(query)
-
+  defp filter_token_transfers_by_amount_after_subquery(unnested_query, from, _to) when not is_nil(from) do
     unnested_query
     |> where(
       [unnested_token_transfer: tt],
@@ -899,7 +977,7 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp filter_token_transfers_by_amount_after_subquery(query, _, _), do: query
 
-  defp make_token_transfer_query_unnested(query) do
+  defp make_token_transfer_query_unnested(query, false) do
     with_named_binding(query, :unnested_token_transfer, fn query, binding ->
       from(token_transfer in subquery(query),
         as: ^binding
@@ -907,22 +985,34 @@ defmodule Explorer.Chain.AdvancedFilter do
     end)
   end
 
-  defp filter_by_token(query, token_contract_address_hashes) when is_list(token_contract_address_hashes) do
-    do_filter_by_token(query, process_address_inclusion(token_contract_address_hashes))
+  defp make_token_transfer_query_unnested(query, _), do: query
+
+  defp filter_by_token(query_function, token_contract_address_hashes) when is_list(token_contract_address_hashes) do
+    case process_address_inclusion(token_contract_address_hashes) do
+      nil ->
+        query_function
+
+      {include_or_exclude, token_contract_address_hashes} ->
+        filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
+
+        if Enum.empty?(filtered) do
+          query_function
+        else
+          do_filter_by_token(query_function, {include_or_exclude, filtered})
+        end
+    end
   end
 
-  defp filter_by_token(query, _), do: query
+  defp filter_by_token(query_function, _), do: query_function
 
-  defp do_filter_by_token(query, {:include, token_contract_address_hashes}) do
-    to_include_filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
-
-    if Enum.empty?(to_include_filtered) do
-      query
-    else
+  defp do_filter_by_token(query_function, {:include, token_contract_address_hashes}) do
+    fn query, _unnested? ->
       queries =
-        to_include_filtered
+        token_contract_address_hashes
         |> Enum.map(fn address ->
-          query |> where([t], t.token_contract_address_hash == ^address)
+          query
+          |> where([token_transfer], token_transfer.token_contract_address_hash == ^address)
+          |> query_function.(true)
         end)
         |> map_first(&subquery/1)
         |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
@@ -934,21 +1024,18 @@ defmodule Explorer.Chain.AdvancedFilter do
     end
   end
 
-  defp do_filter_by_token(query, {:exclude, token_contract_address_hashes}) do
-    to_exclude_filtered = token_contract_address_hashes |> Enum.reject(&(&1 == "native"))
-
-    if Enum.empty?(to_exclude_filtered) do
-      query
-    else
-      from(token_transfer in query,
-        left_join: to_exclude in fragment("UNNEST(?)", type(^to_exclude_filtered, {:array, Hash.Address})),
-        on: token_transfer.token_contract_address_hash == to_exclude,
-        where: is_nil(to_exclude)
+  defp do_filter_by_token(query_function, {:exclude, token_contract_address_hashes}) do
+    fn query, unnested? ->
+      query_function.(
+        from(token_transfer in query,
+          left_join: to_exclude in fragment("UNNEST(?)", type(^token_contract_address_hashes, {:array, Hash.Address})),
+          on: token_transfer.token_contract_address_hash == to_exclude,
+          where: is_nil(to_exclude)
+        ),
+        unnested?
       )
     end
   end
-
-  defp do_filter_by_token(query, _), do: query
 
   defp process_address_inclusion(addresses) when is_list(addresses) do
     case {Keyword.get(addresses, :include, []), Keyword.get(addresses, :exclude, [])} do
