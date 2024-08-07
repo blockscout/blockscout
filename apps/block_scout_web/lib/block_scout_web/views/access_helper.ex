@@ -53,13 +53,23 @@ defmodule BlockScoutWeb.AccessHelper do
     |> Conn.halt()
   end
 
+  @doc """
+  Checks, if rate limit reached before making a new request. It is applied to GraphQL API.
+  """
+  @spec check_rate_limit(Plug.Conn.t(), list()) :: :ok | :rate_limit_reached | true | false
   def check_rate_limit(conn, graphql?: true) do
     rate_limit_config = Application.get_env(:block_scout_web, Api.GraphQL)
+    no_rate_limit_api_key = rate_limit_config[:no_rate_limit_api_key]
 
-    if rate_limit_config[:rate_limit_disabled?] do
-      :ok
-    else
-      check_graphql_rate_limit_inner(conn, rate_limit_config)
+    cond do
+      rate_limit_config[:rate_limit_disabled?] ->
+        :ok
+
+      check_no_rate_limit_api_key(conn, no_rate_limit_api_key) ->
+        :ok
+
+      true ->
+        check_graphql_rate_limit_inner(conn, rate_limit_config)
     end
   end
 
@@ -74,29 +84,46 @@ defmodule BlockScoutWeb.AccessHelper do
     ip_string = conn_to_ip_string(conn)
     plan = get_plan(conn.query_params)
 
+    user_api_key = get_api_key(conn)
+
     cond do
-      check_api_key(conn) && get_api_key(conn) == static_api_key ->
-        rate_limit(static_api_key, limit_by_key, time_interval_limit)
+      check_api_key(conn) && user_api_key == static_api_key ->
+        rate_limit(static_api_key, time_interval_limit, limit_by_key)
 
       check_api_key(conn) && !is_nil(plan) ->
-        conn
-        |> get_api_key()
-        |> rate_limit(min(plan.max_req_per_second, limit_by_key), time_interval_limit)
+        rate_limit(user_api_key, time_interval_limit, min(plan.max_req_per_second, limit_by_key))
 
       true ->
         rate_limit("graphql_#{ip_string}", limit_by_ip, time_interval_by_ip) == :ok &&
-          rate_limit("graphql", global_limit, time_interval_limit) == :ok
+          rate_limit("graphql", time_interval_limit, global_limit) == :ok
     end
   end
 
+  @doc """
+  Checks, if rate limit reached before making a new request. It is applied to API v1, ETH RPC API.
+  """
+  @spec check_rate_limit(Plug.Conn.t()) :: :ok | :rate_limit_reached
   def check_rate_limit(conn) do
     rate_limit_config = Application.get_env(:block_scout_web, :api_rate_limit)
+    no_rate_limit_api_key = rate_limit_config[:no_rate_limit_api_key]
 
-    if rate_limit_config[:disabled] do
-      :ok
-    else
-      check_rate_limit_inner(conn, rate_limit_config)
+    cond do
+      rate_limit_config[:disabled] ->
+        :ok
+
+      check_no_rate_limit_api_key(conn, no_rate_limit_api_key) ->
+        :ok
+
+      true ->
+        check_rate_limit_inner(conn, rate_limit_config)
     end
+  end
+
+  defp check_no_rate_limit_api_key(conn, no_rate_limit_api_key) do
+    user_api_key = get_api_key(conn)
+
+    check_api_key(conn) && !is_nil(user_api_key) && String.trim(user_api_key) !== "" &&
+      user_api_key == no_rate_limit_api_key
   end
 
   # credo:disable-for-next-line /Complexity/
@@ -117,26 +144,26 @@ defmodule BlockScoutWeb.AccessHelper do
 
     user_agent = get_user_agent(conn)
 
+    user_api_key = get_api_key(conn)
+
     cond do
-      check_api_key(conn) && get_api_key(conn) == static_api_key ->
-        rate_limit(static_api_key, limit_by_key, time_interval_limit)
+      check_api_key(conn) && user_api_key == static_api_key ->
+        rate_limit(static_api_key, time_interval_limit, limit_by_key)
 
       check_api_key(conn) && !is_nil(plan) ->
-        conn
-        |> get_api_key()
-        |> rate_limit(plan.max_req_per_second, time_interval_limit)
+        rate_limit(user_api_key, time_interval_limit, plan.max_req_per_second)
 
       Enum.member?(whitelisted_ips(rate_limit_config), ip_string) ->
-        rate_limit(ip_string, limit_by_whitelisted_ip, time_interval_limit)
+        rate_limit(ip_string, time_interval_limit, limit_by_whitelisted_ip)
 
       api_v2_request?(conn) && !is_nil(token) && !is_nil(user_agent) ->
-        rate_limit(token, api_v2_ui_limit, time_interval_limit)
+        rate_limit(token, time_interval_limit, api_v2_ui_limit)
 
       api_v2_request?(conn) && !is_nil(user_agent) ->
-        rate_limit(ip_string, limit_by_ip, time_interval_by_ip)
+        rate_limit(ip_string, time_interval_by_ip, limit_by_ip)
 
       true ->
-        rate_limit("api", global_limit, time_interval_limit)
+        rate_limit("api", time_interval_limit, global_limit)
     end
   end
 
@@ -156,11 +183,8 @@ defmodule BlockScoutWeb.AccessHelper do
     end
   end
 
-  defp rate_limit(key, limit, time_interval) do
-    rate_limit_inner(key, time_interval, limit)
-  end
-
-  defp rate_limit_inner(key, time_interval, limit) do
+  @spec rate_limit(String.t(), integer(), integer()) :: :ok | :rate_limit_reached
+  defp rate_limit(key, time_interval, limit) do
     case Hammer.check_rate(key, time_interval, limit) do
       {:allow, _count} ->
         :ok
