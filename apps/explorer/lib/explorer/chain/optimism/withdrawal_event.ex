@@ -8,17 +8,17 @@ defmodule Explorer.Chain.Optimism.WithdrawalEvent do
   @required_attrs ~w(withdrawal_hash l1_event_type l1_timestamp l1_transaction_hash l1_block_number)a
   @optional_attrs ~w(game_index)a
 
-  @type t :: %__MODULE__{
-          withdrawal_hash: Hash.t(),
-          l1_event_type: String.t(),
-          l1_timestamp: DateTime.t(),
-          l1_transaction_hash: Hash.t(),
-          l1_block_number: non_neg_integer(),
-          game_index: non_neg_integer() | nil
-        }
-
+  @typedoc """
+    * `withdrawal_hash` - A withdrawal hash.
+    * `l1_event_type` - A type of withdrawal event: `WithdrawalProven` or `WithdrawalFinalized`.
+    * `l1_timestamp` - A timestamp of when the withdrawal event appeared.
+    * `l1_transaction_hash` - An hash of L1 transaction that contains the event.
+    * `l1_block_number` - An L1 block number of the L1 transaction.
+    * `game_index` - An index of a dispute game (if available in L1 transaction input) when
+      the withdrawal is proven. Equals to `nil` if not available.
+  """
   @primary_key false
-  schema "op_withdrawal_events" do
+  typed_schema "op_withdrawal_events" do
     field(:withdrawal_hash, Hash.Full, primary_key: true)
     field(:l1_event_type, Ecto.Enum, values: [:WithdrawalProven, :WithdrawalFinalized], primary_key: true)
     field(:l1_timestamp, :utc_datetime_usec)

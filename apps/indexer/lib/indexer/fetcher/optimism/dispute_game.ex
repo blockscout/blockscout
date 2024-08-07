@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Optimism.{DisputeGame, Withdrawal}
+  alias Indexer.Fetcher.Optimism
   alias Indexer.Helper, as: IndexerHelper
 
   @fetcher_name :optimism_dispute_games
@@ -51,13 +52,14 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
-    env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
+    env = Application.get_all_env(:indexer)[Optimism]
+    system_config = env[:optimism_l1_system_config]
     rpc = env[:optimism_l1_rpc]
-    optimism_portal = env[:optimism_l1_portal]
 
-    with {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(rpc)},
-         {:optimism_portal_valid, true} <- {:optimism_portal_valid, IndexerHelper.address_correct?(optimism_portal)},
+    with {:system_config_valid, true} <- {:system_config_valid, IndexerHelper.address_correct?(system_config)},
+         {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(rpc)},
          json_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(rpc),
+         {optimism_portal, _} <- Optimism.read_system_config(system_config, json_rpc_named_arguments),
          dispute_game_factory = get_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments),
          {:dispute_game_factory_available, true} <- {:dispute_game_factory_available, !is_nil(dispute_game_factory)},
          game_count = get_game_count(dispute_game_factory, json_rpc_named_arguments),
@@ -83,8 +85,8 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
         Logger.error("L1 RPC URL is not defined.")
         {:stop, :normal, %{}}
 
-      {:optimism_portal_valid, false} ->
-        Logger.error("OptimismPortal contract address is invalid or undefined.")
+      {:system_config_valid, false} ->
+        Logger.error("SystemConfig contract address is invalid or undefined.")
         {:stop, :normal, %{}}
 
       {:dispute_game_factory_available, false} ->
@@ -96,6 +98,10 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
       {:game_count_available, false} ->
         Logger.error("Cannot read gameCount() public getter from the DisputeGameFactory contract.")
+        {:stop, :normal, %{}}
+
+      nil ->
+        Logger.error("Cannot read SystemConfig contract.")
         {:stop, :normal, %{}}
     end
   end

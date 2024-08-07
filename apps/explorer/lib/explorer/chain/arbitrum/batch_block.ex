@@ -17,16 +17,32 @@ defmodule Explorer.Chain.Arbitrum.BatchBlock do
 
   @required_attrs ~w(batch_number block_number)a
 
-  @type t :: %__MODULE__{
-          batch_number: non_neg_integer(),
-          batch: %Ecto.Association.NotLoaded{} | L1Batch.t() | nil,
-          block_number: non_neg_integer(),
-          confirmation_id: non_neg_integer() | nil,
-          confirmation_transaction: %Ecto.Association.NotLoaded{} | LifecycleTransaction.t() | nil
+  @typedoc """
+  Descriptor of the a rollup block included in an Arbitrum batch:
+    * `batch_number` - The number of the Arbitrum batch.
+    * `block_number` - The number of the rollup block.
+    * `confirmation_id` - The ID of the confirmation L1 transaction from
+                          `Explorer.Chain.Arbitrum.LifecycleTransaction`, or `nil` if the
+                          block is not confirmed yet.
+  """
+  @type to_import :: %{
+          :batch_number => non_neg_integer(),
+          :block_number => non_neg_integer(),
+          :confirmation_id => non_neg_integer() | nil
         }
 
+  @typedoc """
+    * `block_number` - The number of the rollup block.
+    * `batch_number` - The number of the Arbitrum batch.
+    * `batch` - An instance of `Explorer.Chain.Arbitrum.L1Batch` referenced by `batch_number`.
+    * `confirmation_id` - The ID of the confirmation L1 transaction from
+                          `Explorer.Chain.Arbitrum.LifecycleTransaction`, or `nil`
+                          if the block is not confirmed yet.
+    * `confirmation_transaction` - An instance of `Explorer.Chain.Arbitrum.LifecycleTransaction`
+                                   referenced by `confirmation_id`.
+  """
   @primary_key {:block_number, :integer, autogenerate: false}
-  schema "arbitrum_batch_l2_blocks" do
+  typed_schema "arbitrum_batch_l2_blocks" do
     belongs_to(:batch, L1Batch, foreign_key: :batch_number, references: :number, type: :integer)
 
     belongs_to(:confirmation_transaction, LifecycleTransaction,

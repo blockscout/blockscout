@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
 
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
-  alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction}
+  alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction, Reader}
 
   @doc """
     Function to render GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
@@ -71,6 +71,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
       "after_acc" => batch.after_acc
     }
     |> add_l1_tx_info(batch)
+    |> add_da_info(batch)
   end
 
   @doc """
@@ -114,21 +115,62 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   # transaction that committed the batch to L1.
   #
   # ## Parameters
-  # - `batches`: A list of `Explorer.Chain.Arbitrum.L1Batch` entries.
+  # - `batches`: A list of `Explorer.Chain.Arbitrum.L1Batch` entries or a list of maps
+  #              with the corresponding fields.
   #
   # ## Returns
   # - A list of maps with detailed information about each batch, formatted for use
   #   in JSON HTTP responses.
-  @spec render_arbitrum_batches([L1Batch]) :: [map()]
+  @spec render_arbitrum_batches(
+          [L1Batch.t()]
+          | [
+              %{
+                :number => non_neg_integer(),
+                :transactions_count => non_neg_integer(),
+                :start_block => non_neg_integer(),
+                :end_block => non_neg_integer(),
+                :batch_container => atom() | nil,
+                :commitment_transaction => LifecycleTransaction.to_import(),
+                optional(any()) => any()
+              }
+            ]
+        ) :: [map()]
   defp render_arbitrum_batches(batches) do
-    Enum.map(batches, fn batch ->
-      %{
-        "number" => batch.number,
-        "transactions_count" => batch.transactions_count,
-        "blocks_count" => batch.end_block - batch.start_block + 1
-      }
-      |> add_l1_tx_info(batch)
-    end)
+    Enum.map(batches, &render_base_info_for_batch/1)
+  end
+
+  # Transforms a L1 batch into a map format for HTTP response.
+  #
+  # This function processes an Arbitrum L1 batch and converts it into a map that
+  # includes basic batch information and details of the associated transaction
+  # that committed the batch to L1.
+  #
+  # ## Parameters
+  # - `batch`: Either an `Explorer.Chain.Arbitrum.L1Batch` entry or a map with
+  #            the corresponding fields.
+  #
+  # ## Returns
+  # - A  map with detailed information about the batch, formatted for use in JSON HTTP responses.
+  @spec render_base_info_for_batch(
+          L1Batch.t()
+          | %{
+              :number => non_neg_integer(),
+              :transactions_count => non_neg_integer(),
+              :start_block => non_neg_integer(),
+              :end_block => non_neg_integer(),
+              :batch_container => atom() | nil,
+              :commitment_transaction => LifecycleTransaction.to_import(),
+              optional(any()) => any()
+            }
+        ) :: map()
+  def render_base_info_for_batch(batch) do
+    %{
+      "number" => batch.number,
+      "transactions_count" => batch.transactions_count,
+      "blocks_count" => batch.end_block - batch.start_block + 1,
+      "batch_data_container" => batch.batch_container
+    }
+    |> add_l1_tx_info(batch)
   end
 
   @doc """
@@ -208,6 +250,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
       commitment_transaction: arbitrum_entity.arbitrum_commitment_transaction,
       confirmation_transaction: arbitrum_entity.arbitrum_confirmation_transaction
     })
+    |> Map.put("batch_data_container", get_batch_data_container(arbitrum_entity))
     |> Map.put("batch_number", get_batch_number(arbitrum_entity))
   end
 
@@ -226,10 +269,24 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     end
   end
 
+  # Retrieves the batch data container label from an Arbitrum block or transaction
+  # if the batch data is loaded.
+  @spec get_batch_data_container(%{
+          :__struct__ => Block | Transaction,
+          :arbitrum_batch => any(),
+          optional(any()) => any()
+        }) :: nil | String.t()
+  defp get_batch_data_container(arbitrum_entity) do
+    case Map.get(arbitrum_entity, :arbitrum_batch) do
+      nil -> nil
+      %Ecto.Association.NotLoaded{} -> nil
+      value -> to_string(value.batch_container)
+    end
+  end
+
   # Augments an output JSON with commit transaction details and its status.
   @spec add_l1_tx_info(map(), %{
-          :__struct__ => L1Batch,
-          :commitment_transaction => any(),
+          :commitment_transaction => LifecycleTransaction.t() | LifecycleTransaction.to_import(),
           optional(any()) => any()
         }) :: map()
   defp add_l1_tx_info(out_json, %L1Batch{} = batch) do
@@ -243,6 +300,126 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
         "timestamp" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :ts),
         "status" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :status)
       }
+    })
+  end
+
+  defp add_l1_tx_info(out_json, %{
+         commitment_transaction: %{
+           hash: hash,
+           block_number: block_number,
+           timestamp: ts,
+           status: status
+         }
+       }) do
+    out_json
+    |> Map.merge(%{
+      "commitment_transaction" => %{
+        "hash" => %Hash{byte_count: 32, bytes: hash},
+        "block_number" => block_number,
+        "timestamp" => ts,
+        "status" => status
+      }
+    })
+  end
+
+  # Adds data availability (DA) information to the given output JSON based on the batch container type.
+  #
+  # This function enriches the output JSON with data availability information based on
+  # the type of batch container. It handles different DA types, including AnyTrust and
+  # Celestia, and generates the appropriate DA data for inclusion in the output.
+  #
+  # ## Parameters
+  # - `out_json`: The initial JSON map to be enriched with DA information.
+  # - `batch`: The batch struct containing information about the rollup batch.
+  #
+  # ## Returns
+  # - An updated JSON map containing the data availability information.
+  @spec add_da_info(map(), %{
+          :__struct__ => L1Batch,
+          :batch_container => :in_anytrust | :in_celestia | atom() | nil,
+          :number => non_neg_integer(),
+          optional(any()) => any()
+        }) :: map()
+  defp add_da_info(out_json, %L1Batch{} = batch) do
+    da_info =
+      case batch.batch_container do
+        nil -> %{"batch_data_container" => nil}
+        :in_anytrust -> generate_anytrust_certificate(batch.number)
+        :in_celestia -> generate_celestia_da_info(batch.number)
+        value -> %{"batch_data_container" => to_string(value)}
+      end
+
+    out_json
+    |> Map.put("data_availability", da_info)
+  end
+
+  # Generates an AnyTrust certificate for the specified batch number.
+  @spec generate_anytrust_certificate(non_neg_integer()) :: map()
+  defp generate_anytrust_certificate(batch_number) do
+    out = %{"batch_data_container" => "in_anytrust"}
+
+    da_info =
+      with raw_info <- Reader.get_da_info_by_batch_number(batch_number),
+           false <- Enum.empty?(raw_info) do
+        prepare_anytrust_certificate(raw_info)
+      else
+        _ -> %{"data_hash" => nil, "timeout" => nil, "bls_signature" => nil, "signers" => []}
+      end
+
+    out
+    |> Map.merge(da_info)
+  end
+
+  # Prepares an AnyTrust certificate from the given DA information.
+  #
+  # This function retrieves the corresponding AnyTrust keyset based on the provided
+  # DA information, constructs a list of signers and the signers' mask, and assembles
+  # the certificate data.
+  #
+  # ## Parameters
+  # - `da_info`: A map containing the DA information, including the keyset hash, data
+  #   hash, timeout, aggregated BLS signature, and signers' mask.
+  #
+  # ## Returns
+  # - A map representing the AnyTrust certificate, containing the data hash, data
+  #   availability timeout, aggregated BLS signature, and the list of committee
+  #   members who guaranteed availability of data for the specified timeout.
+  @spec prepare_anytrust_certificate(map()) :: map()
+  defp prepare_anytrust_certificate(da_info) do
+    keyset = Reader.get_anytrust_keyset(da_info["keyset_hash"])
+
+    signers =
+      if Enum.empty?(keyset) do
+        []
+      else
+        signers_mask = da_info["signers_mask"]
+
+        # Matches the signers' mask with the keyset to extract the list of signers.
+        keyset["pubkeys"]
+        |> Enum.with_index()
+        |> Enum.filter(fn {_, index} -> Bitwise.band(signers_mask, Bitwise.bsl(1, index)) != 0 end)
+        |> Enum.map(fn {pubkey, _} -> pubkey end)
+      end
+
+    %{
+      "data_hash" => da_info["data_hash"],
+      "timeout" => da_info["timeout"],
+      "bls_signature" => da_info["bls_signature"],
+      "signers" => signers
+    }
+  end
+
+  # Generates Celestia DA information for the given batch number.
+  @spec generate_celestia_da_info(non_neg_integer()) :: map()
+  defp generate_celestia_da_info(batch_number) do
+    out = %{"batch_data_container" => "in_celestia"}
+
+    da_info = Reader.get_da_info_by_batch_number(batch_number)
+
+    out
+    |> Map.merge(%{
+      "height" => Map.get(da_info, "height"),
+      "tx_commitment" => Map.get(da_info, "tx_commitment")
     })
   end
 

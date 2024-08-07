@@ -83,7 +83,6 @@ defmodule Explorer.Etherscan.Logs do
         |> where([log], log.block_number >= ^prepared_filter.from_block)
         |> where([log], log.block_number <= ^prepared_filter.to_block)
         |> limit(1000)
-        |> order_by([log], asc: log.block_number, asc: log.index)
         |> page_logs(paging_options)
 
       all_transaction_logs_query =
@@ -105,7 +104,6 @@ defmodule Explorer.Etherscan.Logs do
       query_with_blocks =
         from(log_transaction_data in subquery(all_transaction_logs_query),
           where: log_transaction_data.address_hash == ^address_hash,
-          order_by: log_transaction_data.block_number,
           select_merge: %{
             block_consensus: log_transaction_data.block_consensus
           }
@@ -121,6 +119,7 @@ defmodule Explorer.Etherscan.Logs do
         end
 
       query_with_consensus
+      |> order_by([log], asc: log.block_number, asc: log.index)
       |> Repo.replica().all()
     else
       logs_query = where_topic_match(Log, prepared_filter)
