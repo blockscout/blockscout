@@ -275,6 +275,8 @@ defmodule Explorer.Etherscan.Logs do
   }
 
   defp where_topic_match(query, filter) do
+    filter = sanitize_filter_topics(filter)
+
     case Enum.filter(@topics, &filter[&1]) do
       [] ->
         query
@@ -284,6 +286,46 @@ defmodule Explorer.Etherscan.Logs do
 
       _ ->
         where_multiple_topics_match(query, filter)
+    end
+  end
+
+  defp sanitize_filter_topics(filter) do
+    @topics
+    |> Enum.reduce(filter, fn topic, acc ->
+      topic_value = filter[topic]
+
+      sanitized_value =
+        topic_value
+        |> List.wrap()
+        |> Enum.map(&sanitize_topic_value/1)
+        |> Enum.reject(&is_nil/1)
+        |> case do
+          [] -> nil
+          [topic] -> topic
+          topics -> topics
+        end
+
+      Map.put(acc, topic, sanitized_value)
+    end)
+  end
+
+  defp sanitize_topic_value(topic_value) do
+    case topic_value do
+      %Explorer.Chain.Hash{} ->
+        topic_value
+
+      _ ->
+        sanitize_string_topic_value(topic_value)
+    end
+  end
+
+  defp sanitize_string_topic_value(topic_value) do
+    case Chain.string_to_block_hash(topic_value) do
+      {:ok, _} ->
+        topic_value
+
+      _ ->
+        nil
     end
   end
 
