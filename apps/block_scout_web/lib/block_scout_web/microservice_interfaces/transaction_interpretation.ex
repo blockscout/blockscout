@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
-  alias Explorer.Chain.{Data, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
   alias HTTPoison.Response
 
   import Explorer.Utility.Microservice, only: [base_url: 2, check_enabled: 2]
@@ -17,6 +17,13 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @request_error_msg "Error while sending request to Transaction Interpretation Service"
   @api_true api?: true
   @items_limit 50
+  @internal_transaction_necessity_by_association [
+    necessity_by_association: %{
+      [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
+    }
+  ]
 
   @doc """
   Interpret transaction or user operation
@@ -100,6 +107,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     transaction =
       Chain.select_repo(@api_true).preload(transaction, [
         :transaction_actions,
+        :block,
         to_address: [:names, :smart_contract],
         from_address: [:names, :smart_contract],
         created_contract_address: [:names, :token, :smart_contract]
@@ -129,7 +137,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         tx_types: TransactionView.tx_types(transaction),
         raw_input: transaction.input,
         decoded_input: decoded_input_data,
-        token_transfers: prepare_token_transfers(transaction, decoded_input)
+        token_transfers: prepare_token_transfers(transaction, decoded_input),
+        internal_transactions: prepare_internal_transactions(transaction)
       },
       logs_data: %{items: prepare_logs(transaction)}
     }
@@ -150,6 +159,17 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     |> Chain.flat_1155_batch_token_transfers()
     |> Enum.take(@items_limit)
     |> Enum.map(&TransactionView.prepare_token_transfer(&1, nil, decoded_input))
+  end
+
+  defp prepare_internal_transactions(transaction) do
+    full_options =
+      @internal_transaction_necessity_by_association
+      |> Keyword.merge(@api_true)
+
+    transaction.hash
+    |> InternalTransaction.transaction_to_internal_transactions(full_options)
+    |> Enum.take(@items_limit)
+    |> Enum.map(&TransactionView.prepare_internal_transaction(&1, transaction.block))
   end
 
   defp user_op_to_logs_and_token_transfers(user_op, decoded_input) do
