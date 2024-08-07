@@ -278,4 +278,9 @@ defmodule Explorer.Chain.Token do
       timeout: @timeout
     )
   end
+
+  def token_by_contract_address_hash_query(contract_address_hash) do
+    __MODULE__
+    |> where([token], token.contract_address_hash == ^contract_address_hash)
+  end
 end

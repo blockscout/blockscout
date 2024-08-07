@@ -3,10 +3,10 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   Adapter for fetching exchange rates from https://coingecko.com
   """
 
-  alias Explorer.{Chain, Helper}
+  alias Explorer.Chain
   alias Explorer.ExchangeRates.{Source, Token}
 
-  import Source, only: [to_decimal: 1]
+  import Source, only: [to_decimal: 1, maybe_get_date: 1, handle_image_url: 1]
 
   @behaviour Source
 
@@ -244,12 +244,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   defp get_last_updated(market_data) do
     last_updated_data = market_data && market_data["last_updated"]
 
-    if last_updated_data do
-      {:ok, last_updated, 0} = DateTime.from_iso8601(last_updated_data)
-      last_updated
-    else
-      nil
-    end
+    maybe_get_date(last_updated_data)
   end
 
   defp get_current_price(market_data) do
@@ -268,10 +263,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
         nil
       end
 
-    case Helper.validate_url(image_url_raw) do
-      {:ok, url} -> url
-      _ -> nil
-    end
+    handle_image_url(image_url_raw)
   end
 
   defp get_btc_value(id, market_data) do
