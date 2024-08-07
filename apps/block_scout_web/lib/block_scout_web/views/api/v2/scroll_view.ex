@@ -43,6 +43,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
 
     out_json
     |> add_optional_transaction_field(transaction, :l1_fee)
+    |> add_optional_transaction_field(transaction, :queue_index)
     |> Map.put("l1_fee_scalar", l1_fee_scalar)
     |> Map.put("l1_fee_commit_scalar", l1_fee_commit_scalar)
     |> Map.put("l1_fee_blob_scalar", l1_fee_blob_scalar)
