@@ -74,7 +74,6 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
   }
 
   @impl Stage
-  # credo:disable-for-next-line /Complexity/
   def runners do
     chain_type = Application.get_env(:explorer, :chain_type)
     chain_type_runners = Map.get(@extra_runners_by_chain_type, chain_type, [])

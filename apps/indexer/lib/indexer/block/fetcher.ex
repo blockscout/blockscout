@@ -278,6 +278,7 @@ defmodule Indexer.Block.Fetcher do
     end
   end
 
+  # credo:disable-for-next-line /Complexity/
   defp import_options(basic_import_options, %{
          transactions_with_receipts: transactions_with_receipts,
          optimism_withdrawals: optimism_withdrawals,
