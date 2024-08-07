@@ -868,6 +868,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
+    :scroll ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
+
+      defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
+        if single_tx? do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+          BlockScoutWeb.API.V2.ScrollView.extend_transaction_json_response(result, transaction)
+        else
+          result
+        end
+      end
+
     :suave ->
       defp chain_type_transformations(transactions) do
         transactions

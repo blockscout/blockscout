@@ -16,6 +16,7 @@ defmodule ConfigHelper do
         :polygon_edge -> base_repos ++ [Explorer.Repo.PolygonEdge]
         :polygon_zkevm -> base_repos ++ [Explorer.Repo.PolygonZkevm]
         :rsk -> base_repos ++ [Explorer.Repo.RSK]
+        :scroll -> base_repos ++ [Explorer.Repo.Scroll]
         :shibarium -> base_repos ++ [Explorer.Repo.Shibarium]
         :suave -> base_repos ++ [Explorer.Repo.Suave]
         :filecoin -> base_repos ++ [Explorer.Repo.Filecoin]
@@ -289,6 +290,7 @@ defmodule ConfigHelper do
     "polygon_edge",
     "polygon_zkevm",
     "rsk",
+    "scroll",
     "shibarium",
     "stability",
     "suave",

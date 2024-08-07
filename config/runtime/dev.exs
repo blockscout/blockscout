@@ -117,6 +117,13 @@ config :explorer, Explorer.Repo.PolygonZkevm,
   # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
   pool_size: 1
 
+# Configure Scroll database
+config :explorer, Explorer.Repo.Scroll,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: 1
+
 # Configure ZkSync database
 config :explorer, Explorer.Repo.ZkSync,
   database: database,

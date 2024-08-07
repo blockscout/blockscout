@@ -156,6 +156,7 @@ defmodule Explorer.Application do
         Explorer.Repo.Optimism,
         Explorer.Repo.PolygonEdge,
         Explorer.Repo.PolygonZkevm,
+        Explorer.Repo.Scroll,
         Explorer.Repo.ZkSync,
         Explorer.Repo.Celo,
         Explorer.Repo.RSK,

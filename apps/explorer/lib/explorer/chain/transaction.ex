@@ -48,6 +48,15 @@ defmodule Explorer.Chain.Transaction.Schema do
                             2
                           )
 
+                        :scroll ->
+                          elem(
+                            quote do
+                              field(:l1_fee, Wei)
+                              field(:queue_index, :integer)
+                            end,
+                            2
+                          )
+
                         :suave ->
                           elem(
                             quote do
@@ -312,6 +321,9 @@ defmodule Explorer.Chain.Transaction do
   @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
                                 :optimism ->
                                   ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
+
+                                :scroll ->
+                                  ~w(l1_fee queue_index)a
 
                                 :suave ->
                                   ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
@@ -1755,7 +1767,7 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  The fee a `transaction` paid for the `t:Explorer.Transaction.t/0` `gas`
+  The fee a `transaction` paid for the `t:Explorer.Chain.Transaction.t/0` `gas`.
 
   If the transaction is pending, then the fee will be a range of `unit`
 
@@ -1795,12 +1807,7 @@ defmodule Explorer.Chain.Transaction do
       {:actual, nil}
     else
       gas_price = effective_gas_price(transaction)
-
-      {:actual,
-       gas_price &&
-         gas_price
-         |> Wei.to(unit)
-         |> Decimal.mult(gas_used)}
+      {:actual, gas_price && l2_fee(gas_price, gas_used, unit)}
     end
   end
 
@@ -1808,7 +1815,7 @@ defmodule Explorer.Chain.Transaction do
     {:actual, fee(tx, gas_price, gas_used, unit)}
   end
 
-  defp fee(tx, gas_price, gas, unit) do
+  defp fee(tx, gas_price, gas_used, unit) do
     l1_fee =
       case Map.get(tx, :l1_fee) do
         nil -> Wei.from(Decimal.new(0), :wei)
@@ -1816,11 +1823,35 @@ defmodule Explorer.Chain.Transaction do
       end
 
     gas_price
-    |> Wei.to(unit)
-    |> Decimal.mult(gas)
+    |> l2_fee(gas_used, unit)
     |> Wei.from(unit)
     |> Wei.sum(l1_fee)
     |> Wei.to(unit)
+  end
+
+  @doc """
+    The fee a `transaction` paid for the `t:Explorer.Chain.Transaction.t/0` `gas`.
+    Doesn't include L1 fee. See the description for the `fee` function for parameters and return values.
+  """
+  def l2_fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
+
+  def l2_fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
+    {:maximum, l2_fee(gas_price, gas, unit)}
+  end
+
+  def l2_fee(%Transaction{gas_price: nil, gas_used: gas_used} = tx, unit) do
+    gas_price = effective_gas_price(tx)
+    {:actual, gas_price && l2_fee(gas_price, gas_used, unit)}
+  end
+
+  def l2_fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
+    {:actual, l2_fee(gas_price, gas_used, unit)}
+  end
+
+  def l2_fee(gas_price, gas_used, unit) do
+    gas_price
+    |> Wei.to(unit)
+    |> Decimal.mult(gas_used)
   end
 
   @doc """

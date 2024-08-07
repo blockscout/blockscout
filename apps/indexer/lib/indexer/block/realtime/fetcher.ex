@@ -40,6 +40,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Indexer.Fetcher.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
   alias Indexer.Fetcher.PolygonZkevm.BridgeL2, as: PolygonZkevmBridgeL2
+  alias Indexer.Fetcher.Scroll.L1FeeParam, as: ScrollL1FeeParam
   alias Indexer.Fetcher.Shibarium.L2, as: ShibariumBridgeL2
   alias Indexer.Prometheus
   alias Timex.Duration
@@ -300,6 +301,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
           # we need to remove all rows from `polygon_zkevm_bridge` table previously written starting from reorg block number
           remove_polygon_zkevm_assets_by_number(block_number_to_fetch)
 
+          # we need to remove all rows from `scroll_l1_fee_params` table previously written starting from reorg block number
+          remove_scroll_assets_by_number(block_number_to_fetch)
+
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
           :timer.sleep(@reorg_delay)
@@ -335,6 +339,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp remove_shibarium_assets_by_number(block_number_to_fetch) do
     if Application.get_env(:explorer, :chain_type) == :shibarium do
       ShibariumBridgeL2.reorg_handle(block_number_to_fetch)
+    end
+  end
+
+  defp remove_scroll_assets_by_number(block_number_to_fetch) do
+    if Application.get_env(:explorer, :chain_type) == :scroll do
+      ScrollL1FeeParam.handle_l2_reorg(block_number_to_fetch)
     end
   end
 

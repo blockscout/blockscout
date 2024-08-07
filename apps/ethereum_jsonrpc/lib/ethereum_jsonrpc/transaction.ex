@@ -34,6 +34,13 @@ defmodule EthereumJSONRPC.Transaction do
                            ]
                          )
 
+    :scroll ->
+      @chain_type_fields quote(
+                           do: [
+                             queue_index: non_neg_integer()
+                           ]
+                         )
+
     :suave ->
       @chain_type_fields quote(
                            do: [
@@ -113,6 +120,9 @@ defmodule EthereumJSONRPC.Transaction do
     :optimism -> """
        * `"l1TxOrigin"` - .
        * `"l1BlockNumber"` - .
+      """
+    :scroll -> """
+       * `"queueIndex"` - .
       """
     :suave -> """
        * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).
@@ -511,6 +521,11 @@ defmodule EthereumJSONRPC.Transaction do
           {"blobVersionedHashes", :blob_versioned_hashes}
         ])
 
+      :scroll ->
+        put_if_present(params, elixir, [
+          {"queueIndex", :queue_index}
+        ])
+
       :suave ->
         wrapped = Map.get(elixir, "requestRecord")
 
@@ -670,7 +685,7 @@ defmodule EthereumJSONRPC.Transaction do
     do: {"input", value}
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas maxFeePerBlobGas requestId) and
+       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas maxFeePerBlobGas requestId queueIndex) and
               quantity != nil do
     {key, quantity_to_integer(quantity)}
   end

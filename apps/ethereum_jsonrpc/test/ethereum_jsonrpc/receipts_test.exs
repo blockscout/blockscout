@@ -86,7 +86,8 @@ defmodule EthereumJSONRPC.ReceiptsTest do
                      "data" => data,
                      "logIndex" => integer_to_quantity(index),
                      "topics" => [first_topic],
-                     "transactionHash" => transaction_hash
+                     "transactionHash" => transaction_hash,
+                     "transactionIndex" => integer_to_quantity(transaction_index)
                    }
                  ],
                  "status" => native_status,
@@ -110,7 +111,8 @@ defmodule EthereumJSONRPC.ReceiptsTest do
                     index: ^index,
                     second_topic: nil,
                     third_topic: nil,
-                    transaction_hash: ^transaction_hash
+                    transaction_hash: ^transaction_hash,
+                    transaction_index: ^transaction_index
                   }
                   | _
                 ],

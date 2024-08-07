@@ -251,14 +251,14 @@ defmodule Indexer.Helper do
           non_neg_integer() | binary(),
           non_neg_integer() | binary(),
           binary(),
-          [binary()],
+          [binary()] | [list()],
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: {:error, atom() | binary() | map()} | {:ok, any()}
   @spec get_logs(
           non_neg_integer() | binary(),
           non_neg_integer() | binary(),
           binary(),
-          [binary()],
+          [binary()] | [list()],
           EthereumJSONRPC.json_rpc_named_arguments(),
           integer()
         ) :: {:error, atom() | binary() | map()} | {:ok, any()}
@@ -266,7 +266,7 @@ defmodule Indexer.Helper do
           non_neg_integer() | binary(),
           non_neg_integer() | binary(),
           binary(),
-          [binary()],
+          [binary()] | [list()],
           EthereumJSONRPC.json_rpc_named_arguments(),
           integer(),
           non_neg_integer()
