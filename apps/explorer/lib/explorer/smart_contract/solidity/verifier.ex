@@ -25,6 +25,12 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   @bytecode_hash_options ["default", "none", "bzzr1"]
 
+  if Application.compile_env(:explorer, :chain_type) == :zksync do
+    @optimization_runs "200"
+  else
+    @optimization_runs 200
+  end
+
   def evaluate_authenticity(_, %{"contract_source_code" => ""}),
     do: {:error, :contract_source_code}
 
@@ -127,10 +133,26 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   def evaluate_authenticity_via_standard_json_input_inner(true, address_hash, params, json_input) do
     {creation_tx_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
-    %{"compilerVersion" => params["compiler_version"]}
+    compiler_version_map =
+      if Application.get_env(:explorer, :chain_type) == :zksync do
+        constructor_arguments = zksync_get_constructor_arguments(address_hash)
+
+        %{
+          "solcCompiler" => params["compiler_version"],
+          "zkCompiler" => params["zk_compiler_version"],
+          "constructorArguments" => constructor_arguments
+        }
+      else
+        %{"compilerVersion" => params["compiler_version"]}
+      end
+
+    compiler_version_map
     |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
     |> Map.put("input", json_input)
-    |> RustVerifierInterface.verify_standard_json_input(verifier_metadata)
+    |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+          do: RustVerifierInterface.zksync_verify_standard_json_input(&1, verifier_metadata),
+          else: RustVerifierInterface.verify_standard_json_input(&1, verifier_metadata)
+        )).()
   end
 
   def evaluate_authenticity_via_standard_json_input_inner(false, address_hash, params, json_input) do
@@ -148,6 +170,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
     |> Map.put("compilerVersion", params["compiler_version"])
     |> RustVerifierInterface.verify_multi_part(verifier_metadata)
+  end
+
+  defp zksync_get_constructor_arguments(address_hash_string) do
+    Chain.contract_creation_input_data(address_hash_string)
   end
 
   defp verify(address_hash, params, json_input) do
@@ -215,6 +241,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp extract_settings_from_json(json_input) when is_map(json_input) do
     %{"enabled" => optimization, "runs" => optimization_runs} = json_input["settings"]["optimizer"]
 
+    optimization_runs =
+      if Application.get_env(:explorer, :chain_type) == :zksync,
+        do: to_string(optimization_runs),
+        else: optimization_runs
+
     %{"optimization" => optimization}
     |> (&if(parse_boolean(optimization), do: Map.put(&1, "optimization_runs", optimization_runs), else: &1)).()
   end
@@ -227,7 +258,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     external_libraries = Map.get(params, "external_libraries", %{})
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     evm_version = Map.get(params, "evm_version")
-    optimization_runs = Map.get(params, "optimization_runs", 200)
+    optimization_runs = Map.get(params, "optimization_runs", @optimization_runs)
     autodetect_constructor_arguments = params |> Map.get("autodetect_constructor_args", "true") |> parse_boolean()
 
     if is_compiler_version_at_least_0_6_0?(compiler_version) do

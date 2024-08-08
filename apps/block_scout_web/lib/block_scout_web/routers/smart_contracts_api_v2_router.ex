@@ -69,12 +69,15 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
   scope "/:address_hash/verification/via", as: :api_v2 do
     pipe_through(:api_v2_no_forgery_protect)
 
-    post("/flattened-code", V2.VerificationController, :verification_via_flattened_code)
     post("/standard-input", V2.VerificationController, :verification_via_standard_input)
-    post("/sourcify", V2.VerificationController, :verification_via_sourcify)
-    post("/multi-part", V2.VerificationController, :verification_via_multi_part)
-    post("/vyper-code", V2.VerificationController, :verification_via_vyper_code)
-    post("/vyper-multi-part", V2.VerificationController, :verification_via_vyper_multipart)
-    post("/vyper-standard-input", V2.VerificationController, :verification_via_vyper_standard_input)
+
+    if Application.compile_env(:explorer, :chain_type) !== :zksync do
+      post("/flattened-code", V2.VerificationController, :verification_via_flattened_code)
+      post("/sourcify", V2.VerificationController, :verification_via_sourcify)
+      post("/multi-part", V2.VerificationController, :verification_via_multi_part)
+      post("/vyper-code", V2.VerificationController, :verification_via_vyper_code)
+      post("/vyper-multi-part", V2.VerificationController, :verification_via_vyper_multipart)
+      post("/vyper-standard-input", V2.VerificationController, :verification_via_vyper_standard_input)
+    end
   end
 end

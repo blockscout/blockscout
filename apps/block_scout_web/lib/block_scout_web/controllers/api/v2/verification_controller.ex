@@ -19,8 +19,15 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   @api_true [api?: true]
   @sc_verification_started "Smart-contract verification started"
 
+  if Application.compile_env(:explorer, :chain_type) == :zksync do
+    @optimization_runs "200"
+  else
+    @optimization_runs 200
+  end
+
   def config(conn, _params) do
     solidity_compiler_versions = CompilerVersion.fetch_version_list(:solc)
+    zk_compiler_versions = CompilerVersion.fetch_version_list(:zk)
     vyper_compiler_versions = CompilerVersion.fetch_version_list(:vyper)
 
     verification_options =
@@ -34,16 +41,26 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
             else: &1
           )).()
 
+    base_config =
+      %{
+        solidity_evm_versions: CodeCompiler.evm_versions(:solidity),
+        solidity_compiler_versions: solidity_compiler_versions,
+        vyper_compiler_versions: vyper_compiler_versions,
+        verification_options: verification_options,
+        vyper_evm_versions: CodeCompiler.evm_versions(:vyper),
+        is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?(),
+        license_types: Enum.into(SmartContract.license_types_enum(), %{})
+      }
+
+    config =
+      base_config
+      |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+            do: Map.put(&1, :zk_compiler_versions, zk_compiler_versions),
+            else: &1
+          )).()
+
     conn
-    |> json(%{
-      solidity_evm_versions: CodeCompiler.evm_versions(:solidity),
-      solidity_compiler_versions: solidity_compiler_versions,
-      vyper_compiler_versions: vyper_compiler_versions,
-      verification_options: verification_options,
-      vyper_evm_versions: CodeCompiler.evm_versions(:vyper),
-      is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?(),
-      license_types: Enum.into(SmartContract.license_types_enum(), %{})
-    })
+    |> json(config)
   end
 
   def verification_via_flattened_code(
@@ -62,7 +79,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         }
         |> Map.put("optimization", Map.get(params, "is_optimization_enabled", false))
         |> (&if(params |> Map.get("is_optimization_enabled", false) |> parse_boolean(),
-              do: Map.put(&1, "optimization_runs", Map.get(params, "optimization_runs", 200)),
+              do: Map.put(&1, "optimization_runs", Map.get(params, "optimization_runs", @optimization_runs)),
               else: &1
             )).()
         |> Map.put("evm_version", Map.get(params, "evm_version", "default"))
@@ -98,6 +115,10 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", ""))
         |> Map.put("name", Map.get(params, "contract_name", ""))
         |> Map.put("license_type", Map.get(params, "license_type"))
+        |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+              do: Map.put(&1, "zk_compiler_version", Map.get(params, "zk_compiler_version")),
+              else: &1
+            )).()
 
       log_sc_verification_started(address_hash_string)
       Que.add(SolidityPublisherWorker, {"json_api_v2", verification_params, json_input})
@@ -150,7 +171,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         }
         |> Map.put("optimization", Map.get(params, "is_optimization_enabled", false))
         |> (&if(params |> Map.get("is_optimization_enabled", false) |> parse_boolean(),
-              do: Map.put(&1, "optimization_runs", Map.get(params, "optimization_runs", 200)),
+              do: Map.put(&1, "optimization_runs", Map.get(params, "optimization_runs", @optimization_runs)),
               else: &1
             )).()
         |> Map.put("evm_version", Map.get(params, "evm_version", "default"))

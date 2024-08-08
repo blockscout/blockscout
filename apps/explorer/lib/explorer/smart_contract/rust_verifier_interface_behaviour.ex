@@ -39,6 +39,18 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata), true)
       end
 
+      def zksync_verify_standard_json_input(
+            %{
+              "code" => _,
+              "solcCompiler" => _,
+              "zkCompiler" => _,
+              "input" => _
+            } = body,
+            metadata
+          ) do
+        http_post_request(solidity_standard_json_verification_url(), append_metadata(body, metadata), true)
+      end
+
       def vyper_verify_multipart(
             %{
               "bytecode" => _,
@@ -146,32 +158,64 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
         {:ok, source}
       end
 
+      # zksync
+      def process_verifier_response(%{"verificationSuccess" => success}, _) do
+        {:ok, success}
+      end
+
+      # zksync
+      def process_verifier_response(%{"verificationFailure" => %{"message" => error}}, _) do
+        {:error, error}
+      end
+
+      # zksync
+      def process_verifier_response(%{"compilationFailure" => %{"message" => error}}, _) do
+        {:error, error}
+      end
+
       def process_verifier_response(%{"status" => "FAILURE", "message" => error}, _) do
         {:error, error}
       end
 
       def process_verifier_response(%{"compilerVersions" => versions}, _), do: {:ok, versions}
 
-      def process_verifier_response(other, _), do: {:error, other}
+      # zksync
+      def process_verifier_response(%{"solcCompilers" => solc_compilers, "zkCompilers" => zk_compilers}, _),
+        do: {:ok, {solc_compilers, zk_compilers}}
+
+      def process_verifier_response(other, res) do
+        {:error, other}
+      end
 
       # Uses url encoded ("%3A") version of ':', as ':' symbol breaks `Bypass` library during tests.
       # https://github.com/PSPDFKit-labs/bypass/issues/122
 
       def solidity_multiple_files_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/solidity/sources%3Averify-multi-part"
+        do: base_api_url() <> "/verifier/solidity/sources%3Averify-multi-part"
 
       def vyper_multiple_files_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/vyper/sources%3Averify-multi-part"
+        do: base_api_url() <> "/verifier/vyper/sources%3Averify-multi-part"
 
       def vyper_standard_json_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/vyper/sources%3Averify-standard-json"
+        do: base_api_url() <> "/verifier/vyper/sources%3Averify-standard-json"
 
-      def solidity_standard_json_verification_url,
-        do: "#{base_api_url()}" <> "/verifier/solidity/sources%3Averify-standard-json"
+      def solidity_standard_json_verification_url do
+        base_api_url() <> verifier_path() <> "/solidity/sources%3Averify-standard-json"
+      end
 
-      def versions_list_url, do: "#{base_api_url()}" <> "/verifier/solidity/versions"
+      def versions_list_url do
+        base_api_url() <> verifier_path() <> "/solidity/versions"
+      end
 
-      def vyper_versions_list_url, do: "#{base_api_url()}" <> "/verifier/vyper/versions"
+      defp verifier_path do
+        if Application.get_env(:explorer, :chain_type) == :zksync do
+          "/zksync-verifier"
+        else
+          "/verifier"
+        end
+      end
+
+      def vyper_versions_list_url, do: base_api_url() <> "/verifier/vyper/versions"
 
       def base_api_url, do: "#{base_url()}" <> "/api/v2"
 

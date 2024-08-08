@@ -1,5 +1,48 @@
+defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
+  @moduledoc false
+  case Application.compile_env(:explorer, :chain_type) do
+    :zksync ->
+      @chain_type_fields quote(
+                           do: [
+                             field(:optimization_runs, :string),
+                             field(:zk_compiler_version, :string)
+                           ]
+                         )
+
+    _ ->
+      @chain_type_fields quote(do: [field(:optimization_runs, :integer)])
+  end
+
+  defmacro generate do
+    quote do
+      object :smart_contract do
+        field(:name, :string)
+        field(:compiler_version, :string)
+        field(:optimization, :boolean)
+        field(:contract_source_code, :string)
+        field(:abi, :json)
+        field(:address_hash, :address_hash)
+        field(:constructor_arguments, :string)
+        field(:evm_version, :string)
+        field(:external_libraries, :json)
+        field(:verified_via_sourcify, :boolean)
+        field(:partially_verified, :boolean)
+        field(:file_path, :string)
+        field(:is_vyper_contract, :boolean)
+        field(:is_changed_bytecode, :boolean)
+        field(:compiler_settings, :json)
+        field(:verified_via_eth_bytecode_db, :boolean)
+
+        unquote_splicing(@chain_type_fields)
+      end
+    end
+  end
+end
+
 defmodule BlockScoutWeb.GraphQL.Schema.Types do
   @moduledoc false
+
+  require BlockScoutWeb.GraphQL.Schema.SmartContracts
 
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
@@ -10,6 +53,8 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
     InternalTransaction,
     Transaction
   }
+
+  alias BlockScoutWeb.GraphQL.Schema.SmartContracts, as: SmartContractsSchema
 
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.GraphQL.Schema.Scalars)
@@ -100,25 +145,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
   blockchain."
   http://solidity.readthedocs.io/en/v0.4.24/introduction-to-smart-contracts.html
   """
-  object :smart_contract do
-    field(:name, :string)
-    field(:compiler_version, :string)
-    field(:optimization, :boolean)
-    field(:contract_source_code, :string)
-    field(:abi, :json)
-    field(:address_hash, :address_hash)
-    field(:constructor_arguments, :string)
-    field(:optimization_runs, :integer)
-    field(:evm_version, :string)
-    field(:external_libraries, :json)
-    field(:verified_via_sourcify, :boolean)
-    field(:partially_verified, :boolean)
-    field(:file_path, :string)
-    field(:is_vyper_contract, :boolean)
-    field(:is_changed_bytecode, :boolean)
-    field(:compiler_settings, :json)
-    field(:verified_via_eth_bytecode_db, :boolean)
-  end
+  SmartContractsSchema.generate()
 
   @desc """
   Represents a token transfer between addresses.

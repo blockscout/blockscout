@@ -367,13 +367,21 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     contract_name = settings |> Map.get("compilationTarget") |> Map.get("#{compilation_target_file_path}")
     optimizer = Map.get(settings, "optimizer")
 
+    runs =
+      optimizer
+      |> Map.get("runs")
+      |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+            do: to_string(&1),
+            else: &1
+          )).()
+
     params =
       %{}
       |> Map.put("name", contract_name)
       |> Map.put("compiler_version", compiler_version)
       |> Map.put("evm_version", Map.get(settings, "evmVersion"))
       |> Map.put("optimization", Map.get(optimizer, "enabled"))
-      |> Map.put("optimization_runs", Map.get(optimizer, "runs"))
+      |> Map.put("optimization_runs", runs)
       |> Map.put("external_libraries", Map.get(settings, "libraries"))
       |> Map.put("verified_via_sourcify", true)
       |> Map.put("compiler_settings", settings)
