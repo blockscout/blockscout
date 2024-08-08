@@ -256,22 +256,83 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert PendingBlockOperation |> Repo.get(full_block.hash) |> is_nil()
     end
 
-    test "sets refetch_needed=true for blocks where not all transactions are filled" do
-      full_block = insert(:block)
-      transaction_a = insert(:transaction) |> with_block(full_block)
-      transaction_b = insert(:transaction) |> with_block(full_block)
+    if Application.compile_env(:explorer, :chain_type) != :zetachain do
+      test "sets refetch_needed=true for blocks where not all transactions are filled" do
+        full_block = insert(:block)
+        transaction_a = insert(:transaction) |> with_block(full_block)
+        transaction_b = insert(:transaction) |> with_block(full_block)
 
-      insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
+        insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
 
-      transaction_a_changes = make_internal_transaction_changes(transaction_a, 0, nil)
+        transaction_a_changes = make_internal_transaction_changes(transaction_a, 0, nil)
 
-      assert {:ok, _} = run_internal_transactions([transaction_a_changes])
+        assert {:ok, _} = run_internal_transactions([transaction_a_changes])
 
-      assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_a.hash) |> Repo.one() |> is_nil()
-      assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_b.hash) |> Repo.one() |> is_nil()
+        assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_a.hash)
+               |> Repo.one()
+               |> is_nil()
 
-      assert %{consensus: true, refetch_needed: true} = Repo.get(Block, full_block.hash)
-      assert not is_nil(Repo.get(PendingBlockOperation, full_block.hash))
+        assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_b.hash)
+               |> Repo.one()
+               |> is_nil()
+
+        assert %{consensus: true, refetch_needed: true} = Repo.get(Block, full_block.hash)
+        assert not is_nil(Repo.get(PendingBlockOperation, full_block.hash))
+      end
+
+      test "does not set refetch_needed=true from non-traceable blocks" do
+        original_config = Application.get_env(:indexer, :trace_block_ranges)
+
+        full_block = insert(:block)
+        transaction_a = insert(:transaction) |> with_block(full_block)
+        transaction_b = insert(:transaction) |> with_block(full_block)
+
+        Application.put_env(:indexer, :trace_block_ranges, "#{full_block.number + 1}..latest")
+
+        insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
+
+        transaction_a_changes = make_internal_transaction_changes(transaction_a, 0, nil)
+
+        assert {:ok, _} = run_internal_transactions([transaction_a_changes])
+
+        assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_a.hash)
+               |> Repo.one()
+               |> is_nil()
+
+        assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_b.hash)
+               |> Repo.one()
+               |> is_nil()
+
+        assert %{consensus: true, refetch_needed: false} = Repo.get(Block, full_block.hash)
+
+        on_exit(fn -> Application.put_env(:indexer, :trace_block_ranges, original_config) end)
+      end
+    end
+
+    if Application.compile_env(:explorer, :chain_type) == :zetachain do
+      test "does not set refetch_needed=true from non-traceable blocks (zetachain)" do
+        original_config = Application.get_env(:indexer, :trace_block_ranges)
+
+        full_block = insert(:block)
+        transaction = insert(:transaction) |> with_block(full_block)
+
+        Application.put_env(:indexer, :trace_block_ranges, "#{full_block.number + 1}..latest")
+
+        insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
+
+        transaction_changes =
+          transaction
+          |> make_internal_transaction_changes(0, nil)
+          |> Map.put(:block_number, full_block.number - 1)
+
+        assert {:ok, _} = run_internal_transactions([transaction_changes])
+
+        assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction.hash) |> Repo.one() |> is_nil()
+
+        assert %{consensus: true, refetch_needed: false} = Repo.get(Block, full_block.hash)
+
+        on_exit(fn -> Application.put_env(:indexer, :trace_block_ranges, original_config) end)
+      end
     end
 
     test "does not remove consensus when block is empty and no transactions are missing" do
@@ -309,29 +370,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert %{consensus: true} = Repo.get(Block, full_block.hash)
       assert PendingBlockOperation |> Repo.get(full_block.hash) |> is_nil()
-    end
-
-    test "does not remove consensus from non-traceable blocks" do
-      original_config = Application.get_env(:indexer, :trace_block_ranges)
-
-      full_block = insert(:block)
-      transaction_a = insert(:transaction) |> with_block(full_block)
-      transaction_b = insert(:transaction) |> with_block(full_block)
-
-      Application.put_env(:indexer, :trace_block_ranges, "#{full_block.number + 1}..latest")
-
-      insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
-
-      transaction_a_changes = make_internal_transaction_changes(transaction_a, 0, nil)
-
-      assert {:ok, _} = run_internal_transactions([transaction_a_changes])
-
-      assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_a.hash) |> Repo.one() |> is_nil()
-      assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_b.hash) |> Repo.one() |> is_nil()
-
-      assert %{consensus: true} = Repo.get(Block, full_block.hash)
-
-      on_exit(fn -> Application.put_env(:indexer, :trace_block_ranges, original_config) end)
     end
 
     test "successfully imports internal transaction with stop type" do
