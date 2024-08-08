@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.API.V2.UtilsController do
           @api_true
         )
 
-      decoded_input_data = decoded_input |> TransactionView.format_decoded_input() |> TransactionView.decoded_input()
+      decoded_input_data = decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()
 
       conn
       |> json(%{result: decoded_input_data})

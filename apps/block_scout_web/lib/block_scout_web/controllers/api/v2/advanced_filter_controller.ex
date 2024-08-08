@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 4]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
-  alias BlockScoutWeb.API.V2.{AdvancedFilterView, CSVExportController, TransactionView}
+  alias BlockScoutWeb.API.V2.{AdvancedFilterView, CSVExportController}
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{AdvancedFilter, ContractMethod, Data, Token, Transaction}
   alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     {decoded_transactions, _abi_acc, methods_acc} =
       advanced_filters
       |> Enum.map(fn af -> %Transaction{to_address: af.to_address, input: af.input, hash: af.hash} end)
-      |> TransactionView.decode_transactions(true)
+      |> Transaction.decode_transactions(true, @api_true)
 
     next_page_params =
       next_page |> next_page_params(advanced_filters, Map.take(params, ["items_count"]), &paging_params/1)

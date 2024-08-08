@@ -8,9 +8,34 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
     test "exports address transactions to csv" do
       address = insert(:address)
 
+      insert(:contract_method,
+        identifier: Base.decode16!("731133e9", case: :lower),
+        abi: %{
+          "constant" => false,
+          "inputs" => [
+            %{"name" => "account", "type" => "address"},
+            %{"name" => "id", "type" => "uint256"},
+            %{"name" => "amount", "type" => "uint256"},
+            %{"name" => "data", "type" => "bytes"}
+          ],
+          "name" => "mint",
+          "outputs" => [],
+          "payable" => false,
+          "stateMutability" => "nonpayable",
+          "type" => "function"
+        }
+      )
+
+      to_address = insert(:contract_address)
+
       transaction =
         :transaction
-        |> insert(from_address: address)
+        |> insert(
+          from_address: address,
+          to_address: to_address,
+          input:
+            "0x731133e9000000000000000000000000bb36c792b9b45aaf8b848a1392b0d6559202729e000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001700000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000"
+        )
         |> with_block()
         |> Repo.preload(:token_transfers)
 
@@ -50,6 +75,8 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
                          [[], op_price],
                          _,
                          [[], cl_price],
+                         _,
+                         [[], method_name],
                          _
                        ] ->
           %{
@@ -66,7 +93,8 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
             error: error,
             current_price: cur_price,
             opening_price: op_price,
-            closing_price: cl_price
+            closing_price: cl_price,
+            method_name: method_name
           }
         end)
 
@@ -84,6 +112,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       assert result.current_price
       assert result.opening_price
       assert result.closing_price
+      assert result.method_name == "mint"
     end
 
     test "fetches all transactions" do
