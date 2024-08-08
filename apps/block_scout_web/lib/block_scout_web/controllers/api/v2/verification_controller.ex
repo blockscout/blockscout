@@ -27,6 +27,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
   def config(conn, _params) do
     solidity_compiler_versions = CompilerVersion.fetch_version_list(:solc)
+    zk_compiler_versions = CompilerVersion.fetch_version_list(:zk)
     vyper_compiler_versions = CompilerVersion.fetch_version_list(:vyper)
 
     verification_options =
@@ -40,16 +41,26 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
             else: &1
           )).()
 
+    base_config =
+      %{
+        solidity_evm_versions: CodeCompiler.evm_versions(:solidity),
+        solidity_compiler_versions: solidity_compiler_versions,
+        vyper_compiler_versions: vyper_compiler_versions,
+        verification_options: verification_options,
+        vyper_evm_versions: CodeCompiler.evm_versions(:vyper),
+        is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?(),
+        license_types: Enum.into(SmartContract.license_types_enum(), %{})
+      }
+
+    config =
+      base_config
+      |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+            do: Map.put(&1, :zk_compiler_versions, zk_compiler_versions),
+            else: &1
+          )).()
+
     conn
-    |> json(%{
-      solidity_evm_versions: CodeCompiler.evm_versions(:solidity),
-      solidity_compiler_versions: solidity_compiler_versions,
-      vyper_compiler_versions: vyper_compiler_versions,
-      verification_options: verification_options,
-      vyper_evm_versions: CodeCompiler.evm_versions(:vyper),
-      is_rust_verifier_microservice_enabled: RustVerifierInterface.enabled?(),
-      license_types: Enum.into(SmartContract.license_types_enum(), %{})
-    })
+    |> json(config)
   end
 
   def verification_via_flattened_code(

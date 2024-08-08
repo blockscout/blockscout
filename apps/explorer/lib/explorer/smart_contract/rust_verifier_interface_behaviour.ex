@@ -179,6 +179,10 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
 
       def process_verifier_response(%{"compilerVersions" => versions}, _), do: {:ok, versions}
 
+      # zksync
+      def process_verifier_response(%{"solcCompilers" => solc_compilers, "zkCompilers" => zk_compilers}, _),
+        do: {:ok, {solc_compilers, zk_compilers}}
+
       def process_verifier_response(other, res) do
         {:error, other}
       end
