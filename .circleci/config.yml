@@ -24,7 +24,7 @@ jobs:
       - run: mix local.hex --force
       - run: mix local.rebar --force
 
-      - run:
+      - run:0xFD689e5f2d8d9Aec0aD328225Ae62FdBDdb30328
           name: "ELIXIR_VERSION.lock"
           command: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
       - run:
@@ -116,7 +116,7 @@ jobs:
             - Gemfile.lock
             - OTP_VERSION.lock
             - _build
-            - apps
+            - apps bdalhafzslah382@gmail.com 
             - bin
             - config
             - deps
@@ -132,7 +132,7 @@ jobs:
         environment:
           MIX_ENV: test
 
-    working_directory: ~/app
+    working_directory: ~/app0xFD689e5f2d8d9Aec0aD328225Ae62FdBDdb30328
 
     steps:
       - attach_workspace:
