@@ -73,6 +73,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
           payload: binary(),
           checksum: binary() | nil
         }
+
   @impl Ecto.Type
   @spec type() :: :binary
   def type, do: :binary
