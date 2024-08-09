@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Filecoin.NativeAddress.ID do
+defmodule Explorer.Chain.Filecoin.IDAddress do
   @moduledoc """
   Handles Filecoin ID addresses, wrapping the `NativeAddress` type.
   """
@@ -17,7 +17,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddress.ID do
   @type t :: %__MODULE__{value: binary()}
 
   @impl Ecto.Type
-  def type, do: :bytea
+  @spec type() :: :binary
+  def type, do: :binary
 
   defp to_native_adddress(%__MODULE__{value: value}) do
     %NativeAddress{
@@ -26,21 +27,21 @@ defmodule Explorer.Chain.Filecoin.NativeAddress.ID do
     }
   end
 
-  @impl Ecto.Type
   @doc """
-  Casts a binary string to a `Explorer.Chain.Filecoin.NativeAddress.ID`.
+  Casts a binary string to a `Explorer.Chain.Filecoin.IDAddress`.
 
   ## Examples
 
-      iex> Explorer.Chain.Filecoin.NativeAddress.ID.cast("f01729")
-      {:ok, %Explorer.Chain.Filecoin.NativeAddress.ID{value: <<193, 13>>}}
+      iex> Explorer.Chain.Filecoin.IDAddress.cast("f01729")
+      {:ok, %Explorer.Chain.Filecoin.IDAddress{value: <<193, 13>>}}
 
-      iex> Explorer.Chain.Filecoin.NativeAddress.ID.cast(%Explorer.Chain.Filecoin.NativeAddress.ID{value: <<193, 13>>})
-      {:ok, %Explorer.Chain.Filecoin.NativeAddress.ID{value: <<193, 13>>}}
+      iex> Explorer.Chain.Filecoin.IDAddress.cast(%Explorer.Chain.Filecoin.IDAddress{value: <<193, 13>>})
+      {:ok, %Explorer.Chain.Filecoin.IDAddress{value: <<193, 13>>}}
 
-      iex> Explorer.Chain.Filecoin.NativeAddress.ID.cast("invalid")
+      iex> Explorer.Chain.Filecoin.IDAddress.cast("invalid")
       :error
   """
+  @impl Ecto.Type
   def cast(address_string) when is_binary(address_string) do
     address_string
     |> NativeAddress.cast()
@@ -63,19 +64,19 @@ defmodule Explorer.Chain.Filecoin.NativeAddress.ID do
   @impl Ecto.Type
   def cast(_), do: :error
 
-  @impl Ecto.Type
   @doc """
-  Dumps an `Explorer.Chain.Filecoin.NativeAddress.ID` to its binary representation.
+  Dumps an `Explorer.Chain.Filecoin.IDAddress` to its binary representation.
 
   ## Examples
 
-      iex> address = %Explorer.Chain.Filecoin.NativeAddress.ID{value: <<193, 13>>}
-      iex> Explorer.Chain.Filecoin.NativeAddress.ID.dump(address)
+      iex> address = %Explorer.Chain.Filecoin.IDAddress{value: <<193, 13>>}
+      iex> Explorer.Chain.Filecoin.IDAddress.dump(address)
       {:ok, <<0, 193, 13>>}
 
-      iex> Explorer.Chain.Filecoin.NativeAddress.ID.dump("invalid")
+      iex> Explorer.Chain.Filecoin.IDAddress.dump("invalid")
       :error
   """
+  @impl Ecto.Type
   def dump(%__MODULE__{} = address) do
     address
     |> to_native_adddress()
@@ -84,18 +85,18 @@ defmodule Explorer.Chain.Filecoin.NativeAddress.ID do
 
   def dump(_), do: :error
 
-  @impl Ecto.Type
   @doc """
-  Loads a binary representation of an `Explorer.Chain.Filecoin.NativeAddress.ID`.
+  Loads a binary representation of an `Explorer.Chain.Filecoin.IDAddress`.
 
   ## Examples
 
-      iex> Explorer.Chain.Filecoin.NativeAddress.ID.load(<<0, 193, 13>>)
-      {:ok, %Explorer.Chain.Filecoin.NativeAddress.ID{value: <<193, 13>>}}
+      iex> Explorer.Chain.Filecoin.IDAddress.load(<<0, 193, 13>>)
+      {:ok, %Explorer.Chain.Filecoin.IDAddress{value: <<193, 13>>}}
 
-      iex> Explorer.Chain.Filecoin.NativeAddress.ID.load("invalid")
+      iex> Explorer.Chain.Filecoin.IDAddress.load("invalid")
       :error
   """
+  @impl Ecto.Type
   def load(bytes) when is_binary(bytes) do
     bytes
     |> NativeAddress.load()
@@ -115,12 +116,12 @@ defmodule Explorer.Chain.Filecoin.NativeAddress.ID do
   def load(_), do: :error
 
   @doc """
-  Converts an `Explorer.Chain.Filecoin.NativeAddress.ID` to its string representation.
+  Converts an `Explorer.Chain.Filecoin.IDAddress` to its string representation.
 
   ## Examples
 
-      iex> address = %Explorer.Chain.Filecoin.NativeAddress.ID{value: <<193, 13>>}
-      iex> Explorer.Chain.Filecoin.NativeAddress.ID.to_string(address)
+      iex> address = %Explorer.Chain.Filecoin.IDAddress{value: <<193, 13>>}
+      iex> Explorer.Chain.Filecoin.IDAddress.to_string(address)
       "f01729"
   """
   @spec to_string(t()) :: String.t()
