@@ -27,6 +27,11 @@ defmodule Explorer.ExchangeRates.Source.DefiLlama do
   end
 
   @impl Source
+  def secondary_source_url do
+    :ignore
+  end
+
+  @impl Source
   def headers do
     []
   end

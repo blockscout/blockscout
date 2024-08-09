@@ -173,7 +173,17 @@ defmodule ConfigHelper do
 
   @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap | Source.Mobula
   def exchange_rates_source do
-    case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
+    case System.get_env("EXCHANGE_RATES_SOURCE") do
+      "coin_gecko" -> Source.CoinGecko
+      "coin_market_cap" -> Source.CoinMarketCap
+      "mobula" -> Source.Mobula
+      _ -> Source.CoinGecko
+    end
+  end
+
+  @spec exchange_rates_secondary_coin_source() :: Source.CoinGecko | Source.CoinMarketCap | Source.Mobula
+  def exchange_rates_secondary_coin_source do
+    case System.get_env("EXCHANGE_RATES_SECONDARY_COIN_SOURCE") do
       "coin_gecko" -> Source.CoinGecko
       "coin_market_cap" -> Source.CoinMarketCap
       "mobula" -> Source.Mobula

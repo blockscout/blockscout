@@ -13,7 +13,6 @@ defmodule Explorer.ExchangeRates do
   alias Explorer.Market
   alias Explorer.ExchangeRates.{Source, Token}
 
-  @interval Application.compile_env(:explorer, __MODULE__)[:cache_period]
   @table_name :exchange_rates
 
   @impl GenServer
@@ -27,23 +26,30 @@ defmodule Explorer.ExchangeRates do
 
   # Callback for successful fetch
   @impl GenServer
-  def handle_info({_ref, {:ok, tokens}}, state) do
+  def handle_info({_ref, {:ok, secondary_coin?, [coin]}}, state) do
     if store() == :ets do
-      records = Enum.map(tokens, &Token.to_tuple/1)
-      :ets.insert(table_name(), records)
+      :ets.insert(table_name(), {secondary_coin?, coin})
     end
 
     broadcast_event(:exchange_rate)
+
+    unless secondary_coin? do
+      schedule_next_consolidation()
+    end
 
     {:noreply, state}
   end
 
   # Callback for errored fetch
   @impl GenServer
-  def handle_info({_ref, {:error, reason}}, state) do
-    Logger.warning(fn -> "Failed to get exchange rates with reason '#{reason}'." end)
+  def handle_info({_ref, {:error, secondary_coin?, reason}}, state) do
+    Logger.warning(fn ->
+      "Failed to get #{if secondary_coin?, do: "secondary", else: ""} exchange rates with reason '#{reason}'."
+    end)
 
-    schedule_next_consolidation()
+    unless secondary_coin? do
+      schedule_next_consolidation()
+    end
 
     {:noreply, state}
   end
@@ -57,7 +63,6 @@ defmodule Explorer.ExchangeRates do
   @impl GenServer
   def init(_) do
     send(self(), :update)
-    :timer.send_interval(@interval, :update)
 
     table_opts = [
       :set,
@@ -79,7 +84,29 @@ defmodule Explorer.ExchangeRates do
   end
 
   defp schedule_next_consolidation do
-    Process.send_after(self(), :update, :timer.minutes(1))
+    if consolidate?() do
+      Process.send_after(self(), :update, cache_period())
+    end
+  end
+
+  @spec get_coin_exchange_rate() :: Token.t() | nil
+  def get_coin_exchange_rate do
+    if store() == :ets && enabled?() do
+      case :ets.lookup(table_name(), false) do
+        [{_, coin} | _] -> coin
+        _ -> nil
+      end
+    end
+  end
+
+  @spec get_secondary_coin_exchange_rate() :: Token.t() | nil
+  def get_secondary_coin_exchange_rate do
+    if store() == :ets && enabled?() do
+      case :ets.lookup(table_name(), true) do
+        [{_, coin} | _] -> coin
+        _ -> nil
+      end
+    end
   end
 
   @doc """
@@ -123,12 +150,29 @@ defmodule Explorer.ExchangeRates do
 
   @spec fetch_rates :: Task.t()
   defp fetch_rates do
-    Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
+    Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fetch_rates_task(false))
+
+    if secondary_coin_enabled?() do
+      Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fetch_rates_task(true))
+    end
+  end
+
+  defp fetch_rates_task(false) do
+    fn ->
       case Source.fetch_exchange_rates() do
-        {:ok, tokens} -> {:ok, add_coin_info_from_db(tokens)}
-        err -> err
+        {:ok, coin} -> {:ok, false, add_coin_info_from_db(coin)}
+        {:error, reason} -> {:error, false, reason}
       end
-    end)
+    end
+  end
+
+  defp fetch_rates_task(true) do
+    fn ->
+      case Source.fetch_secondary_exchange_rates() do
+        {:ok, coin} -> {:ok, true, coin}
+        {:error, reason} -> {:error, true, reason}
+      end
+    end
   end
 
   defp add_coin_info_from_db(tokens) do
@@ -150,7 +194,7 @@ defmodule Explorer.ExchangeRates do
   defp list_from_store(:ets) do
     table_name()
     |> :ets.tab2list()
-    |> Enum.map(&Token.from_tuple/1)
+    |> Enum.map(fn {_, coin} -> coin end)
     |> Enum.sort_by(fn %Token{symbol: symbol} -> symbol end)
   end
 
@@ -160,7 +204,19 @@ defmodule Explorer.ExchangeRates do
     config(:store) || :ets
   end
 
+  defp cache_period do
+    Application.get_env(:explorer, __MODULE__, [])[:cache_period]
+  end
+
   defp enabled? do
     Application.get_env(:explorer, __MODULE__, [])[:enabled] == true
+  end
+
+  defp consolidate? do
+    Application.get_env(:explorer, __MODULE__, [])[:enable_consolidation]
+  end
+
+  defp secondary_coin_enabled? do
+    Application.get_env(:explorer, __MODULE__, [])[:secondary_coin_enabled]
   end
 end

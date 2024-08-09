@@ -20,6 +20,8 @@ config :explorer, Explorer.Counters.Transactions24hStats,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TRANSACTIONS_24H_STATS_PERIOD", "1h"),
   enable_consolidation: false
 
+config :explorer, Explorer.ExchangeRates, enable_consolidation: false
+
 variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "apps/explorer/config/test")

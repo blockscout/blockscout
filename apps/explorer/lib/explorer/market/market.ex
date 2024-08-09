@@ -55,7 +55,7 @@ defmodule Explorer.Market do
   """
   @spec get_coin_exchange_rate() :: Token.t()
   def get_coin_exchange_rate do
-    get_native_coin_exchange_rate_from_cache() || get_native_coin_exchange_rate_from_db() || Token.null()
+    ExchangeRates.get_coin_exchange_rate() || get_native_coin_exchange_rate_from_db() || Token.null()
   end
 
   @doc """
@@ -63,7 +63,7 @@ defmodule Explorer.Market do
   """
   @spec get_secondary_coin_exchange_rate() :: Token.t()
   def get_secondary_coin_exchange_rate do
-    get_native_coin_exchange_rate_from_db(true)
+    ExchangeRates.get_secondary_coin_exchange_rate() || get_native_coin_exchange_rate_from_db(true)
   end
 
   @doc false
@@ -145,13 +145,5 @@ defmodule Explorer.Market do
           market_history.opening_price == 0 or is_nil(market_history.closing_price) or
           market_history.closing_price == 0
     )
-  end
-
-  @spec get_native_coin_exchange_rate_from_cache :: Token.t() | nil
-  defp get_native_coin_exchange_rate_from_cache do
-    case ExchangeRates.list() do
-      [native_coin] -> native_coin
-      _ -> nil
-    end
   end
 end
