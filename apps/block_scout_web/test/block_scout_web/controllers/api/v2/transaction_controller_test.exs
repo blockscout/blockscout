@@ -1322,7 +1322,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/raw-trace")
 
       assert response = json_response(request, 500)
-      assert response == "error"
+      assert response == "Error while raw trace fetching"
     end
   end
 
