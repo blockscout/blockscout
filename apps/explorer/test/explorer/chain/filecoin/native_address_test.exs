@@ -8,12 +8,15 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
   doctest NativeAddress
   doctest NativeAddress.ID
 
+  @doc """
+  The following test cases are taken from the filecoin spec:
+  https://spec.filecoin.io/appendix/address/#section-appendix.address.test-vectors
+
+  The key is the address and the value is the hex-encoded binary representation
+  of the address in the database.
+  """
+  # cspell:disable
   @test_cases %{
-    # The following test cases are taken from the filecoin spec:
-    # https://spec.filecoin.io/appendix/address/#section-appendix.address.test-vectors
-    #
-    # The key is the address and the value is the hex-encoded binary
-    # representation of the address in the database.
     "f00" => "0000",
     "f0150" => "009601",
     "f01024" => "008008",
@@ -40,6 +43,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
     "f3u5zgwa4ael3vuocgc5mfgygo4yuqocrntuuhcklf4xzg5tcaqwbyfabxetwtj4tsam3pbhnwghyhijr5mixa" =>
       "03a7726b038022f75a384617585360cee629070a2d9d28712965e5f26ecc40858382803724ed34f2720336f09db631f074"
   }
+
+  # cspell:enable
 
   describe "cast/1" do
     test "parses f0, f1, f2, f3 addresses from spec test vectors" do
