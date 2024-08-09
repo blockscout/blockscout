@@ -3,10 +3,10 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
 
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Hash.Address
-  alias Explorer.Chain.Filecoin.NativeAddress
+  alias Explorer.Chain.Filecoin.{NativeAddress, IDAddress}
 
   doctest NativeAddress
-  doctest NativeAddress.ID
+  doctest IDAddress
 
   @doc """
   The following test cases are taken from the filecoin spec:
