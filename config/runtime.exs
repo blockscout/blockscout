@@ -1037,7 +1037,6 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,
     ConfigHelper.chain_type() == :polygon_zkevm &&
       ConfigHelper.parse_bool_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED")
 
-
 config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CELO_VALIDATOR_GROUP_VOTES_BATCH_SIZE", 200_000)
 
@@ -1057,6 +1056,17 @@ config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
 config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
   base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3"),
   api_token: System.get_env("BERYX_API_TOKEN")
+
+filecoin_native_address_fetcher_enabled? =
+  ConfigHelper.chain_type() == :filecoin and
+    not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_FILECOIN_NATIVE_ADDRESS_FETCHER")
+
+config :indexer, Indexer.Fetcher.Filecoin.NativeAddress.Supervisor,
+  enabled: filecoin_native_address_fetcher_enabled?,
+  disabled?: not filecoin_native_address_fetcher_enabled?
+
+config :indexer, Indexer.Fetcher.Filecoin.NativeAddress,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_FILECOIN_NATIVE_ADDRESS_CONCURRENCY", 1)
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
