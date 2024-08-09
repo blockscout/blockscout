@@ -83,6 +83,10 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 
+  @doc """
+  Prepares address properties for rendering in /addresses and /addresses/:address_hash_param API v2 endpoints
+  """
+  @spec prepare_address(Address.t(), Plug.Conn.t() | nil) :: map()
   def prepare_address(address, conn \\ nil) do
     base_info = Helper.address_with_info(conn, address, address.hash, true)
 
@@ -93,17 +97,24 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         false
       )
 
-    is_proxy = AddressView.smart_contract_is_proxy?(address_with_smart_contract, @api_true)
+    is_verified_smart_contract = !is_nil(address_with_smart_contract.smart_contract)
+    is_proxy = AddressView.address_is_proxy?(address_with_smart_contract, @api_true)
 
-    implementations =
-      with true <- is_proxy,
-           {addresses, names} <-
-             Implementation.get_implementation(address_with_smart_contract.smart_contract, @api_true),
-           false <- addresses && Enum.empty?(addresses) do
-        Helper.proxy_object_info(addresses, names)
+    {implementations, proxy_type} =
+      with {:verified_smart_contract, true} <- {:verified_smart_contract, is_verified_smart_contract},
+           true <- is_proxy,
+           {addresses, names, proxy_type} <-
+             Implementation.get_implementation(address_with_smart_contract.smart_contract, @api_true) do
+        {Helper.proxy_object_info(addresses, names), proxy_type}
       else
+        {:verified_smart_contract, false} ->
+          {addresses, names, proxy_type} =
+            Implementation.get_implementation(address_with_smart_contract.smart_contract, @api_true)
+
+          {Helper.proxy_object_info(addresses, names), proxy_type}
+
         _ ->
-          []
+          {[], nil}
       end
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
@@ -134,6 +145,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       extended_info
     else
       Map.merge(extended_info, %{
+        "proxy_type" => proxy_type,
         "implementations" => implementations
       })
     end

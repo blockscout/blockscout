@@ -78,8 +78,6 @@ defmodule BlockScoutWeb.AddressReadContractControllerTest do
         block_index: 0
       )
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
       conn =
         get(conn, address_read_contract_path(BlockScoutWeb.Endpoint, :index, Address.checksum(contract_address.hash)))
 

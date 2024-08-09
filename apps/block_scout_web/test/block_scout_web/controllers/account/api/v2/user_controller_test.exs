@@ -151,6 +151,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
              "name" => name,
              "address" => %{
                "hash" => Address.checksum(addr),
+               "proxy_type" => nil,
                "implementations" => [],
                "is_contract" => false,
                "is_verified" => false,
@@ -207,6 +208,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
              "name" => name,
              "address" => %{
                "hash" => Address.checksum(addr),
+               "proxy_type" => nil,
                "implementations" => [],
                "is_contract" => false,
                "is_verified" => false,

@@ -2599,7 +2599,8 @@ defmodule Explorer.ChainTest do
           :contracts_creation_internal_transaction,
           :contracts_creation_transaction,
           :token,
-          [smart_contract: :smart_contract_additional_sources]
+          [smart_contract: :smart_contract_additional_sources],
+          :proxy_implementations
         ])
 
       options = [
@@ -2611,8 +2612,6 @@ defmodule Explorer.ChainTest do
           :contracts_creation_transaction => :optional
         }
       ]
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
 
       response = Chain.find_contract_address(address.hash, options, true)
 

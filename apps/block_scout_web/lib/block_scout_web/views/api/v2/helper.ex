@@ -64,25 +64,27 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def address_with_info(%Address{} = address, _address_hash) do
     smart_contract? = Address.smart_contract?(address)
 
-    {proxy_implementations, implementation_address_hashes, implementation_names} =
+    {proxy_implementations, implementation_address_hashes, implementation_names, proxy_type} =
       case address.proxy_implementations do
         %NotLoaded{} ->
-          {nil, [], []}
+          {nil, [], [], nil}
 
         nil ->
-          {nil, [], []}
+          {nil, [], [], nil}
 
         proxy_implementations ->
           address_hashes = proxy_implementations.address_hashes
           names = proxy_implementations.names
+          proxy_type = proxy_implementations.proxy_type
 
-          {proxy_implementations, address_hashes, names}
+          {proxy_implementations, address_hashes, names, proxy_type}
       end
 
     %{
       "hash" => Address.checksum(address),
       "is_contract" => smart_contract?,
       "name" => address_name(address),
+      "proxy_type" => proxy_type,
       "implementations" => proxy_object_info(implementation_address_hashes, implementation_names),
       "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
       "ens_domain_name" => address.ens_domain_name,
@@ -110,6 +112,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => Address.checksum(address_hash),
       "is_contract" => false,
       "name" => nil,
+      "proxy_type" => nil,
       "implementations" => [],
       "is_verified" => nil,
       "ens_domain_name" => nil,
