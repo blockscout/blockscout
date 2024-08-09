@@ -154,7 +154,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
     write_methods? = AddressView.smart_contract_with_write_functions?(address)
 
-    is_proxy = AddressView.smart_contract_is_proxy?(address, @api_true)
+    is_proxy = AddressView.address_is_proxy?(address, @api_true)
 
     read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
     write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)

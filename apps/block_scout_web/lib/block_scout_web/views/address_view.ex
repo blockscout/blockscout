@@ -259,13 +259,13 @@ defmodule BlockScoutWeb.AddressView do
 
   def read_function?(function), do: Helper.queriable_method?(function) || Helper.read_with_wallet_method?(function)
 
-  def smart_contract_is_proxy?(address, options \\ [])
+  def address_is_proxy?(address, options \\ [])
 
-  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, options) do
+  def address_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, options) do
     Proxy.proxy_contract?(smart_contract, options)
   end
 
-  def smart_contract_is_proxy?(%Address{smart_contract: _}, _), do: false
+  def address_is_proxy?(%Address{smart_contract: _}, _), do: false
 
   def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     !contract_interaction_disabled?() &&
