@@ -278,4 +278,10 @@ defmodule Explorer.Chain.Token do
       timeout: @timeout
     )
   end
+
+  def drop_token_info(token) do
+    token
+    |> Changeset.change(%{is_verified_via_admin_panel: false, icon_url: nil, symbol: nil, name: nil})
+    |> Repo.update()
+  end
 end
