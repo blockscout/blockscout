@@ -29,7 +29,8 @@ defmodule ConfigHelper do
     ext_repos =
       [
         {parse_bool_env_var("BRIDGED_TOKENS_ENABLED"), Explorer.Repo.BridgedTokens},
-        {parse_bool_env_var("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud}
+        {parse_bool_env_var("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud},
+        {parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"), Explorer.Repo.ShrunkInternalTransactions}
       ]
       |> Enum.filter(&elem(&1, 0))
       |> Enum.map(&elem(&1, 1))

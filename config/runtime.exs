@@ -235,7 +235,8 @@ config :explorer,
   checksum_function: checksum_function && String.to_atom(checksum_function),
   elasticity_multiplier: ConfigHelper.parse_integer_env_var("EIP_1559_ELASTICITY_MULTIPLIER", 2),
   base_fee_max_change_denominator: ConfigHelper.parse_integer_env_var("EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR", 8),
-  csv_export_limit: ConfigHelper.parse_integer_env_var("CSV_EXPORT_LIMIT", 10_000)
+  csv_export_limit: ConfigHelper.parse_integer_env_var("CSV_EXPORT_LIMIT", 10_000),
+  shrink_internal_transactions_enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED")
 
 config :explorer, :proxy,
   caching_implementation_data_enabled: true,
@@ -592,6 +593,11 @@ config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_CONCURRENCY", 5),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_BATCH_SIZE", 50),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_TIMEOUT", "250ms")
+
+config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
+  enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
+  batch_size: ConfigHelper.parse_integer_env_var("SHRINK_INTERNAL_TRANSACTIONS_BATCH_SIZE", 1000),
+  concurrency: ConfigHelper.parse_integer_env_var("SHRINK_INTERNAL_TRANSACTIONS_CONCURRENCY", 1)
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),

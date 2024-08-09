@@ -89,6 +89,11 @@ config :explorer, Explorer.Repo.Mud,
   timeout: :timer.seconds(60),
   ssl_opts: [verify: :verify_none]
 
+config :explorer, Explorer.Repo.ShrunkInternalTransactions,
+  prepare: :unnamed,
+  timeout: :timer.seconds(60),
+  ssl_opts: [verify: :verify_none]
+
 config :explorer, Explorer.Tracer, env: "production", disabled?: true
 
 config :logger, :explorer,

@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Log, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
@@ -99,8 +99,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> prepare_transaction(conn, true, block_height, decoded_input)
   end
 
-  def render("raw_trace.json", %{internal_transactions: internal_transactions}) do
-    InternalTransaction.internal_transactions_to_raw(internal_transactions)
+  def render("raw_trace.json", %{raw_traces: raw_traces}) do
+    raw_traces
   end
 
   def render("decoded_log_input.json", %{method_id: method_id, text: text, mapping: mapping}) do

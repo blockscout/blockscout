@@ -33,6 +33,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       preload: 2
     ]
 
+  require Logger
+
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
@@ -344,21 +346,31 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> put_status(200)
         |> render(:raw_trace, %{internal_transactions: []})
       else
-        internal_transactions =
-          InternalTransaction.all_transaction_to_internal_transactions(transaction_hash, @api_true)
+        unless Application.get_env(:explorer, :shrink_internal_transactions_enabled) do
+          internal_transactions =
+            InternalTransaction.all_transaction_to_internal_transactions(transaction_hash, @api_true)
 
-        first_trace_exists =
-          Enum.find_index(internal_transactions, fn trace ->
-            trace.index == 0
-          end)
+          # credo:disable-for-lines:8 Credo.Check.Refactor.Nesting
+          first_trace_exists =
+            Enum.find_index(internal_transactions, fn trace ->
+              trace.index == 0
+            end)
 
-        if !first_trace_exists do
-          FirstTraceOnDemand.trigger_fetch(transaction)
+          if !first_trace_exists do
+            FirstTraceOnDemand.trigger_fetch(transaction)
+          end
         end
 
-        conn
-        |> put_status(200)
-        |> render(:raw_trace, %{internal_transactions: internal_transactions})
+        case Chain.fetch_transaction_raw_traces(transaction) do
+          {:ok, raw_traces} ->
+            conn
+            |> put_status(200)
+            |> render(:raw_trace, %{raw_traces: raw_traces})
+
+          {:error, error} ->
+            Logger.error("Raw trace fetching failed: #{inspect(error)}")
+            {500, "Error while raw trace fetching"}
+        end
       end
     end
   end
