@@ -1816,10 +1816,6 @@ defmodule Explorer.Chain do
     Decimal.mult(tokens, fiat_value)
   end
 
-  def contract?(%{contract_code: nil}), do: false
-
-  def contract?(%{contract_code: _}), do: true
-
   @doc """
   Returns a stream of unfetched `t:Explorer.Chain.Address.CoinBalance.t/0`.
 

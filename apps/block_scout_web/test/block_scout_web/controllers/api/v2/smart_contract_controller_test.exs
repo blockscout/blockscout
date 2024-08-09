@@ -32,6 +32,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     test "get unverified smart-contract info", %{conn: conn} do
       address = insert(:contract_address)
 
+      TestHelper.get_eip1967_implementation_error_response()
+
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
 
@@ -52,6 +54,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
       )
       |> with_block()
+
+      TestHelper.get_eip1967_implementation_error_response()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
@@ -114,6 +118,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       )
       |> with_block()
 
+      implementation_address = insert(:address)
+      implementation_address_hash_string = to_string(implementation_address.hash)
+      formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
+
       correct_response = %{
         "verified_twin_address_hash" => nil,
         "is_verified" => true,
@@ -153,8 +161,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "creation_bytecode" =>
           "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
         "abi" => target_contract.abi,
-        "proxy_type" => nil,
-        "implementations" => [],
+        "proxy_type" => "eip1967",
+        "implementations" => [%{"address" => formatted_implementation_address_hash_string, "name" => nil}],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
         "language" => smart_contract_language(target_contract),
@@ -163,8 +171,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_blueprint" => false
       }
 
-      implementation_address = insert(:address)
-      implementation_address_hash_string = to_string(implementation_address.hash)
       TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
@@ -450,13 +456,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           contract_code: proxy_deployed_bytecode
         )
 
-      insert(:proxy_implementation,
-        proxy_address_hash: proxy_address.hash,
-        proxy_type: "eip1167",
-        address_hashes: [implementation_contract.address_hash],
-        names: [implementation_contract.name]
-      )
-
       insert(:transaction,
         created_contract_address_hash: proxy_address.hash,
         input: proxy_tx_input
@@ -618,9 +617,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     )
     |> with_block(status: :ok)
 
+    formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_contract.address_hash))
+
     correct_response = %{
-      "proxy_type" => nil,
-      "implementations" => [],
+      "proxy_type" => "clone_with_immutable_arguments",
+      "implementations" => [
+        %{"address" => formatted_implementation_address_hash_string, "name" => implementation_contract.name}
+      ],
       "has_custom_methods_read" => false,
       "has_custom_methods_write" => false,
       "is_self_destructed" => false,
@@ -715,6 +718,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
 
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
       assert %{"is_verified" => true} = response
@@ -799,6 +804,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
@@ -989,6 +996,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         Conn.resp(conn, 200, eth_bytecode_response)
       end)
 
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
       assert_receive %Phoenix.Socket.Message{
@@ -1018,8 +1027,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  "creation_bytecode" =>
                    "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                }
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
@@ -1103,6 +1110,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       implementation_address = insert(:address)
       implementation_address_hash_string = to_string(implementation_address.hash)
+      formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
       TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -1137,6 +1145,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
+      assert %{"proxy_type" => "eip1967"} = response
+
+      assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
+               response
+
       assert %{"is_verified" => true} = response
       assert %{"is_verified_via_eth_bytecode_db" => true} = response
       assert %{"is_partially_verified" => true} = response
@@ -1222,6 +1235,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       implementation_address = insert(:address)
       implementation_address_hash_string = to_string(implementation_address.hash)
+      formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
       TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -1256,6 +1270,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
+      assert %{"proxy_type" => "eip1967"} = response
+
+      assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
+               response
+
       assert %{"is_verified" => true} = response
       assert %{"is_verified_via_eth_bytecode_db" => true} = response
       assert %{"is_partially_verified" => false} = response
@@ -1341,6 +1360,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       implementation_address = insert(:address)
       implementation_address_hash_string = to_string(implementation_address.hash)
+      formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
       TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
@@ -1375,6 +1395,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       assert response = json_response(request, 200)
+      assert %{"proxy_type" => "eip1967"} = response
+
+      assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
+               response
+
       assert %{"is_verified" => true} = response
       assert %{"is_verified_via_eth_bytecode_db" => true} = response
       assert %{"is_partially_verified" => false} = response
@@ -1455,6 +1480,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
         Conn.resp(conn, 200, "{\"sources\": []}")
       end)
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
 
       _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 

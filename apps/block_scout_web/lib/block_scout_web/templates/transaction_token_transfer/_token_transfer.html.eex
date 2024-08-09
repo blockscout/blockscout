@@ -7,9 +7,9 @@
     <div class="col-12 col-md-8 col-lg-10 d-flex flex-column text-nowrap">
       <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @token_transfer.transaction_hash %>
       <span class="text-nowrap">
-        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.from_address, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.from_address), use_custom_tooltip: false %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.from_address, contract: Address.smart_contract?(@token_transfer.from_address), use_custom_tooltip: false %>
         &rarr;
-        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.to_address, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.to_address), use_custom_tooltip: false %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.to_address, contract: Address.smart_contract?(@token_transfer.to_address), use_custom_tooltip: false %>
       </span>
 
       <span class="tile-title">

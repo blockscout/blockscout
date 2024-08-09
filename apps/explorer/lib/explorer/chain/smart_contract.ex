@@ -934,7 +934,7 @@ defmodule Explorer.Chain.SmartContract do
 
     with true <- is_nil(current_smart_contract),
          {:ok, address} <- Chain.hash_to_address(address_hash),
-         true <- Chain.contract?(address) do
+         true <- Address.smart_contract?(address) do
       {implementation_smart_contract, implementation_address_fetched?} =
         if fetch_implementation? do
           implementation_smart_contract =

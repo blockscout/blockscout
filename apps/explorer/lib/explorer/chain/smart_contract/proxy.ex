@@ -4,7 +4,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   """
 
   alias EthereumJSONRPC.Contract
-  alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
@@ -89,24 +89,28 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       true
     else
       _ ->
-        {implementation_address_hash_strings, _implementation_names, _proxy_type} =
-          get_implementation(smart_contract, options)
-
-        with false <- is_nil(implementation_address_hash_strings),
-             false <- Enum.empty?(implementation_address_hash_strings) do
-          implementation_address_hash_strings
-          |> Enum.reduce_while(false, fn implementation_address_hash_string, acc ->
-            with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
-                 false <- implementation_address_hash.bytes == burn_address_hash.bytes do
-              {:halt, true}
-            else
-              _ ->
-                {:cont, acc}
-            end
-          end)
+        if options[:skip_implementation_fetch?] do
+          false
         else
-          _ ->
-            false
+          {implementation_address_hash_strings, _implementation_names, _proxy_type} =
+            get_implementation(smart_contract, options)
+
+          with false <- is_nil(implementation_address_hash_strings),
+               false <- Enum.empty?(implementation_address_hash_strings) do
+            implementation_address_hash_strings
+            |> Enum.reduce_while(false, fn implementation_address_hash_string, acc ->
+              with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
+                   false <- implementation_address_hash.bytes == burn_address_hash.bytes do
+                {:halt, true}
+              else
+                _ ->
+                  {:cont, acc}
+              end
+            end)
+          else
+            _ ->
+              false
+          end
         end
     end
   end
@@ -453,5 +457,40 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     |> SmartContract.get_smart_contract_query()
     |> join_associations(necessity_by_association)
     |> select_repo(options).one(timeout: 10_000)
+  end
+
+  @doc """
+  Retrieves formatted proxy object based on its implementation addresses and names.
+
+  ## Parameters
+
+    * `implementation_addresses` - A list of implementation addresses for the proxy object.
+    * `implementation_names` - A list of implementation names for the proxy object.
+
+  ## Returns
+
+  A list of maps containing information about the proxy object.
+
+  """
+  @spec proxy_object_info([String.t() | Hash.Address.t()], [String.t() | nil]) :: [map()]
+  def proxy_object_info([], []), do: []
+
+  def proxy_object_info(implementation_addresses, implementation_names) do
+    implementation_addresses
+    |> Enum.zip(implementation_names)
+    |> Enum.reduce([], fn {address, name}, acc ->
+      case address do
+        %Hash{} = address_hash ->
+          [%{"address" => Address.checksum(address_hash), "name" => name} | acc]
+
+        _ ->
+          with {:ok, address_hash} <- string_to_address_hash(address),
+               checksummed_address <- Address.checksum(address_hash) do
+            [%{"address" => checksummed_address, "name" => name} | acc]
+          else
+            _ -> acc
+          end
+      end
+    end)
   end
 end

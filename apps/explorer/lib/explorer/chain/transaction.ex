@@ -266,6 +266,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.{Chain, Helper, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
+    Address,
     Block,
     Block.Reward,
     ContractMethod,
@@ -1847,7 +1848,7 @@ defmodule Explorer.Chain.Transaction do
   @spec where_transactions_to_from(Hash.Address.t()) :: any()
   def where_transactions_to_from(address_hash) do
     with {:ok, address} <- Chain.hash_to_address(address_hash),
-         true <- Chain.contract?(address) do
+         true <- Address.smart_contract?(address) do
       dynamic([transaction], transaction.to_address_hash == ^address_hash)
     else
       _ ->

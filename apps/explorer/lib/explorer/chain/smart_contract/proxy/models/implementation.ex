@@ -176,6 +176,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     if fetch_implementation?(implementation_address_fetched?, refetch_necessity_checked?, implementation_updated_at) do
       get_implementation_address_hash_task =
         Task.async(fn ->
+          # Here and only here we fetch implementations for the given address
+          # using requests to the JSON RPC node for known proxy patterns
           result = Proxy.fetch_implementation_address_hash(address_hash, abi, options)
 
           callback = Keyword.get(options, :callback, nil)

@@ -4,8 +4,8 @@ defmodule BlockScoutWeb.API.V2.Helper do
   """
 
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.Address
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.Transaction.History.TransactionStats
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -85,7 +85,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "is_contract" => smart_contract?,
       "name" => address_name(address),
       "proxy_type" => proxy_type,
-      "implementations" => proxy_object_info(implementation_address_hashes, implementation_names),
+      "implementations" => Proxy.proxy_object_info(implementation_address_hashes, implementation_names),
       "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
@@ -118,41 +118,6 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "ens_domain_name" => nil,
       "metadata" => nil
     }
-  end
-
-  @doc """
-  Retrieves formatted proxy object based on its implementation addresses and names.
-
-  ## Parameters
-
-    * `implementation_addresses` - A list of implementation addresses for the proxy object.
-    * `implementation_names` - A list of implementation names for the proxy object.
-
-  ## Returns
-
-  A list of maps containing information about the proxy object.
-
-  """
-  @spec proxy_object_info([String.t() | Hash.Address.t()], [String.t() | nil]) :: [map()]
-  def proxy_object_info([], []), do: []
-
-  def proxy_object_info(implementation_addresses, implementation_names) do
-    implementation_addresses
-    |> Enum.zip(implementation_names)
-    |> Enum.reduce([], fn {address, name}, acc ->
-      case address do
-        %Hash{} = address_hash ->
-          [%{"address" => Address.checksum(address_hash), "name" => name} | acc]
-
-        _ ->
-          with {:ok, address_hash} <- Chain.string_to_address_hash(address),
-               checksummed_address <- Address.checksum(address_hash) do
-            [%{"address" => checksummed_address, "name" => name} | acc]
-          else
-            _ -> acc
-          end
-      end
-    end)
   end
 
   defp minimal_proxy_pattern?(proxy_implementations) do

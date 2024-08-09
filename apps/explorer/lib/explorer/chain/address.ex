@@ -26,6 +26,7 @@ defmodule Explorer.Chain.Address do
   }
 
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
@@ -459,5 +460,25 @@ defmodule Explorer.Chain.Address do
       [set: [contract_code: contract_code, updated_at: now]],
       timeout: @timeout
     )
+  end
+
+  @doc """
+  Prepares implementations object and proxy type from address
+  """
+  @spec parse_implementation_and_proxy_type(__MODULE__.t()) :: {list(), String.t() | nil}
+  def parse_implementation_and_proxy_type(address) do
+    with %__MODULE__{
+           proxy_implementations: %Implementation{
+             address_hashes: address_hashes,
+             names: names,
+             proxy_type: proxy_type
+           }
+         } <- address,
+         false <- address_hashes && Enum.empty?(address_hashes) do
+      {Proxy.proxy_object_info(address_hashes, names), proxy_type}
+    else
+      _ ->
+        {[], nil}
+    end
   end
 end

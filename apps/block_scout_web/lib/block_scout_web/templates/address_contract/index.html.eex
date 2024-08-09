@@ -6,7 +6,7 @@
 <% additional_sources = BlockScoutWeb.API.V2.SmartContractView.get_additional_sources(@address.smart_contract, smart_contract_verified, bytecode_twin_contract) %>
 <% visualize_sol2uml_enabled = Explorer.Visualize.Sol2uml.enabled?() %>
 <section class="container">
-  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+  <% is_proxy = SmartContractHelper.address_is_proxy?(@address) %>
 
   <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path, tags: @tags %>
 

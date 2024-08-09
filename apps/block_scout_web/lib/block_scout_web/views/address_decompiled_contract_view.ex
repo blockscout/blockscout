@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.AddressDecompiledContractView do
   use BlockScoutWeb, :view
+  alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
   @colors %{
     "\e[95m" => "",

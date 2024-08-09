@@ -4,9 +4,13 @@ defmodule Explorer.SmartContract.Helper do
   """
 
   alias Explorer.{Chain, Helper}
-  alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Chain.{Address, Hash, SmartContract}
+  alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.SmartContract.Writer
   alias Phoenix.HTML
+
+  @api_true [api?: true]
 
   def queriable_method?(method) do
     method["constant"] || method["stateMutability"] == "view" || method["stateMutability"] == "pure"
@@ -210,4 +214,39 @@ defmodule Explorer.SmartContract.Helper do
 
   def prepare_license_type(binary) when is_binary(binary), do: Helper.parse_integer(binary) || binary
   def prepare_license_type(_), do: nil
+
+  @doc """
+  Pre-fetches implementation for unverified smart contract or verified proxy smart-contract
+  """
+  @spec pre_fetch_implementations(Address.t()) :: {any(), any(), atom() | nil}
+  def pre_fetch_implementations(address) do
+    with {:verified_smart_contract, %SmartContract{}} <- {:verified_smart_contract, address.smart_contract},
+         {:proxy?, true} <- {:proxy?, address_is_proxy?(address, @api_true)} do
+      Implementation.get_implementation(address.smart_contract, @api_true)
+    else
+      {:verified_smart_contract, _} ->
+        if Address.smart_contract?(address) do
+          smart_contract = %SmartContract{
+            address_hash: address.hash
+          }
+
+          Implementation.get_implementation(smart_contract, @api_true)
+        end
+
+      {:proxy?, false} ->
+        {[], [], nil}
+    end
+  end
+
+  @doc """
+  Checks if given address is proxy smart contract
+  """
+  @spec address_is_proxy?(Address.t(), list()) :: boolean()
+  def address_is_proxy?(address, options \\ [])
+
+  def address_is_proxy?(%Address{smart_contract: %SmartContract{} = smart_contract}, options) do
+    Proxy.proxy_contract?(smart_contract, options)
+  end
+
+  def address_is_proxy?(%Address{smart_contract: _}, _), do: false
 end

@@ -11,19 +11,28 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
-  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.Visualize.Sol2uml
 
   require Logger
 
   @api_true [api?: true]
+  # Option to skip fetching implementation from the node,
+  # when checking, if smart-contract is proxy. It is used in smart contract view
+  # to prevent double request to the JSON RPC node.
+  @skip_implementation_fetch_true [skip_implementation_fetch?: true]
 
   def render("smart_contracts.json", %{smart_contracts: smart_contracts, next_page_params: next_page_params}) do
     %{"items" => Enum.map(smart_contracts, &prepare_smart_contract_for_list/1), "next_page_params" => next_page_params}
   end
 
-  def render("smart_contract.json", %{address: address, conn: conn}) do
-    prepare_smart_contract(address, conn)
+  def render("smart_contract.json", %{
+        address: address,
+        implementations: implementations,
+        proxy_type: proxy_type,
+        conn: conn
+      }) do
+    prepare_smart_contract(address, implementations, proxy_type, conn)
   end
 
   def render("read_functions.json", %{functions: functions}) do
@@ -146,7 +155,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_output(output), do: output
 
   # credo:disable-for-next-line
-  def prepare_smart_contract(%Address{smart_contract: %SmartContract{} = smart_contract} = address, conn) do
+  def prepare_smart_contract(
+        %Address{smart_contract: %SmartContract{} = smart_contract} = address,
+        implementations,
+        proxy_type,
+        conn
+      ) do
     bytecode_twin = SmartContract.get_address_verified_bytecode_twin_contract(address.hash, @api_true)
     minimal_proxy_address_hash = address.implementation
     bytecode_twin_contract = bytecode_twin.verified_contract
@@ -154,7 +168,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
     write_methods? = AddressView.smart_contract_with_write_functions?(address)
 
-    is_proxy = AddressView.smart_contract_is_proxy?(address, @api_true)
+    is_proxy = SmartContractHelper.address_is_proxy?(address, Keyword.merge(@api_true, @skip_implementation_fetch_true))
 
     read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
     write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
@@ -170,21 +184,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
     target_contract =
       if smart_contract_verified, do: smart_contract, else: bytecode_twin_contract
-
-    {implementations, proxy_type} =
-      with %Address{
-             proxy_implementations: %Implementation{
-               address_hashes: address_hashes,
-               names: names,
-               proxy_type: proxy_type
-             }
-           } <- address,
-           false <- address_hashes && Enum.empty?(address_hashes) do
-        {Helper.proxy_object_info(address_hashes, names), proxy_type}
-      else
-        _ ->
-          {[], nil}
-      end
 
     %{
       "verified_twin_address_hash" =>
@@ -243,24 +242,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     |> Map.merge(bytecode_info(address))
   end
 
-  def prepare_smart_contract(address, conn) do
+  def prepare_smart_contract(address, implementations, proxy_type, conn) do
     read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
     write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
-
-    {implementations, proxy_type} =
-      with %Address{
-             proxy_implementations: %Implementation{
-               address_hashes: address_hashes,
-               names: names,
-               proxy_type: proxy_type
-             }
-           } <- address,
-           false <- address_hashes && Enum.empty?(address_hashes) do
-        {Helper.proxy_object_info(address_hashes, names), proxy_type}
-      else
-        _ ->
-          {[], nil}
-      end
 
     %{
       "has_custom_methods_read" => read_custom_abi?,
