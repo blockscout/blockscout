@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Filecoin.IDAddress do
   @spec type() :: :binary
   def type, do: :binary
 
-  defp to_native_adddress(%__MODULE__{value: value}) do
+  defp to_native_address(%__MODULE__{value: value}) do
     %NativeAddress{
       protocol_indicator: @protocol_indicator,
       payload: value
@@ -79,7 +79,7 @@ defmodule Explorer.Chain.Filecoin.IDAddress do
   @impl Ecto.Type
   def dump(%__MODULE__{} = address) do
     address
-    |> to_native_adddress()
+    |> to_native_address()
     |> NativeAddress.dump()
   end
 
@@ -127,7 +127,7 @@ defmodule Explorer.Chain.Filecoin.IDAddress do
   @spec to_string(t()) :: String.t()
   def to_string(%__MODULE__{} = address) do
     address
-    |> to_native_adddress()
+    |> to_native_address()
     |> NativeAddress.to_string()
   end
 
