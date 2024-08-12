@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.API.V2.ImportControllerTest do
     test "return error on misconfigured api key", %{conn: conn} do
       request =
         delete(conn, "/api/v2/import/token-info", %{
-          "tokenAddress" => build(:address).hash
+          "token_address_hash" => build(:address).hash
         })
 
       assert %{"message" => "API key not configured on the server"} = json_response(request, 403)
@@ -88,7 +88,7 @@ defmodule BlockScoutWeb.API.V2.ImportControllerTest do
 
     test "return error on wrong api key", %{conn: conn} do
       Application.put_env(:block_scout_web, :sensitive_endpoints_api_key, "abc")
-      body = %{"tokenAddress" => build(:address).hash}
+      body = %{"token_address_hash" => build(:address).hash}
       request = delete(conn, "/api/v2/import/token-info", Map.merge(body, %{"api_key" => "123"}))
 
       assert %{"message" => "Wrong API key"} = json_response(request, 401)
