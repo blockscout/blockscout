@@ -151,7 +151,7 @@ defmodule BlockScoutWeb.API.V2.ImportControllerTest do
       token_address = to_string(insert(:token).contract_address_hash)
 
       body = %{
-        "tokenAddress" => token_address
+        "token_address_hash" => token_address
       }
 
       request = delete(conn, "/api/v2/import/token-info", Map.merge(body, %{"api_key" => api_key}))
