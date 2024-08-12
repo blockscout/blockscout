@@ -101,14 +101,16 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
   defp fetch_and_update(%PendingAddressOperation{address_hash: address_hash} = operation) do
     with {:ok, new_params} <- fetch_address_info_using_beryx_api(address_hash),
          {:ok, _} <- update_address_and_remove_pending_operation(operation, new_params) do
+      Logger.info("Fetched Filecoin address info for: #{to_string(address_hash)}")
       :ok
     else
       _ ->
-        Logger.error("Could not fetch Filecoin native address: #{to_string(address_hash)}")
+        Logger.error("Could not fetch Filecoin address info: #{to_string(address_hash)}")
         :retry
     end
   end
 
+  # todo: should I move this logic somewhere else?
   @spec update_address_and_remove_pending_operation(
           PendingAddressOperation.t(),
           %{
@@ -123,16 +125,42 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
   defp update_address_and_remove_pending_operation(operation, new_address_params) do
     Multi.new()
     |> Multi.run(
-      :update_address,
+      :acquire_address,
       fn repo, _ ->
-        %Address{hash: operation.address_hash}
+        case repo.get_by(
+               Address,
+               [hash: operation.address_hash],
+               lock: "FOR UPDATE"
+             ) do
+          nil -> {:error, :not_found}
+          address -> {:ok, address}
+        end
+      end
+    )
+    |> Multi.run(
+      :acquire_pending_address_operation,
+      fn repo, _ ->
+        case repo.get_by(
+               PendingAddressOperation,
+               [address_hash: operation.address_hash],
+               lock: "FOR UPDATE"
+             ) do
+          nil -> {:error, :not_found}
+          pending_operation -> {:ok, pending_operation}
+        end
+      end
+    )
+    |> Multi.run(
+      :update_address,
+      fn repo, %{acquire_address: address} ->
+        address
         |> Address.changeset(new_address_params)
         |> repo.update()
       end
     )
     |> Multi.run(
       :delete_pending_operation,
-      fn repo, _ ->
+      fn repo, %{acquire_pending_address_operation: operation} ->
         repo.delete(operation)
       end
     )
