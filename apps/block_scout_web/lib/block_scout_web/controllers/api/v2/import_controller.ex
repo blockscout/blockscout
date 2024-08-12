@@ -19,12 +19,12 @@ defmodule BlockScoutWeb.API.V2.ImportController do
         conn,
         %{
           "iconUrl" => icon_url,
-          "tokenAddress" => _token_address_hash_string,
+          "tokenAddress" => token_address_hash_string,
           "tokenSymbol" => token_symbol,
           "tokenName" => token_name
         } = params
       ) do
-    with {:ok, token} <- validate_api_key_address_hash_and_token(params) do
+    with {:ok, token} <- validate_api_key_address_hash_and_token(token_address_hash_string, params["api_key"]) do
       changeset =
         %{is_verified_via_admin_panel: true}
         |> put_icon_url(icon_url)
@@ -95,10 +95,10 @@ defmodule BlockScoutWeb.API.V2.ImportController do
   def delete_token_info(
         conn,
         %{
-          "tokenAddress" => _token_address_hash_string
+          "token_address_hash" => token_address_hash_string
         } = params
       ) do
-    with {:ok, token} <- validate_api_key_address_hash_and_token(params) do
+    with {:ok, token} <- validate_api_key_address_hash_and_token(token_address_hash_string, params["api_key"]) do
       case Token.drop_token_info(token) do
         {:ok, _} ->
           TokenUpdater.run([token], [])
@@ -165,14 +165,10 @@ defmodule BlockScoutWeb.API.V2.ImportController do
     end
   end
 
-  defp validate_api_key_address_hash_and_token(
-         %{
-           "tokenAddress" => token_address_hash_string
-         } = params
-       ) do
+  defp validate_api_key_address_hash_and_token(token_address_hash_string, provided_api_key) do
     with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <- {:api_key, params["api_key"]},
+         {:api_key, ^api_key} <- {:api_key, provided_api_key},
          {:format_address, {:ok, address_hash}} <-
            {:format_address, Chain.string_to_address_hash(token_address_hash_string)},
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
