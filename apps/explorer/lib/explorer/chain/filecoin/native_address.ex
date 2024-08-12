@@ -37,8 +37,6 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   3. The remaining bytes are the payload.
   """
 
-  import Explorer.Helper, only: [parse_integer: 1]
-
   alias Blake2.Blake2b
   alias Explorer.Chain.Hash
   alias Poison.Encoder.BitString
@@ -160,9 +158,9 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
 
   defp cast_protocol_indicator_and_payload("0" <> id_string) do
     id_string
-    |> parse_integer()
+    |> Integer.parse()
     |> case do
-      id when is_integer(id) and id >= 0 ->
+      {id, ""} when is_integer(id) and id >= 0 ->
         payload = LEB128.encode(id)
 
         {:ok,
@@ -180,7 +178,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
 
   defp cast_protocol_indicator_and_payload("4" <> rest) do
     with [actor_id_string, base32_digits] <- String.split(rest, "f", parts: 2),
-         actor_id when is_integer(actor_id) <- parse_integer(actor_id_string),
+         {actor_id, ""} when is_integer(actor_id) <- Integer.parse(actor_id_string),
          {:ok, {payload, checksum}} <- cast_base32_digits(base32_digits) do
       {:ok,
        %__MODULE__{
@@ -200,8 +198,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
              protocol_indicator_and_payload,
              1
            ),
-         protocol_indicator when protocol_indicator in @standard_protocol_indicators <-
-           protocol_indicator_string |> parse_integer(),
+         {protocol_indicator, ""} when protocol_indicator in @standard_protocol_indicators <-
+           Integer.parse(protocol_indicator_string),
          {:ok, byte_count} <-
            Map.fetch(
              @protocol_indicator_to_payload_byte_count,
