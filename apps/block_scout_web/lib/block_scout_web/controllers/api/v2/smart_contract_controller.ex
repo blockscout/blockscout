@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
-  alias Explorer.Chain.SmartContract.{AuditReport, Proxy}
+  alias Explorer.Chain.SmartContract.AuditReport
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.SmartContract.{Reader, Writer}
@@ -39,10 +39,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          _ <- PublishHelper.sourcify_check(address_hash_string),
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options, false)} do
-      {implementation_address_hashes, implementation_names, proxy_type} =
+      {implementations, proxy_type} =
         SmartContractHelper.pre_fetch_implementations(address)
-
-      implementations = Proxy.proxy_object_info(implementation_address_hashes, implementation_names)
 
       conn
       |> put_status(200)

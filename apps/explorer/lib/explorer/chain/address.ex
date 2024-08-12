@@ -94,6 +94,7 @@ defmodule Explorer.Chain.Address do
     field(:gas_used, :integer)
     field(:ens_domain_name, :string, virtual: true)
     field(:metadata, :any, virtual: true)
+    # todo: remove virtual field for a single implementation
     field(:implementation, :any, virtual: true)
 
     has_one(:smart_contract, SmartContract, references: :hash)

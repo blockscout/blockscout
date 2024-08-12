@@ -16,8 +16,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     ApiView.render("message.json", assigns)
   end
 
-  def render("address.json", %{address: address, conn: conn}) do
-    prepare_address(address, conn)
+  def render("address.json", %{address: address, implementations: implementations, proxy_type: proxy_type, conn: conn}) do
+    prepare_address(address, conn, implementations, proxy_type)
   end
 
   def render("token_balances.json", %{token_balances: token_balances}) do
@@ -84,11 +84,9 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   @doc """
   Prepares address properties for rendering in /addresses and /addresses/:address_hash_param API v2 endpoints
   """
-  @spec prepare_address(Address.t(), Plug.Conn.t() | nil) :: map()
-  def prepare_address(address, conn \\ nil) do
+  @spec prepare_address(Address.t(), Plug.Conn.t() | nil, list(), String.t() | nil) :: map()
+  def prepare_address(address, conn \\ nil, implementations \\ [], proxy_type \\ nil) do
     base_info = Helper.address_with_info(conn, address, address.hash, true)
-
-    {implementations, proxy_type} = Address.parse_implementation_and_proxy_type(address)
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
     exchange_rate = Market.get_coin_exchange_rate().usd_value

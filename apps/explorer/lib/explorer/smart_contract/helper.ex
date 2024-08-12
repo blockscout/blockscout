@@ -218,24 +218,31 @@ defmodule Explorer.SmartContract.Helper do
   @doc """
   Pre-fetches implementation for unverified smart contract or verified proxy smart-contract
   """
-  @spec pre_fetch_implementations(Address.t()) :: {any(), any(), atom() | nil}
+  @spec pre_fetch_implementations(Address.t()) :: {any(), atom() | nil}
   def pre_fetch_implementations(address) do
-    with {:verified_smart_contract, %SmartContract{}} <- {:verified_smart_contract, address.smart_contract},
-         {:proxy?, true} <- {:proxy?, address_is_proxy?(address, @api_true)} do
-      Implementation.get_implementation(address.smart_contract, @api_true)
-    else
-      {:verified_smart_contract, _} ->
-        if Address.smart_contract?(address) do
-          smart_contract = %SmartContract{
-            address_hash: address.hash
-          }
+    {implementation_address_hashes, implementation_names, proxy_type} =
+      with {:verified_smart_contract, %SmartContract{}} <- {:verified_smart_contract, address.smart_contract},
+           {:proxy?, true} <- {:proxy?, address_is_proxy?(address, @api_true)} do
+        Implementation.get_implementation(address.smart_contract, @api_true)
+      else
+        {:verified_smart_contract, _} ->
+          if Address.smart_contract?(address) do
+            smart_contract = %SmartContract{
+              address_hash: address.hash
+            }
 
-          Implementation.get_implementation(smart_contract, @api_true)
-        end
+            Implementation.get_implementation(smart_contract, @api_true)
+          else
+            {[], [], nil}
+          end
 
-      {:proxy?, false} ->
-        {[], [], nil}
-    end
+        {:proxy?, false} ->
+          {[], [], nil}
+      end
+
+    implementations = Proxy.proxy_object_info(implementation_address_hashes, implementation_names)
+
+    {implementations, proxy_type}
   end
 
   @doc """
