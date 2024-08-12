@@ -258,6 +258,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         ),
       "method" => method_name(token_transfer.transaction, decoded_input, true),
       "block_hash" => to_string(token_transfer.block_hash),
+      "block_number" => to_string(token_transfer.block_number),
       "log_index" => to_string(token_transfer.log_index)
     }
   end
