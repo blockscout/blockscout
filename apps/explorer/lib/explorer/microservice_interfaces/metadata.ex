@@ -10,7 +10,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_meta: 3]
 
   require Logger
-  @post_timeout :timer.seconds(5)
+  @request_timeout :timer.seconds(5)
 
   @tags_per_address_limit 5
   @request_error_msg "Error while sending request to Metadata microservice"
@@ -28,12 +28,19 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
     end
   end
 
-  defp http_get_request(url, params) do
-    headers = [{"Content-Type", "application/json"}]
+  def get_addresses(params) do
+    with :ok <- Microservice.check_enabled(__MODULE__) do
+      params = params|>Map.put("pageSize", 50)|> Map.put("chainId", Application.get_env(:block_scout_web, :chain_id))
+        http_get_request(addresses_url(), params, &decode_addresses_response/1)
+    end
+  end
 
-    case HTTPoison.get(url, headers, params: params, recv_timeout: @post_timeout) do
+  defp http_get_request(url, params, parsing_function \\ &decode_meta/1) do
+    headers = []
+
+    case HTTPoison.get(url, headers, params: params, recv_timeout: @request_timeout) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        body |> Jason.decode() |> decode_meta()
+        body |> Jason.decode() |> parsing_function.()
 
       {_, error} ->
         Logger.error(fn ->
@@ -49,6 +56,10 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
   defp addresses_metadata_url do
     "#{base_url()}/metadata"
+  end
+
+  defp addresses_url do
+    "#{base_url()}/addresses"
   end
 
   defp base_url do
@@ -89,4 +100,12 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   defp decode_meta_in_tag(%{"meta" => meta} = tag) do
     Map.put(tag, "meta", Jason.decode!(meta))
   end
+
+  defp decode_addresses_response({:ok, %{"addresses" => addresses}}) do
+    {:ok,addresses}
+  end
+
+  defp decode_addresses_response(_), do: :error
+
+
 end
