@@ -641,6 +641,13 @@ config :explorer, Explorer.Chain.Metrics,
 config :explorer, Explorer.Chain.Filecoin.NativeAddress,
   network_prefix: ConfigHelper.parse_catalog_value("FILECOIN_NETWORK_PREFIX", ["f", "t"], true, "f")
 
+config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
+  enabled:
+    ConfigHelper.chain_type() == :filecoin and
+      ConfigHelper.parse_bool_env_var("FILECOIN_PENDING_ADDRESS_OPERATIONS_MIGRATION_ENABLED"),
+  batch_size: ConfigHelper.parse_integer_env_var("FILECOIN_PENDING_ADDRESS_OPERATIONS_MIGRATION_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("FILECOIN_PENDING_ADDRESS_OPERATIONS_MIGRATION_CONCURRENCY", 1)
+
 ###############
 ### Indexer ###
 ###############
