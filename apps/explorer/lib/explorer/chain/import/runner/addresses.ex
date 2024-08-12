@@ -105,9 +105,9 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       &Multi.run(
         &1,
         :filecoin_pending_address_operations,
-        fn repo, %{filter_addresses: {filtered_addresses, _}} ->
+        fn repo, _ ->
           Instrumenter.block_import_stage_runner(
-            fn -> filecoin_pending_address_operations(repo, filtered_addresses, insert_options) end,
+            fn -> filecoin_pending_address_operations(repo, ordered_changes_list, insert_options) end,
             :addresses,
             :addresses,
             :filecoin_pending_address_operations
@@ -279,9 +279,9 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     end
   end
 
-  defp filecoin_pending_address_operations(repo, filtered_addresses, %{timeout: timeout, timestamps: timestamps}) do
+  defp filecoin_pending_address_operations(repo, addresses, %{timeout: timeout, timestamps: timestamps}) do
     ordered_addresses =
-      filtered_addresses
+      addresses
       |> Enum.map(&%{address_hash: &1.hash})
       |> Enum.sort_by(& &1.address_hash)
       |> Enum.dedup_by(& &1.address_hash)
