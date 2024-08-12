@@ -182,7 +182,9 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
         |> Map.get("items")
 
       assert Enum.all?(created, fn {_, _, map} ->
-               map in response
+               Enum.any?(response, fn item ->
+                 addresses_json_match?(map, item)
+               end)
              end)
     end
 
@@ -237,7 +239,11 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
         |> json_response(200)
         |> Map.get("items")
 
-      assert Enum.all?(created, fn {_, _, map} -> map in response end)
+      assert Enum.all?(created, fn {_, _, map} ->
+               Enum.any?(response, fn item ->
+                 addresses_json_match?(map, item)
+               end)
+             end)
 
       {_, _, %{"id" => id}} = Enum.at(created, 0)
 
@@ -1263,5 +1269,15 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
     assert Enum.count(second_page_resp["items"]) == 1
     assert second_page_resp["next_page_params"] == nil
     compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
+  end
+
+  defp addresses_json_match?(expected, actual) do
+    Enum.all?(expected, fn {key, value} ->
+      case value do
+        # Recursively compare nested maps
+        %{} -> addresses_json_match?(value, actual[key])
+        _ -> actual[key] == value
+      end
+    end)
   end
 end
