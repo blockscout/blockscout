@@ -166,7 +166,6 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
         b in Block,
         inner_join: tb in __MODULE__,
         on: tb.l2_block_number == b.number and tb.frame_sequence_id == ^batch_number,
-        select: b,
         where: b.consensus == true
       )
 
@@ -179,6 +178,8 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
+  
+  defp page_blocks(query, %PagingOptions{key: {0}}), do: query
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
     where(query, [block], block.number < ^block_number)
