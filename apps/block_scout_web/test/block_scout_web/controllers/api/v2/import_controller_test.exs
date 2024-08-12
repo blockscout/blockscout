@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.ImportControllerTest do
 
   import Mox
 
-  describe "/import/token-info" do
+  describe "POST /import/token-info" do
     test "return error on misconfigured api key", %{conn: conn} do
       request =
         post(conn, "/api/v2/import/token-info", %{
@@ -71,6 +71,27 @@ defmodule BlockScoutWeb.API.V2.ImportControllerTest do
 
       request = get(conn, "/api/v2/tokens/#{token_address}")
       assert %{"icon_url" => ^icon_url, "name" => ^token_name, "symbol" => ^token_symbol} = json_response(request, 200)
+
+      Application.put_env(:block_scout_web, :sensitive_endpoints_api_key, nil)
+    end
+  end
+
+  describe "DELETE /import/token-info" do
+    test "return error on misconfigured api key", %{conn: conn} do
+      request =
+        delete(conn, "/api/v2/import/token-info", %{
+          "tokenAddress" => build(:address).hash
+        })
+
+      assert %{"message" => "API key not configured on the server"} = json_response(request, 403)
+    end
+
+    test "return error on wrong api key", %{conn: conn} do
+      Application.put_env(:block_scout_web, :sensitive_endpoints_api_key, "abc")
+      body = %{"tokenAddress" => build(:address).hash}
+      request = delete(conn, "/api/v2/import/token-info", Map.merge(body, %{"api_key" => "123"}))
+
+      assert %{"message" => "Wrong API key"} = json_response(request, 401)
 
       Application.put_env(:block_scout_web, :sensitive_endpoints_api_key, nil)
     end
