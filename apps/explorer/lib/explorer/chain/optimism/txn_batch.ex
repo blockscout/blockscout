@@ -178,7 +178,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
-  
+
   defp page_blocks(query, %PagingOptions{key: {0}}), do: query
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
