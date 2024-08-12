@@ -3,6 +3,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   Module to interact with Metadata microservice
   """
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Address.MetadataPreloader, Transaction}
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
@@ -28,10 +29,14 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
     end
   end
 
+  @doc """
+    Get addresses list from Metadata microservice. Then preloads addresses from local DB.
+  """
+  @spec get_addresses(map()) :: {:error | integer(), any()}
   def get_addresses(params) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
-      params = params|>Map.put("pageSize", 50)|> Map.put("chainId", Application.get_env(:block_scout_web, :chain_id))
-        http_get_request(addresses_url(), params, &decode_addresses_response/1)
+      params = params |> Map.put("pageSize", 50) |> Map.put("chainId", Application.get_env(:block_scout_web, :chain_id))
+      http_get_request_for_proxy_method(addresses_url(), params, &prepare_addresses_response/1)
     end
   end
 
@@ -51,6 +56,31 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
         end)
 
         {:error, @request_error_msg}
+    end
+  end
+
+  defp http_get_request_for_proxy_method(url, params, parsing_function) do
+    case HTTPoison.get(url, [], params: params) do
+      {:ok, %Response{body: body, status_code: 200}} ->
+        {200, body |> Jason.decode() |> parsing_function.()}
+
+      {_, %Response{body: body, status_code: status_code} = error} ->
+        old_truncate = Application.get_env(:logger, :truncate)
+        Logger.configure(truncate: :infinity)
+
+        Logger.error(fn ->
+          [
+            "Error while sending request to Metadata microservice url: #{url}: ",
+            inspect(error, limit: :infinity, printable_limit: :infinity)
+          ]
+        end)
+
+        Logger.configure(truncate: old_truncate)
+        {:ok, response_json} = Jason.decode(body)
+        {status_code, response_json}
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {500, %{error: reason}}
     end
   end
 
@@ -101,11 +131,18 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
     Map.put(tag, "meta", Jason.decode!(meta))
   end
 
-  defp decode_addresses_response({:ok, %{"addresses" => addresses}}) do
-    {:ok,addresses}
+  defp prepare_addresses_response({:ok, %{"addresses" => addresses} = response}) do
+    {:ok,
+     Map.put(
+       response,
+       "addresses",
+       addresses
+       |> Chain.hashes_to_addresses(
+         necessity_by_association: %{names: :optional, smart_contract: :optional, proxy_implementations: :optional}
+       )
+       |> Enum.map(fn address -> {address, address.transactions_count} end)
+     )}
   end
 
-  defp decode_addresses_response(_), do: :error
-
-
+  defp prepare_addresses_response(_), do: :error
 end

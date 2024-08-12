@@ -1,4 +1,7 @@
-defmodule BlockScoutWeb.API.V2.Proxy.MetadataServiceController do
+defmodule BlockScoutWeb.API.V2.Proxy.MetadataController do
+  @moduledoc """
+  Controller for the metadata service
+  """
   use BlockScoutWeb, :controller
 
   alias Explorer.MicroserviceInterfaces.Metadata
@@ -6,9 +9,17 @@ defmodule BlockScoutWeb.API.V2.Proxy.MetadataServiceController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def addresses(conn, params) do
-    with {:ok, addresses} <- Metadata.get_addresses(params) do
-      conn
-      |> json(params)
+    with {code, body} <- Metadata.get_addresses(params) do
+      case code do
+        200 ->
+          conn
+          |> render(:addresses, %{result: body})
+
+        status_code ->
+          conn
+          |> put_status(status_code)
+          |> json(body)
+      end
     end
   end
 end
