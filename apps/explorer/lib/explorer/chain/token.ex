@@ -278,4 +278,16 @@ defmodule Explorer.Chain.Token do
       timeout: @timeout
     )
   end
+
+  @doc """
+  Drops token info for the given token:
+  Sets is_verified_via_admin_panel to false, icon_url to nil, symbol to nil, name to nil.
+  Don't forget to set/update token's symbol and name after this function.
+  """
+  @spec drop_token_info(t()) :: {:ok, t()} | {:error, Changeset.t()}
+  def drop_token_info(token) do
+    token
+    |> Changeset.change(%{is_verified_via_admin_panel: false, icon_url: nil, symbol: nil, name: nil})
+    |> Repo.update()
+  end
 end

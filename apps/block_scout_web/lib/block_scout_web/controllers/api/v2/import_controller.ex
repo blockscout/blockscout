@@ -3,9 +3,10 @@ defmodule BlockScoutWeb.API.V2.ImportController do
 
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain
-  alias Explorer.Chain.{Data, SmartContract}
+  alias Explorer.Chain.{Data, SmartContract, Token}
   alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
   alias Explorer.SmartContract.EthBytecodeDBInterface
+  alias Indexer.Fetcher.TokenUpdater
 
   import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3, contract_creation_input: 1]
 
@@ -23,12 +24,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
           "tokenName" => token_name
         } = params
       ) do
-    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
-           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <- {:api_key, params["api_key"]},
-         {:format_address, {:ok, address_hash}} <-
-           {:format_address, Chain.string_to_address_hash(token_address_hash_string)},
-         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
+    with {:ok, token} <- validate_api_key_address_hash_and_token(token_address_hash_string, params["api_key"]) do
       changeset =
         %{is_verified_via_admin_panel: true}
         |> put_icon_url(icon_url)
@@ -96,6 +92,32 @@ defmodule BlockScoutWeb.API.V2.ImportController do
     end
   end
 
+  def delete_token_info(
+        conn,
+        %{
+          "token_address_hash" => token_address_hash_string
+        } = params
+      ) do
+    with {:ok, token} <- validate_api_key_address_hash_and_token(token_address_hash_string, params["api_key"]) do
+      case Token.drop_token_info(token) do
+        {:ok, _} ->
+          TokenUpdater.run([token], [])
+
+          conn
+          |> put_view(ApiView)
+          |> render(:message, %{message: "Success"})
+
+        error ->
+          Logger.warning(fn -> ["Error on deleting token info: ", inspect(error)] end)
+
+          conn
+          |> put_view(ApiView)
+          |> put_status(:bad_request)
+          |> render(:message, %{message: "Error"})
+      end
+    end
+  end
+
   defp params_to_contract_search_options(%{"import_from" => "verifier_alliance"}) do
     [only_verifier_alliance?: true]
   end
@@ -140,6 +162,17 @@ defmodule BlockScoutWeb.API.V2.ImportController do
 
       _ ->
         nil
+    end
+  end
+
+  defp validate_api_key_address_hash_and_token(token_address_hash_string, provided_api_key) do
+    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
+           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
+         {:api_key, ^api_key} <- {:api_key, provided_api_key},
+         {:format_address, {:ok, address_hash}} <-
+           {:format_address, Chain.string_to_address_hash(token_address_hash_string)},
+         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
+      {:ok, token}
     end
   end
 end
