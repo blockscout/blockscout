@@ -528,14 +528,14 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
 
   # Determines if an Arbitrum transaction contains a cross-chain message and extends
   # the incoming map with fields related to the cross-chain message to reflect the
-  # direction of the message and the associated L1 transaction.
+  # direction of the message, its status and the associated L1 transaction.
   #
   # ## Parameters
   # - `arbitrum_tx`: An Arbitrum transaction.
   #
   # ## Returns
-  # - A map extended with fields indicating the direction of the message and
-  #   the associated L1 transaction.
+  # - A map extended with fields indicating the direction of the message, its status
+  #   and the associated L1 transaction.
   @spec extend_if_message(map(), %{
           :__struct__ => Transaction,
           :arbitrum_message_to_l2 => any(),
@@ -543,22 +543,56 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           optional(any()) => any()
         }) :: map()
   defp extend_if_message(arbitrum_json, %Transaction{} = arbitrum_tx) do
-    {message_type, l1_tx} =
+    {message_type, message_data} =
       case {APIV2Helper.specified?(Map.get(arbitrum_tx, :arbitrum_message_to_l2)),
             APIV2Helper.specified?(Map.get(arbitrum_tx, :arbitrum_message_from_l2))} do
         {true, false} ->
-          {"incoming", APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_to_l2, :originating_transaction_hash)}
+          {"incoming", l1_tx_and_status_for_message(arbitrum_tx, :incoming)}
 
         {false, true} ->
-          {"outcoming", APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_from_l2, :completion_transaction_hash)}
+          {"outcoming", l1_tx_and_status_for_message(arbitrum_tx, :outcoming)}
 
         _ ->
-          {nil, nil}
+          {nil, %{}}
       end
 
     arbitrum_json
     |> Map.put("contains_message", message_type)
-    |> Map.put("message_related_l1_transaction", l1_tx)
+    |> Map.put("message_related_info", message_data)
+  end
+
+  # Determines the associated L1 transaction and its status for the given message direction.
+  @spec l1_tx_and_status_for_message(Transaction.t(), :incoming | :outcoming) :: map()
+  defp l1_tx_and_status_for_message(arbitrum_tx, message_direction) do
+    {l1_tx, status} =
+      case message_direction do
+        :incoming ->
+          l1_tx = APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_to_l2, :originating_transaction_hash)
+
+          if is_nil(l1_tx) do
+            {nil, "Syncing with base layer"}
+          else
+            {l1_tx, "Relayed"}
+          end
+
+        :outcoming ->
+          case APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_from_l2, :status) do
+            :initiated ->
+              {nil, "Settlement pending"}
+
+            :sent ->
+              {nil, "Waiting for confirmation"}
+
+            :confirmed ->
+              {nil, "Ready for relay"}
+
+            :relayed ->
+              {APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_from_l2, :completion_transaction_hash),
+               "Relayed"}
+          end
+      end
+
+    %{"associated_l1_transaction" => l1_tx, "message_status" => status}
   end
 
   # Extends the output JSON with information from Arbitrum-specific fields of the transaction.
