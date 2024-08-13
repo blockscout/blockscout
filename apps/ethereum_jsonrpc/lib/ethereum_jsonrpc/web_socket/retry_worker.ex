@@ -9,8 +9,6 @@ defmodule EthereumJSONRPC.WebSocket.RetryWorker do
 
   alias EthereumJSONRPC.WebSocket.Supervisor, as: WebSocketSupervisor
 
-  @retry_interval :timer.minutes(1)
-
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -52,6 +50,10 @@ defmodule EthereumJSONRPC.WebSocket.RetryWorker do
   end
 
   defp schedule_next_retry do
-    Process.send_after(self(), :retry, @retry_interval)
+    Process.send_after(self(), :retry, retry_interval())
+  end
+
+  defp retry_interval do
+    Application.get_env(:ethereum_jsonrpc, __MODULE__)[:retry_interval]
   end
 end
