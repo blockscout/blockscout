@@ -527,14 +527,15 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   # Determines if an Arbitrum transaction contains a cross-chain message and extends
-  # the incoming map with the `contains_message` field to reflect the direction of
-  # the message.
+  # the incoming map with fields related to the cross-chain message to reflect the
+  # direction of the message and the associated L1 transaction.
   #
   # ## Parameters
   # - `arbitrum_tx`: An Arbitrum transaction.
   #
   # ## Returns
-  # - A map extended with a field indicating the direction of the message.
+  # - A map extended with fields indicating the direction of the message and
+  #   the associated L1 transaction.
   @spec extend_if_message(map(), %{
           :__struct__ => Transaction,
           :arbitrum_message_to_l2 => any(),
@@ -542,15 +543,22 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           optional(any()) => any()
         }) :: map()
   defp extend_if_message(arbitrum_json, %Transaction{} = arbitrum_tx) do
-    message_type =
+    {message_type, l1_tx} =
       case {APIV2Helper.specified?(Map.get(arbitrum_tx, :arbitrum_message_to_l2)),
             APIV2Helper.specified?(Map.get(arbitrum_tx, :arbitrum_message_from_l2))} do
-        {true, false} -> "incoming"
-        {false, true} -> "outcoming"
-        _ -> nil
+        {true, false} ->
+          {"incoming", APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_to_l2, :originating_transaction_hash)}
+
+        {false, true} ->
+          {"outcoming", APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_from_l2, :completion_transaction_hash)}
+
+        _ ->
+          {nil, nil}
       end
 
-    Map.put(arbitrum_json, "contains_message", message_type)
+    arbitrum_json
+    |> Map.put("contains_message", message_type)
+    |> Map.put("message_related_l1_transaction", l1_tx)
   end
 
   # Extends the output JSON with information from Arbitrum-specific fields of the transaction.
