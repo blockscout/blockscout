@@ -18,6 +18,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
   @api_true [api?: true]
   @sc_verification_started "Smart-contract verification started"
+  @zk_optimization_modes ["0", "1", "2", "3", "s", "z"]
 
   if Application.compile_env(:explorer, :chain_type) == :zksync do
     @optimization_runs "200"
@@ -27,19 +28,9 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
   def config(conn, _params) do
     solidity_compiler_versions = CompilerVersion.fetch_version_list(:solc)
-    zk_compiler_versions = CompilerVersion.fetch_version_list(:zk)
     vyper_compiler_versions = CompilerVersion.fetch_version_list(:vyper)
 
-    verification_options =
-      ["flattened-code", "standard-input", "vyper-code"]
-      |> (&if(Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled],
-            do: ["sourcify" | &1],
-            else: &1
-          )).()
-      |> (&if(RustVerifierInterface.enabled?(),
-            do: ["multi-part", "vyper-multi-part", "vyper-standard-input"] ++ &1,
-            else: &1
-          )).()
+    verification_options = get_verification_options()
 
     base_config =
       %{
@@ -54,13 +45,38 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
     config =
       base_config
-      |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
-            do: Map.put(&1, :zk_compiler_versions, zk_compiler_versions),
-            else: &1
-          )).()
+      |> maybe_add_zk_options()
 
     conn
     |> json(config)
+  end
+
+  defp get_verification_options do
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      ["standard-input"]
+    else
+      ["flattened-code", "standard-input", "vyper-code"]
+      |> (&if(Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled],
+            do: ["sourcify" | &1],
+            else: &1
+          )).()
+      |> (&if(RustVerifierInterface.enabled?(),
+            do: ["multi-part", "vyper-multi-part", "vyper-standard-input"] ++ &1,
+            else: &1
+          )).()
+    end
+  end
+
+  defp maybe_add_zk_options(config) do
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      zk_compiler_versions = CompilerVersion.fetch_version_list(:zk)
+
+      config
+      |> Map.put(:zk_compiler_versions, zk_compiler_versions)
+      |> Map.put(:zk_optimization_modes, @zk_optimization_modes)
+    else
+      config
+    end
   end
 
   def verification_via_flattened_code(
