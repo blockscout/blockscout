@@ -562,7 +562,15 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   # Determines the associated L1 transaction and its status for the given message direction.
-  @spec l1_tx_and_status_for_message(Transaction.t(), :incoming | :outcoming) :: map()
+  @spec l1_tx_and_status_for_message(
+          %{
+            :__struct__ => Transaction,
+            :arbitrum_message_to_l2 => any(),
+            :arbitrum_message_from_l2 => any(),
+            optional(any()) => any()
+          },
+          :incoming | :outcoming
+        ) :: map()
   defp l1_tx_and_status_for_message(arbitrum_tx, message_direction) do
     {l1_tx, status} =
       case message_direction do
