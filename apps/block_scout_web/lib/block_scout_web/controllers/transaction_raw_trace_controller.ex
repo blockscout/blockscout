@@ -8,7 +8,6 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   alias BlockScoutWeb.{AccessHelper, TransactionController}
   alias EthereumJSONRPC
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.InternalTransaction
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
 
   def index(conn, %{"transaction_id" => hash_string} = params) do
@@ -30,19 +29,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
       if is_nil(transaction.block_number) do
         render_raw_trace(conn, [], transaction, hash)
       else
-        unless Application.get_env(:explorer, :shrink_internal_transactions_enabled) do
-          internal_transactions = InternalTransaction.all_transaction_to_internal_transactions(hash)
-
-          # credo:disable-for-lines:8 Credo.Check.Refactor.Nesting
-          first_trace_exists =
-            Enum.find_index(internal_transactions, fn trace ->
-              trace.index == 0
-            end)
-
-          if !first_trace_exists do
-            FirstTraceOnDemand.trigger_fetch(transaction)
-          end
-        end
+        FirstTraceOnDemand.maybe_trigger_fetch(transaction)
 
         case Chain.fetch_transaction_raw_traces(transaction) do
           {:ok, raw_traces} -> render_raw_trace(conn, raw_traces, transaction, hash)

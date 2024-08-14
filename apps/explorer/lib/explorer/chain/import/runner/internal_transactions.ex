@@ -119,23 +119,26 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :valid_internal_transactions_without_first_traces_of_trivial_transactions
       )
     end)
-    |> Multi.run(:shrink_internal_transactions_params, fn _,
-                                                          %{
-                                                            valid_internal_transactions_without_first_traces_of_trivial_transactions:
-                                                              valid_internal_transactions_without_first_traces_of_trivial_transactions
-                                                          } ->
+    |> Multi.run(:maybe_shrink_internal_transactions_params, fn _,
+                                                                %{
+                                                                  valid_internal_transactions_without_first_traces_of_trivial_transactions:
+                                                                    valid_internal_transactions_without_first_traces_of_trivial_transactions
+                                                                } ->
       Instrumenter.block_import_stage_runner(
         fn ->
-          shrink_internal_transactions_params(valid_internal_transactions_without_first_traces_of_trivial_transactions)
+          maybe_shrink_internal_transactions_params(
+            valid_internal_transactions_without_first_traces_of_trivial_transactions
+          )
         end,
         :block_pending,
         :internal_transactions,
-        :shrink_internal_transactions_params
+        :maybe_shrink_internal_transactions_params
       )
     end)
     |> Multi.run(:internal_transactions, fn repo,
                                             %{
-                                              shrink_internal_transactions_params: shrink_internal_transactions_params
+                                              maybe_shrink_internal_transactions_params:
+                                                shrink_internal_transactions_params
                                             } ->
       Instrumenter.block_import_stage_runner(
         fn ->
@@ -447,7 +450,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  defp shrink_internal_transactions_params(internal_transactions) do
+  defp maybe_shrink_internal_transactions_params(internal_transactions) do
     if Application.get_env(:explorer, :shrink_internal_transactions_enabled) do
       shrunk_internal_transactions =
         Enum.map(internal_transactions, fn it ->

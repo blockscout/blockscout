@@ -340,26 +340,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   """
   @spec raw_trace(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def raw_trace(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
-    with {:ok, transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+    with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
       if is_nil(transaction.block_number) do
         conn
         |> put_status(200)
         |> render(:raw_trace, %{internal_transactions: []})
       else
-        unless Application.get_env(:explorer, :shrink_internal_transactions_enabled) do
-          internal_transactions =
-            InternalTransaction.all_transaction_to_internal_transactions(transaction_hash, @api_true)
-
-          # credo:disable-for-lines:8 Credo.Check.Refactor.Nesting
-          first_trace_exists =
-            Enum.find_index(internal_transactions, fn trace ->
-              trace.index == 0
-            end)
-
-          if !first_trace_exists do
-            FirstTraceOnDemand.trigger_fetch(transaction)
-          end
-        end
+        FirstTraceOnDemand.maybe_trigger_fetch(transaction, @api_true)
 
         case Chain.fetch_transaction_raw_traces(transaction) do
           {:ok, raw_traces} ->

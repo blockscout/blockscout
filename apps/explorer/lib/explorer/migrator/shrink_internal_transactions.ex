@@ -48,11 +48,10 @@ defmodule Explorer.Migrator.ShrinkInternalTransactions do
   @impl FillingMigration
   def update_batch(block_numbers) do
     block_hashes_query = from(b in Block, where: b.number in ^block_numbers, select: b.hash)
-    block_hashes = Repo.all(block_hashes_query)
 
     query =
       from(it in InternalTransaction,
-        where: it.block_hash in ^block_hashes,
+        where: it.block_hash in subquery(block_hashes_query),
         update: [set: [input: fragment("substring(? FOR 4)", it.input), output: nil]]
       )
 
