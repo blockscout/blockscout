@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     skip_sig_provider? = false
     {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true)
 
-    decoded_input_data = decoded_input |> TransactionView.format_decoded_input() |> TransactionView.decoded_input()
+    decoded_input_data = decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()
 
     %{
       data: %{
@@ -131,7 +131,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         hash: transaction.hash,
         type: transaction.type,
         value: transaction.value,
-        method: TransactionView.method_name(transaction, TransactionView.format_decoded_input(decoded_input)),
+        method: Transaction.method_name(transaction, Transaction.format_decoded_input(decoded_input)),
         status: transaction.status,
         actions: TransactionView.transaction_actions(transaction.transaction_actions),
         tx_types: TransactionView.tx_types(transaction),
@@ -317,7 +317,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         hash: user_op_hash,
         type: 0,
         value: "0",
-        method: TransactionView.method_name(mock_tx, TransactionView.format_decoded_input(decoded_input), true),
+        method: Transaction.method_name(mock_tx, Transaction.format_decoded_input(decoded_input), true),
         status: user_op["status"],
         actions: [],
         tx_types: [],
@@ -350,6 +350,6 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(mock_tx, skip_sig_provider?, @api_true)
 
-    {mock_tx, decoded_input, decoded_input |> TransactionView.format_decoded_input() |> TransactionView.decoded_input()}
+    {mock_tx, decoded_input, decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()}
   end
 end
