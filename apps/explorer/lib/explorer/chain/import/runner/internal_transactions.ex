@@ -456,7 +456,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         Enum.map(internal_transactions, fn it ->
           it
           |> Map.delete(:output)
-          |> Map.replace(:input, it[:input] && binary_slice(it[:input], 0, 4))
+          |> Map.replace(:input, it[:input] && Map.put(it[:input], :bytes, binary_slice(it[:input].bytes, 0, 4)))
         end)
 
       {:ok, shrunk_internal_transactions}
