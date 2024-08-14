@@ -9,6 +9,7 @@ defmodule Explorer.ExchangeRates.Source.Cryptorank do
 
   import Source, only: [to_decimal: 1, maybe_get_date: 1, handle_image_url: 1]
 
+  @spec format_data(term()) :: [Token.t()] | map()
   def format_data(%{"data" => %{} = coin}) do
     last_updated = maybe_get_date(coin["lastUpdated"])
 
