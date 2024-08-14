@@ -1902,6 +1902,13 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
+  @doc """
+  Receives as input list of transactions and returns tuple {decoded_input_data, abi_acc, methods_acc}
+  Where
+    - `decoded_input_data` is list of results: either `{:ok, _identifier, _text, _mapping}` or `nil`
+    - `abi_acc` is list of all smart contracts ABIs fetched during decoding
+    - `methods_acc` is list of all smart contracts methods fetched from `contract_methods` table during decoding
+  """
   @spec decode_transactions([Transaction.t()], boolean(), Keyword.t()) :: {[any()], map(), map()}
   def decode_transactions(transactions, skip_sig_provider?, opts) do
     {results, abi_acc, methods_acc} =
