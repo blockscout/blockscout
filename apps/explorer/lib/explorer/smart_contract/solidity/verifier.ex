@@ -25,11 +25,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   @bytecode_hash_options ["default", "none", "bzzr1"]
 
-  if Application.compile_env(:explorer, :chain_type) == :zksync do
-    @optimization_runs "200"
-  else
-    @optimization_runs 200
-  end
+  @optimization_runs 200
 
   def evaluate_authenticity(_, %{"contract_source_code" => ""}),
     do: {:error, :contract_source_code}

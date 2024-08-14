@@ -162,7 +162,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
     end
   end
 
-  @spec source_url(:solc | :zk | :vyper) :: String.t()
+  @spec source_url(:solc | :vyper) :: String.t()
   defp source_url(compiler) do
     case compiler do
       :solc ->

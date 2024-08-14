@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   @zk_optimization_modes ["0", "1", "2", "3", "s", "z"]
 
   if Application.compile_env(:explorer, :chain_type) == :zksync do
-    @optimization_runs "200"
+    @optimization_runs "0"
   else
     @optimization_runs 200
   end

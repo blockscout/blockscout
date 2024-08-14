@@ -484,9 +484,14 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   def merge_twin_contract_with_changeset(nil, %Changeset{} = changeset) do
+    optimization_runs =
+      if Application.get_env(:explorer, :chain_type) == :zksync,
+        do: "0",
+        else: "200"
+
     changeset
     |> Changeset.put_change(:name, "")
-    |> Changeset.put_change(:optimization_runs, "200")
+    |> Changeset.put_change(:optimization_runs, optimization_runs)
     |> Changeset.put_change(:optimization, true)
     |> Changeset.put_change(:evm_version, "default")
     |> Changeset.put_change(:compiler_version, "latest")
