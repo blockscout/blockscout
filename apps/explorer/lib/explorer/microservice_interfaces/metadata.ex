@@ -14,6 +14,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   @request_timeout :timer.seconds(5)
 
   @tags_per_address_limit 5
+  @page_size 50
   @request_error_msg "Error while sending request to Metadata microservice"
 
   @spec get_addresses_tags([String.t()]) :: {:error, :disabled | <<_::416>> | Jason.DecodeError.t()} | {:ok, any()}
@@ -35,7 +36,11 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   @spec get_addresses(map()) :: {:error | integer(), any()}
   def get_addresses(params) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
-      params = params |> Map.put("pageSize", 50) |> Map.put("chainId", Application.get_env(:block_scout_web, :chain_id))
+      params =
+        params
+        |> Map.put("pageSize", @page_size)
+        |> Map.put("chainId", Application.get_env(:block_scout_web, :chain_id))
+
       http_get_request_for_proxy_method(addresses_url(), params, &prepare_addresses_response/1)
     end
   end
