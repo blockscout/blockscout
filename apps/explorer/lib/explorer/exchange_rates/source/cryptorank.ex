@@ -104,31 +104,31 @@ defmodule Explorer.ExchangeRates.Source.Cryptorank do
     |> URI.to_string()
   end
 
-  def headers do
+  defp headers do
     []
   end
 
-  def base_url do
+  defp base_url do
     config()[:base_url] |> URI.parse() |> URI.append_query("api_key=#{api_key()}")
   end
 
-  def api_key do
+  defp api_key do
     config()[:api_key]
   end
 
-  def platform_id do
+  defp platform_id do
     config()[:platform]
   end
 
-  def coin_id do
+  defp coin_id do
     config()[:coin_id]
   end
 
-  def secondary_coin_id do
+  defp secondary_coin_id do
     config()[:secondary_coin_id]
   end
 
-  def config do
+  defp config do
     Application.get_env(:explorer, __MODULE__)
   end
 
