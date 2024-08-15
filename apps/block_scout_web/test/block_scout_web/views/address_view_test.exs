@@ -176,23 +176,6 @@ defmodule BlockScoutWeb.AddressViewTest do
     assert "" = AddressView.balance_percentage(address, nil)
   end
 
-  describe "contract?/1" do
-    test "with a smart contract" do
-      {:ok, code} = Data.cast("0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef")
-      address = insert(:address, contract_code: code)
-      assert AddressView.contract?(address)
-    end
-
-    test "with an account" do
-      address = insert(:address, contract_code: nil)
-      refute AddressView.contract?(address)
-    end
-
-    test "with nil address" do
-      assert AddressView.contract?(nil)
-    end
-  end
-
   describe "hash/1" do
     test "gives a string version of an address's hash" do
       address = %Address{

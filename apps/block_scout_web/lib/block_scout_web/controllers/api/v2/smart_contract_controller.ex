@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Chain.SmartContract.AuditReport
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.SmartContract.{Reader, Writer}
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.ThirdPartyIntegrations.SolidityScan
@@ -22,7 +23,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     necessity_by_association: %{
       :contracts_creation_internal_transaction => :optional,
       [smart_contract: :smart_contract_additional_sources] => :optional,
-      :contracts_creation_transaction => :optional
+      :contracts_creation_transaction => :optional,
+      :proxy_implementations => :optional
     },
     api?: true
   ]
@@ -37,9 +39,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          _ <- PublishHelper.sourcify_check(address_hash_string),
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options, false)} do
+      {implementations, proxy_type} =
+        SmartContractHelper.pre_fetch_implementations(address)
+
       conn
       |> put_status(200)
-      |> render(:smart_contract, %{address: address})
+      |> render(:smart_contract, %{address: address, implementations: implementations, proxy_type: proxy_type})
     end
   end
 
@@ -206,7 +211,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   end
 
   @doc """
-  /api/v2/smart-contracts/${address_hash_string}/solidityscan-report logic
+  /api/v2/smart-contracts/:address_hash_string/solidityscan-report logic
   """
   @spec solidityscan_report(Plug.Conn.t(), map()) ::
           {:address, {:error, :not_found}}

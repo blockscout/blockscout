@@ -449,7 +449,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def involves_contract?(%Transaction{from_address: from_address, to_address: to_address}) do
-    AddressView.contract?(from_address) || AddressView.contract?(to_address)
+    Address.smart_contract?(from_address) || Address.smart_contract?(to_address)
   end
 
   def involves_token_transfers?(%Transaction{token_transfers: []}), do: false

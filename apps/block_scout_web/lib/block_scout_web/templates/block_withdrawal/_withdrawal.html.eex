@@ -12,7 +12,7 @@
     <%= render BlockScoutWeb.AddressView,
         "_link.html",
         address: @withdrawal.address,
-        contract: BlockScoutWeb.AddressView.contract?(@withdrawal.address),
+        contract: Address.smart_contract?(@withdrawal.address),
         use_custom_tooltip: false
     %>
   </td>

@@ -84,7 +84,7 @@
 
         <% address_string = Map.get(@action.data, "address") %>
         <% {address_status, address} = transaction_action_string_to_address(address_string) %>
-        <% address = if address_status == :ok, do: render_to_string(BlockScoutWeb.AddressView, "_link.html", address: address, contract: BlockScoutWeb.AddressView.contract?(address), use_custom_tooltip: false, trimmed: false), else: render_to_string(BlockScoutWeb.TransactionView, "_actions_address.html", address_string: address_string, action: @action) %>
+        <% address = if address_status == :ok, do: render_to_string(BlockScoutWeb.AddressView, "_link.html", address: address, contract: Address.smart_contract?(address), use_custom_tooltip: false, trimmed: false), else: render_to_string(BlockScoutWeb.TransactionView, "_actions_address.html", address_string: address_string, action: @action) %>
         <% to_address = Map.get(@action.data, "to") %>
         <% to_content = raw(render_to_string BlockScoutWeb.TransactionView, "_actions_to.html", address: to_address) %>
         <% to = link to: address_path(BlockScoutWeb.Endpoint, :show, to_address), "data-test": "address_hash_link", do: to_content %>
@@ -114,11 +114,11 @@
         <% address0 = Map.get(@action.data, "address0") %>
         <% symbol1 = Map.get(@action.data, "symbol1") %>
         <% address1 = Map.get(@action.data, "address1") %>
-        
+
         <i class="fa fa-caret-right"></i>
-        
+
         <% symbol0 = if symbol0 != "Ether", do: link(symbol0, to: token_path(BlockScoutWeb.Endpoint, :show, address0), "data-test": "token_link"), else: raw(symbol0) %>
-        
+
         <% symbol1 = if symbol1 != "Ether", do: link(symbol1, to: token_path(BlockScoutWeb.Endpoint, :show, address1), "data-test": "token_link"), else: raw(symbol1) %>
 
         <%= if @action.type == :mint do %>
