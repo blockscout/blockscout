@@ -84,14 +84,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   def address(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, _address_hash, address} <- validate_address(address_hash_string, params, @address_options) do
+      fully_preloaded_address =
+        Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true)
+
       {implementations, proxy_type} =
-        SmartContractHelper.pre_fetch_implementations(address)
+        SmartContractHelper.pre_fetch_implementations(fully_preloaded_address)
 
       CoinBalanceOnDemand.trigger_fetch(address)
       ContractCodeOnDemand.trigger_fetch(address)
-
-      fully_preloaded_address =
-        Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true)
 
       conn
       |> put_status(200)
