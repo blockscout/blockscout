@@ -4,7 +4,7 @@ defmodule Explorer.ExchangeRates.Source do
   """
 
   alias Explorer.Chain.Hash
-  alias Explorer.ExchangeRates.Source.CoinGecko
+  alias Explorer.ExchangeRates.Source.{CoinGecko, Cryptorank}
   alias Explorer.ExchangeRates.Token
   alias Explorer.Helper
   alias HTTPoison.{Error, Response}
@@ -50,6 +50,26 @@ defmodule Explorer.ExchangeRates.Source do
         {:ok,
          result
          |> CoinGecko.format_data()}
+
+      resp ->
+        resp
+    end
+  end
+
+  @doc """
+  Fetches exchange rates for tokens from cryptorank.
+  """
+  @spec cryptorank_fetch_currencies(integer(), integer()) ::
+          {:error, any()}
+          | {:ok, map()}
+  def cryptorank_fetch_currencies(limit, offset) do
+    source_url = Cryptorank.source_url(:currencies, limit, offset)
+
+    case http_request(source_url, []) do
+      {:ok, result} ->
+        {:ok,
+         result
+         |> Cryptorank.format_data()}
 
       resp ->
         resp
@@ -145,6 +165,29 @@ defmodule Explorer.ExchangeRates.Source do
       {:error, "#{status_code}: #{body_json["error"]}"}
     else
       {:error, "#{status_code}: #{body}"}
+    end
+  end
+
+  @doc """
+  Returns `nil` if the date is `nil`, otherwise returns the parsed date.
+  Date should be in ISO8601 format
+  """
+  @spec maybe_get_date(String.t() | nil) :: DateTime.t() | nil
+  def maybe_get_date(nil), do: nil
+
+  def maybe_get_date(date) do
+    {:ok, parsed_date, 0} = DateTime.from_iso8601(date)
+    parsed_date
+  end
+
+  @doc """
+  Returns `nil` if the url is invalid, otherwise returns the parsed url.
+  """
+  @spec handle_image_url(String.t() | nil) :: String.t() | nil
+  def handle_image_url(url) do
+    case Helper.validate_url(url) do
+      {:ok, url} -> url
+      _ -> nil
     end
   end
 end
