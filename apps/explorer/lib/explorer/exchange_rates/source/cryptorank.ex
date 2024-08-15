@@ -38,7 +38,7 @@ defmodule Explorer.ExchangeRates.Source.Cryptorank do
     ]
   end
 
-  def format_data(%{"data" => currencies, "meta" => %{"count" => count}}) do
+  def format_data(%{"data" => currencies, "meta" => %{"count" => count}}) when is_list(currencies) do
     platform_id = platform_id()
     currencies |> Enum.reduce(%{}, &reduce_currency(platform_id, &1, &2)) |> Map.put(:count, count)
   end
