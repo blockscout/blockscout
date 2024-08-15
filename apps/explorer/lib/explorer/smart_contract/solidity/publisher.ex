@@ -96,7 +96,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
          "fileName" => _,
          "sources" => _,
          "compilerSettings" => _,
-         "creationMatch" => _
+         "runtimeMatch" => _
        } = result_params} ->
         compilation_artifacts = Jason.decode!(compilation_artifacts_string)
 
@@ -172,7 +172,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "fileName" => file_name,
           "sources" => sources,
           "compilerSettings" => compiler_settings_string,
-          "creationMatch" => %{"type" => match_type, "values" => values_string},
+          "runtimeMatch" => %{"type" => match_type, "values" => values_string},
           "zkCompiler" => %{"version" => zk_compiler_version}
         },
         address_hash,
