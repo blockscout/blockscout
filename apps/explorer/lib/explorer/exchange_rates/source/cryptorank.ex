@@ -104,7 +104,7 @@ defmodule Explorer.ExchangeRates.Source.Cryptorank do
     |> URI.to_string()
   end
 
-  defp headers do
+  def headers do
     []
   end
 
