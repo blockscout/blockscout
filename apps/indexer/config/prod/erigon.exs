@@ -38,6 +38,7 @@ config :indexer,
         EthereumJSONRPC.WebSocket,
     transport_options: [
       web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
-      url: System.get_env("ETHEREUM_JSONRPC_WS_URL")
+      url: System.get_env("ETHEREUM_JSONRPC_WS_URL"),
+      fallback_url: System.get_env("ETHEREUM_JSONRPC_FALLBACK_WS_URL")
     ]
   ]
