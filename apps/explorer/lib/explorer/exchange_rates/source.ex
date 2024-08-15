@@ -56,6 +56,12 @@ defmodule Explorer.ExchangeRates.Source do
     end
   end
 
+  @doc """
+  Fetches exchange rates for tokens from cryptorank.
+  """
+  @spec cryptorank_fetch_currencies(integer(), integer()) ::
+          {:error, any()}
+          | {:ok, map()}
   def cryptorank_fetch_currencies(limit, offset) do
     source_url = Cryptorank.source_url(:currencies, limit, offset)
 
@@ -167,13 +173,11 @@ defmodule Explorer.ExchangeRates.Source do
   Date should be in ISO8601 format
   """
   @spec maybe_get_date(String.t() | nil) :: DateTime.t() | nil
+  def maybe_get_date(nil), do: nil
+
   def maybe_get_date(date) do
-    if date do
-      {:ok, parsed_date, 0} = DateTime.from_iso8601(date)
-      parsed_date
-    else
-      nil
-    end
+    {:ok, parsed_date, 0} = DateTime.from_iso8601(date)
+    parsed_date
   end
 
   @doc """

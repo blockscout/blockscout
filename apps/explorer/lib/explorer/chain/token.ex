@@ -291,6 +291,10 @@ defmodule Explorer.Chain.Token do
     |> Repo.update()
   end
 
+  @doc """
+  Returns query for token by contract address hash
+  """
+  @spec token_by_contract_address_hash_query(binary() | Hash.Address.t()) :: Ecto.Query.t()
   def token_by_contract_address_hash_query(contract_address_hash) do
     __MODULE__
     |> where([token], token.contract_address_hash == ^contract_address_hash)
