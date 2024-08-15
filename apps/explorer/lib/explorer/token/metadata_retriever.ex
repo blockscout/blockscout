@@ -765,7 +765,10 @@ defmodule Explorer.Token.MetadataRetriever do
     if String.ends_with?(base_uri, "/") do
       base_uri <> to_string(token_id)
     else
-      base_uri <> "/" <> to_string(token_id)
+      case String.ends_with?(base_uri, "{id}") do
+        true -> String.replace(base_uri, "{id}", to_string(token_id))
+        _ -> base_uri <> "/" <> to_string(token_id)
+      end
     end
   end
 
@@ -773,8 +776,12 @@ defmodule Explorer.Token.MetadataRetriever do
        when empty_token_id in [nil, ""],
        do: token_uri
 
-  defp substitute_token_id_to_token_uri(token_uri, _token_id, hex_token_id, _from_base_uri?) do
+  defp substitute_token_id_to_token_uri(token_uri, _token_id, hex_token_id, _from_base_uri?) when not is_nil(hex_token_id) do
     String.replace(token_uri, @erc1155_token_id_placeholder, hex_token_id)
+  end
+
+  defp substitute_token_id_to_token_uri(token_uri, token_id, _hex_token_id, _from_base_uri?) do
+    String.replace(token_uri, @erc1155_token_id_placeholder, token_id)
   end
 
   @doc """
