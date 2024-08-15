@@ -1,12 +1,12 @@
 <% contract_creation_code = contract_creation_code(@address) %>
 <% minimal_proxy_template = EIP1167.get_implementation_smart_contract(@address.hash) %>
-<% implementation_or_bytecode_twin_contract = minimal_proxy_template || SmartContract.get_address_verified_bytecode_twin_contract(@address.hash).verified_contract %>
+<% bytecode_twin_contract = SmartContract.get_address_verified_bytecode_twin_contract(@address.hash).verified_contract %>
 <% smart_contract_verified = BlockScoutWeb.AddressView.smart_contract_verified?(@address) %>
 <% fully_verified = SmartContract.verified_with_full_match?(@address.hash)%>
-<% additional_sources = BlockScoutWeb.API.V2.SmartContractView.get_additional_sources(@address.smart_contract, smart_contract_verified, implementation_or_bytecode_twin_contract) %>
+<% additional_sources = BlockScoutWeb.API.V2.SmartContractView.get_additional_sources(@address.smart_contract, smart_contract_verified, bytecode_twin_contract) %>
 <% visualize_sol2uml_enabled = Explorer.Visualize.Sol2uml.enabled?() %>
 <section class="container">
-  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+  <% is_proxy = SmartContractHelper.address_is_proxy?(@address) %>
 
   <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path, tags: @tags %>
 
@@ -15,16 +15,16 @@
     <div class="card-body">
       <%= unless smart_contract_verified do %>
         <%= if minimal_proxy_template do %>
-          <%= render BlockScoutWeb.CommonComponentsView, "_minimal_proxy_pattern.html", address_hash: implementation_or_bytecode_twin_contract.address_hash, conn: @conn %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_minimal_proxy_pattern.html", address_hash: bytecode_twin_contract.address_hash, conn: @conn %>
         <% else %>
-          <%= if implementation_or_bytecode_twin_contract do %>
+          <%= if bytecode_twin_contract do %>
             <% path = address_verify_contract_path(@conn, :new, @address.hash) %>
             <div class="mb-4">
               <div style="display: inline-block;">
                 <%= render BlockScoutWeb.CommonComponentsView, "_info.html" %>
                 <span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
-                  implementation_or_bytecode_twin_contract.address_hash,
-                  to: address_contract_path(@conn, :index, implementation_or_bytecode_twin_contract.address_hash)) %>.<br/> <%= gettext("All metadata displayed below is from that contract. In order to verify current contract, click") %> <i><%= gettext("Verify & Publish") %></i> <%= gettext("button") %></span>
+                  bytecode_twin_contract.address_hash,
+                  to: address_contract_path(@conn, :index, bytecode_twin_contract.address_hash)) %>.<br/> <%= gettext("All metadata displayed below is from that contract. In order to verify current contract, click") %> <i><%= gettext("Verify & Publish") %></i> <%= gettext("button") %></span>
               </div>
               <%= link(gettext("Verify & Publish"), to: path, class: "button button-primary button-sm float-right ml-3", "data-test": "verify_and_publish") %>
             </div>
@@ -40,8 +40,8 @@
           </div>
         <% end %>
       <% end %>
-      <%= if smart_contract_verified || (!smart_contract_verified && implementation_or_bytecode_twin_contract) do %>
-        <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: implementation_or_bytecode_twin_contract %>
+      <%= if smart_contract_verified || (!smart_contract_verified && bytecode_twin_contract) do %>
+        <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: bytecode_twin_contract %>
         <%= if @address.smart_contract && @address.smart_contract.verified_via_sourcify && @address.smart_contract.partially_verified && smart_contract_verified do %>
           <div class="mb-4">
             <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("This contract has been partially verified via Sourcify.") %>
@@ -240,8 +240,8 @@
         <% end %>
       </section>
 
-      <%= if smart_contract_verified || (!smart_contract_verified && implementation_or_bytecode_twin_contract) do %>
-        <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: implementation_or_bytecode_twin_contract %>
+      <%= if smart_contract_verified || (!smart_contract_verified && bytecode_twin_contract) do %>
+        <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: bytecode_twin_contract %>
         <%= if target_contract.external_libraries && target_contract.external_libraries != [] do %>
           <section>
             <div class="d-flex justify-content-between align-items-baseline">

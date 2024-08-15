@@ -288,6 +288,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.{Chain, Helper, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
+    Address,
     Block,
     Block.Reward,
     ContractMethod,
@@ -1872,7 +1873,7 @@ defmodule Explorer.Chain.Transaction do
   @spec where_transactions_to_from(Hash.Address.t()) :: any()
   def where_transactions_to_from(address_hash) do
     with {:ok, address} <- Chain.hash_to_address(address_hash),
-         true <- Chain.contract?(address) do
+         true <- Address.smart_contract?(address) do
       dynamic([transaction], transaction.to_address_hash == ^address_hash)
     else
       _ ->
@@ -1899,5 +1900,60 @@ defmodule Explorer.Chain.Transaction do
       :count,
       timeout: :infinity
     )
+  end
+
+  @doc """
+  Receives as input list of transactions and returns tuple {decoded_input_data, abi_acc, methods_acc}
+  Where
+    - `decoded_input_data` is list of results: either `{:ok, _identifier, _text, _mapping}` or `nil`
+    - `abi_acc` is list of all smart contracts ABIs fetched during decoding
+    - `methods_acc` is list of all smart contracts methods fetched from `contract_methods` table during decoding
+  """
+  @spec decode_transactions([Transaction.t()], boolean(), Keyword.t()) :: {[any()], map(), map()}
+  def decode_transactions(transactions, skip_sig_provider?, opts) do
+    {results, abi_acc, methods_acc} =
+      Enum.reduce(transactions, {[], %{}, %{}}, fn transaction, {results, abi_acc, methods_acc} ->
+        {result, abi_acc, methods_acc} =
+          decoded_input_data(transaction, skip_sig_provider?, opts, abi_acc, methods_acc)
+
+        {[format_decoded_input(result) | results], abi_acc, methods_acc}
+      end)
+
+    {Enum.reverse(results), abi_acc, methods_acc}
+  end
+
+  @doc """
+  Receives as input result of decoded_input_data/5, returns either nil or decoded input in format: {:ok, _identifier, _text, _mapping}
+  """
+  @spec format_decoded_input(any()) :: nil | tuple()
+  def format_decoded_input({:error, _, []}), do: nil
+  def format_decoded_input({:error, _, candidates}), do: Enum.at(candidates, 0)
+  def format_decoded_input({:ok, _identifier, _text, _mapping} = decoded), do: decoded
+  def format_decoded_input(_), do: nil
+
+  @doc """
+    Return method name used in tx
+  """
+  @spec method_name(t(), any(), boolean()) :: binary() | nil
+  def method_name(_, _, skip_sc_check? \\ false)
+
+  def method_name(_, {:ok, _method_id, text, _mapping}, _) do
+    parse_method_name(text, false)
+  end
+
+  def method_name(
+        %__MODULE__{to_address: to_address, input: %{bytes: <<method_id::binary-size(4), _::binary>>}},
+        _,
+        skip_sc_check?
+      ) do
+    if skip_sc_check? || Address.smart_contract?(to_address) do
+      "0x" <> Base.encode16(method_id, case: :lower)
+    else
+      nil
+    end
+  end
+
+  def method_name(_, _, _) do
+    nil
   end
 end

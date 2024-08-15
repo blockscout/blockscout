@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
       wrapped_value = Map.get(transaction, :wrapped_value)
 
       {[wrapped_decoded_input], _, _} =
-        TransactionView.decode_transactions(
+        Transaction.decode_transactions(
           [
             %Transaction{
               to_address: wrapped_to_address,
@@ -36,7 +36,8 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
               hash: wrapped_hash
             }
           ],
-          false
+          false,
+          api?: true
         )
 
       out_json
@@ -76,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
         "value" => wrapped_value,
         "hash" => wrapped_hash,
         "method" =>
-          TransactionView.method_name(
+          Transaction.method_name(
             %Transaction{to_address: wrapped_to_address, input: wrapped_input},
             wrapped_decoded_input
           ),

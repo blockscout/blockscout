@@ -29,6 +29,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.Chain.{Address, Hash, Transaction}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Token.Instance
+  alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
   alias BlockScoutWeb.API.V2.CeloView
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
@@ -118,16 +119,23 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def address(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, _address_hash, address} <- validate_address(address_hash_string, params, @address_options),
-         fully_preloaded_address <-
-           Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true) do
-      CoinBalanceOnDemand.trigger_fetch(fully_preloaded_address)
+    with {:ok, _address_hash, address} <- validate_address(address_hash_string, params, @address_options) do
+      fully_preloaded_address =
+        Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true)
 
+      {implementations, proxy_type} =
+        SmartContractHelper.pre_fetch_implementations(fully_preloaded_address)
+
+      CoinBalanceOnDemand.trigger_fetch(address)
       ContractCodeOnDemand.trigger_fetch(address)
 
       conn
       |> put_status(200)
-      |> render(:address, %{address: fully_preloaded_address |> maybe_preload_ens_to_address()})
+      |> render(:address, %{
+        address: fully_preloaded_address |> maybe_preload_ens_to_address(),
+        implementations: implementations,
+        proxy_type: proxy_type
+      })
     end
   end
 

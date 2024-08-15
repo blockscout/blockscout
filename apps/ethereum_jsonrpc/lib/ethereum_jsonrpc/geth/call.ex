@@ -363,6 +363,38 @@ defmodule EthereumJSONRPC.Geth.Call do
     ])
   end
 
+  # failed internal transaction
+  defp elixir_to_internal_transaction_params(%{
+         "blockNumber" => block_number,
+         "transactionIndex" => transaction_index,
+         "transactionHash" => transaction_hash,
+         "index" => index,
+         "traceAddress" => trace_address,
+         "type" => type,
+         "from" => from_address_hash,
+         "gas" => gas,
+         "gasUsed" => gas_used,
+         "init" => init,
+         "value" => value,
+         "error" => error
+       })
+       when type in ~w(create create2) and not is_nil(error) do
+    %{
+      block_number: block_number,
+      transaction_index: transaction_index,
+      transaction_hash: transaction_hash,
+      index: index,
+      trace_address: trace_address,
+      type: type,
+      from_address_hash: from_address_hash,
+      gas: gas,
+      gas_used: gas_used,
+      init: init,
+      value: value,
+      error: error
+    }
+  end
+
   defp elixir_to_internal_transaction_params(
          %{
            "blockNumber" => block_number,
@@ -394,7 +426,7 @@ defmodule EthereumJSONRPC.Geth.Call do
     }
     |> put_if_present(params, [
       {"error", :error},
-      {"createdContractAddressHash", :created_contract_address_hash},
+      {"createdContractAddressHash", :created_contract_address_hash, %{validation: :address_hash}},
       {"createdContractCode", :created_contract_code}
     ])
   end

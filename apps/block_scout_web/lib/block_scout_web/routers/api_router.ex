@@ -93,6 +93,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     pipe_through(:api_v2_no_session)
 
     post("/token-info", V2.ImportController, :import_token_info)
+    delete("/token-info", V2.ImportController, :delete_token_info)
+
     get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
   end
 
@@ -163,6 +165,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if Application.compile_env(:explorer, :chain_type) == :celo do
         get("/:block_hash_or_number/epoch", V2.BlockController, :celo_epoch)
         get("/:block_hash_or_number/election-rewards/:reward_type", V2.BlockController, :celo_election_rewards)
+      end
+
+      if Application.compile_env(:explorer, :chain_type) == :optimism do
+        get("/optimism-batch/:batch_number", V2.BlockController, :optimism_batch)
       end
     end
 
@@ -307,6 +313,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
       scope "/zerion" do
         get("/wallets/:address_hash_param/portfolio", V2.Proxy.ZerionController, :wallet_portfolio)
+      end
+
+      scope "/metadata" do
+        get("/addresses", V2.Proxy.MetadataController, :addresses)
       end
     end
 

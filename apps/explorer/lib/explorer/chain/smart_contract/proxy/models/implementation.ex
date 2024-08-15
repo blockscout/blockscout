@@ -7,10 +7,17 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   use Explorer.Schema
 
+  import Ecto.Query,
+    only: [
+      from: 2,
+      select: 3
+    ]
+
   import Explorer.Chain, only: [select_repo: 1, string_to_address_hash: 1]
 
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Repo
   alias Timex.Duration
@@ -78,14 +85,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   Returns all implementations for the given smart-contract address hash
   """
   @spec get_proxy_implementations(Hash.Address.t() | nil, Keyword.t()) :: __MODULE__.t() | nil
-  def get_proxy_implementations(address_hash, options \\ []) do
-    all_implementations_query =
-      from(
-        p in __MODULE__,
-        where: p.proxy_address_hash == ^address_hash
-      )
-
-    all_implementations_query
+  def get_proxy_implementations(proxy_address_hash, options \\ []) do
+    proxy_address_hash
+    |> get_proxy_implementations_query()
     |> select_repo(options).one()
   end
 
@@ -93,22 +95,24 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   Returns the last implementation updated_at for the given smart-contract address hash
   """
   @spec get_proxy_implementation_updated_at(Hash.Address.t() | nil, Keyword.t()) :: DateTime.t()
-  def get_proxy_implementation_updated_at(address_hash, options) do
-    updated_at_query =
-      from(
-        p in __MODULE__,
-        where: p.proxy_address_hash == ^address_hash,
-        select: p.updated_at
-      )
-
-    updated_at_query
+  def get_proxy_implementation_updated_at(proxy_address_hash, options) do
+    proxy_address_hash
+    |> get_proxy_implementations_query()
+    |> select([p], p.updated_at)
     |> select_repo(options).one()
   end
 
+  defp get_proxy_implementations_query(proxy_address_hash) do
+    from(
+      p in __MODULE__,
+      where: p.proxy_address_hash == ^proxy_address_hash
+    )
+  end
+
   @doc """
-  Returns implementation address and name of the given SmartContract by hash address
+  Returns implementation address, name and proxy type for the given SmartContract
   """
-  @spec get_implementation(any(), any()) :: {any(), any()}
+  @spec get_implementation(any(), any()) :: {any(), any(), atom() | nil}
   def get_implementation(smart_contract, options \\ [])
 
   def get_implementation(
@@ -152,6 +156,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     )
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def get_implementation(
         %{
           updated: %SmartContract{
@@ -164,14 +169,15 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         },
         options
       ) do
-    {implementation_addresses_hash_from_db, implementation_names_from_db, implementation_updated_at_from_db} =
-      implementation_from_db(address_hash, options)
+    proxy_implementations = get_proxy_implementations(address_hash, options)
 
-    implementation_updated_at = implementation_updated_at || implementation_updated_at_from_db
+    implementation_updated_at = implementation_updated_at || (proxy_implementations && proxy_implementations.updated_at)
 
     if fetch_implementation?(implementation_address_fetched?, refetch_necessity_checked?, implementation_updated_at) do
       get_implementation_address_hash_task =
         Task.async(fn ->
+          # Here and only here we fetch implementations for the given address
+          # using requests to the JSON RPC node for known proxy patterns
           result = Proxy.fetch_implementation_address_hash(address_hash, abi, options)
 
           callback = Keyword.get(options, :callback, nil)
@@ -187,41 +193,34 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
       case Task.yield(get_implementation_address_hash_task, timeout) ||
              Task.ignore(get_implementation_address_hash_task) do
-        {:ok, {:empty, :empty}} ->
-          {[], []}
+        {:ok, :empty} ->
+          {[], [], nil}
 
-        {:ok, {:error, :error}} ->
-          {db_implementation_data_converter(implementation_addresses_hash_from_db),
-           db_implementation_data_converter(implementation_names_from_db)}
+        {:ok, :error} ->
+          format_proxy_implementations_response(proxy_implementations)
 
-        {:ok, {address_hash, _name} = result} when not is_nil(address_hash) ->
-          result
+        {:ok, %Implementation{} = result} ->
+          format_proxy_implementations_response(result)
 
         _ ->
-          {db_implementation_data_converter(implementation_addresses_hash_from_db),
-           db_implementation_data_converter(implementation_names_from_db)}
+          format_proxy_implementations_response(proxy_implementations)
       end
     else
-      {db_implementation_data_converter(implementation_addresses_hash_from_db),
-       db_implementation_data_converter(implementation_names_from_db)}
+      format_proxy_implementations_response(proxy_implementations)
     end
   end
 
-  def get_implementation(_, _), do: {[], []}
+  def get_implementation(_, _), do: {[], [], nil}
 
   defp fetch_implementation?(implementation_address_fetched?, refetch_necessity_checked?, implementation_updated_at) do
     (!implementation_address_fetched? || !refetch_necessity_checked?) &&
       check_implementation_refetch_necessity(implementation_updated_at)
   end
 
-  defp implementation_from_db(address_hash, options) do
-    proxy_implementations = get_proxy_implementations(address_hash, options)
-
-    if proxy_implementations do
-      {proxy_implementations.address_hashes, proxy_implementations.names, proxy_implementations.updated_at}
-    else
-      {[], [], nil}
-    end
+  defp format_proxy_implementations_response(proxy_implementations) do
+    {(proxy_implementations && db_implementation_data_converter(proxy_implementations.address_hashes)) || [],
+     (proxy_implementations && db_implementation_data_converter(proxy_implementations.names)) || [],
+     proxy_implementations && proxy_implementations.proxy_type}
   end
 
   @doc """
@@ -279,9 +278,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   Saves proxy's implementation into the DB
   """
   @spec save_implementation_data([String.t()], Hash.Address.t(), atom() | nil, Keyword.t()) ::
-          {[String.t()], [String.t()]} | {:empty, :empty} | {:error, :error}
+          Implementation.t() | :empty | :error
   def save_implementation_data(:error, _proxy_address_hash, _proxy_type, _options) do
-    {:error, :error}
+    :error
   end
 
   def save_implementation_data(implementation_address_hash_strings, proxy_address_hash, proxy_type, options)
@@ -289,7 +288,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
              implementation_address_hash_strings == [] do
     upsert_implementation(proxy_address_hash, proxy_type, [], [], options)
 
-    {:empty, :empty}
+    :empty
   end
 
   def save_implementation_data(
@@ -301,7 +300,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       when is_burn_signature(empty_implementation_address_hash_string) do
     upsert_implementation(proxy_address_hash, proxy_type, [], [], options)
 
-    {:empty, :empty}
+    :empty
   end
 
   def save_implementation_data(
@@ -331,17 +330,22 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       |> Enum.unzip()
 
     if Enum.empty?(implementation_addresses) do
-      {:empty, :empty}
+      :empty
     else
-      upsert_implementation(
-        proxy_address_hash,
-        proxy_type,
-        implementation_addresses,
-        implementation_names,
-        options
-      )
+      case upsert_implementation(
+             proxy_address_hash,
+             proxy_type,
+             implementation_addresses,
+             implementation_names,
+             options
+           ) do
+        {:ok, result} ->
+          result
 
-      {implementation_addresses, implementation_names}
+        {:error, error} ->
+          Logger.error("Error while upserting proxy implementations data into the DB: #{inspect(error)}")
+          :error
+      end
     end
   end
 

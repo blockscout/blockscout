@@ -3,6 +3,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   Module to interact with Metadata microservice
   """
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Address.MetadataPreloader, Transaction}
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
@@ -10,9 +11,10 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_meta: 3]
 
   require Logger
-  @post_timeout :timer.seconds(5)
+  @request_timeout :timer.seconds(5)
 
   @tags_per_address_limit 5
+  @page_size 50
   @request_error_msg "Error while sending request to Metadata microservice"
 
   @spec get_addresses_tags([String.t()]) :: {:error, :disabled | <<_::416>> | Jason.DecodeError.t()} | {:ok, any()}
@@ -28,12 +30,27 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
     end
   end
 
-  defp http_get_request(url, params) do
-    headers = [{"Content-Type", "application/json"}]
+  @doc """
+    Get addresses list from Metadata microservice. Then preloads addresses from local DB.
+  """
+  @spec get_addresses(map()) :: {:error | integer(), any()}
+  def get_addresses(params) do
+    with :ok <- Microservice.check_enabled(__MODULE__) do
+      params =
+        params
+        |> Map.put("pageSize", @page_size)
+        |> Map.put("chainId", Application.get_env(:block_scout_web, :chain_id))
 
-    case HTTPoison.get(url, headers, params: params, recv_timeout: @post_timeout) do
+      http_get_request_for_proxy_method(addresses_url(), params, &prepare_addresses_response/1)
+    end
+  end
+
+  defp http_get_request(url, params, parsing_function \\ &decode_meta/1) do
+    headers = []
+
+    case HTTPoison.get(url, headers, params: params, recv_timeout: @request_timeout) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        body |> Jason.decode() |> decode_meta()
+        body |> Jason.decode() |> parsing_function.()
 
       {_, error} ->
         Logger.error(fn ->
@@ -47,8 +64,37 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
     end
   end
 
+  defp http_get_request_for_proxy_method(url, params, parsing_function) do
+    case HTTPoison.get(url, [], params: params) do
+      {:ok, %Response{body: body, status_code: 200}} ->
+        {200, body |> Jason.decode() |> parsing_function.()}
+
+      {_, %Response{body: body, status_code: status_code} = error} ->
+        old_truncate = Application.get_env(:logger, :truncate)
+        Logger.configure(truncate: :infinity)
+
+        Logger.error(fn ->
+          [
+            "Error while sending request to Metadata microservice url: #{url}: ",
+            inspect(error, limit: :infinity, printable_limit: :infinity)
+          ]
+        end)
+
+        Logger.configure(truncate: old_truncate)
+        {:ok, response_json} = Jason.decode(body)
+        {status_code, response_json}
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {500, %{error: reason}}
+    end
+  end
+
   defp addresses_metadata_url do
     "#{base_url()}/metadata"
+  end
+
+  defp addresses_url do
+    "#{base_url()}/addresses"
   end
 
   defp base_url do
@@ -89,4 +135,19 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   defp decode_meta_in_tag(%{"meta" => meta} = tag) do
     Map.put(tag, "meta", Jason.decode!(meta))
   end
+
+  defp prepare_addresses_response({:ok, %{"addresses" => addresses} = response}) do
+    {:ok,
+     Map.put(
+       response,
+       "addresses",
+       addresses
+       |> Chain.hashes_to_addresses(
+         necessity_by_association: %{names: :optional, smart_contract: :optional, proxy_implementations: :optional}
+       )
+       |> Enum.map(fn address -> {address, address.transactions_count} end)
+     )}
+  end
+
+  defp prepare_addresses_response(_), do: :error
 end

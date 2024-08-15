@@ -228,7 +228,7 @@ defmodule Explorer.Chain.Address.Counters do
 
   @spec address_to_gas_usage_count(Address.t()) :: Decimal.t() | nil
   def address_to_gas_usage_count(address) do
-    if Chain.contract?(address) do
+    if Address.smart_contract?(address) do
       incoming_transaction_gas_usage = address_to_incoming_transaction_gas_usage(address.hash)
 
       cond do

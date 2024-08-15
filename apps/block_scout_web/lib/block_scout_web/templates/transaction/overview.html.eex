@@ -245,7 +245,7 @@
                 text: gettext("Address (external or contract) sending the transaction.") %>
               <%= gettext "From" %></dt>
             <dd class="col-sm-9 col-lg-10">
-              <%= render BlockScoutWeb.AddressView, "_link.html", address: from_address, contract: BlockScoutWeb.AddressView.contract?(from_address), use_custom_tooltip: false, trimmed: false %>
+              <%= render BlockScoutWeb.AddressView, "_link.html", address: from_address, contract: Address.smart_contract?(from_address), use_custom_tooltip: false, trimmed: false %>
               <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @from_tags %>
               <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                 additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],
@@ -261,7 +261,7 @@
             <dt class="col-sm-3 col-lg-2 text-muted">
               <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip_2.html",
                 text: gettext("Address (external or contract) receiving the transaction.") %>
-              <%= if BlockScoutWeb.AddressView.contract?(to_address) && !created_address_hash do %>
+              <%= if Address.smart_contract?(to_address) && !created_address_hash do %>
                 <%= gettext "Interacted With (To)" %>
               <% else %>
                 <%= gettext "To" %>
@@ -271,7 +271,7 @@
               <%= cond do %>
                 <% created_address_hash -> %>
                   [<%= gettext("Contract") %>&nbsp;
-                  <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
+                  <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: Address.smart_contract?(to_address), use_custom_tooltip: false, trimmed: false %>
                   <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @to_tags %>
                   &nbsp;<%= gettext("created") %>]
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
@@ -280,7 +280,7 @@
                     aria_label: gettext("Copy To Address"),
                     title: gettext("Copy To Address") %>
                 <% recipient_address_hash -> %>
-                  <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: BlockScoutWeb.AddressView.contract?(to_address), use_custom_tooltip: false, trimmed: false %>
+                  <%= render BlockScoutWeb.AddressView, "_link.html", address: to_address, contract: Address.smart_contract?(to_address), use_custom_tooltip: false, trimmed: false %>
                   <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @to_tags %>
                   <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
                     additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"],

@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         watchlist_names: watchlist_names
       }) do
     block_height = Chain.block_height(@api_true)
-    {decoded_transactions, _, _} = decode_transactions(transactions, true)
+    {decoded_transactions, _, _} = Transaction.decode_transactions(transactions, true, @api_true)
 
     %{
       "items" =>
@@ -50,7 +50,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         watchlist_names: watchlist_names
       }) do
     block_height = Chain.block_height(@api_true)
-    {decoded_transactions, _, _} = decode_transactions(transactions, true)
+    {decoded_transactions, _, _} = Transaction.decode_transactions(transactions, true, @api_true)
 
     transactions
     |> chain_type_transformations()
@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params, conn: conn}) do
     block_height = Chain.block_height(@api_true)
-    {decoded_transactions, _, _} = decode_transactions(transactions, true)
+    {decoded_transactions, _, _} = Transaction.decode_transactions(transactions, true, @api_true)
 
     %{
       "items" =>
@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def render("transactions.json", %{transactions: transactions, conn: conn}) do
     block_height = Chain.block_height(@api_true)
-    {decoded_transactions, _, _} = decode_transactions(transactions, true)
+    {decoded_transactions, _, _} = Transaction.decode_transactions(transactions, true, @api_true)
 
     transactions
     |> chain_type_transformations()
@@ -92,7 +92,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def render("transaction.json", %{transaction: transaction, conn: conn}) do
     block_height = Chain.block_height(@api_true)
-    {[decoded_input], _, _} = decode_transactions([transaction], false)
+    {[decoded_input], _, _} = Transaction.decode_transactions([transaction], false, @api_true)
 
     transaction
     |> chain_type_transformations()
@@ -116,7 +116,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("token_transfers.json", %{token_transfers: token_transfers, next_page_params: next_page_params, conn: conn}) do
-    {decoded_transactions, _, _} = decode_transactions(Enum.map(token_transfers, fn tt -> tt.transaction end), true)
+    {decoded_transactions, _, _} =
+      Transaction.decode_transactions(Enum.map(token_transfers, fn tt -> tt.transaction end), true, @api_true)
 
     %{
       "items" =>
@@ -128,7 +129,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("token_transfers.json", %{token_transfers: token_transfers, conn: conn}) do
-    {decoded_transactions, _, _} = decode_transactions(Enum.map(token_transfers, fn tt -> tt.transaction end), true)
+    {decoded_transactions, _, _} =
+      Transaction.decode_transactions(Enum.map(token_transfers, fn tt -> tt.transaction end), true, @api_true)
 
     token_transfers
     |> Enum.zip(decoded_transactions)
@@ -136,7 +138,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("token_transfer.json", %{token_transfer: token_transfer, conn: conn}) do
-    {[decoded_transaction], _, _} = decode_transactions([token_transfer.transaction], true)
+    {[decoded_transaction], _, _} = Transaction.decode_transactions([token_transfer.transaction], true, @api_true)
     prepare_token_transfer(token_transfer, conn, decoded_transaction)
   end
 
@@ -231,18 +233,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     Enum.reverse(result)
   end
 
-  def decode_transactions(transactions, skip_sig_provider?) do
-    {results, abi_acc, methods_acc} =
-      Enum.reduce(transactions, {[], %{}, %{}}, fn transaction, {results, abi_acc, methods_acc} ->
-        {result, abi_acc, methods_acc} =
-          Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true, abi_acc, methods_acc)
-
-        {[format_decoded_input(result) | results], abi_acc, methods_acc}
-      end)
-
-    {Enum.reverse(results), abi_acc, methods_acc}
-  end
-
   def prepare_token_transfer(token_transfer, _conn, decoded_input) do
     %{
       "tx_hash" => token_transfer.transaction_hash,
@@ -256,8 +246,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           do: block_timestamp(token_transfer.transaction),
           else: block_timestamp(token_transfer.block)
         ),
-      "method" => method_name(token_transfer.transaction, decoded_input, true),
+      "method" => Transaction.method_name(token_transfer.transaction, decoded_input, true),
       "block_hash" => to_string(token_transfer.block_hash),
+      "block_number" => to_string(token_transfer.block_number),
       "log_index" => to_string(token_transfer.log_index)
     }
   end
@@ -456,7 +447,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers, single_tx?),
       "actions" => transaction_actions(transaction.transaction_actions),
       "exchange_rate" => Market.get_coin_exchange_rate().usd_value,
-      "method" => method_name(transaction, decoded_input),
+      "method" => Transaction.method_name(transaction, decoded_input),
       "tx_types" => tx_types(transaction),
       "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_tx? && conn)),
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
@@ -552,12 +543,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   defp format_status({:error, reason}), do: reason
   defp format_status(status), do: status
 
-  @spec format_decoded_input(any()) :: nil | map() | tuple()
-  def format_decoded_input({:error, _, []}), do: nil
-  def format_decoded_input({:error, _, candidates}), do: Enum.at(candidates, 0)
-  def format_decoded_input({:ok, _identifier, _text, _mapping} = decoded), do: decoded
-  def format_decoded_input(_), do: nil
-
   defp format_decoded_log_input({:error, :could_not_decode}), do: nil
   defp format_decoded_log_input({:ok, _method_id, _text, _mapping} = decoded), do: decoded
   defp format_decoded_log_input({:error, _, candidates}), do: Enum.at(candidates, 0)
@@ -604,32 +589,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def diff(left, right) do
     left
     |> Timex.diff(right, :milliseconds)
-  end
-
-  @doc """
-    Return method name used in tx
-  """
-  @spec method_name(Transaction.t(), any(), boolean()) :: binary() | nil
-  def method_name(_, _, skip_sc_check? \\ false)
-
-  def method_name(_, {:ok, _method_id, text, _mapping}, _) do
-    Transaction.parse_method_name(text, false)
-  end
-
-  def method_name(
-        %Transaction{to_address: to_address, input: %{bytes: <<method_id::binary-size(4), _::binary>>}},
-        _,
-        skip_sc_check?
-      ) do
-    if skip_sc_check? || Address.smart_contract?(to_address) do
-      "0x" <> Base.encode16(method_id, case: :lower)
-    else
-      nil
-    end
-  end
-
-  def method_name(_, _, _) do
-    nil
   end
 
   @doc """

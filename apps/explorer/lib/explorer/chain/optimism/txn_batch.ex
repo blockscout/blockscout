@@ -16,8 +16,9 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
 
   use Explorer.Schema
 
-  import Explorer.Chain, only: [default_paging_options: 0, join_association: 3, select_repo: 1]
+  import Explorer.Chain, only: [default_paging_options: 0, join_association: 3, join_associations: 2, select_repo: 1]
 
+  alias Explorer.Chain.Block
   alias Explorer.Chain.Optimism.FrameSequence
   alias Explorer.{PagingOptions, Repo}
 
@@ -134,6 +135,54 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
         |> limit(^paging_options.page_size)
         |> select_repo(options).all()
     end
+  end
+
+  @doc """
+    Retrieves a list of rollup blocks included into a specified batch.
+
+    This function constructs and executes a database query to retrieve a list of rollup blocks,
+    considering pagination options specified in the `options` parameter. These options dictate
+    the number of items to retrieve and how many items to skip from the top.
+
+    ## Parameters
+    - `batch_number`: The batch number whose transactions are included on L1.
+    - `options`: A keyword list of options specifying pagination, association necessity, and
+      whether to use a replica database.
+
+    ## Returns
+    - A list of `Explorer.Chain.Block` entries belonging to the specified batch.
+  """
+  @spec batch_blocks(non_neg_integer() | binary(),
+          necessity_by_association: %{atom() => :optional | :required},
+          api?: boolean(),
+          paging_options: PagingOptions.t()
+        ) :: [Block.t()]
+  def batch_blocks(batch_number, options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
+
+    query =
+      from(
+        b in Block,
+        inner_join: tb in __MODULE__,
+        on: tb.l2_block_number == b.number and tb.frame_sequence_id == ^batch_number,
+        where: b.consensus == true
+      )
+
+    query
+    |> page_blocks(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by(desc: :number)
+    |> join_associations(necessity_by_association)
+    |> select_repo(options).all()
+  end
+
+  defp page_blocks(query, %PagingOptions{key: nil}), do: query
+
+  defp page_blocks(query, %PagingOptions{key: {0}}), do: query
+
+  defp page_blocks(query, %PagingOptions{key: {block_number}}) do
+    where(query, [block], block.number < ^block_number)
   end
 
   @doc """

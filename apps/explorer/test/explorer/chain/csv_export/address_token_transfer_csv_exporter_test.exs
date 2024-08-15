@@ -15,6 +15,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
 
       token_transfer =
         insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
+        |> Repo.preload([:token, :transaction])
 
       from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
       to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
@@ -39,6 +40,8 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
                          _,
                          [[], type],
                          _,
+                         [[], token_decimals],
+                         _,
                          [[], token_symbol],
                          _,
                          [[], tokens_transferred],
@@ -58,6 +61,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
             to_address: to_address,
             token_contract_address: token_contract_address,
             type: type,
+            token_decimals: token_decimals,
             token_symbol: token_symbol,
             tokens_transferred: tokens_transferred,
             transaction_fee: transaction_fee,
@@ -71,6 +75,11 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
       assert result.from_address == Address.checksum(token_transfer.from_address_hash)
       assert result.to_address == Address.checksum(token_transfer.to_address_hash)
       assert result.timestamp == to_string(transaction.block_timestamp)
+      assert result.token_symbol == to_string(token_transfer.token.symbol)
+      assert result.token_decimals == to_string(token_transfer.token.decimals)
+      assert result.tokens_transferred == to_string(token_transfer.amount)
+      assert result.status == to_string(token_transfer.transaction.status)
+      assert result.err_code == to_string(token_transfer.transaction.error)
       assert result.type == "OUT"
     end
 

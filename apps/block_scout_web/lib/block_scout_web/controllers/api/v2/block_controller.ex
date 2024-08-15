@@ -35,6 +35,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
   alias Explorer.Chain.Celo.Reader, as: CeloReader
   alias Explorer.Chain.InternalTransaction
+  alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
 
   case Application.compile_env(:explorer, :chain_type) do
     :ethereum ->
@@ -185,6 +186,33 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     {blocks, next_page} =
       batch_number
       |> ArbitrumReader.batch_blocks(full_options)
+      |> split_list_by_page()
+
+    next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))
+
+    conn
+    |> put_status(200)
+    |> render(:blocks, %{
+      blocks: blocks |> maybe_preload_ens() |> maybe_preload_metadata(),
+      next_page_params: next_page_params
+    })
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/blocks/optimism-batch/:batch_number` endpoint.
+    It renders the list of L2 blocks bound to the specified batch.
+  """
+  @spec optimism_batch(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  def optimism_batch(conn, %{"batch_number" => batch_number} = params) do
+    full_options =
+      params
+      |> select_block_type()
+      |> Keyword.merge(paging_options(params))
+      |> Keyword.merge(@api_true)
+
+    {blocks, next_page} =
+      batch_number
+      |> OptimismTxnBatch.batch_blocks(full_options)
       |> split_list_by_page()
 
     next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))

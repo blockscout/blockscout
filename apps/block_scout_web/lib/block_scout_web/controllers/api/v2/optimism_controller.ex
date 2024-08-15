@@ -15,7 +15,16 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   alias Explorer.Chain
   alias Explorer.Chain.Transaction
-  alias Explorer.Chain.Optimism.{Deposit, DisputeGame, FrameSequence, OutputRoot, TxnBatch, Withdrawal}
+
+  alias Explorer.Chain.Optimism.{
+    Deposit,
+    DisputeGame,
+    FrameSequence,
+    FrameSequenceBlob,
+    OutputRoot,
+    TxnBatch,
+    Withdrawal
+  }
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -74,10 +83,12 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
           l2_block_number_from = TxnBatch.edge_l2_block_number(fs.id, :min)
           l2_block_number_to = TxnBatch.edge_l2_block_number(fs.id, :max)
           tx_count = Transaction.tx_count_for_block_range(l2_block_number_from..l2_block_number_to)
+          {batch_data_container, _} = FrameSequenceBlob.list(fs.id, api?: true)
 
           fs
           |> Map.put(:l2_block_range, l2_block_number_from..l2_block_number_to)
           |> Map.put(:tx_count, tx_count)
+          |> Map.put(:batch_data_container, batch_data_container)
         end)
       end)
       |> Task.yield_many(:infinity)
