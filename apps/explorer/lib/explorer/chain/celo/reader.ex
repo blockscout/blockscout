@@ -12,8 +12,9 @@ defmodule Explorer.Chain.Celo.Reader do
       default_paging_options: 0
     ]
 
-  alias Explorer.Chain.Cache.CeloCoreContracts
-  alias Explorer.Chain.Celo.ElectionReward
+  alias Explorer.Chain.Block
+  alias Explorer.Chain.Cache.{Blocks, CeloCoreContracts}
+  alias Explorer.Chain.Celo.{ElectionReward, Helper}
   alias Explorer.Chain.{Hash, Token, Wei}
 
   @election_reward_types ElectionReward.types()
@@ -189,5 +190,24 @@ defmodule Explorer.Chain.Celo.Reader do
     |> Map.new(fn {reward_type_atom, token_atom} ->
       {reward_type_atom, Map.get(token_atom_to_token, token_atom)}
     end)
+  end
+
+  @doc """
+  Retrieves the epoch number of the last fetched block.
+  """
+  @spec last_block_epoch_number(Keyword.t()) :: EthereumJSONRPC.block_number() | nil
+  def last_block_epoch_number(options \\ []) do
+    block_number =
+      1
+      |> Blocks.take_enough()
+      |> case do
+        [%Block{number: number}] ->
+          number
+
+        nil ->
+          select_repo(options).aggregate(Block, :max, :number)
+      end
+
+    block_number && Helper.block_number_to_epoch_number(block_number)
   end
 end
