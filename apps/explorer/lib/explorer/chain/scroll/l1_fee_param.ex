@@ -1,5 +1,13 @@
 defmodule Explorer.Chain.Scroll.L1FeeParam do
-  @moduledoc "Models an L1 fee parameter for Scroll."
+  @moduledoc """
+    Models an L1 fee parameter for Scroll.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Scroll.L1FeeParams
+
+    Migrations:
+    - Explorer.Repo.Scroll.Migrations.AddFeeFields
+  """
 
   use Explorer.Schema
 
