@@ -3048,6 +3048,19 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Fetches the raw traces of transaction.
+  """
+  @spec fetch_transaction_raw_traces(map()) :: {:ok, [map()]} | {:error, any()}
+  def fetch_transaction_raw_traces(%{hash: hash, block_number: block_number}) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    EthereumJSONRPC.fetch_transaction_raw_traces(
+      %{hash: to_string(hash), block_number: block_number},
+      json_rpc_named_arguments
+    )
+  end
+
+  @doc """
   Parses the revert reason from an error returned by JSON RPC node during eth_call.
   Returns the formatted revert reason as a hex or utf8 string.
   Returns `nil` if the revert reason cannot be parsed or error format is unknown.

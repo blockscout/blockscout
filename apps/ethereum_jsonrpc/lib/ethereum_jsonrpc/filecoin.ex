@@ -5551,6 +5551,24 @@ defmodule EthereumJSONRPC.Filecoin do
     end
   end
 
+  @doc """
+  Fetches the raw traces from the FEVM trace URL.
+  """
+  @impl EthereumJSONRPC.Variant
+  def fetch_transaction_raw_traces(%{hash: transaction_hash, block_number: block_number}, json_rpc_named_arguments) do
+    request = debug_trace_block_by_number_request({0, block_number})
+    transaction_hash_string = to_string(transaction_hash)
+
+    case json_rpc(request, json_rpc_named_arguments) do
+      {:ok, response} ->
+        {:ok, Enum.filter(response, &(&1["transactionHash"] == transaction_hash_string))}
+
+      {:error, error} ->
+        Logger.error(inspect(error))
+        {:error, error}
+    end
+  end
+
   defp to_transactions_params(blocks_responses, id_to_params) do
     Enum.reduce(blocks_responses, [], fn %{id: id, result: tx_result}, blocks_acc ->
       extract_transactions_params(Map.fetch!(id_to_params, id), tx_result) ++ blocks_acc

@@ -7,10 +7,21 @@ defmodule Indexer.Fetcher.OnDemand.FirstTrace do
   use Indexer.Fetcher, restart: :permanent
 
   alias Explorer.Chain
-  alias Explorer.Chain.Import
+  alias Explorer.Chain.{Import, InternalTransaction}
   alias Explorer.Chain.Import.Runner.InternalTransactions
 
   require Logger
+
+  def maybe_trigger_fetch(transaction, opts \\ []) do
+    unless Application.get_env(:explorer, :shrink_internal_transactions_enabled) do
+      transaction.hash
+      |> InternalTransaction.all_transaction_to_internal_transactions(opts)
+      |> Enum.any?(&(&1.index == 0))
+      |> unless do
+        trigger_fetch(transaction)
+      end
+    end
+  end
 
   def trigger_fetch(transaction) do
     GenServer.cast(__MODULE__, {:fetch, transaction})

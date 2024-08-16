@@ -8,7 +8,6 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   alias BlockScoutWeb.{AccessHelper, TransactionController}
   alias EthereumJSONRPC
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.InternalTransaction
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
 
   def index(conn, %{"transaction_id" => hash_string} = params) do
@@ -30,18 +29,12 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
       if is_nil(transaction.block_number) do
         render_raw_trace(conn, [], transaction, hash)
       else
-        internal_transactions = InternalTransaction.all_transaction_to_internal_transactions(hash)
+        FirstTraceOnDemand.maybe_trigger_fetch(transaction)
 
-        first_trace_exists =
-          Enum.find_index(internal_transactions, fn trace ->
-            trace.index == 0
-          end)
-
-        if !first_trace_exists do
-          FirstTraceOnDemand.trigger_fetch(transaction)
+        case Chain.fetch_transaction_raw_traces(transaction) do
+          {:ok, raw_traces} -> render_raw_trace(conn, raw_traces, transaction, hash)
+          _error -> unprocessable_entity(conn)
         end
-
-        render_raw_trace(conn, internal_transactions, transaction, hash)
       end
     else
       {:restricted_access, _} ->
@@ -55,12 +48,12 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
     end
   end
 
-  defp render_raw_trace(conn, internal_transactions, transaction, hash) do
+  defp render_raw_trace(conn, raw_traces, transaction, hash) do
     render(
       conn,
       "index.html",
       exchange_rate: Market.get_coin_exchange_rate(),
-      internal_transactions: internal_transactions,
+      raw_traces: raw_traces,
       block_height: Chain.block_height(),
       current_user: current_user(conn),
       show_token_transfers: Chain.transaction_has_token_transfers?(hash),

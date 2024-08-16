@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
+  import Mox
 
   alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Account.WatchlistAddress
@@ -1279,6 +1280,49 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  }
                ] = json_response(request, 200)
       end
+    end
+  end
+
+  describe "/transactions/{tx_hash}/raw-trace" do
+    test "returns raw trace from node", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      raw_trace = %{
+        "traceAddress" => [],
+        "type" => "call",
+        "callType" => "call",
+        "from" => "0xa931c862e662134b85e4dc4baf5c70cc9ba74db4",
+        "to" => "0x1469b17ebf82fedf56f04109e5207bdc4554288c",
+        "gas" => "0x8600",
+        "gasUsed" => "0x7d37",
+        "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
+        "output" => "0x",
+        "value" => "0x174876e800"
+      }
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ -> {:ok, raw_trace} end)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/raw-trace")
+
+      assert response = json_response(request, 200)
+      assert response == raw_trace
+    end
+
+    test "returns correct error", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ -> {:error, "error"} end)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/raw-trace")
+
+      assert response = json_response(request, 500)
+      assert response == "Error while raw trace fetching"
     end
   end
 

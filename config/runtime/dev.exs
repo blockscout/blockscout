@@ -192,6 +192,13 @@ config :explorer, Explorer.Repo.Mud,
   pool_size: ConfigHelper.parse_integer_env_var("MUD_POOL_SIZE", 10),
   queue_target: queue_target
 
+# Configures ShrunkInternalTransactions database
+config :explorer, Explorer.Repo.ShrunkInternalTransactions,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: 1
+
 variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "apps/explorer/config/dev")

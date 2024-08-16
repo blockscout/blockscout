@@ -386,6 +386,16 @@ defmodule EthereumJSONRPC do
     Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_pending_transactions(json_rpc_named_arguments)
   end
 
+  @doc """
+  Retrieves raw traces from Ethereum JSON RPC variant API.
+  """
+  def fetch_transaction_raw_traces(transaction_params, json_rpc_named_arguments) do
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_transaction_raw_traces(
+      transaction_params,
+      json_rpc_named_arguments
+    )
+  end
+
   @spec fetch_transaction_receipts(
           [
             %{required(:gas) => non_neg_integer(), required(:hash) => hash, optional(atom) => any}
