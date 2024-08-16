@@ -387,7 +387,7 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Retrieves raw traces from variant API.
+  Retrieves raw traces from Ethereum JSON RPC variant API.
   """
   def fetch_transaction_raw_traces(transaction_params, json_rpc_named_arguments) do
     Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_transaction_raw_traces(
