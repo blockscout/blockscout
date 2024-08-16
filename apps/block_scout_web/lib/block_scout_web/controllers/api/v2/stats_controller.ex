@@ -65,6 +65,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         "total_transactions" => TransactionCache.estimated_count() |> to_string(),
         "average_block_time" => AverageBlockTime.average_block_time() |> Duration.to_milliseconds(),
         "coin_image" => exchange_rate.image_url,
+        "secondary_coin_image" => secondary_coin_exchange_rate.image_url,
         "coin_price" => exchange_rate.usd_value,
         "coin_price_change_percentage" => coin_price_change,
         "secondary_coin_price" => secondary_coin_exchange_rate.usd_value,

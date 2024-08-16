@@ -85,9 +85,6 @@ config :explorer, Explorer.Chain.Cache.TransactionActionTokensData, enabled: tru
 
 config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: true
 
-config :explorer, Explorer.ExchangeRates,
-  cache_period: ConfigHelper.parse_time_env_var("CACHE_EXCHANGE_RATES_PERIOD", "10m")
-
 config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: true
 
 config :explorer, Explorer.Counters.TokenHoldersCounter,

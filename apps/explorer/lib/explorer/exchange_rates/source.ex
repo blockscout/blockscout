@@ -18,6 +18,17 @@ defmodule Explorer.ExchangeRates.Source do
     fetch_exchange_rates_request(source, source_url, source.headers())
   end
 
+  @doc """
+  Fetches exchange rates for secondary coin.
+  """
+  @spec fetch_secondary_exchange_rates(module) :: {:ok, [Token.t()]} | {:error, any}
+  def fetch_secondary_exchange_rates(source \\ secondary_exchange_rates_source()) do
+    case source.secondary_source_url() do
+      :ignore -> {:error, "Secondary coin fetching is not implemented for source #{inspect(source)}"}
+      source_url -> fetch_exchange_rates_request(source, source_url, source.headers())
+    end
+  end
+
   @spec fetch_exchange_rates_for_token(String.t()) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates_for_token(symbol) do
     source_url = CoinGecko.source_url(symbol)
@@ -105,6 +116,11 @@ defmodule Explorer.ExchangeRates.Source do
 
   @callback source_url(String.t()) :: String.t() | :ignore
 
+  @doc """
+  Url for the api to query to get the market info for secondary coin.
+  """
+  @callback secondary_source_url :: String.t() | nil | :ignore
+
   @callback headers :: [any]
 
   def headers do
@@ -126,6 +142,11 @@ defmodule Explorer.ExchangeRates.Source do
   @spec exchange_rates_source() :: module()
   defp exchange_rates_source do
     config(:source) || Explorer.ExchangeRates.Source.CoinGecko
+  end
+
+  @spec secondary_exchange_rates_source() :: module()
+  defp secondary_exchange_rates_source do
+    config(:secondary_coin_source) || exchange_rates_source()
   end
 
   @spec config(atom()) :: term
