@@ -86,6 +86,26 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
        } = result_params} ->
         process_rust_verifier_response(result_params, address_hash, params, true, true)
 
+      # zksync
+      {:ok,
+       %{
+         "compilationArtifacts" => compilation_artifacts_string,
+         "evmCompiler" => _,
+         "zkCompiler" => _,
+         "contractName" => _,
+         "fileName" => _,
+         "sources" => _,
+         "compilerSettings" => _,
+         "runtimeMatch" => _
+       } = result_params} ->
+        compilation_artifacts = Jason.decode!(compilation_artifacts_string)
+
+        transformed_result_params =
+          result_params
+          |> Map.put("abi", Map.get(compilation_artifacts, "abi"))
+
+        process_rust_verifier_response(transformed_result_params, address_hash, params, true, true)
+
       {:ok, %{abi: abi, constructor_arguments: constructor_arguments}, additional_params} ->
         params_with_constructor_arguments =
           params
@@ -135,6 +155,73 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   end
 
   def process_rust_verifier_response(
+        source,
+        address_hash,
+        initial_params,
+        is_standard_json?,
+        save_file_path?,
+        automatically_verified? \\ false
+      )
+
+  # zksync
+  def process_rust_verifier_response(
+        %{
+          "abi" => abi,
+          "evmCompiler" => %{"version" => compiler_version},
+          "contractName" => contract_name,
+          "fileName" => file_name,
+          "sources" => sources,
+          "compilerSettings" => compiler_settings_string,
+          "runtimeMatch" => %{"type" => match_type},
+          "zkCompiler" => %{"version" => zk_compiler_version}
+        },
+        address_hash,
+        initial_params,
+        is_standard_json?,
+        save_file_path?,
+        _automatically_verified?
+      ) do
+    secondary_sources =
+      for {file, source} <- sources,
+          file != file_name,
+          do: %{"file_name" => file, "contract_source_code" => source, "address_hash" => address_hash}
+
+    %{^file_name => contract_source_code} = sources
+
+    compiler_settings = Jason.decode!(compiler_settings_string)
+
+    optimization = extract_optimization(compiler_settings)
+
+    optimization_runs = zksync_parse_optimization_runs(compiler_settings, optimization)
+
+    constructor_arguments =
+      if initial_params["constructor_arguments"] !== "0x", do: initial_params["constructor_arguments"], else: nil
+
+    prepared_params =
+      %{}
+      |> Map.put("optimization", optimization)
+      |> Map.put("optimization_runs", optimization_runs)
+      |> Map.put("evm_version", compiler_settings["evmVersion"] || "default")
+      |> Map.put("compiler_version", compiler_version)
+      |> Map.put("zk_compiler_version", zk_compiler_version)
+      |> Map.put("constructor_arguments", constructor_arguments)
+      |> Map.put("contract_source_code", contract_source_code)
+      |> Map.put("external_libraries", cast_libraries(compiler_settings["libraries"] || %{}))
+      |> Map.put("name", contract_name)
+      |> Map.put("file_path", if(save_file_path?, do: file_name))
+      |> Map.put("secondary_sources", secondary_sources)
+      |> Map.put("compiler_settings", if(is_standard_json?, do: compiler_settings))
+      |> Map.put("partially_verified", match_type == "PARTIAL")
+      |> Map.put("verified_via_sourcify", false)
+      |> Map.put("verified_via_eth_bytecode_db", false)
+      |> Map.put("verified_via_verifier_alliance", false)
+      |> Map.put("license_type", initial_params["license_type"])
+      |> Map.put("is_blueprint", false)
+
+    publish_smart_contract(address_hash, prepared_params, abi)
+  end
+
+  def process_rust_verifier_response(
         %{
           "abi" => abi_string,
           "compilerVersion" => compiler_version,
@@ -149,7 +236,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         initial_params,
         is_standard_json?,
         save_file_path?,
-        automatically_verified? \\ false
+        automatically_verified?
       ) do
     secondary_sources =
       for {file, source} <- sources,
@@ -162,10 +249,12 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     optimization = extract_optimization(compiler_settings)
 
+    optimization_runs = parse_optimization_runs(compiler_settings, optimization)
+
     prepared_params =
       %{}
       |> Map.put("optimization", optimization)
-      |> Map.put("optimization_runs", if(optimization, do: compiler_settings["optimizer"]["runs"]))
+      |> Map.put("optimization_runs", optimization_runs)
       |> Map.put("evm_version", compiler_settings["evmVersion"] || "default")
       |> Map.put("compiler_version", compiler_version)
       |> Map.put("constructor_arguments", constructor_arguments)
@@ -183,6 +272,18 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("is_blueprint", source["isBlueprint"])
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
+  end
+
+  defp parse_optimization_runs(compiler_settings, optimization) do
+    if(optimization, do: compiler_settings["optimizer"]["runs"])
+  end
+
+  defp zksync_parse_optimization_runs(compiler_settings, optimization) do
+    optimizer = Map.get(compiler_settings, "optimizer")
+
+    if optimization do
+      if optimizer && Map.has_key?(optimizer, "mode"), do: Map.get(optimizer, "mode"), else: "3"
+    end
   end
 
   def extract_optimization(compiler_settings),
@@ -262,6 +363,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     Map.put(attributes(address_hash, params, abi), :file_path, file_path)
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp attributes(address_hash, params, abi \\ %{}) do
     constructor_arguments = params["constructor_arguments"]
     compiler_settings = params["compiler_settings"]
@@ -279,30 +381,37 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     compiler_version = CompilerVersion.get_strict_compiler_version(:solc, params["compiler_version"])
 
-    %{
-      address_hash: address_hash,
-      name: params["name"],
-      file_path: params["file_path"],
-      compiler_version: compiler_version,
-      evm_version: params["evm_version"],
-      optimization_runs: params["optimization_runs"],
-      optimization: params["optimization"],
-      contract_source_code: params["contract_source_code"],
-      constructor_arguments: clean_constructor_arguments,
-      external_libraries: prepared_external_libraries,
-      secondary_sources: params["secondary_sources"],
-      abi: abi,
-      verified_via_sourcify: params["verified_via_sourcify"] || false,
-      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
-      verified_via_verifier_alliance: params["verified_via_verifier_alliance"] || false,
-      partially_verified: params["partially_verified"] || false,
-      is_vyper_contract: false,
-      autodetect_constructor_args: params["autodetect_constructor_args"],
-      is_yul: params["is_yul"] || false,
-      compiler_settings: clean_compiler_settings,
-      license_type: prepare_license_type(params["license_type"]) || :none,
-      is_blueprint: params["is_blueprint"] || false
-    }
+    base_attributes =
+      %{
+        address_hash: address_hash,
+        name: params["name"],
+        file_path: params["file_path"],
+        compiler_version: compiler_version,
+        evm_version: params["evm_version"],
+        optimization_runs: params["optimization_runs"],
+        optimization: params["optimization"],
+        contract_source_code: params["contract_source_code"],
+        constructor_arguments: clean_constructor_arguments,
+        external_libraries: prepared_external_libraries,
+        secondary_sources: params["secondary_sources"],
+        abi: abi,
+        verified_via_sourcify: params["verified_via_sourcify"] || false,
+        verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
+        verified_via_verifier_alliance: params["verified_via_verifier_alliance"] || false,
+        partially_verified: params["partially_verified"] || false,
+        is_vyper_contract: false,
+        autodetect_constructor_args: params["autodetect_constructor_args"],
+        is_yul: params["is_yul"] || false,
+        compiler_settings: clean_compiler_settings,
+        license_type: prepare_license_type(params["license_type"]) || :none,
+        is_blueprint: params["is_blueprint"] || false
+      }
+
+    base_attributes
+    |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+          do: Map.put(&1, :zk_compiler_version, params["zk_compiler_version"]),
+          else: &1
+        )).()
   end
 
   defp clear_constructor_arguments(constructor_arguments) do

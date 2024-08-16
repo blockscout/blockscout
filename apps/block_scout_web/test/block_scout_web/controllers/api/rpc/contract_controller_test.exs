@@ -7,6 +7,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
   setup :verify_on_exit!
 
+  if Application.compile_env(:explorer, :chain_type) == :zksync do
+    @optimization_runs "0"
+  else
+    @optimization_runs 200
+  end
+
   def prepare_contracts do
     insert(:contract_address)
     {:ok, dt_1, _} = DateTime.from_iso8601("2022-09-20 10:00:00Z")
@@ -108,7 +114,11 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [result(contract)]
+      result_props = result(contract) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == result(contract)[prop]
+      end
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
@@ -179,7 +189,11 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [result(contract)]
+      result_props = result(contract) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == result(contract)[prop]
+      end
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
@@ -204,7 +218,11 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [result(contract_2)]
+      result_props = result(contract_2) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == result(contract_2)[prop]
+      end
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
@@ -229,7 +247,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [result(contract_2), result(contract_3)]
+      result_props = result(contract_2) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == result(contract_2)[prop]
+        assert Enum.at(response["result"], 1)[prop] == result(contract_3)[prop]
+      end
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
@@ -254,7 +277,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [result(contract_1), result(contract_2)]
+      result_props = result(contract_1) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == result(contract_1)[prop]
+        assert Enum.at(response["result"], 1)[prop] == result(contract_2)[prop]
+      end
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
@@ -497,7 +525,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       contract =
         insert(:smart_contract,
           optimization: true,
-          optimization_runs: 200,
+          optimization_runs: @optimization_runs,
           evm_version: "default",
           contract_code_md5: "123"
         )
@@ -519,7 +547,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           # for `OptimizationUsed` is "1". If it was false, the expected value
           # would be "0".
           "OptimizationUsed" => "true",
-          "OptimizationRuns" => 200,
+          "OptimizationRuns" => @optimization_runs,
           "EVMVersion" => "default",
           "FileName" => "",
           "IsProxy" => "false"
@@ -533,7 +561,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == expected_result
+      result_props = Enum.at(expected_result, 0) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == Enum.at(expected_result, 0)[prop]
+      end
+
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
@@ -751,7 +784,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         }
       ]
 
-      assert response["result"] == expected_result
+      result_props = Enum.at(expected_result, 0) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == Enum.at(expected_result, 0)[prop]
+      end
+
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
@@ -761,7 +799,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       contract =
         insert(:smart_contract,
           optimization: true,
-          optimization_runs: 200,
+          optimization_runs: @optimization_runs,
           evm_version: "default",
           constructor_arguments:
             "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
@@ -782,7 +820,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
           "OptimizationUsed" => "true",
-          "OptimizationRuns" => 200,
+          "OptimizationRuns" => @optimization_runs,
           "EVMVersion" => "default",
           "ConstructorArguments" =>
             "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
@@ -798,7 +836,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == expected_result
+      result_props = Enum.at(expected_result, 0) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == Enum.at(expected_result, 0)[prop]
+      end
+
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
@@ -859,7 +902,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           }
         ],
         optimization: true,
-        optimization_runs: 200,
+        optimization_runs: @optimization_runs,
         evm_version: "default"
       }
 
@@ -884,7 +927,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
           "OptimizationUsed" => "true",
-          "OptimizationRuns" => 200,
+          "OptimizationRuns" => @optimization_runs,
           "EVMVersion" => "default",
           "ExternalLibraries" => [
             %{"name" => "Test", "address_hash" => "0xb18aed9518d735482badb4e8b7fd8d2ba425ce95"},
@@ -902,7 +945,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == expected_result
+      result_props = Enum.at(expected_result, 0) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == Enum.at(expected_result, 0)[prop]
+      end
+
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)

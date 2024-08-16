@@ -240,6 +240,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_blueprint" => if(smart_contract.is_blueprint, do: smart_contract.is_blueprint, else: false)
     }
     |> Map.merge(bytecode_info(address))
+    |> add_zksync_info(target_contract)
   end
 
   def prepare_smart_contract(address, implementations, proxy_type, conn) do
@@ -291,6 +292,16 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end
   end
 
+  defp add_zksync_info(smart_contract_info, target_contract) do
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      Map.merge(smart_contract_info, %{
+        "zk_compiler_version" => target_contract.zk_compiler_version
+      })
+    else
+      smart_contract_info
+    end
+  end
+
   defp prepare_external_libraries(libraries) when is_list(libraries) do
     Enum.map(libraries, fn %Explorer.Chain.SmartContract.ExternalLibrary{name: name, address_hash: address_hash} ->
       {:ok, hash} = Chain.string_to_address_hash(address_hash)
@@ -338,26 +349,30 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_smart_contract_for_list(%SmartContract{} = smart_contract) do
     token = smart_contract.address.token
 
-    %{
-      "address" =>
-        Helper.address_with_info(
-          nil,
-          %Address{smart_contract.address | smart_contract: smart_contract},
-          smart_contract.address.hash,
-          false
-        ),
-      "compiler_version" => smart_contract.compiler_version,
-      "optimization_enabled" => smart_contract.optimization,
-      "tx_count" => smart_contract.address.transactions_count,
-      "language" => smart_contract_language(smart_contract),
-      "verified_at" => smart_contract.inserted_at,
-      "market_cap" => token && token.circulating_market_cap,
-      "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
-      "coin_balance" =>
-        if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value),
-      "license_type" => smart_contract.license_type,
-      "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false)
-    }
+    smart_contract_info =
+      %{
+        "address" =>
+          Helper.address_with_info(
+            nil,
+            %Address{smart_contract.address | smart_contract: smart_contract},
+            smart_contract.address.hash,
+            false
+          ),
+        "compiler_version" => smart_contract.compiler_version,
+        "optimization_enabled" => smart_contract.optimization,
+        "tx_count" => smart_contract.address.transactions_count,
+        "language" => smart_contract_language(smart_contract),
+        "verified_at" => smart_contract.inserted_at,
+        "market_cap" => token && token.circulating_market_cap,
+        "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
+        "coin_balance" =>
+          if(smart_contract.address.fetched_coin_balance, do: smart_contract.address.fetched_coin_balance.value),
+        "license_type" => smart_contract.license_type,
+        "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false)
+      }
+
+    smart_contract_info
+    |> add_zksync_info(smart_contract)
   end
 
   defp smart_contract_language(smart_contract) do

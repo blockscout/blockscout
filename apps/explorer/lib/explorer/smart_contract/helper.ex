@@ -115,9 +115,14 @@ defmodule Explorer.SmartContract.Helper do
   def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode)
 
   def prepare_bytecode_for_microservice(body, empty, deployed_bytecode) when is_nil(empty) do
-    body
-    |> Map.put("bytecodeType", "DEPLOYED_BYTECODE")
-    |> Map.put("bytecode", deployed_bytecode)
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      body
+      |> Map.put("code", deployed_bytecode)
+    else
+      body
+      |> Map.put("bytecodeType", "DEPLOYED_BYTECODE")
+      |> Map.put("bytecode", deployed_bytecode)
+    end
   end
 
   def prepare_bytecode_for_microservice(body, creation_bytecode, _deployed_bytecode) do
@@ -173,15 +178,19 @@ defmodule Explorer.SmartContract.Helper do
       "chainId" => Application.get_env(:block_scout_web, :chain_id)
     }
 
-    case SmartContract.creation_tx_with_bytecode(address_hash) do
-      %{init: init, tx: tx} ->
-        {init, deployed_bytecode, tx |> tx_to_metadata(init) |> Map.merge(metadata)}
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      {nil, deployed_bytecode, metadata}
+    else
+      case SmartContract.creation_tx_with_bytecode(address_hash) do
+        %{init: init, tx: tx} ->
+          {init, deployed_bytecode, tx |> tx_to_metadata(init) |> Map.merge(metadata)}
 
-      %{init: init, internal_tx: internal_tx} ->
-        {init, deployed_bytecode, internal_tx |> internal_tx_to_metadata(init) |> Map.merge(metadata)}
+        %{init: init, internal_tx: internal_tx} ->
+          {init, deployed_bytecode, internal_tx |> internal_tx_to_metadata(init) |> Map.merge(metadata)}
 
-      _ ->
-        {nil, deployed_bytecode, metadata}
+        _ ->
+          {nil, deployed_bytecode, metadata}
+      end
     end
   end
 

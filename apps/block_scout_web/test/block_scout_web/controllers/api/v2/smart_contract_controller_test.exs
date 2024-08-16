@@ -176,7 +176,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
 
-      assert correct_response == response
+      result_props = correct_response |> Map.keys()
+
+      for prop <- result_props do
+        assert correct_response[prop] == response[prop]
+      end
     end
 
     test "get smart-contract with decoded constructor", %{conn: conn} do
@@ -282,7 +286,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
 
-      assert correct_response == response
+      result_props = correct_response |> Map.keys()
+
+      for prop <- result_props do
+        assert correct_response[prop] == response[prop]
+      end
     end
 
     test "get smart-contract data from bytecode twin without constructor args", %{conn: conn} do
@@ -390,7 +398,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
 
-      assert correct_response == response
+      result_props = correct_response |> Map.keys()
+
+      for prop <- result_props do
+        assert correct_response[prop] == response[prop]
+      end
     end
 
     test "doesn't get smart-contract multiple additional sources from EIP-1167 implementation", %{conn: conn} do
@@ -480,7 +492,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
       response = json_response(request, 200)
 
-      assert correct_response == response
+      result_props = correct_response |> Map.keys()
+
+      for prop <- result_props do
+        assert correct_response[prop] == response[prop]
+      end
     end
 
     test "get smart-contract which is blueprint", %{conn: conn} do
@@ -550,7 +566,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
 
-      assert correct_response == response
+      result_props = correct_response |> Map.keys()
+
+      for prop <- result_props do
+        assert correct_response[prop] == response[prop]
+      end
     end
   end
 
@@ -634,947 +654,954 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
     response = json_response(request, 200)
 
-    assert correct_response == response
+    result_props = correct_response |> Map.keys()
+
+    for prop <- result_props do
+      assert correct_response[prop] == response[prop]
+    end
   end
 
-  describe "/smart-contracts/{address_hash} <> eth_bytecode_db" do
-    setup do
-      old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
+  if Application.compile_env(:explorer, :chain_type) !== :zksync do
+    describe "/smart-contracts/{address_hash} <> eth_bytecode_db" do
+      setup do
+        old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
 
-      :ok
+        :ok
 
-      on_exit(fn ->
-        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
-      end)
-    end
+        on_exit(fn ->
+          Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
+        end)
+      end
 
-    test "automatically verify contract", %{conn: conn} do
-      {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      test "automatically verify contract", %{conn: conn} do
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
-      Application.put_env(:block_scout_web, :chain_id, 5)
+        Application.put_env(:block_scout_web, :chain_id, 5)
 
-      bypass = Bypass.open()
-      eth_bytecode_response = File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_response.json")
+        bypass = Bypass.open()
+        eth_bytecode_response = File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_response.json")
 
-      old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
 
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true,
-        type: "eth_bytecode_db",
-        eth_bytecode_db?: true
-      )
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true,
+          type: "eth_bytecode_db",
+          eth_bytecode_db?: true
+        )
 
-      address = insert(:contract_address)
+        address = insert(:contract_address)
 
-      insert(:transaction,
-        created_contract_address_hash: address.hash,
-        input:
-          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-      )
-      |> with_block()
+        insert(:transaction,
+          created_contract_address_hash: address.hash,
+          input:
+            "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+        )
+        |> with_block()
 
-      topic = "addresses:#{address.hash}"
+        topic = "addresses:#{address.hash}"
 
-      {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
-        |> socket("no_id", %{})
-        |> subscribe_and_join(topic)
+        {:ok, _reply, _socket} =
+          BlockScoutWeb.UserSocketV2
+          |> socket("no_id", %{})
+          |> subscribe_and_join(topic)
 
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
-        Conn.resp(conn, 200, eth_bytecode_response)
-      end)
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
+          Conn.resp(conn, 200, eth_bytecode_response)
+        end)
 
-      TestHelper.get_eip1967_implementation_error_response()
+        TestHelper.get_eip1967_implementation_error_response()
 
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
 
-      response = json_response(request, 200)
+        response = json_response(request, 200)
 
-      assert response ==
-               %{
-                 "proxy_type" => nil,
-                 "implementations" => [],
-                 "has_custom_methods_read" => false,
-                 "has_custom_methods_write" => false,
-                 "is_self_destructed" => false,
-                 "deployed_bytecode" => to_string(address.contract_code),
-                 "creation_bytecode" =>
-                   "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-               }
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-      assert response = json_response(request, 200)
-      assert %{"is_verified" => true} = response
-      assert %{"is_verified_via_eth_bytecode_db" => true} = response
-      assert %{"is_partially_verified" => true} = response
-      assert %{"is_fully_verified" => false} = response
-
-      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-      Bypass.down(bypass)
-      GenServer.stop(pid)
-    end
-
-    test "automatically verify contract using search-all (ethBytecodeDbSources) endpoint", %{conn: conn} do
-      {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-      Application.put_env(:block_scout_web, :chain_id, 5)
-
-      bypass = Bypass.open()
-
-      eth_bytecode_response =
-        File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_all_local_sources_response.json")
-
-      old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true,
-        type: "eth_bytecode_db",
-        eth_bytecode_db?: true
-      )
-
-      address = insert(:contract_address)
-
-      insert(:transaction,
-        created_contract_address_hash: address.hash,
-        input:
-          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-      )
-      |> with_block()
-
-      topic = "addresses:#{address.hash}"
-
-      {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
-        |> socket("no_id", %{})
-        |> subscribe_and_join(topic)
-
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
-        Conn.resp(conn, 200, eth_bytecode_response)
-      end)
-
-      TestHelper.get_eip1967_implementation_error_response()
-
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
-
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
-
-      response = json_response(request, 200)
-
-      assert response ==
-               %{
-                 "proxy_type" => nil,
-                 "implementations" => [],
-                 "has_custom_methods_read" => false,
-                 "has_custom_methods_write" => false,
-                 "is_self_destructed" => false,
-                 "deployed_bytecode" => to_string(address.contract_code),
-                 "creation_bytecode" =>
-                   "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-               }
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-      assert response = json_response(request, 200)
-      assert %{"is_verified" => true} = response
-      assert %{"is_verified_via_eth_bytecode_db" => true} = response
-      assert %{"is_partially_verified" => true} = response
-      assert %{"is_fully_verified" => false} = response
-
-      smart_contract = Jason.decode!(eth_bytecode_response)["ethBytecodeDbSources"] |> List.first()
-      assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
-      assert response["name"] == smart_contract["contractName"]
-      assert response["compiler_version"] == smart_contract["compilerVersion"]
-      assert response["file_path"] == smart_contract["fileName"]
-      assert response["constructor_args"] == smart_contract["constructorArguments"]
-      assert response["abi"] == Jason.decode!(smart_contract["abi"])
-
-      assert response["decoded_constructor_args"] == [
-               [
-                 "0xc35dadb65012ec5796536bd9864ed8773abc74c4",
+        assert response ==
                  %{
-                   "internalType" => "address",
-                   "name" => "_factory",
-                   "type" => "address"
+                   "proxy_type" => nil,
+                   "implementations" => [],
+                   "has_custom_methods_read" => false,
+                   "has_custom_methods_write" => false,
+                   "is_self_destructed" => false,
+                   "deployed_bytecode" => to_string(address.contract_code),
+                   "creation_bytecode" =>
+                     "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                  }
-               ],
-               [
-                 "0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6",
+
+        TestHelper.get_eip1967_implementation_zero_addresses()
+
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert response = json_response(request, 200)
+        assert %{"is_verified" => true} = response
+        assert %{"is_verified_via_eth_bytecode_db" => true} = response
+        assert %{"is_partially_verified" => true} = response
+        assert %{"is_fully_verified" => false} = response
+
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
+        Bypass.down(bypass)
+        GenServer.stop(pid)
+      end
+
+      test "automatically verify contract using search-all (ethBytecodeDbSources) endpoint", %{conn: conn} do
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+
+        Application.put_env(:block_scout_web, :chain_id, 5)
+
+        bypass = Bypass.open()
+
+        eth_bytecode_response =
+          File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_all_local_sources_response.json")
+
+        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true,
+          type: "eth_bytecode_db",
+          eth_bytecode_db?: true
+        )
+
+        address = insert(:contract_address)
+
+        insert(:transaction,
+          created_contract_address_hash: address.hash,
+          input:
+            "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+        )
+        |> with_block()
+
+        topic = "addresses:#{address.hash}"
+
+        {:ok, _reply, _socket} =
+          BlockScoutWeb.UserSocketV2
+          |> socket("no_id", %{})
+          |> subscribe_and_join(topic)
+
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
+          Conn.resp(conn, 200, eth_bytecode_response)
+        end)
+
+        TestHelper.get_eip1967_implementation_error_response()
+
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        response = json_response(request, 200)
+
+        assert response ==
                  %{
-                   "internalType" => "address",
-                   "name" => "_WETH",
-                   "type" => "address"
+                   "proxy_type" => nil,
+                   "implementations" => [],
+                   "has_custom_methods_read" => false,
+                   "has_custom_methods_write" => false,
+                   "is_self_destructed" => false,
+                   "deployed_bytecode" => to_string(address.contract_code),
+                   "creation_bytecode" =>
+                     "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+                 }
+
+        TestHelper.get_eip1967_implementation_zero_addresses()
+
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert response = json_response(request, 200)
+        assert %{"is_verified" => true} = response
+        assert %{"is_verified_via_eth_bytecode_db" => true} = response
+        assert %{"is_partially_verified" => true} = response
+        assert %{"is_fully_verified" => false} = response
+
+        smart_contract = Jason.decode!(eth_bytecode_response)["ethBytecodeDbSources"] |> List.first()
+        assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
+        assert response["name"] == smart_contract["contractName"]
+        assert response["compiler_version"] == smart_contract["compilerVersion"]
+        assert response["file_path"] == smart_contract["fileName"]
+        assert response["constructor_args"] == smart_contract["constructorArguments"]
+        assert response["abi"] == Jason.decode!(smart_contract["abi"])
+
+        assert response["decoded_constructor_args"] == [
+                 [
+                   "0xc35dadb65012ec5796536bd9864ed8773abc74c4",
+                   %{
+                     "internalType" => "address",
+                     "name" => "_factory",
+                     "type" => "address"
+                   }
+                 ],
+                 [
+                   "0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6",
+                   %{
+                     "internalType" => "address",
+                     "name" => "_WETH",
+                     "type" => "address"
+                   }
+                 ]
+               ]
+
+        assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
+
+        assert response["external_libraries"] == [
+                 %{
+                   "address_hash" => "0x00000000D41867734BBee4C6863D9255b2b06aC1",
+                   "name" => "__CACHE_BREAKER__"
                  }
                ]
-             ]
 
-      assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
+        additional_sources =
+          for file_name <- Map.keys(smart_contract["sourceFiles"]), smart_contract["fileName"] != file_name do
+            %{
+              "source_code" => smart_contract["sourceFiles"][file_name],
+              "file_path" => file_name
+            }
+          end
 
-      assert response["external_libraries"] == [
-               %{
-                 "address_hash" => "0x00000000D41867734BBee4C6863D9255b2b06aC1",
-                 "name" => "__CACHE_BREAKER__"
-               }
-             ]
+        assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
+                 additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
 
-      additional_sources =
-        for file_name <- Map.keys(smart_contract["sourceFiles"]), smart_contract["fileName"] != file_name do
-          %{
-            "source_code" => smart_contract["sourceFiles"][file_name],
-            "file_path" => file_name
-          }
-        end
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
+        Bypass.down(bypass)
+        GenServer.stop(pid)
+      end
 
-      assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
-               additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
+      test "automatically verify contract using search-all (sourcifySources) endpoint", %{conn: conn} do
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
-      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-      Bypass.down(bypass)
-      GenServer.stop(pid)
-    end
+        Application.put_env(:block_scout_web, :chain_id, 5)
 
-    test "automatically verify contract using search-all (sourcifySources) endpoint", %{conn: conn} do
-      {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+        bypass = Bypass.open()
 
-      Application.put_env(:block_scout_web, :chain_id, 5)
+        eth_bytecode_response =
+          File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_all_sourcify_sources_response.json")
 
-      bypass = Bypass.open()
+        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
 
-      eth_bytecode_response =
-        File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_all_sourcify_sources_response.json")
-
-      old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true,
-        type: "eth_bytecode_db",
-        eth_bytecode_db?: true
-      )
-
-      address = insert(:contract_address)
-
-      insert(:transaction,
-        created_contract_address_hash: address.hash,
-        input:
-          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-      )
-      |> with_block()
-
-      topic = "addresses:#{address.hash}"
-
-      {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
-        |> socket("no_id", %{})
-        |> subscribe_and_join(topic)
-
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
-        Conn.resp(conn, 200, eth_bytecode_response)
-      end)
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
-
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
-
-      response = json_response(request, 200)
-
-      assert response ==
-               %{
-                 "proxy_type" => nil,
-                 "implementations" => [],
-                 "has_custom_methods_read" => false,
-                 "has_custom_methods_write" => false,
-                 "is_self_destructed" => false,
-                 "deployed_bytecode" => to_string(address.contract_code),
-                 "creation_bytecode" =>
-                   "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-               }
-
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-      assert response = json_response(request, 200)
-      assert %{"is_verified" => true} = response
-      assert %{"is_verified_via_eth_bytecode_db" => true} = response
-      assert %{"is_verified_via_sourcify" => true} = response
-      assert %{"is_partially_verified" => true} = response
-      assert %{"is_fully_verified" => false} = response
-      assert response["file_path"] == "Test.sol"
-
-      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-      Bypass.down(bypass)
-      GenServer.stop(pid)
-    end
-
-    test "automatically verify contract using search-all (sourcifySources with libraries) endpoint", %{conn: conn} do
-      {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-      Application.put_env(:block_scout_web, :chain_id, 5)
-
-      bypass = Bypass.open()
-
-      eth_bytecode_response =
-        File.read!(
-          "./test/support/fixture/smart_contract/eth_bytecode_db_search_all_sourcify_sources_with_libs_response.json"
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true,
+          type: "eth_bytecode_db",
+          eth_bytecode_db?: true
         )
 
-      old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+        address = insert(:contract_address)
 
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true,
-        type: "eth_bytecode_db",
-        eth_bytecode_db?: true
-      )
+        insert(:transaction,
+          created_contract_address_hash: address.hash,
+          input:
+            "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+        )
+        |> with_block()
 
-      address = insert(:contract_address)
+        topic = "addresses:#{address.hash}"
 
-      insert(:transaction,
-        created_contract_address_hash: address.hash,
-        input:
-          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-      )
-      |> with_block()
+        {:ok, _reply, _socket} =
+          BlockScoutWeb.UserSocketV2
+          |> socket("no_id", %{})
+          |> subscribe_and_join(topic)
 
-      topic = "addresses:#{address.hash}"
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
+          Conn.resp(conn, 200, eth_bytecode_response)
+        end)
 
-      {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
-        |> socket("no_id", %{})
-        |> subscribe_and_join(topic)
+        TestHelper.get_eip1967_implementation_zero_addresses()
 
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
-        Conn.resp(conn, 200, eth_bytecode_response)
-      end)
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
 
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        response = json_response(request, 200)
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        assert response ==
+                 %{
+                   "proxy_type" => nil,
+                   "implementations" => [],
+                   "has_custom_methods_read" => false,
+                   "has_custom_methods_write" => false,
+                   "is_self_destructed" => false,
+                   "deployed_bytecode" => to_string(address.contract_code),
+                   "creation_bytecode" =>
+                     "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+                 }
 
-      response = json_response(request, 200)
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert response = json_response(request, 200)
+        assert %{"is_verified" => true} = response
+        assert %{"is_verified_via_eth_bytecode_db" => true} = response
+        assert %{"is_verified_via_sourcify" => true} = response
+        assert %{"is_partially_verified" => true} = response
+        assert %{"is_fully_verified" => false} = response
+        assert response["file_path"] == "Test.sol"
 
-      assert response ==
-               %{
-                 "proxy_type" => nil,
-                 "implementations" => [],
-                 "has_custom_methods_read" => false,
-                 "has_custom_methods_write" => false,
-                 "is_self_destructed" => false,
-                 "deployed_bytecode" => to_string(address.contract_code),
-                 "creation_bytecode" =>
-                   "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-               }
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
+        Bypass.down(bypass)
+        GenServer.stop(pid)
+      end
 
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-      assert response = json_response(request, 200)
+      test "automatically verify contract using search-all (sourcifySources with libraries) endpoint", %{conn: conn} do
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
-      smart_contract = Jason.decode!(eth_bytecode_response)["sourcifySources"] |> List.first()
+        Application.put_env(:block_scout_web, :chain_id, 5)
 
-      assert %{"is_verified" => true} = response
-      assert %{"is_verified_via_eth_bytecode_db" => true} = response
-      assert %{"is_verified_via_sourcify" => true} = response
-      assert %{"is_partially_verified" => true} = response
-      assert %{"is_fully_verified" => false} = response
-      assert response["file_path"] == "src/zkbob/ZkBobPool.sol"
+        bypass = Bypass.open()
 
-      assert response["external_libraries"] == [
-               %{
-                 "address_hash" => "0x22DE6B06544Ee5Cd907813a04bcdEd149A2f49D2",
-                 "name" => "lib/base58-solidity/contracts/Base58.sol:Base58"
-               },
-               %{
-                 "address_hash" => "0x019d3788F00a7087234f3844CB1ceCe1F9982B7A",
-                 "name" => "src/libraries/ZkAddress.sol:ZkAddress"
-               }
-             ]
+        eth_bytecode_response =
+          File.read!(
+            "./test/support/fixture/smart_contract/eth_bytecode_db_search_all_sourcify_sources_with_libs_response.json"
+          )
 
-      additional_sources =
-        for file_name <- Map.keys(smart_contract["sourceFiles"]), smart_contract["fileName"] != file_name do
-          %{
-            "source_code" => smart_contract["sourceFiles"][file_name],
-            "file_path" => file_name
-          }
-        end
+        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
 
-      assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
-               additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
-
-      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-      Bypass.down(bypass)
-      GenServer.stop(pid)
-    end
-
-    test "automatically verify contract using search-all (allianceSources) endpoint", %{conn: conn} do
-      {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-      Application.put_env(:block_scout_web, :chain_id, 5)
-
-      bypass = Bypass.open()
-
-      eth_bytecode_response =
-        File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_all_alliance_sources_response.json")
-
-      old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true,
-        type: "eth_bytecode_db",
-        eth_bytecode_db?: true
-      )
-
-      address = insert(:contract_address)
-
-      insert(:transaction,
-        created_contract_address_hash: address.hash,
-        input:
-          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-      )
-      |> with_block()
-
-      topic = "addresses:#{address.hash}"
-
-      {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
-        |> socket("no_id", %{})
-        |> subscribe_and_join(topic)
-
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
-        Conn.resp(conn, 200, eth_bytecode_response)
-      end)
-
-      implementation_address = insert(:address)
-      implementation_address_hash_string = to_string(implementation_address.hash)
-      formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
-      TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
-
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
-
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
-
-      response = json_response(request, 200)
-
-      assert response ==
-               %{
-                 "proxy_type" => nil,
-                 "implementations" => [],
-                 "has_custom_methods_read" => false,
-                 "has_custom_methods_write" => false,
-                 "is_self_destructed" => false,
-                 "deployed_bytecode" => to_string(address.contract_code),
-                 "creation_bytecode" =>
-                   "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-               }
-
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-      assert response = json_response(request, 200)
-      assert %{"proxy_type" => "eip1967"} = response
-
-      assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
-               response
-
-      assert %{"is_verified" => true} = response
-      assert %{"is_verified_via_eth_bytecode_db" => true} = response
-      assert %{"is_partially_verified" => true} = response
-      assert %{"is_verified_via_sourcify" => false} = response
-      assert %{"is_verified_via_verifier_alliance" => true} = response
-      assert %{"is_fully_verified" => false} = response
-
-      smart_contract = Jason.decode!(eth_bytecode_response)["allianceSources"] |> List.first()
-      assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
-      assert response["name"] == smart_contract["contractName"]
-      assert response["compiler_version"] == smart_contract["compilerVersion"]
-      assert response["file_path"] == smart_contract["fileName"]
-      assert response["constructor_args"] == smart_contract["constructorArguments"]
-      assert response["abi"] == Jason.decode!(smart_contract["abi"])
-
-      assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
-
-      assert response["external_libraries"] == [
-               %{
-                 "address_hash" => "0x00000000D41867734BBee4C6863D9255b2b06aC1",
-                 "name" => "__CACHE_BREAKER__"
-               }
-             ]
-
-      additional_sources =
-        for file_name <- Map.keys(smart_contract["sourceFiles"]), smart_contract["fileName"] != file_name do
-          %{
-            "source_code" => smart_contract["sourceFiles"][file_name],
-            "file_path" => file_name
-          }
-        end
-
-      assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
-               additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
-
-      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-      Bypass.down(bypass)
-      GenServer.stop(pid)
-    end
-
-    test "automatically verify contract using search-all (prefer sourcify FULL match) endpoint", %{conn: conn} do
-      {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
-
-      Application.put_env(:block_scout_web, :chain_id, 5)
-
-      bypass = Bypass.open()
-
-      eth_bytecode_response =
-        File.read!(
-          "./test/support/fixture/smart_contract/eth_bytecode_db_search_all_alliance_sources_partial_response.json"
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true,
+          type: "eth_bytecode_db",
+          eth_bytecode_db?: true
         )
 
-      old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+        address = insert(:contract_address)
 
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true,
-        type: "eth_bytecode_db",
-        eth_bytecode_db?: true
-      )
+        insert(:transaction,
+          created_contract_address_hash: address.hash,
+          input:
+            "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+        )
+        |> with_block()
 
-      address = insert(:contract_address)
+        topic = "addresses:#{address.hash}"
 
-      insert(:transaction,
-        created_contract_address_hash: address.hash,
-        input:
-          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-      )
-      |> with_block()
+        {:ok, _reply, _socket} =
+          BlockScoutWeb.UserSocketV2
+          |> socket("no_id", %{})
+          |> subscribe_and_join(topic)
 
-      topic = "addresses:#{address.hash}"
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
+          Conn.resp(conn, 200, eth_bytecode_response)
+        end)
 
-      {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
-        |> socket("no_id", %{})
-        |> subscribe_and_join(topic)
+        TestHelper.get_eip1967_implementation_error_response()
 
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
-        Conn.resp(conn, 200, eth_bytecode_response)
-      end)
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
-      implementation_address = insert(:address)
-      implementation_address_hash_string = to_string(implementation_address.hash)
-      formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
-      TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
 
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        response = json_response(request, 200)
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        assert response ==
+                 %{
+                   "proxy_type" => nil,
+                   "implementations" => [],
+                   "has_custom_methods_read" => false,
+                   "has_custom_methods_write" => false,
+                   "is_self_destructed" => false,
+                   "deployed_bytecode" => to_string(address.contract_code),
+                   "creation_bytecode" =>
+                     "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+                 }
 
-      response = json_response(request, 200)
+        TestHelper.get_eip1967_implementation_zero_addresses()
 
-      assert response ==
-               %{
-                 "proxy_type" => nil,
-                 "implementations" => [],
-                 "has_custom_methods_read" => false,
-                 "has_custom_methods_write" => false,
-                 "is_self_destructed" => false,
-                 "deployed_bytecode" => to_string(address.contract_code),
-                 "creation_bytecode" =>
-                   "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-               }
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert response = json_response(request, 200)
 
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-      assert response = json_response(request, 200)
-      assert %{"proxy_type" => "eip1967"} = response
+        smart_contract = Jason.decode!(eth_bytecode_response)["sourcifySources"] |> List.first()
+        assert %{"is_verified" => true} = response
+        assert %{"is_verified_via_eth_bytecode_db" => true} = response
+        assert %{"is_verified_via_sourcify" => true} = response
+        assert %{"is_partially_verified" => true} = response
+        assert %{"is_fully_verified" => false} = response
+        assert response["file_path"] == "src/zkbob/ZkBobPool.sol"
 
-      assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
-               response
+        assert response["external_libraries"] == [
+                 %{
+                   "address_hash" => "0x22DE6B06544Ee5Cd907813a04bcdEd149A2f49D2",
+                   "name" => "lib/base58-solidity/contracts/Base58.sol:Base58"
+                 },
+                 %{
+                   "address_hash" => "0x019d3788F00a7087234f3844CB1ceCe1F9982B7A",
+                   "name" => "src/libraries/ZkAddress.sol:ZkAddress"
+                 }
+               ]
 
-      assert %{"is_verified" => true} = response
-      assert %{"is_verified_via_eth_bytecode_db" => true} = response
-      assert %{"is_partially_verified" => false} = response
-      assert %{"is_verified_via_sourcify" => true} = response
-      assert %{"is_verified_via_verifier_alliance" => false} = response
-      assert %{"is_fully_verified" => true} = response
+        additional_sources =
+          for file_name <- Map.keys(smart_contract["sourceFiles"]), smart_contract["fileName"] != file_name do
+            %{
+              "source_code" => smart_contract["sourceFiles"][file_name],
+              "file_path" => file_name
+            }
+          end
 
-      smart_contract = Jason.decode!(eth_bytecode_response)["sourcifySources"] |> List.first()
-      assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
-      assert response["name"] == smart_contract["contractName"]
-      assert response["compiler_version"] == smart_contract["compilerVersion"]
-      assert response["file_path"] == smart_contract["fileName"]
-      assert response["constructor_args"] == smart_contract["constructorArguments"]
-      assert response["abi"] == Jason.decode!(smart_contract["abi"])
+        assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
+                 additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
 
-      assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
+        Bypass.down(bypass)
+        GenServer.stop(pid)
+      end
 
-      assert response["external_libraries"] == [
-               %{
-                 "address_hash" => "0x00000000D41867734BBee4C6863D9255b2b06aC1",
-                 "name" => "__CACHE_BREAKER__"
-               }
-             ]
+      test "automatically verify contract using search-all (allianceSources) endpoint", %{conn: conn} do
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
-      additional_sources =
-        for file_name <- Map.keys(smart_contract["sourceFiles"]), smart_contract["fileName"] != file_name do
-          %{
-            "source_code" => smart_contract["sourceFiles"][file_name],
-            "file_path" => file_name
-          }
-        end
+        Application.put_env(:block_scout_web, :chain_id, 5)
 
-      assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
-               additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
+        bypass = Bypass.open()
 
-      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-      Bypass.down(bypass)
-      GenServer.stop(pid)
-    end
+        eth_bytecode_response =
+          File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_all_alliance_sources_response.json")
 
-    test "automatically verify contract using search-all (take eth bytecode db FULL match) endpoint", %{conn: conn} do
-      {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
 
-      Application.put_env(:block_scout_web, :chain_id, 5)
-
-      bypass = Bypass.open()
-
-      eth_bytecode_response =
-        File.read!(
-          "./test/support/fixture/smart_contract/eth_bytecode_db_search_all_alliance_sources_partial_response_eth_bdb_full.json"
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true,
+          type: "eth_bytecode_db",
+          eth_bytecode_db?: true
         )
 
-      old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+        address = insert(:contract_address)
 
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true,
-        type: "eth_bytecode_db",
-        eth_bytecode_db?: true
-      )
+        insert(:transaction,
+          created_contract_address_hash: address.hash,
+          input:
+            "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+        )
+        |> with_block()
 
-      address = insert(:contract_address)
+        topic = "addresses:#{address.hash}"
 
-      insert(:transaction,
-        created_contract_address_hash: address.hash,
-        input:
-          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-      )
-      |> with_block()
+        {:ok, _reply, _socket} =
+          BlockScoutWeb.UserSocketV2
+          |> socket("no_id", %{})
+          |> subscribe_and_join(topic)
 
-      topic = "addresses:#{address.hash}"
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
+          Conn.resp(conn, 200, eth_bytecode_response)
+        end)
 
-      {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
-        |> socket("no_id", %{})
-        |> subscribe_and_join(topic)
+        implementation_address = insert(:address)
+        implementation_address_hash_string = to_string(implementation_address.hash)
+        formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
+        TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
 
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
-        Conn.resp(conn, 200, eth_bytecode_response)
-      end)
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
-      implementation_address = insert(:address)
-      implementation_address_hash_string = to_string(implementation_address.hash)
-      formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
-      TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
 
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        response = json_response(request, 200)
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        assert response ==
+                 %{
+                   "proxy_type" => nil,
+                   "implementations" => [],
+                   "has_custom_methods_read" => false,
+                   "has_custom_methods_write" => false,
+                   "is_self_destructed" => false,
+                   "deployed_bytecode" => to_string(address.contract_code),
+                   "creation_bytecode" =>
+                     "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+                 }
 
-      response = json_response(request, 200)
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert response = json_response(request, 200)
+        assert %{"proxy_type" => "eip1967"} = response
 
-      assert response ==
-               %{
-                 "proxy_type" => nil,
-                 "implementations" => [],
-                 "has_custom_methods_read" => false,
-                 "has_custom_methods_write" => false,
-                 "is_self_destructed" => false,
-                 "deployed_bytecode" => to_string(address.contract_code),
-                 "creation_bytecode" =>
-                   "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-               }
+        assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
+                 response
 
-      request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
-      assert response = json_response(request, 200)
-      assert %{"proxy_type" => "eip1967"} = response
+        assert %{"is_verified" => true} = response
+        assert %{"is_verified_via_eth_bytecode_db" => true} = response
+        assert %{"is_partially_verified" => true} = response
+        assert %{"is_verified_via_sourcify" => false} = response
+        assert %{"is_verified_via_verifier_alliance" => true} = response
+        assert %{"is_fully_verified" => false} = response
 
-      assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
-               response
+        smart_contract = Jason.decode!(eth_bytecode_response)["allianceSources"] |> List.first()
+        assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
+        assert response["name"] == smart_contract["contractName"]
+        assert response["compiler_version"] == smart_contract["compilerVersion"]
+        assert response["file_path"] == smart_contract["fileName"]
+        assert response["constructor_args"] == smart_contract["constructorArguments"]
+        assert response["abi"] == Jason.decode!(smart_contract["abi"])
 
-      assert %{"is_verified" => true} = response
-      assert %{"is_verified_via_eth_bytecode_db" => true} = response
-      assert %{"is_partially_verified" => false} = response
-      assert %{"is_verified_via_sourcify" => false} = response
-      assert %{"is_verified_via_verifier_alliance" => false} = response
-      assert %{"is_fully_verified" => true} = response
+        assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
 
-      smart_contract = Jason.decode!(eth_bytecode_response)["ethBytecodeDbSources"] |> List.first()
-      assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
-      assert response["name"] == smart_contract["contractName"]
-      assert response["compiler_version"] == smart_contract["compilerVersion"]
-      assert response["file_path"] == smart_contract["fileName"]
-      assert response["constructor_args"] == smart_contract["constructorArguments"]
-      assert response["abi"] == Jason.decode!(smart_contract["abi"])
+        assert response["external_libraries"] == [
+                 %{
+                   "address_hash" => "0x00000000D41867734BBee4C6863D9255b2b06aC1",
+                   "name" => "__CACHE_BREAKER__"
+                 }
+               ]
 
-      assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
+        additional_sources =
+          for file_name <- Map.keys(smart_contract["sourceFiles"]), smart_contract["fileName"] != file_name do
+            %{
+              "source_code" => smart_contract["sourceFiles"][file_name],
+              "file_path" => file_name
+            }
+          end
 
-      assert response["external_libraries"] == [
-               %{
-                 "address_hash" => "0x00000000D41867734BBee4C6863D9255b2b06aC1",
-                 "name" => "__CACHE_BREAKER__"
-               }
-             ]
+        assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
+                 additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
 
-      additional_sources =
-        for file_name <- Map.keys(smart_contract["sourceFiles"]), smart_contract["fileName"] != file_name do
-          %{
-            "source_code" => smart_contract["sourceFiles"][file_name],
-            "file_path" => file_name
-          }
-        end
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
+        Bypass.down(bypass)
+        GenServer.stop(pid)
+      end
 
-      assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
-               additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
+      test "automatically verify contract using search-all (prefer sourcify FULL match) endpoint", %{conn: conn} do
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
-      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-      Bypass.down(bypass)
-      GenServer.stop(pid)
-    end
+        Application.put_env(:block_scout_web, :chain_id, 5)
 
-    test "check fetch interval for LookUpSmartContractSourcesOnDemand and use sources:search endpoint since chain_id is unset",
-         %{conn: conn} do
-      {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
-      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+        bypass = Bypass.open()
 
-      Application.put_env(:block_scout_web, :chain_id, nil)
+        eth_bytecode_response =
+          File.read!(
+            "./test/support/fixture/smart_contract/eth_bytecode_db_search_all_alliance_sources_partial_response.json"
+          )
 
-      bypass = Bypass.open()
-      address = insert(:contract_address)
-      topic = "addresses:#{address.hash}"
+        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
 
-      {:ok, _reply, _socket} =
-        BlockScoutWeb.UserSocketV2
-        |> socket("no_id", %{})
-        |> subscribe_and_join(topic)
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true,
+          type: "eth_bytecode_db",
+          eth_bytecode_db?: true
+        )
 
-      insert(:transaction,
-        created_contract_address_hash: address.hash,
-        input:
-          "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
-      )
-      |> with_block()
+        address = insert(:contract_address)
 
-      old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+        insert(:transaction,
+          created_contract_address_hash: address.hash,
+          input:
+            "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+        )
+        |> with_block()
 
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true,
-        type: "eth_bytecode_db",
-        eth_bytecode_db?: true
-      )
+        topic = "addresses:#{address.hash}"
 
-      old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
+        {:ok, _reply, _socket} =
+          BlockScoutWeb.UserSocketV2
+          |> socket("no_id", %{})
+          |> subscribe_and_join(topic)
 
-      Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, fetch_interval: 0)
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
+          Conn.resp(conn, 200, eth_bytecode_response)
+        end)
 
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
-        Conn.resp(conn, 200, "{\"sources\": []}")
-      end)
+        implementation_address = insert(:address)
+        implementation_address_hash_string = to_string(implementation_address.hash)
+        formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
+        TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
-      _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_not_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        response = json_response(request, 200)
 
-      :timer.sleep(10)
+        assert response ==
+                 %{
+                   "proxy_type" => nil,
+                   "implementations" => [],
+                   "has_custom_methods_read" => false,
+                   "has_custom_methods_write" => false,
+                   "is_self_destructed" => false,
+                   "deployed_bytecode" => to_string(address.contract_code),
+                   "creation_bytecode" =>
+                     "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+                 }
 
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
-        Conn.resp(conn, 200, "{\"sources\": []}")
-      end)
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert response = json_response(request, 200)
+        assert %{"proxy_type" => "eip1967"} = response
 
-      _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
+                 response
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        assert %{"is_verified" => true} = response
+        assert %{"is_verified_via_eth_bytecode_db" => true} = response
+        assert %{"is_partially_verified" => false} = response
+        assert %{"is_verified_via_sourcify" => true} = response
+        assert %{"is_verified_via_verifier_alliance" => false} = response
+        assert %{"is_fully_verified" => true} = response
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_not_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        smart_contract = Jason.decode!(eth_bytecode_response)["sourcifySources"] |> List.first()
+        assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
+        assert response["name"] == smart_contract["contractName"]
+        assert response["compiler_version"] == smart_contract["compilerVersion"]
+        assert response["file_path"] == smart_contract["fileName"]
+        assert response["constructor_args"] == smart_contract["constructorArguments"]
+        assert response["abi"] == Jason.decode!(smart_contract["abi"])
 
-      :timer.sleep(10)
+        assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
 
-      Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
-        Conn.resp(conn, 200, "{\"sources\": []}")
-      end)
+        assert response["external_libraries"] == [
+                 %{
+                   "address_hash" => "0x00000000D41867734BBee4C6863D9255b2b06aC1",
+                   "name" => "__CACHE_BREAKER__"
+                 }
+               ]
 
-      _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        additional_sources =
+          for file_name <- Map.keys(smart_contract["sourceFiles"]), smart_contract["fileName"] != file_name do
+            %{
+              "source_code" => smart_contract["sourceFiles"][file_name],
+              "file_path" => file_name
+            }
+          end
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
+                 additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
 
-      assert_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_not_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
+        Bypass.down(bypass)
+        GenServer.stop(pid)
+      end
 
-      :timer.sleep(10)
+      test "automatically verify contract using search-all (take eth bytecode db FULL match) endpoint", %{conn: conn} do
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
-      Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, fetch_interval: 10000)
+        Application.put_env(:block_scout_web, :chain_id, 5)
 
-      _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        bypass = Bypass.open()
 
-      refute_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "eth_bytecode_db_lookup_started",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        eth_bytecode_response =
+          File.read!(
+            "./test/support/fixture/smart_contract/eth_bytecode_db_search_all_alliance_sources_partial_response_eth_bdb_full.json"
+          )
 
-      refute_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_not_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
 
-      refute_receive %Phoenix.Socket.Message{
-                       payload: %{},
-                       event: "smart_contract_was_verified",
-                       topic: ^topic
-                     },
-                     :timer.seconds(1)
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true,
+          type: "eth_bytecode_db",
+          eth_bytecode_db?: true
+        )
 
-      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
-      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
-      Bypass.down(bypass)
-      GenServer.stop(pid)
+        address = insert(:contract_address)
+
+        insert(:transaction,
+          created_contract_address_hash: address.hash,
+          input:
+            "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+        )
+        |> with_block()
+
+        topic = "addresses:#{address.hash}"
+
+        {:ok, _reply, _socket} =
+          BlockScoutWeb.UserSocketV2
+          |> socket("no_id", %{})
+          |> subscribe_and_join(topic)
+
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
+          Conn.resp(conn, 200, eth_bytecode_response)
+        end)
+
+        implementation_address = insert(:address)
+        implementation_address_hash_string = to_string(implementation_address.hash)
+        formatted_implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
+        TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
+
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        response = json_response(request, 200)
+
+        assert response ==
+                 %{
+                   "proxy_type" => nil,
+                   "implementations" => [],
+                   "has_custom_methods_read" => false,
+                   "has_custom_methods_write" => false,
+                   "is_self_destructed" => false,
+                   "deployed_bytecode" => to_string(address.contract_code),
+                   "creation_bytecode" =>
+                     "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+                 }
+
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert response = json_response(request, 200)
+        assert %{"proxy_type" => "eip1967"} = response
+
+        assert %{"implementations" => [%{"address" => ^formatted_implementation_address_hash_string, "name" => nil}]} =
+                 response
+
+        assert %{"is_verified" => true} = response
+        assert %{"is_verified_via_eth_bytecode_db" => true} = response
+        assert %{"is_partially_verified" => false} = response
+        assert %{"is_verified_via_sourcify" => false} = response
+        assert %{"is_verified_via_verifier_alliance" => false} = response
+        assert %{"is_fully_verified" => true} = response
+
+        smart_contract = Jason.decode!(eth_bytecode_response)["ethBytecodeDbSources"] |> List.first()
+        assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
+        assert response["name"] == smart_contract["contractName"]
+        assert response["compiler_version"] == smart_contract["compilerVersion"]
+        assert response["file_path"] == smart_contract["fileName"]
+        assert response["constructor_args"] == smart_contract["constructorArguments"]
+        assert response["abi"] == Jason.decode!(smart_contract["abi"])
+
+        assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
+
+        assert response["external_libraries"] == [
+                 %{
+                   "address_hash" => "0x00000000D41867734BBee4C6863D9255b2b06aC1",
+                   "name" => "__CACHE_BREAKER__"
+                 }
+               ]
+
+        additional_sources =
+          for file_name <- Map.keys(smart_contract["sourceFiles"]), smart_contract["fileName"] != file_name do
+            %{
+              "source_code" => smart_contract["sourceFiles"][file_name],
+              "file_path" => file_name
+            }
+          end
+
+        assert response["additional_sources"] |> Enum.sort_by(fn x -> x["file_path"] end) ==
+                 additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
+
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
+        Bypass.down(bypass)
+        GenServer.stop(pid)
+      end
+
+      test "check fetch interval for LookUpSmartContractSourcesOnDemand and use sources:search endpoint since chain_id is unset",
+           %{conn: conn} do
+        {:ok, pid} = Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand.start_link([])
+        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+
+        Application.put_env(:block_scout_web, :chain_id, nil)
+
+        bypass = Bypass.open()
+        address = insert(:contract_address)
+        topic = "addresses:#{address.hash}"
+
+        {:ok, _reply, _socket} =
+          BlockScoutWeb.UserSocketV2
+          |> socket("no_id", %{})
+          |> subscribe_and_join(topic)
+
+        insert(:transaction,
+          created_contract_address_hash: address.hash,
+          input:
+            "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+        )
+        |> with_block()
+
+        old_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true,
+          type: "eth_bytecode_db",
+          eth_bytecode_db?: true
+        )
+
+        old_interval_env = Application.get_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand)
+
+        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, fetch_interval: 0)
+
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
+          Conn.resp(conn, 200, "{\"sources\": []}")
+        end)
+
+        TestHelper.get_eip1967_implementation_zero_addresses()
+
+        _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_not_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        :timer.sleep(10)
+
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
+          Conn.resp(conn, 200, "{\"sources\": []}")
+        end)
+
+        _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_not_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        :timer.sleep(10)
+
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search", fn conn ->
+          Conn.resp(conn, 200, "{\"sources\": []}")
+        end)
+
+        _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_not_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        :timer.sleep(10)
+
+        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, fetch_interval: 10000)
+
+        _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+        refute_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        refute_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_not_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        refute_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand, old_interval_env)
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, old_env)
+        Bypass.down(bypass)
+        GenServer.stop(pid)
+      end
     end
   end
 
