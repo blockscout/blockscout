@@ -1300,15 +1300,16 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         "gasUsed" => "0x7d37",
         "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
         "output" => "0x",
-        "value" => "0x174876e800"
+        "value" => "0x174876e800",
+        "transactionHash" => to_string(transaction.hash)
       }
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ -> {:ok, raw_trace} end)
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ -> {:ok, [raw_trace]} end)
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/raw-trace")
 
       assert response = json_response(request, 200)
-      assert response == raw_trace
+      assert response == [raw_trace]
     end
 
     test "returns correct error", %{conn: conn} do
