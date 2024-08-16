@@ -172,7 +172,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "fileName" => file_name,
           "sources" => sources,
           "compilerSettings" => compiler_settings_string,
-          "runtimeMatch" => %{"type" => match_type, "values" => values_string},
+          "runtimeMatch" => %{"type" => match_type},
           "zkCompiler" => %{"version" => zk_compiler_version}
         },
         address_hash,
@@ -194,7 +194,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     optimization_runs = zksync_parse_optimization_runs(compiler_settings, optimization)
 
-    values = Jason.decode!(values_string)
+    constructor_arguments =
+      if initial_params["constructor_arguments"] !== "0x", do: initial_params["constructor_arguments"], else: nil
 
     prepared_params =
       %{}
@@ -203,7 +204,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("evm_version", compiler_settings["evmVersion"] || "default")
       |> Map.put("compiler_version", compiler_version)
       |> Map.put("zk_compiler_version", zk_compiler_version)
-      |> Map.put("constructor_arguments", (values && values["constructorArguments"]) || nil)
+      |> Map.put("constructor_arguments", constructor_arguments)
       |> Map.put("contract_source_code", contract_source_code)
       |> Map.put("external_libraries", cast_libraries(compiler_settings["libraries"] || %{}))
       |> Map.put("name", contract_name)

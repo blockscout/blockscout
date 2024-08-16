@@ -131,12 +131,9 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
     compiler_version_map =
       if Application.get_env(:explorer, :chain_type) == :zksync do
-        constructor_arguments = zksync_get_constructor_arguments(address_hash)
-
         %{
           "solcCompiler" => params["compiler_version"],
-          "zkCompiler" => params["zk_compiler_version"],
-          "constructorArguments" => constructor_arguments
+          "zkCompiler" => params["zk_compiler_version"]
         }
       else
         %{"compilerVersion" => params["compiler_version"]}
@@ -166,10 +163,6 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> Map.put("evmVersion", Map.get(params, "evm_version", "default"))
     |> Map.put("compilerVersion", params["compiler_version"])
     |> RustVerifierInterface.verify_multi_part(verifier_metadata)
-  end
-
-  defp zksync_get_constructor_arguments(address_hash_string) do
-    Chain.contract_creation_input_data(address_hash_string)
   end
 
   defp verify(address_hash, params, json_input) do
