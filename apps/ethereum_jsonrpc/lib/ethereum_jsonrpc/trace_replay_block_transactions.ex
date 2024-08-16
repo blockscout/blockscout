@@ -51,6 +51,11 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
     end
   end
 
+  @doc """
+  Fetches the raw traces of transaction by `trace_replayTransaction` JSON RPC method.
+  """
+  @spec fetch_transaction_raw_traces(map(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {:ok, [map()]} | {:error, any()}
   def fetch_transaction_raw_traces(%{hash: transaction_hash}, json_rpc_named_arguments) do
     request = trace_replay_transaction_request(%{id: 0, hash_data: to_string(transaction_hash)})
 

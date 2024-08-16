@@ -3084,6 +3084,10 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Fetches the raw traces of transaction.
+  """
+  @spec fetch_transaction_raw_traces(map()) :: {:ok, [map()]} | {:error, any()}
   def fetch_transaction_raw_traces(%{hash: hash, block_number: block_number}) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
