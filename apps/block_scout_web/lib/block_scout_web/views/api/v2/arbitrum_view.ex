@@ -617,8 +617,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     # for the transaction prior to the migration to Arbitrum specific BS build.
     gas_used_for_l1 = Map.get(arbitrum_tx, :gas_used_for_l1, 0) || 0
 
-    gas_used = Map.get(arbitrum_tx, :gas_used, 0)
-    gas_price = Map.get(arbitrum_tx, :gas_price, 0)
+    gas_used = Map.get(arbitrum_tx, :gas_used, 0) || 0
+    gas_price = Map.get(arbitrum_tx, :gas_price, 0) || 0
 
     gas_used_for_l2 =
       gas_used
