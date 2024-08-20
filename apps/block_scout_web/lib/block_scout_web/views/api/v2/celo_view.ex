@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
   alias Explorer.Chain.Celo.{ElectionReward, EpochReward}
   alias Explorer.Chain.Hash
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.{Block, Token, Transaction, Wei}
 
   @address_params [
     necessity_by_association: %{
@@ -97,20 +97,26 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   end
 
   def render("celo_base_fee.json", %Block{} = block) do
-    # For the blocks, where both FeeHandler and Governance contracts aren't
-    # deployed, the base fee is not burnt, but refunded to transaction sender,
-    # so we return nil in this case.
+    block.transactions
+    |> Block.burnt_fees(block.base_fee_per_gas)
+    |> Wei.cast()
+    |> case do
+      {:ok, base_fee} ->
+        # For the blocks, where both FeeHandler and Governance contracts aren't
+        # deployed, the base fee is not burnt, but refunded to transaction sender,
+        # so we return nil in this case.
+        fee_handler_base_fee_breakdown(
+          base_fee,
+          block.number
+        ) ||
+          governance_base_fee_breakdown(
+            base_fee,
+            block.number
+          )
 
-    base_fee = Block.burnt_fees(block.transactions, block.base_fee_per_gas)
-
-    fee_handler_base_fee_breakdown(
-      base_fee,
-      block.number
-    ) ||
-      governance_base_fee_breakdown(
-        base_fee,
-        block.number
-      )
+      _ ->
+        nil
+    end
   end
 
   def render("celo_election_rewards.json", %{
@@ -246,7 +252,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   # Get the breakdown of the base fee for the case when FeeHandler is a contract
   # that receives the base fee.
-  @spec fee_handler_base_fee_breakdown(Decimal.t(), Block.block_number()) ::
+  @spec fee_handler_base_fee_breakdown(Wei.t(), Block.block_number()) ::
           %{
             :recipient => %{optional(String.t()) => any()},
             :amount => float(),
@@ -268,10 +274,10 @@ defmodule BlockScoutWeb.API.V2.CeloView do
            CeloCoreContracts.get_event(:fee_handler, :burn_fraction_set, block_number) do
       burn_fraction = burn_fraction_decimal(burn_fraction_fixidity_lib)
 
-      burnt_amount = Decimal.mult(base_fee, burn_fraction)
+      burnt_amount = Wei.mult(base_fee, burn_fraction)
       burnt_percentage = Decimal.mult(burn_fraction, 100)
 
-      carbon_offsetting_amount = Decimal.sub(base_fee, burnt_amount)
+      carbon_offsetting_amount = Wei.sub(base_fee, burnt_amount)
       carbon_offsetting_percentage = Decimal.sub(100, burnt_percentage)
 
       celo_burn_address_hash_string = dead_address_hash_string()
@@ -337,7 +343,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   #
   # Note that the base fee is not burnt in this case, but simply kept on the
   # contract balance.
-  @spec governance_base_fee_breakdown(Decimal.t(), Block.block_number()) ::
+  @spec governance_base_fee_breakdown(Wei.t(), Block.block_number()) ::
           %{
             :recipient => %{optional(String.t()) => any()},
             :amount => float(),
