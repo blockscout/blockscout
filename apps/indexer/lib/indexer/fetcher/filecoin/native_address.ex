@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.Filecoin.NativeAddress do
   @moduledoc """
-  A task for updating native Filecoin addresses in the Address table using the
+  A task for fetching Filecoin addresses info in the Address table using the
   Beryx API.
 
   Due to the lack of batch support in the API, addresses are fetched
@@ -11,10 +11,12 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
 
   alias Ecto.Multi
   alias Explorer.Repo
-  alias Explorer.Chain.{Address, Filecoin.PendingAddressOperation, Hash}
+  alias Explorer.Chain.{Address, Filecoin.PendingAddressOperation}
   alias Indexer.Fetcher.Filecoin.BeryxAPI
   alias Indexer.Fetcher.Filecoin.NativeAddress.Supervisor, as: FilecoinNativeAddressSupervisor
   alias Indexer.{BufferedTask, Tracer}
+
+  @http_error_codes 400..526
 
   @batch_size 1
 
@@ -99,7 +101,7 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
 
   @spec fetch_and_update(PendingAddressOperation.t()) :: :ok | :retry
   defp fetch_and_update(%PendingAddressOperation{address_hash: address_hash} = operation) do
-    with {:ok, new_params} <- fetch_address_info_using_beryx_api(address_hash),
+    with {:ok, new_params} <- fetch_address_info_using_beryx_api(operation),
          {:ok, _} <- update_address_and_remove_pending_operation(operation, new_params) do
       Logger.info("Fetched Filecoin address info for: #{to_string(address_hash)}")
       :ok
@@ -122,7 +124,10 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
           {:ok, PendingAddressOperation.t()}
           | {:error, Ecto.Changeset.t()}
           | Ecto.Multi.failure()
-  defp update_address_and_remove_pending_operation(operation, new_address_params) do
+  defp update_address_and_remove_pending_operation(
+         %PendingAddressOperation{} = operation,
+         new_address_params
+       ) do
     Multi.new()
     |> Multi.run(
       :acquire_address,
@@ -167,7 +172,7 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
     |> Repo.transaction()
   end
 
-  @spec fetch_address_info_using_beryx_api(Hash.Address.t()) ::
+  @spec fetch_address_info_using_beryx_api(PendingAddressOperation.t()) ::
           {:ok,
            %{
              filecoin_id: String.t(),
@@ -175,8 +180,8 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
              filecoin_actor_type: String.t()
            }}
           | :error
-  defp fetch_address_info_using_beryx_api(address_hash) do
-    with {:ok, body_json} <- address_hash |> to_string() |> BeryxAPI.fetch_account_info(),
+  defp fetch_address_info_using_beryx_api(%PendingAddressOperation{} = operation) do
+    with {:ok, body_json} <- operation.address_hash |> to_string() |> BeryxAPI.fetch_account_info(),
          {:ok, id_address_string} <- Map.fetch(body_json, "short"),
          {:ok, robust_address_string} <- Map.fetch(body_json, "robust"),
          {:ok, actor_type_string} <- Map.fetch(body_json, "actor_type") do
@@ -187,9 +192,19 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
          filecoin_actor_type: actor_type_string
        }}
     else
-      {:error, status_code, %{"error" => reason}} when status_code in 400..526 ->
+      {:error, status_code, %{"error" => reason}} when status_code in @http_error_codes ->
         Logger.error("Beryx API returned error code #{status_code} with reason: #{reason}")
-        :error
+
+        operation
+        |> PendingAddressOperation.changeset(%{http_status_code: status_code})
+        |> Repo.update()
+        |> case do
+          {:ok, _} ->
+            Logger.info("Updated pending operation with error status code")
+
+          {:error, changeset} ->
+            Logger.error("Could not update pending operation with error status code: #{inspect(changeset)}")
+        end
 
       error ->
         Logger.error("Error processing Beryx API response: #{inspect(error)}")
