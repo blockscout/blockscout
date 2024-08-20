@@ -65,7 +65,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
   defp sanitize_pending_transactions(json_rpc_named_arguments) do
     receipts_batch_size = Application.get_env(:indexer, :receipts_batch_size)
-    pending_transactions_list_from_db = Chain.pending_transactions_list()
+    pending_transactions_list_from_db = Transaction.pending_transactions_list()
     id_to_params = id_to_params(pending_transactions_list_from_db)
 
     with {:ok, responses} <-

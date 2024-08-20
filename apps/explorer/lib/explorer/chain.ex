@@ -11,13 +11,11 @@ defmodule Explorer.Chain do
       join: 4,
       join: 5,
       limit: 2,
-      lock: 2,
       offset: 2,
       order_by: 2,
       order_by: 3,
       preload: 2,
       preload: 3,
-      select: 2,
       select: 3,
       subquery: 1,
       union: 2,
@@ -2006,38 +2004,6 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
-  @spec stream_pending_transactions(
-          fields :: [
-            :block_hash
-            | :created_contract_code_indexed_at
-            | :from_address_hash
-            | :gas
-            | :gas_price
-            | :hash
-            | :index
-            | :input
-            | :nonce
-            | :r
-            | :s
-            | :to_address_hash
-            | :v
-            | :value
-          ],
-          initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_pending_transactions(fields, initial, reducer, limited? \\ false) when is_function(reducer, 2) do
-    query =
-      Transaction
-      |> pending_transactions_query()
-      |> select(^fields)
-      |> add_fetcher_limit(limited?)
-
-    Repo.stream_reduce(query, initial, reducer)
-  end
-
   @doc """
   Returns a stream of all blocks that are marked as unfetched in `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`.
   For each uncle block a `hash` of nephew block and an `index` of the block in it are returned.
@@ -2545,24 +2511,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Count of pending `t:Explorer.Chain.Transaction.t/0`.
-
-  A count of all pending transactions.
-
-      iex> insert(:transaction)
-      iex> :transaction |> insert() |> with_block()
-      iex> Explorer.Chain.pending_transaction_count()
-      1
-
-  """
-  @spec pending_transaction_count() :: non_neg_integer()
-  def pending_transaction_count do
-    Transaction
-    |> pending_transactions_query()
-    |> Repo.aggregate(:count, :hash)
-  end
-
-  @doc """
   Returns the paged list of collated transactions that occurred recently from newest to oldest using `block_number`
   and `index`.
 
@@ -2690,68 +2638,6 @@ defmodule Explorer.Chain do
                 end)
             )).()
     end
-  end
-
-  @doc """
-  Return the list of pending transactions that occurred recently.
-
-      iex> 2 |> insert_list(:transaction)
-      iex> :transaction |> insert() |> with_block()
-      iex> 8 |> insert_list(:transaction)
-      iex> recent_pending_transactions = Explorer.Chain.recent_pending_transactions()
-      iex> length(recent_pending_transactions)
-      10
-      iex> Enum.all?(recent_pending_transactions, fn %Explorer.Chain.Transaction{block_hash: block_hash} ->
-      ...>   is_nil(block_hash)
-      ...> end)
-      true
-
-  ## Options
-
-    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association,
-      then the `t:Explorer.Chain.Transaction.t/0` will not be included in the list.
-    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` (defaults to
-      `#{@default_paging_options.page_size}`) and `:key` (a tuple of the lowest/oldest `{inserted_at, hash}`) and.
-      Results will be the transactions older than the `inserted_at` and `hash` that are passed.
-
-  """
-  @spec recent_pending_transactions([paging_options | necessity_by_association_option], true | false) :: [
-          Transaction.t()
-        ]
-  def recent_pending_transactions(options \\ [], old_ui? \\ true)
-      when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    method_id_filter = Keyword.get(options, :method)
-    type_filter = Keyword.get(options, :type)
-
-    Transaction
-    |> Transaction.page_pending_transaction(paging_options)
-    |> limit(^paging_options.page_size)
-    |> pending_transactions_query()
-    |> apply_filter_by_method_id_to_transactions(method_id_filter)
-    |> apply_filter_by_tx_type_to_transactions(type_filter)
-    |> order_by([transaction], desc: transaction.inserted_at, asc: transaction.hash)
-    |> join_associations(necessity_by_association)
-    |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
-    |> select_repo(options).all()
-  end
-
-  def pending_transactions_query(query) do
-    from(transaction in query,
-      where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
-    )
-  end
-
-  def pending_transactions_list do
-    query =
-      from(transaction in Transaction,
-        where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
-      )
-
-    query
-    |> Repo.all(timeout: :infinity)
   end
 
   @doc """
@@ -3819,83 +3705,6 @@ defmodule Explorer.Chain do
     address_hash
     |> Address.Token.list_address_tokens_with_balance(paging_options)
     |> Repo.all()
-  end
-
-  @spec find_and_update_replaced_transactions([
-          %{
-            required(:nonce) => non_neg_integer,
-            required(:from_address_hash) => Hash.Address.t(),
-            required(:hash) => Hash.t()
-          }
-        ]) :: {integer(), nil | [term()]}
-  def find_and_update_replaced_transactions(transactions, timeout \\ :infinity) do
-    query =
-      transactions
-      |> Enum.reduce(
-        Transaction,
-        fn %{hash: hash, nonce: nonce, from_address_hash: from_address_hash}, query ->
-          from(t in query,
-            or_where:
-              t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and t.hash != ^hash and
-                not is_nil(t.block_number)
-          )
-        end
-      )
-      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-      |> order_by(asc: :hash)
-      |> lock("FOR NO KEY UPDATE")
-
-    hashes = Enum.map(transactions, & &1.hash)
-
-    transactions_to_update =
-      from(pending in Transaction,
-        join: duplicate in subquery(query),
-        on: duplicate.nonce == pending.nonce,
-        on: duplicate.from_address_hash == pending.from_address_hash,
-        where: pending.hash in ^hashes and is_nil(pending.block_hash)
-      )
-
-    Repo.update_all(transactions_to_update, [set: [error: "dropped/replaced", status: :error]], timeout: timeout)
-  end
-
-  @spec update_replaced_transactions([
-          %{
-            required(:nonce) => non_neg_integer,
-            required(:from_address_hash) => Hash.Address.t(),
-            required(:block_hash) => Hash.Full.t()
-          }
-        ]) :: {integer(), nil | [term()]}
-  def update_replaced_transactions(transactions, timeout \\ :infinity) do
-    filters =
-      transactions
-      |> Enum.filter(fn transaction ->
-        transaction.block_hash && transaction.nonce && transaction.from_address_hash
-      end)
-      |> Enum.map(fn transaction ->
-        {transaction.nonce, transaction.from_address_hash}
-      end)
-      |> Enum.uniq()
-
-    if Enum.empty?(filters) do
-      {:ok, []}
-    else
-      query =
-        filters
-        |> Enum.reduce(Transaction, fn {nonce, from_address}, query ->
-          from(t in query,
-            or_where: t.nonce == ^nonce and t.from_address_hash == ^from_address and is_nil(t.block_hash)
-          )
-        end)
-        # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-        |> order_by(asc: :hash)
-        |> lock("FOR NO KEY UPDATE")
-
-      Repo.update_all(
-        from(t in Transaction, join: s in subquery(query), on: t.hash == s.hash),
-        [set: [error: "dropped/replaced", status: :error]],
-        timeout: timeout
-      )
-    end
   end
 
   @doc """
@@ -5060,7 +4869,7 @@ defmodule Explorer.Chain do
   end
 
   def recent_transactions(options, [:pending | _]) do
-    recent_pending_transactions(options, false)
+    Transaction.recent_pending_transactions(options, false)
   end
 
   def recent_transactions(options, _) do

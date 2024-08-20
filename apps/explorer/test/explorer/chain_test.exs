@@ -2195,13 +2195,13 @@ defmodule Explorer.ChainTest do
 
   describe "pending_transactions/0" do
     test "without transactions" do
-      assert [] = Chain.recent_pending_transactions()
+      assert [] = Transaction.recent_pending_transactions()
     end
 
     test "with transactions" do
       %Transaction{hash: hash} = insert(:transaction)
 
-      assert [%Transaction{hash: ^hash}] = Chain.recent_pending_transactions()
+      assert [%Transaction{hash: ^hash}] = Transaction.recent_pending_transactions()
     end
 
     test "with transactions can be paginated" do
@@ -2214,7 +2214,7 @@ defmodule Explorer.ChainTest do
 
       assert second_page_hashes ==
                [paging_options: %PagingOptions{key: {inserted_at, hash}, page_size: 50}]
-               |> Chain.recent_pending_transactions()
+               |> Transaction.recent_pending_transactions()
                |> Enum.map(& &1.hash)
                |> Enum.reverse()
     end
@@ -3355,76 +3355,6 @@ defmodule Explorer.ChainTest do
       assert balance_fields_list_by_address_hash[miner.hash] |> Enum.map(& &1.block_number) |> Enum.sort() == [
                block.number
              ]
-    end
-  end
-
-  describe "update_replaced_transactions/2" do
-    test "update replaced transactions" do
-      replaced_transaction_hash = "0x2a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
-
-      address = insert(:address, hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6")
-
-      insert(:transaction,
-        from_address: address,
-        nonce: 1,
-        block_hash: nil,
-        index: nil,
-        block_number: nil,
-        hash: replaced_transaction_hash
-      )
-
-      mined_transaction_hash = "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
-      block = insert(:block)
-
-      mined_transaction =
-        insert(:transaction,
-          from_address: address,
-          nonce: 1,
-          index: 0,
-          block_hash: block.hash,
-          block_number: block.number,
-          cumulative_gas_used: 1,
-          gas_used: 1,
-          hash: mined_transaction_hash
-        )
-
-      second_mined_transaction_hash = "0x3a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
-      second_block = insert(:block)
-
-      insert(:transaction,
-        from_address: address,
-        nonce: 1,
-        index: 0,
-        block_hash: second_block.hash,
-        block_number: second_block.number,
-        cumulative_gas_used: 1,
-        gas_used: 1,
-        hash: second_mined_transaction_hash
-      )
-
-      {1, _} =
-        Chain.update_replaced_transactions([
-          %{
-            block_hash: mined_transaction.block_hash,
-            nonce: mined_transaction.nonce,
-            from_address_hash: mined_transaction.from_address_hash
-          }
-        ])
-
-      replaced_transaction = Repo.get(Transaction, replaced_transaction_hash)
-
-      assert replaced_transaction.status == :error
-      assert replaced_transaction.error == "dropped/replaced"
-
-      found_mined_transaction = Repo.get(Transaction, mined_transaction_hash)
-
-      assert found_mined_transaction.status == nil
-      assert found_mined_transaction.error == nil
-
-      second_mined_transaction = Repo.get(Transaction, second_mined_transaction_hash)
-
-      assert second_mined_transaction.status == nil
-      assert second_mined_transaction.error == nil
     end
   end
 

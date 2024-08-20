@@ -465,7 +465,7 @@ defmodule Explorer.Etherscan do
 
     query
     |> where_address_match(address_hash, options)
-    |> Chain.pending_transactions_query()
+    |> Transaction.pending_transactions_query()
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> Repo.replica().all()
   end
