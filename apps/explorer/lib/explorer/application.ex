@@ -143,7 +143,7 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.TokenTransferBlockConsensus),
         configure(Explorer.Migrator.RestoreOmittedWETHTransfers),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability),
-        configure(Explorer.Migrator.ShrinkInternalTransactions)
+        configure_mode_dependent_process(Explorer.Migrator.ShrinkInternalTransactions, :indexer)
       ]
       |> List.flatten()
 
@@ -203,6 +203,14 @@ defmodule Explorer.Application do
 
   defp configure_chain_type_dependent_process(process, chain_type) do
     if Application.get_env(:explorer, :chain_type) == chain_type do
+      process
+    else
+      []
+    end
+  end
+
+  defp configure_mode_dependent_process(process, mode) do
+    if Application.get_env(:explorer, :mode) in [mode, :all] do
       process
     else
       []
