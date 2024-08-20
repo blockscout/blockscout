@@ -91,7 +91,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
-      Indexer.Fetcher.Filecoin.NativeAddress.Supervisor.Case.start_supervised!()
+      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!()
 
       # In CELO network, there is a token duality feature where CELO can be used
       # as both a native chain currency and as an ERC-20 token (GoldToken).
@@ -598,7 +598,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
         block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
       )
 
-      Indexer.Fetcher.Filecoin.NativeAddress.Supervisor.Case.start_supervised!()
+      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!()
 
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 

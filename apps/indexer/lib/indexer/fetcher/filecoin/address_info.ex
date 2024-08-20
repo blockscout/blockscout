@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.Filecoin.NativeAddress do
+defmodule Indexer.Fetcher.Filecoin.AddressInfo do
   @moduledoc """
   A task for fetching Filecoin addresses info in the Address table using the
   Beryx API.
@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
   alias Explorer.Repo
   alias Explorer.Chain.{Address, Filecoin.PendingAddressOperation}
   alias Indexer.Fetcher.Filecoin.BeryxAPI
-  alias Indexer.Fetcher.Filecoin.NativeAddress.Supervisor, as: FilecoinNativeAddressSupervisor
+  alias Indexer.Fetcher.Filecoin.AddressInfo.Supervisor, as: FilecoinAddressInfoSupervisor
   alias Indexer.{BufferedTask, Tracer}
 
   @http_error_codes 400..526
@@ -25,12 +25,12 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
   require Logger
 
   @doc """
-  Asynchronously fetches native filecoin addresses
+  Asynchronously fetches filecoin addresses info
   """
   @spec async_fetch([PendingAddressOperation.t()], boolean(), integer()) :: :ok
   def async_fetch(pending_operations, realtime?, timeout \\ 5000)
       when is_list(pending_operations) do
-    if FilecoinNativeAddressSupervisor.disabled?() do
+    if FilecoinAddressInfoSupervisor.disabled?() do
       :ok
     else
       unique_operations =
@@ -80,12 +80,12 @@ defmodule Indexer.Fetcher.Filecoin.NativeAddress do
       max_concurrency: env[:concurrency],
       max_batch_size: @batch_size,
       task_supervisor: __MODULE__.TaskSupervisor,
-      metadata: [fetcher: :filecoin_native_address]
+      metadata: [fetcher: :filecoin_address_info]
     ]
   end
 
   @doc """
-  Fetches the native Filecoin address for the given pending operation.
+  Fetches the Filecoin address info for the given pending operation.
   """
   @impl BufferedTask
   @decorate trace(

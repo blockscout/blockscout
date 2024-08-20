@@ -1,5 +1,5 @@
-defmodule Indexer.Fetcher.Filecoin.NativeAddress.Supervisor.Case do
-  alias Indexer.Fetcher.Filecoin.NativeAddress
+defmodule Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case do
+  alias Indexer.Fetcher.Filecoin.AddressInfo
 
   def start_supervised!(fetcher_arguments \\ []) when is_list(fetcher_arguments) do
     merged_fetcher_arguments =

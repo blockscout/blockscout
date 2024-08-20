@@ -1066,14 +1066,14 @@ config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
 
 filecoin_native_address_fetcher_enabled? =
   ConfigHelper.chain_type() == :filecoin and
-    not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_FILECOIN_NATIVE_ADDRESS_FETCHER")
+    not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_FILECOIN_ADDRESS_INFO_FETCHER")
 
-config :indexer, Indexer.Fetcher.Filecoin.NativeAddress.Supervisor,
+config :indexer, Indexer.Fetcher.Filecoin.AddressInfo.Supervisor,
   enabled: filecoin_native_address_fetcher_enabled?,
   disabled?: not filecoin_native_address_fetcher_enabled?
 
-config :indexer, Indexer.Fetcher.Filecoin.NativeAddress,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_FILECOIN_NATIVE_ADDRESS_CONCURRENCY", 1)
+config :indexer, Indexer.Fetcher.Filecoin.AddressInfo,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_FILECOIN_ADDRESS_INFO_CONCURRENCY", 1)
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
