@@ -271,7 +271,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
          {:ok, %{"address" => fee_beneficiary_address_hash}} <-
            CeloCoreContracts.get_event(:fee_handler, :fee_beneficiary_set, block_number),
          {:ok, %{"value" => burn_fraction_fixidity_lib}} <-
-           CeloCoreContracts.get_event(:fee_handler, :burn_fraction_set, block_number) do
+           CeloCoreContracts.get_event(:fee_handler, :burn_fraction_set, block_number),
+         {:ok, celo_token_address_hash} <- CeloCoreContracts.get_address(:celo_token, block_number) do
       burn_fraction = burn_fraction_decimal(burn_fraction_fixidity_lib)
 
       burnt_amount = Wei.mult(base_fee, burn_fraction)
@@ -317,18 +318,25 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           }
         )
 
+      celo_token = Token.get_by_contract_address_hash(celo_token_address_hash, api?: true)
+
       %{
         recipient: fee_handler_contract_address_info,
         amount: base_fee,
+        token:
+          TokenView.render("token.json", %{
+            token: celo_token,
+            contract_address_hash: celo_token.contract_address_hash
+          }),
         breakdown: [
           %{
             address: burn_address_info,
-            amount: Decimal.to_float(burnt_amount),
+            amount: burnt_amount,
             percentage: Decimal.to_float(burnt_percentage)
           },
           %{
             address: fee_beneficiary_address_info,
-            amount: Decimal.to_float(carbon_offsetting_amount),
+            amount: carbon_offsetting_amount,
             percentage: Decimal.to_float(carbon_offsetting_percentage)
           }
         ]
@@ -359,7 +367,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   defp governance_base_fee_breakdown(base_fee, block_number) do
     with {:ok, address_hash_string} when not is_nil(address_hash_string) <-
            CeloCoreContracts.get_address(:governance, block_number),
-         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, celo_token_address_hash} <- CeloCoreContracts.get_address(:celo_token, block_number) do
       address =
         address_hash
         # todo: Querying database in the view is not a good practice. Consider
@@ -376,9 +385,16 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           address_hash
         )
 
+      celo_token = Token.get_by_contract_address_hash(celo_token_address_hash, api?: true)
+
       %{
         recipient: address_with_info,
         amount: base_fee,
+        token:
+          TokenView.render("token.json", %{
+            token: celo_token,
+            contract_address_hash: celo_token.contract_address_hash
+          }),
         breakdown: []
       }
     else
