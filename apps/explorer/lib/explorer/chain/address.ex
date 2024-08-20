@@ -21,7 +21,6 @@ defmodule Explorer.Chain.Address.Schema do
   }
 
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
-  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
@@ -128,6 +127,8 @@ defmodule Explorer.Chain.Address do
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.{Chain, PagingOptions, Repo}
 

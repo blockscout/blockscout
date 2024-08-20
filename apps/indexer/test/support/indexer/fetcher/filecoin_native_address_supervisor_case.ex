@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case do
       )
 
     [merged_fetcher_arguments]
-    |> NativeAddress.Supervisor.child_spec()
+    |> AddressInfo.Supervisor.child_spec()
     |> ExUnit.Callbacks.start_supervised!()
   end
 end

@@ -20,13 +20,16 @@ defmodule Explorer.Migrator.FilecoinPendingAddressOperations do
   def migration_name, do: @migration_name
 
   @impl FillingMigration
-  def last_unprocessed_identifiers do
+  def last_unprocessed_identifiers(state) do
     limit = batch_size() * concurrency()
 
-    unprocessed_data_query()
-    |> select([address], address.hash)
-    |> limit(^limit)
-    |> Repo.all(timeout: :infinity)
+    ids =
+      unprocessed_data_query()
+      |> select([address], address.hash)
+      |> limit(^limit)
+      |> Repo.all(timeout: :infinity)
+
+    {ids, state}
   end
 
   @impl FillingMigration

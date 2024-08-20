@@ -10,10 +10,10 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
   use Spandex.Decorators
 
   alias Ecto.Multi
-  alias Explorer.Repo
   alias Explorer.Chain.{Address, Filecoin.PendingAddressOperation}
-  alias Indexer.Fetcher.Filecoin.BeryxAPI
+  alias Explorer.Repo
   alias Indexer.Fetcher.Filecoin.AddressInfo.Supervisor, as: FilecoinAddressInfoSupervisor
+  alias Indexer.Fetcher.Filecoin.BeryxAPI
   alias Indexer.{BufferedTask, Tracer}
 
   @http_error_codes 400..526
