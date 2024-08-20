@@ -736,6 +736,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "txhash" => "#{transaction.hash}"
       }
 
+      init_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
+
       assert response =
                conn
                |> get("/api", params)
@@ -744,6 +747,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       assert response["result"]["revertReason"] == hex_reason
       assert response["status"] == "1"
       assert response["message"] == "OK"
+
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, init_config)
     end
   end
 
@@ -836,6 +841,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       "txhash" => "#{transaction.hash}"
     }
 
+    init_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
+
     assert response =
              conn
              |> get("/api", params)
@@ -844,6 +852,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
     assert response["result"]["revertReason"] in ["", "0x"]
     assert response["status"] == "1"
     assert response["message"] == "OK"
+
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, init_config)
   end
 
   defp resolve_schema(result \\ %{}) do

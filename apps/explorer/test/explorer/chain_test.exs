@@ -4324,6 +4324,9 @@ defmodule Explorer.ChainTest do
         end
       )
 
+      init_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
+
       assert Chain.transaction_to_revert_reason(transaction) == hex_reason
 
       assert Transaction.decoded_revert_reason(transaction, hex_reason) == {
@@ -4332,6 +4335,8 @@ defmodule Explorer.ChainTest do
                "Error(string reason)",
                [{"reason", "string", "No credit of that type"}]
              }
+
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, init_config)
     end
   end
 
