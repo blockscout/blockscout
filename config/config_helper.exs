@@ -322,6 +322,11 @@ defmodule ConfigHelper do
   @spec chain_type() :: atom() | nil
   def chain_type, do: parse_catalog_value("CHAIN_TYPE", @supported_chain_types, true, "default")
 
+  @supported_modes ["all", "indexer", "api"]
+
+  @spec mode :: atom()
+  def mode, do: parse_catalog_value("MODE", @supported_modes, true, "all")
+
   @spec eth_call_url(String.t() | nil) :: String.t() | nil
   def eth_call_url(default \\ nil) do
     System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URL") || System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || default
