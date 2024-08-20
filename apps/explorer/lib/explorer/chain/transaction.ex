@@ -430,7 +430,7 @@ defmodule Explorer.Chain.Transaction do
       processing.
    * `error` - the `error` from the last `t:Explorer.Chain.InternalTransaction.t/0` in `internal_transactions` that
      caused `status` to be `:error`.  Only set after `internal_transactions_index_at` is set AND if there was an error.
-     Also, `error` is set if transaction is replaced/dropped
+     Also, `error` is set if transaction is dropped/replaced
    * `forks` - copies of this transactions that were collated into `uncles` not on the primary consensus of the chain.
    * `from_address` - the source of `value`
    * `from_address_hash` - foreign key of `from_address`
