@@ -576,6 +576,7 @@ defmodule Explorer.Token.MetadataRetriever do
     {:error, "unknown metadata uri format"}
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp fetch_from_ipfs?(token_uri_string, ipfs?, token_id, hex_token_id, from_base_uri?) do
     case URI.parse(token_uri_string) do
       %URI{scheme: "ipfs", path: path} ->
@@ -599,10 +600,20 @@ defmodule Explorer.Token.MetadataRetriever do
       %URI{scheme: scheme} when not is_nil(scheme) ->
         fetch_metadata_inner(token_uri_string, ipfs?, token_id, hex_token_id, from_base_uri?)
 
-      %URI{path: _path} ->
-        json = ExplorerHelper.decode_json(token_uri_string, true)
+      %URI{path: path} ->
+        case path do
+          "Qm" <> <<_::binary-size(44)>> = resource_id ->
+            fetch_from_ipfs(resource_id, hex_token_id)
 
-        check_type(json, hex_token_id)
+          # todo: rewrite for strict CID v1 support
+          "bafybe" <> _ = resource_id ->
+            fetch_from_ipfs(resource_id, hex_token_id)
+
+          _ ->
+            json = ExplorerHelper.decode_json(token_uri_string, true)
+
+            check_type(json, hex_token_id)
+        end
     end
   rescue
     e ->
