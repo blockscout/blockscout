@@ -885,7 +885,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                 }}
     end
 
-    test "fetches image from ipfs link directly", %{bypass: bypass} do
+    test "fetches image from ipfs link directly" do
       path = "/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
 
       json = """
@@ -917,7 +917,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
               }} == MetadataRetriever.fetch_json(data)
     end
 
-    test "Fetches metadata from ipfs", %{bypass: bypass} do
+    test "Fetches metadata from ipfs" do
       path = "/ipfs/bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
 
       json = """
