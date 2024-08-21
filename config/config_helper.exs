@@ -325,7 +325,7 @@ defmodule ConfigHelper do
   @supported_modes ["all", "indexer", "api"]
 
   @spec mode :: atom()
-  def mode, do: parse_catalog_value("MODE", @supported_modes, true, "all")
+  def mode, do: parse_catalog_value("APPLICATION_MODE", @supported_modes, true, "all")
 
   @spec eth_call_url(String.t() | nil) :: String.t() | nil
   def eth_call_url(default \\ nil) do
