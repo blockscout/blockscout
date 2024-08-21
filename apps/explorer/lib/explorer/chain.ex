@@ -3881,14 +3881,17 @@ defmodule Explorer.Chain do
       |> Enum.uniq()
 
     if Enum.empty?(filters) do
-      {:ok, []}
+      {0, []}
     else
       query =
         filters
         |> Enum.reduce(Transaction, fn {nonce, from_address}, query ->
           from(t in query,
             or_where:
-              t.nonce == ^nonce and t.from_address_hash == ^from_address and is_nil(t.block_hash) and is_nil(t.error)
+              t.nonce == ^nonce and
+                t.from_address_hash == ^from_address and
+                is_nil(t.block_hash) and
+                (is_nil(t.error) or t.error != "dropped/replaced")
           )
         end)
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
