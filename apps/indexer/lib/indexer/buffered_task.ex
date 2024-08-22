@@ -1140,7 +1140,8 @@ defmodule Indexer.BufferedTask do
   # - The function ensures that no more than `max_batch_size` entries are taken.
   # - If the queue becomes empty before taking all requested entries, the function
   #   returns with whatever entries it has accumulated so far.
-  @spec take_batch(%__MODULE__{bound_queue: BoundQueue.t(term()), max_batch_size: non_neg_integer()}) :: {entries(), t()}
+  @spec take_batch(%__MODULE__{bound_queue: BoundQueue.t(term()), max_batch_size: non_neg_integer()}) ::
+          {entries(), t()}
   defp take_batch(%__MODULE__{bound_queue: bound_queue, max_batch_size: max_batch_size} = state) do
     {batch, new_bound_queue} = take_batch(bound_queue, max_batch_size)
     {batch, %__MODULE__{state | bound_queue: new_bound_queue}}
@@ -1313,7 +1314,12 @@ defmodule Indexer.BufferedTask do
     This function is public to allow it to be called by `Task.Supervisor`, but it's
     not intended for direct use outside of the BufferedTask context.
   """
-  @spec log_run(%{metadata: Logger.metadata(), callback_module: module(), batch: entries(), callback_module_state: term()}) ::
+  @spec log_run(%{
+          metadata: Logger.metadata(),
+          callback_module: module(),
+          batch: entries(),
+          callback_module_state: term()
+        }) ::
           any()
   def log_run(%{
         metadata: metadata,
