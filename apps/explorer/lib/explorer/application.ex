@@ -210,7 +210,7 @@ defmodule Explorer.Application do
   end
 
   defp configure_mode_dependent_process(process, mode) do
-    if Application.get_env(:explorer, :mode) in [mode, :all] do
+    if should_start?(process) and Application.get_env(:explorer, :mode) in [mode, :all] do
       process
     else
       []
