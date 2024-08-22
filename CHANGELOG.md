@@ -31,6 +31,13 @@
 
 ### 🐛 Bug Fixes
 
+- Fix bug in update_replaced_transactions query ([#10634](https://github.com/blockscout/blockscout/issues/10634))
+- Fix mode dependent processes starting ([#10641](https://github.com/blockscout/blockscout/issues/10641))
+- Better detection IPFS links in NFT metadata fetcher ([#10638](https://github.com/blockscout/blockscout/issues/10638))
+- Change mode env name ([#10636](https://github.com/blockscout/blockscout/issues/10636))
+- Proper default value of gas used for dropped Arbitrum transactions ([#10619](https://github.com/blockscout/blockscout/issues/10619))
+- Fix fetch_first_trace tests ([#10618](https://github.com/blockscout/blockscout/issues/10618))
+- Add SHRINK_INTERNAL_TRANSACTIONS_ENABLED arg to Dockerfile ([#10616](https://github.com/blockscout/blockscout/issues/10616))
 - Fix raw-trace test ([#10606](https://github.com/blockscout/blockscout/issues/10606))
 - Fix internal transaction validation ([#10443](https://github.com/blockscout/blockscout/issues/10443))
 - Fix internal transactions runner test for zetachain ([#10576](https://github.com/blockscout/blockscout/issues/10576))
@@ -86,6 +93,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Run shrink internal transactions migration for indexer instance only ([#10631](https://github.com/blockscout/blockscout/issues/10631))
 - Shrink internal transactions ([#10567](https://github.com/blockscout/blockscout/issues/10567))
 - Upgrade WS client ([#10407](https://github.com/blockscout/blockscout/issues/10407))
 - Add API endpoint for OP batch blocks ([#10566](https://github.com/blockscout/blockscout/issues/10566))
