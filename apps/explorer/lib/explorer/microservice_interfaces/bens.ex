@@ -113,7 +113,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   defp http_get_request(url, query_params) do
-    case HTTPoison.get(url, [], params: query_params) do
+    case HTTPoison.get(url, [], params: query_params) |> dbg() do
       {:ok, %Response{body: body, status_code: 200}} ->
         Jason.decode(body)
 

@@ -598,12 +598,13 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_ens_name(search_query, options) do
-    if result = search_ens_name_in_bens(search_query) do
+    if result = search_ens_name_in_bens(search_query) |> dbg() do
       [
         result[:address_hash]
         |> search_address_query()
         |> select_repo(options).all()
         |> merge_address_search_result_with_ens_info(result)
+        |> dbg()
       ]
     else
       []
