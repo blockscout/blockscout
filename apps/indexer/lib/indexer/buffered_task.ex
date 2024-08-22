@@ -1175,7 +1175,7 @@ defmodule Indexer.BufferedTask do
   #
   # This function has two clauses:
   # 1. When the queue is empty, there are no ongoing tasks, and polling is enabled,
-  #    it reinitializes the stream to fetch more work.
+  #    it re-initializes the stream to fetch more work.
   # 2. In all other cases, it schedules the next buffer flush.
   #
   # ## Parameters
