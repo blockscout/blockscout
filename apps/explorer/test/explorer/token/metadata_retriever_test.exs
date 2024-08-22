@@ -885,7 +885,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                 }}
     end
 
-    test "fetches image from ipfs link directly", %{bypass: bypass} do
+    test "fetches image from ipfs link directly" do
       path = "/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
 
       json = """
@@ -894,14 +894,19 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       }
       """
 
-      Bypass.expect(bypass, "GET", path, fn conn ->
-        Conn.resp(conn, 200, json)
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu",
+                         _headers,
+                         _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: json}}
       end)
 
       data =
         {:ok,
          [
-           "http://localhost:#{bypass.port}#{path}"
+           path
          ]}
 
       assert {:ok,
@@ -912,7 +917,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
               }} == MetadataRetriever.fetch_json(data)
     end
 
-    test "Fetches metadata from ipfs", %{bypass: bypass} do
+    test "Fetches metadata from ipfs" do
       path = "/ipfs/bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
 
       json = """
@@ -921,14 +926,19 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       }
       """
 
-      Bypass.expect(bypass, "GET", path, fn conn ->
-        Conn.resp(conn, 200, json)
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn "https://ipfs.io/ipfs/bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json",
+                         _headers,
+                         _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: json}}
       end)
 
       data =
         {:ok,
          [
-           "http://localhost:#{bypass.port}#{path}"
+           path
          ]}
 
       {:ok,
@@ -937,6 +947,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
        }} = MetadataRetriever.fetch_json(data)
 
       assert "ipfs://bafybeihxuj3gxk7x5p36amzootyukbugmx3pw7dyntsrohg3se64efkuga/51.png" == Map.get(metadata, "image")
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "Fetches metadata from '${url}'", %{bypass: bypass} do

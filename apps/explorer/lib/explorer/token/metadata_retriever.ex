@@ -13,7 +13,6 @@ defmodule Explorer.Token.MetadataRetriever do
 
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
-  @ipfs_protocol "ipfs://"
   @invalid_base64_data "invalid data:application/json;base64"
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
@@ -515,28 +514,8 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
-  # CIDv0 IPFS links # https://docs.ipfs.tech/concepts/content-addressing/#version-0-v0
-  defp fetch_json_from_uri({:ok, ["Qm" <> _ = result]}, _, token_id, hex_token_id, from_base_uri?) do
-    if String.length(result) == 46 do
-      ipfs? = true
-      fetch_json_from_uri({:ok, [ipfs_link(result)]}, ipfs?, token_id, hex_token_id, from_base_uri?)
-    else
-      Logger.warning(["Unknown metadata format result #{inspect(result)}."], fetcher: :token_instances)
-
-      {:error, truncate_error(result)}
-    end
-  end
-
   defp fetch_json_from_uri({:ok, ["'" <> token_uri]}, ipfs?, token_id, hex_token_id, from_base_uri?) do
     token_uri = token_uri |> String.split("'") |> List.first()
-    fetch_metadata_inner(token_uri, ipfs?, token_id, hex_token_id, from_base_uri?)
-  end
-
-  defp fetch_json_from_uri({:ok, ["http://" <> _ = token_uri]}, ipfs?, token_id, hex_token_id, from_base_uri?) do
-    fetch_metadata_inner(token_uri, ipfs?, token_id, hex_token_id, from_base_uri?)
-  end
-
-  defp fetch_json_from_uri({:ok, ["https://" <> _ = token_uri]}, ipfs?, token_id, hex_token_id, from_base_uri?) do
     fetch_metadata_inner(token_uri, ipfs?, token_id, hex_token_id, from_base_uri?)
   end
 
@@ -587,35 +566,63 @@ defmodule Explorer.Token.MetadataRetriever do
       {:error, @invalid_base64_data}
   end
 
-  defp fetch_json_from_uri({:ok, ["#{@ipfs_protocol}ipfs/" <> right]}, _ipfs?, _token_id, hex_token_id, _from_base_uri?) do
-    fetch_from_ipfs(right, hex_token_id)
-  end
-
-  defp fetch_json_from_uri({:ok, ["ipfs/" <> right]}, _ipfs?, _token_id, hex_token_id, _from_base_uri?) do
-    fetch_from_ipfs(right, hex_token_id)
-  end
-
-  defp fetch_json_from_uri({:ok, [@ipfs_protocol <> right]}, _ipfs?, _token_id, hex_token_id, _from_base_uri?) do
-    fetch_from_ipfs(right, hex_token_id)
-  end
-
-  defp fetch_json_from_uri({:ok, [json]}, _ipfs?, _token_id, hex_token_id, _from_base_uri?) do
-    json = ExplorerHelper.decode_json(json, true)
-
-    check_type(json, hex_token_id)
-  rescue
-    e ->
-      Logger.warning(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
-        fetcher: :token_instances
-      )
-
-      {:error, "invalid json"}
+  defp fetch_json_from_uri({:ok, [token_uri_string]}, ipfs?, token_id, hex_token_id, from_base_uri?) do
+    fetch_from_ipfs?(token_uri_string, ipfs?, token_id, hex_token_id, from_base_uri?)
   end
 
   defp fetch_json_from_uri(uri, _ipfs?, _token_id, _hex_token_id, _from_base_uri?) do
     Logger.warning(["Unknown metadata uri format #{inspect(uri)}."], fetcher: :token_instances)
 
     {:error, "unknown metadata uri format"}
+  end
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp fetch_from_ipfs?(token_uri_string, ipfs?, token_id, hex_token_id, from_base_uri?) do
+    case URI.parse(token_uri_string) do
+      %URI{scheme: "ipfs", path: path} ->
+        resource_id =
+          case path do
+            "/ipfs/" <> resource_id ->
+              resource_id
+
+            "/" <> resource_id ->
+              resource_id
+          end
+
+        fetch_from_ipfs(resource_id, hex_token_id)
+
+      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
+        fetch_from_ipfs(resource_id, hex_token_id)
+
+      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
+        fetch_from_ipfs(resource_id, hex_token_id)
+
+      %URI{scheme: scheme} when not is_nil(scheme) ->
+        fetch_metadata_inner(token_uri_string, ipfs?, token_id, hex_token_id, from_base_uri?)
+
+      %URI{path: path} ->
+        case path do
+          "Qm" <> <<_::binary-size(44)>> = resource_id ->
+            fetch_from_ipfs(resource_id, hex_token_id)
+
+          # todo: rewrite for strict CID v1 support
+          "bafybe" <> _ = resource_id ->
+            fetch_from_ipfs(resource_id, hex_token_id)
+
+          _ ->
+            json = ExplorerHelper.decode_json(token_uri_string, true)
+
+            check_type(json, hex_token_id)
+        end
+    end
+  rescue
+    e ->
+      Logger.warning(
+        ["Unknown metadata format #{inspect(token_uri_string)}.", Exception.format(:error, e, __STACKTRACE__)],
+        fetcher: :token_instances
+      )
+
+      {:error, "invalid token_uri_string"}
   end
 
   defp fetch_json_from_json_string(json, ipfs?, token_id, hex_token_id, from_base_uri?, type) do
