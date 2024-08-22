@@ -93,6 +93,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Make Dockerfile use specified user with uid/gid ([#10070](https://github.com/blockscout/blockscout/pull/10070))
 - Run shrink internal transactions migration for indexer instance only ([#10631](https://github.com/blockscout/blockscout/issues/10631))
 - Shrink internal transactions ([#10567](https://github.com/blockscout/blockscout/issues/10567))
 - Upgrade WS client ([#10407](https://github.com/blockscout/blockscout/issues/10407))
