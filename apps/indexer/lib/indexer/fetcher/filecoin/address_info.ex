@@ -206,6 +206,8 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
             Logger.error("Could not update pending operation with error status code: #{inspect(changeset)}")
         end
 
+        :error
+
       error ->
         Logger.error("Error processing Beryx API response: #{inspect(error)}")
         :error
