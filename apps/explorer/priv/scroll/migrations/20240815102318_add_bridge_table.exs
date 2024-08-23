@@ -18,5 +18,7 @@ defmodule Explorer.Repo.Scroll.Migrations.AddBridgeTable do
       add(:message_hash, :bytea, null: false, primary_key: true)
       timestamps(null: false, type: :utc_datetime_usec)
     end
+
+    create(index(:scroll_bridge, [:type, :index]))
   end
 end

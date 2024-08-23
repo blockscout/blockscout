@@ -64,6 +64,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.Arbitrum.DaMultiPurposeRecords
     ],
     scroll: [
+      Runner.Scroll.BridgeOperations,
       Runner.Scroll.L1FeeParams
     ],
     celo: [

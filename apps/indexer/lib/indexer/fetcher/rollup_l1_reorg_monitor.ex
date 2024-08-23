@@ -43,6 +43,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
           Indexer.Fetcher.PolygonEdge.Deposit,
           Indexer.Fetcher.PolygonEdge.WithdrawalExit,
           Indexer.Fetcher.PolygonZkevm.BridgeL1,
+          Indexer.Fetcher.Scroll.BridgeL1,
           Indexer.Fetcher.Shibarium.L1
         ]
 
