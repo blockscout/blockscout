@@ -579,14 +579,14 @@ defmodule Explorer.Token.MetadataRetriever do
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp fetch_from_ipfs?(token_uri_string, ipfs?, token_id, hex_token_id, from_base_uri?) do
     case URI.parse(token_uri_string) do
-      %URI{scheme: "ipfs", path: path} ->
+      %URI{scheme: "ipfs", host: host, path: path} ->
         resource_id =
-          case path do
-            "/ipfs/" <> resource_id ->
-              resource_id
-
-            "/" <> resource_id ->
-              resource_id
+          if host == "ipfs" do
+            "/" <> resource_id = path
+            resource_id
+          else
+            # credo:disable-for-next-line
+            if is_nil(path), do: host, else: host <> path
           end
 
         fetch_from_ipfs(resource_id, hex_token_id)
