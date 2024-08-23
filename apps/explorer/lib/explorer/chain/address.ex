@@ -328,7 +328,7 @@ defmodule Explorer.Chain.Address do
 
     if is_nil(paging_options.key) do
       paging_options.page_size
-      |> Accounts.take_enough()
+      |> Accounts.atomic_take_enough()
       |> case do
         nil ->
           get_addresses(options)
