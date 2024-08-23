@@ -1100,6 +1100,17 @@ config :indexer, Indexer.Fetcher.Scroll.L1FeeParam,
 
 config :indexer, Indexer.Fetcher.Scroll.L1FeeParam.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
 
+config :indexer, Indexer.Fetcher.Scroll.BridgeL1,
+  rpc: System.get_env("INDEXER_SCROLL_L1_RPC"),
+  messenger_contract: System.get_env("INDEXER_SCROLL_L1_MESSENGER_CONTRACT"),
+  start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_SCROLL_L1_MESSENGER_START_BLOCK")
+
+config :indexer, Indexer.Fetcher.Scroll.BridgeL2, messenger_contract: System.get_env("INDEXER_SCROLL_L2_MESSENGER_CONTRACT")
+
+config :indexer, Indexer.Fetcher.Scroll.BridgeL1.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
+
+config :indexer, Indexer.Fetcher.Scroll.BridgeL2.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
