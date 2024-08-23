@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  import BlockScoutWeb.WebRouter.Helpers,
+  import BlockScoutWeb.Routers.WebRouter.Helpers,
     only: [address_internal_transaction_path: 3, address_internal_transaction_path: 4]
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction}
@@ -402,6 +402,19 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       third_page_items = third_page_to_items ++ third_page_from_items
 
       path = address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash))
+
+      empty_page_response =
+        conn
+        |> get(path, %{
+          "block_number" => Integer.to_string(0),
+          "transaction_index" => Integer.to_string(0),
+          "index" => "0",
+          "type" => "JSON"
+        })
+        |> json_response(200)
+        |> Map.get("items")
+
+      assert Enum.count(empty_page_response) == 0
 
       first_page_response =
         conn

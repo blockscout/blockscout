@@ -46,8 +46,13 @@ defmodule Indexer.Supervisor do
     Withdrawal
   }
 
+  alias Indexer.Fetcher.Arbitrum.RollupMessagesCatchup, as: ArbitrumRollupMessagesCatchup
+  alias Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses, as: ArbitrumTrackingBatchesStatuses
+  alias Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1, as: ArbitrumTrackingMessagesOnL1
+  alias Indexer.Fetcher.ZkSync.BatchesStatusTracker, as: ZkSyncBatchesStatusTracker
+  alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
+
   alias Indexer.Temporary.{
-    BlocksTransactionsMismatch,
     UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
@@ -114,8 +119,6 @@ defmodule Indexer.Supervisor do
         {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         # Async catchup fetchers
         {UncleBlock.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor]]},
-        {BlockReward.Supervisor,
-         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {InternalTransaction.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {CoinBalanceCatchup.Supervisor,
@@ -137,19 +140,19 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
-        configure(Indexer.Fetcher.Optimism.Supervisor, [[memory_monitor: memory_monitor]]),
+        {Indexer.Fetcher.RollupL1ReorgMonitor.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(
           Indexer.Fetcher.Optimism.TxnBatch.Supervisor,
           [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
         ),
         configure(Indexer.Fetcher.Optimism.OutputRoot.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.Optimism.DisputeGame.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.Optimism.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(
           Indexer.Fetcher.Optimism.Withdrawal.Supervisor,
           [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
         ),
         configure(Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, [[memory_monitor: memory_monitor]]),
-        {Indexer.Fetcher.RollupL1ReorgMonitor.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor, [
           [memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]
@@ -167,7 +170,22 @@ defmodule Indexer.Supervisor do
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
+        configure(ZkSyncTransactionBatch.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ZkSyncBatchesStatusTracker.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
         configure(Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ArbitrumTrackingMessagesOnL1.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ArbitrumTrackingBatchesStatuses.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ArbitrumRollupMessagesCatchup.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},
@@ -180,8 +198,6 @@ defmodule Indexer.Supervisor do
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},
         {UnclesWithoutIndex.Supervisor,
-         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-        {BlocksTransactionsMismatch.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},
         {PendingBlockOperationsSanitizer, [[]]},
@@ -207,6 +223,9 @@ defmodule Indexer.Supervisor do
       basic_fetchers
       |> maybe_add_bridged_tokens_fetchers()
       |> add_chain_type_dependent_fetchers()
+      |> maybe_add_block_reward_fetcher(
+        {BlockReward.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
+      )
 
     Supervisor.init(
       all_fetchers,
@@ -231,9 +250,29 @@ defmodule Indexer.Supervisor do
     end
   end
 
+  @variants_with_implemented_fetch_beneficiaries [
+    EthereumJSONRPC.Besu,
+    EthereumJSONRPC.Erigon,
+    EthereumJSONRPC.Nethermind
+  ]
+
+  defp maybe_add_block_reward_fetcher(
+         fetchers,
+         {_, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: _memory_monitor]]} = params
+       ) do
+    case Keyword.fetch(json_rpc_named_arguments, :variant) do
+      {:ok, ignored_variant} when ignored_variant not in @variants_with_implemented_fetch_beneficiaries ->
+        Application.put_env(:indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true)
+        fetchers
+
+      _ ->
+        [params | fetchers]
+    end
+  end
+
   defp add_chain_type_dependent_fetchers(fetchers) do
     case Application.get_env(:explorer, :chain_type) do
-      "stability" ->
+      :stability ->
         [{ValidatorStability, []} | fetchers]
 
       _ ->

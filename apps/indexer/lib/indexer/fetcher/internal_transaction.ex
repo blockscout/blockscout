@@ -16,7 +16,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Accounts, Blocks}
-  alias Explorer.Chain.Import.Runner.Blocks, as: BlocksRunner
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
   alias Indexer.Transform.Addresses
@@ -42,12 +41,12 @@ defmodule Indexer.Fetcher.InternalTransaction do
   *Note*: The internal transactions for individual transactions cannot be paginated,
   so the total number of internal transactions that could be produced is unknown.
   """
-  @spec async_fetch([Block.block_number()]) :: :ok
-  def async_fetch(block_numbers, timeout \\ 5000) when is_list(block_numbers) do
+  @spec async_fetch([Block.block_number()], boolean()) :: :ok
+  def async_fetch(block_numbers, realtime?, timeout \\ 5000) when is_list(block_numbers) do
     if InternalTransactionSupervisor.disabled?() do
       :ok
     else
-      BufferedTask.buffer(__MODULE__, block_numbers, timeout)
+      BufferedTask.buffer(__MODULE__, block_numbers, realtime?, timeout)
     end
   end
 
@@ -97,7 +96,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     unique_numbers =
       block_numbers
       |> Enum.uniq()
-      |> Chain.filter_consensus_block_numbers()
+      |> Chain.filter_non_refetch_needed_block_numbers()
 
     filtered_unique_numbers =
       unique_numbers
@@ -119,7 +118,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
       {:error, reason} ->
         Logger.error(
           fn ->
-            ["failed to fetch internal transactions for blocks: ", Exception.format(:error, reason)]
+            [
+              "failed to fetch internal transactions for blocks #{inspect(filtered_unique_numbers)}: ",
+              Exception.format(:error, reason)
+            ]
           end,
           error_count: filtered_unique_numbers_count
         )
@@ -132,7 +134,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
       {:error, reason, stacktrace} ->
         Logger.error(
           fn ->
-            ["failed to fetch internal transactions for blocks: ", Exception.format(:error, reason, stacktrace)]
+            [
+              "failed to fetch internal transactions for blocks #{inspect(filtered_unique_numbers)}: ",
+              Exception.format(:error, reason, stacktrace)
+            ]
           end,
           error_count: filtered_unique_numbers_count
         )
@@ -241,7 +246,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   @zetachain_non_traceable_type 88
   defp filter_non_traceable_transactions(transactions) do
     case Application.get_env(:explorer, :chain_type) do
-      "zetachain" -> Enum.reject(transactions, &(&1.type == @zetachain_non_traceable_type))
+      :zetachain -> Enum.reject(transactions, &(&1.type == @zetachain_non_traceable_type))
       _ -> transactions
     end
   end
@@ -347,7 +352,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   defp has_failed_parent?(_failed_parent_paths, [], _reverse_path_acc), do: false
 
   defp handle_unique_key_violation(%{exception: %{postgres: %{code: :unique_violation}}}, block_numbers) do
-    BlocksRunner.invalidate_consensus_blocks(block_numbers)
+    Block.set_refetch_needed(block_numbers)
 
     Logger.error(fn ->
       [
@@ -360,7 +365,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   defp handle_unique_key_violation(_reason, _block_numbers), do: :ok
 
   defp handle_foreign_key_violation(internal_transactions_params, block_numbers) do
-    BlocksRunner.invalidate_consensus_blocks(block_numbers)
+    Block.set_refetch_needed(block_numbers)
 
     transaction_hashes =
       internal_transactions_params
@@ -389,10 +394,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp invalidate_block_from_error(%{"blockNumber" => block_number}),
-    do: BlocksRunner.invalidate_consensus_blocks([block_number])
+    do: Block.set_refetch_needed([block_number])
 
   defp invalidate_block_from_error(%{block_number: block_number}),
-    do: BlocksRunner.invalidate_consensus_blocks([block_number])
+    do: Block.set_refetch_needed([block_number])
 
   defp invalidate_block_from_error(_error_data), do: :ok
 

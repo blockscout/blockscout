@@ -31,7 +31,7 @@ services:
         CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
         CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
         ADMIN_PANEL_ENABLED: ""
-        RELEASE_VERSION: 6.2.2
+        RELEASE_VERSION: 6.7.2
     links:
       - db:database
     environment:
@@ -60,6 +60,9 @@ services:
         MICROSERVICE_SIG_PROVIDER_ENABLED: "false"
         INDEXER_TOKEN_INSTANCE_RETRY_REFETCH_INTERVAL: "30s"
         ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT: "30s"
+        RE_CAPTCHA_CLIENT_KEY: "6LcUCysqAAAAAB62o5u8RnB_FzMELuEnxPPst_ET"
+        RE_CAPTCHA_SECRET_KEY: ${RE_CAPTCHA_SECRET_KEY}
+        DATABASE_URL: "postgresql://blockscout:${DB_PASSWORD:-ceWb1MeLBEeOIfk65gU8EjF8}@db:5432/blockscout"
 
   frontend:
     depends_on:

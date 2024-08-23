@@ -59,7 +59,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, uncles}} ->
+            {:"$gen_call", from, {:buffer, uncles, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:uncles, uncles})
           end
@@ -434,7 +434,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, block_numbers}} ->
+            {:"$gen_call", from, {:buffer, block_numbers, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:block_numbers, block_numbers})
           end
@@ -584,7 +584,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       pid =
         spawn_link(fn ->
           receive do
-            {:"$gen_call", from, {:buffer, block_numbers}} ->
+            {:"$gen_call", from, {:buffer, block_numbers, _front?}} ->
               GenServer.reply(from, :ok)
               send(parent, {:block_numbers, block_numbers})
           end

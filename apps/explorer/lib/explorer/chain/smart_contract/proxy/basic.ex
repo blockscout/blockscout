@@ -9,7 +9,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Basic do
   @doc """
   Gets implementation hash string of proxy contract from getter.
   """
-  @spec get_implementation_address_hash_string(binary, binary, SmartContract.abi()) :: nil | binary
+  @spec get_implementation_address_hash_string(binary, binary, SmartContract.abi()) :: nil | binary() | [binary()]
   def get_implementation_address_hash_string(signature, proxy_address_hash, abi) do
     implementation_address =
       case Reader.query_contract(
@@ -30,8 +30,13 @@ defmodule Explorer.Chain.SmartContract.Proxy.Basic do
   @doc """
   Adds 0x to address at the beginning
   """
-  @spec adds_0x_to_address(nil | binary()) :: nil | binary()
+  @spec adds_0x_to_address(nil | binary()) :: nil | binary() | [binary()]
   def adds_0x_to_address(nil), do: nil
+
+  def adds_0x_to_address(addresses) when is_list(addresses) do
+    addresses
+    |> Enum.map(fn address -> adds_0x_to_address(address) end)
+  end
 
   def adds_0x_to_address(address) do
     if address do

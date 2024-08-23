@@ -7,8 +7,9 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Token.Instance
 
   @api_true [api?: true]
@@ -34,7 +35,11 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   end
 
   def render("coin_balances_by_day.json", %{coin_balances_by_day: coin_balances_by_day}) do
-    Enum.map(coin_balances_by_day, &prepare_coin_balance_history_by_day_entry/1)
+    %{
+      :items => Enum.map(coin_balances_by_day, &prepare_coin_balance_history_by_day_entry/1),
+      :days =>
+        Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
+    }
   end
 
   def render("tokens.json", %{tokens: tokens, next_page_params: next_page_params}) do
@@ -90,17 +95,15 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
     is_proxy = AddressView.smart_contract_is_proxy?(address_with_smart_contract, @api_true)
 
-    {implementation_address, implementation_name} =
+    implementations =
       with true <- is_proxy,
-           {address, name} <-
-             SmartContract.get_implementation_address_hash(address_with_smart_contract.smart_contract, @api_true),
-           false <- is_nil(address),
-           {:ok, address_hash} <- Chain.string_to_address_hash(address),
-           checksummed_address <- Address.checksum(address_hash) do
-        {checksummed_address, name}
+           {addresses, names} <-
+             Implementation.get_implementation(address_with_smart_contract.smart_contract, @api_true),
+           false <- addresses && Enum.empty?(addresses) do
+        Helper.proxy_object_info(addresses, names)
       else
         _ ->
-          {nil, nil}
+          []
       end
 
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
@@ -110,33 +113,47 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     creation_tx = creator_hash && AddressView.transaction_hash(address)
     token = address.token && TokenView.render("token.json", %{token: address.token})
 
-    write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
-    read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
+    # todo: added for backward compatibility, remove when frontend unbound from these props
+    {implementation_address, implementation_name} = single_implementation(implementations)
 
-    Map.merge(base_info, %{
-      "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
-      "creation_tx_hash" => creation_tx,
-      "token" => token,
-      "coin_balance" => balance,
-      "exchange_rate" => exchange_rate,
-      "implementation_name" => implementation_name,
-      "implementation_address" => implementation_address,
-      "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
-      "has_custom_methods_read" => read_custom_abi?,
-      "has_custom_methods_write" => write_custom_abi?,
-      "has_methods_read" => AddressView.smart_contract_with_read_only_functions?(address),
-      "has_methods_write" => AddressView.smart_contract_with_write_functions?(address),
-      "has_methods_read_proxy" => is_proxy,
-      "has_methods_write_proxy" =>
-        AddressView.smart_contract_with_write_functions?(address_with_smart_contract) && is_proxy,
-      "has_decompiled_code" => AddressView.has_decompiled_code?(address),
-      "has_validated_blocks" => Counters.check_if_validated_blocks_at_address(address.hash, @api_true),
-      "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
-      "has_tokens" => Counters.check_if_tokens_at_address(address.hash, @api_true),
-      "has_token_transfers" => Counters.check_if_token_transfers_at_address(address.hash, @api_true),
-      "watchlist_address_id" => Chain.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
-      "has_beacon_chain_withdrawals" => Counters.check_if_withdrawals_at_address(address.hash, @api_true)
-    })
+    extended_info =
+      Map.merge(base_info, %{
+        "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
+        "creation_tx_hash" => creation_tx,
+        "token" => token,
+        "coin_balance" => balance,
+        "exchange_rate" => exchange_rate,
+        "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
+        "has_decompiled_code" => AddressView.has_decompiled_code?(address),
+        "has_validated_blocks" => Counters.check_if_validated_blocks_at_address(address.hash, @api_true),
+        "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
+        "has_tokens" => Counters.check_if_tokens_at_address(address.hash, @api_true),
+        "has_token_transfers" => Counters.check_if_token_transfers_at_address(address.hash, @api_true),
+        "watchlist_address_id" => Chain.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
+        "has_beacon_chain_withdrawals" => Counters.check_if_withdrawals_at_address(address.hash, @api_true)
+      })
+
+    if Enum.empty?(implementations) do
+      extended_info
+    else
+      Map.merge(extended_info, %{
+        # todo: added for backward compatibility, remove when frontend unbound from these props
+        "implementation_address" => implementation_address,
+        "implementation_name" => implementation_name,
+        "implementations" => implementations
+      })
+    end
+  end
+
+  defp single_implementation(implementations) do
+    %{"address" => implementation_address, "name" => implementation_name} =
+      if Enum.empty?(implementations) do
+        %{"address" => nil, "name" => nil}
+      else
+        implementations |> Enum.at(0)
+      end
+
+    {implementation_address, implementation_name}
   end
 
   @spec prepare_token_balance(Chain.Address.TokenBalance.t(), boolean()) :: map()
@@ -230,7 +247,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         ) :: map()
   def fetch_and_render_token_instance(token_id, token, address_hash, token_balance) do
     token_instance =
-      case Chain.erc721_or_erc1155_token_instance_from_token_id_and_token_address(
+      case Chain.nft_instance_from_token_id_and_token_address(
              token_id,
              token.contract_address_hash,
              @api_true

@@ -30,7 +30,7 @@ defmodule Indexer.Fetcher.CoinBalance.Catchup do
     else
       entries = Enum.map(balance_fields, &Helper.entry/1)
 
-      BufferedTask.buffer(__MODULE__, entries)
+      BufferedTask.buffer(__MODULE__, entries, false)
     end
   end
 
@@ -62,7 +62,7 @@ defmodule Indexer.Fetcher.CoinBalance.Catchup do
               tracer: Tracer
             )
   def run(entries, json_rpc_named_arguments) do
-    Helper.run(entries, json_rpc_named_arguments, true)
+    Helper.run(entries, json_rpc_named_arguments, :catchup)
   end
 
   defp defaults do

@@ -35,6 +35,8 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   @counter [name: :import_errors_count, help: "Number of database import errors"]
 
+  @gauge [name: :memory_consumed, labels: [:fetcher], help: "Amount of memory consumed by fetchers (MB)"]
+
   def block_full_process(time, fetcher) do
     Histogram.observe([name: :block_full_processing_duration_microseconds, labels: [fetcher]], time)
   end
@@ -57,5 +59,9 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   def import_errors(error_count \\ 1) do
     Counter.inc([name: :import_errors_count], error_count)
+  end
+
+  def set_memory_consumed(fetcher, memory) do
+    Gauge.set([name: :memory_consumed, labels: [fetcher]], memory)
   end
 end

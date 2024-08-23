@@ -1,8 +1,6 @@
 defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
-
   alias BlockScoutWeb.Chain
   alias Explorer.Chain.{Hash, Wei}
   alias Explorer.Counters.AverageBlockTime
@@ -58,8 +56,6 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       |> insert(gas_price: 1)
       |> with_block(block, gas_used: 1)
 
-      block_quantity = integer_to_quantity(block.number)
-
       expected_reward =
         emission_reward.reward
         |> Wei.to(:wei)
@@ -100,8 +96,6 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       :transaction
       |> insert(gas_price: 1)
       |> with_block(block, gas_used: 1)
-
-      block_quantity = integer_to_quantity(block.number)
 
       decimal_emission_reward = Wei.to(emission_reward.reward, :wei)
 

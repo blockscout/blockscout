@@ -10,10 +10,11 @@ defmodule Explorer.Chain.Cache.AddressSumMinusBurnt do
     key: :sum_minus_burnt,
     key: :async_task,
     ttl_check_interval: Application.get_env(:explorer, __MODULE__)[:ttl_check_interval],
-    global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
+    global_ttl: :infinity,
     callback: &async_task_on_deletion(&1)
 
   alias Explorer.{Chain, Etherscan}
+  alias Explorer.Chain.Cache.Helper
 
   defp handle_fallback(:sum_minus_burnt) do
     # This will get the task PID if one exists and launch a new task if not
@@ -38,7 +39,7 @@ defmodule Explorer.Chain.Cache.AddressSumMinusBurnt do
 
           Chain.upsert_last_fetched_counter(params)
 
-          set_sum_minus_burnt(result)
+          set_sum_minus_burnt(%ConCache.Item{ttl: Helper.ttl(__MODULE__, "CACHE_ADDRESS_SUM_PERIOD"), value: result})
         rescue
           e ->
             Logger.debug([

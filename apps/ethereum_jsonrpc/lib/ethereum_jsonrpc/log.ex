@@ -1,7 +1,7 @@
 defmodule EthereumJSONRPC.Log do
   @moduledoc """
   Log included in return from
-  [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionreceipt).
+  [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionreceipt).
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
@@ -177,7 +177,7 @@ defmodule EthereumJSONRPC.Log do
   end
 
   defp entry_to_elixir(_) do
-    {nil, nil}
+    {:ignore, :ignore}
   end
 
   defp put_topics(params, topics) when is_map(params) and is_list(topics) do

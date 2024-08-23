@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   backend:
-    image: skalenetwork/blockscout:${DOCKER_TAG:-latest}
+    image: skalenetwork/blockscout:${BLOCKSCOUT_BACKEND_DOCKER_TAG:-latest}
     pull_policy: always
     restart: always
     stop_grace_period: 5m

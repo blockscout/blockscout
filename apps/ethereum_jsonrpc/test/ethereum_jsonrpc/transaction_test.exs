@@ -9,7 +9,7 @@ defmodule EthereumJSONRPC.TransactionTest do
     test "skips unsupported keys" do
       map = %{"key" => "value", "key1" => "value1"}
 
-      assert %{nil: nil} = Transaction.to_elixir(map)
+      assert %{ignore: :ignore} = Transaction.to_elixir(map)
     end
   end
 end

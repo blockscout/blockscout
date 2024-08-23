@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Chain.{Address, Block, Transaction, Withdrawal}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Withdrawal}
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
@@ -386,6 +386,84 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
     end
   end
 
+  describe "/blocks/{block_hash_or_number}/internal-transactions" do
+    test "returns 422 on invalid parameter", %{conn: conn} do
+      request_1 = get(conn, "/api/v2/blocks/0x123123/internal-transactions")
+      assert %{"message" => "Invalid hash"} = json_response(request_1, 422)
+
+      request_2 = get(conn, "/api/v2/blocks/123qwe/internal-transactions")
+      assert %{"message" => "Invalid number"} = json_response(request_2, 422)
+    end
+
+    test "returns 404 on non existing block", %{conn: conn} do
+      block = build(:block)
+
+      request_1 = get(conn, "/api/v2/blocks/#{block.number}/internal-transactions")
+      assert %{"message" => "Not found"} = json_response(request_1, 404)
+
+      request_2 = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+      assert %{"message" => "Not found"} = json_response(request_2, 404)
+    end
+
+    test "returns empty list", %{conn: conn} do
+      block = insert(:block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+
+      request = get(conn, "/api/v2/blocks/#{block.number}/internal-transactions")
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "can paginate internal transactions", %{conn: conn} do
+      block = insert(:block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: tx,
+        index: 0,
+        block_number: tx.block_number,
+        transaction_index: tx.index,
+        block_hash: tx.block_hash,
+        block_index: 0
+      )
+
+      internal_txs =
+        51..1
+        |> Enum.map(fn index ->
+          tx =
+            :transaction
+            |> insert()
+            |> with_block(block)
+
+          insert(:internal_transaction,
+            transaction: tx,
+            index: index,
+            block_number: tx.block_number,
+            transaction_index: tx.index,
+            block_hash: tx.block_hash,
+            block_index: index
+          )
+        end)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, internal_txs)
+    end
+  end
+
   defp compare_item(%Block{} = block, json) do
     assert to_string(block.hash) == json["hash"]
     assert block.number == json["height"]
@@ -401,6 +479,15 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
   defp compare_item(%Withdrawal{} = withdrawal, json) do
     assert withdrawal.index == json["index"]
+  end
+
+  defp compare_item(%InternalTransaction{} = internal_tx, json) do
+    assert internal_tx.block_number == json["block"]
+    assert to_string(internal_tx.gas) == json["gas_limit"]
+    assert internal_tx.index == json["index"]
+    assert to_string(internal_tx.transaction_hash) == json["transaction_hash"]
+    assert Address.checksum(internal_tx.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(internal_tx.to_address_hash) == json["to"]["hash"]
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, list) do

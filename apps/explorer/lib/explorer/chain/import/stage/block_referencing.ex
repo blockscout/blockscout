@@ -23,6 +23,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Optimism.FrameSequences,
     Runner.Optimism.TxnBatches,
     Runner.Optimism.OutputRoots,
+    Runner.Optimism.DisputeGames,
     Runner.Optimism.Deposits,
     Runner.Optimism.Withdrawals,
     Runner.Optimism.WithdrawalEvents
@@ -43,6 +44,13 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.PolygonZkevm.BridgeOperations
   ]
 
+  @zksync_runners [
+    Runner.ZkSync.LifecycleTransactions,
+    Runner.ZkSync.TransactionBatches,
+    Runner.ZkSync.BatchTransactions,
+    Runner.ZkSync.BatchBlocks
+  ]
+
   @shibarium_runners [
     Runner.Shibarium.BridgeOperations
   ]
@@ -51,23 +59,38 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Beacon.BlobTransactions
   ]
 
+  @arbitrum_runners [
+    Runner.Arbitrum.Messages,
+    Runner.Arbitrum.LifecycleTransactions,
+    Runner.Arbitrum.L1Executions,
+    Runner.Arbitrum.L1Batches,
+    Runner.Arbitrum.BatchBlocks,
+    Runner.Arbitrum.BatchTransactions
+  ]
+
   @impl Stage
   def runners do
     case Application.get_env(:explorer, :chain_type) do
-      "optimism" ->
+      :optimism ->
         @default_runners ++ @optimism_runners
 
-      "polygon_edge" ->
+      :polygon_edge ->
         @default_runners ++ @polygon_edge_runners
 
-      "polygon_zkevm" ->
+      :polygon_zkevm ->
         @default_runners ++ @polygon_zkevm_runners
 
-      "shibarium" ->
+      :shibarium ->
         @default_runners ++ @shibarium_runners
 
-      "ethereum" ->
+      :ethereum ->
         @default_runners ++ @ethereum_runners
+
+      :zksync ->
+        @default_runners ++ @zksync_runners
+
+      :arbitrum ->
+        @default_runners ++ @arbitrum_runners
 
       _ ->
         @default_runners
@@ -76,7 +99,10 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @impl Stage
   def all_runners do
-    @default_runners ++ @optimism_runners ++ @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners
+    @default_runners ++
+      @ethereum_runners ++
+      @optimism_runners ++
+      @polygon_edge_runners ++ @polygon_zkevm_runners ++ @shibarium_runners ++ @zksync_runners ++ @arbitrum_runners
   end
 
   @impl Stage

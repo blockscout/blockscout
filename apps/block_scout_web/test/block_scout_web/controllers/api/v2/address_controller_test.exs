@@ -1,9 +1,11 @@
 defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
   use EthereumJSONRPC.Case, async: false
+  use BlockScoutWeb.ChannelCase
 
+  alias ABI.{TypeDecoder, TypeEncoder}
   alias BlockScoutWeb.Models.UserFromAuth
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Address.Counters
 
   alias Explorer.Chain.{
@@ -22,6 +24,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   alias Explorer.Account.WatchlistAddress
   alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Plug.Conn
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
@@ -59,7 +62,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       correct_response = %{
         "hash" => Address.checksum(address.hash),
         "is_contract" => false,
-        "is_verified" => nil,
+        "is_verified" => false,
         "name" => nil,
         "private_tags" => [],
         "public_tags" => [],
@@ -69,15 +72,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "token" => nil,
         "coin_balance" => nil,
         "exchange_rate" => nil,
-        "implementation_name" => nil,
+        # todo: added for backward compatibility, remove when frontend unbound from these props
         "implementation_address" => nil,
+        "implementation_name" => nil,
+        "implementations" => [],
         "block_number_balance_updated_at" => nil,
-        "has_custom_methods_read" => false,
-        "has_custom_methods_write" => false,
-        "has_methods_read" => false,
-        "has_methods_write" => false,
-        "has_methods_read_proxy" => false,
-        "has_methods_write_proxy" => false,
         "has_decompiled_code" => false,
         "has_validated_blocks" => false,
         "has_logs" => false,
@@ -85,7 +84,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "has_token_transfers" => false,
         "watchlist_address_id" => nil,
         "has_beacon_chain_withdrawals" => false,
-        "ens_domain_name" => nil
+        "ens_domain_name" => nil,
+        "metadata" => nil
       }
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
@@ -95,7 +95,102 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert ^correct_response = json_response(request, 200)
     end
 
-    test "get contract info", %{conn: conn} do
+    test "get EIP-1167 proxy contract info", %{conn: conn} do
+      implementation_contract =
+        insert(:smart_contract,
+          name: "Implementation",
+          external_libraries: [],
+          constructor_arguments: "",
+          abi: [
+            %{
+              "type" => "constructor",
+              "inputs" => [
+                %{"type" => "address", "name" => "_proxyStorage"},
+                %{"type" => "address", "name" => "_implementationAddress"}
+              ]
+            },
+            %{
+              "constant" => false,
+              "inputs" => [%{"name" => "x", "type" => "uint256"}],
+              "name" => "set",
+              "outputs" => [],
+              "payable" => false,
+              "stateMutability" => "nonpayable",
+              "type" => "function"
+            },
+            %{
+              "constant" => true,
+              "inputs" => [],
+              "name" => "get",
+              "outputs" => [%{"name" => "", "type" => "uint256"}],
+              "payable" => false,
+              "stateMutability" => "view",
+              "type" => "function"
+            }
+          ],
+          license_type: 9
+        )
+
+      implementation_contract_address_hash_string =
+        Base.encode16(implementation_contract.address_hash.bytes, case: :lower)
+
+      proxy_tx_input =
+        "0x11b804ab000000000000000000000000" <>
+          implementation_contract_address_hash_string <>
+          "000000000000000000000000000000000000000000000000000000000000006035323031313537360000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000284e159163400000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd30000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d61100000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d6110000000000000000000000000000000000000000000000000000000000000003e8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd300000000000000000000000000000000000000000000000000000000000000184f7074696d69736d2053756273637269626572204e465473000000000000000000000000000000000000000000000000000000000000000000000000000000054f504e46540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000037697066733a2f2f516d66544e504839765651334b5952346d6b52325a6b757756424266456f5a5554545064395538666931503332752f300000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c82bbe41f2cf04e3a8efa18f7032bdd7f6d98a81000000000000000000000000efba8a2a82ec1fb1273806174f5e28fbb917cf9500000000000000000000000000000000000000000000000000000000"
+
+      proxy_deployed_bytecode =
+        "0x363d3d373d3d3d363d73" <> implementation_contract_address_hash_string <> "5af43d82803e903d91602b57fd5bf3"
+
+      proxy_address =
+        insert(:contract_address,
+          contract_code: proxy_deployed_bytecode
+        )
+
+      tx =
+        insert(:transaction,
+          created_contract_address_hash: proxy_address.hash,
+          input: proxy_tx_input
+        )
+        |> with_block(status: :ok)
+
+      name = implementation_contract.name
+      from = Address.checksum(tx.from_address_hash)
+      tx_hash = to_string(tx.hash)
+      address_hash = Address.checksum(proxy_address.hash)
+
+      {:ok, implementation_contract_address_hash} =
+        Chain.string_to_address_hash("0x" <> implementation_contract_address_hash_string)
+
+      checksummed_implementation_contract_address_hash =
+        implementation_contract_address_hash && Address.checksum(implementation_contract_address_hash)
+
+      insert(:proxy_implementation,
+        proxy_address_hash: proxy_address.hash,
+        proxy_type: "eip1167",
+        address_hashes: [implementation_contract.address_hash],
+        names: [name]
+      )
+
+      request = get(conn, "/api/v2/addresses/#{Address.checksum(proxy_address.hash)}")
+
+      assert %{
+               "hash" => ^address_hash,
+               "is_contract" => true,
+               "is_verified" => true,
+               "private_tags" => [],
+               "public_tags" => [],
+               "watchlist_names" => [],
+               "creator_address_hash" => ^from,
+               "creation_tx_hash" => ^tx_hash,
+               "implementation_address" => ^checksummed_implementation_contract_address_hash,
+               "implementations" => [
+                 %{"address" => ^checksummed_implementation_contract_address_hash, "name" => ^name}
+               ]
+             } = json_response(request, 200)
+    end
+
+    test "get EIP-1967 proxy contract info", %{conn: conn} do
       smart_contract = insert(:smart_contract)
 
       tx =
@@ -118,7 +213,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       tx_hash = to_string(tx.hash)
       address_hash = Address.checksum(smart_contract.address_hash)
 
-      get_eip1967_implementation_non_zero_address()
+      implementation_address = insert(:address)
+      implementation_address_hash_string = to_string(Address.checksum(implementation_address.hash))
+      TestHelper.get_eip1967_implementation_non_zero_address(implementation_address_hash_string)
 
       request = get(conn, "/api/v2/addresses/#{Address.checksum(smart_contract.address_hash)}")
 
@@ -132,7 +229,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
                "creation_tx_hash" => ^tx_hash,
-               "implementation_address" => "0x0000000000000000000000000000000000000001"
+               "implementation_address" => ^implementation_address_hash_string,
+               "implementations" => [%{"address" => ^implementation_address_hash_string, "name" => nil}]
              } = json_response(request, 200)
     end
 
@@ -778,7 +876,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address
+          )
 
           insert(:token_transfer,
             transaction: tx,
@@ -843,7 +946,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address
+          )
         end
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
@@ -888,7 +996,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         for _ <- 0..50 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address
+          )
         end
 
       for _ <- 0..50 do
@@ -915,7 +1028,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         for _ <- 0..49 do
           tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+          insert(:token_transfer,
+            transaction: tx,
+            block: tx.block,
+            block_number: tx.block_number,
+            from_address: address
+          )
         end
 
       tt_to =
@@ -1681,11 +1799,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       response = json_response(request, 200)
 
-      assert [
-               %{"date" => _, "value" => "2000"},
-               %{"date" => _, "value" => "1000"},
-               %{"date" => _, "value" => "1000"}
-             ] = response
+      assert %{
+               "days" => 10,
+               "items" => [
+                 %{"date" => _, "value" => "2000"},
+                 %{"date" => _, "value" => "1000"},
+                 %{"date" => _, "value" => "1000"}
+               ]
+             } = response
     end
   end
 
@@ -1755,6 +1876,84 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/logs", response["next_page_params"])
       assert response_2nd_page = json_response(request_2nd_page, 200)
       check_paginated_response(response, response_2nd_page, logs)
+    end
+
+    # https://github.com/blockscout/blockscout/issues/9926
+    test "regression test for 9926", %{conn: conn} do
+      address = insert(:address, hash: "0x036cec1a199234fC02f72d29e596a09440825f1C")
+
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      log =
+        insert(:log,
+          transaction: tx,
+          index: 1,
+          block: tx.block,
+          block_number: tx.block_number,
+          address: address
+        )
+
+      bypass = Bypass.open()
+
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+      old_env_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      old_env_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Bypass.expect_once(bypass, "POST", "api/v1/#{chain_id}/addresses:batch_resolve_names", fn conn ->
+        Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "names" => %{
+              to_string(address) => "test.eth"
+            }
+          })
+        )
+      end)
+
+      Bypass.expect_once(bypass, "GET", "api/v1/metadata", fn conn ->
+        Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "addresses" => %{
+              to_string(address) => %{"tags" => [%{"slug" => "tag", "meta" => "{\"styles\":\"danger_high\"}"}]}
+            }
+          })
+        )
+      end)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      compare_item(log, Enum.at(response["items"], 0))
+      log = Enum.at(response["items"], 0)
+      assert log["address"]["ens_domain_name"] == "test.eth"
+      assert log["address"]["metadata"] == %{"tags" => [%{"slug" => "tag", "meta" => %{"styles" => "danger_high"}}]}
+
+      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
+      Bypass.down(bypass)
     end
 
     test "logs can be filtered by topic", %{conn: conn} do
@@ -1835,7 +2034,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
         end
-        |> Enum.sort_by(fn x -> x.value end, :asc)
+        |> Enum.sort_by(fn x -> Decimal.to_integer(x.value) end, :asc)
 
       ctbs_erc_1155 =
         for _ <- 0..50 do
@@ -1846,7 +2045,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
         end
-        |> Enum.sort_by(fn x -> x.value end, :asc)
+        |> Enum.sort_by(fn x -> Decimal.to_integer(x.value) end, :asc)
 
       filter = %{"type" => "ERC-20"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/tokens", filter)
@@ -1880,6 +2079,291 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, ctbs_erc_1155)
+    end
+  end
+
+  describe "checks Indexer.Fetcher.OnDemand.TokenBalance" do
+    setup do
+      Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
+      old_env = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance)
+
+      Application.put_env(
+        :indexer,
+        Indexer.Fetcher.OnDemand.TokenBalance,
+        Keyword.put(old_env, :fallback_threshold_in_blocks, 0)
+      )
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance, old_env)
+      end)
+    end
+
+    test "Indexer.Fetcher.OnDemand.TokenBalance broadcasts only updated balances", %{conn: conn} do
+      address = insert(:address)
+
+      ctbs_erc_20 =
+        for i <- 0..1 do
+          ctb =
+            insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+              address: address,
+              token_type: "ERC-20",
+              token_id: nil
+            )
+
+          {to_string(ctb.token_contract_address_hash),
+           Decimal.to_integer(ctb.value) + if(rem(i, 2) == 0, do: 1, else: 0)}
+        end
+        |> Enum.into(%{})
+
+      ctbs_erc_721 =
+        for i <- 0..1 do
+          ctb =
+            insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+              address: address,
+              token_type: "ERC-721",
+              token_id: nil
+            )
+
+          {to_string(ctb.token_contract_address_hash),
+           Decimal.to_integer(ctb.value) + if(rem(i, 2) == 0, do: 1, else: 0)}
+        end
+        |> Enum.into(%{})
+
+      other_balances = Map.merge(ctbs_erc_20, ctbs_erc_721)
+
+      balances_erc_1155 =
+        for i <- 0..1 do
+          ctb =
+            insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+              address: address,
+              token_type: "ERC-1155",
+              token_id: Enum.random(1..100_000)
+            )
+
+          {{to_string(ctb.token_contract_address_hash), to_string(ctb.token_id)},
+           Decimal.to_integer(ctb.value) + if(rem(i, 2) == 0, do: 1, else: 0)}
+        end
+        |> Enum.into(%{})
+
+      block_number_hex = "0x" <> (Integer.to_string(insert(:block).number, 16) |> String.upcase())
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [
+                                                  %{
+                                                    id: id_1,
+                                                    jsonrpc: "2.0",
+                                                    method: "eth_call",
+                                                    params: [
+                                                      %{
+                                                        data: "0x00fdd58e" <> request_1,
+                                                        to: contract_address_1
+                                                      },
+                                                      ^block_number_hex
+                                                    ]
+                                                  },
+                                                  %{
+                                                    id: id_2,
+                                                    jsonrpc: "2.0",
+                                                    method: "eth_call",
+                                                    params: [
+                                                      %{
+                                                        data: "0x00fdd58e" <> request_2,
+                                                        to: contract_address_2
+                                                      },
+                                                      ^block_number_hex
+                                                    ]
+                                                  }
+                                                ],
+                                                _options ->
+        types_list = [:address, {:uint, 256}]
+
+        [address_1, token_id_1] = request_1 |> Base.decode16!(case: :lower) |> TypeDecoder.decode_raw(types_list)
+
+        assert address_1 == address.hash.bytes
+
+        result_1 =
+          balances_erc_1155[{contract_address_1 |> String.downcase(), to_string(token_id_1)}]
+          |> List.wrap()
+          |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
+          |> Base.encode16(case: :lower)
+
+        [address_2, token_id_2] = request_2 |> Base.decode16!(case: :lower) |> TypeDecoder.decode_raw(types_list)
+
+        assert address_2 == address.hash.bytes
+
+        result_2 =
+          balances_erc_1155[{contract_address_2 |> String.downcase(), to_string(token_id_2)}]
+          |> List.wrap()
+          |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
+          |> Base.encode16(case: :lower)
+
+        {:ok,
+         [
+           %{
+             id: id_1,
+             jsonrpc: "2.0",
+             result: "0x" <> result_1
+           },
+           %{
+             id: id_2,
+             jsonrpc: "2.0",
+             result: "0x" <> result_2
+           }
+         ]}
+      end)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [
+                                                  %{
+                                                    id: id_1,
+                                                    jsonrpc: "2.0",
+                                                    method: "eth_call",
+                                                    params: [
+                                                      %{
+                                                        data: "0x70a08231" <> request_1,
+                                                        to: contract_address_1
+                                                      },
+                                                      ^block_number_hex
+                                                    ]
+                                                  },
+                                                  %{
+                                                    id: id_2,
+                                                    jsonrpc: "2.0",
+                                                    method: "eth_call",
+                                                    params: [
+                                                      %{
+                                                        data: "0x70a08231" <> request_2,
+                                                        to: contract_address_2
+                                                      },
+                                                      ^block_number_hex
+                                                    ]
+                                                  },
+                                                  %{
+                                                    id: id_3,
+                                                    jsonrpc: "2.0",
+                                                    method: "eth_call",
+                                                    params: [
+                                                      %{
+                                                        data: "0x70a08231" <> request_3,
+                                                        to: contract_address_3
+                                                      },
+                                                      ^block_number_hex
+                                                    ]
+                                                  },
+                                                  %{
+                                                    id: id_4,
+                                                    jsonrpc: "2.0",
+                                                    method: "eth_call",
+                                                    params: [
+                                                      %{
+                                                        data: "0x70a08231" <> request_4,
+                                                        to: contract_address_4
+                                                      },
+                                                      ^block_number_hex
+                                                    ]
+                                                  }
+                                                ],
+                                                _options ->
+        types_list = [:address]
+
+        assert request_1 |> Base.decode16!(case: :lower) |> TypeDecoder.decode_raw(types_list) == [address.hash.bytes]
+
+        assert request_2 |> Base.decode16!(case: :lower) |> TypeDecoder.decode_raw(types_list) == [address.hash.bytes]
+
+        assert request_3 |> Base.decode16!(case: :lower) |> TypeDecoder.decode_raw(types_list) == [address.hash.bytes]
+
+        assert request_4 |> Base.decode16!(case: :lower) |> TypeDecoder.decode_raw(types_list) == [address.hash.bytes]
+
+        result_1 =
+          other_balances[contract_address_1 |> String.downcase()]
+          |> List.wrap()
+          |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
+          |> Base.encode16(case: :lower)
+
+        result_2 =
+          other_balances[contract_address_2 |> String.downcase()]
+          |> List.wrap()
+          |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
+          |> Base.encode16(case: :lower)
+
+        result_3 =
+          other_balances[contract_address_3 |> String.downcase()]
+          |> List.wrap()
+          |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
+          |> Base.encode16(case: :lower)
+
+        result_4 =
+          other_balances[contract_address_4 |> String.downcase()]
+          |> List.wrap()
+          |> TypeEncoder.encode_raw([{:uint, 256}], :standard)
+          |> Base.encode16(case: :lower)
+
+        {:ok,
+         [
+           %{
+             id: id_1,
+             jsonrpc: "2.0",
+             result: "0x" <> result_1
+           },
+           %{
+             id: id_2,
+             jsonrpc: "2.0",
+             result: "0x" <> result_2
+           },
+           %{
+             id: id_3,
+             jsonrpc: "2.0",
+             result: "0x" <> result_3
+           },
+           %{
+             id: id_4,
+             jsonrpc: "2.0",
+             result: "0x" <> result_4
+           }
+         ]}
+      end)
+
+      topic = "addresses:#{address.hash}"
+
+      {:ok, _reply, _socket} =
+        BlockScoutWeb.UserSocketV2
+        |> socket("no_id", %{})
+        |> subscribe_and_join(topic)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/tokens")
+      assert _response = json_response(request, 200)
+      overflow = false
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{token_balances: [ctb_erc_20], overflow: ^overflow},
+                       event: "updated_token_balances_erc_20",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{token_balances: [ctb_erc_721], overflow: ^overflow},
+                       event: "updated_token_balances_erc_721",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{token_balances: [ctb_erc_1155], overflow: ^overflow},
+                       event: "updated_token_balances_erc_1155",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      assert Decimal.to_integer(ctb_erc_20["value"]) ==
+               other_balances[ctb_erc_20["token"]["address"] |> String.downcase()]
+
+      assert Decimal.to_integer(ctb_erc_721["value"]) ==
+               other_balances[ctb_erc_721["token"]["address"] |> String.downcase()]
+
+      assert Decimal.to_integer(ctb_erc_1155["value"]) ==
+               balances_erc_1155[
+                 {ctb_erc_1155["token"]["address"] |> String.downcase(), to_string(ctb_erc_1155["token_id"])}
+               ]
     end
   end
 
@@ -2261,6 +2745,42 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
               address: address,
               token_type: "ERC-1155",
+              token_id: ti.token_id,
+              token_contract_address_hash: token.contract_address_hash
+            )
+
+          %Instance{ti | current_token_balance: current_token_balance}
+        end
+        |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
+
+      request = get(conn, endpoint.(address.hash))
+      assert response = json_response(request, 200)
+
+      request_2nd_page = get(conn, endpoint.(address.hash), response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, token_instances)
+    end
+
+    test "get paginated ERC-404 nft", %{conn: conn, endpoint: endpoint} do
+      address = insert(:address)
+
+      insert_list(51, :address_current_token_balance_with_token_id)
+
+      token_instances =
+        for _ <- 0..50 do
+          token = insert(:token, type: "ERC-404")
+
+          ti =
+            insert(:token_instance,
+              token_contract_address_hash: token.contract_address_hash
+            )
+            |> Repo.preload([:token])
+
+          current_token_balance =
+            insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+              address: address,
+              token_type: "ERC-404",
               token_id: ti.token_id,
               token_contract_address_hash: token.contract_address_hash
             )
@@ -2902,43 +3422,4 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   def check_total(_, _, _), do: true
-
-  def get_eip1967_implementation_non_zero_address do
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                                id: 0,
-                                                method: "eth_getStorageAt",
-                                                params: [
-                                                  _,
-                                                  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-                                                  "latest"
-                                                ]
-                                              },
-                                              _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
-    end)
-    |> expect(:json_rpc, fn %{
-                              id: 0,
-                              method: "eth_getStorageAt",
-                              params: [
-                                _,
-                                "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                                "latest"
-                              ]
-                            },
-                            _options ->
-      {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
-    end)
-  end
 end

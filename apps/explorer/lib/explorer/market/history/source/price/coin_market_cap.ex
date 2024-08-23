@@ -10,15 +10,18 @@ defmodule Explorer.Market.History.Source.Price.CoinMarketCap do
   @behaviour SourcePrice
 
   @impl SourcePrice
-  def fetch_price_history(_previous_days \\ nil) do
-    url = ExchangeRatesSourceCoinMarketCap.source_url()
+  def fetch_price_history(_previous_days \\ nil, secondary_coin? \\ false) do
+    url =
+      if secondary_coin?,
+        do: ExchangeRatesSourceCoinMarketCap.source_url(:secondary_coin),
+        else: ExchangeRatesSourceCoinMarketCap.source_url()
 
     if url do
       case Source.http_request(url, ExchangeRatesSourceCoinMarketCap.headers()) do
         {:ok, data} ->
           result =
             data
-            |> format_data()
+            |> format_data(secondary_coin?)
 
           {:ok, result}
 
@@ -30,10 +33,10 @@ defmodule Explorer.Market.History.Source.Price.CoinMarketCap do
     end
   end
 
-  @spec format_data(term()) :: SourcePrice.record() | nil
-  defp format_data(nil), do: nil
+  @spec format_data(term(), boolean()) :: SourcePrice.record() | nil
+  defp format_data(nil, _), do: nil
 
-  defp format_data(%{"data" => _} = json_data) do
+  defp format_data(%{"data" => _} = json_data, secondary_coin?) do
     market_data = json_data["data"]
     token_properties = ExchangeRatesSourceCoinMarketCap.get_token_properties(market_data)
 
@@ -48,7 +51,8 @@ defmodule Explorer.Market.History.Source.Price.CoinMarketCap do
       %{
         closing_price: current_price_usd,
         date: last_updated,
-        opening_price: current_price_usd
+        opening_price: current_price_usd,
+        secondary_coin: secondary_coin?
       }
     ]
   end

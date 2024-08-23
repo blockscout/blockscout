@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.WithdrawalEvent
-  alias Indexer.Fetcher.Optimism
+  alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
   alias Indexer.Helper
 
   @fetcher_name :optimism_withdrawal_events
@@ -24,8 +24,14 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   # 32-byte signature of the event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
   @withdrawal_proven_event "0x67a6208cfcc0801d50f6cbe764733f4fddf66ac0b04442061a8a8c0cb6b63f62"
 
+  # 32-byte signature of the Blast chain event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to, uint256 requestId)
+  @withdrawal_proven_event_blast "0x5d5446905f1f582d57d04ced5b1bed0f1a6847bcee57f7dd9d6f2ec12ab9ec2e"
+
   # 32-byte signature of the event WithdrawalFinalized(bytes32 indexed withdrawalHash, bool success)
   @withdrawal_finalized_event "0xdb5c7652857aa163daadd670e116628fb42e869d8ac4251ef8971d9e5727df1b"
+
+  # 32-byte signature of the Blast chain event WithdrawalFinalized(bytes32 indexed withdrawalHash, uint256 indexed hintId, bool success)
+  @withdrawal_finalized_event_blast "0x36d89e6190aa646d1a48286f8ad05e60a144483f42fd7e0ea08baba79343645b"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -88,7 +94,12 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
               chunk_start,
               chunk_end,
               optimism_portal,
-              [@withdrawal_proven_event, @withdrawal_finalized_event],
+              [
+                @withdrawal_proven_event,
+                @withdrawal_proven_event_blast,
+                @withdrawal_finalized_event,
+                @withdrawal_finalized_event_blast
+              ],
               json_rpc_named_arguments,
               Helper.infinite_retries_number()
             )
@@ -111,7 +122,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
           )
         end
 
-        reorg_block = Optimism.reorg_block_pop(@fetcher_name)
+        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} = Repo.delete_all(from(we in WithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
@@ -143,12 +154,6 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   end
 
   @impl GenServer
-  def handle_info({:chain_event, :optimism_reorg_block, :realtime, block_number}, state) do
-    Optimism.reorg_block_push(@fetcher_name, block_number)
-    {:noreply, state}
-  end
-
-  @impl GenServer
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
@@ -162,22 +167,60 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end
   end
 
+  defp get_transaction_input_by_hash(blocks, tx_hashes) do
+    Enum.reduce(blocks, %{}, fn block, acc ->
+      block
+      |> Map.get("transactions", [])
+      |> Enum.filter(fn tx ->
+        Enum.member?(tx_hashes, tx["hash"])
+      end)
+      |> Enum.map(fn tx ->
+        {tx["hash"], tx["input"]}
+      end)
+      |> Enum.into(%{})
+      |> Map.merge(acc)
+    end)
+  end
+
   defp prepare_events(events, json_rpc_named_arguments) do
-    timestamps =
+    blocks =
       events
       |> get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
+
+    tx_hashes =
+      events
+      |> Enum.reduce([], fn event, acc ->
+        if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
+          [event["transactionHash"] | acc]
+        else
+          acc
+        end
+      end)
+
+    input_by_hash = get_transaction_input_by_hash(blocks, tx_hashes)
+
+    timestamps =
+      blocks
       |> Enum.reduce(%{}, fn block, acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
         Map.put(acc, block_number, timestamp)
       end)
 
-    Enum.map(events, fn event ->
-      l1_event_type =
-        if Enum.at(event["topics"], 0) == @withdrawal_proven_event do
-          "WithdrawalProven"
+    events
+    |> Enum.map(fn event ->
+      tx_hash = event["transactionHash"]
+
+      {l1_event_type, game_index} =
+        if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
+          game_index =
+            input_by_hash
+            |> Map.get(tx_hash)
+            |> input_to_game_index()
+
+          {"WithdrawalProven", game_index}
         else
-          "WithdrawalFinalized"
+          {"WithdrawalFinalized", nil}
         end
 
       l1_block_number = quantity_to_integer(event["blockNumber"])
@@ -186,10 +229,22 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         withdrawal_hash: Enum.at(event["topics"], 1),
         l1_event_type: l1_event_type,
         l1_timestamp: Map.get(timestamps, l1_block_number),
-        l1_transaction_hash: event["transactionHash"],
-        l1_block_number: l1_block_number
+        l1_transaction_hash: tx_hash,
+        l1_block_number: l1_block_number,
+        game_index: game_index
       }
     end)
+    |> Enum.reduce(%{}, fn e, acc ->
+      key = {e.withdrawal_hash, e.l1_event_type}
+      prev_game_index = Map.get(acc, key, %{game_index: 0}).game_index
+
+      if prev_game_index < e.game_index or is_nil(prev_game_index) do
+        Map.put(acc, key, e)
+      else
+        acc
+      end
+    end)
+    |> Map.values()
   end
 
   def get_last_l1_item do
@@ -214,13 +269,36 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
       |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
       |> Stream.with_index()
       |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-      |> Blocks.requests(&ByNumber.request(&1, false, false))
+      |> Blocks.requests(&ByNumber.request(&1, true, false))
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"
 
     case Optimism.repeated_request(request, error_message, json_rpc_named_arguments, retries) do
       {:ok, results} -> Enum.map(results, fn %{result: result} -> result end)
       {:error, _} -> []
+    end
+  end
+
+  defp input_to_game_index(input) do
+    method_signature = String.slice(input, 0..9)
+
+    if method_signature == "0x4870496f" do
+      # the signature of `proveWithdrawalTransaction(tuple _tx, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+
+      # to get (slice) `_disputeGameIndex` from the tx input, we need to know its offset in the input string (represented as 0x...):
+      # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_tx` tuple offset, totally is 74
+      game_index_offset = String.length(method_signature) + 32 * 2
+      game_index_length = 32 * 2
+
+      game_index_range_start = game_index_offset
+      game_index_range_end = game_index_range_start + game_index_length - 1
+
+      {game_index, ""} =
+        input
+        |> String.slice(game_index_range_start..game_index_range_end)
+        |> Integer.parse(16)
+
+      game_index
     end
   end
 end
