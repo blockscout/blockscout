@@ -31,6 +31,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix for metadata detection at ipfs protocol([#10646](https://github.com/blockscout/blockscout/pull/10646))
 - Change default shrink internal_transactions table migration params ([#10644](https://github.com/blockscout/blockscout/pull/10644))
 - Fix bug in update_replaced_transactions query ([#10634](https://github.com/blockscout/blockscout/issues/10634))
 - Fix mode dependent processes starting ([#10641](https://github.com/blockscout/blockscout/issues/10641))
