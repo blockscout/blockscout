@@ -3,6 +3,7 @@ defmodule Indexer.Transform.Arbitrum.Messaging do
     Helper functions for transforming data for Arbitrum cross-chain messages.
   """
 
+  alias Explorer.Chain.Arbitrum.Message
   alias Indexer.Fetcher.Arbitrum.Messaging, as: ArbitrumMessages
 
   require Logger
@@ -24,12 +25,12 @@ defmodule Indexer.Transform.Arbitrum.Messaging do
     - A combined list of detailed message maps from both L1-to-L2 completions and
       L2-to-L1 initiations, ready for database import.
   """
-  @spec parse(list(), list()) :: list()
+  @spec parse(list(), list()) :: {[Message.to_import()], list()}
   def parse(transactions, logs) do
     prev_metadata = Logger.metadata()
     Logger.metadata(fetcher: :arbitrum_bridge_l2)
 
-    l1_to_l2_completion_ops =
+    {l1_to_l2_completion_ops, transactions_with_hashed_message_id} =
       transactions
       |> ArbitrumMessages.filter_l1_to_l2_messages()
 
@@ -39,6 +40,6 @@ defmodule Indexer.Transform.Arbitrum.Messaging do
 
     Logger.reset_metadata(prev_metadata)
 
-    l1_to_l2_completion_ops ++ l2_to_l1_initiating_ops
+    {l1_to_l2_completion_ops ++ l2_to_l1_initiating_ops, transactions_with_hashed_message_id}
   end
 end

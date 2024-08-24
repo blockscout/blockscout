@@ -264,7 +264,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
           # the new field in DB
           requests = build_transaction_requests(chunk)
 
-          messages =
+          {messages, _} =
             requests
             |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
             |> Enum.map(&transaction_json_to_map/1)
