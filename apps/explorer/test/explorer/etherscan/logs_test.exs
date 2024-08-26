@@ -99,7 +99,12 @@ defmodule Explorer.Etherscan.LogsTest do
         |> insert(to_address: contract_address)
         |> with_block()
 
-      insert_list(2, :log, address: contract_address, transaction: transaction, block_number: block.number, block: block)
+      insert_list(2, :log,
+        address: contract_address,
+        transaction: transaction,
+        block_number: block.number,
+        block: block
+      )
 
       filter = %{
         from_block: block.number,
@@ -210,7 +215,12 @@ defmodule Explorer.Etherscan.LogsTest do
         |> with_block()
 
       inserted_records =
-        insert_list(2000, :log, address: contract_address, transaction: transaction, block_number: block.number, block: block)
+        insert_list(2000, :log,
+          address: contract_address,
+          transaction: transaction,
+          block_number: block.number,
+          block: block
+        )
 
       filter = %{
         from_block: block.number,
