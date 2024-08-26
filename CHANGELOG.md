@@ -31,6 +31,7 @@
 
 ### 🐛 Bug Fixes
 
+- Logs list serialization ([#10565](https://github.com/blockscout/blockscout/issues/10565))
 - nil in OrderedCache ([#10647](https://github.com/blockscout/blockscout/pull/10647))
 - Fix for metadata detection at ipfs protocol([#10646](https://github.com/blockscout/blockscout/pull/10646))
 - Change default shrink internal_transactions table migration params ([#10644](https://github.com/blockscout/blockscout/pull/10644))
