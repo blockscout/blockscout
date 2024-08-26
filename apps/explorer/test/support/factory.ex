@@ -757,7 +757,7 @@ defmodule Explorer.Factory do
       index: sequence("log_index", & &1),
       second_topic: nil,
       third_topic: nil,
-      transaction: build(:transaction, block: block)
+      transaction: build(:transaction)
     }
   end
 
