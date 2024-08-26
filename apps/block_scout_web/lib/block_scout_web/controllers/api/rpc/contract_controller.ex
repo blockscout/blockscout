@@ -605,10 +605,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
     result =
       case SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash) do
-        {nil, _} ->
+        nil ->
           :not_found
 
-        {contract, _} ->
+        contract ->
           {:ok, SmartContract.preload_decompiled_smart_contract(contract)}
       end
 

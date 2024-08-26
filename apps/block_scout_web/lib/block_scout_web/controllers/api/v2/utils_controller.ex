@@ -19,10 +19,7 @@ defmodule BlockScoutWeb.API.V2.UtilsController do
          {:format, true} <- {:format, match?({:ok, _hash}, address_hash) || is_nil(address_hash)} do
       smart_contract =
         if address_hash do
-          {updated_smart_contract, _} =
-            SmartContract.address_hash_to_smart_contract_with_bytecode_twin(elem(address_hash, 1), @api_true)
-
-          updated_smart_contract
+          SmartContract.address_hash_to_smart_contract_with_bytecode_twin(elem(address_hash, 1), @api_true)
         end
 
       {decoded_input, _abi_acc, _methods_acc} =

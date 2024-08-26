@@ -332,7 +332,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   defp validate_smart_contract(params, address_hash_string) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {smart_contract, _}} when not is_nil(smart_contract) <-
+         {:not_found, smart_contract} when not is_nil(smart_contract) <-
            {:not_found, SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, @api_true)} do
       {:ok, address_hash, smart_contract}
     end

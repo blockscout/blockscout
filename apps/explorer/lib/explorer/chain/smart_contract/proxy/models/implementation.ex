@@ -94,7 +94,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   @doc """
   Returns the last implementation updated_at for the given smart-contract address hash
   """
-  @spec get_proxy_implementation_updated_at(Hash.Address.t() | nil, Keyword.t()) :: DateTime.t()
+  @spec get_proxy_implementation_updated_at(Hash.Address.t() | nil, Keyword.t()) :: DateTime.t() | nil
   def get_proxy_implementation_updated_at(proxy_address_hash, options) do
     proxy_address_hash
     |> get_proxy_implementations_query()
@@ -140,9 +140,20 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
     {updated_smart_contract, implementation_address_fetched?} =
       if check_implementation_refetch_necessity(implementation_updated_at) do
-        SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options)
+        smart_contract_with_bytecode_twin =
+          SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options)
+
+        if smart_contract_with_bytecode_twin do
+          {smart_contract_with_bytecode_twin, !is_nil(implementation_updated_at)}
+        else
+          {smart_contract, !is_nil(implementation_updated_at)}
+        end
       else
-        {smart_contract, false}
+        if implementation_updated_at do
+          {smart_contract, true}
+        else
+          {smart_contract, false}
+        end
       end
 
     get_implementation(
@@ -313,7 +324,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       implementation_address_hash_strings
       |> Enum.map(fn implementation_address_hash_string ->
         with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
-             {:implementation, {%SmartContract{name: name}, _}} <- {
+             {:implementation, %SmartContract{name: name}} <- {
                :implementation,
                SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options)
              } do
