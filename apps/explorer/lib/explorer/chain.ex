@@ -1638,7 +1638,7 @@ defmodule Explorer.Chain do
   end
 
   defp block_from_cache(block_type, paging_options, necessity_by_association, options) do
-    case Blocks.take_enough(paging_options.page_size) do
+    case Blocks.atomic_take_enough(paging_options.page_size) do
       nil ->
         elements = fetch_blocks(block_type, paging_options, necessity_by_association, options)
 
@@ -1652,7 +1652,7 @@ defmodule Explorer.Chain do
   end
 
   def uncles_from_cache(block_type, paging_options, necessity_by_association, options) do
-    case Uncles.take_enough(paging_options.page_size) do
+    case Uncles.atomic_take_enough(paging_options.page_size) do
       nil ->
         elements = fetch_blocks(block_type, paging_options, necessity_by_association, options)
 
@@ -2620,7 +2620,7 @@ defmodule Explorer.Chain do
       if is_nil(paging_options.key) or paging_options.page_number == 1 do
         paging_options.page_size
         |> Kernel.+(1)
-        |> Transactions.take_enough()
+        |> Transactions.atomic_take_enough()
         |> case do
           nil ->
             transactions = fetch_recent_collated_transactions_for_rap(paging_options, necessity_by_association)

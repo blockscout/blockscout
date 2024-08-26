@@ -31,6 +31,7 @@
 
 ### 🐛 Bug Fixes
 
+- nil in OrderedCache ([#10647](https://github.com/blockscout/blockscout/pull/10647))
 - Fix for metadata detection at ipfs protocol([#10646](https://github.com/blockscout/blockscout/pull/10646))
 - Change default shrink internal_transactions table migration params ([#10644](https://github.com/blockscout/blockscout/pull/10644))
 - Fix bug in update_replaced_transactions query ([#10634](https://github.com/blockscout/blockscout/issues/10634))
