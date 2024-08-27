@@ -1065,7 +1065,8 @@ config :indexer, Indexer.Fetcher.Scroll.BridgeL1,
   messenger_contract: System.get_env("INDEXER_SCROLL_L1_MESSENGER_CONTRACT"),
   start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_SCROLL_L1_MESSENGER_START_BLOCK")
 
-config :indexer, Indexer.Fetcher.Scroll.BridgeL2, messenger_contract: System.get_env("INDEXER_SCROLL_L2_MESSENGER_CONTRACT")
+config :indexer, Indexer.Fetcher.Scroll.BridgeL2,
+  messenger_contract: System.get_env("INDEXER_SCROLL_L2_MESSENGER_CONTRACT")
 
 config :indexer, Indexer.Fetcher.Scroll.BridgeL1.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
 

@@ -129,10 +129,11 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
                 message
               ])
 
-            message_hash = "0x" <>
-              (operation_encoded
-               |> ExKeccak.hash_256()
-               |> Base.encode16(case: :lower))
+            message_hash =
+              "0x" <>
+                (operation_encoded
+                 |> ExKeccak.hash_256()
+                 |> Base.encode16(case: :lower))
 
             {index, amount, block_number, block_timestamp, message_hash}
 

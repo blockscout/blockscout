@@ -50,6 +50,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
+  alias Indexer.Transform.Scroll.Bridge, as: ScrollBridge
   alias Indexer.Transform.Scroll.L1FeeParams, as: ScrollL1FeeParams
 
   alias Indexer.Transform.Arbitrum.Messaging, as: ArbitrumMessaging
@@ -191,6 +192,11 @@ defmodule Indexer.Block.Fetcher do
              do: PolygonZkevmBridge.parse(blocks, logs),
              else: []
            ),
+         scroll_bridge_operations =
+           if(callback_module == Indexer.Block.Realtime.Fetcher,
+             do: ScrollBridge.parse(blocks, logs),
+             else: []
+           ),
          arbitrum_xlevel_messages = ArbitrumMessaging.parse(transactions_with_receipts, logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
@@ -247,6 +253,7 @@ defmodule Indexer.Block.Fetcher do
            polygon_edge_withdrawals: polygon_edge_withdrawals,
            polygon_edge_deposit_executes: polygon_edge_deposit_executes,
            polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+           scroll_bridge_operations: scroll_bridge_operations,
            scroll_l1_fee_params: scroll_l1_fee_params,
            shibarium_bridge_operations: shibarium_bridge_operations,
            celo_gas_tokens: celo_gas_tokens,
@@ -285,6 +292,7 @@ defmodule Indexer.Block.Fetcher do
          polygon_edge_withdrawals: polygon_edge_withdrawals,
          polygon_edge_deposit_executes: polygon_edge_deposit_executes,
          polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+         scroll_bridge_operations: scroll_bridge_operations,
          scroll_l1_fee_params: scroll_l1_fee_params,
          shibarium_bridge_operations: shibarium_bridge_operations,
          celo_gas_tokens: celo_gas_tokens,
@@ -312,6 +320,7 @@ defmodule Indexer.Block.Fetcher do
 
       :scroll ->
         basic_import_options
+        |> Map.put_new(:scroll_bridge_operations, %{params: scroll_bridge_operations})
         |> Map.put_new(:scroll_l1_fee_params, %{params: scroll_l1_fee_params})
 
       :shibarium ->
