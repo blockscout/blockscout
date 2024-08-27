@@ -330,7 +330,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
        ) do
     implementation_address_hash_strings = module.get_implementation_address_hash_strings(proxy_address_hash)
 
-    if !is_nil(implementation_address_hash_strings) && implementation_address_hash_strings !== :error do
+    if !is_nil(implementation_address_hash_strings) && implementation_address_hash_strings !== [] &&
+         implementation_address_hash_strings !== :error do
       %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: proxy_type}
     else
       do_get_implementation_address_hash_string_by_module(
@@ -389,8 +390,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end
   end
 
-  defp implementation_fallback_value(implementation_address_hash_string) do
-    value = if implementation_address_hash_string == :error, do: :error, else: []
+  defp implementation_fallback_value(implementation_value) do
+    value = if implementation_value == :error, do: :error, else: []
 
     %{implementation_address_hash_strings: value, proxy_type: :unknown}
   end
