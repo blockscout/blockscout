@@ -954,7 +954,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         assert response ==
                  %{
-                   "proxy_type" => nil,
+                   "proxy_type" => "unknown",
                    "implementations" => [],
                    "has_custom_methods_read" => false,
                    "has_custom_methods_write" => false,
@@ -1159,8 +1159,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         assert response ==
                  %{
-                   "proxy_type" => nil,
-                   "implementations" => [],
+                   "proxy_type" => "eip1967",
+                   "implementations" => [%{"address" => formatted_implementation_address_hash_string, "name" => nil}],
                    "has_custom_methods_read" => false,
                    "has_custom_methods_write" => false,
                    "is_self_destructed" => false,
@@ -1284,8 +1284,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         assert response ==
                  %{
-                   "proxy_type" => nil,
-                   "implementations" => [],
+                   "proxy_type" => "eip1967",
+                   "implementations" => [%{"address" => formatted_implementation_address_hash_string, "name" => nil}],
                    "has_custom_methods_read" => false,
                    "has_custom_methods_write" => false,
                    "is_self_destructed" => false,
@@ -1409,8 +1409,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
         assert response ==
                  %{
-                   "proxy_type" => nil,
-                   "implementations" => [],
+                   "proxy_type" => "eip1967",
+                   "implementations" => [%{"address" => formatted_implementation_address_hash_string, "name" => nil}],
                    "has_custom_methods_read" => false,
                    "has_custom_methods_write" => false,
                    "is_self_destructed" => false,
