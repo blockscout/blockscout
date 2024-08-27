@@ -19,7 +19,7 @@ fi
 
 # Build image
 echo "Building $IMAGE_NAME..."
-BLOCKSCOUT_BACKEND_DOCKER_TAG=$VERSION docker-compose -f docker-compose/docker-compose.yml build backend || exit $?
+BLOCKSCOUT_BACKEND_DOCKER_TAG=$VERSION docker compose -f docker-compose/docker-compose.yml build backend || exit $?
 docker tag $IMAGE_NAME $LATEST_IMAGE_NAME
 
 echo "========================================================================================="
