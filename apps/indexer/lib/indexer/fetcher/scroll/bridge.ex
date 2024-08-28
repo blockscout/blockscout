@@ -15,6 +15,8 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
 
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
+  alias Indexer.Fetcher.RollupL1ReorgMonitor
+  alias Indexer.Fetcher.Scroll.BridgeL1
   alias Indexer.Helper, as: IndexerHelper
 
   # 32-byte signature of the event SentMessage(address indexed sender, address indexed target, uint256 value, uint256 messageNonce, uint256 gasLimit, bytes message)
@@ -23,6 +25,85 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
 
   # 32-byte signature of the event RelayedMessage(bytes32 indexed messageHash)
   @relayed_message_event "0x4641df4a962071e12719d8c8c8e5ac7fc4d97b927346a3d7a335b1f7517e133c"
+
+  @eth_get_logs_range_size 1000
+
+  def loop(
+        module,
+        %{
+          block_check_interval: block_check_interval,
+          messenger_contract: messenger_contract,
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          end_block: end_block,
+          start_block: start_block
+        } = state
+      ) do
+    layer =
+      if module == BridgeL1 do
+        :L1
+      else
+        :L2
+      end
+
+    time_before = Timex.now()
+
+    last_written_block =
+      start_block..end_block
+      |> Enum.chunk_every(@eth_get_logs_range_size)
+      |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
+        chunk_start = List.first(current_chunk)
+        chunk_end = List.last(current_chunk)
+
+        if chunk_start <= chunk_end do
+          IndexerHelper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, layer)
+
+          operations =
+            {chunk_start, chunk_end}
+            |> get_logs_all(messenger_contract, json_rpc_named_arguments)
+            |> prepare_operations(layer == :L1, json_rpc_named_arguments)
+
+          import_operations(operations)
+
+          IndexerHelper.log_blocks_chunk_handling(
+            chunk_start,
+            chunk_end,
+            start_block,
+            end_block,
+            "#{Enum.count(operations)} #{layer} operation(s)",
+            layer
+          )
+        end
+
+        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(module)
+
+        if !is_nil(reorg_block) && reorg_block > 0 do
+          if layer == :L1 do
+            BridgeL1.reorg_handle(reorg_block)
+          end
+
+          {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
+        else
+          {:cont, chunk_end}
+        end
+      end)
+
+    new_start_block = last_written_block + 1
+
+    {:ok, new_end_block} =
+      IndexerHelper.get_block_number_by_tag("latest", json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
+
+    delay =
+      if new_end_block == last_written_block do
+        # there is no new block, so wait for some time to let the chain issue the new block
+        max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
+      else
+        0
+      end
+
+    Process.send_after(Process.whereis(module), :continue, delay)
+
+    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
+  end
 
   @doc """
   Filters the given list of events keeping only `SentMessage` and `RelayedMessage` ones
@@ -77,32 +158,12 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
   Converts the list of Scroll messenger events to the list of operations
   preparing them for importing to the database.
   """
-  @spec prepare_operations(
-          list(),
-          boolean(),
-          list() | nil,
-          map() | nil
-        ) ::
-          list()
-  def prepare_operations(
-        events,
-        is_l1,
-        json_rpc_named_arguments,
-        block_to_timestamp \\ nil
-      ) do
+  @spec prepare_operations(list(), boolean(), list()) :: list()
+  def prepare_operations(events, is_l1, json_rpc_named_arguments) do
     block_to_timestamp =
-      if is_nil(block_to_timestamp) do
-        # this function is called by the catchup indexer,
-        # so here we can use RPC calls as it's not so critical for delays as in realtime
-        events
-        |> Enum.filter(fn event -> event.first_topic == @sent_message_event end)
-        |> blocks_to_timestamps(json_rpc_named_arguments)
-      else
-        # this function is called in realtime by the transformer,
-        # so we don't use RPC calls to avoid delays and fetch token data
-        # in a separate fetcher
-        block_to_timestamp
-      end
+      events
+      |> Enum.filter(fn event -> event.first_topic == @sent_message_event end)
+      |> blocks_to_timestamps(json_rpc_named_arguments)
 
     events
     |> Enum.map(fn event ->

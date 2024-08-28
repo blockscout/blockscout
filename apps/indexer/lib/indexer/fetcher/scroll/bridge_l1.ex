@@ -10,15 +10,12 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
 
   import Ecto.Query
 
-  import Indexer.Fetcher.Scroll.Bridge,
-    only: [get_logs_all: 3, import_operations: 1, prepare_operations: 3]
-
   alias Explorer.Chain.Scroll.{Bridge, Reader}
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
+  alias Indexer.Fetcher.Scroll.Bridge, as: BridgeFetcher
   alias Indexer.Helper
 
-  @eth_get_logs_range_size 1000
   @fetcher_name :scroll_bridge_l1
 
   def child_spec(start_link_arguments) do
@@ -125,69 +122,8 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
   end
 
   @impl GenServer
-  def handle_info(
-        :continue,
-        %{
-          messenger_contract: messenger_contract,
-          block_check_interval: block_check_interval,
-          start_block: start_block,
-          end_block: end_block,
-          json_rpc_named_arguments: json_rpc_named_arguments
-        } = state
-      ) do
-    time_before = Timex.now()
-
-    last_written_block =
-      start_block..end_block
-      |> Enum.chunk_every(@eth_get_logs_range_size)
-      |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
-        chunk_start = List.first(current_chunk)
-        chunk_end = List.last(current_chunk)
-
-        if chunk_start <= chunk_end do
-          Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
-
-          operations =
-            {chunk_start, chunk_end}
-            |> get_logs_all(messenger_contract, json_rpc_named_arguments)
-            |> prepare_operations(true, json_rpc_named_arguments)
-
-          import_operations(operations)
-
-          Helper.log_blocks_chunk_handling(
-            chunk_start,
-            chunk_end,
-            start_block,
-            end_block,
-            "#{Enum.count(operations)} L1 operation(s)",
-            :L1
-          )
-        end
-
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
-
-        if !is_nil(reorg_block) && reorg_block > 0 do
-          reorg_handle(reorg_block)
-          {:halt, if(reorg_block <= chunk_end, do: reorg_block - 1, else: chunk_end)}
-        else
-          {:cont, chunk_end}
-        end
-      end)
-
-    new_start_block = last_written_block + 1
-    {:ok, new_end_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
-
-    delay =
-      if new_end_block == last_written_block do
-        # there is no new block, so wait for some time to let the chain issue the new block
-        max(block_check_interval - Timex.diff(Timex.now(), time_before, :milliseconds), 0)
-      else
-        0
-      end
-
-    Process.send_after(self(), :continue, delay)
-
-    {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
+  def handle_info(:continue, state) do
+    BridgeFetcher.loop(__MODULE__, state)
   end
 
   @impl GenServer
@@ -196,7 +132,7 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
     {:noreply, state}
   end
 
-  defp reorg_handle(reorg_block) do
+  def reorg_handle(reorg_block) do
     {deleted_count, _} =
       Repo.delete_all(from(b in Bridge, where: b.type == :deposit and b.block_number >= ^reorg_block))
 

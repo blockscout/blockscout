@@ -145,7 +145,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     end
   end
 
-  defp reorg_block_push(block_number, module) do
+  def reorg_block_push(block_number, module) do
     table_name = reorg_table_name(module)
     {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)
     :ets.insert(table_name, {:queue, updated_queue})
