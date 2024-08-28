@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Detect Diamond proxy pattern on unverified proxy smart-contract ([#10665](https://github.com/blockscout/blockscout/pull/10665))
 - Support smart-contract verification in zkSync ([#10500](https://github.com/blockscout/blockscout/issues/10500))
 - Add icon for secondary coin ([#10241](https://github.com/blockscout/blockscout/issues/10241))
 - Integrate Cryptorank API ([#10550](https://github.com/blockscout/blockscout/issues/10550))
