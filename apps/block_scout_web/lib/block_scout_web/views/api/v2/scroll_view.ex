@@ -8,6 +8,36 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   @api_true [api?: true]
 
   @doc """
+    Function to render GET requests to `/api/v2/scroll/deposits` and `/api/v2/scroll/withdrawals` endpoints.
+  """
+  def render("scroll_bridge_items.json", %{
+        items: items,
+        next_page_params: next_page_params
+      }) do
+    %{
+      items:
+        Enum.map(items, fn item ->
+          %{
+            "block_number" => item.block_number,
+            "index" => item.index,
+            "l1_transaction_hash" => item.l1_transaction_hash,
+            "timestamp" => item.block_timestamp,
+            "l2_transaction_hash" => item.l2_transaction_hash,
+            "value" => item.amount
+          }
+        end),
+      next_page_params: next_page_params
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/scroll/deposits/count` and `/api/v2/scroll/withdrawals/count` endpoints.
+  """
+  def render("scroll_bridge_items_count.json", %{count: count}) do
+    count
+  end
+
+  @doc """
     Extends the json output with a sub-map containing information related Scroll.
 
     ## Parameters
