@@ -261,6 +261,15 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
+    scope "/scroll" do
+      if Application.compile_env(:explorer, :chain_type) == :scroll do
+        get("/deposits", V2.ScrollController, :deposits)
+        get("/deposits/count", V2.ScrollController, :deposits_count)
+        get("/withdrawals", V2.ScrollController, :withdrawals)
+        get("/withdrawals/count", V2.ScrollController, :withdrawals_count)
+      end
+    end
+
     scope "/shibarium" do
       if Application.compile_env(:explorer, :chain_type) == :shibarium do
         get("/deposits", V2.ShibariumController, :deposits)
