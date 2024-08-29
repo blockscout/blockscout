@@ -1,7 +1,6 @@
 name: Release for Optimism
 
 on:
-  workflow_dispatch:
   release:
     types: [published]
 
