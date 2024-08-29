@@ -1017,10 +1017,10 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
   end
 
   describe "/advanced_filters/methods?q=" do
-    test "returns 404 if method does not exist", %{conn: conn} do
+    test "returns empty list if method does not exist", %{conn: conn} do
       request = get(conn, "/api/v2/advanced-filters/methods", %{"q" => "foo"})
-      assert response = json_response(request, 404)
-      assert response["message"] == "Not found"
+      assert response = json_response(request, 200)
+      assert response == []
     end
 
     test "finds method by name", %{conn: conn} do

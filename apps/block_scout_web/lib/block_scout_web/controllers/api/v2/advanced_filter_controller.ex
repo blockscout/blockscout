@@ -133,8 +133,12 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
               ContractMethod.find_contract_method_by_name(query, @api_true)
           end
 
-        with {:method, %ContractMethod{abi: %{"name" => name}, identifier: identifier}} <- {:method, mb_contract_method} do
-          render(conn, :methods, methods: [%{method_id: "0x" <> Base.encode16(identifier, case: :lower), name: name}])
+        case mb_contract_method do
+          %ContractMethod{abi: %{"name" => name}, identifier: identifier} ->
+            render(conn, :methods, methods: [%{method_id: "0x" <> Base.encode16(identifier, case: :lower), name: name}])
+
+          _ ->
+            render(conn, :methods, methods: [])
         end
     end
   end

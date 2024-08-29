@@ -115,7 +115,6 @@ defmodule Explorer.Chain.AdvancedFilter do
     |> Enum.sort(&sort_function/2)
     |> take_page_size(paging_options)
     |> Chain.select_repo(options).preload(
-      token_transfer: [:token],
       from_address: [:names, :smart_contract, :proxy_implementations],
       to_address: [:names, :smart_contract, :proxy_implementations],
       created_contract_address: [:names, :smart_contract, :proxy_implementations]
@@ -391,7 +390,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     |> limit_query(paging_options)
     |> query_function.(false)
     |> limit_query(paging_options)
-    |> preload([:transaction])
+    |> preload([:transaction, :token])
     |> select_merge([token_transfer], %{token_ids: [token_transfer.token_id], amounts: [token_transfer.amount]})
   end
 
@@ -1046,7 +1045,10 @@ defmodule Explorer.Chain.AdvancedFilter do
         {:exclude, to_exclude}
 
       {to_include, to_exclude} when is_list(to_include) ->
-        {:include, to_include -- (to_exclude || [])}
+        case to_include -- (to_exclude || []) do
+          [] -> nil
+          to_include -> {:include, to_include}
+        end
     end
   end
 
