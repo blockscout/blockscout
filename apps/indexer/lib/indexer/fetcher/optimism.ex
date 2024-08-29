@@ -56,7 +56,7 @@ defmodule Indexer.Fetcher.Optimism do
   """
   @spec get_block_check_interval(list()) :: {:ok, non_neg_integer(), non_neg_integer()} | {:error, any()}
   def get_block_check_interval(json_rpc_named_arguments) do
-    {last_safe_block, _} = get_safe_block(json_rpc_named_arguments)
+    {last_safe_block, _} = Helper.get_safe_block(json_rpc_named_arguments)
 
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
@@ -89,26 +89,6 @@ defmodule Indexer.Fetcher.Optimism do
       error_message,
       retries
     )
-  end
-
-  @doc """
-  Tries to get `safe` block number from the RPC node.
-  If it's not available, gets the `latest` one.
-  Returns a tuple of `{block_number, is_latest}`
-  where `is_latest` is true if the `safe` is not available.
-  """
-  @spec get_safe_block(list()) :: {non_neg_integer(), boolean()}
-  def get_safe_block(json_rpc_named_arguments) do
-    case get_block_number_by_tag("safe", json_rpc_named_arguments) do
-      {:ok, safe_block} ->
-        {safe_block, false}
-
-      {:error, :not_found} ->
-        {:ok, latest_block} =
-          get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
-
-        {latest_block, true}
-    end
   end
 
   defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do

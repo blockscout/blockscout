@@ -139,8 +139,9 @@ defmodule Indexer.Helper do
       {:ok, safe_block} ->
         {safe_block, false}
 
-      {:error, :not_found} ->
-        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+      {:error, _} ->
+        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, @infinite_retries_number)
+
         {latest_block, true}
     end
   end
