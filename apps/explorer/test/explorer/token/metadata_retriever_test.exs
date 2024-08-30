@@ -915,6 +915,8 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                   "image" => "https://ipfs.io/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
                 }
               }} == MetadataRetriever.fetch_json(data)
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "Fetches metadata from ipfs" do
