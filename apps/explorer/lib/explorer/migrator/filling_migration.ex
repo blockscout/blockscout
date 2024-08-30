@@ -37,15 +37,15 @@ defmodule Explorer.Migrator.FillingMigration do
 
       @impl true
       def handle_continue(:ok, state) do
-        case MigrationStatus.get_status(migration_name()) do
-          "completed" ->
+        case MigrationStatus.fetch(migration_name()) do
+          %{status: "completed"} ->
             update_cache()
             {:stop, :normal, state}
 
-          _ ->
+          migration_status ->
             MigrationStatus.set_status(migration_name(), "started")
             schedule_batch_migration()
-            {:noreply, %{}}
+            {:noreply, (migration_status && migration_status.meta) || %{}}
         end
       end
 
@@ -62,6 +62,8 @@ defmodule Explorer.Migrator.FillingMigration do
             |> Enum.chunk_every(batch_size())
             |> Enum.map(&run_task/1)
             |> Task.await_many(:infinity)
+
+            MigrationStatus.update_meta(migration_name(), new_state)
 
             schedule_batch_migration()
 
