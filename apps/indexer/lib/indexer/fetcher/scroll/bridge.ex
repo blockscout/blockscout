@@ -77,6 +77,7 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
         reorg_block = RollupL1ReorgMonitor.reorg_block_pop(module)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           if layer == :L1 do
             BridgeL1.reorg_handle(reorg_block)
           end
