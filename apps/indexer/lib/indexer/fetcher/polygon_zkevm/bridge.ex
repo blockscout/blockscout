@@ -473,7 +473,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   defp get_new_data(data, request, response) do
     if atomized_key(request.method_id) == :symbol do
-      Map.put(data, :symbol, response)
+      Map.put(data, :symbol, Reader.sanitize_symbol(response))
     else
       Map.put(data, :decimals, Reader.sanitize_decimals(response))
     end
