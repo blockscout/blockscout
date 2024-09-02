@@ -337,6 +337,14 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
     end
   end
 
+  @doc """
+    Filters token symbol (cannot be longer than 16 characters).
+  """
+  @spec sanitize_symbol(String.t()) :: String.t()
+  def sanitize_symbol(symbol) do
+    String.slice(symbol, 0, 16)
+  end
+
   defp page_batches(query, %PagingOptions{key: nil}), do: query
 
   defp page_batches(query, %PagingOptions{key: {number}}) do
