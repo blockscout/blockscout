@@ -1,8 +1,11 @@
-name: Release for Fuse
+name: Pre-release for CELO
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      number:
+        type: number
+        required: true
 
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
@@ -26,13 +29,13 @@ jobs:
           docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
-      - name: Build and push Docker image for Fuse (indexer + API)
+      - name: Build and push Docker image for CELO (indexer + API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-fuse:latest, blockscout/blockscout-fuse:${{ env.RELEASE_VERSION }}
+          tags: blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -45,17 +48,17 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=false
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            BRIDGED_TOKENS_ENABLED=true
+            CHAIN_TYPE=celo
 
-      - name: Build and push Docker image for Fuse (indexer)
+      - name: Build and push Docker image for CELO (indexer)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-fuse:${{ env.RELEASE_VERSION }}-indexer
+          tags: blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -67,17 +70,17 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=false
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            BRIDGED_TOKENS_ENABLED=true
+            CHAIN_TYPE=celo
 
-      - name: Build and push Docker image for Fuse (API)
+      - name: Build and push Docker image for CELO (API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-fuse:${{ env.RELEASE_VERSION }}-api
+          tags: blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-api
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -89,6 +92,6 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             ADMIN_PANEL_ENABLED=false
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            BRIDGED_TOKENS_ENABLED=true
+            CHAIN_TYPE=celo

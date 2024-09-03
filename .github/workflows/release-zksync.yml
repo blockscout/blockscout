@@ -1,7 +1,6 @@
 name: Release for ZkSync
 
 on:
-  workflow_dispatch:
   release:
     types: [published]
 

@@ -103,6 +103,7 @@ defmodule Explorer.Etherscan.Logs do
         )
 
       all_transaction_logs_query
+      |> Chain.wrapped_union_subquery()
       |> order_by([log], asc: log.block_number, asc: log.index)
       |> Repo.replica().all()
     else

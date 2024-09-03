@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - production-eth-experimental
+      - production-eth
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub

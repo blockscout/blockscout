@@ -93,29 +93,29 @@ jobs:
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=optimism
 
-            - name: Build and push Docker image for Optimism (indexer + API + shrink internal transactions)
-            uses: docker/build-push-action@v5
-            with:
-              context: .
-              file: ./docker/Dockerfile
-              push: true
-              tags: blockscout/blockscout-optimism:${{ env.RELEASE_VERSION }}-shrink-internal-txs
-              labels: ${{ steps.setup.outputs.docker-labels }}
-              platforms: |
-                linux/amd64
-                linux/arm64/v8
-              build-args: |
-                DISABLE_WEBAPP=false
-                API_V1_READ_METHODS_DISABLED=false
-                API_V1_WRITE_METHODS_DISABLED=false
-                CACHE_EXCHANGE_RATES_PERIOD=
-                CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-                CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-                ADMIN_PANEL_ENABLED=false
-                BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
-                RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-                CHAIN_TYPE=optimism
-                SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
+      - name: Build and push Docker image for Optimism (indexer + API + shrink internal transactions)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-optimism:${{ env.RELEASE_VERSION }}-shrink-internal-txs
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            DISABLE_WEBAPP=false
+            API_V1_READ_METHODS_DISABLED=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_EXCHANGE_RATES_PERIOD=
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=false
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=optimism
+            SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       - name: Build and push Docker image for Optimism (indexer + shrink internal transactions)
         uses: docker/build-push-action@v5

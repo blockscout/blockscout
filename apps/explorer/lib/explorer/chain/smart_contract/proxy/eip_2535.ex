@@ -19,7 +19,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP2535 do
     }
   ]
 
-  @spec get_implementation_address_hash_strings(Hash.Address.t()) :: nil | [binary]
+  @spec get_implementation_address_hash_strings(Hash.Address.t()) :: nil | :error | [binary]
   def get_implementation_address_hash_strings(proxy_address_hash) do
     case @facet_addresses_signature
          |> Basic.get_implementation_address_hash_string(
@@ -28,6 +28,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP2535 do
          ) do
       implementation_addresses when is_list(implementation_addresses) ->
         implementation_addresses
+
+      :error ->
+        :error
 
       _ ->
         nil

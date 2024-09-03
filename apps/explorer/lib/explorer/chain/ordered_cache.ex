@@ -113,6 +113,11 @@ defmodule Explorer.Chain.OrderedCache do
   @callback take_enough(integer()) :: [element] | nil
 
   @doc """
+  Behaves like `take_enough/1`, but addresses [#10445](https://github.com/blockscout/blockscout/issues/10445).
+  """
+  @callback atomic_take_enough(integer()) :: [element] | nil
+
+  @doc """
   Adds an element, or a list of elements, to the cache.
   When the cache is full, only the most prevailing elements will be stored, based
   on `c:prevails?/2`.
@@ -201,6 +206,22 @@ defmodule Explorer.Chain.OrderedCache do
           ids
           |> Enum.take(amount)
           |> Enum.map(&get(&1))
+        end
+      end
+
+      @impl OrderedCache
+      def atomic_take_enough(amount) do
+        items =
+          cache_name()
+          |> ConCache.ets()
+          |> :ets.tab2list()
+
+        if amount <= Enum.count(items) - 1 do
+          items
+          |> Enum.reject(fn {key, _value} -> key == ids_list_key() end)
+          |> Enum.sort(&prevails?/2)
+          |> Enum.take(amount)
+          |> Enum.map(fn {_key, value} -> value end)
         end
       end
 
