@@ -257,17 +257,18 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   @doc """
-  Returns additional sources of the smart-contract from bytecode twin
+  Returns additional sources of the smart-contract or from its bytecode twin
   """
   @spec get_additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil) ::
           [SmartContractAdditionalSource.t()] | nil
   def get_additional_sources(smart_contract, smart_contract_verified, bytecode_twin_contract) do
     cond do
+      smart_contract_verified && is_list(smart_contract.smart_contract_additional_sources) &&
+          !Enum.empty?(smart_contract.smart_contract_additional_sources) ->
+        smart_contract.smart_contract_additional_sources
+
       !is_nil(bytecode_twin_contract) ->
         bytecode_twin_contract.smart_contract_additional_sources
-
-      smart_contract_verified ->
-        smart_contract.smart_contract_additional_sources
 
       true ->
         []
