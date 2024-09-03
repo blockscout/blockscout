@@ -1,0 +1,47 @@
+{
+  "name": "e2e-testnet",
+  "version": "1.0.0",
+  "description": "XIXOIO E2E Testnet test suite",
+  "license": "ISC",
+  "author": "XIXOIO, a.s.",
+  "main": "index.js",
+  "scripts": {
+    "gui": "cypress open",
+    "gui-e2e": "cypress open --env grepTags=e2e",
+    "gui-mobile": "cypress open --config viewportHeight=1792,viewportWidth=828",
+    "lint": "eslint --cache 'cypress/**/*.js'",
+    "lint:fix": "eslint --cache --fix 'cypress/**/*.js'",
+    "test": "cypress run",
+    "test-mobile": "cypress run --config viewportHeight=1792,viewportWidth=828"
+  },
+  "eslintConfig": {
+    "plugins": [
+      "cypress",
+      "prettier"
+    ],
+    "extends": [
+      "plugin:prettier/recommended",
+      "plugin:cypress/recommended"
+    ],
+    "rules": {
+      "sort-imports": "off",
+      "prettier/prettier": "warn"
+    }
+  },
+  "dependencies": {
+    "cypress": "^9.1.0",
+    "decimal.js-light": "^2.5.1",
+    "har-validator": "^5.1.5"
+  },
+  "devDependencies": {
+    "@cypress/snapshot": "^2.1.7",
+    "@testing-library/cypress": "^8.0.1",
+    "cypress-grep": "^2.5.1",
+    "eslint": "^7.14.0",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-plugin-cypress": "^2.11.2",
+    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-simple-import-sort": "^6.0.1",
+    "prettier": "2.2.1"
+  }
+}
