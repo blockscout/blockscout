@@ -1,13 +1,13 @@
 defmodule Explorer.Account.TagAddress do
   @moduledoc """
-    Watchlist is root entity for WatchlistAddresses
+    User created custom address tags.
   """
 
   use Explorer.Schema
 
   import Ecto.Changeset
 
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Identity
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Hash}
@@ -18,6 +18,7 @@ defmodule Explorer.Account.TagAddress do
     field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:name, Explorer.Encrypted.Binary, null: false)
     field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:user_created, :boolean, null: false, default: true)
 
     belongs_to(:identity, Identity, null: false)
 
@@ -177,4 +178,15 @@ defmodule Explorer.Account.TagAddress do
   end
 
   def get_max_tags_count, do: Application.get_env(:explorer, Explorer.Account)[:private_tags_limit]
+
+  @spec merge(Multi.t(), integer(), [integer()]) :: Multi.t()
+  def merge(multi, primary_id, ids_to_merge) do
+    Multi.run(multi, :merge_tag_addresses, fn repo, _ ->
+      {:ok,
+       repo.update_all(
+         from(key in __MODULE__, where: key.identity_id in ^ids_to_merge),
+         set: [identity_id: primary_id, user_created: false]
+       )}
+    end)
+  end
 end

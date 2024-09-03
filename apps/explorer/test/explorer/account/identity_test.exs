@@ -1,9 +1,7 @@
-defmodule UserFromAuthTest do
+defmodule Explorer.Account.IdentityTest do
   use Explorer.DataCase
 
-  alias BlockScoutWeb.Models.UserFromAuth
-  alias Explorer.Account.Identity
-  alias Explorer.Account.Watchlist
+  alias Explorer.Account.{Identity, Watchlist}
   alias Explorer.Repo
   alias Ueberauth.Auth
   alias Ueberauth.Auth.Info
@@ -30,12 +28,11 @@ defmodule UserFromAuthTest do
         uid: "github|666666"
       }
 
-      user_data = UserFromAuth.find_or_create(auth)
+      user_data = Identity.find_or_create(auth)
 
       %{
         id: identity_id,
         email: "john@blockscout.com",
-        name: "John Snow",
         uid: "github|666666"
       } = Identity |> first |> Repo.account_repo().one()
 
@@ -77,12 +74,11 @@ defmodule UserFromAuthTest do
         uid: "google-oauth2|666666"
       }
 
-      user_data = UserFromAuth.find_or_create(auth)
+      user_data = Identity.find_or_create(auth)
 
       %{
         id: identity_id,
         email: "john@blockscout.com",
-        name: "John Snow",
         uid: "google-oauth2|666666"
       } = Identity |> first |> Repo.account_repo().one()
 

@@ -4,8 +4,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
 
-  alias BlockScoutWeb.Models.UserFromAuth
-  alias Explorer.Account.WatchlistAddress
+  alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Repo
 
@@ -109,7 +108,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       auth = build(:auth)
       insert(:address)
-      {:ok, user} = UserFromAuth.find_or_create(auth)
+      {:ok, user} = Identity.find_or_create(auth)
 
       conn = Plug.Test.init_test_session(conn, current_user: user)
 
@@ -122,7 +121,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
     test "watchlist txs can paginate", %{conn: conn} do
       auth = build(:auth)
-      {:ok, user} = UserFromAuth.find_or_create(auth)
+      {:ok, user} = Identity.find_or_create(auth)
 
       conn = Plug.Test.init_test_session(conn, current_user: user)
 

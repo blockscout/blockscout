@@ -7,15 +7,17 @@ defmodule Explorer.Account.TagTransaction do
 
   import Ecto.Changeset
 
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Identity
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Chain.Hash
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
   typed_schema "account_tag_transactions" do
     field(:tx_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:name, Explorer.Encrypted.Binary, null: false)
     field(:tx_hash, Explorer.Encrypted.TransactionHash, null: false)
+    field(:user_created, :boolean, null: false, default: true)
 
     belongs_to(:identity, Identity, null: false)
 
@@ -122,20 +124,13 @@ defmodule Explorer.Account.TagTransaction do
 
   defp page_transaction_tags(query, _), do: query
 
-  def tag_transaction_by_transaction_hash_and_identity_id_query(tx_hash, identity_id)
-      when not is_nil(tx_hash) and not is_nil(identity_id) do
-    __MODULE__
-    |> where([tag], tag.identity_id == ^identity_id and tag.tx_hash == ^tx_hash)
-  end
-
-  def tag_transaction_by_transaction_hash_and_identity_id_query(_, _), do: nil
-
+  @spec get_tag_transaction_by_transaction_hash_and_identity_id(String.t() | Hash.Full.t() | nil, integer() | nil) ::
+          [__MODULE__.t()] | nil
   def get_tag_transaction_by_transaction_hash_and_identity_id(tx_hash, identity_id)
       when not is_nil(tx_hash) and not is_nil(identity_id) do
-    tx_hash
-    |> hash_to_lower_case_string()
-    |> tag_transaction_by_transaction_hash_and_identity_id_query(identity_id)
-    |> Repo.account_repo().one()
+    query = from(tag in __MODULE__, where: tag.tx_hash_hash == ^tx_hash and tag.identity_id == ^identity_id)
+
+    Repo.account_repo().all(query)
   end
 
   def get_tag_transaction_by_transaction_hash_and_identity_id(_, _), do: nil
@@ -176,6 +171,17 @@ defmodule Explorer.Account.TagTransaction do
   end
 
   def get_max_tags_count, do: Application.get_env(:explorer, Explorer.Account)[:private_tags_limit]
+
+  @spec merge(Multi.t(), integer(), [integer()]) :: Multi.t()
+  def merge(multi, primary_id, ids_to_merge) do
+    Multi.run(multi, :merge_tag_transactions, fn repo, _ ->
+      {:ok,
+       repo.update_all(
+         from(key in __MODULE__, where: key.identity_id in ^ids_to_merge),
+         set: [identity_id: primary_id, user_created: false]
+       )}
+    end)
+  end
 end
 
 defimpl Jason.Encoder, for: Explorer.Account.TagTransaction do

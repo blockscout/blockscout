@@ -1,9 +1,11 @@
 defmodule BlockScoutWeb.Account.Api.V2.EmailController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.Models.UserFromAuth
+  import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
+
+  alias BlockScoutWeb.Account.Api.V2.AuthenticateController
   alias Explorer.Account.Identity
-  alias Explorer.Repo
+  alias Explorer.{Helper, Repo}
   alias Explorer.ThirdPartyIntegrations.Auth0
 
   require Logger
@@ -18,8 +20,13 @@ defmodule BlockScoutWeb.Account.Api.V2.EmailController do
     with user <- conn.cookies[@invalid_session_key],
          {:auth, false} <- {:auth, is_nil(user)},
          {:email_verified, false} <- {:email_verified, user[:email_verified]},
-         {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(user[:id])},
-         {:interval, true} <- {:interval, check_time_interval(identity.verification_email_sent_at)} do
+         {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(user[:id])},
+         {:interval, true} <-
+           {:interval,
+            Helper.check_time_interval(
+              identity.verification_email_sent_at,
+              Application.get_env(:explorer, Explorer.Account)[:verification_email_resend_interval]
+            )} do
       domain = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:domain]
       api_key = Auth0.get_m2m_jwt()
       headers = [{"Authorization", "Bearer #{api_key}"}, {"Content-Type", "application/json"}]
@@ -49,20 +56,10 @@ defmodule BlockScoutWeb.Account.Api.V2.EmailController do
     end
   end
 
-  def check_time_interval(nil), do: true
-
-  def check_time_interval(sent_at) do
-    interval = Application.get_env(:explorer, Explorer.Account)[:resend_interval]
-    now = DateTime.utc_now()
-
-    if sent_at
-       |> DateTime.add(interval, :millisecond)
-       |> DateTime.compare(now) != :gt do
-      true
-    else
-      sent_at
-      |> DateTime.add(interval, :millisecond)
-      |> DateTime.diff(now, :second)
+  def link_email(conn, %{"email" => email, "otp" => otp} = params) do
+    with {:auth, %{uid: id}} <- {:auth, current_user(conn)},
+         {:ok, auth} <- Auth0.link_email(id, email, otp) do
+      AuthenticateController.put_auth_to_session(conn, params, auth)
     end
   end
 end
