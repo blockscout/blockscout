@@ -124,7 +124,11 @@ defmodule Explorer.Mixfile do
       {:ueberauth, "~> 0.7"},
       {:recon, "~> 2.5"},
       {:varint, "~> 1.4"},
-      {:blake2, "~> 1.0"}
+      {:blake2, "~> 1.0"},
+      {:ueberauth_auth0, "~> 2.0"},
+      {:oauth2, "~> 2.0"},
+      {:siwe, github: "royal-markets/siwe-ex", ref: "51c9c08240eb7eea3c35693011f8d260cd9bb3be"},
+      {:joken, "~> 2.6"}
     ]
   end
 

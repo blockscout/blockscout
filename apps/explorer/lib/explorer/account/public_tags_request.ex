@@ -4,7 +4,7 @@ defmodule Explorer.Account.PublicTagsRequest do
   """
   use Explorer.Schema
 
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Identity
   alias Explorer.Chain.Hash
   alias Explorer.Repo
@@ -252,4 +252,15 @@ defmodule Explorer.Account.PublicTagsRequest do
   end
 
   def get_max_public_tags_request_count, do: @max_public_tags_request_per_account
+
+  @spec merge(Multi.t(), integer(), [integer()]) :: Multi.t()
+  def merge(multi, primary_id, ids_to_merge) do
+    Multi.run(multi, :merge_public_tags_requests, fn repo, _ ->
+      {:ok,
+       repo.update_all(
+         from(key in __MODULE__, where: key.identity_id in ^ids_to_merge),
+         set: [identity_id: primary_id]
+       )}
+    end)
+  end
 end

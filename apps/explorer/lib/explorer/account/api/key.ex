@@ -4,6 +4,7 @@ defmodule Explorer.Account.Api.Key do
   """
   use Explorer.Schema
 
+  alias Ecto.Multi
   alias Explorer.Account.Identity
   alias Ecto.{Changeset, UUID}
   alias Explorer.Repo
@@ -126,4 +127,15 @@ defmodule Explorer.Account.Api.Key do
   def api_key_with_plan_by_value(_), do: nil
 
   def get_max_api_keys_count, do: @max_key_per_account
+
+  @spec merge(Multi.t(), integer(), [integer()]) :: Multi.t()
+  def merge(multi, primary_id, ids_to_merge) do
+    Multi.run(multi, :merge_keys, fn repo, _ ->
+      {:ok,
+       repo.update_all(
+         from(key in __MODULE__, where: key.identity_id in ^ids_to_merge),
+         set: [identity_id: primary_id]
+       )}
+    end)
+  end
 end

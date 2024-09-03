@@ -5414,10 +5414,16 @@ defmodule Explorer.Chain do
 
   def select_watchlist_address_id(watchlist_id, address_hash)
       when not is_nil(watchlist_id) and not is_nil(address_hash) do
-    WatchlistAddress
-    |> where([wa], wa.watchlist_id == ^watchlist_id and wa.address_hash_hash == ^address_hash)
-    |> select([wa], wa.id)
-    |> Repo.account_repo().one()
+    wa_ids =
+      WatchlistAddress
+      |> where([wa], wa.watchlist_id == ^watchlist_id and wa.address_hash_hash == ^address_hash)
+      |> select([wa], wa.id)
+      |> Repo.account_repo().all()
+
+    case wa_ids do
+      [wa_id | _] -> wa_id
+      _ -> nil
+    end
   end
 
   def select_watchlist_address_id(_watchlist_id, _address_hash), do: nil

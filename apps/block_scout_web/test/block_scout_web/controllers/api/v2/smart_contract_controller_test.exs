@@ -5,8 +5,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   import Mox
 
   alias BlockScoutWeb.AddressContractView
-  alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Account.Identity
   alias Explorer.TestHelper
   alias Plug.Conn
 
@@ -2763,7 +2763,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     setup %{conn: conn} do
       auth = build(:auth)
 
-      {:ok, user} = UserFromAuth.find_or_create(auth)
+      {:ok, user} = Identity.find_or_create(auth)
 
       {:ok, conn: Plug.Test.init_test_session(conn, current_user: user)}
     end

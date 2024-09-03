@@ -60,7 +60,7 @@ defmodule Explorer.Factory do
   alias Explorer.Utility.{MissingBalanceOfToken, MissingBlockRange}
 
   alias Ueberauth.Strategy.Auth0
-  alias Ueberauth.Auth.Info
+  alias Ueberauth.Auth.{Extra, Info}
   alias Ueberauth.Auth
 
   if Application.compile_env(:explorer, :chain_type) == :zksync do
@@ -78,13 +78,20 @@ defmodule Explorer.Factory do
   end
 
   def auth_factory do
+    email = sequence(:email, &"test_user-#{&1}@blockscout.com")
+    image = sequence("https://example.com/avatar/test_user")
+    name = sequence("User Test")
+    nickname = sequence("test_user")
+    uid = sequence("blockscout|000")
+    address_hash = to_string(build(:contract_address).hash)
+
     %Auth{
       info: %Info{
         birthday: nil,
         description: nil,
-        email: sequence(:email, &"test_user-#{&1}@blockscout.com"),
+        email: email,
         first_name: nil,
-        image: sequence("https://example.com/avatar/test_user"),
+        image: image,
         last_name: nil,
         location: nil,
         name: sequence("User Test"),
@@ -94,7 +101,36 @@ defmodule Explorer.Factory do
       },
       provider: :auth0,
       strategy: Auth0,
-      uid: sequence("blockscout|000")
+      uid: uid,
+      extra: %Extra{
+        raw_info: %{
+          user: %{
+            "created_at" => "2024-09-06T13:49:20.481Z",
+            "email" => email,
+            "email_verified" => true,
+            "identities" => [
+              %{
+                "connection" => "email",
+                "isSocial" => false,
+                "provider" => "email",
+                "user_id" => "66db0852af53e2c0ae80ddb2"
+              }
+            ],
+            "last_ip" => "42.42.42.42",
+            "last_login" => "2024-09-14T12:14:26.965Z",
+            "logins_count" => 11,
+            "name" => name,
+            "nickname" => nickname,
+            "picture" => image,
+            "updated_at" => "2024-09-14T12:14:26.966Z",
+            "user_id" => uid,
+            "user_metadata" => %{
+              "web3_address_hash" => address_hash
+            }
+          },
+          token: nil
+        }
+      }
     }
   end
 
