@@ -147,6 +147,7 @@ defmodule Explorer.Repo do
         Explorer.Repo.Shibarium,
         Explorer.Repo.Stability,
         Explorer.Repo.Suave,
+        Explorer.Repo.Zilliqa,
         Explorer.Repo.ZkSync
       ] do
     defmodule repo do

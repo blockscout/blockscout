@@ -23,6 +23,9 @@ config :explorer, Explorer.Repo.PolygonZkevm, timeout: :timer.seconds(80)
 # Configure Scroll database
 config :explorer, Explorer.Repo.Scroll, timeout: :timer.seconds(80)
 
+# Configure Zilliqa database
+config :explorer, Explorer.Repo.Zilliqa, timeout: :timer.seconds(80)
+
 # Configure ZkSync database
 config :explorer, Explorer.Repo.ZkSync, timeout: :timer.seconds(80)
 
