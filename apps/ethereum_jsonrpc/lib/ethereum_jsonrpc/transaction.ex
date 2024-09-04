@@ -122,7 +122,7 @@ defmodule EthereumJSONRPC.Transaction do
        * `"l1BlockNumber"` - .
       """
     :scroll -> """
-       * `"queueIndex"` - .
+       * `"queueIndex"` - An index of L1MessageTx (replaces Nonce) in Scroll rollup.
       """
     :suave -> """
        * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).

@@ -28,6 +28,26 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
 
   @eth_get_logs_range_size 1000
 
+  @doc """
+  The main function that scans RPC node for the message logs (events), parses them,
+  and imports to the database (scroll_bridge table).
+
+  The function works for both L1 and L2 layers (depending on the `module` parameter).
+  It splits a given block range by chunks and scans the messenger contract for the message
+  logs (events) for each chunk. The found events are handled and then imported to the
+  `scroll_bridge` database table.
+
+  After historical block range is covered, the function switches to realtime mode and
+  searches for the message events in every new block. Reorg blocks are taken into account.
+
+  ## Parameters
+  - `module`: The module from which the function was called: Indexer.Fetcher.Scroll.BridgeL1 or Indexer.Fetcher.Scroll.BridgeL2.
+  - `state`: The state map containing needed data such as messenger contract address and the block range.
+
+  ## Returns
+  - {:noreply, state} tuple with the updated block range in the `state` to scan logs in.
+  """
+  @spec loop(module(), map()) :: {:noreply, map()}
   def loop(
         module,
         %{
@@ -106,27 +126,10 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
     {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
   end
 
-  @doc """
-  Filters the given list of events keeping only `SentMessage` and `RelayedMessage` ones
-  emitted by the messenger contract.
-  """
-  @spec filter_messenger_events(list(), binary()) :: list()
-  def filter_messenger_events(events, messenger_contract) do
-    Enum.filter(events, fn event ->
-      IndexerHelper.address_hash_to_string(event.address_hash, true) == messenger_contract and
-        Enum.member?(
-          [@sent_message_event, @relayed_message_event],
-          IndexerHelper.log_topic_to_string(event.first_topic)
-        )
-    end)
-  end
-
-  @doc """
-  Fetches `SentMessage` and `RelayedMessage` events of the messenger contract from an RPC node
-  for the given range of blocks.
-  """
+  # Fetches `SentMessage` and `RelayedMessage` events of the messenger contract from an RPC node
+  # for the given range of blocks.
   @spec get_logs_all({non_neg_integer(), non_neg_integer()}, binary(), list()) :: list()
-  def get_logs_all({chunk_start, chunk_end}, messenger_contract, json_rpc_named_arguments) do
+  defp get_logs_all({chunk_start, chunk_end}, messenger_contract, json_rpc_named_arguments) do
     {:ok, result} =
       IndexerHelper.get_logs(
         chunk_start,
@@ -141,13 +144,11 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
     Logs.elixir_to_params(result)
   end
 
-  @doc """
-  Imports the given Scroll messages into database.
-  Used by Indexer.Fetcher.Scroll.BridgeL1 and Indexer.Fetcher.Scroll.BridgeL2 fetchers.
-  Doesn't return anything.
-  """
+  # Imports the given Scroll messages into database.
+  # Used by Indexer.Fetcher.Scroll.BridgeL1 and Indexer.Fetcher.Scroll.BridgeL2 fetchers.
+  # Doesn't return anything.
   @spec import_operations(list()) :: no_return()
-  def import_operations(operations) do
+  defp import_operations(operations) do
     {:ok, _} =
       Chain.import(%{
         scroll_bridge_operations: %{params: operations},
@@ -155,12 +156,10 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
       })
   end
 
-  @doc """
-  Converts the list of Scroll messenger events to the list of operations
-  preparing them for importing to the database.
-  """
+  # Converts the list of Scroll messenger events to the list of operations
+  # preparing them for importing to the database.
   @spec prepare_operations(list(), boolean(), list()) :: list()
-  def prepare_operations(events, is_l1, json_rpc_named_arguments) do
+  defp prepare_operations(events, is_l1, json_rpc_named_arguments) do
     block_to_timestamp =
       events
       |> Enum.filter(fn event -> event.first_topic == @sent_message_event end)

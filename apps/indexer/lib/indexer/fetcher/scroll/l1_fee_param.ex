@@ -162,7 +162,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   end
 
   @doc """
-    Handles L2 block reorg: removes all rows from the `scroll_l1_fee_params`
+    Handles L2 block reorg: removes all rows from the `scroll_l1_fee_params` table
     created beginning from the reorged block, and accordingly reduces the last
     block number defined in the `last_fetched_counters` database table.
 

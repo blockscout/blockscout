@@ -1,6 +1,14 @@
 defmodule Indexer.Fetcher.Scroll.BridgeL2 do
   @moduledoc """
-  Fills scroll_bridge DB table.
+  The module for scanning Scroll RPC node on L2 for the message logs (events), parsing them,
+  and importing to the database (scroll_bridge table).
+
+  The main function splits the whole block range by chunks and scans L2 Scroll Messenger contract
+  for the message logs (events) for each chunk. The found events are handled and then imported to the
+  `scroll_bridge` database table.
+
+  After historical block range is covered, the process switches to realtime mode and
+  searches for the message events in every new block. Reorg blocks are taken into account.
   """
 
   use GenServer
@@ -47,6 +55,11 @@ defmodule Indexer.Fetcher.Scroll.BridgeL2 do
     {:noreply, %{json_rpc_named_arguments: json_rpc_named_arguments}}
   end
 
+  # Validates parameters and initiates searching of the events.
+  #
+  # When first launch, the events searching will start from the first block of the chain
+  # and end on the `latest` one. If this is not the first launch, the process will start
+  # from the block which was the last on the previous launch.
   @impl GenServer
   def handle_info(:init_with_delay, %{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
     env = Application.get_all_env(:indexer)[__MODULE__]
@@ -89,6 +102,7 @@ defmodule Indexer.Fetcher.Scroll.BridgeL2 do
     end
   end
 
+  # See the description of the `loop` function.
   @impl GenServer
   def handle_info(:continue, state) do
     BridgeFetcher.loop(__MODULE__, state)
@@ -100,6 +114,16 @@ defmodule Indexer.Fetcher.Scroll.BridgeL2 do
     {:noreply, state}
   end
 
+  @doc """
+    Handles L2 block reorg: removes all Withdrawal rows from the `scroll_bridge` table
+    created beginning from the reorged block.
+
+    ## Parameters
+    - `reorg_block`: the block number where reorg has occurred.
+
+    ## Returns
+    - nothing
+  """
   def reorg_handle(reorg_block) do
     {deleted_count, _} =
       Repo.delete_all(from(b in Bridge, where: b.type == :withdrawal and b.block_number >= ^reorg_block))
