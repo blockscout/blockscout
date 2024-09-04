@@ -1869,9 +1869,10 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-    The fee a `transaction` paid for the `t:Explorer.Chain.Transaction.t/0` `gas`.
+    The execution fee a `transaction` paid for the `t:Explorer.Chain.Transaction.t/0` `gas`.
     Doesn't include L1 fee. See the description for the `fee` function for parameters and return values.
   """
+  @spec l2_fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t() | nil} | {:actual, Decimal.t() | nil}
   def l2_fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
   def l2_fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
@@ -1887,7 +1888,7 @@ defmodule Explorer.Chain.Transaction do
     {:actual, l2_fee(gas_price, gas_used, unit)}
   end
 
-  def l2_fee(gas_price, gas_used, unit) do
+  defp l2_fee(gas_price, gas_used, unit) do
     gas_price
     |> Wei.to(unit)
     |> Decimal.mult(gas_used)

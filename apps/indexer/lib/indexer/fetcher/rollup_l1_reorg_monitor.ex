@@ -1,6 +1,9 @@
 defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   @moduledoc """
-  A module to catch L1 reorgs and notify a rollup module about it.
+  A module to catch L1 reorgs and make queue of the reorg blocks (if there are multiple reorgs).
+
+  A rollup module uses the queue to detect a reorg and to do required actions.
+  In case of reorg, the block number is popped from the queue for that rollup module.
   """
 
   use GenServer
@@ -129,7 +132,13 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
   @doc """
   Pops the number of reorg block from the front of the queue for the specified rollup module.
-  Returns `nil` if the reorg queue is empty.
+
+  ## Parameters
+  - `module`: The module for which the block number is popped from the queue.
+
+  ## Returns
+  - The popped block number.
+  - `nil` if the reorg queue is empty.
   """
   @spec reorg_block_pop(module()) :: non_neg_integer() | nil
   def reorg_block_pop(module) do
@@ -145,6 +154,17 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     end
   end
 
+  @doc """
+  Pushes the number of reorg block to the back of the queue for the specified rollup module.
+
+  ## Parameters
+  - `block_number`: The reorg block number.
+  - `module`: The module for which the block number is pushed to the queue.
+
+  ## Returns
+  - Nothing is returned.
+  """
+  @spec reorg_block_push(non_neg_integer(), module()) :: any()
   def reorg_block_push(block_number, module) do
     table_name = reorg_table_name(module)
     {:ok, updated_queue} = BoundQueue.push_back(reorg_queue_get(table_name), block_number)

@@ -55,6 +55,12 @@ defmodule Explorer.Chain.Scroll.Reader do
   @doc """
     Retrieves a list of Scroll deposits (both completed and unclaimed)
     sorted in descending order of the index.
+
+    ## Parameters
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - A list of deposits.
   """
   @spec deposits(list()) :: list()
   def deposits(options \\ []) do
@@ -96,6 +102,12 @@ defmodule Explorer.Chain.Scroll.Reader do
   @doc """
     Retrieves a list of Scroll withdrawals (both completed and unclaimed)
     sorted in descending order of the index.
+
+    ## Parameters
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - A list of withdrawals.
   """
   @spec withdrawals(list()) :: list()
   def withdrawals(options \\ []) do
