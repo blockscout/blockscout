@@ -1037,11 +1037,14 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,
 config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CELO_VALIDATOR_GROUP_VOTES_BATCH_SIZE", 200_000)
 
+config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor,
+  enabled:
+    ConfigHelper.chain_type() == :celo and
+      not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CELO_VALIDATOR_GROUP_VOTES_FETCHER")
+
 celo_epoch_fetchers_enabled? =
   ConfigHelper.chain_type() == :celo and
     not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CELO_EPOCH_FETCHER")
-
-config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor, enabled: celo_epoch_fetchers_enabled?
 
 config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
   enabled: celo_epoch_fetchers_enabled?,
