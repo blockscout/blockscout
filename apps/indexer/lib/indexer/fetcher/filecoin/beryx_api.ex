@@ -23,8 +23,9 @@ defmodule Indexer.Fetcher.Filecoin.BeryxAPI do
           | {:error, integer(), map()}
           | {:error, HTTPoison.Error.t()}
   def fetch_account_info(eth_address_hash) do
-    base_url = Application.get_env(:indexer, __MODULE__)[:base_url]
-    api_token = Application.get_env(:indexer, __MODULE__)[:api_token]
+    config = Application.get_env(:indexer, __MODULE__)
+    base_url = config |> Keyword.get(:base_url) |> String.trim_trailing("/")
+    api_token = config[:api_token]
 
     url = "#{base_url}/mainnet/account/info/#{eth_address_hash}"
 

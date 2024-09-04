@@ -6,6 +6,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   require Ecto.Query
 
   import Ecto.Query, only: [from: 2, where: 3, subquery: 1]
+  import Explorer.Chain.Import.Runner.Helper, only: [chain_type_dependent_import: 3]
 
   alias Ecto.{Changeset, Multi, Repo}
 
@@ -227,14 +228,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   @impl Runner
   def timeout, do: @timeout
-
-  def chain_type_dependent_import(multi, chain_type, multi_run) do
-    if Application.get_env(:explorer, :chain_type) == chain_type do
-      multi_run.(multi)
-    else
-      multi
-    end
-  end
 
   defp fork_transactions(%{
          repo: repo,

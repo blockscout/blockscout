@@ -54,12 +54,15 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   @min_address_string_length 3
 
   # Payload sizes:
-  # f1 -- 65 bytes
-  # f2 -- 32 bytes
+  # f1 -- 20 bytes
+  # f2 -- 20 bytes
   # f3 -- 48 bytes
   @protocol_indicator_to_payload_byte_count %{
     1 => 20,
-    # todo: WTF? Should be 32. Specs are lying
+    # For some reason, specs tell that payload for f2 is a SHA256 hash, which is
+    # 32 bytes long. However, in practice, it is 20 bytes long...
+    #
+    # https://spec.filecoin.io/appendix/address/#section-appendix.address.protocol-2-actor
     2 => 20,
     3 => 48
   }

@@ -112,7 +112,6 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
     end
   end
 
-  # todo: should I move this logic somewhere else?
   @spec update_address_and_remove_pending_operation(
           PendingAddressOperation.t(),
           %{

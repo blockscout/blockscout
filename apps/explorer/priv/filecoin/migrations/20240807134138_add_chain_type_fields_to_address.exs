@@ -5,11 +5,7 @@ defmodule Explorer.Repo.Filecoin.Migrations.AddChainTypeFieldsToAddress do
     alter table(:addresses) do
       add(:filecoin_id, :bytea)
       add(:filecoin_robust, :bytea)
+      add(:filecoin_actor_type, :smallint)
     end
-
-    execute(
-      "ALTER TABLE addresses ADD COLUMN filecoin_actor_type SMALLINT;",
-      "ALTER TABLE addresses DROP COLUMN filecoin_actor_type;"
-    )
   end
 end
