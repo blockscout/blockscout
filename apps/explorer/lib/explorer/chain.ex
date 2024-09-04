@@ -2105,11 +2105,11 @@ defmodule Explorer.Chain do
       {:error, :not_found}
 
   """
-  @spec max_consensus_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
-  def max_consensus_block_number do
+  @spec max_consensus_block_number(Keyword.t()) :: {:ok, Block.block_number()} | {:error, :not_found}
+  def max_consensus_block_number(options \\ []) do
     Block
     |> where(consensus: true)
-    |> Repo.aggregate(:max, :number)
+    |> select_repo(options).aggregate(:max, :number)
     |> case do
       nil -> {:error, :not_found}
       number -> {:ok, number}

@@ -9,7 +9,8 @@ defmodule Explorer.Chain.Celo.Reader do
     only: [
       select_repo: 1,
       join_associations: 2,
-      default_paging_options: 0
+      default_paging_options: 0,
+      max_consensus_block_number: 1
     ]
 
   alias Explorer.Chain.Block
@@ -195,17 +196,18 @@ defmodule Explorer.Chain.Celo.Reader do
   @doc """
   Retrieves the epoch number of the last fetched block.
   """
-  @spec last_block_epoch_number(Keyword.t()) :: EthereumJSONRPC.block_number() | nil
+  @spec last_block_epoch_number(Keyword.t()) :: Block.block_number() | nil
   def last_block_epoch_number(options \\ []) do
     block_number =
       1
-      |> Blocks.take_enough()
+      |> Blocks.atomic_take_enough()
       |> case do
-        [%Block{number: number}] ->
-          number
-
-        nil ->
-          select_repo(options).aggregate(Block, :max, :number)
+        [%Block{number: number}] -> {:ok, number}
+        nil -> max_consensus_block_number(options)
+      end
+      |> case do
+        {:ok, number} -> number
+        _ -> nil
       end
 
     block_number && Helper.block_number_to_epoch_number(block_number)
