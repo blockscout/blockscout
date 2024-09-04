@@ -181,6 +181,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   defp handle_failed_balances(failed_token_balances) do
     {missing_balance_of_balances, other_failed_balances} =
       Enum.split_with(failed_token_balances, fn
+        %{error: :unable_to_decode} -> true
         %{error: error} when is_binary(error) -> error =~ "execution reverted"
         _ -> false
       end)
