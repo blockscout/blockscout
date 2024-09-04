@@ -109,13 +109,24 @@ defmodule BlockScoutWeb.AddressContractView do
 
   def contract_creation_code(%Address{
         contract_code: %Data{bytes: <<>>},
-        contracts_creation_internal_transaction: %InternalTransaction{init: init}
+        contracts_creation_internal_transaction: %InternalTransaction{init: init, status: 0}
+      }) do
+    nil
+  end
+
+  def contract_creation_code(%Address{
+        contract_code: %Data{bytes: <<>>},
+        contracts_creation_internal_transaction: %InternalTransaction{init: init, status: 1}
       }) do
     {:selfdestructed, init}
   end
 
-  def contract_creation_code(%Address{contract_code: contract_code}) do
+  def contract_creation_code(%Address{contract_code: contract_code, contracts_creation_transaction: %Transaction{status: 1}}) do
     {:ok, contract_code}
+  end
+
+  def contract_creation_code(%Address{contract_code: contract_code, contracts_creation_transaction: %Transaction{status: 0}}) do
+    nil
   end
 
   def creation_code(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
