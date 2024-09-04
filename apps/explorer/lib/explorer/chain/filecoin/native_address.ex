@@ -37,7 +37,6 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   3. The remaining bytes are the payload.
   """
 
-  alias Blake2.Blake2b
   alias Explorer.Chain.Hash
   alias Poison.Encoder.BitString
   alias Varint.LEB128
@@ -381,7 +380,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   end
 
   defp to_checksum(bytes),
-    do: Blake2b.hash(bytes, "", @checksum_bytes_count)
+    do: Blake2.hash2b(bytes, @checksum_bytes_count)
 
   defimpl String.Chars do
     def to_string(hash) do

@@ -124,7 +124,7 @@ defmodule Explorer.Mixfile do
       {:ueberauth, "~> 0.7"},
       {:recon, "~> 2.5"},
       {:varint, "~> 1.4"},
-      {:blake2_elixir, "~> 0.8.1"}
+      {:blake2, "~> 1.0"}
     ]
   end
 
