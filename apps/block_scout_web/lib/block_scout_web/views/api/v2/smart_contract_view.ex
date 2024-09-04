@@ -162,7 +162,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         conn
       ) do
     bytecode_twin = SmartContract.get_address_verified_bytecode_twin_contract(address.hash, @api_true)
-    minimal_proxy_address_hash = address.implementation
     bytecode_twin_contract = bytecode_twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
     fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
@@ -203,9 +202,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "has_methods_write" => write_methods?,
       "has_methods_read_proxy" => is_proxy,
       "has_methods_write_proxy" => is_proxy && write_methods?,
-      # todo: remove this property once frontend is bound to "implementations"
-      "minimal_proxy_address_hash" =>
-        minimal_proxy_address_hash && Address.checksum(minimal_proxy_address_hash.address_hash),
       "proxy_type" => proxy_type,
       "implementations" => implementations,
       "sourcify_repo_url" =>
