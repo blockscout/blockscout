@@ -270,8 +270,6 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert()
         |> Repo.preload(to_address: :smart_contract)
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
       assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}, _, _} =
                Transaction.decoded_input_data(transaction, [])
     end
@@ -292,8 +290,6 @@ defmodule Explorer.Chain.TransactionTest do
         :transaction
         |> insert(to_address: contract.address, input: "0x" <> input_data)
         |> Repo.preload(to_address: :smart_contract)
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
 
       assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}, _, _} =
                Transaction.decoded_input_data(transaction, [])
@@ -326,8 +322,6 @@ defmodule Explorer.Chain.TransactionTest do
         :transaction
         |> insert(to_address: contract.address, input: "0x" <> input_data)
         |> Repo.preload(to_address: :smart_contract)
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
 
       assert {{:ok, "60fe47b1", "set(uint256 arg0)", [{"arg0", "uint256", 10}]}, _, _} =
                Transaction.decoded_input_data(transaction, [])
