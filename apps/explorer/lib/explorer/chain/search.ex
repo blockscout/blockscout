@@ -618,7 +618,7 @@ defmodule Explorer.Chain.Search do
   def search_ens_name_in_bens(search_query) do
     trimmed_query = String.trim(search_query)
 
-    with true <- Regex.match?(~r/\w+\.\w+/, trimmed_query),
+        with true <- Regex.match?(~r/[a-zA-Z0-9\p{Emoji}]+\.[a-zA-Z0-9\p{Emoji}]+/, trimmed_query),
          %{address_hash: _address_hash} = result <- ens_domain_name_lookup(search_query) do
       result
     else
