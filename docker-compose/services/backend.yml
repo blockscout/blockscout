@@ -14,3 +14,6 @@ services:
       -  ../envs/common-blockscout.env
     volumes:
       - ./logs/:/app/logs/
+    ports:
+      - target: 4000
+        published: 4000

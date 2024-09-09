@@ -9,3 +9,6 @@ services:
     container_name: 'frontend'
     env_file:
       -  ../envs/common-frontend.env
+    ports:
+      - target: 3000
+        published: 3000
