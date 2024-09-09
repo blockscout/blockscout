@@ -3672,6 +3672,7 @@ defmodule Explorer.Chain do
       from(
         token in Token,
         where: token.cataloged == false or is_nil(token.cataloged),
+        where: is_nil(token.skip_metadata) or token.skip_metadata == false,
         select: token.contract_address_hash
       )
 
