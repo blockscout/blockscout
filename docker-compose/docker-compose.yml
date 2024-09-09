@@ -41,10 +41,10 @@ services:
     links:
       - db:database
     environment:
-        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_TRACE_URL: http://host.docker.internal:8545/
-        ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
-        CHAIN_ID: '1337'
+        ETHEREUM_JSONRPC_HTTP_URL: https://rpc.uomi.ai/
+        ETHEREUM_JSONRPC_TRACE_URL: https://rpc.uomi.ai/
+        ETHEREUM_JSONRPC_WS_URL: wss://rpc.uomi.ai/
+        CHAIN_ID: '4386'
 
   visualizer:
     extends:
@@ -92,11 +92,11 @@ services:
       file: ./services/user-ops-indexer.yml
       service: user-ops-indexer
 
-  proxy:
-    depends_on:
-      - backend
-      - frontend
-      - stats
-    extends:
-      file: ./services/nginx.yml
-      service: proxy
+  # proxy:
+  #   depends_on:
+  #     - backend
+  #     - frontend
+  #     - stats
+  #   extends:
+  #     file: ./services/nginx.yml
+  #     service: proxy
