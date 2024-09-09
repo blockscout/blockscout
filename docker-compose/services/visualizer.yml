@@ -9,3 +9,6 @@ services:
     container_name: 'visualizer'
     env_file:
       -  ../envs/common-visualizer.env
+    ports:
+      - target: 8050
+        published: 8081
