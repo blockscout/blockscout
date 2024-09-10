@@ -199,6 +199,13 @@ config :explorer, Explorer.Repo.ShrunkInternalTransactions,
   url: System.get_env("DATABASE_URL"),
   pool_size: 1
 
+# Configures Blackfort database
+config :explorer, Explorer.Repo.Blackfort,
+  database: database,
+  hostname: hostname,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: 1
+
 variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "apps/explorer/config/dev")

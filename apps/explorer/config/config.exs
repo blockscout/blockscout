@@ -81,6 +81,11 @@ config :explorer, Explorer.Chain.Cache.StabilityValidatorsCounters,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
+config :explorer, Explorer.Chain.Cache.BlackfortValidatorsCounters,
+  enabled: true,
+  enable_consolidation: true,
+  update_interval_in_milliseconds: update_interval_in_milliseconds_default
+
 config :explorer, Explorer.Chain.Cache.TransactionActionTokensData, enabled: true
 
 config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: true
