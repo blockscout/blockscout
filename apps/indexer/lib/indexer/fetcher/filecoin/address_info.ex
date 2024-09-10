@@ -103,7 +103,7 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
   defp fetch_and_update(%PendingAddressOperation{address_hash: address_hash} = operation) do
     with {:ok, new_params} <- fetch_address_info_using_beryx_api(operation),
          {:ok, _} <- update_address_and_remove_pending_operation(operation, new_params) do
-      Logger.info("Fetched Filecoin address info for: #{to_string(address_hash)}")
+      Logger.debug("Fetched Filecoin address info for: #{to_string(address_hash)}")
       :ok
     else
       _ ->
