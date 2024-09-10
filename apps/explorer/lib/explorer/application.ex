@@ -142,8 +142,9 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.TransactionBlockConsensus),
         configure(Explorer.Migrator.TokenTransferBlockConsensus),
         configure(Explorer.Migrator.RestoreOmittedWETHTransfers),
-        configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability),
-        configure_mode_dependent_process(Explorer.Migrator.ShrinkInternalTransactions, :indexer)
+        configure(Explorer.Migrator.FilecoinPendingAddressOperations),
+        configure_mode_dependent_process(Explorer.Migrator.ShrinkInternalTransactions, :indexer),
+        configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability)
       ]
       |> List.flatten()
 

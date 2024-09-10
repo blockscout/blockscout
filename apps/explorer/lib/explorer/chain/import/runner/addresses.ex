@@ -3,14 +3,16 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   Bulk imports `t:Explorer.Chain.Address.t/0`.
   """
 
-  require Ecto.Query
+  import Ecto.Query, only: [from: 2]
+  import Explorer.Chain.Import.Runner.Helper, only: [chain_type_dependent_import: 3]
 
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{Address, Hash, Import, Transaction}
+  alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Chain.{Address, Hash, Import, Transaction}
   alias Explorer.Prometheus.Instrumenter
 
-  import Ecto.Query, only: [from: 2]
+  require Ecto.Query
 
   @behaviour Import.Runner
 
@@ -98,6 +100,21 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
         :created_address_code_indexed_at_transactions
       )
     end)
+    |> chain_type_dependent_import(
+      :filecoin,
+      &Multi.run(
+        &1,
+        :filecoin_pending_address_operations,
+        fn repo, _ ->
+          Instrumenter.block_import_stage_runner(
+            fn -> filecoin_pending_address_operations(repo, ordered_changes_list, insert_options) end,
+            :addresses,
+            :addresses,
+            :filecoin_pending_address_operations
+          )
+        end
+      )
+    )
   end
 
   @impl Import.Runner
@@ -260,5 +277,24 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
           {:error, %{exception: postgrex_error, transaction_hashes: ordered_created_contract_hashes}}
       end
     end
+  end
+
+  defp filecoin_pending_address_operations(repo, addresses, %{timeout: timeout, timestamps: timestamps}) do
+    ordered_addresses =
+      addresses
+      |> Enum.map(&%{address_hash: &1.hash})
+      |> Enum.sort_by(& &1.address_hash)
+      |> Enum.dedup_by(& &1.address_hash)
+
+    Import.insert_changes_list(
+      repo,
+      ordered_addresses,
+      conflict_target: :address_hash,
+      on_conflict: :nothing,
+      for: FilecoinPendingAddressOperation,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 end

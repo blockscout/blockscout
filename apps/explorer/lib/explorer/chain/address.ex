@@ -1,15 +1,10 @@
-defmodule Explorer.Chain.Address do
+defmodule Explorer.Chain.Address.Schema do
   @moduledoc """
-  A stored representation of a web3 address.
+    A stored representation of a web3 address.
+
+    Changes in the schema should be reflected in the bulk import module:
+    - Explorer.Chain.Import.Runner.Addresses
   """
-
-  require Bitwise
-
-  use Explorer.Schema
-
-  alias Ecto.Association.NotLoaded
-  alias Ecto.Changeset
-  alias Explorer.{Chain, PagingOptions, Repo}
 
   alias Explorer.Chain.{
     Address,
@@ -26,12 +21,127 @@ defmodule Explorer.Chain.Address do
   }
 
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
-  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
+  @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
+                        :filecoin ->
+                          alias Explorer.Chain.Filecoin.{IDAddress, NativeAddress}
+
+                          quote do
+                            [
+                              field(:filecoin_id, IDAddress),
+                              field(:filecoin_robust, NativeAddress),
+                              field(
+                                :filecoin_actor_type,
+                                Ecto.Enum,
+                                values:
+                                  Enum.with_index([
+                                    :account,
+                                    :cron,
+                                    :datacap,
+                                    :eam,
+                                    :ethaccount,
+                                    :evm,
+                                    :init,
+                                    :market,
+                                    :miner,
+                                    :multisig,
+                                    :paych,
+                                    :placeholder,
+                                    :power,
+                                    :reward,
+                                    :system,
+                                    :verifreg
+                                  ])
+                              )
+                            ]
+                          end
+
+                        _ ->
+                          []
+                      end)
+
+  defmacro generate do
+    quote do
+      @primary_key false
+      @primary_key false
+      typed_schema "addresses" do
+        field(:hash, Hash.Address, primary_key: true)
+        field(:fetched_coin_balance, Wei)
+        field(:fetched_coin_balance_block_number, :integer) :: Block.block_number() | nil
+        field(:contract_code, Data)
+        field(:nonce, :integer)
+        field(:decompiled, :boolean, default: false)
+        field(:verified, :boolean, default: false)
+        field(:has_decompiled_code?, :boolean, virtual: true)
+        field(:stale?, :boolean, virtual: true)
+        field(:transactions_count, :integer)
+        field(:token_transfers_count, :integer)
+        field(:gas_used, :integer)
+        field(:ens_domain_name, :string, virtual: true)
+        field(:metadata, :any, virtual: true)
+
+        # todo: remove virtual field for a single implementation when frontend is bound to "implementations" object value in API
+        field(:implementation, :any, virtual: true)
+
+        has_one(:smart_contract, SmartContract, references: :hash)
+        has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)
+        has_one(:proxy_implementations, Implementation, foreign_key: :proxy_address_hash, references: :hash)
+
+        has_one(
+          :contracts_creation_internal_transaction,
+          InternalTransaction,
+          foreign_key: :created_contract_address_hash,
+          references: :hash
+        )
+
+        has_one(
+          :contracts_creation_transaction,
+          Transaction,
+          foreign_key: :created_contract_address_hash,
+          references: :hash
+        )
+
+        has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
+        has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
+        has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
+
+        timestamps()
+
+        unquote_splicing(@chain_type_fields)
+      end
+    end
+  end
+end
+
+defmodule Explorer.Chain.Address do
+  @moduledoc """
+  A stored representation of a web3 address.
+  """
+
+  require Bitwise
+  require Explorer.Chain.Address.Schema
+
+  use Explorer.Schema
+
+  alias Ecto.Association.NotLoaded
+  alias Ecto.Changeset
+  alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.{Chain, PagingOptions, Repo}
+
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
+  @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
+                                :filecoin ->
+                                  ~w(filecoin_id filecoin_robust filecoin_actor_type)a
+
+                                _ ->
+                                  []
+                              end)
   @required_attrs ~w(hash)a
-  @allowed_attrs @optional_attrs ++ @required_attrs
+  @allowed_attrs @optional_attrs ++ @required_attrs ++ @chain_type_optional_attrs
 
   @typedoc """
   Hash of the public key for this address.
@@ -74,54 +184,18 @@ defmodule Explorer.Chain.Address do
    * `inserted_at` - when this address was inserted
    * `updated_at` - when this address was last updated
    * `ens_domain_name` - virtual field for ENS domain name passing
-
+   #{case Application.compile_env(:explorer, :chain_type) do
+    :filecoin -> """
+       * `filecoin_native_address` - robust f0/f1/f2/f3/f4 Filecoin address
+       * `filecoin_id_address` - short f0 Filecoin address that may change during chain reorgs
+       * `filecoin_actor_type` - type of actor associated with the Filecoin address
+      """
+    _ -> ""
+  end}
    `fetched_coin_balance` and `fetched_coin_balance_block_number` may be updated when a new coin_balance row is fetched.
     They may also be updated when the balance is fetched via the on demand fetcher.
   """
-  @primary_key false
-  typed_schema "addresses" do
-    field(:hash, Hash.Address, primary_key: true)
-    field(:fetched_coin_balance, Wei)
-    field(:fetched_coin_balance_block_number, :integer) :: Block.block_number() | nil
-    field(:contract_code, Data)
-    field(:nonce, :integer)
-    field(:decompiled, :boolean, default: false)
-    field(:verified, :boolean, default: false)
-    field(:has_decompiled_code?, :boolean, virtual: true)
-    field(:stale?, :boolean, virtual: true)
-    field(:transactions_count, :integer)
-    field(:token_transfers_count, :integer)
-    field(:gas_used, :integer)
-    field(:ens_domain_name, :string, virtual: true)
-    field(:metadata, :any, virtual: true)
-
-    # todo: remove virtual field for a single implementation when frontend is bound to "implementations" object value in API
-    field(:implementation, :any, virtual: true)
-
-    has_one(:smart_contract, SmartContract, references: :hash)
-    has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)
-    has_one(:proxy_implementations, Implementation, foreign_key: :proxy_address_hash, references: :hash)
-
-    has_one(
-      :contracts_creation_internal_transaction,
-      InternalTransaction,
-      foreign_key: :created_contract_address_hash,
-      references: :hash
-    )
-
-    has_one(
-      :contracts_creation_transaction,
-      Transaction,
-      foreign_key: :created_contract_address_hash,
-      references: :hash
-    )
-
-    has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
-    has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
-    has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
-
-    timestamps()
-  end
+  Explorer.Chain.Address.Schema.generate()
 
   @balance_changeset_required_attrs @required_attrs ++ ~w(fetched_coin_balance fetched_coin_balance_block_number)a
 
