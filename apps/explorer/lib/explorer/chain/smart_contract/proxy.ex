@@ -521,9 +521,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   defp parse_abi_from_proxy_implementations(nil), do: []
 
-  defp parse_abi_from_proxy_implementations(proxy_implementation_addresses_tuple) do
-    proxy_implementation_addresses_tuple
-    |> elem(1)
+  defp parse_abi_from_proxy_implementations({_proxy_address_hash, implementations}) do
+    implementations
     |> Enum.reduce([], fn implementation, acc ->
       if implementation.smart_contract && implementation.smart_contract.abi do
         acc ++ implementation.smart_contract.abi
