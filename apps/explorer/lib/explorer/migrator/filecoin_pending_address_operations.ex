@@ -9,7 +9,6 @@ defmodule Explorer.Migrator.FilecoinPendingAddressOperations do
 
   import Ecto.Query
 
-  alias Ecto.Multi
   alias Explorer.Chain.{Address, Filecoin.PendingAddressOperation, Import}
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Repo
@@ -55,20 +54,16 @@ defmodule Explorer.Migrator.FilecoinPendingAddressOperations do
         &%{address_hash: &1}
       )
 
-    Multi.new()
-    |> Multi.run(:insert_changes, fn repo, _ ->
-      Import.insert_changes_list(
-        repo,
-        ordered_pending_operations,
-        conflict_target: :address_hash,
-        on_conflict: :nothing,
-        for: PendingAddressOperation,
-        returning: true,
-        timeout: :infinity,
-        timestamps: Import.timestamps()
-      )
-    end)
-    |> Repo.transaction()
+    Import.insert_changes_list(
+      Repo,
+      ordered_pending_operations,
+      conflict_target: :address_hash,
+      on_conflict: :nothing,
+      for: PendingAddressOperation,
+      returning: true,
+      timeout: :infinity,
+      timestamps: Import.timestamps()
+    )
   end
 
   @impl FillingMigration
