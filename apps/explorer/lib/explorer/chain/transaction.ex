@@ -2017,10 +2017,10 @@ defmodule Explorer.Chain.Transaction do
     unique_to_address_hashes =
       transactions
       |> Enum.filter(fn
-      %Transaction{to_address: %Address{}} -> true
-      %Transaction{created_contract_address: %Address{}} -> true
-      _ -> false
-    end)
+        %Transaction{to_address: %Address{}} -> true
+        %Transaction{created_contract_address: %Address{}} -> true
+        _ -> false
+      end)
       |> Enum.map(fn transaction ->
         (transaction.to_address && transaction.to_address.hash) ||
           (transaction.created_contract_address && transaction.created_contract_address.hash)
