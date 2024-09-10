@@ -2016,28 +2016,11 @@ defmodule Explorer.Chain.Transaction do
     # parse unique address hashes of smart-contracts from to_address and created_contract_address properties of the transactions list
     unique_to_address_hashes =
       transactions
-      |> Enum.filter(fn transaction ->
-        case transaction do
-          %Transaction{
-            to_address: to_address,
-            created_contract_address: created_contract_address
-          } ->
-            case to_address do
-              %Address{} ->
-                true
-
-              _ ->
-                # credo:disable-for-next-line
-                case created_contract_address do
-                  %Address{} -> true
-                  _ -> false
-                end
-            end
-
-          _ ->
-            false
-        end
-      end)
+      |> Enum.filter(fn
+      %Transaction{to_address: %Address{}} -> true
+      %Transaction{created_contract_address: %Address{}} -> true
+      _ -> false
+    end)
       |> Enum.map(fn transaction ->
         (transaction.to_address && transaction.to_address.hash) ||
           (transaction.created_contract_address && transaction.created_contract_address.hash)
