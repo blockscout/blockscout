@@ -56,6 +56,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     )
 
     field(:address_hashes, {:array, Hash.Address}, null: false)
+    has_many(:addresses, Address, foreign_key: :hash, references: :address_hashes)
+
     field(:names, {:array, :string}, null: false)
 
     belongs_to(
@@ -419,4 +421,18 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   end
 
   def names(_, _), do: []
+
+  def addresses_association(nested_ids) do
+    query = from(address in Address, where: address.hash in ^List.flatten(nested_ids))
+
+    addresses_map =
+      query
+      |> Repo.replica().all()
+      |> Map.new(&{&1.hash, &1})
+
+    for ids <- nested_ids,
+        address <- ids |> Enum.map(&addresses_map[&1]) do
+      {ids, address}
+    end
+  end
 end

@@ -44,6 +44,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
@@ -78,7 +79,15 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
                                           ] => :optional,
                                           [from_address: [:names, :smart_contract, :proxy_implementations]] =>
                                             :optional,
-                                          [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
+                                          [
+                                            to_address: [
+                                              :names,
+                                              :smart_contract,
+                                              proxy_implementations: [
+                                                addresses: {&Implementation.addresses_association/1, [:smart_contract]}
+                                              ]
+                                            ]
+                                          ] => :optional
                                         }
                                         |> Map.merge(@chain_type_transaction_necessity_by_association)
 
@@ -151,6 +160,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            ),
          preloaded <-
            Chain.preload_token_transfers(transaction, @token_transfers_in_tx_necessity_by_association, @api_true, false) do
+      dbg(transaction.to_address)
+
       conn
       |> put_status(200)
       |> render(:transaction, %{
