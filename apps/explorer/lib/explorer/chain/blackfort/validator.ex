@@ -20,8 +20,8 @@ defmodule Explorer.Chain.Blackfort.Validator do
     field(:address_hash, HashAddress, primary_key: true)
     field(:name, :binary)
     field(:commission, :integer)
-    field(:self_bonded_amount, :integer)
-    field(:delegated_amount, :integer)
+    field(:self_bonded_amount, :decimal)
+    field(:delegated_amount, :decimal)
     field(:slashing_status_is_slashed, :boolean, default: false)
     field(:slashing_status_by_block, :integer)
     field(:slashing_status_multiplier, :integer)
@@ -149,7 +149,7 @@ defmodule Explorer.Chain.Blackfort.Validator do
   end
 
   def fetch_validators_list do
-    case HTTPoison.get(validator_url()) do
+    case HTTPoison.get(validator_url(), [], follow_redirect: true) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body |> Jason.decode() |> parse_validators_info()
 
@@ -163,7 +163,7 @@ defmodule Explorer.Chain.Blackfort.Validator do
     {:ok,
      validators
      |> Enum.map(fn %{
-                      "address" => address_hash,
+                      "address" => address_hash_string,
                       "name" => name,
                       "commission" => commission,
                       "self_bonded_amount" => self_bonded_amount,
@@ -174,12 +174,14 @@ defmodule Explorer.Chain.Blackfort.Validator do
                         "multiplier" => slashing_status_multiplier
                       }
                     } ->
+       {:ok, address_hash} = HashAddress.cast(address_hash_string)
+
        %{
          address_hash: address_hash,
          name: name,
-         commission: commission,
-         self_bonded_amount: self_bonded_amount,
-         delegated_amount: delegated_amount,
+         commission: parse_number(commission),
+         self_bonded_amount: parse_number(self_bonded_amount),
+         delegated_amount: parse_number(delegated_amount),
          slashing_status_is_slashed: slashing_status_is_slashed,
          slashing_status_by_block: slashing_status_by_block,
          slashing_status_multiplier: slashing_status_multiplier
@@ -194,5 +196,10 @@ defmodule Explorer.Chain.Blackfort.Validator do
 
   defp validator_url do
     Application.get_env(:explorer, __MODULE__)[:api_url]
+  end
+
+  defp parse_number(string) do
+    {number, _} = Integer.parse(string)
+    number
   end
 end

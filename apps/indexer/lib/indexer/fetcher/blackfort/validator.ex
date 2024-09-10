@@ -25,17 +25,20 @@ defmodule Indexer.Fetcher.Blackfort.Validator do
 
         validators_map =
           Enum.reduce(validators, %{}, fn %{address_hash: address_hash}, map ->
-            Map.put(map, address_hash |> String.downcase(), true)
+            Map.put(map, address_hash.bytes, true)
           end)
 
         address_hashes_to_drop_from_db =
           Enum.flat_map(validators_from_db, fn validator ->
-            (is_nil(validators_map[validator.address_hash |> to_string() |> String.downcase()]) &&
+            (is_nil(validators_map[validator.address_hash.bytes]) &&
                [validator.address_hash]) || []
           end)
 
         Validator.delete_validators_by_address_hashes(address_hashes_to_drop_from_db)
-        Validator.insert_validators(validators)
+
+        validators
+        |> Enum.map(&Validator.append_timestamps/1)
+        |> Validator.insert_validators()
 
       _ ->
         nil

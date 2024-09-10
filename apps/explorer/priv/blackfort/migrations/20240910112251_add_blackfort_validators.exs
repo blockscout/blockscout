@@ -15,6 +15,6 @@ defmodule Explorer.Repo.Blackfort.Migrations.AddBlackfortValidators do
       timestamps()
     end
 
-    create_if_not_exists(index(:validators_stability, ["address_hash ASC"]))
+    create_if_not_exists(index(:validators_blackfort, ["address_hash ASC"]))
   end
 end
