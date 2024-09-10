@@ -14,7 +14,15 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   """
   use BlockScoutWeb, :router
   alias BlockScoutWeb.AddressTransactionController
-  alias BlockScoutWeb.Routers.{APIKeyV2Router, SmartContractsApiV2Router, TokensApiV2Router, UtilsApiV2Router}
+
+  alias BlockScoutWeb.Routers.{
+    AddressBadgesApiV2Router,
+    APIKeyV2Router,
+    SmartContractsApiV2Router,
+    TokensApiV2Router,
+    UtilsApiV2Router
+  }
+
   alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
   alias BlockScoutWeb.Routers.AccountRouter
 
@@ -25,6 +33,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
   forward("/v2/key", APIKeyV2Router)
   forward("/v2/utils", UtilsApiV2Router)
+  forward("/v2/address-badges", AddressBadgesApiV2Router)
 
   pipeline :api do
     plug(
@@ -55,6 +64,23 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(:fetch_session)
     plug(:protect_from_forgery)
     plug(RateLimit)
+  end
+
+  pipeline :api_v2_no_forgery_protect do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 20_000_000,
+      query_string_length: 5_000,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
+    plug(:accepts, ["json"])
+    plug(CheckApiV2)
+    plug(RateLimit)
+    plug(:fetch_session)
   end
 
   pipeline :api_v2_no_session do

@@ -103,6 +103,7 @@ defmodule Explorer.Chain.Address.Schema do
         )
 
         has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
+        has_many(:badges, Address.BadgeToAddress, foreign_key: :address_hash, references: :hash)
         has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 
@@ -181,6 +182,7 @@ defmodule Explorer.Chain.Address do
      Solidity source code is in `smart_contract` `t:Explorer.Chain.SmartContract.t/0` `contract_source_code` *if* the
     contract has been verified
    * `names` - names known for the address
+   * `badges` - badges applied for the address
    * `inserted_at` - when this address was inserted
    * `updated_at` - when this address was last updated
    * `ens_domain_name` - virtual field for ENS domain name passing

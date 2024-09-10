@@ -85,7 +85,6 @@ defmodule BlockScoutWeb.Account.Api.V2.FallbackController do
 
   def call(conn, {:api_key, _}) do
     conn
-    |> put_status(:unauthorized)
     |> put_view(UserView)
     |> render(:message, %{message: "Wrong API key"})
   end

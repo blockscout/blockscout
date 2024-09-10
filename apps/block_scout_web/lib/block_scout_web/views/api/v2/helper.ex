@@ -84,6 +84,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => Address.checksum(address),
       "is_contract" => smart_contract?,
       "name" => address_name(address),
+      "badges" => address_badges(address),
       "proxy_type" => proxy_type,
       "implementations" => Proxy.proxy_object_info(implementation_address_hashes, implementation_names),
       "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
@@ -157,6 +158,20 @@ defmodule BlockScoutWeb.API.V2.Helper do
   end
 
   def address_name(_), do: nil
+
+  def address_badges(%Address{badges: badge_mappings}) when is_list(badge_mappings) do
+    badge_mappings
+    |> Enum.map(fn badge_mapping ->
+      %{
+        :category => badge_mapping.badge.category,
+        :content => badge_mapping.badge.content
+      }
+    end)
+  end
+
+  def address_badges(_) do
+    []
+  end
 
   def verified?(%Address{smart_contract: nil}), do: false
   def verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false

@@ -75,6 +75,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @address_options [
     necessity_by_association: %{
       :names => :optional,
+      [badges: [:badge, :address]] => :optional,
       :token => :optional,
       :proxy_implementations => :optional
     },
