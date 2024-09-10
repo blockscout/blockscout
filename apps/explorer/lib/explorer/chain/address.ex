@@ -61,7 +61,6 @@ defmodule Explorer.Chain.Address do
            ]}
 
   @timeout :timer.minutes(1)
-  @api_true [api?: true]
 
   @typedoc """
    * `fetched_coin_balance` - The last fetched balance from Nethermind
@@ -483,21 +482,5 @@ defmodule Explorer.Chain.Address do
       _ ->
         {[], nil}
     end
-  end
-
-  @doc """
-  Get multiple addresses by hashes with preloaded smart-contract
-  """
-  @spec get_multiple_addresses([Hash.Address.t()]) :: [Address.t()]
-  def get_multiple_addresses(address_hashes) do
-    query =
-      from(
-        address in Address,
-        where: address.hash in ^address_hashes
-      )
-
-    query
-    |> Chain.select_repo(@api_true).all()
-    |> Repo.preload([:smart_contract])
   end
 end

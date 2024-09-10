@@ -6,6 +6,8 @@ defmodule Explorer.Chain.Transaction.Schema do
     - Explorer.Chain.Import.Runner.Transactions
   """
 
+  alias Explorer.Chain
+
   alias Explorer.Chain.{
     Address,
     Beacon.BlobTransaction,
@@ -2043,7 +2045,8 @@ defmodule Explorer.Chain.Transaction do
       end)
 
     # query from the DB address objects with smart_contract preload for all found above implementation addresses
-    implementation_addresses_with_smart_contracts = Address.get_multiple_addresses(implementation_hashes)
+    implementation_addresses_with_smart_contracts =
+      Chain.hashes_to_addresses(implementation_hashes, necessity_by_association: %{smart_contract: :optional})
 
     # combine final tuple {proxy_address_hash, the list of implementations as Address.t() object with preloaded SmartContract.t()}
     proxy_implementation_addresses_tuple_list_raw
