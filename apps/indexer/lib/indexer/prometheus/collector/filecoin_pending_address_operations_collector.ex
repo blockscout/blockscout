@@ -14,7 +14,7 @@ defmodule Indexer.Prometheus.Collector.FilecoinPendingAddressOperations do
       create_gauge(
         :filecoin_pending_address_operations,
         "Number of records in filecoin_pending_address_operations table",
-        Repo.aggregate(PendingAddressOperation, :count)
+        Repo.aggregate(PendingAddressOperation, :count, timeout: :infinity)
       )
     )
   end
