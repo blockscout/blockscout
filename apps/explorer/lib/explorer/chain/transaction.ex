@@ -2029,27 +2029,38 @@ defmodule Explorer.Chain.Transaction do
     multiple_proxy_implementations =
       Implementation.get_proxy_implementations_for_multiple_proxies(unique_to_address_hashes)
 
-    # combine unique list of implementation addresses hashes
-    implementation_hashes =
+    # combine tuple {proxy_address_hash, implementation_address_hashes} and unique list of implementation addresses hashes
+    {proxy_implementation_addresses_tuple_list_raw, implementation_hashes} =
       multiple_proxy_implementations
-      |> Enum.flat_map(fn proxy_implementations -> proxy_implementations.address_hashes end)
+      |> Enum.reduce({[], []}, fn proxy_implementations,
+                                  {proxy_implementation_addresses_tuple_list_acc, implementation_hashes_acc} ->
+        proxy_implementation_addresses_tuple_list_new_acc = [
+          {proxy_implementations.proxy_address_hash, proxy_implementations.address_hashes}
+          | proxy_implementation_addresses_tuple_list_acc
+        ]
+
+        implementation_hashes_new_acc = implementation_hashes_acc ++ proxy_implementations.address_hashes
+        {proxy_implementation_addresses_tuple_list_new_acc, implementation_hashes_new_acc}
+      end)
 
     # query from the DB address objects with smart_contract preload for all found above implementation addresses
     implementation_addresses_with_smart_contracts =
       Chain.hashes_to_addresses(implementation_hashes, necessity_by_association: %{smart_contract: :optional})
 
-    # combine tuple {proxy_address_hash, the list of implementations as Address.t() object with preloaded SmartContract.t()}
-    multiple_proxy_implementations
-    |> Enum.map(fn proxy_implementations ->
+    # combine final tuple {proxy_address_hash, the list of implementations as Address.t() object with preloaded SmartContract.t()}
+    proxy_implementation_addresses_tuple_list_raw
+    |> Enum.map(fn proxy_implementation_addresses_tuple ->
+      {proxy_address_hash, implementation_address_hashes} = proxy_implementation_addresses_tuple
+
       implementation_addresses_with_smart_contract_preload =
-        proxy_implementations.address_hashes
+        implementation_address_hashes
         |> Enum.map(fn implementation_address_hash ->
           Enum.find(implementation_addresses_with_smart_contracts, fn address ->
             address.hash.bytes == implementation_address_hash.bytes
           end)
         end)
 
-      {proxy_implementations.proxy_address_hash, implementation_addresses_with_smart_contract_preload}
+      {proxy_address_hash, implementation_addresses_with_smart_contract_preload}
     end)
   end
 
