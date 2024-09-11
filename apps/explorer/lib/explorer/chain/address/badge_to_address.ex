@@ -38,6 +38,10 @@ defmodule Explorer.Chain.Address.BadgeToAddress do
     |> foreign_key_constraint(:badge_id)
   end
 
+  @doc """
+  Creates Address.BadgeToAddress.t() by Address.Badge.t() id and list of Hash.Address.t()
+  """
+  @spec create(non_neg_integer(), [Hash.Address.t()]) :: {non_neg_integer(), [__MODULE__.t()]}
   def create(badge_id, address_hashes) do
     now = DateTime.utc_now()
 
@@ -54,6 +58,10 @@ defmodule Explorer.Chain.Address.BadgeToAddress do
     Repo.insert_all(__MODULE__, insert_params, on_conflict: :nothing, returning: [:badge_id, :address_hash])
   end
 
+  @doc """
+  Deletes Address.BadgeToAddress.t() by Address.Badge.t() id and list of Hash.Address.t()
+  """
+  @spec delete(non_neg_integer(), [Hash.Address.t()]) :: {non_neg_integer(), [__MODULE__.t()]}
   def delete(badge_id, address_hashes) do
     query =
       from(
@@ -66,6 +74,10 @@ defmodule Explorer.Chain.Address.BadgeToAddress do
     Repo.delete_all(query)
   end
 
+  @doc """
+  Gets Address.BadgeToAddress.t() by Address.Badge.t() id
+  """
+  @spec get(non_neg_integer(), [Chain.necessity_by_association_option() | Chain.api?()]) :: [__MODULE__.t()]
   def get(badge_id, options) do
     query = from(badge_to_address in __MODULE__, where: badge_to_address.badge_id == ^badge_id)
 

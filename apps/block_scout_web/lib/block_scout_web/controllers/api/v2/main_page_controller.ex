@@ -24,9 +24,10 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     necessity_by_association:
       %{
         :block => :required,
-        [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [created_contract_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]] =>
+          :optional,
         [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-        [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
+        [to_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]] => :optional
       }
       |> Map.merge(@chain_type_transaction_necessity_by_association),
     paging_options: %PagingOptions{page_size: 6},

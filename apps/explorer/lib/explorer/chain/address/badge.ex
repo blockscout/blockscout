@@ -1,6 +1,7 @@
 defmodule Explorer.Chain.Address.Badge do
   @moduledoc """
-  Defines Address.t() badges
+  Defines Address.t() badges, which will allow to display them on the address page,
+  e.g. for scam contracts, EoA associated with bad actors etc.
   """
 
   use Explorer.Schema
@@ -48,7 +49,10 @@ defmodule Explorer.Chain.Address.Badge do
     )
   end
 
-  @spec get(non_neg_integer(), [Chain.necessity_by_association_option() | Chain.api?()]) :: t() | nil
+  @doc """
+  Gets Address.Badge.t() by its id
+  """
+  @spec get(non_neg_integer(), [Chain.necessity_by_association_option() | Chain.api?()]) :: __MODULE__.t() | nil
   def get(badge_id, options) do
     query = from(badge in __MODULE__, where: badge.id == ^badge_id)
 
@@ -56,18 +60,30 @@ defmodule Explorer.Chain.Address.Badge do
     |> Chain.select_repo(options).one()
   end
 
+  @doc """
+  Creates new Address.Badge.t() with provided category and content
+  """
+  @spec create(String.t(), String.t()) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   def create(category, content) do
     %__MODULE__{}
     |> __MODULE__.changeset(%{category: category, content: content})
     |> Repo.insert(returning: [:id, :category, :content])
   end
 
+  @doc """
+  Updates existing Address.Badge.t() by badge_id with provided category and content
+  """
+  @spec update(__MODULE__.t(), String.t(), String.t()) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   def update(badge, category, content) do
     badge
     |> __MODULE__.changeset(%{category: category, content: content})
     |> Repo.update()
   end
 
+  @doc """
+  Deletes existing Address.Badge.t()
+  """
+  @spec delete(__MODULE__.t()) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   def delete(badge) do
     badge
     |> Changeset.change()

@@ -121,9 +121,9 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
          {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
          {:api_key, ^api_key} <- {:api_key, provided_api_key},
-         {:param, {badge_id, _}} <- {:param, Integer.parse(badge_id_string)},
-         badge_to_address_list = BadgeToAddress.get(badge_id, @api_true),
-         false <- is_nil(badge_to_address_list) do
+         {:param, {badge_id, _}} <- {:param, Integer.parse(badge_id_string)} do
+      badge_to_address_list = BadgeToAddress.get(badge_id, @api_true)
+
       conn
       |> put_status(200)
       |> render(:badge_to_address, %{
