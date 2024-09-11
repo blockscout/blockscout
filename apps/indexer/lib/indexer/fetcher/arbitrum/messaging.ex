@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
+  alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Message
   alias Indexer.Fetcher.Arbitrum.Utils.Db
 
@@ -234,6 +235,26 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     |> Map.values()
   end
 
+  @doc """
+    Imports a list of messages into the database.
+
+    ## Parameters
+    - `messages`: A list of messages to import into the database.
+
+    ## Returns
+    N/A
+  """
+  @spec import_to_db([Message.to_import()]) :: :ok
+  def import_to_db(messages) do
+    {:ok, _} =
+      Chain.import(%{
+        arbitrum_messages: %{params: messages},
+        timeout: :infinity
+      })
+
+    :ok
+  end
+
   # Converts an incomplete message structure into a complete parameters map for database updates.
   @spec complete_to_params(map()) :: Message.to_import()
   defp complete_to_params(incomplete) do
@@ -316,13 +337,4 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   defp plain_message_id?(_) do
     false
   end
-
-  # defp get_hashed_message_id(message_id) when is_integer(message_id) do
-  #   <<message_id::size(256)>> <> <<0::size(256)>>
-  #   |> ExKeccak.hash_256()
-  # end
-
-  # defp get_hashed_message_id(message_id) when is_binary(message_id) and byte_size(message_id) == 66 do
-  #   get_hashed_message_id(quantity_to_integer(message_id))
-  # end
 end

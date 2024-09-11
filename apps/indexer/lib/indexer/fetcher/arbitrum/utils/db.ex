@@ -916,6 +916,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Reader.get_da_info_by_batch_number(batch_number)
   end
 
+  def get_uncompleted_l1_to_l2_messages_ids do
+    Reader.get_uncompleted_l1_to_l2_messages_ids()
+  end
+
   # Checks if the rollup is synced by verifying if the block after the first block exists in the database.
   @spec rollup_synced?() :: boolean()
   defp rollup_synced? do

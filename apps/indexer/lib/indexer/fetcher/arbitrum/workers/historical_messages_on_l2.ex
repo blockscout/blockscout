@@ -18,8 +18,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
 
   alias EthereumJSONRPC.Transaction, as: TransactionByRPC
 
-  alias Explorer.Chain
-
+  alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Arbitrum.Messaging
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
@@ -127,7 +126,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
         logs
         |> Messaging.handle_filtered_l2_to_l1_messages(__MODULE__)
 
-      import_to_db(messages)
+      Messaging.import_to_db(messages)
     end
 
     {:ok, start_block}
@@ -253,10 +252,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     if transactions_length > 0 do
       log_debug("#{transactions_length} historical messages to L2 discovered")
 
-      messages =
+      {messages, txs_for_further_handling} =
         transactions
         |> Enum.chunk_every(chunk_size)
-        |> Enum.reduce([], fn chunk, messages_acc ->
+        |> Enum.reduce({[], []}, fn chunk, {messages_acc, txs_acc} ->
           # Since DB does not contain the field RequestId specific to Arbitrum
           # all transactions will be requested from the rollup RPC endpoint.
           # The catchup process intended to be run once and only for the BS instance
@@ -264,19 +263,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
           # the new field in DB
           requests = build_transaction_requests(chunk)
 
-          {messages, _} =
+          {messages, txs_with_hashed_message_id} =
             requests
             |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
             |> Enum.map(&transaction_json_to_map/1)
             |> Messaging.filter_l1_to_l2_messages(false)
 
-          messages ++ messages_acc
+          {messages ++ messages_acc, txs_with_hashed_message_id ++ txs_acc}
         end)
 
-      # Logging of zero messages is left by intent to reveal potential cases when
-      # not all transactions are recognized as completed L1-to-L2 messages.
-      log_info("#{length(messages)} completions of L1-to-L2 messages will be imported")
-      import_to_db(messages)
+      handle_messages(messages)
+      handle_txs_with_hashed_message_id(txs_for_further_handling)
     end
 
     {:ok, start_block}
@@ -301,12 +298,29 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     |> TransactionByRPC.elixir_to_params()
   end
 
-  # Imports a list of messages into the database.
-  defp import_to_db(messages) do
-    {:ok, _} =
-      Chain.import(%{
-        arbitrum_messages: %{params: messages},
-        timeout: :infinity
-      })
+  defp handle_messages(messages) do
+    # Logging of zero messages is left by intent to reveal potential cases when
+    # not all transactions are recognized as completed L1-to-L2 messages.
+    log_info("#{length(messages)} completions of L1-to-L2 messages will be imported")
+    Messaging.import_to_db(messages)
+  end
+
+  defp handle_txs_with_hashed_message_id([]), do: nil
+
+  defp handle_txs_with_hashed_message_id(txs_with_hashed_message_id) do
+    # This is ok to handle such transactions asynchronously:
+    # - if the corresponding L1 transaction is indexed already, the message will be imported
+    # after the next flush of the queued tasks buffer
+    # - if the corresponding L1 transaction is not indexed yet, it will be awaited by the
+    # queued tasks handler
+    # If this functionality is synchronous, it will either lock the discovery process
+    # by waiting for the L1 transaction to be indexed or the message will be picked up
+    # after the instance restart.
+
+    log_info(
+      "#{length(txs_with_hashed_message_id)} completions of L1-to-L2 messages require message ID matching discovery"
+    )
+
+    ArbitrumMessagesToL2Matcher.async_discover_match(txs_with_hashed_message_id)
   end
 end
