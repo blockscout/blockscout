@@ -275,6 +275,8 @@ defmodule Indexer.Block.FetcherTest do
     } do
       block_number = @first_full_block_number
 
+      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!()
+
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Nethermind ->
@@ -681,6 +683,8 @@ defmodule Indexer.Block.FetcherTest do
       block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
       block_number = 7_374_455
+
+      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!()
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox

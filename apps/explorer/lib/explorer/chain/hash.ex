@@ -121,7 +121,7 @@ defmodule Explorer.Chain.Hash do
   """
   @spec to_integer(t()) :: pos_integer()
   def to_integer(%__MODULE__{byte_count: byte_count, bytes: bytes}) do
-    <<integer::big-integer-size(byte_count)-unit(8)>> = bytes
+    <<integer::big-integer-size(byte_count)-unit(@bits_per_byte)>> = bytes
 
     integer
   end

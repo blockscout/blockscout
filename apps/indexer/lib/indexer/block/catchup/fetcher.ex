@@ -14,6 +14,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_celo_epoch_block_operations: 2,
       async_import_coin_balances: 2,
       async_import_created_contract_codes: 2,
+      async_import_filecoin_addresses_info: 2,
       async_import_internal_transactions: 2,
       async_import_replaced_transactions: 2,
       async_import_token_balances: 2,
@@ -141,6 +142,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_token_instances(imported)
     async_import_blobs(imported, realtime?)
     async_import_celo_epoch_block_operations(imported, realtime?)
+    async_import_filecoin_addresses_info(imported, realtime?)
   end
 
   defp stream_fetch_and_import(state, ranges) do

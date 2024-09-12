@@ -108,9 +108,9 @@ defmodule Indexer.Helper do
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
     with {:ok, first_block_timestamp} <-
-           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, 100_000_000),
+           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, @infinite_retries_number),
          {:ok, last_safe_block_timestamp} <-
-           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, 100_000_000) do
+           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, @infinite_retries_number) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
@@ -139,8 +139,9 @@ defmodule Indexer.Helper do
       {:ok, safe_block} ->
         {safe_block, false}
 
-      {:error, :not_found} ->
-        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+      {:error, _} ->
+        {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, @infinite_retries_number)
+
         {latest_block, true}
     end
   end
@@ -251,14 +252,14 @@ defmodule Indexer.Helper do
           non_neg_integer() | binary(),
           non_neg_integer() | binary(),
           binary(),
-          [binary()],
+          [binary()] | [list()],
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: {:error, atom() | binary() | map()} | {:ok, any()}
   @spec get_logs(
           non_neg_integer() | binary(),
           non_neg_integer() | binary(),
           binary(),
-          [binary()],
+          [binary()] | [list()],
           EthereumJSONRPC.json_rpc_named_arguments(),
           integer()
         ) :: {:error, atom() | binary() | map()} | {:ok, any()}
@@ -266,7 +267,7 @@ defmodule Indexer.Helper do
           non_neg_integer() | binary(),
           non_neg_integer() | binary(),
           binary(),
-          [binary()],
+          [binary()] | [list()],
           EthereumJSONRPC.json_rpc_named_arguments(),
           integer(),
           non_neg_integer()

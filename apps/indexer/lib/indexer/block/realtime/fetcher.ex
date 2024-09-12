@@ -17,6 +17,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_block_rewards: 2,
       async_import_celo_epoch_block_operations: 2,
       async_import_created_contract_codes: 2,
+      async_import_filecoin_addresses_info: 2,
       async_import_internal_transactions: 2,
       async_import_polygon_zkevm_bridge_l1_tokens: 1,
       async_import_realtime_coin_balances: 1,
@@ -467,5 +468,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_blobs(imported, realtime?)
     async_import_polygon_zkevm_bridge_l1_tokens(imported)
     async_import_celo_epoch_block_operations(imported, realtime?)
+    async_import_filecoin_addresses_info(imported, realtime?)
   end
 end

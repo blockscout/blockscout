@@ -71,7 +71,8 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL2 do
          false <- is_nil(start_block),
          true <- start_block > 0,
          {last_l2_block_number, last_l2_transaction_hash} = Reader.last_l2_item(),
-         {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000),
+         {:ok, latest_block} =
+           Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
          {:start_block_valid, true} <-
            {:start_block_valid,
             (start_block <= last_l2_block_number || last_l2_block_number == 0) && start_block <= latest_block},

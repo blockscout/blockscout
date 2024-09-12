@@ -90,6 +90,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
     }
+    |> address_chain_type_fields(address)
   end
 
   def address_with_info(%NotLoaded{}, address_hash) do
@@ -118,6 +119,19 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "ens_domain_name" => nil,
       "metadata" => nil
     }
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :filecoin ->
+      defp address_chain_type_fields(result, address) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.extend_address_json_response(result, address)
+      end
+
+    _ ->
+      defp address_chain_type_fields(result, _address) do
+        result
+      end
   end
 
   defp minimal_proxy_pattern?(proxy_implementations) do

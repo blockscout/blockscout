@@ -123,6 +123,7 @@ config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, enabled
 config :explorer, Explorer.Migrator.TransactionBlockConsensus, enabled: true
 config :explorer, Explorer.Migrator.TokenTransferBlockConsensus, enabled: true
 config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers, enabled: true
+config :explorer, Explorer.Migrator.SanitizeMissingTokenBalances, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 

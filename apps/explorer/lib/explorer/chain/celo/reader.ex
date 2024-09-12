@@ -9,11 +9,13 @@ defmodule Explorer.Chain.Celo.Reader do
     only: [
       select_repo: 1,
       join_associations: 2,
-      default_paging_options: 0
+      default_paging_options: 0,
+      max_consensus_block_number: 1
     ]
 
-  alias Explorer.Chain.Cache.CeloCoreContracts
-  alias Explorer.Chain.Celo.ElectionReward
+  alias Explorer.Chain.Block
+  alias Explorer.Chain.Cache.{Blocks, CeloCoreContracts}
+  alias Explorer.Chain.Celo.{ElectionReward, Helper}
   alias Explorer.Chain.{Hash, Token, Wei}
 
   @election_reward_types ElectionReward.types()
@@ -189,5 +191,25 @@ defmodule Explorer.Chain.Celo.Reader do
     |> Map.new(fn {reward_type_atom, token_atom} ->
       {reward_type_atom, Map.get(token_atom_to_token, token_atom)}
     end)
+  end
+
+  @doc """
+  Retrieves the epoch number of the last fetched block.
+  """
+  @spec last_block_epoch_number(Keyword.t()) :: Block.block_number() | nil
+  def last_block_epoch_number(options \\ []) do
+    block_number =
+      1
+      |> Blocks.atomic_take_enough()
+      |> case do
+        [%Block{number: number}] -> {:ok, number}
+        nil -> max_consensus_block_number(options)
+      end
+      |> case do
+        {:ok, number} -> number
+        _ -> nil
+      end
+
+    block_number && Helper.block_number_to_epoch_number(block_number)
   end
 end
