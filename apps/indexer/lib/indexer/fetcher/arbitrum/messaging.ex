@@ -53,23 +53,25 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
          }
 
   @doc """
-    Filters a list of rollup transactions to identify L1-to-L2 messages and composes a map for each with the related message information.
+    Filters rollup transactions to identify L1-to-L2 messages and categorizes them.
 
-    This function filters a list of rollup transactions, selecting those where
-    `request_id` is not nil and is below 2^31, indicating they are L1-to-L2
-    message completions. These filtered transactions are then processed to
-    construct a detailed message structure for each.
+    This function processes a list of rollup transactions, identifying those with
+    non-nil `request_id` fields. It then separates these into two categories:
+    messages with plain message IDs and transactions with hashed message IDs.
 
     ## Parameters
     - `transactions`: A list of rollup transaction entries.
     - `report`: An optional boolean flag (default `true`) that, when `true`, logs
-      the number of processed L1-to-L2 messages if any are found.
+      the number of identified L1-to-L2 messages and transactions requiring
+      further processing.
 
     ## Returns
-    - A list of L1-to-L2 messages with detailed information and current status. Every
-      map in the list compatible with the database import operation. All messages in
-      this context are considered `:relayed` as they represent completed actions from
-      L1 to L2.
+    A tuple containing:
+    - A list of L1-to-L2 messages with detailed information, ready for database
+      import. All messages in this context are considered `:relayed` as they
+      represent completed actions from L1 to L2.
+    - A list of transactions with hashed message IDs that require further
+      processing for message ID matching.
   """
   @spec filter_l1_to_l2_messages([min_transaction()]) :: {[Message.to_import()], [min_transaction()]}
   @spec filter_l1_to_l2_messages([min_transaction()], boolean()) :: {[Message.to_import()], [min_transaction()]}
@@ -84,6 +86,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
         plain_message_id?(tx[:request_id])
       end)
 
+    # Transform transactions with the plain message ID into messages
     messages =
       transactions_with_proper_message_id
       |> handle_filtered_l1_to_l2_messages()
@@ -330,6 +333,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     end)
   end
 
+  # Checks if the given request ID is a plain message ID (starts with 58 zero bytes).
+  @spec plain_message_id?(non_neg_integer()) :: boolean()
   defp plain_message_id?(request_id) when byte_size(request_id) == 66 do
     String.starts_with?(request_id, @zero_hex_prefix)
   end

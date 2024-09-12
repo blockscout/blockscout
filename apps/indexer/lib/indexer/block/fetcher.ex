@@ -735,6 +735,8 @@ defmodule Indexer.Block.Fetcher do
     end)
   end
 
+  # Asynchronously schedules matching of Arbitrum L1-to-L2 messages where the message ID is hashed.
+  @spec async_match_arbitrum_messages_to_l2([map()]) :: :ok
   defp async_match_arbitrum_messages_to_l2([]), do: :ok
 
   defp async_match_arbitrum_messages_to_l2(txs_with_messages_from_l1) do

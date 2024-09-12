@@ -916,6 +916,13 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Reader.get_da_info_by_batch_number(batch_number)
   end
 
+  @doc """
+    Retrieves the list of uncompleted L2-to-L1 messages IDs.
+
+    ## Returns
+    - A list of the IDs of uncompleted L2-to-L1 messages.
+  """
+  @spec get_uncompleted_l1_to_l2_messages_ids() :: [non_neg_integer()]
   def get_uncompleted_l1_to_l2_messages_ids do
     Reader.get_uncompleted_l1_to_l2_messages_ids()
   end

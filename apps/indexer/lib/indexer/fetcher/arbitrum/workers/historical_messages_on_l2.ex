@@ -142,9 +142,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     then their bodies are re-requested through RPC because already indexed
     transactions from the database cannot be utilized; the `requestId` field is not
     included in the transaction model. The function ensures that the block range
-    has been indexed before proceeding with message discovery and import. The
-    imported messages are marked as `:relayed`, as they represent completed actions
-    from L1 to L2.
+    has been indexed before proceeding with message discovery and import.
+
+    Messages with plain (non-hashed) request IDs are imported into the database and
+    marked as `:relayed`, representing completed actions from L1 to L2.
+
+    For transactions where the `requestId` represents a hashed message ID, the
+    function schedules asynchronous discovery to match them with corresponding L1
+    transactions.
 
     ## Parameters
     - `end_block`: The ending block number for the discovery operation. If `nil` or
@@ -212,25 +217,33 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   # Discovers and processes historical messages sent from L1 to L2 within a
   # specified rollup block range.
   #
-  # This function identifies which of already indexed transactions within the
-  # block range contains L1-to-L2 messages and makes RPC calls to fetch
-  # transaction data. These transactions are then processed to construct proper
-  # message structures, which are imported into the database. The imported
-  # messages are marked as `:relayed` as they represent completed actions from L1
-  # to L2.
+  # This function identifies already indexed transactions within the block range
+  # that potentially contain L1-to-L2 messages. It then makes RPC calls to fetch
+  # complete transaction data, as the database doesn't include the Arbitrum-specific
+  # `requestId` field.
   #
-  # Note: Already indexed transactions from the database cannot be used because
-  # the `requestId` field is not included in the transaction model.
+  # The fetched transactions are processed to construct proper message structures.
+  # Messages with plain (non-hashed) request IDs are imported into the database
+  # and marked as `:relayed`, representing completed actions from L1 to L2.
+  #
+  # For transactions where the `requestId` represents a hashed message ID, the
+  # function schedules asynchronous discovery to match them with corresponding L1
+  # transactions.
+  #
+  # The function processes transactions in chunks to manage memory usage and
+  # network load efficiently.
   #
   # ## Parameters
   # - `start_block`: The starting block number for the discovery range.
   # - `end_block`: The ending block number for the discovery range.
-  # - `config`: The configuration map containing settings for RPC communication
-  #   and chunk size.
+  # - `config`: A map containing configuration settings, including:
+  #   - `:rollup_rpc`: A map with RPC settings:
+  #     - `:chunk_size`: The number of transactions to process in each chunk.
+  #     - `:json_rpc_named_arguments`: Arguments for JSON-RPC communication.
   #
   # ## Returns
   # - `{:ok, start_block}`: A tuple indicating successful processing, returning
-  #                         the initial starting block number.
+  #   the initial starting block number.
   @spec do_discover_historical_messages_to_l2(non_neg_integer(), non_neg_integer(), %{
           :rollup_rpc => %{
             :chunk_size => non_neg_integer(),
@@ -298,25 +311,56 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
     |> TransactionByRPC.elixir_to_params()
   end
 
+  # Processes and imports completed L1-to-L2 messages.
+  #
+  # This function handles a list of completed L1-to-L2 messages, logging the number
+  # of messages to be imported and then importing them into the database. The
+  # function intentionally logs even when there are zero messages to import, which
+  # helps identify potential cases where not all transactions are recognized as
+  # completed L1-to-L2 messages.
+  #
+  # ## Parameters
+  # - `messages`: A list of completed L1-to-L2 messages ready for import.
+  #
+  # ## Returns
+  # - `:ok`
+  @spec handle_messages([Explorer.Chain.Arbitrum.Message.to_import()]) :: :ok
   defp handle_messages(messages) do
-    # Logging of zero messages is left by intent to reveal potential cases when
-    # not all transactions are recognized as completed L1-to-L2 messages.
     log_info("#{length(messages)} completions of L1-to-L2 messages will be imported")
     Messaging.import_to_db(messages)
   end
 
-  defp handle_txs_with_hashed_message_id([]), do: nil
+  # Processes transactions with hashed message IDs for L1-to-L2 message completion.
+  #
+  # This function asynchronously handles transactions that contain L1-to-L2
+  # messages with hashed message IDs.
+  #
+  # The asynchronous handling is beneficial because:
+  # - If the corresponding L1 transaction is already indexed, the message will be
+  #   imported after the next flush of the queued tasks buffer.
+  # - If the corresponding L1 transaction is not yet indexed, it will be awaited by
+  #   the queued tasks handler.
+  #
+  # Asynchronous processing prevents locking the discovery process, which would
+  # occur if we waited synchronously for L1 transactions to be indexed. Another
+  # approach for synchronous handling is to skip a message without importing it to
+  # the DB when an L1 transaction is not found; the absence of the message will be
+  # discovered after a Blockscout instance restart. In the current asynchronous
+  # implementation, even if the awaiting of an L1 transaction in the queued tasks
+  # is terminated due to a Blockscout instance shutdown, the absence of the message
+  # will be discovered after the restart. The system will then attempt to match it
+  # with the corresponding L1 message again.
+  #
+  # ## Parameters
+  # - `txs_with_hashed_message_id`: A list of transactions containing L1-to-L2
+  #   messages with hashed message IDs.
+  #
+  # ## Returns
+  # - `:ok`
+  @spec handle_txs_with_hashed_message_id([map()]) :: :ok
+  defp handle_txs_with_hashed_message_id([]), do: :ok
 
   defp handle_txs_with_hashed_message_id(txs_with_hashed_message_id) do
-    # This is ok to handle such transactions asynchronously:
-    # - if the corresponding L1 transaction is indexed already, the message will be imported
-    # after the next flush of the queued tasks buffer
-    # - if the corresponding L1 transaction is not indexed yet, it will be awaited by the
-    # queued tasks handler
-    # If this functionality is synchronous, it will either lock the discovery process
-    # by waiting for the L1 transaction to be indexed or the message will be picked up
-    # after the instance restart.
-
     log_info(
       "#{length(txs_with_hashed_message_id)} completions of L1-to-L2 messages require message ID matching discovery"
     )

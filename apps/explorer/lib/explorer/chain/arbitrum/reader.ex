@@ -1333,6 +1333,13 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     |> Repo.all()
   end
 
+  @doc """
+    Retrieves the message IDs of uncompleted L1-to-L2 messages.
+
+    ## Returns
+    - A list of the message IDs of uncompleted L1-to-L2 messages.
+  """
+  @spec get_uncompleted_l1_to_l2_messages_ids() :: [non_neg_integer()]
   def get_uncompleted_l1_to_l2_messages_ids do
     query =
       from(msg in Message,
