@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
 
   def create_badge(_, _), do: {:error, :not_found}
 
-  def add_addresses_to_badge(
+  def assign_badge_to_address(
         conn,
         %{
           "badge_id" => badge_id_string,
@@ -82,9 +82,9 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
     end
   end
 
-  def add_addresses_to_badge(_, _), do: {:error, :not_found}
+  def assign_badge_to_address(_, _), do: {:error, :not_found}
 
-  def remove_addresses_to_badge(
+  def unassign_badge_from_address(
         conn,
         %{
           "badge_id" => badge_id_string,
@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
     end
   end
 
-  def remove_addresses_to_badge(_, _), do: {:error, :not_found}
+  def unassign_badge_from_address(_, _), do: {:error, :not_found}
 
   def show_badge_addresses(conn, %{"badge_id" => badge_id_string}) do
     with {:ok, body, _conn} <- Conn.read_body(conn, []),

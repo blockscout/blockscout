@@ -47,16 +47,16 @@ defmodule BlockScoutWeb.Routers.AddressBadgesApiV2Router do
     pipe_through(:api_v2_no_forgery_protect)
 
     post("/", V2.AddressBadgeController, :create_badge)
-    post("/:badge_id/addresses/add", V2.AddressBadgeController, :add_addresses_to_badge)
-    post("/:badge_id/addresses/remove", V2.AddressBadgeController, :remove_addresses_to_badge)
     patch("/:badge_id", V2.AddressBadgeController, :update_badge)
     delete("/:badge_id", V2.AddressBadgeController, :delete_badge)
+    post("/:badge_id/addresses", V2.AddressBadgeController, :assign_badge_to_address)
+    delete("/:badge_id/addresses", V2.AddressBadgeController, :unassign_badge_from_address)
   end
 
   scope "/", as: :api_v2 do
     pipe_through(:api_v2)
 
     get("/:badge_id", V2.AddressBadgeController, :badge)
-    get("/:badge_id/addresses/show", V2.AddressBadgeController, :show_badge_addresses)
+    get("/:badge_id/addresses", V2.AddressBadgeController, :show_badge_addresses)
   end
 end
