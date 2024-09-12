@@ -126,15 +126,24 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
-    Calculates the L1 block number to start the search for committed batches that precede
-    the earliest batch already discovered.
+    Calculates the L1 block number to start the search for committed batches.
+
+    Returns the block number of the earliest L1 block containing a transaction
+    that commits a batch, as found in the database. If no committed batches are
+    found, it returns a default value. It's safe to use the returned block number
+    for subsequent searches, even if it corresponds to a block we've previously
+    processed. This is because multiple transactions committing different batches
+    can exist within the same block, and revisiting this block ensures no batches
+    are missed.
+
+    The batch discovery process is expected to handle potential duplicates
+    correctly without creating redundant database entries.
 
     ## Parameters
     - `value_if_nil`: The default value to return if no committed batch is found.
 
     ## Returns
-    - The L1 block number immediately preceding the earliest committed batch,
-      or `value_if_nil` if no committed batches are found.
+    - The L1 block number containing the earliest committed batch or `value_if_nil`.
   """
   @spec l1_block_to_discover_earliest_committed_batch(nil | FullBlock.block_number()) :: nil | FullBlock.block_number()
   def l1_block_to_discover_earliest_committed_batch(value_if_nil)
@@ -145,7 +154,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         value_if_nil
 
       value ->
-        value - 1
+        value
     end
   end
 
@@ -737,7 +746,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Example #1
     - Within the range from 1 to 10, the missing batch is 2. The L1 block for the
       batch #1 is 10, and the L1 block for the batch #3 is 31.
-    - The output will be `[{11, 30}]`.
+    - The output will be `[{10, 31}]`.
 
     Example #2
     - Within the range from 1 to 10, the missing batches are 2 and 6, and
@@ -745,14 +754,21 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       - The L1 block for the batch #3 is 31.
       - The L1 block for the batch #5 is 64.
       - The L1 block for the batch #7 is 90.
-    - The output will be `[{11, 30}, {65, 89}]`.
+    - The output will be `[{10, 31}, {64, 90}]`.
 
     Example #3
     - Within the range from 1 to 10, the missing batches are 2 and 4, and
       - The L1 block for the batch #1 is 10.
       - The L1 block for the batch #3 is 31.
       - The L1 block for the batch #5 is 64.
-    - The output will be `[{11, 30}, {32, 63}]`.
+    - The output will be `[{10, 31}, {32, 64}]`.
+
+    Example #4
+    - Within the range from 1 to 10, the missing batches are 2 and 4, and
+      - The L1 block for the batch #1 is 10.
+      - The L1 block for the batch #3 is 31.
+      - The L1 block for the batch #5 is 31.
+    - The output will be `[{10, 31}]`.
   """
   @spec get_l1_block_ranges_for_missing_batches(non_neg_integer(), non_neg_integer(), FullBlock.block_number()) :: [
           {FullBlock.block_number(), FullBlock.block_number()}
@@ -783,9 +799,25 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         |> Map.put(0, block_for_batch_0)
 
       neighbors_of_missing_batches
-      |> Enum.map(fn {start_batch, end_batch} ->
-        {l1_blocks[start_batch] + 1, l1_blocks[end_batch] - 1}
+      |> Enum.reduce({[], %{}}, fn {start_batch, end_batch}, {res, blocks_used} ->
+        range_start = l1_blocks[start_batch]
+        range_end = l1_blocks[end_batch]
+        # If the batch's block was already used as a block finishing one of the ranges
+        # then we should start another range from the next block to avoid discovering
+        # the same batches batches again.
+        if Map.get(blocks_used, range_start, false) do
+          # Edge case when the range consists of a single block (several batches in
+          # the same block) which is going to be inspected up to this moment.
+          if range_start == range_end do
+            {res, blocks_used}
+          else
+            {[{range_start + 1, range_end} | res], Map.put(blocks_used, range_end, true)}
+          end
+        else
+          {[{range_start, range_end} | res], Map.put(blocks_used, range_end, true)}
+        end
       end)
+      |> elem(0)
     end
   end
 
