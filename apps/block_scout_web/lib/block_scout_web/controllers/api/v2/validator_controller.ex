@@ -73,6 +73,10 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     })
   end
 
+  @doc """
+    Function to handle GET requests to `/api/v2/validators/blackfort` endpoint.
+  """
+  @spec blackfort_validators_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def blackfort_validators_list(conn, params) do
     options =
       [

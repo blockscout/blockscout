@@ -148,6 +148,10 @@ defmodule Explorer.Chain.Blackfort.Validator do
     |> Repo.aggregate(:count, :address_hash)
   end
 
+  @doc """
+    Fetch list of Blackfort validators
+  """
+  @spec fetch_validators_list() :: {:ok, list()} | :error
   def fetch_validators_list do
     case HTTPoison.get(validator_url(), [], follow_redirect: true) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
