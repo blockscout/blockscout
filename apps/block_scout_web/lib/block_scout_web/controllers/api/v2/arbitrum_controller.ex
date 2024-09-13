@@ -60,6 +60,34 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   @doc """
+    Function to handle GET requests to `/api/v2/arbitrum/messages/from-rollup/:msg_id` endpoint.
+  """
+  @spec message_by_id(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def message_by_id(conn, %{"msg_id" => msg_id} = _params) do
+    case Reader.l2_to_l1_message_with_id(msg_id) do
+      nil ->
+        conn
+          |> put_status(:not_found)
+          |> render(:message, %{message: "not found"})
+
+      msg ->
+        conn
+          |> put_status(200)
+          |> render(:arbitrum_message, %{message: msg})
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/arbitrum/messages/:msg_id/proof` endpoint.
+  """
+  @spec message_proof(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def message_proof(conn, %{"msg_id" => msg_id} = _params) do
+    conn
+    |> put_status(200)
+    |> render(:arbitrum_message_proof, %{msg_id: msg_id, proof: 456})
+  end
+
+  @doc """
     Function to handle GET requests to `/api/v2/arbitrum/batches/:batch_number` endpoint.
   """
   @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()

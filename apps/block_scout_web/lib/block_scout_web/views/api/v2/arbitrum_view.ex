@@ -1,9 +1,14 @@
 defmodule BlockScoutWeb.API.V2.ArbitrumView do
   use BlockScoutWeb, :view
 
+  alias BlockScoutWeb.API.V2.ApiView
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction, Reader}
+
+  def render("message.json", assigns) do
+    ApiView.render("message.json", assigns)
+  end
 
   @doc """
     Function to render GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
@@ -56,6 +61,31 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   """
   def render("arbitrum_messages_count.json", %{count: count}) do
     count
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/arbitrum/messages/from-rollup/:msg_id` endpoint.
+  """
+  def render("arbitrum_message.json", %{message: message}) do
+    %{
+      "id" => message.message_id,
+      "origination_address" => message.originator_address,
+      "origination_transaction_hash" => message.originating_transaction_hash,
+      "origination_timestamp" => message.origination_timestamp,
+      "origination_transaction_block_number" => message.originating_transaction_block_number,
+      "completion_transaction_hash" => message.completion_transaction_hash,
+      "status" => message.status
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/arbitrum/messages/from-rollup/:msg_id/proof` endpoint.
+  """
+  def render("arbitrum_message_proof.json", %{msg_id: msg_id, proof: proof}) do
+    %{
+      "msg_id" => msg_id,
+      "proof" => proof
+    }
   end
 
   @doc """

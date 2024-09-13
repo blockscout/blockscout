@@ -359,6 +359,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if Application.compile_env(:explorer, :chain_type) == :arbitrum do
         get("/messages/:direction", V2.ArbitrumController, :messages)
         get("/messages/:direction/count", V2.ArbitrumController, :messages_count)
+        get("/messages/from-rollup/:msg_id", V2.ArbitrumController, :message_by_id)
+        get("/messages/from-rollup/:msg_id/proof", V2.ArbitrumController, :message_proof)
         get("/batches", V2.ArbitrumController, :batches)
         get("/batches/count", V2.ArbitrumController, :batches_count)
         get("/batches/:batch_number", V2.ArbitrumController, :batch)
