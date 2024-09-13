@@ -512,7 +512,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       proxy_implementation_addresses_tuple =
         proxy_implementation_addresses_tuple_list
         |> Enum.find(fn {proxy_address_hash, _implementations} ->
-          proxy_address_hash.bytes == (smart_contract.address_hash && smart_contract.address_hash.bytes)
+          proxy_address_hash == smart_contract.address_hash
         end)
 
       parse_abi_from_proxy_implementations(proxy_implementation_addresses_tuple)
