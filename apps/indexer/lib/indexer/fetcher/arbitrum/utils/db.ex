@@ -781,44 +781,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       |> list_to_chunks()
       |> chunks_to_neighbor_ranges()
 
-    if neighbors_of_missing_batches == [] do
-      []
-    else
-      l1_blocks =
-        neighbors_of_missing_batches
-        |> Enum.reduce(MapSet.new(), fn {start_batch, end_batch}, acc ->
-          acc
-          |> MapSet.put(start_batch)
-          |> MapSet.put(end_batch)
-        end)
-        # To avoid error in getting L1 block for the batch 0
-        |> MapSet.delete(0)
-        |> MapSet.to_list()
-        |> Reader.get_l1_blocks_of_batches_by_numbers()
-        # It is safe to add the block for the batch 0 even if the batch 1 is missing
-        |> Map.put(0, block_for_batch_0)
-
-      neighbors_of_missing_batches
-      |> Enum.reduce({[], %{}}, fn {start_batch, end_batch}, {res, blocks_used} ->
-        range_start = l1_blocks[start_batch]
-        range_end = l1_blocks[end_batch]
-        # If the batch's block was already used as a block finishing one of the ranges
-        # then we should start another range from the next block to avoid discovering
-        # the same batches batches again.
-        if Map.get(blocks_used, range_start, false) do
-          # Edge case when the range consists of a single block (several batches in
-          # the same block) which is going to be inspected up to this moment.
-          if range_start == range_end do
-            {res, blocks_used}
-          else
-            {[{range_start + 1, range_end} | res], Map.put(blocks_used, range_end, true)}
-          end
-        else
-          {[{range_start, range_end} | res], Map.put(blocks_used, range_end, true)}
-        end
-      end)
-      |> elem(0)
-    end
+    batches_gaps_to_block_ranges(neighbors_of_missing_batches, block_for_batch_0)
   end
 
   # Splits a list into chunks of consecutive numbers, e.g., [1, 2, 3, 5, 6, 8] becomes [[1, 2, 3], [5, 6], [8]].
@@ -861,6 +824,64 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
         chunk -> {List.first(chunk) - 1, List.last(chunk) + 1}
       end
     end)
+  end
+
+  # Converts batch number gaps to L1 block ranges for missing batches discovery.
+  #
+  # This function takes a list of neighboring batch number ranges representing gaps
+  # in the batch sequence and converts them to corresponding L1 block ranges. These
+  # L1 block ranges can be used to rediscover missing batches.
+  #
+  # ## Parameters
+  # - `neighbors_of_missing_batches`: A list of tuples, each containing the start
+  #   and end batch numbers of a gap in the batch sequence.
+  # - `block_for_batch_0`: The L1 block number corresponding to batch number 0.
+  #
+  # ## Returns
+  # - A list of tuples, each containing the start and end L1 block numbers for
+  #   ranges where missing batches should be rediscovered.
+  @spec batches_gaps_to_block_ranges([{non_neg_integer(), non_neg_integer()}], FullBlock.block_number()) ::
+          [{FullBlock.block_number(), FullBlock.block_number()}]
+  defp batches_gaps_to_block_ranges(neighbors_of_missing_batches, block_for_batch_0)
+
+  defp batches_gaps_to_block_ranges([], _), do: []
+
+  defp batches_gaps_to_block_ranges(neighbors_of_missing_batches, block_for_batch_0) do
+    l1_blocks =
+      neighbors_of_missing_batches
+      |> Enum.reduce(MapSet.new(), fn {start_batch, end_batch}, acc ->
+        acc
+        |> MapSet.put(start_batch)
+        |> MapSet.put(end_batch)
+      end)
+      # To avoid error in getting L1 block for the batch 0
+      |> MapSet.delete(0)
+      |> MapSet.to_list()
+      |> Reader.get_l1_blocks_of_batches_by_numbers()
+      # It is safe to add the block for the batch 0 even if the batch 1 is missing
+      |> Map.put(0, block_for_batch_0)
+
+    neighbors_of_missing_batches
+    |> Enum.reduce({[], %{}}, fn {start_batch, end_batch}, {res, blocks_used} ->
+      range_start = l1_blocks[start_batch]
+      range_end = l1_blocks[end_batch]
+      # If the batch's block was already used as a block finishing one of the ranges
+      # then we should start another range from the next block to avoid discovering
+      # the same batches batches again.
+      case {Map.get(blocks_used, range_start, false), range_start == range_end} do
+        {true, true} ->
+          # Edge case when the range consists of a single block (several batches in
+          # the same block) which is going to be inspected up to this moment.
+          {res, blocks_used}
+
+        {true, false} ->
+          {[{range_start + 1, range_end} | res], Map.put(blocks_used, range_end, true)}
+
+        {false, _} ->
+          {[{range_start, range_end} | res], Map.put(blocks_used, range_end, true)}
+      end
+    end)
+    |> elem(0)
   end
 
   @doc """
