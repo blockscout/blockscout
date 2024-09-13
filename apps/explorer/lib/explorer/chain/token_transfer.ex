@@ -240,7 +240,7 @@ defmodule Explorer.Chain.TokenTransfer do
             :transaction,
             :token,
             [from_address: [:names, :smart_contract, :proxy_implementations]],
-            [to_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]]
+            [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]]
           ])
 
         only_consensus_transfers_query()
@@ -267,7 +267,7 @@ defmodule Explorer.Chain.TokenTransfer do
             :transaction,
             :token,
             [from_address: [:names, :smart_contract, :proxy_implementations]],
-            [to_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]]
+            [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]]
           ])
 
         only_consensus_transfers_query()

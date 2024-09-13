@@ -83,10 +83,9 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @transaction_necessity_by_association [
     necessity_by_association:
       %{
-        [created_contract_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]] =>
-          :optional,
+        [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
         [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-        [to_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]] => :optional,
+        [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
         :block => :optional
       }
       |> Map.merge(@chain_type_transaction_necessity_by_association)
@@ -94,10 +93,9 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   @internal_transaction_necessity_by_association [
     necessity_by_association: %{
-      [created_contract_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]] =>
-        :optional,
-      [from_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]] => :optional,
-      [to_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]] => :optional
+      [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+      [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+      [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
     }
   ]
 

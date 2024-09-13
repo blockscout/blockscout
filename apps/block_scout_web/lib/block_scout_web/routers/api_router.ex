@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
   forward("/v2/key", APIKeyV2Router)
   forward("/v2/utils", UtilsApiV2Router)
-  forward("/v2/address-badges", AddressBadgesApiV2Router)
+  forward("/v2/scam-badge-addresses", AddressBadgesApiV2Router)
 
   pipeline :api do
     plug(

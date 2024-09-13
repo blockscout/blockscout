@@ -51,13 +51,13 @@ defmodule BlockScoutWeb.AddressChannel do
   @transaction_associations [
                               from_address: [:names, :smart_contract, :proxy_implementations],
                               to_address: [
-                                [badges: [:badge, :address]],
+                                :scam_badge,
                                 :names,
                                 :smart_contract,
                                 :proxy_implementations
                               ],
                               created_contract_address: [
-                                [badges: [:badge, :address]],
+                                :scam_badge,
                                 :names,
                                 :smart_contract,
                                 :proxy_implementations
@@ -414,8 +414,8 @@ defmodule BlockScoutWeb.AddressChannel do
           token_transfers
           |> Repo.preload([
             [
-              from_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations],
-              to_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]
+              from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
+              to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
             ]
           ]),
         conn: nil

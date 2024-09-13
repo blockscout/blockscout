@@ -103,7 +103,7 @@ defmodule Explorer.Chain.Address.Schema do
         )
 
         has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
-        has_many(:badges, Address.BadgeToAddress, foreign_key: :address_hash, references: :hash)
+        has_one(:scam_badge, Address.ScamBadgeToAddress, foreign_key: :address_hash, references: :hash)
         has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 

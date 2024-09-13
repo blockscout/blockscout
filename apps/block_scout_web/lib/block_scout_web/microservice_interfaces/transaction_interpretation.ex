@@ -19,10 +19,9 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @items_limit 50
   @internal_transaction_necessity_by_association [
     necessity_by_association: %{
-      [created_contract_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]] =>
-        :optional,
-      [from_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]] => :optional,
-      [to_address: [[badges: [:badge, :address]], :names, :smart_contract, :proxy_implementations]] => :optional
+      [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+      [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+      [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
     }
   ]
 
@@ -109,9 +108,9 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       Chain.select_repo(@api_true).preload(transaction, [
         :transaction_actions,
         :block,
-        to_address: [[badges: [:badge, :address]], :names, :smart_contract],
+        to_address: [:scam_badge, :names, :smart_contract],
         from_address: [:names, :smart_contract],
-        created_contract_address: [[badges: [:badge, :address]], :names, :token, :smart_contract]
+        created_contract_address: [:scam_badge, :names, :token, :smart_contract]
       ])
 
     skip_sig_provider? = false
