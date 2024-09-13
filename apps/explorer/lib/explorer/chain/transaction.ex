@@ -2013,7 +2013,6 @@ defmodule Explorer.Chain.Transaction do
     {Enum.reverse(results), abi_acc, methods_acc}
   end
 
-  # credo:disable-for-next-line
   defp get_proxy_implementation_addresses_tuple_list(transactions) do
     # parse unique address hashes of smart-contracts from to_address and created_contract_address properties of the transactions list
     unique_to_address_hashes =
