@@ -7,7 +7,7 @@ defmodule EthereumJSONRPC.HTTP do
 
   require Logger
 
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [sanitize_id: 1]
 
   @behaviour Transport
 
@@ -190,7 +190,7 @@ defmodule EthereumJSONRPC.HTTP do
     # argument matching.
 
     # Nethermind return string ids
-    id = quantity_to_integer(unstandardized["id"])
+    id = sanitize_id(unstandardized["id"])
 
     standardized = %{jsonrpc: jsonrpc, id: id}
 
