@@ -480,17 +480,54 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @doc """
   Returns combined ABI from proxy and implementation smart-contracts
   """
-  @spec combine_proxy_implementation_abi(any(), any()) :: SmartContract.abi()
-  def combine_proxy_implementation_abi(smart_contract, options \\ [])
+  @spec combine_proxy_implementation_abi(any(), map(), boolean(), any()) :: SmartContract.abi()
+  def combine_proxy_implementation_abi(
+        smart_contract,
+        proxy_implementation_addresses_map \\ %{},
+        fetch_proxy?,
+        options \\ []
+      )
 
-  def combine_proxy_implementation_abi(%SmartContract{abi: abi} = smart_contract, options) when not is_nil(abi) do
-    implementation_abi = Proxy.get_implementation_abi_from_proxy(smart_contract, options)
+  def combine_proxy_implementation_abi(
+        %SmartContract{abi: abi} = smart_contract,
+        proxy_implementation_addresses_map,
+        fetch_proxy?,
+        options
+      )
+      when not is_nil(abi) do
+    implementation_abi =
+      get_implementation_abi(smart_contract, options, proxy_implementation_addresses_map, fetch_proxy?)
 
     if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
   end
 
-  def combine_proxy_implementation_abi(_, _) do
-    []
+  def combine_proxy_implementation_abi(smart_contract, proxy_implementation_addresses_map, fetch_proxy?, options) do
+    get_implementation_abi(smart_contract, options, proxy_implementation_addresses_map, fetch_proxy?)
+  end
+
+  defp get_implementation_abi(smart_contract, options, proxy_implementation_addresses_map, fetch_proxy?) do
+    if fetch_proxy? do
+      Proxy.get_implementation_abi_from_proxy(smart_contract, options)
+    else
+      implementations =
+        proxy_implementation_addresses_map
+        |> Map.get(smart_contract.address_hash)
+
+      parse_abi_from_proxy_implementations(implementations)
+    end
+  end
+
+  defp parse_abi_from_proxy_implementations(nil), do: []
+
+  defp parse_abi_from_proxy_implementations(implementations) do
+    implementations
+    |> Enum.reduce([], fn implementation, acc ->
+      if implementation.smart_contract && implementation.smart_contract.abi do
+        acc ++ implementation.smart_contract.abi
+      else
+        acc
+      end
+    end)
   end
 
   defp find_input_by_name(inputs, name) do
