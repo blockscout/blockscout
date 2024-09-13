@@ -136,7 +136,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
 
       assert Proxy.combine_proxy_implementation_abi(
                %SmartContract{address_hash: proxy_contract_address.hash, abi: nil},
-               [],
+               %{},
                false
              ) ==
                []
@@ -148,7 +148,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [], contract_code_md5: "123")
 
-      assert Proxy.combine_proxy_implementation_abi(smart_contract, [], false) == []
+      assert Proxy.combine_proxy_implementation_abi(smart_contract, %{}, false) == []
     end
 
     test "combine_proxy_implementation_abi/4 returns proxy abi if implementation is not verified" do
@@ -157,7 +157,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
-      assert Proxy.combine_proxy_implementation_abi(smart_contract, [], false) == @proxy_abi
+      assert Proxy.combine_proxy_implementation_abi(smart_contract, %{}, false) == @proxy_abi
     end
 
     test "combine_proxy_implementation_abi/4 returns proxy + implementation abi if implementation is verified" do
@@ -189,10 +189,14 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       _implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
 
+      proxy_implementation_addresses_map =
+        %{}
+        |> Map.put(proxy_contract_address.hash, [implementation_contract_address_with_smart_contract_preload])
+
       combined_abi =
         Proxy.combine_proxy_implementation_abi(
           proxy_smart_contract,
-          [{proxy_contract_address.hash, [implementation_contract_address_with_smart_contract_preload]}],
+          proxy_implementation_addresses_map,
           false
         )
 

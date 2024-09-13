@@ -480,48 +480,46 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @doc """
   Returns combined ABI from proxy and implementation smart-contracts
   """
-  @spec combine_proxy_implementation_abi(any(), list(), boolean(), any()) :: SmartContract.abi()
+  @spec combine_proxy_implementation_abi(any(), map(), boolean(), any()) :: SmartContract.abi()
   def combine_proxy_implementation_abi(
         smart_contract,
-        proxy_implementation_addresses_tuple_list \\ [],
+        proxy_implementation_addresses_map \\ %{},
         fetch_proxy?,
         options \\ []
       )
 
   def combine_proxy_implementation_abi(
         %SmartContract{abi: abi} = smart_contract,
-        proxy_implementation_addresses_tuple_list,
+        proxy_implementation_addresses_map,
         fetch_proxy?,
         options
       )
       when not is_nil(abi) do
     implementation_abi =
-      get_implementation_abi(smart_contract, options, proxy_implementation_addresses_tuple_list, fetch_proxy?)
+      get_implementation_abi(smart_contract, options, proxy_implementation_addresses_map, fetch_proxy?)
 
     if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
   end
 
-  def combine_proxy_implementation_abi(smart_contract, proxy_implementation_addresses_tuple_list, fetch_proxy?, options) do
-    get_implementation_abi(smart_contract, options, proxy_implementation_addresses_tuple_list, fetch_proxy?)
+  def combine_proxy_implementation_abi(smart_contract, proxy_implementation_addresses_map, fetch_proxy?, options) do
+    get_implementation_abi(smart_contract, options, proxy_implementation_addresses_map, fetch_proxy?)
   end
 
-  defp get_implementation_abi(smart_contract, options, proxy_implementation_addresses_tuple_list, fetch_proxy?) do
+  defp get_implementation_abi(smart_contract, options, proxy_implementation_addresses_map, fetch_proxy?) do
     if fetch_proxy? do
       Proxy.get_implementation_abi_from_proxy(smart_contract, options)
     else
-      proxy_implementation_addresses_tuple =
-        proxy_implementation_addresses_tuple_list
-        |> Enum.find(fn {proxy_address_hash, _implementations} ->
-          proxy_address_hash == smart_contract.address_hash
-        end)
+      implementations =
+        proxy_implementation_addresses_map
+        |> Map.get(smart_contract.address_hash)
 
-      parse_abi_from_proxy_implementations(proxy_implementation_addresses_tuple)
+      parse_abi_from_proxy_implementations(implementations)
     end
   end
 
   defp parse_abi_from_proxy_implementations(nil), do: []
 
-  defp parse_abi_from_proxy_implementations({_proxy_address_hash, implementations}) do
+  defp parse_abi_from_proxy_implementations(implementations) do
     implementations
     |> Enum.reduce([], fn implementation, acc ->
       if implementation.smart_contract && implementation.smart_contract.abi do
