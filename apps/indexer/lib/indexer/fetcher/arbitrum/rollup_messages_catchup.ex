@@ -167,32 +167,34 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
     {:noreply, %{state | data: new_data}}
   end
 
-  # Sets the ends blocks of the ranges for discovering historical L1-to-L2 and L2-to-L1 messages.
+  # Sets the end blocks of the ranges for discovering historical L1-to-L2 and L2-to-L1 messages.
   #
-  # No doubts there is a way to query the DB and discover exact block of the first
-  # missed message (both L1-to-L2 and L2-to-L1) and start the discovery process from
-  # there, such query is very expensive and can take a lot of time for the chains with
-  # high amount of transactions. At the same time it is possible to start looking
-  # for the missed messages from the block before the latest indexed block. Although
-  # this approach is not optimal for the Blockscout instances where there are no
-  # missed messages (and it is assumed that such instances are the majority), it is
-  # still better than the first approach. The reason is that finite amount of
-  # relatively cheap queries (they can be tuned with the `missed_messages_blocks_depth`)
-  # are preferable to one expensive query that even becomes more expensive with the
-  # growth of the indexed transactions amount.
+  # There is likely a way to query the DB and discover the exact block of the
+  # first missed message (both L1-to-L2 and L2-to-L1) and start the discovery
+  # process from there. However, such a query is very expensive and can take a
+  # long time for chains with a high number of transactions. Instead, it's
+  # possible to start looking for missed messages from the block before the
+  # latest indexed block.
   #
-  # After identifying the initial values, the function immediately transitions to
-  # the L2-to-L1 message discovery process by sending the `:historical_msg_from_l2`
-  # message.
+  # Although this approach is not optimal for Blockscout instances where there
+  # are no missed messages (assumed to be the majority), it is still preferable
+  # to the first approach. The reason is that a finite number of relatively
+  # cheap queries (which can be tuned with `missed_messages_blocks_depth`) are
+  # preferable to one expensive query that becomes even more expensive as the
+  # number of indexed transactions grows.
+  #
+  # After identifying the initial values, the function immediately transitions
+  # to the L2-to-L1 message discovery process by sending the
+  # `:historical_msg_from_l2` message.
   #
   # ## Parameters
   # - `:init_worker`: The message that triggers the handler.
-  # - `state`: The current state of the fetcher containing the number of the most
-  #   recent block indexed.
+  # - `state`: The current state of the fetcher containing the number of the
+  #   most recent block indexed.
   #
   # ## Returns
-  # - `{:noreply, new_state}` where the end blocks for both L1-to-L2 and L2-to-L1
-  #   message discovery are established.
+  # - `{:noreply, new_state}` where `new_state` contains the updated state with
+  #   end blocks for both L1-to-L2 and L2-to-L1 message discovery established.
   @impl GenServer
   def handle_info(:init_worker, %{data: %{new_block: just_received_block}} = state) do
     Process.send(self(), :historical_msg_from_l2, [])
