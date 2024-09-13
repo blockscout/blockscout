@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Common functions to simplify DB routines for Indexer.Fetcher.Arbitrum fetchers
   """
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
@@ -212,83 +212,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
       value ->
         value - 1
-    end
-  end
-
-  @doc """
-    Determines the rollup block number to discover missed L2-to-L1 messages within
-    a specified range.
-
-    The function checks for the first missed L2-to-L1 message and whether historical
-    block fetching is still in progress. If no missed messages are found and
-    historical fetching is complete, it returns the block number just before the
-    first rollup block. Otherwise, it returns the appropriate block number based on
-    the findings.
-
-    ## Parameters
-    - `initial_value`: The initial block number to start the further search of the
-      missed messages from if no missed messages are found and historical blocks
-      are not fetched yet.
-    - `rollup_first_block`: The block number of the first rollup block.
-
-    ## Returns
-    - The block number of the first missed L2-to-L1 message.
-  """
-  @spec rollup_block_to_discover_missed_messages_from_l2(FullBlock.block_number(), FullBlock.block_number()) ::
-          nil | FullBlock.block_number()
-  def rollup_block_to_discover_missed_messages_from_l2(initial_value, rollup_first_block) do
-    arbsys_contract = Application.get_env(:indexer, Indexer.Fetcher.Arbitrum.Messaging)[:arbsys_contract]
-
-    with {:block, nil} <-
-           {:block, Reader.rollup_block_of_first_missed_message_from_l2(arbsys_contract, @l2_to_l1_event)},
-         {:synced, true} <- {:synced, rollup_synced?()} do
-      log_info("No missed messages from L2 found")
-      rollup_first_block - 1
-    else
-      {:block, value} ->
-        log_info("First missed message from L2 found in block #{value}")
-        value
-
-      {:synced, false} ->
-        log_info("No missed messages from L2 found but historical blocks fetching still in progress")
-        initial_value
-    end
-  end
-
-  @doc """
-    Determines the rollup block number to discover missed L1-to-L2 messages within
-    a specified range.
-
-    The function checks for the first missed L1-to-L2 message and whether historical
-    block fetching is still in progress. If no missed messages are found and
-    historical fetching is complete, it returns the block number just before the
-    first rollup block. Otherwise, it returns the appropriate block number based on
-    the findings.
-
-    ## Parameters
-    - `initial_value`: The initial block number to start the further search of the
-      missed messages from if no missed messages are found and historical blocks
-      are not fetched yet.
-    - `rollup_first_block`: The block number of the first rollup block.
-
-    ## Returns
-    - The block number of the first missed L1-to-L2 message.
-  """
-  @spec rollup_block_to_discover_missed_messages_to_l2(FullBlock.block_number(), FullBlock.block_number()) ::
-          nil | FullBlock.block_number()
-  def rollup_block_to_discover_missed_messages_to_l2(initial_value, rollup_first_block) do
-    with {:block, nil} <- {:block, Reader.rollup_block_of_first_missed_message_to_l2()},
-         {:synced, true} <- {:synced, rollup_synced?()} do
-      log_info("No missed messages to L2 found")
-      rollup_first_block - 1
-    else
-      {:block, value} ->
-        log_info("First missed message to L2 found in block #{value}")
-        value
-
-      {:synced, false} ->
-        log_info("No missed messages to L2 found but historical blocks fetching still in progress")
-        initial_value
     end
   end
 
@@ -914,16 +837,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @spec get_da_info_by_batch_number(non_neg_integer()) :: map()
   def get_da_info_by_batch_number(batch_number) do
     Reader.get_da_info_by_batch_number(batch_number)
-  end
-
-  # Checks if the rollup is synced by verifying if the block after the first block exists in the database.
-  @spec rollup_synced?() :: boolean()
-  defp rollup_synced? do
-    # Since zero block does not have any useful data, it make sense to consider
-    # the block just after it
-    rollup_tail = Application.get_all_env(:indexer)[:first_block] + 1
-
-    Reader.rollup_block_exists?(rollup_tail)
   end
 
   @spec lifecycle_transaction_to_map(Arbitrum.LifecycleTransaction.t()) :: Arbitrum.LifecycleTransaction.to_import()
