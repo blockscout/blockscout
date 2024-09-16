@@ -34,6 +34,11 @@ config :explorer, Explorer.Repo.PolygonZkevm,
   timeout: :timer.seconds(60),
   ssl_opts: [verify: :verify_none]
 
+config :explorer, Explorer.Repo.Zilliqa,
+  prepare: :unnamed,
+  timeout: :timer.seconds(60),
+  ssl_opts: [verify: :verify_none]
+
 config :explorer, Explorer.Repo.ZkSync,
   prepare: :unnamed,
   timeout: :timer.seconds(60),

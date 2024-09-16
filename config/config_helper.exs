@@ -11,18 +11,19 @@ defmodule ConfigHelper do
 
     repos =
       case chain_type() do
+        :arbitrum -> base_repos ++ [Explorer.Repo.Arbitrum]
+        :celo -> base_repos ++ [Explorer.Repo.Celo]
         :ethereum -> base_repos ++ [Explorer.Repo.Beacon]
+        :filecoin -> base_repos ++ [Explorer.Repo.Filecoin]
         :optimism -> base_repos ++ [Explorer.Repo.Optimism]
         :polygon_edge -> base_repos ++ [Explorer.Repo.PolygonEdge]
         :polygon_zkevm -> base_repos ++ [Explorer.Repo.PolygonZkevm]
         :rsk -> base_repos ++ [Explorer.Repo.RSK]
         :shibarium -> base_repos ++ [Explorer.Repo.Shibarium]
-        :suave -> base_repos ++ [Explorer.Repo.Suave]
-        :filecoin -> base_repos ++ [Explorer.Repo.Filecoin]
         :stability -> base_repos ++ [Explorer.Repo.Stability]
+        :suave -> base_repos ++ [Explorer.Repo.Suave]
+        :zilliqa -> base_repos ++ [Explorer.Repo.Zilliqa]
         :zksync -> base_repos ++ [Explorer.Repo.ZkSync]
-        :celo -> base_repos ++ [Explorer.Repo.Celo]
-        :arbitrum -> base_repos ++ [Explorer.Repo.Arbitrum]
         _ -> base_repos
       end
 
@@ -305,6 +306,7 @@ defmodule ConfigHelper do
   @supported_chain_types [
     "default",
     "arbitrum",
+    "celo",
     "ethereum",
     "filecoin",
     "optimism",
@@ -315,8 +317,8 @@ defmodule ConfigHelper do
     "stability",
     "suave",
     "zetachain",
-    "zksync",
-    "celo"
+    "zilliqa",
+    "zksync"
   ]
 
   @spec chain_type() :: atom() | nil
