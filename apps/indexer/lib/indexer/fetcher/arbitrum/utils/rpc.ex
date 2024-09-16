@@ -20,6 +20,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   @selector_sequencer_inbox "ee35f327"
   # bridge()
   @selector_bridge "e78cea92"
+  # latestConfirmed()
+  @selector_latest_confirmed "65f7f80d"
+  # getNode(uint64 nodeNum)
+  @selector_get_node "92c8134c"
   @rollup_contract_abi [
     %{
       "inputs" => [],
@@ -59,6 +63,52 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       ],
       "stateMutability" => "view",
       "type" => "function"
+    },
+    %{
+      "inputs" => [],
+      "name" => "latestConfirmed",
+      "outputs" => [
+        %{
+          "internalType" => "uint64",
+          "name" => "",
+          "type" => "uint64"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [
+        %{
+          "internalType" => "uint64",
+          "name" => "",
+          "type" => "uint64"
+        }
+      ],
+      "name" => "getNode",
+      "outputs" => [
+        %{
+          "type" => "tuple",
+          "name" => "",
+          "internalType" => "struct Node",
+          "components" => [
+            %{"type" => "bytes32", "name" => "stateHash", "internalType" => "bytes32"},
+            %{"type" => "bytes32", "name" => "challengeHash", "internalType" => "bytes32"},
+            %{"type" => "bytes32", "name" => "confirmData", "internalType" => "bytes32"},
+            %{"type" => "uint64", "name" => "prevNum", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "deadlineBlock", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "noChildConfirmedBeforeBlock", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "stakerCount", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "childStakerCount", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "firstChildBlock", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "latestChildNumber", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "createdAtBlock", "internalType" => "uint64"},
+            %{"type" => "bytes32", "name" => "nodeHash", "internalType" => "bytes32"},
+          ]
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
     }
   ]
 
@@ -76,6 +126,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
   # findBatchContainingBlock(uint64 blockNum)
   @selector_find_batch_containing_block "81f1adaf"
+  # constructOutboxProof(uint64 size, uint64 leaf)
+  @selector_construct_outbox_proof "42696350"
   @node_interface_contract_abi [
     %{
       "inputs" => [
@@ -151,6 +203,63 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     call_simple_getters_in_rollup_contract(
       rollup_address,
       [@selector_sequencer_inbox, @selector_outbox],
+      json_rpc_named_arguments
+    )
+  end
+
+  @doc """
+    Retrieves the latest confirmed node index for withdrawals Merkle tree.
+
+    This function fetches an actual confirmed L2->L1 node from the Arbitrum rollup address.
+    It invokes contract method `latestConfirmed()` to obtain the required information.
+
+    ## Parameters
+    - `rollup_address`: The address of the Arbitrum rollup contract from which
+                        information is being retrieved.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A positive integer representing latest confirmed node index
+  """
+  @spec get_latest_confirmed_l2_to_l1_message_id(
+    EthereumJSONRPC.address(),
+    EthereumJSONRPC.json_rpc_named_arguments()
+  ) :: non_neg_integer()
+  def get_latest_confirmed_l2_to_l1_message_id(rollup_address, json_rpc_named_arguments) do
+    read_contract_and_handle_result_as_integer(
+      rollup_address,
+      @selector_latest_confirmed,
+      [],
+      @rollup_contract_abi,
+      json_rpc_named_arguments
+    )
+  end
+
+  @doc """
+    Retrieves rollup noded by index
+
+    This function fetches node information by specified index
+    It invokes Rollup contract method `getNode()` to obtain the required data.
+
+    ## Parameters
+    - `rollup_address`: The address of the Arbitrum rollup contract from which
+                        information is being retrieved.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A positive integer representing latest confirmed node index
+  """
+  @spec get_node(
+    EthereumJSONRPC.address(),
+    non_neg_integer(),
+    EthereumJSONRPC.json_rpc_named_arguments()
+  ) :: any()
+  def get_node(rollup_address, node_index, json_rpc_named_arguments) do
+    read_contract_and_handle_result_as_integer(
+      rollup_address,
+      @selector_get_node,
+      [node_index],
+      @rollup_contract_abi,
       json_rpc_named_arguments
     )
   end

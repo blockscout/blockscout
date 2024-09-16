@@ -66,15 +66,19 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   @doc """
     Function to render GET requests to `/api/v2/arbitrum/messages/from-rollup/:msg_id` endpoint.
   """
-  def render("arbitrum_message.json", %{message: message}) do
+  def render("arbitrum_message.json", %{message: message, data: data}) do
     %{
-      "id" => message.message_id,
-      "origination_address" => message.originator_address,
+      "index" => message.message_id,
+      "status" => message.status,
+      "l2Sender" => message.originator_address,
+      "to" => data[:destination],
+      "l2Block" => data[:arb_block_num],
+      "l1Block" => data[:eth_block_num],
+      "l2Timestamp" => data[:l2_timestamp],
+      "value" => data[:call_value],
+      "data" => data[:data],
       "origination_transaction_hash" => message.originating_transaction_hash,
-      "origination_timestamp" => message.origination_timestamp,
-      "origination_transaction_block_number" => message.originating_transaction_block_number,
-      "completion_transaction_hash" => message.completion_transaction_hash,
-      "status" => message.status
+      "completion_transaction_hash" => message.completion_transaction_hash
     }
   end
 

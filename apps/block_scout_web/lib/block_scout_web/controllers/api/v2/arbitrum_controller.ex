@@ -13,10 +13,21 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   alias Explorer.PagingOptions
   alias Explorer.Chain.Arbitrum.{L1Batch, Message, Reader}
+  alias Explorer.Chain
+  alias Explorer.Chain.Log
+  alias Explorer.Chain.Hash
+  alias Explorer.Chain.Hash.Address
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
+  alias Indexer.Helper, as: IndexerHelper
+
+  require Logger
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @batch_necessity_by_association %{:commitment_transaction => :required}
+
+  # 32-byte signature of the event L2ToL1Tx(address caller, address indexed destination, uint256 indexed hash, uint256 indexed position, uint256 arbBlockNum, uint256 ethBlockNum, uint256 timestamp, uint256 callvalue, bytes data)
+  @l2_to_l1_event "0x3e7aafa77dbf186b7fd488006beff893744caa3c4f6f299e8a709fa2087374fc"
 
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
@@ -71,9 +82,73 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
           |> render(:message, %{message: "not found"})
 
       msg ->
-        conn
-          |> put_status(200)
-          |> render(:arbitrum_message, %{message: msg})
+        #Logger.warning("Received message #{inspect(msg)}")
+
+        wdrawLogs = Chain.transaction_to_logs_by_topic0(msg.originating_transaction_hash, @l2_to_l1_event)
+          #|> Enum.filter(fn log -> Hash.to_integer(log.fourth_topic) == msg_id end)
+
+        case wdrawLogs |> Enum.at(0) do
+          nil ->
+            conn
+              |> put_status(:not_found)
+              |> render(:message, %{message: "associated L2ToL1Tx event in the transaction was not found"})
+
+          log ->
+            #hash_to_int = Hash.to_integer(log.fourth_topic)
+            # Getting needed fields from the L2ToL1Tx event
+            destination = case Hash.Address.cast(Hash.to_integer(log.second_topic)) do
+              {:ok, address} -> address
+              _ -> nil
+            end
+
+            arb_block_num = binary_slice(log.data.bytes, 32, 32)
+              |> :binary.decode_unsigned()
+
+            eth_block_num = binary_slice(log.data.bytes, 64, 32)
+              |> :binary.decode_unsigned()
+
+            l2_timestamp = binary_slice(log.data.bytes, 96, 32)
+              |> :binary.decode_unsigned()
+
+            call_value = binary_slice(log.data.bytes, 128, 32)
+              |> :binary.decode_unsigned()
+
+            data_length = binary_slice(log.data.bytes, 192, 32)
+              |> :binary.decode_unsigned()
+
+            data = binary_slice(log.data.bytes, 224, data_length)
+
+            config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
+            l1_rpc = config_common[:l1_rpc]
+            json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(l1_rpc)
+            l1_rollup_address = config_common[:l1_rollup_address]
+
+            #Logger.warning("l1_rollup_address: #{inspect(l1_rollup_address, pretty: true)}")
+            #Logger.warning("json_rpc_named_arguments: #{inspect(json_rpc, pretty: true)}")
+            #Logger.warning("Application.get_all_env(:indexer): #{inspect(Application.get_all_env(:indexer), pretty: true)}")
+
+            latest_confirmed = Rpc.get_latest_confirmed_l2_to_l1_message_id(
+              l1_rollup_address,
+              json_l1_rpc_named_arguments
+            )
+
+            Logger.warning("latest confirmed: #{inspect(latest_confirmed, pretty: true)}")
+
+            extra = [
+              destination: destination,
+              arb_block_num: arb_block_num,
+              eth_block_num: eth_block_num,
+              l2_timestamp: l2_timestamp,
+              call_value: call_value,
+              data: data,
+            ]
+            #Logger.warning("Extra data object #{inspect(extra, pretty: true)}")
+            #Logger.warning("topic value: #{hash_to_int}, requested value: #{msg_id}, arbBlock: #{inspect(arb_block_num)}")
+            conn
+              |> put_status(200)
+              |> render(:arbitrum_message, %{message: msg, data: extra})
+
+        end
     end
   end
 

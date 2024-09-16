@@ -2890,6 +2890,44 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Finds all `t:Explorer.Chain.Log.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Log.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.Log.t/0` will not be included in the page `entries`.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest `{index}`). Results will be the transactions older than
+      the `index` that are passed.
+
+  """
+  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary(), [paging_options | necessity_by_association_option | api?]) :: [Log.t()]
+  def transaction_to_logs_by_topic0(transaction_hash, topic0, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    log_with_transactions =
+      from(log in Log,
+        inner_join: transaction in Transaction,
+        on:
+          transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
+            transaction.hash == log.transaction_hash
+      )
+
+    query =
+      log_with_transactions
+      |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
+      |> page_transaction_logs(paging_options)
+      |> limit(^paging_options.page_size)
+      |> order_by([log], asc: log.index)
+      |> join_associations(necessity_by_association)
+
+    query
+      |> select_repo(options).all()
+  end
+
+  @doc """
   Finds all `t:Explorer.Chain.TokenTransfer.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
 
   ## Options
