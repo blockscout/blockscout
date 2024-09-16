@@ -14,6 +14,7 @@ defmodule Explorer.GraphQL do
   alias Explorer.Chain.{
     Hash,
     InternalTransaction,
+    Token,
     TokenTransfer,
     Transaction
   }
@@ -80,6 +81,18 @@ defmodule Explorer.GraphQL do
       {:ok, token_transfer}
     else
       {:error, "Token transfer not found."}
+    end
+  end
+
+  @doc """
+  Returns a token for a given contract address hash.
+  """
+  @spec get_token(map()) :: {:ok, Token.t()} | {:error, String.t()}
+  def get_token(%{contract_address_hash: _} = clauses) do
+    if token = Repo.replica().get_by(Token, clauses) do
+      {:ok, token}
+    else
+      {:error, "Token not found."}
     end
   end
 

@@ -317,8 +317,8 @@ defmodule Explorer.Chain do
     filters = Keyword.get(options, :token_type)
     necessity_by_association = Keyword.get(options, :necessity_by_association)
 
-    direction
-    |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters, paging_options)
+    address_hash
+    |> TokenTransfer.token_transfers_by_address_hash(direction, filters, paging_options)
     |> join_associations(necessity_by_association)
     |> select_repo(options).all()
   end

@@ -442,7 +442,7 @@ defmodule Explorer.Chain.TokenTransfer do
     |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
   end
 
-  def token_transfers_by_address_hash(direction, address_hash, token_types, paging_options) do
+  def token_transfers_by_address_hash(address_hash, direction, token_types, paging_options) do
     if direction == :to || direction == :from do
       only_consensus_transfers_query()
       |> filter_by_direction(direction, address_hash)
@@ -474,7 +474,7 @@ defmodule Explorer.Chain.TokenTransfer do
       |> union(^from_address_hash_query)
       |> Chain.wrapped_union_subquery()
       |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
-      |> limit(^paging_options.page_size)
+      |> handle_paging_options(paging_options)
     end
   end
 
