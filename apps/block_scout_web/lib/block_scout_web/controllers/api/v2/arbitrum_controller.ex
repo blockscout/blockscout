@@ -29,6 +29,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   # 32-byte signature of the event L2ToL1Tx(address caller, address indexed destination, uint256 indexed hash, uint256 indexed position, uint256 arbBlockNum, uint256 ethBlockNum, uint256 timestamp, uint256 callvalue, bytes data)
   @l2_to_l1_event "0x3e7aafa77dbf186b7fd488006beff893744caa3c4f6f299e8a709fa2087374fc"
 
+  # 32-byte signature of the event NodeCreated(...)
+  @node_created_event "0x4f4caa9e67fb994e349dd35d1ad0ce23053d4323f83ce11dc817b5435031d096"
+
+
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
   """
@@ -117,6 +121,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
               |> :binary.decode_unsigned()
 
             data = binary_slice(log.data.bytes, 224, data_length)
+              |> Base.encode16(case: :lower)
 
             config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
             l1_rpc = config_common[:l1_rpc]
@@ -132,7 +137,15 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
               json_l1_rpc_named_arguments
             )
 
-            Logger.warning("latest confirmed: #{inspect(latest_confirmed, pretty: true)}")
+            node_creation_block_num = case Rpc.get_node(l1_rollup_address, latest_confirmed, json_l1_rpc_named_arguments) do
+              [{:ok, [fields]}] -> Kernel.elem(fields, 10)
+              [{:error, _}] -> nil
+            end
+            #node_creation_block_num = Rpc.get_node(l1_rollup_address, latest_confirmed, json_l1_rpc_named_arguments)
+
+            #Logger.warning("Latest confirmed node #{latest_confirmed} created at block #{inspect(node_creation_block_num, pretty: true)}")
+
+            #creation_block = Chain.block_to_logs_by_topic0(msg.originating_transaction_hash, @l2_to_l1_event)
 
             extra = [
               destination: destination,
@@ -140,7 +153,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
               eth_block_num: eth_block_num,
               l2_timestamp: l2_timestamp,
               call_value: call_value,
-              data: data,
+              data: "0x" <> data,
             ]
             #Logger.warning("Extra data object #{inspect(extra, pretty: true)}")
             #Logger.warning("topic value: #{hash_to_int}, requested value: #{msg_id}, arbBlock: #{inspect(arb_block_num)}")

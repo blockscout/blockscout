@@ -255,13 +255,13 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     EthereumJSONRPC.json_rpc_named_arguments()
   ) :: any()
   def get_node(rollup_address, node_index, json_rpc_named_arguments) do
-    read_contract_and_handle_result_as_integer(
-      rollup_address,
-      @selector_get_node,
-      [node_index],
-      @rollup_contract_abi,
-      json_rpc_named_arguments
-    )
+    [%{
+      contract_address: rollup_address,
+      method_id: @selector_get_node,
+      args: [node_index]
+    }]
+      |> IndexerHelper.read_contracts_with_retries(@rollup_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
+      |> Kernel.elem(0)
   end
 
   @doc """
