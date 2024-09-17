@@ -122,37 +122,35 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp queries(options, paging_options) do
-    cond do
-      only_transactions?(options) ->
-        [transactions_query(paging_options, options), internal_transactions_query(paging_options, options)]
+    []
+    |> maybe_add_transactions_queries(options, paging_options)
+    |> maybe_add_token_transfers_queries(options, paging_options)
+  end
 
-      only_token_transfers?(options) ->
-        [token_transfers_query(paging_options, options)]
+  defp maybe_add_transactions_queries(queries, options, paging_options) do
+    transaction_types = options[:transaction_types] || []
+    tokens_to_include = options[:token_contract_address_hashes][:include] || []
+    tokens_to_exclude = options[:token_contract_address_hashes][:exclude] || []
 
-      true ->
-        [
-          transactions_query(paging_options, options),
-          internal_transactions_query(paging_options, options),
-          token_transfers_query(paging_options, options)
-        ]
+    if (transaction_types == [] or "COIN_TRANSFER" in transaction_types) and
+         (tokens_to_include == [] or "native" in tokens_to_include) and
+         "native" not in tokens_to_exclude do
+      [transactions_query(paging_options, options), internal_transactions_query(paging_options, options) | queries]
+    else
+      queries
     end
   end
 
-  defp only_transactions?(options) do
-    transaction_types = options[:transaction_types]
-    tokens_to_include = options[:token_contract_address_hashes][:include]
+  defp maybe_add_token_transfers_queries(queries, options, paging_options) do
+    transaction_types = options[:transaction_types] || []
+    tokens_to_include = options[:token_contract_address_hashes][:include] || []
 
-    transaction_types == ["COIN_TRANSFER"] or tokens_to_include == ["native"]
-  end
-
-  defp only_token_transfers?(options) do
-    transaction_types = options[:transaction_types]
-    tokens_to_include = options[:token_contract_address_hashes][:include]
-    tokens_to_exclude = options[:token_contract_address_hashes][:exclude]
-
-    (is_list(transaction_types) and length(transaction_types) > 0 and "COIN_TRANSFER" not in transaction_types) or
-      (is_list(tokens_to_include) and length(tokens_to_include) > 0 and "native" not in tokens_to_include) or
-      (is_list(tokens_to_exclude) and "native" in tokens_to_exclude)
+    if (transaction_types == [] or not (transaction_types |> Enum.reject(&(&1 == "COIN_TRANSFER")) |> Enum.empty?())) and
+         (tokens_to_include == [] or not (tokens_to_include |> Enum.reject(&(&1 == "native")) |> Enum.empty?())) do
+      [token_transfers_query(paging_options, options) | queries]
+    else
+      queries
+    end
   end
 
   defp to_advanced_filter(%Transaction{} = transaction) do
@@ -296,7 +294,9 @@ defmodule Explorer.Chain.AdvancedFilter do
         preload: [
           transaction: transaction
         ],
-        where: transaction.block_consensus == true and internal_transaction.index > 0,
+        where: transaction.block_consensus == true,
+        where:
+          (internal_transaction.type == :call and internal_transaction.index > 0) or internal_transaction.type != :call,
         order_by: [
           desc: transaction.block_number,
           desc: transaction.index,
