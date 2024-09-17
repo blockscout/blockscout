@@ -23,6 +23,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Logs
   alias ABI.TypeDecoder
+  alias EthereumJSONRPC.Encoder
 
   require Logger
 
@@ -104,8 +105,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
           log ->
             # getting needed fields from the L2ToL1Tx event
-            [_pos, arb_block_num, eth_block_num, l2_timestamp, call_value, data] =
-              TypeDecoder.decode_raw(log.data.bytes, [{:uint, 256}, {:uint, 256}, {:uint, 256}, {:uint, 256}, {:uint, 256}, :bytes])
+            [caller, arb_block_num, eth_block_num, l2_timestamp, call_value, data] =
+              TypeDecoder.decode_raw(log.data.bytes, [:address, {:uint, 256}, {:uint, 256}, {:uint, 256}, {:uint, 256}, :bytes])
             data = data
               |> Base.encode16(case: :lower)
               |> (&("0x" <> &1)).()
@@ -114,6 +115,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
               {:ok, address} -> address
               _ -> nil
             end
+
+            position = Hash.to_integer(log.fourth_topic)
 
             #arb_block_num = binary_slice(log.data.bytes, 32, 32)
             #  |> :binary.decode_unsigned()
@@ -139,10 +142,12 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
             json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(l1_rpc)
             json_l2_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
             l1_rollup_address = config_common[:l1_rollup_address]
+            node_interface_address = "0x00000000000000000000000000000000000000c8"
 
             #Logger.warning("l1_rollup_address: #{inspect(l1_rollup_address, pretty: true)}")
             #Logger.warning("json_rpc_named_arguments: #{inspect(json_rpc, pretty: true)}")
             #Logger.warning("Application.get_all_env(:indexer): #{inspect(Application.get_all_env(:indexer), pretty: true)}")
+            #Logger.warning("config_common: #{inspect(config_common, pretty: true)}")
 
             # getting latest confirmed node index (L1)
             latest_confirmed = Rpc.get_latest_confirmed_l2_to_l1_message_id(
@@ -220,7 +225,61 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
             Logger.warning("size for outbox proof: #{inspect(l2_block_send_count, pretty: true)}")
 
+            #Logger.warning("node_interface_address: #{inspect(node_interface_address, pretty: true)}")
+            #Logger.warning("json_l2_rpc_named_arguments: #{inspect(json_l2_rpc_named_arguments, pretty: true)}")
+
             # now we are ready to construct outbox proof
+            proof_values = case Rpc.construct_outbox_proof(
+              node_interface_address,
+              l2_block_send_count,
+              position,
+              json_l2_rpc_named_arguments
+            ) do
+              {:ok, [_send, _root, proof]} -> proof
+                |> Enum.map(fn p -> "0x" <> Base.encode16(p, case: :lower) end)
+              {:error, _} ->
+                Logger.error("Unable to construct proof with size = #{l2_block_send_count}, leaf = #{msg_id}")
+                nil
+            end
+
+            Logger.warning("proof_values: #{inspect(proof_values, pretty: true)}")
+
+            # now let's prepare the executeTransaction (Outbox contract on L1) calldata
+            function_selector = %ABI.FunctionSelector{
+              function: "executeTransaction",
+              returns: [],
+              types: [
+                {:array, {:bytes, 32}}, # proof
+                {:uint, 256}, # index
+                :address, # l2Sender
+                :address, # to
+                {:uint, 256}, # l2Block
+                {:uint, 256}, # l1Block
+                {:uint, 256}, # l2Timestamp
+                {:uint, 256}, # value
+                :bytes, # data
+              ]
+            }
+
+            #Logger.warning("caller: #{inspect(caller, pretty: true)}")
+            #Logger.warning("destination: #{inspect(destination, pretty: true)}")
+            #Logger.warning("data: #{inspect(data, pretty: true)}")
+
+            args = [
+              proof_values,
+              position,
+              "0x" <> Base.encode16(caller, case: :lower),
+              Hash.to_string(destination),
+              arb_block_num,
+              eth_block_num,
+              l2_timestamp,
+              call_value,
+              data
+            ]
+            calldata = Encoder.encode_function_call(function_selector, args)
+
+            Logger.warning("calldata: #{calldata}")
+
 
             extra = [
               destination: destination,

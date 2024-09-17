@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   alias EthereumJSONRPC.Transport
   alias Indexer.Helper, as: IndexerHelper
 
+
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
   @rpc_resend_attempts 20
 
@@ -144,6 +145,40 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           "name" => "batch",
           "type" => "uint64"
         }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [
+        %{
+          "internalType" => "uint64",
+          "name" => "size",
+          "type" => "uint64"
+        },
+        %{
+          "internalType" => "uint64",
+          "name" => "leaf",
+          "type" => "uint64"
+        }
+      ],
+      "name" => "constructOutboxProof",
+      "outputs" => [
+        %{
+          "internalType" => "bytes32",
+          "name" => "send",
+          "type" => "bytes32"
+        },
+        %{
+          "internalType" => "bytes32",
+          "name" => "root",
+          "type" => "bytes32"
+        },
+        %{
+          "internalType" => "bytes32[]",
+          "name" => "proof",
+          "type" => "bytes32[]"
+        },
       ],
       "stateMutability" => "view",
       "type" => "function"
@@ -824,6 +859,48 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       )
 
     {batch_number, Map.put(cache, block_number, batch_number)}
+  end
+
+  # Calculates the proof needed to claim L2->L1 message
+  #
+  # This function calls the `constructOutboxProof` method of the Node Interface
+  # to obtain the data needed for manual message claiming
+  #
+  # Parameters:
+  # - `node_interface_address`: The address of the node interface contract.
+  # - `size`: Index of the latest confirmed node (cummulative number of
+  #    confirmed L2->L1 transactions)
+  # - `leaf`: position of the L2->L1 message (`position` field of the associated
+  #    `L2ToL1Tx` event). It should be less than `size`
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC
+  #   connection.
+  #
+  # Returns:
+  # `{:ok, [send, root, proof]}`, where
+  #    `proof` - an array of 32-bytes values which are needed to execute messages.
+  # `{:error, _}` in case of size less or equal leaf or RPC error
+  @spec construct_outbox_proof(
+          EthereumJSONRPC.address(),
+          non_neg_integer(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:ok, binary()} | {:error, :invalid}
+  def construct_outbox_proof(_, size, leaf, _) when size <= leaf  do
+    {:error, :invalid}
+  end
+
+  def construct_outbox_proof(node_interface_address, size, leaf, json_rpc_named_arguments) do
+    case [%{
+      contract_address: node_interface_address,
+      method_id: @selector_construct_outbox_proof,
+      args: [size, leaf]
+    }]
+      |> IndexerHelper.read_contracts_with_retries(@node_interface_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
+      |> Kernel.elem(0)
+    do
+      [ok: value] -> {:ok, value}
+      [error: err] -> {:error, err}
+    end
   end
 
   # Calls one contract method and processes the result as an integer.
