@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Transaction.Schema do
     Hash,
     InternalTransaction,
     Log,
+    SignedAuthorization,
     TokenTransfer,
     TransactionAction,
     Wei
@@ -268,6 +269,11 @@ defmodule Explorer.Chain.Transaction.Schema do
           foreign_key: :created_contract_address_hash,
           references: :hash,
           type: Hash.Address
+        )
+
+        has_many(:signed_authorizations, SignedAuthorization,
+          foreign_key: :transaction_hash,
+          references: :hash
         )
 
         unquote_splicing(@chain_type_fields)

@@ -19,7 +19,8 @@ defmodule BlockScoutWeb.PagingHelper do
         "contract_creation",
         "token_transfer",
         "token_creation",
-        "blob_transaction"
+        "blob_transaction",
+        "set_code_transaction"
       ]
 
     _ ->

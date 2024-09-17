@@ -234,7 +234,8 @@ defmodule Indexer.Block.Fetcher do
            tokens: %{params: tokens},
            transactions: %{params: transactions_with_receipts},
            withdrawals: %{params: withdrawals_params},
-           token_instances: %{params: token_instances}
+           token_instances: %{params: token_instances},
+           signed_authorizations: %{params: extract_signed_authorizations(transactions_with_receipts)}
          },
          chain_type_import_options = %{
            transactions_with_receipts: transactions_with_receipts,
@@ -738,5 +739,50 @@ defmodule Indexer.Block.Fetcher do
 
       Map.put(token_transfer, :token, token)
     end)
+  end
+
+  defp extract_signed_authorizations(transactions_with_receipts) do
+    transactions_with_receipts
+    |> Enum.filter(&Map.has_key?(&1, :authorization_list))
+    |> Enum.map(
+      &(&1.authorization_list
+        |> Enum.with_index()
+        |> Enum.map(fn {authorization, index} ->
+          authorization
+          |> Map.merge(%{
+            transaction_hash: &1.hash,
+            index: index,
+            authority: recover_authority(authorization)
+          })
+        end))
+    )
+    |> List.flatten()
+  end
+
+  defp recover_authority(signed_authorization) do
+    eip7702_magic = 0x5
+    {:ok, %{bytes: address}} = Hash.Address.cast(signed_authorization.address)
+
+    signed_message =
+      ExKeccak.hash_256(
+        <<eip7702_magic>> <> ExRLP.encode([signed_authorization.chain_id, address, signed_authorization.nonce])
+      )
+
+    authority =
+      ec_recover(signed_message, signed_authorization.r, signed_authorization.s, signed_authorization.v)
+
+    authority
+  end
+
+  defp ec_recover(signed_message, r, s, v) do
+    r_bytes = <<r::integer-size(256)>>
+    s_bytes = <<s::integer-size(256)>>
+
+    {:ok, <<_compression::bytes-size(1), public_key::binary>>} =
+      ExSecp256k1.recover(signed_message, r_bytes, s_bytes, v)
+
+    <<_::bytes-size(12), hash::binary>> = ExKeccak.hash_256(public_key)
+    address = Base.encode16(hash, case: :lower)
+    "0x" <> address
   end
 end
