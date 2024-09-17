@@ -236,7 +236,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   end
 
   @doc """
-    Retrieves rollup noded by index
+    Retrieves rollup node by index
 
     This function fetches node information by specified index
     It invokes Rollup contract method `getNode()` to obtain the required data.

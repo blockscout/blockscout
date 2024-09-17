@@ -17,8 +17,12 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   alias Explorer.Chain.Log
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Hash.Address
+  alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
+  alias EthereumJSONRPC
+  alias EthereumJSONRPC.Logs
+  alias ABI.TypeDecoder
 
   require Logger
 
@@ -88,6 +92,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       msg ->
         #Logger.warning("Received message #{inspect(msg)}")
 
+        # getting L2ToL1Tx event from the originating message
         wdrawLogs = Chain.transaction_to_logs_by_topic0(msg.originating_transaction_hash, @l2_to_l1_event)
           #|> Enum.filter(fn log -> Hash.to_integer(log.fourth_topic) == msg_id end)
 
@@ -98,54 +103,124 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
               |> render(:message, %{message: "associated L2ToL1Tx event in the transaction was not found"})
 
           log ->
-            #hash_to_int = Hash.to_integer(log.fourth_topic)
-            # Getting needed fields from the L2ToL1Tx event
+            # getting needed fields from the L2ToL1Tx event
+            [_pos, arb_block_num, eth_block_num, l2_timestamp, call_value, data] =
+              TypeDecoder.decode_raw(log.data.bytes, [{:uint, 256}, {:uint, 256}, {:uint, 256}, {:uint, 256}, {:uint, 256}, :bytes])
+            data = data
+              |> Base.encode16(case: :lower)
+              |> (&("0x" <> &1)).()
+
             destination = case Hash.Address.cast(Hash.to_integer(log.second_topic)) do
               {:ok, address} -> address
               _ -> nil
             end
 
-            arb_block_num = binary_slice(log.data.bytes, 32, 32)
-              |> :binary.decode_unsigned()
+            #arb_block_num = binary_slice(log.data.bytes, 32, 32)
+            #  |> :binary.decode_unsigned()
 
-            eth_block_num = binary_slice(log.data.bytes, 64, 32)
-              |> :binary.decode_unsigned()
+            #eth_block_num = binary_slice(log.data.bytes, 64, 32)
+            #  |> :binary.decode_unsigned()
 
-            l2_timestamp = binary_slice(log.data.bytes, 96, 32)
-              |> :binary.decode_unsigned()
+            #l2_timestamp = binary_slice(log.data.bytes, 96, 32)
+            #  |> :binary.decode_unsigned()
 
-            call_value = binary_slice(log.data.bytes, 128, 32)
-              |> :binary.decode_unsigned()
+            #call_value = binary_slice(log.data.bytes, 128, 32)
+            #  |> :binary.decode_unsigned()
 
-            data_length = binary_slice(log.data.bytes, 192, 32)
-              |> :binary.decode_unsigned()
+            #data_length = binary_slice(log.data.bytes, 192, 32)
+            #  |> :binary.decode_unsigned()
 
-            data = binary_slice(log.data.bytes, 224, data_length)
-              |> Base.encode16(case: :lower)
+            #data = binary_slice(log.data.bytes, 224, data_length)
+            #  |> Base.encode16(case: :lower)
 
+            # getting needed L1 properties: RPC URL and Main Rollup contract address
             config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
             l1_rpc = config_common[:l1_rpc]
             json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(l1_rpc)
+            json_l2_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
             l1_rollup_address = config_common[:l1_rollup_address]
 
             #Logger.warning("l1_rollup_address: #{inspect(l1_rollup_address, pretty: true)}")
             #Logger.warning("json_rpc_named_arguments: #{inspect(json_rpc, pretty: true)}")
             #Logger.warning("Application.get_all_env(:indexer): #{inspect(Application.get_all_env(:indexer), pretty: true)}")
 
+            # getting latest confirmed node index (L1)
             latest_confirmed = Rpc.get_latest_confirmed_l2_to_l1_message_id(
               l1_rollup_address,
               json_l1_rpc_named_arguments
             )
 
+            # getting block number (L1) where latest confirmed node was created
             node_creation_block_num = case Rpc.get_node(l1_rollup_address, latest_confirmed, json_l1_rpc_named_arguments) do
               [{:ok, [fields]}] -> Kernel.elem(fields, 10)
               [{:error, _}] -> nil
             end
-            #node_creation_block_num = Rpc.get_node(l1_rollup_address, latest_confirmed, json_l1_rpc_named_arguments)
 
-            #Logger.warning("Latest confirmed node #{latest_confirmed} created at block #{inspect(node_creation_block_num, pretty: true)}")
+            # request NodeCreated event from that block
+            node_created_event = case IndexerHelper.get_logs(
+              node_creation_block_num,
+              node_creation_block_num,
+              l1_rollup_address,
+              [@node_created_event],
+              json_l1_rpc_named_arguments
+            ) do
+              {:ok, logs} -> logs |> List.first()
+              {:errorr, _} -> nil
+            end
 
-            #creation_block = Chain.block_to_logs_by_topic0(msg.originating_transaction_hash, @l2_to_l1_event)
+            #Logger.warning("NodeCreated event: #{inspect(node_created_event, pretty: true)}")
+
+            [_execution_hash, {_, {{[l2_block_hash, _], _, }, _}, _}, _after_inbox_batch_acc, _wasm_module_root, _inbox_max_count] =
+              node_created_event
+              |> Map.get("data")
+              |> String.trim_leading("0x")
+              |> Base.decode16!(case: :mixed)
+              |> TypeDecoder.decode_raw([
+                {:bytes, 32},
+                {:tuple, [  # Asserion asserion
+                  {:tuple, [ # ExecutionState beforeState
+                    {:tuple, [ # GlobalState globalState
+                      {:array, {:bytes, 32}, 2},  # bytes32[2] bytes32Vals
+                      {:array, {:uint, 64}, 2},  # uint64[2] u64Vals
+                    ]},
+                    {:uint, 256}  # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
+                  ]},
+                  {:tuple, [ # ExecutionState afterState
+                    {:tuple, [ # GlobalState globalState
+                      {:array, {:bytes, 32}, 2},  # bytes32[2] bytes32Vals
+                      {:array, {:uint, 64}, 2},  # uint64[2] u64Vals
+                    ]},
+                    {:uint, 256}  # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
+                  ]},
+                  {:uint, 64} # uint64 numBlocks
+                ]},
+                {:bytes, 32},
+                {:bytes, 32},
+                {:uint, 256}
+              ])
+            {:ok, l2_block_hash} = l2_block_hash
+              |> Hash.Full.cast()
+
+            Logger.warning("L2 hash: #{Hash.to_string(l2_block_hash)}")
+
+            # getting L2 block with that hash
+            l2_block_send_count = case Chain.hash_to_block(l2_block_hash) do
+              {:ok, block} -> block.send_count
+              {:error, _} ->
+                case EthereumJSONRPC.fetch_blocks_by_hash([l2_block_hash], json_l2_rpc_named_arguments) do
+                  {:ok, blocks} -> blocks.blocks_params
+                    |> hd()
+                    |> Map.get(:send_count)
+
+                  {:error, _} ->
+                    Logger.error("failed to fetch block by hash #{l2_block_hash}")
+                    nil
+                end
+            end
+
+            Logger.warning("size for outbox proof: #{inspect(l2_block_send_count, pretty: true)}")
+
+            # now we are ready to construct outbox proof
 
             extra = [
               destination: destination,
@@ -153,7 +228,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
               eth_block_num: eth_block_num,
               l2_timestamp: l2_timestamp,
               call_value: call_value,
-              data: "0x" <> data,
+              data: data,
             ]
             #Logger.warning("Extra data object #{inspect(extra, pretty: true)}")
             #Logger.warning("topic value: #{hash_to_int}, requested value: #{msg_id}, arbBlock: #{inspect(arb_block_num)}")
