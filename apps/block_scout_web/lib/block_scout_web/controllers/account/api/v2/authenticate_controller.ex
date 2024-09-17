@@ -3,13 +3,11 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
-  alias BlockScoutWeb.AccessHelper
-  alias BlockScoutWeb.Account.AuthController
+  alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Account.Identity
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
   alias Explorer.ThirdPartyIntegrations.Auth0
   alias Plug.{Conn, CSRFProtection}
 
@@ -36,10 +34,7 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
   end
 
   def send_otp(conn, %{"email" => email} = params) do
-    with {:recaptcha, true} <-
-           {:recaptcha,
-            Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] ||
-              CSVHelper.captcha_helper().recaptcha_passed?(params["recaptcha_response"])} do
+    with {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)} do
       case conn |> Conn.fetch_session() |> current_user() do
         nil ->
           with :ok <- Auth0.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
@@ -57,9 +52,9 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
     end
   end
 
-  def confirm_otp(conn, %{"email" => email, "otp" => otp} = params) do
+  def confirm_otp(conn, %{"email" => email, "otp" => otp}) do
     with {:ok, auth} <- Auth0.confirm_otp_and_get_auth(email, otp) do
-      put_auth_to_session(conn, params, auth)
+      put_auth_to_session(conn, auth)
     end
   end
 
@@ -70,14 +65,14 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
     end
   end
 
-  def authenticate_via_wallet(conn, %{"message" => message, "signature" => signature} = params) do
+  def authenticate_via_wallet(conn, %{"message" => message, "signature" => signature}) do
     with {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
-      put_auth_to_session(conn, params, auth)
+      put_auth_to_session(conn, auth)
     end
   end
 
-  @spec put_auth_to_session(any(), any(), Ueberauth.Auth.t()) :: {:error, any()} | Plug.Conn.t()
-  def put_auth_to_session(conn, params, auth) do
+  @spec put_auth_to_session(Conn.t(), Ueberauth.Auth.t()) :: {:error, any()} | Conn.t()
+  def put_auth_to_session(conn, auth) do
     with {:ok, user} <- Identity.find_or_create(auth) do
       CSRFProtection.get_csrf_token()
 
@@ -85,7 +80,8 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
       |> Conn.fetch_session()
       |> put_session(:current_user, user)
       |> delete_resp_cookie(Application.get_env(:block_scout_web, :invalid_session_key))
-      |> redirect(to: AuthController.redirect_path(params["path"]))
+      |> put_status(200)
+      |> json(%{message: "Success"})
     end
   end
 end

@@ -56,10 +56,10 @@ defmodule BlockScoutWeb.Account.Api.V2.EmailController do
     end
   end
 
-  def link_email(conn, %{"email" => email, "otp" => otp} = params) do
+  def link_email(conn, %{"email" => email, "otp" => otp}) do
     with {:auth, %{uid: id}} <- {:auth, current_user(conn)},
          {:ok, auth} <- Auth0.link_email(id, email, otp) do
-      AuthenticateController.put_auth_to_session(conn, params, auth)
+      AuthenticateController.put_auth_to_session(conn, auth)
     end
   end
 end

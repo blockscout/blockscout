@@ -10,11 +10,10 @@ defmodule BlockScoutWeb.AddressTransactionController do
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
-  alias BlockScoutWeb.{AccessHelper, Controller, TransactionView}
+  alias BlockScoutWeb.{AccessHelper, CaptchaHelper, Controller, TransactionView}
   alias BlockScoutWeb.API.V2.CSVExportController
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
-  alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
 
   alias Explorer.Chain.CSVExport.{
     AddressInternalTransactionCsvExporter,
@@ -173,15 +172,14 @@ defmodule BlockScoutWeb.AddressTransactionController do
          %{
            "address_id" => address_hash_string,
            "from_period" => from_period,
-           "to_period" => to_period,
-           "recaptcha_response" => recaptcha_response
+           "to_period" => to_period
          } = params,
          csv_export_module
        )
        when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)},
-         {:recaptcha, true} <- {:recaptcha, CSVHelper.captcha_helper().recaptcha_passed?(recaptcha_response)} do
+         {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)} do
       filter_type = Map.get(params, "filter_type")
       filter_value = Map.get(params, "filter_value")
 
