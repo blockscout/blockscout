@@ -1472,8 +1472,29 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
 
     test "token instance metadata on-demand re-fetcher is called", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+      old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
+      old_http_adapter = Application.get_env(:block_scout_web, :http_adapter)
+
+      v2_secret_key = "v2_secret_key"
+
+      Application.put_env(:block_scout_web, :recaptcha,
+        v2_secret_key: v2_secret_key,
+        is_disabled: false
+      )
+
+      Application.put_env(:block_scout_web, :http_adapter, Explorer.Mox.HTTPoison)
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
+        Application.put_env(:block_scout_web, :http_adapter, old_http_adapter)
+      end)
+
+      expected_body = "secret=#{v2_secret_key}&response=123"
+
+      Explorer.Mox.HTTPoison
+      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"success" => true})}}
+      end)
 
       token = insert(:token, type: "ERC-721")
       token_id = 1
@@ -1535,8 +1556,29 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
 
     test "don't fetch token instance metadata for non-existent token instance", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+      old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
+      old_http_adapter = Application.get_env(:block_scout_web, :http_adapter)
+
+      v2_secret_key = "v2_secret_key"
+
+      Application.put_env(:block_scout_web, :recaptcha,
+        v2_secret_key: v2_secret_key,
+        is_disabled: false
+      )
+
+      Application.put_env(:block_scout_web, :http_adapter, Explorer.Mox.HTTPoison)
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
+        Application.put_env(:block_scout_web, :http_adapter, old_http_adapter)
+      end)
+
+      expected_body = "secret=#{v2_secret_key}&response=123"
+
+      Explorer.Mox.HTTPoison
+      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"success" => true})}}
+      end)
 
       token = insert(:token, type: "ERC-721")
       token_id = 0

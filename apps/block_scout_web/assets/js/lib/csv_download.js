@@ -53,7 +53,7 @@ $button.on('click', () => {
       // eslint-disable-next-line
       grecaptcha.execute(reCaptchaV3ClientKey, { action: 'login' })
         .then(function (token) {
-          const url = `${baseURL}&recaptcha_response=${token}`
+          const url = `${baseURL}&recaptcha_v3_response=${token}`
 
           download(url)
         })

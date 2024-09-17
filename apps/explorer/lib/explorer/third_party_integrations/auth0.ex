@@ -171,11 +171,11 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       {:ok, message}
     else
       {:cache, {:error, error}} ->
-        Logger.error(fn -> "Error while caching nonce: #{inspect(error)}" end)
+        Logger.error("Error while caching nonce: #{inspect(error)}")
         {:error, "Misconfiguration detected, please contact support."}
 
       {:message, {:error, error}} ->
-        Logger.error(fn -> "Error while generating Siwe Message: #{inspect(error)}" end)
+        Logger.error("Error while generating Siwe Message: #{inspect(error)}")
         {:error, error}
     end
   end
@@ -275,7 +275,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
         :ok
 
       other ->
-        Logger.error(fn -> ["Error while sending otp: ", inspect(other)] end)
+        Logger.error("Error while sending otp: ", inspect(other))
 
         :error
     end
@@ -327,11 +327,18 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
              "error_uri" => "https://auth0.com/docs/clients/client-grant-types"
            } = body
        }} ->
-        Logger.error(fn -> ["Need to enable OTP: ", inspect(body)] end)
+        Logger.error("Need to enable OTP: #{inspect(body)}")
         {:error, "Misconfiguration detected, please contact support."}
 
+      {:error,
+       %OAuth2.Response{
+         status_code: 403,
+         body: %{"error" => "invalid_grant", "error_description" => "Wrong email or verification code."}
+       }} ->
+        {:error, "Wrong verification code."}
+
       other ->
-        Logger.error(fn -> ["Error while confirming otp: ", inspect(other)] end)
+        Logger.error("Error while confirming otp: #{inspect(other)}")
 
         :error
     end
@@ -492,7 +499,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
          body = %{"email" => email, "email_verified" => true},
          headers = [{"Content-type", "application/json"}],
          {:ok, %OAuth2.Response{status_code: 200, body: user}} <-
-           Client.patch(client, "/api/v2/users/#{user_id}", body, headers) do
+           Client.patch(client, "/api/v2/users/#{URI.encode(user_id)}", body, headers) do
       {:ok, user}
     else
       error -> handle_common_errors(error, "Failed to update user email")
@@ -505,7 +512,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
          body = %{"user_metadata" => %{"web3_address_hash" => address}},
          headers = [{"Content-type", "application/json"}],
          {:ok, %OAuth2.Response{status_code: 200, body: user}} <-
-           Client.patch(client, "/api/v2/users/#{user_id}", body, headers) do
+           Client.patch(client, "/api/v2/users/#{URI.encode(user_id)}", body, headers) do
       {:ok, user}
     else
       error -> handle_common_errors(error, "Failed to update user address")
@@ -557,7 +564,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
          },
          headers = [{"Content-type", "application/json"}],
          {:ok, %OAuth2.Response{status_code: 201}} <-
-           Client.post(client, "/api/v2/users/#{primary_user_id}/identities", body, headers) do
+           Client.post(client, "/api/v2/users/#{URI.encode(primary_user_id)}/identities", body, headers) do
       :ok
     else
       error -> handle_common_errors(error, "Failed to link accounts")
