@@ -646,7 +646,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       # inspected block is in the boundary of the required batch: the current batch is the same
       # as one found in the previous iteration or the step is not the smallest possible.
 
-      next_block_to_inspect = max(1, inspected_block - new_step)
+      # it is OK to use the earliest block 0 as since the corresponding batch (0)
+      # will be returned by get_batch_number_for_rollup_block.
+      next_block_to_inspect = max(0, inspected_block - new_step)
 
       do_binary_search_of_opposite_block(
         next_block_to_inspect,
