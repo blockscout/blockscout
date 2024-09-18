@@ -6,6 +6,7 @@ defmodule Explorer.Chain.Search do
     only: [
       dynamic: 2,
       from: 2,
+      join: 5,
       limit: 2,
       order_by: 3,
       subquery: 1,
@@ -83,10 +84,10 @@ defmodule Explorer.Chain.Search do
   end
 
   def base_joint_query(string, term) do
-    tokens_query = search_token_query(string, term)
-    contracts_query = search_contract_query(term)
+    tokens_query = string |> search_token_query(term) |> maybe_hide_scam_addresses(:contract_address_hash)
+    contracts_query = term |> search_contract_query() |> maybe_hide_scam_addresses(:address_hash)
     labels_query = search_label_query(term)
-    address_query = search_address_query(string)
+    address_query = string |> search_address_query() |> maybe_hide_scam_addresses(:hash)
     block_query = search_block_query(string)
 
     basic_query =
@@ -161,6 +162,7 @@ defmodule Explorer.Chain.Search do
         tokens_result =
           search_query
           |> search_token_query(term)
+          |> maybe_hide_scam_addresses(:contract_address_hash)
           |> order_by([token],
             desc_nulls_last: token.circulating_market_cap,
             desc_nulls_last: token.fiat_value,
@@ -175,6 +177,7 @@ defmodule Explorer.Chain.Search do
         contracts_result =
           term
           |> search_contract_query()
+          |> maybe_hide_scam_addresses(:address_hash)
           |> order_by([items], asc: items.name, desc: items.inserted_at)
           |> limit(^paging_options.page_size)
           |> select_repo(options).all()
@@ -216,6 +219,7 @@ defmodule Explorer.Chain.Search do
         address_result =
           if query = search_address_query(search_query) do
             query
+            |> maybe_hide_scam_addresses(:hash)
             |> select_repo(options).all()
           else
             []
@@ -400,6 +404,29 @@ defmodule Explorer.Chain.Search do
 
       _ ->
         nil
+    end
+  end
+
+  defp maybe_hide_scam_addresses(nil, _address_hash_key), do: nil
+
+  defp maybe_hide_scam_addresses(query, address_hash_key) do
+    if Application.get_env(:block_scout_web, :hide_scam_addresses) do
+      query
+      |> join(
+        :inner,
+        [q],
+        q2 in fragment("""
+        (
+          SELECT hash
+          FROM addresses a
+          WHERE NOT EXISTS
+            (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=a.hash)
+        )
+        """),
+        on: field(q, ^address_hash_key) == q2.hash
+      )
+    else
+      query
     end
   end
 
@@ -602,6 +629,7 @@ defmodule Explorer.Chain.Search do
       [
         result[:address_hash]
         |> search_address_query()
+        |> maybe_hide_scam_addresses(:hash)
         |> select_repo(options).all()
         |> merge_address_search_result_with_ens_info(result)
       ]

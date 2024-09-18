@@ -33,6 +33,7 @@ config :block_scout_web,
   permanent_light_mode_enabled: ConfigHelper.parse_bool_env_var("PERMANENT_LIGHT_MODE_ENABLED"),
   display_token_icons: ConfigHelper.parse_bool_env_var("DISPLAY_TOKEN_ICONS"),
   hide_block_miner: ConfigHelper.parse_bool_env_var("HIDE_BLOCK_MINER"),
+  hide_scam_addresses: ConfigHelper.parse_bool_env_var("HIDE_SCAM_ADDRESSES"),
   show_tenderly_link: ConfigHelper.parse_bool_env_var("SHOW_TENDERLY_LINK"),
   sensitive_endpoints_api_key: System.get_env("API_SENSITIVE_ENDPOINTS_KEY"),
   disable_api?: disable_api?
