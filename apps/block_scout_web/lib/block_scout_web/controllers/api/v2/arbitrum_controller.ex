@@ -14,14 +14,12 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   alias Explorer.PagingOptions
   alias Explorer.Chain.Arbitrum.{L1Batch, Message, Reader}
   alias Explorer.Chain
-  alias Explorer.Chain.Log
   alias Explorer.Chain.Hash
-  alias Explorer.Chain.Hash.Address
-  alias Explorer.Helper, as: ExplorerHelper
+  #alias Explorer.Chain.Hash.Address
+  #alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
   alias EthereumJSONRPC
-  alias EthereumJSONRPC.Logs
   alias ABI.TypeDecoder
   alias EthereumJSONRPC.Encoder
 
@@ -80,10 +78,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/arbitrum/messages/from-rollup/:msg_id` endpoint.
+    Function to handle GET requests to `/api/v2/arbitrum/messages/claim/:position` endpoint.
   """
-  @spec message_by_id(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def message_by_id(conn, %{"msg_id" => msg_id} = _params) do
+  @spec claim_message(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def claim_message(conn, %{"position" => msg_id} = _params) do
+    msg_id = String.to_integer(msg_id)
     case Reader.l2_to_l1_message_with_id(msg_id) do
       nil ->
         conn
@@ -95,7 +94,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
         # getting L2ToL1Tx event from the originating message
         wdrawLogs = Chain.transaction_to_logs_by_topic0(msg.originating_transaction_hash, @l2_to_l1_event)
-          #|> Enum.filter(fn log -> Hash.to_integer(log.fourth_topic) == msg_id end)
+          |> Enum.filter(fn log -> Hash.to_integer(log.fourth_topic) == msg_id end)
 
         case wdrawLogs |> Enum.at(0) do
           nil ->
@@ -118,24 +117,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
             position = Hash.to_integer(log.fourth_topic)
 
-            #arb_block_num = binary_slice(log.data.bytes, 32, 32)
-            #  |> :binary.decode_unsigned()
-
-            #eth_block_num = binary_slice(log.data.bytes, 64, 32)
-            #  |> :binary.decode_unsigned()
-
-            #l2_timestamp = binary_slice(log.data.bytes, 96, 32)
-            #  |> :binary.decode_unsigned()
-
-            #call_value = binary_slice(log.data.bytes, 128, 32)
-            #  |> :binary.decode_unsigned()
-
-            #data_length = binary_slice(log.data.bytes, 192, 32)
-            #  |> :binary.decode_unsigned()
-
-            #data = binary_slice(log.data.bytes, 224, data_length)
-            #  |> Base.encode16(case: :lower)
-
             # getting needed L1 properties: RPC URL and Main Rollup contract address
             config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
             l1_rpc = config_common[:l1_rpc]
@@ -143,6 +124,9 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
             json_l2_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
             l1_rollup_address = config_common[:l1_rollup_address]
             node_interface_address = "0x00000000000000000000000000000000000000c8"
+            outbox_contract = Rpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
+
+            Logger.warning("Outbox contract: #{outbox_contract}")
 
             #Logger.warning("l1_rollup_address: #{inspect(l1_rollup_address, pretty: true)}")
             #Logger.warning("json_rpc_named_arguments: #{inspect(json_rpc, pretty: true)}")
@@ -212,7 +196,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
             l2_block_send_count = case Chain.hash_to_block(l2_block_hash) do
               {:ok, block} -> block.send_count
               {:error, _} ->
-                case EthereumJSONRPC.fetch_blocks_by_hash([l2_block_hash], json_l2_rpc_named_arguments) do
+                case EthereumJSONRPC.fetch_blocks_by_hash([l2_block_hash], json_l2_rpc_named_arguments, false) do
                   {:ok, blocks} -> blocks.blocks_params
                     |> hd()
                     |> Map.get(:send_count)
@@ -288,12 +272,15 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
               l2_timestamp: l2_timestamp,
               call_value: call_value,
               data: data,
+              send_count_for_proof: l2_block_send_count,
+              claim_address: outbox_contract,
+              claim_calldata: calldata
             ]
             #Logger.warning("Extra data object #{inspect(extra, pretty: true)}")
             #Logger.warning("topic value: #{hash_to_int}, requested value: #{msg_id}, arbBlock: #{inspect(arb_block_num)}")
             conn
               |> put_status(200)
-              |> render(:arbitrum_message, %{message: msg, data: extra})
+              |> render(:arbitrum_claim_message, %{message: msg, data: extra})
 
         end
     end
