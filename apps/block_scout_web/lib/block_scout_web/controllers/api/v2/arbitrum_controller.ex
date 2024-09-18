@@ -23,6 +23,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   alias ABI.TypeDecoder
   alias EthereumJSONRPC.Encoder
 
+  alias Explorer.Chain.Arbitrum.ClaimMessage
+
   require Logger
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -287,13 +289,22 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/arbitrum/messages/:msg_id/proof` endpoint.
+    Function to handle GET requests to `/api/v2/arbitrum/messages/withdrawals/:tx_hash` endpoint.
   """
-  @spec message_proof(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def message_proof(conn, %{"msg_id" => msg_id} = _params) do
+  @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def withdrawals(conn, %{"tx_hash" => tx_hash} = _params) do
+    hash = case Hash.Full.cast(tx_hash) do
+      {:ok, address} -> address
+      _ -> nil
+    end
+
+    Logger.warning("hash = #{inspect(hash, pretty: true)}")
+
+    withdrawals = ClaimMessage.transaction_to_withdrawals(hash)
+
     conn
     |> put_status(200)
-    |> render(:arbitrum_message_proof, %{msg_id: msg_id, proof: 456})
+    |> render(:arbitrum_withdrawals, %{withdrawals: withdrawals})
   end
 
   @doc """

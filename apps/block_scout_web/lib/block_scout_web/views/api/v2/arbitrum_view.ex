@@ -87,11 +87,25 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   @doc """
     Function to render GET requests to `/api/v2/arbitrum/messages/from-rollup/:msg_id/proof` endpoint.
   """
-  def render("arbitrum_message_proof.json", %{msg_id: msg_id, proof: proof}) do
-    %{
-      "msg_id" => msg_id,
-      "proof" => proof
-    }
+  def render("arbitrum_withdrawals.json", %{withdrawals: withdrawals}) do
+    withdrawals_out =
+      withdrawals
+      |> Enum.map(fn withdraw ->
+        %{
+          "id" => withdraw.message_id,
+          "status" => withdraw.status,
+          "tx_hash" => withdraw.tx_hash,
+          "caller" => withdraw.caller,
+          "destination" => withdraw.destination,
+          "arb_block_num" => withdraw.arb_block_num,
+          "eth_block_num" => withdraw.eth_block_num,
+          "l2_timestamp" => withdraw.l2_timestamp,
+          "callvalue" => withdraw.callvalue,
+          "data" => withdraw.data
+        }
+      end)
+
+    %{items: withdrawals_out}
   end
 
   @doc """

@@ -360,7 +360,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/messages/:direction", V2.ArbitrumController, :messages)
         get("/messages/:direction/count", V2.ArbitrumController, :messages_count)
         get("/messages/claim/:position", V2.ArbitrumController, :claim_message)
-        get("/messages/from-rollup/:msg_id/proof", V2.ArbitrumController, :message_proof)
+        get("/messages/withdrawals/:tx_hash", V2.ArbitrumController, :withdrawals)
         get("/batches", V2.ArbitrumController, :batches)
         get("/batches/count", V2.ArbitrumController, :batches_count)
         get("/batches/:batch_number", V2.ArbitrumController, :batch)
