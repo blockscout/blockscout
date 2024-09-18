@@ -778,11 +778,13 @@ defmodule Indexer.Block.Fetcher do
     r_bytes = <<r::integer-size(256)>>
     s_bytes = <<s::integer-size(256)>>
 
-    {:ok, <<_compression::bytes-size(1), public_key::binary>>} =
-      ExSecp256k1.recover(signed_message, r_bytes, s_bytes, v)
-
-    <<_::bytes-size(12), hash::binary>> = ExKeccak.hash_256(public_key)
-    address = Base.encode16(hash, case: :lower)
-    "0x" <> address
+    with {:ok, <<_compression::bytes-size(1), public_key::binary>>} <-
+           ExSecp256k1.recover(signed_message, r_bytes, s_bytes, v),
+         <<_::bytes-size(12), hash::binary>> <- ExKeccak.hash_256(public_key) do
+      address = Base.encode16(hash, case: :lower)
+      "0x" <> address
+    else
+      _ -> nil
+    end
   end
 end

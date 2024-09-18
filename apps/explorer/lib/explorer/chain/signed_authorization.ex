@@ -5,7 +5,7 @@ defmodule Explorer.Chain.SignedAuthorization do
 
   alias Explorer.Chain.{Hash, Transaction}
 
-  @required_attrs ~w(transaction_hash index chain_id address nonce r s v authority)a
+  @required_attrs ~w(transaction_hash index chain_id address nonce r s v)a
 
   @type t :: %__MODULE__{
           transaction_hash: Hash.Full,

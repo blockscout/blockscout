@@ -15,7 +15,7 @@ defmodule Explorer.Repo.Migrations.CreateSignedAuthorizations do
       add(:v, :integer, null: false)
       add(:r, :numeric, precision: 100, null: false)
       add(:s, :numeric, precision: 100, null: false)
-      add(:authority, :bytea, null: false)
+      add(:authority, :bytea, null: true)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
