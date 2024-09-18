@@ -5,6 +5,7 @@ defmodule Explorer.Chain.SignedAuthorization do
 
   alias Explorer.Chain.{Hash, Transaction}
 
+  @optional_attrs ~w(authority)a
   @required_attrs ~w(transaction_hash index chain_id address nonce r s v)a
 
   @type t :: %__MODULE__{
@@ -46,7 +47,11 @@ defmodule Explorer.Chain.SignedAuthorization do
   @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
   def changeset(%__MODULE__{} = struct, attrs \\ %{}) do
     struct
-    |> cast(attrs, @required_attrs)
+    |> cast(
+      attrs,
+      @required_attrs ++
+        @optional_attrs
+    )
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:transaction_hash)
   end
