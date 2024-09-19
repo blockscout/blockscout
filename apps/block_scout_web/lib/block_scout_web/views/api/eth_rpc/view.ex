@@ -108,8 +108,6 @@ defmodule BlockScoutWeb.API.EthRPC.View do
     end
 
     def encode(%View{id: id, error: error}, _options) do
-      error = Jason.encode!(error)
-
       """
       {#{View.jsonrpc_2_0()},"error": #{View.sanitize_error(error, :jason)},"id": #{View.sanitize_id(id)}}
       """
