@@ -14,7 +14,7 @@ defmodule Explorer.Chain.Arbitrum.Withdraw do
   @typedoc """
   Descriptor of the L2ToL1Tx event message on Arbitrum rollups:
     * `message_id` - The ID of the message used for referencing.
-    * `status` - The status of the withdrawal: `:unconfirmed`, `:confirmed`, `:executed`
+    * `status` - The status of the withdrawal: `:unknown`, `:unconfirmed`, `:confirmed`, `:executed`
     * `tx_hash` - The transaction (L2 chain) hash which emit this event
     * `caller` - The sender of the withdraw transaction.
     * `destination` - The receiver of the funds on L1 chain.
@@ -44,7 +44,7 @@ defmodule Explorer.Chain.Arbitrum.Withdraw do
   @typedoc """
   Descriptor of the L2ToL1Tx event message on Arbitrum rollups:
     * `message_id` - The ID of the message used for referencing.
-    * `status` - The status of the withdrawal: `:unconfirmed`, `:confirmed`, `:executed`
+    * `status` - The status of the withdrawal: `:unknown`, `:unconfirmed`, `:confirmed`, `:executed`
     * `tx_hash` - The transaction (L2 chain) hash which emit this event
     * `caller` - The sender of the withdraw transaction.
     * `destination` - The receiver of the funds on L1 chain.

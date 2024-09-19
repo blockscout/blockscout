@@ -185,6 +185,30 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     }
   ]
 
+  # isSpent(uint256 index)
+  @selector_is_spent "5a129efe"
+  @outbox_contract_abi [
+    %{
+      "inputs" => [
+        %{
+          "internalType" => "uint256",
+          "name" => "index",
+          "type" => "uint256"
+        }
+      ],
+      "name" => "isSpent",
+      "outputs" => [
+        %{
+          "internalType" => "bool",
+          "name" => "",
+          "type" => "bool"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
+
   @doc """
     Constructs a JSON RPC request to retrieve a transaction by its hash.
 
@@ -888,7 +912,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   def construct_outbox_proof(_, size, leaf, _) when size <= leaf  do
     {:error, :invalid}
   end
-
   def construct_outbox_proof(node_interface_address, size, leaf, json_rpc_named_arguments) do
     case [%{
       contract_address: node_interface_address,
@@ -899,6 +922,45 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       |> Kernel.elem(0)
     do
       [ok: value] -> {:ok, value}
+      [error: err] -> {:error, err}
+    end
+  end
+
+  @doc """
+    Check is outgoing L2->L1 message was spent.
+
+    To do that we should invoke `isSpent(uint256 index)` method for
+    `Outbox` contract deployed on 1 chain
+
+    ## Parameters
+    - `outbox_contract`: address of the Outbox contract (L1 chain)
+    - `index`: position (index) of the requested L2->L1 message.
+    - `json_l1_rpc_named_arguments`: Configuration parameters for the JSON RPC
+        connection for L1 chain.
+
+    ## Returns
+    - `true` if message was created, confirmed and claimed on L1 chain.
+            Otherwise returns `false`.
+  """
+  @spec is_withdrawal_spent(
+    EthereumJSONRPC.address(),
+    non_neg_integer(),
+    EthereumJSONRPC.json_rpc_named_arguments()
+  ) :: {:ok, boolean()} | {:error, any()}
+  def is_withdrawal_spent(outbox_contract, position, json_l1_rpc_named_arguments) do
+    case [%{
+      contract_address: outbox_contract,
+      method_id: @selector_is_spent,
+      args: [position]
+    }]
+      |> IndexerHelper.read_contracts_with_retries(@outbox_contract_abi, json_l1_rpc_named_arguments, @rpc_resend_attempts)
+      |> Kernel.elem(0)
+    do
+      [ok: value] ->
+        case value do
+          0 -> {:ok, true}
+          _ -> {:ok, false}
+        end
       [error: err] -> {:error, err}
     end
   end

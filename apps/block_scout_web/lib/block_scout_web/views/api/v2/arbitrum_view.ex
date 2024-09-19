@@ -66,21 +66,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   @doc """
     Function to render GET requests to `/api/v2/arbitrum/messages/claim/:position` endpoint.
   """
-  def render("arbitrum_claim_message.json", %{message: message, data: data}) do
+  def render("arbitrum_claim_message.json", %{calldata: calldata, address: address}) do
     %{
-      "index" => message.message_id,
-      "status" => message.status,
-      "l2Sender" => message.originator_address,
-      "to" => data[:destination],
-      "l2Block" => data[:arb_block_num],
-      "l1Block" => data[:eth_block_num],
-      "l2Timestamp" => data[:l2_timestamp],
-      "value" => data[:call_value],
-      "data" => data[:data],
-      "origination_transaction_hash" => message.originating_transaction_hash,
-      "completion_transaction_hash" => message.completion_transaction_hash,
-      "claimCalldata" => data[:claim_calldata],
-      "claimAddress" => data[:claim_address]
+      "calldata" => calldata,
+      "outbox_address" => address
     }
   end
 
