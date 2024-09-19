@@ -282,6 +282,32 @@ defmodule Explorer.Chain.TokenTransfer do
     end
   end
 
+  @spec fetch([paging_options | api?]) :: []
+  def fetch(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
+
+      _ ->
+        preloads =
+          DenormalizationHelper.extend_transaction_preload([
+            :transaction,
+            :token,
+            [from_address: [:names, :smart_contract, :proxy_implementations]],
+            [to_address: [:names, :smart_contract, :proxy_implementations]]
+          ])
+
+        only_consensus_transfers_query()
+        |> preload(^preloads)
+        |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+        |> page_token_transfer(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Chain.select_repo(options).all()
+    end
+  end
+
   @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
   def count_token_transfers_from_token_hash(token_address_hash) do
     query =
