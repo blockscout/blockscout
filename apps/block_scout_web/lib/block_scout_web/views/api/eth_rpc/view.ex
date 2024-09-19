@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.API.EthRPC.View do
   def sanitize_error(error, json_encoder) do
     case json_encoder do
       :jason -> if is_map(error), do: Jason.encode!(error), else: "\"#{error}\""
-      :poison -> if is_map(error), do: Poison.encode!(error), else: "#{error}"
+      :poison -> if is_map(error), do: Poison.encode!(error), else: "\"#{error}\""
     end
   end
 
