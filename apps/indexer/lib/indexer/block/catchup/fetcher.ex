@@ -176,8 +176,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     case result do
       {:ok, %{inserted: inserted, errors: errors}} ->
-        handle_null_rounds(errors)
-        clear_missing_ranges(range, errors)
+        valid_errors = handle_null_rounds(errors)
+        clear_missing_ranges(range, valid_errors)
 
         {:ok, inserted: inserted}
 
