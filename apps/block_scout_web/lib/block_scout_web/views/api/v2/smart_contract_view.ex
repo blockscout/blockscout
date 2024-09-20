@@ -416,7 +416,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       case type do
         "tuple[" <> rest ->
           # we need to convert tuple[...][] or tuple[...][n] into (...)[] or (...)[n]
-          # before sending it to the `FunctionSelector.decode_type/1. See https://github.com/poanetwork/ex_abi/issues/168.
+          # before sending it to the `FunctionSelector.decode_type/1`. See https://github.com/poanetwork/ex_abi/issues/168.
           tuple_item_types =
             rest
             |> String.split("]")
