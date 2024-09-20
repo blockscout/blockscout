@@ -176,7 +176,7 @@ defmodule Explorer.Application do
   end
 
   defp account_repo do
-    if System.get_env("ACCOUNT_DATABASE_URL") || Mix.env() == :test do
+    if Application.get_env(:explorer, Explorer.Account)[:enabled] || Mix.env() == :test do
       [Explorer.Repo.Account]
     else
       []
