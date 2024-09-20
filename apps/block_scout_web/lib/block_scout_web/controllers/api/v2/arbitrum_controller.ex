@@ -78,10 +78,25 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
           |> put_status(200)
           |> render(:arbitrum_claim_message, %{calldata: calldata, address: outbox_contract})
 
+      {:error, :not_found} ->
+        conn
+          |> put_status(:not_found)
+          |> render(:message, %{message: "cannot find requested withdrawal"})
+
+      {:error, :unconfirmed} ->
+        conn
+          |> put_status(:bad_request)
+          |> render(:message, %{message: "withdrawal is unconfirmed yet"})
+
+      {:error, :executed} ->
+        conn
+          |> put_status(:bad_request)
+          |> render(:message, %{message: "withdrawal was executed already"})
+
       {:error, _} ->
         conn
           |> put_status(:not_found)
-          |> render(:message, %{message: "cannot build claim transaction"})
+          |> render(:message, %{message: "internal error occured"})
     end
   end
 

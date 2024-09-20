@@ -946,23 +946,15 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     EthereumJSONRPC.address(),
     non_neg_integer(),
     EthereumJSONRPC.json_rpc_named_arguments()
-  ) :: {:ok, boolean()} | {:error, any()}
+  ) :: boolean()
   def is_withdrawal_spent(outbox_contract, position, json_l1_rpc_named_arguments) do
-    case [%{
-      contract_address: outbox_contract,
-      method_id: @selector_is_spent,
-      args: [position]
-    }]
-      |> IndexerHelper.read_contracts_with_retries(@outbox_contract_abi, json_l1_rpc_named_arguments, @rpc_resend_attempts)
-      |> Kernel.elem(0)
-    do
-      [ok: value] ->
-        case value do
-          0 -> {:ok, true}
-          _ -> {:ok, false}
-        end
-      [error: err] -> {:error, err}
-    end
+    read_contract_and_handle_result_as_integer(
+      outbox_contract,
+      @selector_is_spent,
+      [position],
+      @outbox_contract_abi,
+      json_l1_rpc_named_arguments
+    )
   end
 
   # Calls one contract method and processes the result as an integer.

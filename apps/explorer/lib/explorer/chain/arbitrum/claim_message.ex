@@ -106,15 +106,13 @@ defmodule Explorer.Chain.Arbitrum.ClaimMessage do
             |> (&("0x" <> &1)).()
 
         status = case Rpc.is_withdrawal_spent(outbox_contract, position, json_l1_rpc_named_arguments) do
-          {:ok, true} -> :executed
-          {:ok, false} ->
+          true -> :executed
+          false ->
             case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
-              nil -> :unknown
               size when size > position -> :confirmed
               size when size <= position -> :unconfirmed
+              nil -> :unknown
             end
-
-          {:error, _} -> :unknown
         end
 
         %Explorer.Chain.Arbitrum.Withdraw{
@@ -167,7 +165,7 @@ defmodule Explorer.Chain.Arbitrum.ClaimMessage do
             Logger.error("Unable to find withdrawal with id #{message_id} in tx #{Hash.to_string(msg.originating_transaction_hash)}")
             {:error, :not_found}
 
-          withdrawal ->
+          withdrawal when withdrawal.status == :confirmed  ->
             Logger.warning("Found withdrawal: #{inspect(withdrawal)}")
 
             # getting needed L1 properties: RPC URL and Main Rollup contract address
@@ -183,7 +181,7 @@ defmodule Explorer.Chain.Arbitrum.ClaimMessage do
             case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
               nil ->
                 Logger.error("Cannot get size for proof")
-                {:error, :not_found}
+                {:error, :internal_error}
 
               l2_block_send_count ->
                 Logger.warning("Obtained size for proof: #{l2_block_send_count}")
@@ -221,9 +219,12 @@ defmodule Explorer.Chain.Arbitrum.ClaimMessage do
 
                   {:error, _} ->
                     Logger.error("Unable to construct proof with size = #{l2_block_send_count}, leaf = #{message_id}")
-                    {:error, :not_found}
+                    {:error, :internal_error}
                 end
             end
+
+          w when w.status == :unconfirmed -> {:error, :unconfirmed}
+          w when w.status == :executed -> {:error, :executed}
         end
     end
   end
