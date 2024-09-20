@@ -51,13 +51,6 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
         badge_to_address_list: badge_to_address_list,
         status: if(Enum.empty?(badge_to_address_list), do: "update skipped", else: "removed")
       })
-    else
-      {:error, error} ->
-        Logger.error(fn -> ["Badge addresses addition failed: ", inspect(error)] end)
-        {:error, :badge_creation_failed}
-
-      _ ->
-        {:api_key, :wrong}
     end
   end
 
