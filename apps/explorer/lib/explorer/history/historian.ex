@@ -7,7 +7,8 @@ defmodule Explorer.History.Historian do
   Record of historical values for a specific date.
   """
   @type record :: %{
-          date: Date.t()
+          required(:date) => Date.t(),
+          optional(atom()) => any()
         }
 
   @doc """
