@@ -555,8 +555,8 @@ defmodule Indexer.Helper do
   Fetches blocks info from the given list of events (logs).
   Performs a specified number of retries (up to) if the first attempt returns error.
   """
-  @spec get_blocks_by_events(list(), list(), non_neg_integer()) :: list()
-  def get_blocks_by_events(events, json_rpc_named_arguments, retries) do
+  @spec get_blocks_by_events(list(), list(), non_neg_integer(), boolean()) :: list()
+  def get_blocks_by_events(events, json_rpc_named_arguments, retries, tx_details \\ false) do
     events
     |> Enum.reduce(%{}, fn event, acc ->
       block_number = Map.get(event, :block_number, event["blockNumber"])
@@ -565,7 +565,7 @@ defmodule Indexer.Helper do
     |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
     |> Stream.with_index()
     |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-    |> Blocks.requests(&ByNumber.request(&1, false, false))
+    |> Blocks.requests(&ByNumber.request(&1, tx_details, false))
     |> Enum.chunk_every(@block_by_number_chunk_size)
     |> Enum.reduce([], fn current_requests, results_acc ->
       error_message =

@@ -9,17 +9,54 @@ defmodule Explorer.Chain.Scroll.Reader do
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Scroll.{Bridge, L1FeeParam}
+  alias Explorer.Chain.Scroll.{Batch, BatchBundle, Bridge, L1FeeParam}
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Transaction
 
   @doc """
-    Gets last known L1 item (deposit) from scroll_bridge table.
+    Gets last known L1 batch item from the `scroll_batches` table.
+    Returns block number and L1 transaction hash bound to that batch.
+    If not found, returns zero block number and nil as the transaction hash.
+  """
+  @spec last_l1_batch_item() :: {non_neg_integer(), binary() | nil}
+  def last_l1_batch_item do
+    query =
+      from(b in Batch,
+        select: {b.commit_block_number, b.commit_transaction_hash},
+        order_by: [desc: b.number],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||({0, nil})
+  end
+
+  @doc """
+    Gets `final_batch_number` from the last known L1 bundle.
+    If not found, returns -1.
+  """
+  @spec last_final_batch_number() :: integer()
+  def last_final_batch_number do
+    query =
+      from(bb in BatchBundle,
+        select: bb.final_batch_number,
+        order_by: [desc: bb.id],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||(-1)
+  end
+
+  @doc """
+    Gets last known L1 bridge item (deposit) from the `scroll_bridge` table.
     Returns block number and L1 transaction hash bound to that deposit.
     If not found, returns zero block number and nil as the transaction hash.
   """
-  @spec last_l1_item() :: {non_neg_integer(), binary() | nil}
-  def last_l1_item do
+  @spec last_l1_bridge_item() :: {non_neg_integer(), binary() | nil}
+  def last_l1_bridge_item do
     query =
       from(b in Bridge,
         select: {b.block_number, b.l1_transaction_hash},
@@ -34,12 +71,12 @@ defmodule Explorer.Chain.Scroll.Reader do
   end
 
   @doc """
-    Gets last known L2 item (withdrawal) from scroll_bridge table.
+    Gets last known L2 bridge item (withdrawal) from the `scroll_bridge` table.
     Returns block number and L2 transaction hash bound to that withdrawal.
     If not found, returns zero block number and nil as the transaction hash.
   """
-  @spec last_l2_item() :: {non_neg_integer(), binary() | nil}
-  def last_l2_item do
+  @spec last_l2_bridge_item() :: {non_neg_integer(), binary() | nil}
+  def last_l2_bridge_item do
     query =
       from(b in Bridge,
         select: {b.block_number, b.l2_transaction_hash},

@@ -113,6 +113,9 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
           chain_type == :polygon_edge ->
             PolygonEdge.l1_rpc_url()
 
+          module_using_reorg_monitor == Indexer.Fetcher.Scroll.Batch ->
+            Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll.BridgeL1][:rpc]
+
           true ->
             module = Enum.at(modules_using_reorg_monitor, 0)
             module.l1_rpc_url()
