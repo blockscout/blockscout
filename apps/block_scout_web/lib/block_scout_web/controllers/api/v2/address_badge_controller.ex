@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
   require Logger
   use BlockScoutWeb, :controller
 
+  alias Explorer.Chain
   alias Explorer.Chain.Address.ScamBadgeToAddress
   alias Plug.Conn
 
@@ -17,7 +18,8 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
       )
       when is_list(address_hashes) do
     with :ok <- check_sensitive_endpoint_api_key(params["api_key"]),
-         {_num_of_inserted, badge_to_address_list} <- ScamBadgeToAddress.add(address_hashes) do
+         valid_address_hashes = filter_address_hashes(address_hashes),
+         {_num_of_inserted, badge_to_address_list} <- ScamBadgeToAddress.add(valid_address_hashes) do
       conn
       |> put_status(200)
       |> render(:badge_to_address, %{
@@ -37,7 +39,8 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
       )
       when is_list(address_hashes) do
     with :ok <- check_sensitive_endpoint_api_key(params["api_key"]),
-         {_num_of_deleted, badge_to_address_list} <- ScamBadgeToAddress.delete(address_hashes) do
+         valid_address_hashes = filter_address_hashes(address_hashes),
+         {_num_of_deleted, badge_to_address_list} <- ScamBadgeToAddress.delete(valid_address_hashes) do
       conn
       |> put_status(200)
       |> render(:badge_to_address, %{
@@ -72,5 +75,16 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
          {:api_key, ^api_key} <- {:api_key, provided_api_key} do
       :ok
     end
+  end
+
+  defp filter_address_hashes(address_hashes) do
+    address_hashes
+    |> Enum.uniq()
+    |> Enum.filter(fn potential_address_hash ->
+      case Chain.string_to_address_hash(potential_address_hash) do
+        {:ok, _address_hash} -> true
+        _ -> false
+      end
+    end)
   end
 end
