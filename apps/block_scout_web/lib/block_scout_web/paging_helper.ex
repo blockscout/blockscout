@@ -347,11 +347,5 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_validators_blackfort_sorting("address_hash", "asc"), do: [asc_nulls_first: :address_hash]
   defp do_validators_blackfort_sorting("address_hash", "desc"), do: [desc_nulls_last: :address_hash]
 
-  defp do_validators_blackfort_sorting("blocks_validated", "asc"),
-    do: [{:dynamic, :blocks_validated, :asc_nulls_first, ValidatorStability.dynamic_validated_blocks()}]
-
-  defp do_validators_blackfort_sorting("blocks_validated", "desc"),
-    do: [{:dynamic, :blocks_validated, :desc_nulls_last, ValidatorStability.dynamic_validated_blocks()}]
-
   defp do_validators_blackfort_sorting(_, _), do: []
 end

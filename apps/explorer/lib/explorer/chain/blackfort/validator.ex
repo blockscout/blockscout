@@ -25,7 +25,6 @@ defmodule Explorer.Chain.Blackfort.Validator do
     field(:slashing_status_is_slashed, :boolean, default: false)
     field(:slashing_status_by_block, :integer)
     field(:slashing_status_multiplier, :integer)
-    field(:blocks_validated, :integer, virtual: true)
 
     has_one(:address, Address, foreign_key: :hash, references: :address_hash)
     timestamps()
@@ -55,13 +54,6 @@ defmodule Explorer.Chain.Blackfort.Validator do
     sorting = Keyword.get(options, :sorting, [])
 
     __MODULE__
-    |> select_merge([validator], %{
-      blocks_validated:
-        fragment(
-          "SELECT count(*) FROM blocks WHERE miner_hash = ?",
-          validator.address_hash
-        )
-    })
     |> Chain.join_associations(necessity_by_association)
     |> SortingHelper.apply_sorting(sorting, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
@@ -112,8 +104,8 @@ defmodule Explorer.Chain.Blackfort.Validator do
     Derive next page params from %Explorer.Chain.Blackfort.Validator{}
   """
   @spec next_page_params(t()) :: map()
-  def next_page_params(%__MODULE__{address_hash: address_hash, blocks_validated: blocks_validated}) do
-    %{"address_hash" => address_hash, "blocks_validated" => blocks_validated}
+  def next_page_params(%__MODULE__{address_hash: address_hash}) do
+    %{"address_hash" => address_hash}
   end
 
   @doc """

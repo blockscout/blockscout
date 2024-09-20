@@ -23,7 +23,6 @@ defmodule BlockScoutWeb.API.V2.ValidatorView do
     %{
       "address" => Helper.address_with_info(nil, validator.address, validator.address_hash, true),
       "name" => validator.name,
-      "blocks_validated_count" => validator.blocks_validated,
       "commission" => validator.commission,
       "self_bonded_amount" => validator.self_bonded_amount,
       "delegated_amount" => validator.delegated_amount,
