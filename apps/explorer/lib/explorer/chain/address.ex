@@ -127,6 +127,7 @@ defmodule Explorer.Chain.Address do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
@@ -456,6 +457,7 @@ defmodule Explorer.Chain.Address do
           )
 
         base_query
+        |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
         |> page_addresses(paging_options)
         |> limit(^paging_options.page_size)
         |> Chain.select_repo(options).all()
