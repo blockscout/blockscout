@@ -16,9 +16,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
         } = params
       )
       when is_list(address_hashes) do
-    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
-           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <- {:api_key, params["api_key"]},
+    with :ok <- check_sensitive_endpoint_api_key(params["api_key"]),
          {_num_of_inserted, badge_to_address_list} <- ScamBadgeToAddress.add(address_hashes) do
       conn
       |> put_status(200)
@@ -45,9 +43,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
         } = params
       )
       when is_list(address_hashes) do
-    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
-           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <- {:api_key, params["api_key"]},
+    with :ok <- check_sensitive_endpoint_api_key(params["api_key"]),
          {_num_of_deleted, badge_to_address_list} <- ScamBadgeToAddress.delete(address_hashes) do
       conn
       |> put_status(200)
@@ -70,9 +66,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
   def show_badge_addresses(conn, _) do
     with {:ok, body, _conn} <- Conn.read_body(conn, []),
          {:ok, %{"api_key" => provided_api_key}} <- Jason.decode(body),
-         {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
-           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <- {:api_key, provided_api_key} do
+         :ok <- check_sensitive_endpoint_api_key(provided_api_key) do
       badge_to_address_list = ScamBadgeToAddress.get(@api_true)
 
       conn
@@ -83,6 +77,14 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
     else
       _ ->
         {:error, :not_found}
+    end
+  end
+
+  defp check_sensitive_endpoint_api_key(provided_api_key) do
+    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
+           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
+         {:api_key, ^api_key} <- {:api_key, provided_api_key} do
+      :ok
     end
   end
 end
