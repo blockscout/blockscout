@@ -70,7 +70,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
                                           :block => :optional,
                                           [
                                             created_contract_address: [
-                                              :scam_badge,
                                               :names,
                                               :token,
                                               :smart_contract,
@@ -81,7 +80,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
                                             :optional,
                                           [
                                             to_address: [
-                                              :scam_badge,
                                               :names,
                                               :smart_contract,
                                               :proxy_implementations
@@ -91,21 +89,21 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
                                         |> Map.merge(@chain_type_transaction_necessity_by_association)
 
   @token_transfers_necessity_by_association %{
-    [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-    [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
+    [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+    [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
   }
 
   @token_transfers_in_tx_necessity_by_association %{
-    [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-    [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+    [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+    [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
     token: :required
   }
 
   @internal_transaction_necessity_by_association [
     necessity_by_association: %{
-      [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-      [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-      [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
+      [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+      [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
     }
   ]
 
@@ -523,7 +521,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            validate_transaction(transaction_hash_string, params,
              necessity_by_association: %{
                [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-               [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
+               [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
              },
              api?: true
            ) do

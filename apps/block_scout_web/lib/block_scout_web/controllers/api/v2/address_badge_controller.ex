@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
   use BlockScoutWeb, :controller
 
   alias Explorer.Chain
-  alias Explorer.Chain.Address.ScamBadgeToAddress
+  alias Explorer.Chain.Address
   alias Plug.Conn
 
   @api_true [api?: true]
@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
       when is_list(address_hashes) do
     with :ok <- check_sensitive_endpoint_api_key(params["api_key"]),
          valid_address_hashes = filter_address_hashes(address_hashes),
-         {_num_of_inserted, badge_to_address_list} <- ScamBadgeToAddress.add(valid_address_hashes) do
+         {_num_of_inserted, badge_to_address_list} <- Address.add_scam_flag(valid_address_hashes) do
       conn
       |> put_status(200)
       |> render(:badge_to_address, %{
@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
       when is_list(address_hashes) do
     with :ok <- check_sensitive_endpoint_api_key(params["api_key"]),
          valid_address_hashes = filter_address_hashes(address_hashes),
-         {_num_of_deleted, badge_to_address_list} <- ScamBadgeToAddress.delete(valid_address_hashes) do
+         {_num_of_deleted, badge_to_address_list} <- Address.delete_scam_flag(valid_address_hashes) do
       conn
       |> put_status(200)
       |> render(:badge_to_address, %{
@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
     with {:ok, body, _conn} <- Conn.read_body(conn, []),
          {:ok, %{"api_key" => provided_api_key}} <- Jason.decode(body),
          :ok <- check_sensitive_endpoint_api_key(provided_api_key) do
-      badge_to_address_list = ScamBadgeToAddress.get(@api_true)
+      badge_to_address_list = Address.get_scam_flag(@api_true)
 
       conn
       |> put_status(200)

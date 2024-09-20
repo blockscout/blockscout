@@ -80,6 +80,7 @@ defmodule Explorer.Chain.Address.Schema do
         field(:gas_used, :integer)
         field(:ens_domain_name, :string, virtual: true)
         field(:metadata, :any, virtual: true)
+        field(:is_scam, :boolean)
 
         # todo: remove virtual field for a single implementation when frontend is bound to "implementations" object value in API
         field(:implementation, :any, virtual: true)
@@ -103,7 +104,6 @@ defmodule Explorer.Chain.Address.Schema do
         )
 
         has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
-        has_one(:scam_badge, Address.ScamBadgeToAddress, foreign_key: :address_hash, references: :hash)
         has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 
@@ -134,7 +134,7 @@ defmodule Explorer.Chain.Address do
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.{Chain, PagingOptions, Repo}
 
-  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
+  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count is_scam)a
   @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
                                 :filecoin ->
                                   ~w(filecoin_id filecoin_robust filecoin_actor_type)a
@@ -560,5 +560,51 @@ defmodule Explorer.Chain.Address do
       _ ->
         {[], nil}
     end
+  end
+
+  @doc """
+  Sets `is_scam` flag to `true` of Address.t() by the list of Hash.Address.t()
+  """
+  @spec add_scam_flag([Hash.Address.t()]) :: {non_neg_integer(), [__MODULE__.t()]}
+  def add_scam_flag(address_hashes) do
+    now = DateTime.utc_now()
+
+    insert_params =
+      address_hashes
+      |> Enum.map(fn address_hash_string ->
+        case Chain.string_to_address_hash(address_hash_string) do
+          {:ok, address_hash} -> %{address_hash: address_hash, inserted_at: now, updated_at: now}
+          :error -> nil
+        end
+      end)
+      |> Enum.filter(&(!is_nil(&1)))
+
+    Repo.insert_all(__MODULE__, insert_params, on_conflict: :nothing, returning: [:address_hash])
+  end
+
+  @doc """
+  Empties `is_scam` flag of Address.t() by the list of Hash.Address.t()
+  """
+  @spec delete_scam_flag([Hash.Address.t()]) :: {non_neg_integer(), [__MODULE__.t()]}
+  def delete_scam_flag(address_hashes) do
+    query =
+      from(
+        bta in __MODULE__,
+        where: bta.address_hash in ^address_hashes,
+        select: bta
+      )
+
+    Repo.delete_all(query)
+  end
+
+  @doc """
+  Gets the list of Address.t() with is_scam == true
+  """
+  @spec get_scam_flag([Chain.necessity_by_association_option() | Chain.api?()]) :: [__MODULE__.t()]
+  def get_scam_flag(options) do
+    __MODULE__
+    |> where(is_scam: true)
+    |> select([a], a.hash)
+    |> Chain.select_repo(options).all()
   end
 end
