@@ -57,7 +57,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,
          {last_l2_block_number, last_l2_transaction_hash} <- get_last_l2_item(),
-         {safe_block, safe_block_is_latest} = Optimism.get_safe_block(json_rpc_named_arguments),
+         {safe_block, safe_block_is_latest} = Helper.get_safe_block(json_rpc_named_arguments),
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},

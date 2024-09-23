@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.7.2",
+      version: "6.8.1",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
@@ -106,7 +106,7 @@ defmodule BlockScoutWeb.Mixfile do
       # HTML CSS selectors for Phoenix controller tests
       {:floki, "~> 0.31"},
       {:flow, "~> 1.2"},
-      {:gettext, "~> 0.25.0"},
+      {:gettext, "~> 0.26.1"},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 2.0"},
       {:indexer, in_umbrella: true, runtime: false},

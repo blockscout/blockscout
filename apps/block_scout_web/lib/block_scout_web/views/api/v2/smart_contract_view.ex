@@ -257,17 +257,18 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   @doc """
-  Returns additional sources of the smart-contract from bytecode twin
+  Returns additional sources of the smart-contract or from its bytecode twin
   """
   @spec get_additional_sources(SmartContract.t(), boolean, SmartContract.t() | nil) ::
           [SmartContractAdditionalSource.t()] | nil
   def get_additional_sources(smart_contract, smart_contract_verified, bytecode_twin_contract) do
     cond do
+      smart_contract_verified && is_list(smart_contract.smart_contract_additional_sources) &&
+          !Enum.empty?(smart_contract.smart_contract_additional_sources) ->
+        smart_contract.smart_contract_additional_sources
+
       !is_nil(bytecode_twin_contract) ->
         bytecode_twin_contract.smart_contract_additional_sources
-
-      smart_contract_verified ->
-        smart_contract.smart_contract_additional_sources
 
       true ->
         []
@@ -415,7 +416,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       case type do
         "tuple[" <> rest ->
           # we need to convert tuple[...][] or tuple[...][n] into (...)[] or (...)[n]
-          # before sending it to the `FunctionSelector.decode_type/1. See https://github.com/poanetwork/ex_abi/issues/168.
+          # before sending it to the `FunctionSelector.decode_type/1`. See https://github.com/poanetwork/ex_abi/issues/168.
           tuple_item_types =
             rest
             |> String.split("]")

@@ -13,7 +13,6 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     Runner.Logs,
     Runner.Tokens,
     Runner.TokenInstances,
-    Runner.Address.TokenBalances,
     Runner.TransactionActions,
     Runner.Withdrawals
   ]

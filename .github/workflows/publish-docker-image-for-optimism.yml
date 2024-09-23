@@ -144,7 +144,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-shrink-internal-txs-indexer-api
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-shrink-internal-txs-api
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

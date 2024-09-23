@@ -1,7 +1,6 @@
 name: Release for SUAVE
 
 on:
-  workflow_dispatch:
   release:
     types: [published]
 

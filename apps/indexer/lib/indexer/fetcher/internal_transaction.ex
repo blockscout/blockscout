@@ -24,7 +24,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
   alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
-  alias Indexer.Transform.{Addresses, AddressTokenBalances}
+  alias Indexer.Transform.{AddressCoinBalances, Addresses, AddressTokenBalances}
 
   @behaviour BufferedTask
 
@@ -278,6 +278,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
         {String.downcase(hash), block_number}
       end)
 
+    address_coin_balances_params_set =
+      AddressCoinBalances.params_set(%{internal_transactions_params: internal_transactions_params_marked})
+
     empty_block_numbers =
       unique_numbers
       |> MapSet.new()
@@ -310,6 +313,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         token_transfers: %{params: celo_token_transfers},
         tokens: %{params: celo_tokens},
         addresses: %{params: addresses_params},
+        address_coin_balances: %{params: address_coin_balances_params_set},
         internal_transactions: %{params: internal_transactions_and_empty_block_numbers, with: :blockless_changeset},
         timeout: :infinity
       })

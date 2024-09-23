@@ -1265,7 +1265,15 @@ defmodule Indexer.Fetcher.Optimism.TxnBatch do
       |> Enum.uniq()
       |> Enum.filter(fn id -> id > 0 end)
 
-    Repo.delete_all(from(fs in FrameSequence, where: fs.id in ^ids))
+    try do
+      Repo.delete_all(from(fs in FrameSequence, where: fs.id in ^ids))
+    rescue
+      # we need to ignore `foreign_key_violation` exception when deleting the rows
+      # because there can be a case when the chain partially replaces the frame sequence
+      # (e.g. Unichain Private Testnet), and so some rows in `op_transaction_batches` table
+      # can still reference to the `op_frame_sequences` table
+      _ -> nil
+    end
   end
 
   defp set_frame_sequences_view_ready(sequences) do

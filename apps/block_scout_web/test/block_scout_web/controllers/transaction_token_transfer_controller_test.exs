@@ -159,8 +159,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     end
 
     test "preloads to_address smart contract verified", %{conn: conn} do
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
       transaction = insert(:transaction_to_verified_contract)
 
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
