@@ -469,7 +469,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "tx_types" => tx_types(transaction),
       "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_tx? && conn)),
       "has_error_in_internal_txs" => transaction.has_error_in_internal_txs,
-      "authorizationList" => authorization_list(transaction.signed_authorizations)
+      "authorization_list" => authorization_list(transaction.signed_authorizations)
     }
 
     result
