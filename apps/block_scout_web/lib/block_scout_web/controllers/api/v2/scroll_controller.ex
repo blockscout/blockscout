@@ -8,11 +8,73 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
       split_list_by_page: 1
     ]
 
-  alias Explorer.Chain.Scroll.Reader
+  import BlockScoutWeb.PagingHelper,
+    only: [
+      delete_parameters_from_next_page_params: 1
+    ]
+
+  alias Explorer.Chain.Scroll.{Batch, Reader}
+  alias Explorer.Chain.Transaction
 
   @api_true [api?: true]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
+
+  @batch_necessity_by_association %{:bundle => :optional}
+
+  @doc """
+    Function to handle GET requests to `/api/v2/scroll/batches/:number` endpoint.
+  """
+  @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def batch(conn, %{"number" => number}) do
+    {number, ""} = Integer.parse(number)
+
+    {_, batch} = Reader.batch(number, necessity_by_association: @batch_necessity_by_association, api?: true)
+
+    if batch == :not_found do
+      {:error, :not_found}
+    else
+      tx_count = Transaction.tx_count_for_block_range(batch.l2_block_range.from..batch.l2_block_range.to)
+
+      batch_with_tx_count = Map.put(batch, :tx_count, tx_count)
+
+      conn
+      |> put_status(200)
+      |> render(:scroll_batch, %{batch: batch_with_tx_count})
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/scroll/batches` endpoint.
+  """
+  @spec batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def batches(conn, params) do
+    {batches, next_page} =
+      params
+      |> paging_options()
+      |> Keyword.put(:api?, true)
+      |> Batch.list()
+      |> split_list_by_page()
+
+    next_page_params = next_page_params(next_page, batches, delete_parameters_from_next_page_params(params))
+
+    conn
+    |> put_status(200)
+    |> render(:scroll_batches, %{
+      batches: batches,
+      next_page_params: next_page_params
+    })
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/scroll/batches/count` endpoint.
+  """
+  @spec batches_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def batches_count(conn, _params) do
+    conn
+    |> put_status(200)
+    |> render(:scroll_batches_count, %{count: batch_latest_number() + 1})
+  end
 
   @doc """
     Function to handle GET requests to `/api/v2/scroll/deposits` endpoint.
@@ -80,5 +142,12 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     conn
     |> put_status(200)
     |> render(:scroll_bridge_items_count, %{count: count})
+  end
+
+  defp batch_latest_number do
+    case Reader.batch(:latest, api?: true) do
+      {:ok, batch} -> batch.number
+      {:error, :not_found} -> -1
+    end
   end
 end

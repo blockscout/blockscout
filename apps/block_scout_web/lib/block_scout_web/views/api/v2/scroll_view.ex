@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   @doc """
     Function to render GET requests to `/api/v2/scroll/deposits` and `/api/v2/scroll/withdrawals` endpoints.
   """
+  @spec render(binary(), map()) :: map() | list() | non_neg_integer()
   def render("scroll_bridge_items.json", %{
         items: items,
         next_page_params: next_page_params
@@ -35,6 +36,64 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   """
   def render("scroll_bridge_items_count.json", %{count: count}) do
     count
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/scroll/batches/:number` endpoint.
+  """
+  def render("scroll_batch.json", %{batch: batch}) do
+    render_batch(batch)
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/scroll/batches` endpoint.
+  """
+  def render("scroll_batches.json", %{
+        batches: batches,
+        next_page_params: next_page_params
+      }) do
+    items =
+      batches
+      |> Enum.map(fn batch ->
+        Task.async(fn -> render_batch(batch) end)
+      end)
+      |> Task.yield_many(:infinity)
+      |> Enum.map(fn {_task, {:ok, item}} -> item end)
+
+    %{
+      items: items,
+      next_page_params: next_page_params
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/scroll/batches/count` endpoint.
+  """
+  def render("scroll_batches_count.json", %{count: count}) do
+    count
+  end
+
+  defp render_batch(batch) do
+    {finalize_block_number, finalize_transaction_hash, finalize_timestamp} =
+      if is_nil(batch.bundle) do
+        {nil, nil, nil}
+      else
+        {batch.bundle.finalize_block_number, batch.bundle.finalize_transaction_hash, batch.bundle.finalize_timestamp}
+      end
+
+    tx_count = Transaction.tx_count_for_block_range(batch.l2_block_range.from..batch.l2_block_range.to)
+
+    %{
+      "number" => batch.number,
+      "commit_block_number" => batch.commit_block_number,
+      "commit_tx_hash" => batch.commit_transaction_hash,
+      "commit_timestamp" => batch.commit_timestamp,
+      "finalize_block_number" => finalize_block_number,
+      "finalize_tx_hash" => finalize_transaction_hash,
+      "finalize_timestamp" => finalize_timestamp,
+      "block_count" => batch.l2_block_range.to - batch.l2_block_range.from + 1,
+      "tx_count" => tx_count
+    }
   end
 
   @doc """

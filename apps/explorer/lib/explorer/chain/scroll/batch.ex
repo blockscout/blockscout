@@ -11,9 +11,12 @@ defmodule Explorer.Chain.Scroll.Batch do
 
   use Explorer.Schema
 
+  import Explorer.Chain, only: [default_paging_options: 0, join_association: 3, select_repo: 1]
+
   alias Explorer.Chain.Block.Range, as: BlockRange
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Scroll.BatchBundle
+  alias Explorer.PagingOptions
 
   @optional_attrs ~w(bundle_id)a
 
@@ -56,5 +59,42 @@ defmodule Explorer.Chain.Scroll.Batch do
     |> validate_required(@required_attrs)
     |> unique_constraint(:number)
     |> foreign_key_constraint(:bundle_id)
+  end
+
+  @doc """
+    Lists `t:Explorer.Chain.Scroll.Batch.t/0`'s' in descending order based on the `number`.
+
+    ## Parameters
+    - `options`: A keyword list of options that may include whether to use a replica database and paging options.
+
+    ## Returns
+    - A list of found entities sorted by `number` in descending order.
+  """
+  @spec list(list()) :: [__MODULE__.t()]
+  def list(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, default_paging_options())
+
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
+
+      _ ->
+        base_query =
+          from(b in __MODULE__,
+            order_by: [desc: b.number]
+          )
+
+        base_query
+        |> join_association(:bundle, :optional)
+        |> page_batches(paging_options)
+        |> limit(^paging_options.page_size)
+        |> select_repo(options).all()
+    end
+  end
+
+  defp page_batches(query, %PagingOptions{key: nil}), do: query
+
+  defp page_batches(query, %PagingOptions{key: {number}}) do
+    from(b in query, where: b.number < ^number)
   end
 end
