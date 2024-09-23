@@ -47,8 +47,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
     end
   end
 
-  defp fetch?(%{signed_authorizations: list}), do: !Enum.empty?(list)
-  defp fetch?(address), do: is_nil(address.nonce)
+  defp fetch?(address) when is_nil(address.nonce), do: true
+  defp fetch?(%{signed_authorizations: [_ | _]}), do: true
+  defp fetch?(_), do: false
 
   defp fetch_and_broadcast_bytecode(address_hash, state) do
     with {:fetched_code, {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}}} <-
