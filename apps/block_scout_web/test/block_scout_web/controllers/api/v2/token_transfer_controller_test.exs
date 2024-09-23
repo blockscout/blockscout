@@ -27,6 +27,55 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
       assert response["next_page_params"] == nil
     end
 
+    test "filters by type", %{conn: conn} do
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token = insert(:token, type: "ERC-721")
+
+      tt =
+        insert(:token_transfer,
+          transaction: tx,
+          token: token,
+          token_type: "ERC-721"
+        )
+
+      request = get(conn, "/api/v2/token-transfers?type=ERC-1155")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 0
+      assert response["next_page_params"] == nil
+    end
+
+    test "returns all transfers if filter is incorrect", %{conn: conn} do
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token = insert(:token, type: "ERC-100500")
+
+      insert(:token_transfer,
+        transaction: tx,
+        token: token,
+        token_type: "ERC-721"
+      )
+
+      insert(:token_transfer,
+        transaction: tx,
+        token: token,
+        token_type: "ERC-20"
+      )
+
+      request = get(conn, "/api/v2/token-transfers?type=ERC-20")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 2
+      assert response["next_page_params"] == nil
+    end
+
     test "txs with next_page_params", %{conn: conn} do
       token_transfers =
         for _i <- 0..50 do
