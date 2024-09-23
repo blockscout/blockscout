@@ -25,7 +25,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   end
 
   defp fetch_contract_code(address, state) do
-    with {:empty_nonce, true} <- {:empty_nonce, is_nil(address.nonce)},
+    with {:need_to_fetch, true} <- {:need_to_fetch, fetch?(address)},
          {:retries_number, {retries_number, updated_at}} <-
            {:retries_number, AddressContractCodeFetchAttempt.get_retries_number(address.hash)},
          updated_at_ms = DateTime.to_unix(updated_at, :millisecond),
@@ -35,7 +35,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
               threshold(retries_number)} do
       fetch_and_broadcast_bytecode(address.hash, state)
     else
-      {:empty_nonce, false} ->
+      {:need_to_fetch, false} ->
         :ok
 
       {:retries_number, nil} ->
@@ -46,6 +46,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
         :ok
     end
   end
+
+  defp fetch?(%{signed_authorizations: list}), do: !Enum.empty?(list)
+  defp fetch?(address), do: is_nil(address.nonce)
 
   defp fetch_and_broadcast_bytecode(address_hash, state) do
     with {:fetched_code, {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}}} <-

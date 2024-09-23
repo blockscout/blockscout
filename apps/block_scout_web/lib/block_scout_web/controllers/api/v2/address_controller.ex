@@ -76,7 +76,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     necessity_by_association: %{
       :names => :optional,
       :token => :optional,
-      :proxy_implementations => :optional
+      :proxy_implementations => :optional,
+      :signed_authorizations => :optional
     },
     api?: true
   ]

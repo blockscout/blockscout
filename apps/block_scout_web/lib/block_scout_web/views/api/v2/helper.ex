@@ -63,6 +63,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   def address_with_info(%Address{} = address, _address_hash) do
     smart_contract? = Address.smart_contract?(address)
+    eoa_with_code? = Address.eoa_with_code?(address)
 
     {proxy_implementations, implementation_address_hashes, implementation_names, proxy_type} =
       case address.proxy_implementations do
@@ -84,6 +85,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => Address.checksum(address),
       "is_contract" => smart_contract?,
       "name" => address_name(address),
+      "is_eoa_with_code" => eoa_with_code?,
       "proxy_type" => proxy_type,
       "implementations" => Proxy.proxy_object_info(implementation_address_hashes, implementation_names),
       "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),

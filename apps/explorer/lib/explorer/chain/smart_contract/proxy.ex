@@ -15,6 +15,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     EIP1822,
     EIP1967,
     EIP2535,
+    EIP7702,
     EIP930,
     MasterCopy
   }
@@ -312,7 +313,16 @@ defmodule Explorer.Chain.SmartContract.Proxy do
           proxy_type: atom()
         }
   def get_implementation_address_hash_string_eip2535(proxy_address_hash, proxy_abi, go_to_fallback?) do
-    get_implementation_address_hash_string_by_module(EIP2535, :eip2535, [proxy_address_hash, proxy_abi, go_to_fallback?])
+    get_implementation_address_hash_string_by_module(
+      EIP2535,
+      :eip2535,
+      [proxy_address_hash, proxy_abi, go_to_fallback?],
+      :get_implementation_address_hash_string_eip7702
+    )
+  end
+
+  def get_implementation_address_hash_string_eip7702(proxy_address_hash, proxy_abi, go_to_fallback?) do
+    get_implementation_address_hash_string_by_module(EIP7702, :eip7702, [proxy_address_hash, proxy_abi, go_to_fallback?])
   end
 
   defp get_implementation_address_hash_string_by_module(
