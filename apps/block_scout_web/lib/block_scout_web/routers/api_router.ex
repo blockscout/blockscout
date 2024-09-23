@@ -276,6 +276,9 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/scroll" do
       if Application.compile_env(:explorer, :chain_type) == :scroll do
+        get("/batches", V2.ScrollController, :batches)
+        get("/batches/count", V2.ScrollController, :batches_count)
+        get("/batches/:number", V2.ScrollController, :batch)
         get("/deposits", V2.ScrollController, :deposits)
         get("/deposits/count", V2.ScrollController, :deposits_count)
         get("/withdrawals", V2.ScrollController, :withdrawals)

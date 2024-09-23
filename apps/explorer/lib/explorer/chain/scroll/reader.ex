@@ -4,7 +4,9 @@ defmodule Explorer.Chain.Scroll.Reader do
   import Ecto.Query,
     only: [
       from: 2,
-      limit: 2
+      limit: 2,
+      order_by: 2,
+      where: 2
     ]
 
   import Explorer.Chain, only: [select_repo: 1]
@@ -12,6 +14,38 @@ defmodule Explorer.Chain.Scroll.Reader do
   alias Explorer.Chain.Scroll.{Batch, BatchBundle, Bridge, L1FeeParam}
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Transaction
+
+  @doc """
+    Reads a batch by its number from database.
+    If the number is :latest, gets the latest batch from the `scroll_batches` table.
+    Returns {:error, :not_found} in case the batch is not found.
+  """
+  @spec batch(non_neg_integer() | :latest, list()) :: {:ok, map()} | {:error, :not_found}
+  def batch(number, options \\ [])
+
+  def batch(:latest, options) when is_list(options) do
+    Batch
+    |> order_by(desc: :number)
+    |> limit(1)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      batch -> {:ok, batch}
+    end
+  end
+
+  def batch(number, options) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    Batch
+    |> where(number: ^number)
+    |> Chain.join_associations(necessity_by_association)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      batch -> {:ok, batch}
+    end
+  end
 
   @doc """
     Gets last known L1 batch item from the `scroll_batches` table.
