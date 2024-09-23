@@ -239,7 +239,10 @@ defmodule Indexer.Helper do
     - `from_block`: The starting block number (integer or hexadecimal string) for the log search.
     - `to_block`: The ending block number (integer or hexadecimal string) for the log search.
     - `address`: The address of the contract to filter logs from.
-    - `topics`: List of topics to filter the logs.
+    - `topics`: List of topics to filter the logs. The list represents each topic as follows:
+                [topic0, topic1, topic2, topic3]. The `topicN` can be either some value or
+                a list of possible values, e.g.: [[topic0_1, topic0_2], topic1, topic2, topic3].
+                If a topic is omitted or `nil`, it doesn't take part in the logs filtering.
     - `json_rpc_named_arguments`: Configuration for the JSON-RPC call.
     - `id`: (optional) JSON-RPC request identifier, defaults to 0.
     - `retries`: (optional) Number of retry attempts if the request fails, defaults to 3.

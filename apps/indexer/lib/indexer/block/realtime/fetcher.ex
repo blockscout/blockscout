@@ -37,13 +37,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
-  alias Indexer.Fetcher.Optimism.TransactionBatch, as: OptimismTransactionBatch
-  alias Indexer.Fetcher.Optimism.Withdrawal, as: OptimismWithdrawal
-  alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
-  alias Indexer.Fetcher.PolygonZkevm.BridgeL2, as: PolygonZkevmBridgeL2
-  alias Indexer.Fetcher.Scroll.BridgeL2, as: ScrollBridgeL2
-  alias Indexer.Fetcher.Scroll.L1FeeParam, as: ScrollL1FeeParam
-  alias Indexer.Fetcher.Shibarium.L2, as: ShibariumBridgeL2
   alias Indexer.Prometheus
   alias Timex.Duration
 
@@ -298,20 +291,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Indexer.Logger.metadata(
       fn ->
         if reorg? do
-          # we need to remove all rows from `op_transaction_batches` and `op_withdrawals` tables previously written starting from reorg block number
-          remove_optimism_assets_by_number(block_number_to_fetch)
-
-          # we need to remove all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables previously written starting from reorg block number
-          remove_polygon_edge_assets_by_number(block_number_to_fetch)
-
-          # we need to remove all rows from `shibarium_bridge` table previously written starting from reorg block number
-          remove_shibarium_assets_by_number(block_number_to_fetch)
-
-          # we need to remove all rows from `polygon_zkevm_bridge` table previously written starting from reorg block number
-          remove_polygon_zkevm_assets_by_number(block_number_to_fetch)
-
-          # we need to remove all rows from `scroll_l1_fee_params` table previously written starting from reorg block number
-          remove_scroll_assets_by_number(block_number_to_fetch)
+          remove_assets_by_number(block_number_to_fetch)
 
           # give previous fetch attempt (for same block number) a chance to finish
           # before fetching again, to reduce block consensus mistakes
@@ -324,38 +304,48 @@ defmodule Indexer.Block.Realtime.Fetcher do
       block_number: block_number_to_fetch
     )
   end
+  
+  case Application.compile_env(:explorer, :chain_type) do
+    :optimism ->
+      defp remove_assets_by_number(reorg_block) do
+        # remove all rows from `op_transaction_batches` and `op_withdrawals` tables
+        # previously written starting from the reorg block number
+        Indexer.Fetcher.Optimism.TransactionBatch.handle_l2_reorg(reorg_block)
+        Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block)
+      end
 
-  defp remove_optimism_assets_by_number(block_number_to_fetch) do
-    if Application.get_env(:explorer, :chain_type) == :optimism do
-      OptimismTransactionBatch.handle_l2_reorg(block_number_to_fetch)
-      OptimismWithdrawal.remove(block_number_to_fetch)
-    end
-  end
+    :polygon_edge ->
+      defp remove_assets_by_number(reorg_block) do
+        # remove all rows from `polygon_edge_withdrawals` and `polygon_edge_deposit_executes` tables
+        # previously written starting from the reorg block number
+        Indexer.Fetcher.PolygonEdge.Withdrawal.remove(reorg_block)
+        Indexer.Fetcher.PolygonEdge.DepositExecute.remove(reorg_block)
+      end
 
-  defp remove_polygon_edge_assets_by_number(block_number_to_fetch) do
-    if Application.get_env(:explorer, :chain_type) == :polygon_edge do
-      Withdrawal.remove(block_number_to_fetch)
-      DepositExecute.remove(block_number_to_fetch)
-    end
-  end
+    :polygon_zkevm ->
+      defp remove_assets_by_number(reorg_block) do
+        # remove all rows from `polygon_zkevm_bridge` table
+        # previously written starting from the reorg block number
+        Indexer.Fetcher.PolygonZkevm.BridgeL2.reorg_handle(reorg_block)
+      end
 
-  defp remove_polygon_zkevm_assets_by_number(block_number_to_fetch) do
-    if Application.get_env(:explorer, :chain_type) == :polygon_zkevm do
-      PolygonZkevmBridgeL2.reorg_handle(block_number_to_fetch)
-    end
-  end
+    :shibarium ->
+      defp remove_assets_by_number(reorg_block) do
+        # remove all rows from `shibarium_bridge` table
+        # previously written starting from the reorg block number
+        Indexer.Fetcher.Shibarium.L2.reorg_handle(reorg_block)
+      end
 
-  defp remove_shibarium_assets_by_number(block_number_to_fetch) do
-    if Application.get_env(:explorer, :chain_type) == :shibarium do
-      ShibariumBridgeL2.reorg_handle(block_number_to_fetch)
-    end
-  end
+    :scroll ->
+      defp remove_assets_by_number(reorg_block) do
+        # remove all rows from `scroll_l1_fee_params` table
+        # previously written starting from the reorg block number
+        Indexer.Fetcher.Scroll.BridgeL2.reorg_handle(reorg_block)
+        Indexer.Fetcher.Scroll.L1FeeParam.handle_l2_reorg(reorg_block)
+      end
 
-  defp remove_scroll_assets_by_number(block_number_to_fetch) do
-    if Application.get_env(:explorer, :chain_type) == :scroll do
-      ScrollBridgeL2.reorg_handle(block_number_to_fetch)
-      ScrollL1FeeParam.handle_l2_reorg(block_number_to_fetch)
-    end
+    _ ->
+      defp remove_assets_by_number(_), do: :ok
   end
 
   @decorate span(tracer: Tracer)
