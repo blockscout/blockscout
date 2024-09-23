@@ -22,7 +22,7 @@ defmodule Explorer.Chain.SignedAuthorization do
 
   @primary_key false
   schema "signed_authorizations" do
-    field(:index, :integer)
+    field(:index, :integer, primary_key: true)
     field(:chain_id, :integer)
     field(:address, Hash.Address)
     field(:nonce, :integer)
