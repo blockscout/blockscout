@@ -4,7 +4,7 @@ services:
   db-init:
     image: postgres:15
     volumes:
-      - ./blockscout-db-data:/var/lib/postgresql/data
+      - /mnt/volume-hel1-1/explorer-blockscout-db-data:/var/lib/postgresql/data
     entrypoint:
       - sh
       - -c
@@ -26,7 +26,7 @@ services:
       - target: 5432
         published: 7432
     volumes:
-      - ./blockscout-db-data:/var/lib/postgresql/data
+      - /mnt/volume-hel1-1/explorer-blockscout-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U blockscout -d blockscout"]
       interval: 10s
