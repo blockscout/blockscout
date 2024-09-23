@@ -744,7 +744,7 @@ defmodule Indexer.Block.Fetcher do
   defp extract_signed_authorizations(transactions_with_receipts) do
     transactions_with_receipts
     |> Enum.filter(&Map.has_key?(&1, :authorization_list))
-    |> Enum.map(
+    |> Enum.flat_map(
       &(&1.authorization_list
         |> Enum.with_index()
         |> Enum.map(fn {authorization, index} ->
@@ -756,7 +756,6 @@ defmodule Indexer.Block.Fetcher do
           })
         end))
     )
-    |> List.flatten()
   end
 
   defp recover_authority(signed_authorization) do
