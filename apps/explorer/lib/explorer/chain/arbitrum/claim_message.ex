@@ -45,6 +45,18 @@ defmodule Explorer.Chain.Arbitrum.ClaimMessage do
     {:uint, 256}
   ]
 
+  @finalize_inbound_transfer_selector %ABI.FunctionSelector{
+    function: "finalizeInboundTransfer",
+    returns: [],
+    types: [
+      :address, # _token
+      :address, # _from
+      :address, # _to
+      {:uint, 256}, # _amount
+      :bytes, # data
+    ]
+  }
+
   @execute_transaction_selector %ABI.FunctionSelector{
     function: "executeTransaction",
     returns: [],
@@ -114,6 +126,8 @@ defmodule Explorer.Chain.Arbitrum.ClaimMessage do
               nil -> :unknown
             end
         end
+
+
 
         %Explorer.Chain.Arbitrum.Withdraw{
           message_id: Hash.to_integer(log.fourth_topic),

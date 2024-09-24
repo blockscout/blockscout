@@ -964,7 +964,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           [term()],
           [map()],
           EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: non_neg_integer()
+        ) :: non_neg_integer() | boolean()
   defp read_contract_and_handle_result_as_integer(
          contract_address,
          method_selector,

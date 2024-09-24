@@ -8,7 +8,11 @@ defmodule Explorer.Chain.Arbitrum.Withdraw do
 
   alias Explorer.Chain.Hash
 
+  @optional_attrs ~w(token_address token_destination token_amount)a
+
   @required_attrs ~w(message_id status tx_hash caller destination arb_block_num eth_block_num l2_timestamp callvalue data)a
+
+  @allowed_attrs @optional_attrs ++ @required_attrs
 
 
   @typedoc """
@@ -23,10 +27,13 @@ defmodule Explorer.Chain.Arbitrum.Withdraw do
     * `l2_timestamp` - The timestamp of the originating transaction.
     * `callvalue` - The amount of the native coins to withdraw
     * `data` - Raw transaction data which will be sent to the destination address on L1 chain
-               on claiming the withdraw. In that case sestination should be a contract adress
+               on claiming the withdraw. In that case destination should be a contract adress
                otherwise the transaction will fail. Typicaly this field contain calldata for
                `finalizeInboundTransfer(address,address,address,uint256,bytes)` method of the
                Bridge contract and it intended to withdraw supported tokens instead of native coins.
+    `token_address` - extracted address of the token to withdraw in case of `data` field represents Bridge transaction
+    `token_destination` - extracted receiver address in case of `data` field represents Bridge transaction
+    `token_amount` - extracted token amount in case of `data` field represents Bridge transaction
   """
   @type to_import :: %{
           message_id: non_neg_integer(),
@@ -39,6 +46,9 @@ defmodule Explorer.Chain.Arbitrum.Withdraw do
           l2_timestamp: non_neg_integer(),
           callvalue: non_neg_integer(),
           data: binary(),
+          token_address: binary(),
+          token_destination: binary(),
+          token_amount: non_neg_integer()
         }
 
   @typedoc """
@@ -57,10 +67,12 @@ defmodule Explorer.Chain.Arbitrum.Withdraw do
                otherwise the transaction will fail. Typicaly this field contain calldata for
                `finalizeInboundTransfer(address,address,address,uint256,bytes)` method of the
                Bridge contract and it intended to withdraw supported tokens instead of native coins.
+    `token_address` - extracted address of the token to withdraw in case of `data` field represents Bridge transaction
+    `token_destination` - extracted receiver address in case of `data` field represents Bridge transaction
+    `token_amount` - extracted token amount in case of `data` field represents Bridge transaction
   """
-  @primary_key false
+  @primary_key {:message_id, :integer, autogenerate: false}
   typed_schema "arbitrum_withdraw" do
-    field(:message_id, :integer, primary_key: true)
     field(:status, Ecto.Enum, values: [:unconfirmed, :confirmed, :executed])
     field(:tx_hash, Hash.Full)
     field(:caller, Hash.Address)
@@ -70,6 +82,9 @@ defmodule Explorer.Chain.Arbitrum.Withdraw do
     field(:l2_timestamp, :integer)
     field(:callvalue, :integer)
     field(:data, :binary)
+    field(:token_address, Hash.Address)
+    field(:token_destination, Hash.Address)
+    field(:token_amount, :integer)
 
     timestamps()
   end
@@ -80,8 +95,8 @@ defmodule Explorer.Chain.Arbitrum.Withdraw do
   @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
   def changeset(%__MODULE__{} = txn, attrs \\ %{}) do
     txn
-    |> cast(attrs, @required_attrs)
+    |> cast(attrs, @allowed_attrs)
     |> validate_required(@required_attrs)
-    |> unique_constraint([:direction, :message_id])
+    |> unique_constraint([:message_id])
   end
 end
