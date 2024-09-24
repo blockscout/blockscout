@@ -646,6 +646,8 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   batch_size: ConfigHelper.parse_integer_env_var("FILECOIN_PENDING_ADDRESS_OPERATIONS_MIGRATION_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("FILECOIN_PENDING_ADDRESS_OPERATIONS_MIGRATION_CONCURRENCY", 1)
 
+config :explorer, Explorer.Chain.Blackfort.Validator, api_url: System.get_env("BLACKFORT_VALIDATOR_API_URL")
+
 ###############
 ### Indexer ###
 ###############

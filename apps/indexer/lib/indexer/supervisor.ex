@@ -18,6 +18,7 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Block.Catchup, as: BlockCatchup
   alias Indexer.Block.Realtime, as: BlockRealtime
+  alias Indexer.Fetcher.Blackfort.Validator, as: ValidatorBlackfort
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
@@ -284,6 +285,9 @@ defmodule Indexer.Supervisor do
     case Application.get_env(:explorer, :chain_type) do
       :stability ->
         [{ValidatorStability, []} | fetchers]
+
+      :blackfort ->
+        [{ValidatorBlackfort, []} | fetchers]
 
       _ ->
         fetchers
