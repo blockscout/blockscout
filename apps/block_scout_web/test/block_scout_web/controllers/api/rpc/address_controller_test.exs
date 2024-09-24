@@ -154,15 +154,19 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       address_hash = to_string(address.hash)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: id,
-                                                       method: "eth_getBalance",
-                                                       params: [^mining_address_hash, "0x66"]
-                                                     }
-                                                   ],
-                                                   _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
+      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
+        [
+          %{
+            id: id,
+            method: "eth_getBalance",
+            params: [^mining_address_hash, "0x66"]
+          }
+        ],
+        _options ->
+          {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
+
+        [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
+          {:ok, ["0x66" |> eth_block_number_fake_response() |> Map.put(:id, id)]}
       end)
 
       res = eth_block_number_fake_response("0x66")
@@ -178,15 +182,19 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         {:ok, [res]}
       end)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: id,
-                                                       method: "eth_getBalance",
-                                                       params: [^address_hash, "0x66"]
-                                                     }
-                                                   ],
-                                                   _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
+      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
+        [
+          %{
+            id: id,
+            method: "eth_getBalance",
+            params: [^address_hash, "0x66"]
+          }
+        ],
+        _options ->
+          {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
+
+        [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
+          {:ok, ["0x66" |> eth_block_number_fake_response() |> Map.put(:id, id)]}
       end)
 
       expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [

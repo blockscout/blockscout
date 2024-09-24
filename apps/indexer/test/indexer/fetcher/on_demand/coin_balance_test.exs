@@ -96,15 +96,19 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
       assert nil == Chain.get_coin_balance(address.hash, block_number)
 
       EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  method: "eth_getBalance",
-                                  params: [^string_address_hash, ^string_block_number]
-                                }
-                              ],
-                              _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: integer_to_quantity(balance)}]}
+      |> expect(:json_rpc, 2, fn
+        [
+          %{
+            id: id,
+            method: "eth_getBalance",
+            params: [^string_address_hash, ^string_block_number]
+          }
+        ],
+        _options ->
+          {:ok, [%{id: id, jsonrpc: "2.0", result: integer_to_quantity(balance)}]}
+
+        [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
+          {:ok, [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
       end)
 
       EthereumJSONRPC.Mox
@@ -154,15 +158,19 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
       address_hash = address.hash
       string_address_hash = to_string(address.hash)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: id,
-                                                       method: "eth_getBalance",
-                                                       params: [^string_address_hash, "0x66"]
-                                                     }
-                                                   ],
-                                                   _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
+      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
+        [
+          %{
+            id: id,
+            method: "eth_getBalance",
+            params: [^string_address_hash, "0x66"]
+          }
+        ],
+        _options ->
+          {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
+
+        [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
+          {:ok, [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
       end)
 
       res = eth_block_number_fake_response("0x66")
@@ -196,15 +204,19 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
       address_hash = address.hash
       string_address_hash = to_string(address.hash)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                     %{
-                                                       id: id,
-                                                       method: "eth_getBalance",
-                                                       params: [^string_address_hash, "0x67"]
-                                                     }
-                                                   ],
-                                                   _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
+      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
+        [
+          %{
+            id: id,
+            method: "eth_getBalance",
+            params: [^string_address_hash, "0x67"]
+          }
+        ],
+        _options ->
+          {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
+
+        [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
+          {:ok, [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
       end)
 
       EthereumJSONRPC.Mox
