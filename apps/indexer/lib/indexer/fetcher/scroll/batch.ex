@@ -391,6 +391,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         if event.first_topic == @commit_batch_event do
           commit_block_number = quantity_to_integer(event.block_number)
 
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           l2_block_range =
             if batch_number == 0 do
               {:ok, range} = BlockRange.cast("[0,0]")
@@ -401,39 +402,37 @@ defmodule Indexer.Fetcher.Scroll.Batch do
               |> input_to_l2_block_range()
             end
 
-          new_batches_acc =
-            batches_acc ++
-              [
-                %{
-                  number: batch_number,
-                  commit_transaction_hash: event.transaction_hash,
-                  commit_block_number: commit_block_number,
-                  commit_timestamp: Map.get(timestamps, commit_block_number),
-                  l2_block_range: l2_block_range
-                }
-              ]
+          new_batches_acc = [
+            %{
+              number: batch_number,
+              commit_transaction_hash: event.transaction_hash,
+              commit_block_number: commit_block_number,
+              commit_timestamp: Map.get(timestamps, commit_block_number),
+              l2_block_range: l2_block_range
+            }
+            | batches_acc
+          ]
 
           {prev_final_batch_number_acc, new_batches_acc, bundles_acc}
         else
           finalize_block_number = quantity_to_integer(event.block_number)
 
-          new_bundles_acc =
-            bundles_acc ++
-              [
-                %{
-                  start_batch_number: prev_final_batch_number_acc + 1,
-                  final_batch_number: batch_number,
-                  finalize_transaction_hash: event.transaction_hash,
-                  finalize_block_number: finalize_block_number,
-                  finalize_timestamp: Map.get(timestamps, finalize_block_number)
-                }
-              ]
+          new_bundles_acc = [
+            %{
+              start_batch_number: prev_final_batch_number_acc + 1,
+              final_batch_number: batch_number,
+              finalize_transaction_hash: event.transaction_hash,
+              finalize_block_number: finalize_block_number,
+              finalize_timestamp: Map.get(timestamps, finalize_block_number)
+            }
+            | bundles_acc
+          ]
 
           {batch_number, batches_acc, new_bundles_acc}
         end
       end)
 
-    {batches, bundles}
+    {Enum.reverse(batches), Enum.reverse(bundles)}
   end
 
   # Handles L1 block reorg: removes all batch rows from the `scroll_batches` table
