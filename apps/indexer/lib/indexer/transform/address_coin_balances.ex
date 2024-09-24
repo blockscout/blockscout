@@ -67,20 +67,32 @@ defmodule Indexer.Transform.AddressCoinBalances do
   defp internal_transactions_params_reducer(%{block_number: block_number} = internal_transaction_params, acc)
        when is_integer(block_number) do
     case internal_transaction_params do
-      %{type: "call"} ->
+      %{type: "call"} = params ->
         acc
+        |> process_internal_transaction_field(params, :from_address_hash, block_number)
+        |> process_internal_transaction_field(params, :to_address_hash, block_number)
 
       %{type: "create", error: _} ->
         acc
 
-      %{type: "create", created_contract_address_hash: address_hash} when is_binary(address_hash) ->
-        MapSet.put(acc, %{address_hash: address_hash, block_number: block_number})
+      %{type: "create"} = params ->
+        process_internal_transaction_field(acc, params, :created_contract_address_hash, block_number)
 
       %{type: "selfdestruct", from_address_hash: from_address_hash, to_address_hash: to_address_hash}
       when is_binary(from_address_hash) and is_binary(to_address_hash) ->
         acc
         |> MapSet.put(%{address_hash: from_address_hash, block_number: block_number})
         |> MapSet.put(%{address_hash: to_address_hash, block_number: block_number})
+
+      _params ->
+        acc
+    end
+  end
+
+  defp process_internal_transaction_field(acc, params, field, block_number) do
+    case Map.get(params, field) do
+      nil -> acc
+      address_hash -> MapSet.put(acc, %{address_hash: address_hash, block_number: block_number})
     end
   end
 

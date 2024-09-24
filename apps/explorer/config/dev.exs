@@ -46,6 +46,8 @@ config :explorer, Explorer.Repo.Mud, timeout: :timer.seconds(80)
 
 config :explorer, Explorer.Repo.ShrunkInternalTransactions, timeout: :timer.seconds(80)
 
+config :explorer, Explorer.Repo.Blackfort, timeout: :timer.seconds(80)
+
 config :explorer, Explorer.Tracer, env: "dev", disabled?: true
 
 config :logger, :explorer,

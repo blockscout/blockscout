@@ -144,6 +144,7 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.RestoreOmittedWETHTransfers),
         configure(Explorer.Migrator.FilecoinPendingAddressOperations),
         configure_mode_dependent_process(Explorer.Migrator.ShrinkInternalTransactions, :indexer),
+        configure_chain_type_dependent_process(Explorer.Chain.Cache.BlackfortValidatorsCounters, :blackfort),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeMissingTokenBalances, :indexer)
       ]
@@ -168,7 +169,8 @@ defmodule Explorer.Application do
         Explorer.Repo.BridgedTokens,
         Explorer.Repo.Filecoin,
         Explorer.Repo.Stability,
-        Explorer.Repo.ShrunkInternalTransactions
+        Explorer.Repo.ShrunkInternalTransactions,
+        Explorer.Repo.Blackfort
       ]
     else
       []
@@ -176,7 +178,7 @@ defmodule Explorer.Application do
   end
 
   defp account_repo do
-    if System.get_env("ACCOUNT_DATABASE_URL") || Mix.env() == :test do
+    if Application.get_env(:explorer, Explorer.Account)[:enabled] || Mix.env() == :test do
       [Explorer.Repo.Account]
     else
       []

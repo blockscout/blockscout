@@ -159,6 +159,12 @@ config :explorer, Explorer.Repo.ShrunkInternalTransactions,
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
+# Configures Blackfort database
+config :explorer, Explorer.Repo.Blackfort,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: 1,
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
 variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "apps/explorer/config/prod")

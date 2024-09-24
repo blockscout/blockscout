@@ -330,7 +330,8 @@ defmodule Explorer.Chain.Mud do
       |> Enum.zip(static_types)
       |> Enum.reduce({%{}, (static_data && static_data.bytes) || <<>>}, fn {field, type}, {acc, data} ->
         type_size = static_type_size(type)
-        <<enc::binary-size(type_size), rest::binary>> = data
+        {enc, rest} = split_binary(data, type_size)
+
         decoded = decode_type(type, enc)
         {Map.put(acc, field, decoded), rest}
       end)
@@ -349,7 +350,7 @@ defmodule Explorer.Chain.Mud do
       [dynamic_fields, dynamic_types, dynamic_type_lengths]
       |> Enum.zip()
       |> Enum.reduce({res, (dynamic_data && dynamic_data.bytes) || <<>>}, fn {field, type, length}, {acc, data} ->
-        <<enc::binary-size(length), rest::binary>> = data
+        {enc, rest} = split_binary(data, length)
         decoded = decode_type(type, enc)
 
         {Map.put(acc, field, decoded), rest}
@@ -364,6 +365,12 @@ defmodule Explorer.Chain.Mud do
       97 -> 20
       _ -> 0
     end
+  end
+
+  defp split_binary(binary, size) do
+    if byte_size(binary) >= size,
+      do: :erlang.split_binary(binary, size),
+      else: {<<0::size(size * 8)>>, <<>>}
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity

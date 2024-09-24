@@ -327,11 +327,21 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/validators" do
-      if Application.compile_env(:explorer, :chain_type) == :stability do
-        scope "/stability" do
-          get("/", V2.ValidatorController, :stability_validators_list)
-          get("/counters", V2.ValidatorController, :stability_validators_counters)
-        end
+      case Application.compile_env(:explorer, :chain_type) do
+        :stability ->
+          scope "/stability" do
+            get("/", V2.ValidatorController, :stability_validators_list)
+            get("/counters", V2.ValidatorController, :stability_validators_counters)
+          end
+
+        :blackfort ->
+          scope "/blackfort" do
+            get("/", V2.ValidatorController, :blackfort_validators_list)
+            get("/counters", V2.ValidatorController, :blackfort_validators_counters)
+          end
+
+        _ ->
+          nil
       end
     end
 
