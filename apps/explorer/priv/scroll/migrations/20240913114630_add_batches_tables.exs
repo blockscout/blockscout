@@ -2,7 +2,7 @@ defmodule Explorer.Repo.Scroll.Migrations.AddBatchesTables do
   use Ecto.Migration
 
   def change do
-  	create table(:scroll_batch_bundles, primary_key: true) do
+    create table(:scroll_batch_bundles, primary_key: true) do
       add(:final_batch_number, :bigint, null: false)
       add(:finalize_transaction_hash, :bytea, null: false)
       add(:finalize_block_number, :bigint, null: false)
@@ -15,12 +15,14 @@ defmodule Explorer.Repo.Scroll.Migrations.AddBatchesTables do
       add(:commit_transaction_hash, :bytea, null: false)
       add(:commit_block_number, :bigint, null: false)
       add(:commit_timestamp, :"timestamp without time zone", null: false)
+
       add(
         :bundle_id,
         references(:scroll_batch_bundles, on_delete: :restrict, on_update: :update_all, type: :bigint),
         null: true,
         default: nil
       )
+
       add(:l2_block_range, :int8range)
       timestamps(null: false, type: :utc_datetime_usec)
     end

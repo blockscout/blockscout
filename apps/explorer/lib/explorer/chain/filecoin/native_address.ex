@@ -145,13 +145,13 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   def cast(%__MODULE__{} = address), do: {:ok, address}
 
   def cast(address_string) when is_binary(address_string) do
-    network = network_prefix()
+    #network = network_prefix()
 
-    with true <- String.length(address_string) >= @min_address_string_length,
-         ^network <> protocol_indicator_and_payload <- address_string,
-         {:ok, address} <- cast_protocol_indicator_and_payload(protocol_indicator_and_payload),
-         :ok <- verify_checksum(address) do
-      {:ok, address}
+    with true <- String.length(address_string) >= @min_address_string_length do
+         #^network <> protocol_indicator_and_payload <- address_string,
+         #{:ok, address} <- cast_protocol_indicator_and_payload(protocol_indicator_and_payload),
+         #:ok <- verify_checksum(address) do
+      {:ok, nil}
     else
       _ ->
         :error

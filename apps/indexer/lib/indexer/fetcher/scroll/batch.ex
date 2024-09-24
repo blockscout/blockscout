@@ -165,13 +165,16 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   - {:noreply, state} tuple with the updated block range in the `state` to scan logs in.
   """
   @impl GenServer
-  def handle_info(:continue, %{
-    block_check_interval: block_check_interval,
-    scroll_chain_contract: scroll_chain_contract,
-    json_rpc_named_arguments: json_rpc_named_arguments,
-    end_block: end_block,
-    start_block: start_block
-  } = state) do
+  def handle_info(
+        :continue,
+        %{
+          block_check_interval: block_check_interval,
+          scroll_chain_contract: scroll_chain_contract,
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          end_block: end_block,
+          start_block: start_block
+        } = state
+      ) do
     time_before = Timex.now()
 
     last_written_block =
@@ -285,6 +288,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
                 ]
               }
             )
+
           chunks
 
         # commitBatchWithBlobProof(uint8 _version, bytes _parentBatchHeader, bytes[] _chunks, bytes _skippedL1MessageBitmap, bytes _blobDataProof)
@@ -303,6 +307,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
                 ]
               }
             )
+
           chunks
       end
 
@@ -379,7 +384,8 @@ defmodule Indexer.Fetcher.Scroll.Batch do
 
     {_, batches, bundles} =
       events
-      |> Enum.reduce({prev_final_batch_number, [], []}, fn event, {prev_final_batch_number_acc, batches_acc, bundles_acc} ->
+      |> Enum.reduce({prev_final_batch_number, [], []}, fn event,
+                                                           {prev_final_batch_number_acc, batches_acc, bundles_acc} ->
         batch_number = quantity_to_integer(event.second_topic)
 
         if event.first_topic == @commit_batch_event do
@@ -396,26 +402,32 @@ defmodule Indexer.Fetcher.Scroll.Batch do
             end
 
           new_batches_acc =
-            batches_acc ++ [%{
-              number: batch_number,
-              commit_transaction_hash: event.transaction_hash,
-              commit_block_number: commit_block_number,
-              commit_timestamp: Map.get(timestamps, commit_block_number),
-              l2_block_range: l2_block_range
-            }]
+            batches_acc ++
+              [
+                %{
+                  number: batch_number,
+                  commit_transaction_hash: event.transaction_hash,
+                  commit_block_number: commit_block_number,
+                  commit_timestamp: Map.get(timestamps, commit_block_number),
+                  l2_block_range: l2_block_range
+                }
+              ]
 
           {prev_final_batch_number_acc, new_batches_acc, bundles_acc}
         else
           finalize_block_number = quantity_to_integer(event.block_number)
 
           new_bundles_acc =
-            bundles_acc ++ [%{
-              start_batch_number: prev_final_batch_number_acc + 1,
-              final_batch_number: batch_number,
-              finalize_transaction_hash: event.transaction_hash,
-              finalize_block_number: finalize_block_number,
-              finalize_timestamp: Map.get(timestamps, finalize_block_number)
-            }]
+            bundles_acc ++
+              [
+                %{
+                  start_batch_number: prev_final_batch_number_acc + 1,
+                  final_batch_number: batch_number,
+                  finalize_transaction_hash: event.transaction_hash,
+                  finalize_block_number: finalize_block_number,
+                  finalize_timestamp: Map.get(timestamps, finalize_block_number)
+                }
+              ]
 
           {batch_number, batches_acc, new_bundles_acc}
         end
@@ -435,14 +447,15 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   # - nothing
   defp reorg_handle(reorg_block) do
     bundle_ids =
-      Repo.all(from(b in Batch,
-        select: b.bundle_id,
-        where: b.commit_block_number >= ^reorg_block,
-        group_by: b.bundle_id
-      ))
+      Repo.all(
+        from(b in Batch,
+          select: b.bundle_id,
+          where: b.commit_block_number >= ^reorg_block,
+          group_by: b.bundle_id
+        )
+      )
 
-    {deleted_batches_count, _} =
-      Repo.delete_all(from(b in Batch, where: b.bundle_id in ^bundle_ids))
+    {deleted_batches_count, _} = Repo.delete_all(from(b in Batch, where: b.bundle_id in ^bundle_ids))
 
     {deleted_bundles_count, _} =
       Repo.delete_all(from(bb in BatchBundle, where: bb.id in ^bundle_ids or bb.finalize_block_number >= ^reorg_block))
