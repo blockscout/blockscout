@@ -4,7 +4,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Hash, SmartContract}
+  alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.SmartContract.Proxy
 
   @doc """
