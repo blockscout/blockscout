@@ -143,6 +143,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/optimism-batch/:batch_number", V2.TransactionController, :optimism_batch)
       end
 
+      if Application.compile_env(:explorer, :chain_type) == :scroll do
+        get("/scroll-batch/:batch_number", V2.TransactionController, :scroll_batch)
+      end
+
       if Application.compile_env(:explorer, :chain_type) == :suave do
         get("/execution-node/:execution_node_hash_param", V2.TransactionController, :execution_node)
       end
@@ -182,6 +186,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
       if Application.compile_env(:explorer, :chain_type) == :optimism do
         get("/optimism-batch/:batch_number", V2.BlockController, :optimism_batch)
+      end
+
+      if Application.compile_env(:explorer, :chain_type) == :scroll do
+        get("/scroll-batch/:batch_number", V2.BlockController, :scroll_batch)
       end
     end
 

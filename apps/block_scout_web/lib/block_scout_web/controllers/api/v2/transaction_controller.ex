@@ -44,6 +44,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
+  alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
@@ -262,6 +263,48 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> Chain.join_associations(@transaction_necessity_by_association)
         |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
         |> Repo.replica().all()
+      end
+
+    {transactions, next_page} = split_list_by_page(transactions_plus_one)
+    next_page_params = next_page |> next_page_params(transactions, delete_parameters_from_next_page_params(params))
+
+    conn
+    |> put_status(200)
+    |> render(:transactions, %{
+      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+      next_page_params: next_page_params
+    })
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/transactions/scroll-batch/:batch_number` endpoint.
+    It renders the list of L2 transactions bound to the specified batch.
+  """
+  @spec scroll_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def scroll_batch(conn, %{"batch_number" => batch_number_string} = params) do
+    {batch_number, ""} = Integer.parse(batch_number_string)
+
+    transactions_plus_one =
+      case ScrollReader.batch(batch_number, api?: true) do
+        {:ok, batch} ->
+          paging_options = paging_options(params)[:paging_options]
+
+          query =
+            case paging_options do
+              %PagingOptions{key: {0, 0}, is_index_in_asc_order: false} ->
+                []
+
+              _ ->
+                Transaction.fetch_transactions(paging_options, batch.l2_block_range.from - 1, batch.l2_block_range.to)
+            end
+
+          query
+          |> Chain.join_associations(@transaction_necessity_by_association)
+          |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+          |> Repo.replica().all()
+
+        _ ->
+          []
       end
 
     {transactions, next_page} = split_list_by_page(transactions_plus_one)

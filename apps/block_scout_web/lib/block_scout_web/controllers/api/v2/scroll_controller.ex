@@ -14,7 +14,6 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     ]
 
   alias Explorer.Chain.Scroll.{Batch, Reader}
-  alias Explorer.Chain.Transaction
 
   @api_true [api?: true]
 
@@ -34,13 +33,9 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     if batch == :not_found do
       {:error, :not_found}
     else
-      tx_count = Transaction.tx_count_for_block_range(batch.l2_block_range.from..batch.l2_block_range.to)
-
-      batch_with_tx_count = Map.put(batch, :tx_count, tx_count)
-
       conn
       |> put_status(200)
-      |> render(:scroll_batch, %{batch: batch_with_tx_count})
+      |> render(:scroll_batch, %{batch: batch})
     end
   end
 
