@@ -8,16 +8,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   alias Explorer.Chain.SmartContract.Proxy
 
   @doc """
-  Get delegate address following EIP-7702
-  """
-  @spec get_implementation_smart_contract(Hash.Address.t(), Keyword.t()) :: SmartContract.t() | nil
-  def get_implementation_smart_contract(address_hash, options \\ []) do
-    address_hash
-    |> get_implementation_address_hash_string(options)
-    |> Proxy.implementation_to_smart_contract(options)
-  end
-
-  @doc """
   Get delegate address hash string following EIP-7702
   """
   @spec get_implementation_address_hash_string(Hash.Address.t(), Keyword.t()) :: String.t() | nil
