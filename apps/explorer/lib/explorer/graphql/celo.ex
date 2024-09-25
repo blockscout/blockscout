@@ -18,42 +18,6 @@ defmodule Explorer.GraphQL.Celo do
   }
 
   @doc """
-  Constructs a query to fetch token transfers with related transaction and block
-  data.
-  """
-  @spec token_tx_transfers_query() :: Ecto.Query.t()
-  def token_tx_transfers_query do
-    from(
-      tt in TokenTransfer,
-      where: not is_nil(tt.transaction_hash),
-      inner_join: tx in Transaction,
-      on: tx.hash == tt.transaction_hash,
-      inner_join: b in Block,
-      on: tx.block_hash == b.hash,
-      left_join: token in Token,
-      on: tx.gas_token_contract_address_hash == token.contract_address_hash,
-      select: %{
-        transaction_hash: tt.transaction_hash,
-        to_address_hash: tt.to_address_hash,
-        from_address_hash: tt.from_address_hash,
-        gas_used: tx.gas_used,
-        gas_price: tx.gas_price,
-        fee_currency: tx.gas_token_contract_address_hash,
-        fee_token: fragment("COALESCE(?, 'CELO')", token.symbol),
-        # gateway_fee: tx.gateway_fee,
-        # gateway_fee_recipient: tx.gas_fee_recipient_hash,
-        timestamp: b.timestamp,
-        input: tx.input,
-        nonce: tx.nonce,
-        block_number: tt.block_number
-      },
-      distinct: [desc: tt.block_number, desc: tt.transaction_hash],
-      # to get the ordering from distinct clause, something is needed here too
-      order_by: [asc: tx.nonce, desc: tt.from_address_hash, desc: tt.to_address_hash]
-    )
-  end
-
-  @doc """
   Constructs a paginated query for token transfers involving a specific address.
   """
   @spec token_tx_transfers_query_for_address(Hash.Address.t(), integer(), integer()) :: Ecto.Query.t()
