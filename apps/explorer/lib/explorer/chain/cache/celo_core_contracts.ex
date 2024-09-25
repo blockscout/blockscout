@@ -142,9 +142,6 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
 
         {:error, :event_name_not_found}
 
-      nil ->
-        {:error, :event_does_not_exist}
-
       {:contract_address, :error} ->
         Logger.error(fn ->
           [

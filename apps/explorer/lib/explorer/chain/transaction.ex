@@ -1971,7 +1971,7 @@ defmodule Explorer.Chain.Transaction do
     Only consensus blocks are taken into account.
   """
   @spec tx_count_for_block_range(Range.t()) :: non_neg_integer()
-  def tx_count_for_block_range(from..to) do
+  def tx_count_for_block_range(from..to//_) do
     Repo.replica().aggregate(
       from(
         t in Transaction,
