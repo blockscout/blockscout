@@ -442,6 +442,45 @@ defmodule Explorer.Chain.TokenTransfer do
     |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
   end
 
+  @doc """
+  Retrieves token transfers associated with a given address, optionally filtered
+  by direction and token types.
+
+  ## Parameters
+
+  - `address_hash` (`Hash.Address.t()`): The address hash for which to retrieve
+    token transfers.
+  - `direction` (`nil | :to | :from`): The direction of the transfers to filter.
+    - `:to` - transfers where `to_address` matches `address_hash`.
+    - `:from` - transfers where `from_address` matches `address_hash`.
+    - `nil` - includes both incoming and outgoing transfers.
+  - `token_types` (`[binary()]`): The token types to filter, e.g `["ERC20", "ERC721"]`.
+  - `paging_options` (`nil | Explorer.PagingOptions.t()`): Pagination options to
+    limit the result set.
+
+  ## Returns
+
+  An `Ecto.Query` for `TokenTransfer.t()`.
+
+  ## Examples
+
+  Fetch all incoming ERC20 token transfers for a specific address:
+
+  iex> query = token_transfers_by_address_hash(address_hash, :to, ["ERC20"], paging_options)
+  iex> Repo.all(query)
+
+  Fetch both incoming and outgoing token transfers for a specific address
+  without pagination, token type filtering, and direction filtering:
+
+  iex> query = token_transfers_by_address_hash(address_hash, nil, [], nil)
+  iex> Repo.all(query)
+  """
+  @spec token_transfers_by_address_hash(
+          Hash.Address.t(),
+          nil | :to | :from,
+          [binary()],
+          nil | Explorer.PagingOptions.t()
+        ) :: Ecto.Query.t()
   def token_transfers_by_address_hash(address_hash, direction, token_types, paging_options) do
     if direction == :to || direction == :from do
       only_consensus_transfers_query()
