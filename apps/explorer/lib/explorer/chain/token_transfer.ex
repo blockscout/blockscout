@@ -466,14 +466,14 @@ defmodule Explorer.Chain.TokenTransfer do
 
   Fetch all incoming ERC20 token transfers for a specific address:
 
-  iex> query = token_transfers_by_address_hash(address_hash, :to, ["ERC20"], paging_options)
-  iex> Repo.all(query)
+  # iex> query = token_transfers_by_address_hash(address_hash, :to, ["ERC20"], paging_options)
+  # iex> Repo.all(query)
 
   Fetch both incoming and outgoing token transfers for a specific address
   without pagination, token type filtering, and direction filtering:
 
-  iex> query = token_transfers_by_address_hash(address_hash, nil, [], nil)
-  iex> Repo.all(query)
+  # iex> query = token_transfers_by_address_hash(address_hash, nil, [], nil)
+  # iex> Repo.all(query)
   """
   @spec token_transfers_by_address_hash(
           Hash.Address.t(),
