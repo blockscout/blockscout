@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db
+  alias Explorer.Chain.Hash
 
   require Logger
 
@@ -186,7 +187,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       |> Enum.reduce(%{}, fn event, messages_acc ->
         log_debug("L2 to L1 message #{event.transaction_hash} found")
 
-        {message_id, caller, blocknum, timestamp} = l2_to_l1_event_parse(event)
+        {message_id, caller, _, blocknum, _, timestamp, _, _} = l2_to_l1_event_parse(event)
 
         message =
           %{
@@ -194,7 +195,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
             message_id: message_id,
             originator_address: caller,
             originating_transaction_hash: event.transaction_hash,
-            origination_timestamp: timestamp,
+            origination_timestamp: Timex.from_unix(timestamp),
             originating_transaction_block_number: blocknum,
             status: status_l2_to_l1_message(blocknum, highest_committed_block, highest_confirmed_block)
           }
@@ -243,19 +244,46 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   end
 
   # Parses an L2-to-L1 event, extracting relevant information from the event's data.
-  defp l2_to_l1_event_parse(event) do
+  @spec l2_to_l1_event_parse(min_log) :: {
+    non_neg_integer(), # position,
+    Explorer.Chain.Hash.Address.t(), # caller,
+    Explorer.Chain.Hash.Address.t(), # destination,
+    non_neg_integer(), # arb_block_num,
+    non_neg_integer(), # eth_block_num,
+    non_neg_integer(), # timestamp,
+    non_neg_integer(), # callvalue,
+    String.t() # data
+  }
+  def l2_to_l1_event_parse(event) do
     [
       caller,
       arb_block_num,
-      _eth_block_num,
+      eth_block_num,
       timestamp,
-      _callvalue,
-      _data
+      callvalue,
+      data
     ] = decode_data(event.data, @l2_to_l1_event_unindexed_params)
 
-    position = quantity_to_integer(event.fourth_topic)
+    position = case quantity_to_integer(event.fourth_topic) do
+      nil -> Hash.to_integer(event.fourth_topic)
+      number -> number
+    end
 
-    {position, caller, arb_block_num, Timex.from_unix(timestamp)}
+    caller = case Hash.Address.cast(caller) do
+      {:ok, address} -> address
+      _ -> nil
+    end
+
+    data = data
+      |> Base.encode16(case: :lower)
+      |> (&("0x" <> &1)).()
+
+    destination = case Hash.Address.cast(Hash.to_integer(event.second_topic)) do
+      {:ok, address} -> address
+      _ -> nil
+    end
+
+    {position, caller, destination, arb_block_num, eth_block_num, timestamp, callvalue, data}
   end
 
   # Determines the status of an L2-to-L1 message based on its block number and the highest

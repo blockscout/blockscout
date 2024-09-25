@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Arbitrum.ClaimMessage do
+defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias Explorer.Chain
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Arbitrum.Reader
@@ -7,8 +7,8 @@ defmodule Explorer.Chain.Arbitrum.ClaimMessage do
   alias EthereumJSONRPC
   alias ABI.TypeDecoder
   alias EthereumJSONRPC.Encoder
-
-  Explorer.Chain.Arbitrum.Withdraw
+  alias Indexer.Fetcher.Arbitrum.Messaging, as: ArbitrumMessaging
+  alias Explorer.Arbitrum.Withdraw
 
   require Logger
 
@@ -83,10 +83,10 @@ defmodule Explorer.Chain.Arbitrum.ClaimMessage do
     - `tx_hash`: The transaction hash which will scanned for L2ToL1Tx events.
 
     ## Returns
-    - Array of `Explorer.Chain.Arbitrum.Withdraw.t()` objects each of them represent
+    - Array of `Explorer.Arbitrum.Withdraw.t()` objects each of them represent
       a single message originated by the given transaction.
   """
-  @spec transaction_to_withdrawals(Hash.Full.t()) :: [Explorer.Chain.Arbitrum.Withdraw.t()]
+  @spec transaction_to_withdrawals(Hash.Full.t()) :: [Explorer.Arbitrum.Withdraw.t()]
   def transaction_to_withdrawals(tx_hash) do
     # getting needed L1 properties: RPC URL and Main Rollup contract address
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
@@ -98,24 +98,8 @@ defmodule Explorer.Chain.Arbitrum.ClaimMessage do
     Chain.transaction_to_logs_by_topic0(tx_hash, @l2_to_l1_event)
       |> Enum.map(fn log ->
         # getting needed fields from the L2ToL1Tx event
-        [caller, arb_block_num, eth_block_num, l2_timestamp, call_value, data] =
-          TypeDecoder.decode_raw(log.data.bytes, [:address, {:uint, 256}, {:uint, 256}, {:uint, 256}, {:uint, 256}, :bytes])
-
-          position = Hash.to_integer(log.fourth_topic)
-
-          destination = case Hash.Address.cast(Hash.to_integer(log.second_topic)) do
-            {:ok, address} -> address
-            _ -> nil
-          end
-
-          caller = case Hash.Address.cast(caller) do
-            {:ok, address} -> address
-            _ -> nil
-          end
-
-          data = data
-            |> Base.encode16(case: :lower)
-            |> (&("0x" <> &1)).()
+        {position, caller, destination, arb_block_num, eth_block_num, l2_timestamp, call_value, data} =
+          ArbitrumMessaging.l2_to_l1_event_parse(log)
 
         status = case Rpc.is_withdrawal_spent(outbox_contract, position, json_l1_rpc_named_arguments) do
           true -> :executed
@@ -127,12 +111,9 @@ defmodule Explorer.Chain.Arbitrum.ClaimMessage do
             end
         end
 
-
-
-        %Explorer.Chain.Arbitrum.Withdraw{
+        %Explorer.Arbitrum.Withdraw{
           message_id: Hash.to_integer(log.fourth_topic),
           status: status,
-          tx_hash: tx_hash,
           caller: caller,
           destination: destination,
           arb_block_num: arb_block_num,
