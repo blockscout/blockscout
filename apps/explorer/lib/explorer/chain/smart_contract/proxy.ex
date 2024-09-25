@@ -155,16 +155,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   def get_implementation_abi_from_proxy(_, _), do: []
 
   @doc """
-  Checks if the ABI of the smart-contract follows GnosisSafe proxy pattern
-  """
-  @spec gnosis_safe_contract?([map()]) :: boolean()
-  def gnosis_safe_contract?(abi) when not is_nil(abi) do
-    if get_master_copy_pattern(abi), do: true, else: false
-  end
-
-  def gnosis_safe_contract?(abi) when is_nil(abi), do: false
-
-  @doc """
   Checks if the input of the smart-contract follows master-copy (or Safe) proxy pattern before
   fetching its implementation from 0x0 storage pointer
   """
