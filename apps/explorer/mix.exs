@@ -119,7 +119,7 @@ defmodule Explorer.Mixfile do
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
       {:hammer_backend_redis, "~> 6.1"},
-      {:logger_json, "~> 5.1"},
+      {:logger_json, "~> 6.2"},
       {:typed_ecto_schema, "~> 0.4.1", runtime: false},
       {:ueberauth, "~> 0.7"},
       {:recon, "~> 2.5"},
