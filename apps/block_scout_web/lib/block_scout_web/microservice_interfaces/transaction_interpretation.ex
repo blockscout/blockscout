@@ -113,15 +113,19 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         created_contract_address: [:scam_badge, :names, :token, :smart_contract]
       ])
 
-    token_transfers = fetch_token_transfers(transaction) |> Enum.reverse()
-    internal_transactions = fetch_internal_transactions(transaction) |> Enum.reverse()
-    logs = fetch_logs(transaction) |> Enum.reverse()
+    token_transfers = transaction |> fetch_token_transfers() |> Enum.reverse()
+    internal_transactions = transaction |> fetch_internal_transactions() |> Enum.reverse()
+    logs = transaction |> fetch_logs() |> Enum.reverse()
 
-    [transaction | other_elements] =
+    [transaction_with_meta | other_elements] =
       ([transaction | token_transfers] ++ internal_transactions ++ logs)
       |> maybe_preload_metadata()
 
-    %{logs: logs, token_transfers: token_transfers, internal_transactions: internal_transactions} =
+    %{
+      logs: logs_with_meta,
+      token_transfers: token_transfers_with_meta,
+      internal_transactions: internal_transactions_with_meta
+    } =
       Enum.reduce(other_elements, %{logs: [], token_transfers: [], internal_transactions: []}, fn element, acc ->
         case element do
           %InternalTransaction{} ->
@@ -142,26 +146,27 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     %{
       data: %{
-        to: Helper.address_with_info(nil, transaction.to_address, transaction.to_address_hash, true),
+        to:
+          Helper.address_with_info(nil, transaction_with_meta.to_address, transaction_with_meta.to_address_hash, true),
         from:
           Helper.address_with_info(
             nil,
-            transaction.from_address,
-            transaction.from_address_hash,
+            transaction_with_meta.from_address,
+            transaction_with_meta.from_address_hash,
             true
           ),
-        hash: transaction.hash,
-        type: transaction.type,
-        value: transaction.value,
-        method: Transaction.method_name(transaction, Transaction.format_decoded_input(decoded_input)),
-        status: transaction.status,
-        tx_types: TransactionView.tx_types(transaction),
-        raw_input: transaction.input,
+        hash: transaction_with_meta.hash,
+        type: transaction_with_meta.type,
+        value: transaction_with_meta.value,
+        method: Transaction.method_name(transaction_with_meta, Transaction.format_decoded_input(decoded_input)),
+        status: transaction_with_meta.status,
+        tx_types: TransactionView.tx_types(transaction_with_meta),
+        raw_input: transaction_with_meta.input,
         decoded_input: decoded_input_data,
-        token_transfers: prepare_token_transfers(token_transfers, decoded_input),
-        internal_transactions: prepare_internal_transactions(internal_transactions, transaction)
+        token_transfers: prepare_token_transfers(token_transfers_with_meta, decoded_input),
+        internal_transactions: prepare_internal_transactions(internal_transactions_with_meta, transaction_with_meta)
       },
-      logs_data: %{items: prepare_logs(logs, transaction)}
+      logs_data: %{items: prepare_logs(logs_with_meta, transaction_with_meta)}
     }
   end
 
