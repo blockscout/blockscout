@@ -46,10 +46,24 @@ ADD config ./config
 ADD rel ./rel
 ADD *.exs ./
 
-# Run backend compilation
-RUN mix compile
+RUN apk add --update nodejs npm
+
+# Run backend compilation and install latest npm
+RUN mix compile && npm install npm@latest
+
+# Add blockscout npm deps
+RUN cd apps/block_scout_web/assets/ && \
+    npm install && \
+    npm run deploy && \
+    cd /app/apps/explorer/ && \
+    npm install && \
+    apk update && \
+    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+
 
 RUN apk add --update git make 
+
+RUN mix phx.digest
 
 RUN mkdir -p /opt/release \
   && mix release blockscout \
@@ -80,6 +94,7 @@ RUN apk --no-cache --update add jq curl && \
 WORKDIR /app
 
 COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /opt/release/blockscout .
+COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/apps/explorer/node_modules ./node_modules
 COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/config/config_helper.exs ./config/config_helper.exs
 COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/config/config_helper.exs /app/releases/${RELEASE_VERSION}/config_helper.exs
 COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/config/assets/precompiles-arbitrum.json ./config/assets/precompiles-arbitrum.json
