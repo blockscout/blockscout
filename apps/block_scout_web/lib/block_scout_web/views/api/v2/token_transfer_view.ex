@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
       "block_number" => token_transfer.block_number,
       "log_index" => token_transfer.log_index,
       "block_timestamp" => token_transfer.transaction.block_timestamp,
-      "amounts_or_token_ids" => token_transfer.amounts || [token_transfer.amount || 1],
+      "amounts_or_token_ids" => token_transfer.token_ids || token_transfer.amounts || [token_transfer.amount || 1],
       "from" => Helper.address_with_info(nil, token_transfer.from_address, token_transfer.from_address_hash, false),
       "to" => Helper.address_with_info(nil, token_transfer.to_address, token_transfer.to_address_hash, false),
       "token" =>

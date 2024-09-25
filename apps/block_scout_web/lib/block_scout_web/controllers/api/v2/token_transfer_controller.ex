@@ -1,6 +1,5 @@
 defmodule BlockScoutWeb.API.V2.TokenTransferController do
   use BlockScoutWeb, :controller
-  alias BlockScoutWeb.API.V2.TokenTransferView
   alias Explorer.{Helper, PagingOptions}
   alias Explorer.Chain.{TokenTransfer, Transaction}
 
@@ -17,6 +16,8 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
       token_transfers_types_options: 1
     ]
 
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -60,9 +61,8 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
 
     conn
     |> put_status(200)
-    |> put_view(TokenTransferView)
     |> render(:token_transfers, %{
-      token_transfers: token_transfers,
+      token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
       decoded_transactions_map: decoded_transactions_map,
       next_page_params: next_page_params
     })
