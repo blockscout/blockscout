@@ -83,7 +83,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
         %{
           "id" => withdraw.message_id,
           "status" => withdraw.status,
-          "tx_hash" => withdraw.tx_hash,
           "caller" => withdraw.caller,
           "destination" => withdraw.destination,
           "arb_block_num" => withdraw.arb_block_num,

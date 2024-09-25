@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   alias Explorer.Chain.Hash
   alias EthereumJSONRPC
 
-  alias Explorer.Chain.Arbitrum.ClaimMessage
+  alias Explorer.Arbitrum.ClaimRollupMessage
 
   require Logger
 
@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   def claim_message(conn, %{"position" => msg_id} = _params) do
     msg_id = String.to_integer(msg_id)
 
-    case ClaimMessage.claim(msg_id) do
+    case ClaimRollupMessage.claim(msg_id) do
       {:ok, [contract_address: outbox_contract, calldata: calldata]} ->
         conn
           |> put_status(200)
@@ -112,7 +112,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
     Logger.warning("hash = #{inspect(hash, pretty: true)}")
 
-    withdrawals = ClaimMessage.transaction_to_withdrawals(hash)
+    withdrawals = ClaimRollupMessage.transaction_to_withdrawals(hash)
 
     conn
     |> put_status(200)
