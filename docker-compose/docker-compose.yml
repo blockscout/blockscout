@@ -46,6 +46,18 @@ services:
         ETHEREUM_JSONRPC_WS_URL: ws://host.docker.internal:8545/
         CHAIN_ID: '1337'
 
+  nft_media_handler:
+    depends_on:
+      - backend
+    extends:
+      file: ./services/nft_media_handler.yml
+      service: nft_media_handler
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+      args:
+        RELEASE_VERSION: 6.8.0
+
   visualizer:
     extends:
       file: ./services/visualizer.yml

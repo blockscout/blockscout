@@ -112,8 +112,34 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "external_app_url" => NFTHelper.external_url(instance),
       "animation_url" => instance.metadata && NFTHelper.retrieve_image(instance.metadata["animation_url"]),
       "image_url" => instance.metadata && NFTHelper.get_media_src(instance.metadata, false),
-      "is_unique" => instance.is_unique
+      "is_unique" => instance.is_unique,
+      "thumbnails" => instance.media_urls,
+      "media_type" => instance.media_type,
+      "media_url" => media_url(instance.metadata)
     }
+  end
+
+  # Function to fetch media url from metadata (separate function to guarantee the same algorithm with one used during upload to CDN)
+  defp media_url(metadata) do
+    result =
+      cond do
+        metadata["image_url"] ->
+          metadata["image_url"]
+
+        metadata["image"] ->
+          metadata["image"]
+
+        is_map(metadata["properties"]) && is_binary(metadata["properties"]["image"]) ->
+          metadata["properties"]["image"]
+
+        metadata["animation_url"] ->
+          metadata["animation_url"]
+
+        true ->
+          nil
+      end
+
+    if result && String.trim(result) == "", do: nil, else: result
   end
 
   defp token_instance_owner(false, _instance), do: nil

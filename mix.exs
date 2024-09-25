@@ -11,7 +11,7 @@ defmodule BlockScout.Mixfile do
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
-      elixir: "~> 1.13",
+      elixir: "~> 1.16.3",
       preferred_cli_env: [
         credo: :test,
         dialyzer: :test
@@ -23,11 +23,21 @@ defmodule BlockScout.Mixfile do
             block_scout_web: :permanent,
             ethereum_jsonrpc: :permanent,
             explorer: :permanent,
-            indexer: :permanent
+            indexer: :permanent,
+            nft_media_handler_dispatcher: :permanent,
+            nft_media_handler_dispatcher_interface: :permanent,
+            nft_media_handler: :permanent
           ],
           steps: [:assemble, &copy_prod_runtime_config/1],
           validate_compile_env: false
         ]
+        # ,
+        # nft_media_handler: [
+        #   applications: [
+        #     nft_media_handler_dispatcher_interface: :permanent,
+        #     nft_media_handler: :permanent
+        #   ]
+        # ]
       ]
     ]
   end

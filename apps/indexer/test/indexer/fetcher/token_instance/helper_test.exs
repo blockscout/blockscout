@@ -524,8 +524,6 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
     test "Don't fail on high retries count" do
       config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
 
-      coef = config[:exp_timeout_coeff]
-      base = config[:exp_timeout_base]
       max_refetch_interval = config[:max_refetch_interval]
 
       erc_721_token = insert(:token, type: "ERC-721")
