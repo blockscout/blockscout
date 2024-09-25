@@ -15,14 +15,14 @@ defmodule BlockScoutWeb.GraphQL.Celo.Resolvers.TokenTransferTx do
       end
 
     address_hash
-    |> GraphQL.token_txtransfers_query_for_address(offset, limit)
+    |> GraphQL.token_tx_transfers_query_for_address(offset, limit)
     |> Connection.from_query(&Repo.all/1, connection_args, options(args))
   end
 
   def get_by(_, args, _) do
     connection_args = Map.take(args, [:after, :before, :first, :last])
 
-    GraphQL.token_txtransfers_query()
+    GraphQL.token_tx_transfers_query()
     |> Connection.from_query(&Repo.all/1, connection_args, options(args))
   end
 

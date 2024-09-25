@@ -21,8 +21,8 @@ defmodule Explorer.GraphQL.Celo do
   Constructs a query to fetch token transfers with related transaction and block
   data.
   """
-  @spec token_txtransfers_query() :: Ecto.Query.t()
-  def token_txtransfers_query do
+  @spec token_tx_transfers_query() :: Ecto.Query.t()
+  def token_tx_transfers_query do
     from(
       tt in TokenTransfer,
       where: not is_nil(tt.transaction_hash),
@@ -56,8 +56,8 @@ defmodule Explorer.GraphQL.Celo do
   @doc """
   Constructs a paginated query for token transfers involving a specific address.
   """
-  @spec token_txtransfers_query_for_address(Hash.Address.t(), integer(), integer()) :: Ecto.Query.t()
-  def token_txtransfers_query_for_address(address_hash, offset, limit) do
+  @spec token_tx_transfers_query_for_address(Hash.Address.t(), integer(), integer()) :: Ecto.Query.t()
+  def token_tx_transfers_query_for_address(address_hash, offset, limit) do
     page = floor(offset / limit) + 1
     growing_limit = limit * (page + 1)
 
