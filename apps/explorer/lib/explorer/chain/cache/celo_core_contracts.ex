@@ -223,6 +223,23 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     end
   end
 
+  @doc """
+  Retrieves the block number of the first address update for a given core
+  contract.
+
+  ## Parameters
+
+  - `contract_atom` (`atom()`): The atom representing the core contract.
+
+  ## Returns
+
+  - `{:ok, Block.block_number()}`: The block number of the first update.
+  - `{:error, :contract_atom_not_found}`: If the contract atom is not
+    recognized.
+  """
+  @spec get_first_update_block_number(atom()) ::
+          {:ok, Block.block_number() | nil}
+          | {:error, :contract_atom_not_found}
   def get_first_update_block_number(contract_atom) do
     with {:ok, address_updates} <- get_address_updates(contract_atom),
          %{"updated_at_block_number" => updated_at_block_number} <-
