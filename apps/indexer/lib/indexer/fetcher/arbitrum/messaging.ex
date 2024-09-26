@@ -252,7 +252,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     non_neg_integer(), # eth_block_num,
     non_neg_integer(), # timestamp,
     non_neg_integer(), # callvalue,
-    String.t() # data
+    binary() # data
   }
   def l2_to_l1_event_parse(event) do
     [
@@ -273,10 +273,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       {:ok, address} -> address
       _ -> nil
     end
-
-    data = data
-      |> Base.encode16(case: :lower)
-      |> (&("0x" <> &1)).()
 
     destination = case Hash.Address.cast(Hash.to_integer(event.second_topic)) do
       {:ok, address} -> address

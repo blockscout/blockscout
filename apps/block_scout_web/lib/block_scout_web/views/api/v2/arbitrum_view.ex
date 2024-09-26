@@ -90,7 +90,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           "eth_block_num" => withdraw.eth_block_num,
           "l2_timestamp" => withdraw.l2_timestamp,
           "callvalue" => withdraw.callvalue,
-          "data" => withdraw.data
+          "data" => withdraw.data,
+          "token" => withdraw.token
         }
       end)
 

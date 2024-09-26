@@ -38,9 +38,11 @@ defmodule Explorer.Arbitrum.Withdraw do
     l2_timestamp: l2_timestamp,
     callvalue: callvalue,
     data: data,
-    token_address: token_address,
-    token_destination: token_destination,
-    token_amount: token_amount
+    token: %{
+      address: token_address,
+      destination: token_destination,
+      amount: token_amount
+    } | nil
   }
 
   @typep message_id :: non_neg_integer()
@@ -52,9 +54,9 @@ defmodule Explorer.Arbitrum.Withdraw do
   @typep l2_timestamp :: non_neg_integer()
   @typep callvalue :: non_neg_integer()
   @typep data :: binary()
-  @typep token_address :: Hash.Address.t() | nil
-  @typep token_destination :: Hash.Address.t() | nil
-  @typep token_amount :: non_neg_integer() | nil
+  @typep token_address :: Hash.Address.t()
+  @typep token_destination :: Hash.Address.t()
+  @typep token_amount :: non_neg_integer()
 
   defstruct [
     :message_id,
@@ -66,9 +68,7 @@ defmodule Explorer.Arbitrum.Withdraw do
     :l2_timestamp,
     :callvalue,
     :data,
-    token_address: nil,
-    token_destination: nil,
-    token_amount: nil
+    token: nil,
   ]
 
 end

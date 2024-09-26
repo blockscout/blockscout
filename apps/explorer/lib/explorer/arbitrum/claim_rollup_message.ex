@@ -1,6 +1,7 @@
 defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias Explorer.Chain
   alias Explorer.Chain.Hash
+  alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Arbitrum.Reader
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
@@ -8,7 +9,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias ABI.TypeDecoder
   alias EthereumJSONRPC.Encoder
   alias Indexer.Fetcher.Arbitrum.Messaging, as: ArbitrumMessaging
-  alias Explorer.Arbitrum.Withdraw
 
   require Logger
 
@@ -105,11 +105,17 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           true -> :executed
           false ->
             case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
-              size when size > position -> :confirmed
-              size when size <= position -> :unconfirmed
               nil -> :unknown
+              size when size > position -> :confirmed
+              _ -> :unconfirmed
             end
         end
+
+        token = decode_withdraw_token_data(data)
+        Logger.warning("Decoded: #{inspect(token, pretty: true)}")
+
+        data = data
+          |> Base.encode16(case: :lower)
 
         %Explorer.Arbitrum.Withdraw{
           message_id: Hash.to_integer(log.fourth_topic),
@@ -120,10 +126,37 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           eth_block_num: eth_block_num,
           l2_timestamp: l2_timestamp,
           callvalue: call_value,
-          data: data
+          data: "0x" <> data,
+          token: token
         }
       end
     )
+  end
+
+
+  def decode_withdraw_token_data(<<0x2e567b36::32, rest_data::binary>>) do
+    [token, _, to, amount, _] = ABI.decode(@finalize_inbound_transfer_selector, rest_data)
+
+    token = case Address.cast(token) do
+      {:ok, address} -> address
+      _ -> nil
+    end
+
+    to = case Address.cast(to) do
+      {:ok, address} -> address
+      _ -> nil
+    end
+
+    %{
+      address: token,
+      destination: to,
+      amount: amount
+    }
+
+  end
+
+  def decode_withdraw_token_data(_binary) do
+    nil
   end
 
   @doc """
