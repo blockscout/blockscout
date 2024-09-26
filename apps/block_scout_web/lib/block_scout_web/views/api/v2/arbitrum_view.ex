@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.V2.ArbitrumView do
   use BlockScoutWeb, :view
 
+  require Logger
   alias BlockScoutWeb.API.V2.ApiView
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
@@ -600,6 +601,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   # Determines the associated L1 transaction and its status for the given message direction.
+  # TODO: it's need to take into account the tx on L2 may initiate consist several withdrawals.
+  #       The current architecture doesn't support that.
   @spec l1_tx_and_status_for_message(
           %{
             :__struct__ => Transaction,
@@ -638,7 +641,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           end
       end
 
-    %{"associated_l1_transaction" => l1_tx, "message_status" => status}
+    %{
+      "message_id" => APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_from_l2, :message_id),
+      "associated_l1_transaction" => l1_tx,
+      "message_status" => status
+    }
   end
 
   # Extends the output JSON with information from Arbitrum-specific fields of the transaction.
