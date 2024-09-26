@@ -17,3 +17,5 @@ config :explorer, Explorer.ExchangeRates, store: :none
 config :explorer, Explorer.ExchangeRates.Source,
   source: Explorer.ExchangeRates.Source.NoOpSource,
   price_source: Explorer.ExchangeRates.Source.NoOpPriceSource
+
+config :tesla, adapter: Tesla.Mock

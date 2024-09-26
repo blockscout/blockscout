@@ -1490,11 +1490,9 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
-
-      Explorer.Mox.HTTPoison
-      |> expect(:get, fn ^url, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
+      Tesla.Mock.mock(fn
+        %{method: :get, url: url} ->
+          %Tesla.Env{status: 200, body: Jason.encode!(metadata)}
       end)
 
       topic = "token_instances:#{token_contract_address_hash_string}"

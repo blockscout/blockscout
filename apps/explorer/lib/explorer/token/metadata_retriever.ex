@@ -2,6 +2,10 @@ defmodule Explorer.Token.MetadataRetriever do
   @moduledoc """
   Reads Token's fields using Smart Contract functions from the blockchain.
   """
+  use Tesla
+
+  plug(Tesla.Middleware.FollowRedirects, max_redirects: 3)
+  plug(Tesla.Middleware.Timeout, timeout: 30_000)
 
   require Logger
 
@@ -9,7 +13,6 @@ defmodule Explorer.Token.MetadataRetriever do
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Reader
-  alias HTTPoison.{Error, Response}
 
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
@@ -672,17 +675,13 @@ defmodule Explorer.Token.MetadataRetriever do
   defp fetch_metadata_from_uri_request(uri, hex_token_id, ipfs?) do
     headers = if ipfs?, do: ipfs_headers(), else: []
 
-    case Application.get_env(:explorer, :http_adapter).get(uri, headers,
-           recv_timeout: 30_000,
-           follow_redirect: true,
-           hackney: [pool: :token_instance_fetcher]
-         ) do
-      {:ok, %Response{body: body, status_code: 200, headers: response_headers}} ->
+    case Tesla.get(uri, headers: headers) do
+      {:ok, %Tesla.Env{body: body, status: 200, headers: response_headers}} ->
         content_type = get_content_type_from_headers(response_headers)
 
         check_content_type(content_type, uri, hex_token_id, body)
 
-      {:ok, %Response{body: body, status_code: code}} ->
+      {:ok, %Tesla.Env{body: body, status: code}} ->
         Logger.debug(
           ["Request to token uri: #{inspect(uri)} failed with code #{code}. Body:", inspect(body)],
           fetcher: :token_instances
@@ -690,7 +689,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
         {:error_code, code}
 
-      {:error, %Error{reason: reason}} ->
+      {:error, reason} ->
         Logger.warning(
           ["Request to token uri failed: #{inspect(uri)}.", inspect(reason)],
           fetcher: :token_instances
