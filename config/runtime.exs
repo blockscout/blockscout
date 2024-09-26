@@ -1065,7 +1065,7 @@ config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
   disabled?: not celo_epoch_fetchers_enabled?
 
 config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
-  base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3"),
+  base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3/mainnet"),
   api_token: System.get_env("BERYX_API_TOKEN")
 
 filecoin_native_address_fetcher_enabled? =
