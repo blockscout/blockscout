@@ -161,7 +161,33 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     end
   end
 
-  defp get_address_updates(contract_atom) do
+  @doc """
+  Retrieves all address updates for a specified core contract.
+
+  ## Parameters
+
+  - `contract_atom` (`atom()`): The atom representing the core contract (e.g.,
+    `:accounts`, `:validators`).
+
+  ## Returns
+
+  - `{:ok, [map()]}`: On success, returns a list of maps containing address
+    updates for the contract.
+  - `{:error, reason}`: Returns an error tuple with one of the following
+    reasons: `:contract_atom_not_found`, `:contract_name_not_found`
+
+  ## Examples
+
+      iex> Explorer.Chain.Cache.CeloCoreContracts.get_address_updates(:validators)
+      {:ok, [%{"address" => "0x123...", "updated_at_block_number" => 1000000}, ...]}
+
+      iex> Explorer.Chain.Cache.CeloCoreContracts.get_address_updates(:unknown_contract)
+      {:error, :contract_atom_not_found}
+
+  """
+  @spec get_address_updates(atom()) ::
+          {:ok, [map()]} | {:error, :contract_atom_not_found | :contract_name_not_found}
+  def get_address_updates(contract_atom) do
     with {:atom, {:ok, contract_name}} <-
            {:atom, Map.fetch(@atom_to_contract_name, contract_atom)},
          {:addresses, {:ok, contract_name_to_addresses}} <-

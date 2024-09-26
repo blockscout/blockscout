@@ -221,7 +221,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     }
   end
 
-  defp prepare_election_reward(%ElectionReward{} = reward) do
+  defp prepare_election_reward(%ElectionReward{token: %Token{}} = reward) do
     %{
       amount: reward.amount,
       block_number: reward.block.number,
@@ -237,7 +237,12 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           reward.associated_account_address,
           reward.associated_account_address_hash
         ),
-      type: reward.type
+      type: reward.type,
+      token:
+        TokenView.render("token.json", %{
+          token: reward.token,
+          contract_address_hash: reward.token.contract_address_hash
+        })
     }
   end
 
