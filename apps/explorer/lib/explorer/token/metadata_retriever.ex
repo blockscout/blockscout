@@ -14,6 +14,7 @@ defmodule Explorer.Token.MetadataRetriever do
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @invalid_base64_data "invalid data:application/json;base64"
+  @default_headers [{"User-Agent", "blockscout"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -475,12 +476,12 @@ defmodule Explorer.Token.MetadataRetriever do
       gateway_url_param_value = ipfs_params[:gateway_url_param_value]
 
       if gateway_url_param_key && gateway_url_param_value do
-        [{gateway_url_param_key, gateway_url_param_value}]
+        [{gateway_url_param_key, gateway_url_param_value} | @default_headers]
       else
-        []
+        @default_headers
       end
     else
-      []
+      @default_headers
     end
   end
 
@@ -670,7 +671,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   defp fetch_metadata_from_uri_request(uri, hex_token_id, ipfs?) do
-    headers = if ipfs?, do: ipfs_headers(), else: []
+    headers = if ipfs?, do: ipfs_headers(), else: @default_headers
 
     case Application.get_env(:explorer, :http_adapter).get(uri, headers,
            recv_timeout: 30_000,
