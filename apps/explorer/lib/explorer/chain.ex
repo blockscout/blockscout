@@ -2472,8 +2472,6 @@ defmodule Explorer.Chain do
   @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
           {:ok, Block.block_number()} | {:error, :not_found}
   def timestamp_to_block_number(given_timestamp, closest, from_api) do
-    {:ok, t} = Timex.format(given_timestamp, "%Y-%m-%d %H:%M:%S", :strftime)
-
     consensus_blocks_query =
       from(
         block in Block,
@@ -2483,7 +2481,7 @@ defmodule Explorer.Chain do
     gt_timestamp_query =
       from(
         block in consensus_blocks_query,
-        where: fragment("? >= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS')", block.timestamp, ^t),
+        where: block.timestamp >= ^given_timestamp,
         order_by: [asc: block.timestamp],
         limit: 1,
         select: block
@@ -2492,7 +2490,7 @@ defmodule Explorer.Chain do
     lt_timestamp_query =
       from(
         block in consensus_blocks_query,
-        where: fragment("? <= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS')", block.timestamp, ^t),
+        where: block.timestamp <= ^given_timestamp,
         order_by: [desc: block.timestamp],
         limit: 1,
         select: block
@@ -2504,8 +2502,7 @@ defmodule Explorer.Chain do
       from(
         block in subquery(union_query),
         select: block,
-        order_by:
-          fragment("abs(extract(epoch from (? - TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS'))))", block.timestamp, ^t),
+        order_by: fragment("abs(extract(epoch from (? - ?)))", block.timestamp, ^given_timestamp),
         limit: 1
       )
 
