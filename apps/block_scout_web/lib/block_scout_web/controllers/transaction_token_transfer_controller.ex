@@ -120,9 +120,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
           )
       )
     else
-      :not_found ->
-        TransactionController.set_not_found_view(conn, transaction_hash_string)
-
       :error ->
         unprocessable_entity(conn)
 

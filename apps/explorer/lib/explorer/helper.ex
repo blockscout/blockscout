@@ -7,7 +7,7 @@ defmodule Explorer.Helper do
   alias Explorer.Chain
   alias Explorer.Chain.Data
 
-  import Ecto.Query, only: [where: 3]
+  import Ecto.Query, only: [join: 5, where: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   @max_safe_integer round(:math.pow(2, 63)) - 1
@@ -210,6 +210,42 @@ defmodule Explorer.Helper do
       a < b -> :lt
       a > b -> :gt
       true -> :eq
+    end
+  end
+
+  @doc """
+  Conditionally hides scam addresses in the given query.
+
+  ## Parameters
+
+    - query: The Ecto query to be modified.
+    - address_hash_key: The key used to identify address hash field in the query to join with base query table on.
+
+  ## Returns
+
+  The modified query with scam addresses hidden, if applicable.
+  """
+  @spec maybe_hide_scam_addresses(nil | Ecto.Query.t(), atom()) :: Ecto.Query.t()
+  def maybe_hide_scam_addresses(nil, _address_hash_key), do: nil
+
+  def maybe_hide_scam_addresses(query, address_hash_key) do
+    if Application.get_env(:block_scout_web, :hide_scam_addresses) do
+      query
+      |> join(
+        :inner,
+        [q],
+        q2 in fragment("""
+        (
+          SELECT hash
+          FROM addresses a
+          WHERE NOT EXISTS
+            (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=a.hash)
+        )
+        """),
+        on: field(q, ^address_hash_key) == q2.hash
+      )
+    else
+      query
     end
   end
 end

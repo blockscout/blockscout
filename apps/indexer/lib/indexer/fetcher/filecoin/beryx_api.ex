@@ -27,7 +27,7 @@ defmodule Indexer.Fetcher.Filecoin.BeryxAPI do
     base_url = config |> Keyword.get(:base_url) |> String.trim_trailing("/")
     api_token = config[:api_token]
 
-    url = "#{base_url}/mainnet/account/info/#{eth_address_hash}"
+    url = "#{base_url}/account/info/#{eth_address_hash}"
 
     headers = [
       {"Authorization", "Bearer #{api_token}"},

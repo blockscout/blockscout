@@ -72,7 +72,7 @@ defmodule Explorer.Chain.AddressTest do
 
     test "with top addresses in order" do
       address_hashes =
-        4..1
+        4..1//-1
         |> Enum.map(&insert(:address, fetched_coin_balance: &1))
         |> Enum.map(& &1.hash)
 

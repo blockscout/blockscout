@@ -22,6 +22,10 @@ defmodule BlockScoutWeb.GraphQL.Schema do
 
   import_types(BlockScoutWeb.GraphQL.Schema.Types)
 
+  if Application.compile_env(:explorer, :chain_type) == :celo do
+    import_types(BlockScoutWeb.GraphQL.Celo.Schema.Types)
+  end
+
   node interface do
     resolve_type(fn
       %ExplorerChainInternalTransaction{}, _ ->
@@ -99,6 +103,13 @@ defmodule BlockScoutWeb.GraphQL.Schema do
     field :transaction, :transaction do
       arg(:hash, non_null(:full_hash))
       resolve(&Transaction.get_by/3)
+    end
+
+    if Application.compile_env(:explorer, :chain_type) == :celo do
+      require BlockScoutWeb.GraphQL.Celo.QueryFields
+      alias BlockScoutWeb.GraphQL.Celo.QueryFields
+
+      QueryFields.generate()
     end
   end
 

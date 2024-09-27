@@ -399,7 +399,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     trimmed_path =
       path
       |> String.split("/")
-      |> Enum.slice(9..-1)
+      |> Enum.slice(9..-1//-1)
       |> Enum.join("/")
 
     %{
