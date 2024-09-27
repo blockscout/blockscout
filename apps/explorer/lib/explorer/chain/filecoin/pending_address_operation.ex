@@ -19,7 +19,8 @@ defmodule Explorer.Chain.Filecoin.PendingAddressOperation do
   @typedoc """
    * `address_hash` - the hash of the address that is pending to be fetched.
    * `http_status_code` - the unsuccessful (non-200) http code returned by Beryx
-     API if the fetcher failed to fetch the address.
+     API if the fetcher failed to fetch the address, set to `nil` if the fetcher
+     did not attempt to fetch the address yet.
   """
   @primary_key false
   typed_schema "filecoin_pending_address_operations" do
@@ -63,6 +64,7 @@ defmodule Explorer.Chain.Filecoin.PendingAddressOperation do
       from(
         op in __MODULE__,
         select: op,
+        where: is_nil(op.http_status_code),
         order_by: [desc: op.address_hash]
       )
 
