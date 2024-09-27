@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TokenTransferController do
   use BlockScoutWeb, :controller
-  alias Explorer.{Helper, PagingOptions}
+  alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Chain.{TokenTransfer, Transaction}
 
   import BlockScoutWeb.Chain,
@@ -29,9 +29,10 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
   """
   @spec token_transfers(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def token_transfers(conn, params) do
+    paging_options = paging_options(params)
+
     options =
-      params
-      |> paging_options()
+      paging_options
       |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
                                                                         page_size: page_size
                                                                       } = paging_options ->
@@ -41,7 +42,14 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
       |> Keyword.merge(token_transfers_types_options(params))
       |> Keyword.merge(@api_true)
 
-    {token_transfers, next_page} = options |> TokenTransfer.fetch() |> split_list_by_page()
+    result =
+      options
+      |> TokenTransfer.fetch()
+      |> Chain.flat_1155_batch_token_transfers()
+      |> Chain.paginate_1155_batch_token_transfers(paging_options)
+      |> split_list_by_page()
+
+    {token_transfers, next_page} = result
 
     transactions =
       token_transfers
