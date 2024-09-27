@@ -25,6 +25,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, SmartContract}
   alias Explorer.Chain.Events.Publisher
+  alias Explorer.Chain.SmartContract.VerificationStatus
   alias Explorer.SmartContract.EthBytecodeDBInterface
   alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias Explorer.SmartContract.Vyper.Publisher, as: VyperPublisher
@@ -101,6 +102,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
          :ok <- check_match_type(match_type, only_full?),
          {:ok, _} <- process_contract_source(type, source, address_hash_string) do
       Publisher.broadcast(%{smart_contract_was_verified: [address_hash_string]}, :on_demand)
+      VerificationStatus.set_verified_status_by_address_hash(address_hash_string)
     else
       _ ->
         Publisher.broadcast(%{smart_contract_was_not_verified: [address_hash_string]}, :on_demand)
