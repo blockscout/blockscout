@@ -113,7 +113,7 @@ defmodule Indexer.BufferedTask do
     `:max_batch_size`.
   - `state`: The current state of the callback module.
 
-  The `run/2` callback processes the given entries and returns one of three
+  The `run/2` callback processes the given entries and returns one of the following
   possible results:
 
   - `:ok`: Indicates successful processing.
@@ -461,7 +461,7 @@ defmodule Indexer.BufferedTask do
       `:max_batch_size`.
     - `state`: The current state of the callback module.
 
-    The `run/2` callback processes the given entries and returns one of three
+    The `run/2` callback processes the given entries and returns one of the following
     possible results:
 
     - `:ok`: Indicates successful processing.
