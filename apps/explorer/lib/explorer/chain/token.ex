@@ -81,6 +81,7 @@ defmodule Explorer.Chain.Token do
   alias Ecto.Changeset
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{BridgedToken, Hash, Search, Token}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Repo
   alias Explorer.SmartContract.Helper
 
@@ -210,6 +211,7 @@ defmodule Explorer.Chain.Token do
 
     sorted_paginated_query =
       query
+      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
       |> apply_filter(token_type)
       |> SortingHelper.apply_sorting(sorting, @default_sorting)
       |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)

@@ -14,7 +14,15 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   """
   use BlockScoutWeb, :router
   alias BlockScoutWeb.AddressTransactionController
-  alias BlockScoutWeb.Routers.{APIKeyV2Router, SmartContractsApiV2Router, TokensApiV2Router, UtilsApiV2Router}
+
+  alias BlockScoutWeb.Routers.{
+    AddressBadgesApiV2Router,
+    APIKeyV2Router,
+    SmartContractsApiV2Router,
+    TokensApiV2Router,
+    UtilsApiV2Router
+  }
+
   alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
   alias BlockScoutWeb.Routers.AccountRouter
 
@@ -25,6 +33,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
   forward("/v2/key", APIKeyV2Router)
   forward("/v2/utils", UtilsApiV2Router)
+  forward("/v2/scam-badge-addresses", AddressBadgesApiV2Router)
 
   pipeline :api do
     plug(
