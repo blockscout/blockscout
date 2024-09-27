@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.TransactionView
-  alias Explorer.Chain.Scroll.{L1FeeParam, Reader}
+  alias Explorer.Chain.Scroll.{Batch, L1FeeParam, Reader}
   alias Explorer.Chain.{Data, Transaction}
 
   @api_true [api?: true]
@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   @doc """
     Function to render GET requests to `/api/v2/scroll/deposits` and `/api/v2/scroll/withdrawals` endpoints.
   """
-  @spec render(binary(), map()) :: map() | list() | non_neg_integer()
+  @spec render(binary(), map()) :: map() | non_neg_integer()
   def render("scroll_bridge_items.json", %{
         items: items,
         next_page_params: next_page_params
@@ -73,6 +73,15 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
     count
   end
 
+  # Transforms the batch info into a map format for HTTP response.
+  #
+  # ## Parameters
+  # - `batch`: An instance of `Explorer.Chain.Scroll.Batch` entry.
+  #
+  # ## Returns
+  # - A map with detailed information about the batch formatted for use
+  #   in JSON HTTP response.
+  @spec render_batch(Batch.t()) :: map()
   defp render_batch(batch) do
     {finalize_block_number, finalize_transaction_hash, finalize_timestamp} =
       if is_nil(batch.bundle) do
