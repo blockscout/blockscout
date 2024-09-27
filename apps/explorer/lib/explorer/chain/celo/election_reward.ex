@@ -32,8 +32,9 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   import Ecto.Query, only: [from: 2, where: 3]
   import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
+  alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, Block, Hash, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Token, Wei}
 
   @type type :: :voter | :validator | :group | :delegated_payment
   @types_enum ~w(voter validator group delegated_payment)a
@@ -95,6 +96,8 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       type: Hash.Address,
       null: false
     )
+
+    field(:token, :any, virtual: true) :: Token.t() | nil
 
     timestamps()
   end
@@ -244,9 +247,75 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   end
 
   @doc """
+  Joins the token table to the query based on the reward type.
+
+  ## Parameters
+  - `query` (`Ecto.Query.t()`): The query to join the token table.
+
+  ## Returns
+  - An Ecto query with the token table joined.
+  """
+  @spec join_token(Ecto.Query.t()) :: Ecto.Query.t()
+  def join_token(query) do
+    # This match should never fail
+    %{
+      voter: [voter_token_address_hash],
+      validator: [validator_token_address_hash],
+      group: [group_token_address_hash],
+      delegated_payment: [delegated_payment_token_address_hash]
+    } =
+      Map.new(
+        @reward_type_atom_to_token_atom,
+        fn {type, token_atom} ->
+          addresses =
+            token_atom
+            |> CeloCoreContracts.get_address_updates()
+            |> case do
+              {:ok, addresses} -> addresses
+              _ -> []
+            end
+            |> Enum.map(fn %{"address" => address_hash_string} ->
+              {:ok, address_hash} = Hash.Address.cast(address_hash_string)
+              address_hash
+            end)
+
+          {type, addresses}
+        end
+      )
+
+    from(
+      r in query,
+      join: t in Token,
+      on:
+        t.contract_address_hash ==
+          fragment(
+            """
+            CASE ?
+              WHEN ? THEN ?::bytea
+              WHEN ? THEN ?::bytea
+              WHEN ? THEN ?::bytea
+              WHEN ? THEN ?::bytea
+              ELSE NULL
+            END
+            """,
+            r.type,
+            ^"voter",
+            ^voter_token_address_hash.bytes,
+            ^"validator",
+            ^validator_token_address_hash.bytes,
+            ^"group",
+            ^group_token_address_hash.bytes,
+            ^"delegated_payment",
+            ^delegated_payment_token_address_hash.bytes
+          ),
+      select_merge: %{token: t}
+    )
+  end
+
+  @doc """
   Makes Explorer.PagingOptions map for election rewards.
   """
-  @spec address_paging_options(map()) :: [Chain.paging_options()]
+  @spec block_paging_options(map()) :: [Chain.paging_options()]
   def block_paging_options(params) do
     with %{
            "amount" => amount_string,
