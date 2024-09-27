@@ -143,4 +143,14 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   end
 
   defp mb_find_uid_in_queue(other_status, _), do: other_status
+
+  @doc """
+  Set verified status by address_hash for all pending entries
+  """
+  @spec set_verified_status_by_address_hash(binary()) :: {non_neg_integer(), nil | [term()]}
+  def set_verified_status_by_address_hash(address_hash) do
+    __MODULE__
+    |> where([c], c.status == ^0 and c.address_hash == ^address_hash)
+    |> Repo.update_all(set: [status: 1])
+  end
 end
