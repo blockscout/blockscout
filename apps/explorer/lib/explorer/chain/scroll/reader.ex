@@ -17,8 +17,15 @@ defmodule Explorer.Chain.Scroll.Reader do
 
   @doc """
     Reads a batch by its number from database.
-    If the number is :latest, gets the latest batch from the `scroll_batches` table.
-    Returns {:error, :not_found} in case the batch is not found.
+
+    ## Parameters
+    - `number`: The batch number. If `:latest`, the function gets
+                the latest batch from the `scroll_batches` table.
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - {:ok, batch} when the batch is found in the table.
+    - {:error, :not_found} when the batch is not found.
   """
   @spec batch(non_neg_integer() | :latest, list()) :: {:ok, map()} | {:error, :not_found}
   def batch(number, options \\ [])
@@ -49,8 +56,10 @@ defmodule Explorer.Chain.Scroll.Reader do
 
   @doc """
     Gets last known L1 batch item from the `scroll_batches` table.
-    Returns block number and L1 transaction hash bound to that batch.
-    If not found, returns zero block number and nil as the transaction hash.
+
+    ## Returns
+    - A tuple `{block_number, tx_hash}` - the block number and L1 transaction hash bound to the batch.
+    - If the batch is not found, returns `{0, nil}`.
   """
   @spec last_l1_batch_item() :: {non_neg_integer(), binary() | nil}
   def last_l1_batch_item do
@@ -68,7 +77,10 @@ defmodule Explorer.Chain.Scroll.Reader do
 
   @doc """
     Gets `final_batch_number` from the last known L1 bundle.
-    If not found, returns -1.
+
+    ## Returns
+    - The `final_batch_number` of the last L1 bundle.
+    - If there are no bundles, returns -1.
   """
   @spec last_final_batch_number() :: integer()
   def last_final_batch_number do
@@ -85,9 +97,11 @@ defmodule Explorer.Chain.Scroll.Reader do
   end
 
   @doc """
-    Gets last known L1 bridge item (deposit) from the `scroll_bridge` table.
-    Returns block number and L1 transaction hash bound to that deposit.
-    If not found, returns zero block number and nil as the transaction hash.
+    Gets the last known L1 bridge item (deposit) from the `scroll_bridge` table.
+
+    ## Returns
+    - A tuple `{block_number, tx_hash}` - the block number and L1 transaction hash bound to the deposit.
+    - If the deposit is not found, returns `{0, nil}`.
   """
   @spec last_l1_bridge_item() :: {non_neg_integer(), binary() | nil}
   def last_l1_bridge_item do
@@ -105,9 +119,11 @@ defmodule Explorer.Chain.Scroll.Reader do
   end
 
   @doc """
-    Gets last known L2 bridge item (withdrawal) from the `scroll_bridge` table.
-    Returns block number and L2 transaction hash bound to that withdrawal.
-    If not found, returns zero block number and nil as the transaction hash.
+    Gets the last known L2 bridge item (withdrawal) from the `scroll_bridge` table.
+
+    ## Returns
+    - A tuple `{block_number, tx_hash}` - the block number and L2 transaction hash bound to the withdrawal.
+    - If the withdrawal is not found, returns `{0, nil}`.
   """
   @spec last_l2_bridge_item() :: {non_neg_integer(), binary() | nil}
   def last_l2_bridge_item do

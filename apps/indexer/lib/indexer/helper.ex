@@ -552,8 +552,17 @@ defmodule Indexer.Helper do
   end
 
   @doc """
-  Fetches blocks info from the given list of events (logs).
-  Performs a specified number of retries (up to) if the first attempt returns error.
+    Fetches blocks info from the given list of events (logs).
+    Performs a specified number of retries (up to) if the first attempt returns error.
+
+    ## Parameters
+    - `events`: The list of events to retrieve block numbers from.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+    - `retries`: Number of retry attempts if the request fails.
+    - `tx_details`: Whether to include transaction details into the resulting list of blocks.
+
+    ## Returns
+    - The list of blocks. The list is empty if the HTTP response returns error.
   """
   @spec get_blocks_by_events(list(), list(), non_neg_integer(), boolean()) :: list()
   def get_blocks_by_events(events, json_rpc_named_arguments, retries, tx_details \\ false) do

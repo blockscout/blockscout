@@ -1,7 +1,7 @@
 defmodule Indexer.Fetcher.Scroll.Batch do
   @moduledoc """
   The module for scanning Scroll RPC node on L1 for the batch logs (events), parsing them,
-  and importing to the database (scroll_batches and scroll_batch_bundles tables).
+  and importing to the database (into the `scroll_batches` and `scroll_batch_bundles` tables).
 
   The main function splits the whole block range by chunks and scans L1 Scroll Chain contract
   for the batch logs (events) for each chunk. The found events are handled and then imported to the
@@ -148,7 +148,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
 
   @doc """
   The main function that scans RPC node for the batch logs (events), parses them,
-  and imports to the database (scroll_batches and scroll_batch_bundles tables).
+  and imports to the database (into the `scroll_batches` and `scroll_batch_bundles` tables).
 
   The function splits a given block range by chunks and scans the Scroll Chain contract
   for the batch logs (events) for each chunk. The found events are handled and then imported
@@ -444,6 +444,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   #
   # ## Returns
   # - nothing
+  @spec reorg_handle(non_neg_integer()) :: any()
   defp reorg_handle(reorg_block) do
     bundle_ids =
       Repo.all(
