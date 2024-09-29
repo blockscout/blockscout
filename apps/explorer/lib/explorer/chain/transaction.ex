@@ -1943,10 +1943,12 @@ defmodule Explorer.Chain.Transaction do
     proxy_implementation_abi_map = combine_proxy_implementation_abi_map(transactions)
 
     method_ids =
-      Enum.flat_map(transactions, fn
+      transactions
+      |> Enum.flat_map(fn
         %{input: <<method_id::binary-size(4), _::binary>>} -> [method_id]
         _ -> []
       end)
+      |> Enum.uniq()
 
     methods_map =
       if Enum.count(method_ids) > 1 do
@@ -1961,7 +1963,9 @@ defmodule Explorer.Chain.Transaction do
 
     transactions
     |> Enum.map(fn transaction ->
-      decoded_input_data(transaction, skip_sig_provider?, opts, methods_map, proxy_implementation_abi_map)
+      transaction
+      |> decoded_input_data(skip_sig_provider?, opts, methods_map, proxy_implementation_abi_map)
+      |> format_decoded_input()
     end)
   end
 

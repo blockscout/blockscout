@@ -265,6 +265,8 @@ defmodule Explorer.Chain.TransactionTest do
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       transaction =
         :transaction_to_verified_contract
         |> insert()
@@ -275,6 +277,8 @@ defmodule Explorer.Chain.TransactionTest do
     end
 
     test "that a contract call will look up a match in contract_methods table" do
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       :transaction_to_verified_contract
       |> insert()
       |> Repo.preload(to_address: :smart_contract)
@@ -296,6 +300,8 @@ defmodule Explorer.Chain.TransactionTest do
     end
 
     test "arguments name in function call replaced with argN if it's empty string" do
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       contract =
         insert(:smart_contract,
           contract_code_md5: "123",
