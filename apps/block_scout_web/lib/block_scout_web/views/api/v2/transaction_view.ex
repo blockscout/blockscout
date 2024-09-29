@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         watchlist_names: watchlist_names
       }) do
     block_height = Chain.block_height(@api_true)
-    {decoded_transactions, _, _} = Transaction.decode_transactions(transactions, true, @api_true)
+    decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
 
     %{
       "items" =>
@@ -50,7 +50,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         watchlist_names: watchlist_names
       }) do
     block_height = Chain.block_height(@api_true)
-    {decoded_transactions, _, _} = Transaction.decode_transactions(transactions, true, @api_true)
+    decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
 
     transactions
     |> chain_type_transformations()
@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params, conn: conn}) do
     block_height = Chain.block_height(@api_true)
-    {decoded_transactions, _, _} = Transaction.decode_transactions(transactions, true, @api_true)
+    decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
 
     %{
       "items" =>
@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def render("transactions.json", %{transactions: transactions, conn: conn}) do
     block_height = Chain.block_height(@api_true)
-    {decoded_transactions, _, _} = Transaction.decode_transactions(transactions, true, @api_true)
+    decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
 
     transactions
     |> chain_type_transformations()
@@ -92,7 +92,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def render("transaction.json", %{transaction: transaction, conn: conn}) do
     block_height = Chain.block_height(@api_true)
-    {[decoded_input], _, _} = Transaction.decode_transactions([transaction], false, @api_true)
+    [decoded_input] = Transaction.decode_transactions([transaction], false, @api_true)
 
     transaction
     |> chain_type_transformations()
@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("token_transfers.json", %{token_transfers: token_transfers, next_page_params: next_page_params, conn: conn}) do
-    {decoded_transactions, _, _} =
+    decoded_transactions =
       Transaction.decode_transactions(Enum.map(token_transfers, fn tt -> tt.transaction end), true, @api_true)
 
     %{
@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("token_transfers.json", %{token_transfers: token_transfers, conn: conn}) do
-    {decoded_transactions, _, _} =
+    decoded_transactions =
       Transaction.decode_transactions(Enum.map(token_transfers, fn tt -> tt.transaction end), true, @api_true)
 
     token_transfers
@@ -138,7 +138,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("token_transfer.json", %{token_transfer: token_transfer, conn: conn}) do
-    {[decoded_transaction], _, _} = Transaction.decode_transactions([token_transfer.transaction], true, @api_true)
+    [decoded_transaction] = Transaction.decode_transactions([token_transfer.transaction], true, @api_true)
     prepare_token_transfer(token_transfer, conn, decoded_transaction)
   end
 

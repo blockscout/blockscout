@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
     {advanced_filters, next_page} = split_list_by_page(advanced_filters_plus_one)
 
-    {decoded_transactions, _abi_acc, methods_acc} =
+    decoded_transactions =
       advanced_filters
       |> Enum.map(fn af -> %Transaction{to_address: af.to_address, input: af.input, hash: af.hash} end)
       |> Transaction.decode_transactions(true, @api_true)
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       advanced_filters: advanced_filters,
       decoded_transactions: decoded_transactions,
       search_params: %{
-        method_ids: method_id_to_name_from_params(full_options[:methods] || [], methods_acc),
+        method_ids: method_id_to_name_from_params(full_options[:methods] || [], decoded_transactions),
         tokens: contract_address_hash_to_token_from_params(full_options[:token_contract_address_hashes])
       },
       next_page_params: next_page_params
@@ -142,22 +142,19 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     render(conn, :methods, methods: @methods)
   end
 
-  defp method_id_to_name_from_params(prepared_method_ids, methods_acc) do
+  defp method_id_to_name_from_params(prepared_method_ids, decoded_transactions) do
     {decoded_method_ids, method_ids_to_find} =
       Enum.reduce(prepared_method_ids, {%{}, []}, fn method_id, {decoded, to_decode} ->
         {:ok, method_id_hash} = Data.cast(method_id)
+        trimmed_method_id = method_id_hash.bytes |> Base.encode16(case: :lower)
 
         case {Map.get(@methods_id_to_name_map, method_id),
-              methods_acc
-              |> Map.get(method_id_hash.bytes, [])
-              |> Enum.find(
-                &match?(%ContractMethod{abi: %{"type" => "function", "name" => name}} when is_binary(name), &1)
-              )} do
+              decoded_transactions |> Enum.find(&match?({:ok, ^trimmed_method_id, _, _}, &1))} do
           {name, _} when is_binary(name) ->
             {Map.put(decoded, method_id, name), to_decode}
 
-          {_, %ContractMethod{abi: %{"type" => "function", "name" => name}}} when is_binary(name) ->
-            {Map.put(decoded, method_id, name), to_decode}
+          {_, {:ok, _, function_signature, _}} when is_binary(function_signature) ->
+            {Map.put(decoded, method_id, function_signature |> String.split("(") |> Enum.at(0)), to_decode}
 
           {nil, nil} ->
             {decoded, [method_id_hash.bytes | to_decode]}
