@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   For details on the structure of the `CELO_CORE_CONTRACTS` environment
   variable, see `app/explorer/lib/fetch_celo_core_contracts.ex`.
   """
-  @dialyzer :no_match
+  @dialyzer {:nowarn_function, get_address_updates: 1}
 
   require Logger
 

@@ -12,7 +12,6 @@ defmodule Indexer.Application do
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
 
   alias Indexer.Memory
-  alias Prometheus.Registry
 
   @impl Application
   def start(_type, _args) do
