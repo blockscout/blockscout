@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
     only: [
       split_list_by_page: 1,
       paging_options: 1,
-      next_page_params: 3
+      token_transfers_next_page_params: 3
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -65,7 +65,8 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
       |> Enum.zip(decoded_transactions)
       |> Enum.into(%{}, fn {%{hash: hash}, decoded_input} -> {hash, decoded_input} end)
 
-    next_page_params = next_page |> next_page_params(token_transfers, delete_parameters_from_next_page_params(params))
+    next_page_params =
+      next_page |> token_transfers_next_page_params(token_transfers, delete_parameters_from_next_page_params(params))
 
     conn
     |> put_status(200)
