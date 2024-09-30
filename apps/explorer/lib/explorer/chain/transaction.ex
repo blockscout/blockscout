@@ -1938,34 +1938,51 @@ defmodule Explorer.Chain.Transaction do
   Where
     - `decoded_input_data` is list of results: either `{:ok, _identifier, _text, _mapping}` or `nil`
   """
-  @spec decode_transactions([Transaction.t()], boolean(), Keyword.t()) :: [any()]
+  @spec decode_transactions([Transaction.t()], boolean(), Keyword.t()) :: [nil | {:ok, String.t(), String.t(), map()}]
   def decode_transactions(transactions, skip_sig_provider?, opts) do
     proxy_implementation_abi_map = combine_proxy_implementation_abi_map(transactions)
 
-    method_ids =
+    # first we assemble an empty methods map, so that decoded_input_data will skip ContractMethod.t() lookup and decoding
+    empty_methods_map =
       transactions
       |> Enum.flat_map(fn
         %{input: <<method_id::binary-size(4), _::binary>>} -> [method_id]
         _ -> []
       end)
-      |> Enum.uniq()
+      |> Enum.into(%{}, &{&1, []})
 
+    # try to decode transaction using full abi data from proxy_implementation_abi_map
+    decoded_transactions =
+      transactions
+      |> Enum.map(fn transaction ->
+        transaction
+        |> decoded_input_data(skip_sig_provider?, opts, empty_methods_map, proxy_implementation_abi_map)
+        |> format_decoded_input()
+      end)
+      |> Enum.zip(transactions)
+
+    # assemble a new methods map from methods in non-decoded transactions
     methods_map =
-      if Enum.count(method_ids) > 1 do
-        # TODO it's possible to further get rid of this DB query or reduce the number of requested methods with proper refactoring
-        # i.e. we can only request methods that are not in the proxy_implementation_abi_map for the called contract
-        method_ids
-        |> ContractMethod.find_contract_methods(opts)
-        |> Enum.into(%{}, &{&1.identifier, &1})
-      else
-        %{}
-      end
+      decoded_transactions
+      |> Enum.flat_map(fn
+        {nil, %{input: <<method_id::binary-size(4), _::binary>>}} -> [method_id]
+        _ -> []
+      end)
+      |> Enum.uniq()
+      |> ContractMethod.find_contract_methods(opts)
+      |> Enum.into(%{}, &{&1.identifier, [&1]})
 
-    transactions
-    |> Enum.map(fn transaction ->
-      transaction
-      |> decoded_input_data(skip_sig_provider?, opts, methods_map, proxy_implementation_abi_map)
-      |> format_decoded_input()
+    # decode remaining transaction using methods map
+    decoded_transactions
+    |> Enum.map(fn
+      {nil, transaction} ->
+        transaction
+        |> Map.put(:to_address, %NotLoaded{})
+        |> decoded_input_data(skip_sig_provider?, opts, methods_map, proxy_implementation_abi_map)
+        |> format_decoded_input()
+
+      {decoded, _} ->
+        decoded
     end)
   end
 
@@ -2010,7 +2027,7 @@ defmodule Explorer.Chain.Transaction do
   @doc """
   Receives as input result of decoded_input_data/5, returns either nil or decoded input in format: {:ok, _identifier, _text, _mapping}
   """
-  @spec format_decoded_input(any()) :: nil | tuple()
+  @spec format_decoded_input(any()) :: nil | {:ok, String.t(), String.t(), map()}
   def format_decoded_input({:error, _, []}), do: nil
   def format_decoded_input({:error, _, candidates}), do: Enum.at(candidates, 0)
   def format_decoded_input({:ok, _identifier, _text, _mapping} = decoded), do: decoded

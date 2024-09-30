@@ -467,6 +467,13 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
 
     assert Proxy.proxy_contract?(smart_contract)
     verify!(EthereumJSONRPC.Mox)
+
+    proxy =
+      :explorer
+      |> Application.get_env(:proxy)
+      |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+
+    Application.put_env(:explorer, :proxy, proxy)
   end
 
   defp eip_1967_beacon_proxy_mock_requests(
