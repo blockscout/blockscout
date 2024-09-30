@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.16.3-erlang-26.2.5.1-alpine-3.18.7 AS builder
+FROM hexpm/elixir:1.17.3-erlang-27.1-alpine-3.20.3 AS builder
 
 WORKDIR /app
 
@@ -46,31 +46,17 @@ ADD config ./config
 ADD rel ./rel
 ADD *.exs ./
 
-RUN apk add --update nodejs npm
-
-# Run forderground build and phoenix digest
-RUN mix compile && npm install npm@latest
-
-# Add blockscout npm deps
-RUN cd apps/block_scout_web/assets/ && \
-    npm install && \
-    npm run deploy && \
-    cd /app/apps/explorer/ && \
-    npm install && \
-    apk update && \
-    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
-
+# Run backend compilation
+RUN mix compile
 
 RUN apk add --update git make 
-
-RUN mix phx.digest
 
 RUN mkdir -p /opt/release \
   && mix release blockscout \
   && mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
 ##############################################################
-FROM hexpm/elixir:1.16.3-erlang-26.2.5.1-alpine-3.18.7
+FROM hexpm/elixir:1.17.3-erlang-27.1-alpine-3.20.3
 
 ARG RELEASE_VERSION
 ENV RELEASE_VERSION=${RELEASE_VERSION}
@@ -94,7 +80,6 @@ RUN apk --no-cache --update add jq curl && \
 WORKDIR /app
 
 COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /opt/release/blockscout .
-COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/apps/explorer/node_modules ./node_modules
 COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/config/config_helper.exs ./config/config_helper.exs
 COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/config/config_helper.exs /app/releases/${RELEASE_VERSION}/config_helper.exs
 COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/config/assets/precompiles-arbitrum.json ./config/assets/precompiles-arbitrum.json

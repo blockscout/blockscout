@@ -153,7 +153,7 @@ defmodule Explorer.Etherscan.Contracts do
     query =
       from(
         address in Address,
-        where: address.contract_code != <<>>,
+        where: address.contract_code != ^%Explorer.Chain.Data{bytes: <<>>},
         where: not is_nil(address.contract_code),
         where: address.decompiled == true,
         limit: ^limit,
@@ -171,7 +171,7 @@ defmodule Explorer.Etherscan.Contracts do
     query =
       from(
         address in Address,
-        where: address.contract_code != <<>>,
+        where: address.contract_code != ^%Explorer.Chain.Data{bytes: <<>>},
         where: not is_nil(address.contract_code),
         where: fragment("? IS NOT TRUE", address.verified),
         limit: ^limit,
@@ -191,7 +191,7 @@ defmodule Explorer.Etherscan.Contracts do
         address in Address,
         where: fragment("? IS NOT TRUE", address.verified),
         where: fragment("? IS NOT TRUE", address.decompiled),
-        where: address.contract_code != <<>>,
+        where: address.contract_code != ^%Explorer.Chain.Data{bytes: <<>>},
         where: not is_nil(address.contract_code),
         limit: ^limit,
         offset: ^offset
@@ -207,7 +207,7 @@ defmodule Explorer.Etherscan.Contracts do
   def list_empty_contracts(limit, offset) do
     query =
       from(address in Address,
-        where: address.contract_code == <<>>,
+        where: address.contract_code == ^%Explorer.Chain.Data{bytes: <<>>},
         preload: [:smart_contract, :decompiled_smart_contracts],
         order_by: [asc: address.inserted_at],
         limit: ^limit,

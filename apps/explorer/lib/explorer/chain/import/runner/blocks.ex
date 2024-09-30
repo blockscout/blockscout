@@ -530,10 +530,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select:
           map(ctb, [
             :address_hash,
-            :block_number,
             :token_contract_address_hash,
             :token_id,
-            :token_type,
             # Used to determine if `address_hash` was a holder of `token_contract_address_hash` before
 
             # `address_current_token_balance` is deleted in `update_tokens_holder_count`.
@@ -566,28 +564,43 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          %{timeout: timeout} = options
        )
        when is_list(deleted_address_current_token_balances) do
-    new_current_token_balances_placeholders =
-      Enum.map(deleted_address_current_token_balances, fn deleted_balance ->
-        now = DateTime.utc_now()
+    final_query = derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances)
 
-        %{
-          address_hash: deleted_balance.address_hash,
-          token_contract_address_hash: deleted_balance.token_contract_address_hash,
-          token_id: deleted_balance.token_id,
-          token_type: deleted_balance.token_type,
-          block_number: deleted_balance.block_number,
-          value: nil,
-          value_fetched_at: nil,
-          inserted_at: now,
-          updated_at: now
-        }
-      end)
+    new_current_token_balance_query =
+      from(new_current_token_balance in subquery(final_query),
+        inner_join: tb in Address.TokenBalance,
+        on:
+          tb.address_hash == new_current_token_balance.address_hash and
+            tb.token_contract_address_hash == new_current_token_balance.token_contract_address_hash and
+            ((is_nil(tb.token_id) and is_nil(new_current_token_balance.token_id)) or
+               (tb.token_id == new_current_token_balance.token_id and
+                  not is_nil(tb.token_id) and not is_nil(new_current_token_balance.token_id))) and
+            tb.block_number == new_current_token_balance.block_number,
+        select: %{
+          address_hash: new_current_token_balance.address_hash,
+          token_contract_address_hash: new_current_token_balance.token_contract_address_hash,
+          token_id: new_current_token_balance.token_id,
+          token_type: tb.token_type,
+          block_number: new_current_token_balance.block_number,
+          value: tb.value,
+          value_fetched_at: tb.value_fetched_at,
+          inserted_at: over(min(tb.inserted_at), :w),
+          updated_at: over(max(tb.updated_at), :w)
+        },
+        windows: [
+          w: [partition_by: [tb.address_hash, tb.token_contract_address_hash, tb.token_id]]
+        ]
+      )
+
+    current_token_balance =
+      new_current_token_balance_query
+      |> repo.all()
 
     timestamps = Import.timestamps()
 
     result =
       CurrentTokenBalances.insert_changes_list_with_and_without_token_id(
-        new_current_token_balances_placeholders,
+        current_token_balance,
         repo,
         timestamps,
         timeout,
@@ -738,7 +751,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp refs_to_token_transfers_query(historical_token_transfers_query, filtered_query) do
-    if Application.get_env(:explorer, :chain_type) == :polygon_zkevm do
+    if Application.get_env(:explorer, :chain_type) in [:polygon_zkevm, :rsk] do
       from(historical_tt in subquery(historical_token_transfers_query),
         inner_join: tt in subquery(filtered_query),
         on:
@@ -779,7 +792,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp derived_token_transfers_query(refs_to_token_transfers, filtered_query) do
-    if Application.get_env(:explorer, :chain_type) == :polygon_zkevm do
+    if Application.get_env(:explorer, :chain_type) in [:polygon_zkevm, :rsk] do
       from(tt in filtered_query,
         inner_join: tt_1 in subquery(refs_to_token_transfers),
         on:
@@ -810,6 +823,43 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         ]
       ]
     )
+  end
+
+  defp derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances) do
+    initial_query =
+      from(tb in Address.TokenBalance,
+        select: %{
+          address_hash: tb.address_hash,
+          token_contract_address_hash: tb.token_contract_address_hash,
+          token_id: tb.token_id,
+          block_number: max(tb.block_number)
+        },
+        group_by: [tb.address_hash, tb.token_contract_address_hash, tb.token_id]
+      )
+
+    Enum.reduce(deleted_address_current_token_balances, initial_query, fn %{
+                                                                            address_hash: address_hash,
+                                                                            token_contract_address_hash:
+                                                                              token_contract_address_hash,
+                                                                            token_id: token_id
+                                                                          },
+                                                                          acc_query ->
+      if token_id do
+        from(tb in acc_query,
+          or_where:
+            tb.address_hash == ^address_hash and
+              tb.token_contract_address_hash == ^token_contract_address_hash and
+              tb.token_id == ^token_id
+        )
+      else
+        from(tb in acc_query,
+          or_where:
+            tb.address_hash == ^address_hash and
+              tb.token_contract_address_hash == ^token_contract_address_hash and
+              is_nil(tb.token_id)
+        )
+      end
+    end)
   end
 
   # `block_rewards` are linked to `blocks.hash`, but fetched by `blocks.number`, so when a block with the same number is

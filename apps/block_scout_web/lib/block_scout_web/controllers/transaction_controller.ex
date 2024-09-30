@@ -174,12 +174,6 @@ defmodule BlockScoutWeb.TransactionController do
               )
           )
         else
-          :not_found ->
-            set_not_found_view(conn, id)
-
-          :error ->
-            unprocessable_entity(conn)
-
           {:error, :not_found} ->
             set_not_found_view(conn, id)
 
@@ -209,12 +203,6 @@ defmodule BlockScoutWeb.TransactionController do
               )
           )
         else
-          :not_found ->
-            set_not_found_view(conn, id)
-
-          :error ->
-            unprocessable_entity(conn)
-
           {:error, :not_found} ->
             set_not_found_view(conn, id)
 

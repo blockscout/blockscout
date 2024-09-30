@@ -317,8 +317,8 @@ defmodule Explorer.Chain do
     filters = Keyword.get(options, :token_type)
     necessity_by_association = Keyword.get(options, :necessity_by_association)
 
-    direction
-    |> TokenTransfer.token_transfers_by_address_hash(address_hash, filters, paging_options)
+    address_hash
+    |> TokenTransfer.token_transfers_by_address_hash(direction, filters, paging_options)
     |> join_associations(necessity_by_association)
     |> select_repo(options).all()
   end
@@ -2281,15 +2281,15 @@ defmodule Explorer.Chain do
       iex> insert(:block, number: 0)
       iex> insert(:block, number: 2)
       iex> insert(:block, number: 5)
-      iex> Explorer.Chain.missing_block_number_ranges(5..0)
-      [4..3, 1..1]
+      iex> Explorer.Chain.missing_block_number_ranges(5..0//-1)
+      [4..3//-1, 1..1]
 
   If only non-consensus blocks exist for a number, the number still counts as missing.
 
       iex> insert(:block, number: 0)
       iex> insert(:block, number: 1, consensus: false)
       iex> insert(:block, number: 2)
-      iex> Explorer.Chain.missing_block_number_ranges(2..0)
+      iex> Explorer.Chain.missing_block_number_ranges(2..0//-1)
       [1..1]
 
   if range starts with non-consensus block in the middle of the chain, it returns missing numbers.
@@ -2311,7 +2311,7 @@ defmodule Explorer.Chain do
   @spec missing_block_number_ranges(Range.t()) :: [Range.t()]
   def missing_block_number_ranges(range)
 
-  def missing_block_number_ranges(range_start..range_end) do
+  def missing_block_number_ranges(range_start..range_end//_) do
     range_min = min(range_start, range_end)
     range_max = max(range_start, range_end)
 

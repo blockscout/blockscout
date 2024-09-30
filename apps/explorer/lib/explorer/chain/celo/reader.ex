@@ -52,6 +52,7 @@ defmodule Explorer.Chain.Celo.Reader do
 
     address_hash
     |> ElectionReward.address_hash_to_ordered_rewards_query()
+    |> ElectionReward.join_token()
     |> ElectionReward.paginate(paging_options)
     |> limit(^paging_options.page_size)
     |> join_associations(necessity_by_association)

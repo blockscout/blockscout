@@ -133,6 +133,13 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:changeset_errors, changeset: changeset)
   end
 
+  def call(conn, {:error, :badge_creation_failed}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UserView)
+    |> render(:message, %{message: "Badge creation failed"})
+  end
+
   def call(conn, {:restricted_access, true}) do
     Logger.error(fn ->
       ["#{@restricted_access}"]

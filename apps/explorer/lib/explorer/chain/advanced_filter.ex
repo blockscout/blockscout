@@ -252,8 +252,8 @@ defmodule Explorer.Chain.AdvancedFilter do
         preload: [
           :block,
           from_address: [:names, :smart_contract, :proxy_implementations],
-          to_address: [:names, :smart_contract, :proxy_implementations],
-          created_contract_address: [:names, :smart_contract, :proxy_implementations]
+          to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
+          created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
         ],
         order_by: [
           desc: transaction.block_number,
@@ -289,8 +289,8 @@ defmodule Explorer.Chain.AdvancedFilter do
         as: :transaction,
         preload: [
           from_address: [:names, :smart_contract, :proxy_implementations],
-          to_address: [:names, :smart_contract, :proxy_implementations],
-          created_contract_address: [:names, :smart_contract, :proxy_implementations],
+          to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
+          created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
           transaction: transaction
         ],
         order_by: [
@@ -703,8 +703,8 @@ defmodule Explorer.Chain.AdvancedFilter do
         preload: [
           :transaction,
           :token,
-          from_address: [:names, :smart_contract, :proxy_implementations],
-          to_address: [:names, :smart_contract, :proxy_implementations]
+          from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
+          to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
         ],
         select_merge: %{
           token_ids: [token_transfer.token_id],
