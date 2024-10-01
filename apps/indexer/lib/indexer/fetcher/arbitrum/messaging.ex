@@ -246,7 +246,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   @doc """
     Parses an L2-to-L1 event, extracting relevant information from the event's data.
 
-    This function takes an L2ToL1Tx event emited by ArbSys contract and parses its fields
+    This function takes an L2ToL1Tx event emitted by ArbSys contract and parses its fields
     to extract needed message properties.
 
     ## Parameters

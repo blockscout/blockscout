@@ -18,8 +18,8 @@ defmodule Explorer.Arbitrum.Withdraw do
     * `l2_timestamp` - The timestamp of the originating transaction.
     * `callvalue` - The amount of the native coins to withdraw
     * `data` - Raw transaction data which will be sent to the destination address on L1 chain
-               on claiming the withdraw. In that case destination should be a contract adress
-               otherwise the transaction will fail. Typicaly this field contain calldata for
+               on claiming the withdraw. In that case destination should be a contract address
+               otherwise the transaction will fail. Typically this field contain calldata for
                `finalizeInboundTransfer(address,address,address,uint256,bytes)` method of the
                Bridge contract and it intended to withdraw supported tokens instead of native coins.
     * `token_address` - extracted address of the token to withdraw in case of `data` field represents Bridge transaction

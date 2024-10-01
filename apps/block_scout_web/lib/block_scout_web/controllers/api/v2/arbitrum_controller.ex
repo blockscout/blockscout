@@ -96,7 +96,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       {:error, :internal_error} ->
         conn
         |> put_status(:not_found)
-        |> render(:message, %{message: "internal error occured"})
+        |> render(:message, %{message: "internal error occurred"})
     end
   end
 

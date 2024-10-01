@@ -893,7 +893,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   #
   # Parameters:
   # - `node_interface_address`: The address of the node interface contract.
-  # - `size`: Index of the latest confirmed node (cummulative number of
+  # - `size`: Index of the latest confirmed node (cumulative number of
   #    confirmed L2->L1 transactions)
   # - `leaf`: position of the L2->L1 message (`position` field of the associated
   #    `L2ToL1Tx` event). It should be less than `size`

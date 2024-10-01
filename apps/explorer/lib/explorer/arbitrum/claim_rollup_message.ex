@@ -23,7 +23,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
   @node_created_data_abi [
     {:bytes, 32},
-    # Asserion asserion
+    # Assertion assertion
     {:tuple,
      [
        # ExecutionState beforeState
@@ -32,9 +32,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           # GlobalState globalState
           {:tuple,
            [
-             # bytes32[2] bytes32Vals
+             # bytes32[2] `bytes32Vals`
              {:array, {:bytes, 32}, 2},
-             # uint64[2] u64Vals
+             # uint64[2] `u64Vals`
              {:array, {:uint, 64}, 2}
            ]},
           # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
@@ -46,9 +46,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           # GlobalState globalState
           {:tuple,
            [
-             # bytes32[2] bytes32Vals
+             # bytes32[2] `bytes32Vals`
              {:array, {:bytes, 32}, 2},
-             # uint64[2] u64Vals
+             # uint64[2] `u64Vals`
              {:array, {:uint, 64}, 2}
            ]},
           # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
@@ -201,7 +201,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
     To claim a message on L1 user should use method of th Outbox smart contract:
     `executeTransaction(proof, index, l2Sender, to, l2Block, l1Block, l2Timestamp, value, data)`
-    The first parameter, outbox proof should be calculated separetely with NodeInterface's
+    The first parameter, outbox proof should be calculated separately with NodeInterface's
     method `constructOutboxProof(size, leaf)`.
 
     ## Parameters
@@ -231,7 +231,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             {:error, :not_found}
 
           withdrawal when withdrawal.status == :confirmed ->
-
             # getting needed L1 properties: RPC URL and Main Rollup contract address
             config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
             l1_rpc = config_common[:l1_rpc]
@@ -339,10 +338,15 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             # getting L2 block with that hash
             l2_block_send_count =
               case Chain.hash_to_block(l2_block_hash) do
-                {:ok, block} -> Map.get(block, :send_count)
+                {:ok, block} ->
+                  Map.get(block, :send_count)
 
                 {:error, _} ->
-                  case EthereumJSONRPC.fetch_blocks_by_hash([Hash.to_string(l2_block_hash)], json_l2_rpc_named_arguments, false) do
+                  case EthereumJSONRPC.fetch_blocks_by_hash(
+                         [Hash.to_string(l2_block_hash)],
+                         json_l2_rpc_named_arguments,
+                         false
+                       ) do
                     {:ok, blocks} ->
                       blocks.blocks_params
                       |> hd()
