@@ -56,7 +56,7 @@ defmodule BlockScout.Mixfile do
     [
       plt_add_deps: :app_tree,
       plt_add_apps: ~w(credo ex_unit mix wallaby)a,
-      ignore_warnings: ".dialyzer-ignore",
+      ignore_warnings: ".dialyzer_ignore.exs",
       plt_core_path: "priv/plts",
       plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
     ]
