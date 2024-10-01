@@ -46,6 +46,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
           Indexer.Fetcher.PolygonEdge.Deposit,
           Indexer.Fetcher.PolygonEdge.WithdrawalExit,
           Indexer.Fetcher.PolygonZkevm.BridgeL1,
+          Indexer.Fetcher.Scroll.Batch,
           Indexer.Fetcher.Scroll.BridgeL1,
           Indexer.Fetcher.Shibarium.L1
         ]
@@ -87,6 +88,9 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
           ) ->
             # there can be more than one Optimism.* modules, so we get the common L1 RPC URL for them from Indexer.Fetcher.Optimism
             Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc]
+
+          module_using_reorg_monitor == Indexer.Fetcher.Scroll.Batch ->
+            Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll.BridgeL1][:rpc]
 
           true ->
             Application.get_all_env(:indexer)[module_using_reorg_monitor][:rpc]

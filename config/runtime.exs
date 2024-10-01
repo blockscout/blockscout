@@ -1086,9 +1086,15 @@ config :indexer, Indexer.Fetcher.Scroll.BridgeL1,
 config :indexer, Indexer.Fetcher.Scroll.BridgeL2,
   messenger_contract: System.get_env("INDEXER_SCROLL_L2_MESSENGER_CONTRACT")
 
+config :indexer, Indexer.Fetcher.Scroll.Batch,
+  scroll_chain_contract: System.get_env("INDEXER_SCROLL_L1_CHAIN_CONTRACT"),
+  start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_SCROLL_L1_BATCH_START_BLOCK")
+
 config :indexer, Indexer.Fetcher.Scroll.BridgeL1.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
 
 config :indexer, Indexer.Fetcher.Scroll.BridgeL2.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
+
+config :indexer, Indexer.Fetcher.Scroll.Batch.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
 
 config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
   base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3/mainnet"),

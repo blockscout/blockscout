@@ -66,7 +66,7 @@ defmodule Indexer.Fetcher.Scroll.BridgeL2 do
 
     with {:messenger_contract_address_is_valid, true} <-
            {:messenger_contract_address_is_valid, Helper.address_correct?(env[:messenger_contract])},
-         {last_l2_block_number, last_l2_transaction_hash} = Reader.last_l2_item(),
+         {last_l2_block_number, last_l2_transaction_hash} = Reader.last_l2_bridge_item(),
          {:ok, block_check_interval, _} <- Helper.get_block_check_interval(json_rpc_named_arguments),
          {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000),
          {:ok, last_l2_tx} <- Helper.get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),

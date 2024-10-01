@@ -176,6 +176,9 @@ defmodule Indexer.Supervisor do
         configure(Indexer.Fetcher.Scroll.L1FeeParam.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
+        configure(Indexer.Fetcher.Scroll.Batch.Supervisor, [
+          [memory_monitor: memory_monitor]
+        ]),
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, [
