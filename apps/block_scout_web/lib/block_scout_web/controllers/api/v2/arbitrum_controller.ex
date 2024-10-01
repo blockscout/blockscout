@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         |> put_status(:bad_request)
         |> render(:message, %{message: "withdrawal was executed already"})
 
-      {:error, _} ->
+      {:error, :internal_error} ->
         conn
         |> put_status(:not_found)
         |> render(:message, %{message: "internal error occured"})
@@ -110,8 +110,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         {:ok, address} -> address
         _ -> nil
       end
-
-    Logger.warning("hash = #{inspect(hash, pretty: true)}")
 
     withdrawals = ClaimRollupMessage.transaction_to_withdrawals(hash)
 

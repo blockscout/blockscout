@@ -909,7 +909,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           non_neg_integer(),
           non_neg_integer(),
           EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: {:ok, binary()} | {:error, :invalid}
+        ) :: {:ok, any()} | {:error, :invalid}
   def construct_outbox_proof(_, size, leaf, _) when size <= leaf do
     {:error, :invalid}
   end

@@ -263,7 +263,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
         callvalue,
         data]
   """
-  @spec l2_to_l1_event_parse(min_log) :: any()
+  @spec l2_to_l1_event_parse(any()) :: any()
   def l2_to_l1_event_parse(event) do
     [
       caller,

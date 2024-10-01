@@ -10,7 +10,7 @@ defmodule Indexer.Transform.TokenTransfers do
 
   alias Explorer.{Helper, Repo}
   alias Explorer.Chain.{Hash, Token, TokenTransfer}
-  # alias Indexer.Fetcher.TokenTotalSupplyUpdater
+  alias Indexer.Fetcher.TokenTotalSupplyUpdater
 
   @doc """
   Returns a list of token transfers given a list of logs.
@@ -62,9 +62,9 @@ defmodule Indexer.Transform.TokenTransfers do
     tokens = sanitize_token_types(rough_tokens, rough_token_transfers)
     token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
 
-    # token_transfers
-    # |> filter_tokens_for_supply_update()
-    # |> TokenTotalSupplyUpdater.add_tokens()
+    token_transfers
+    |> filter_tokens_for_supply_update()
+    |> TokenTotalSupplyUpdater.add_tokens()
 
     tokens_uniq = tokens |> Enum.uniq()
 

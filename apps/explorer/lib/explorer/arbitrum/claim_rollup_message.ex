@@ -101,7 +101,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       {:uint, 256},
       # data
       :bytes
-    ]
+    ],
+    type: :function,
+    inputs_indexed: []
   }
 
   @doc """
@@ -148,7 +150,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         end
 
       token = decode_withdraw_token_data(data)
-      Logger.warning("Decoded: #{inspect(token, pretty: true)}")
 
       data =
         data
@@ -211,7 +212,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       where `contract_address` - the address where claim transaction should be sent (Outbox on L1),
             `calldata` - transaction raw calldata starting with selector
   """
-  @spec claim(non_neg_integer()) :: {:ok, [contract_address: String.t(), calldata: String.t()]} | {:error, :not_found}
+  @spec claim(non_neg_integer()) :: {:ok, [contract_address: String.t(), calldata: String.t()]} | {:error, term()}
   def claim(message_id) do
     case Reader.l2_to_l1_message_with_id(message_id) do
       nil ->
@@ -219,8 +220,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         {:error, :not_found}
 
       msg ->
-        # Logger.warning("Received message #{inspect(msg)}")
-
         case transaction_to_withdrawals(msg.originating_transaction_hash)
              |> Enum.filter(fn w -> w.message_id == message_id end)
              |> List.first() do
@@ -232,7 +231,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             {:error, :not_found}
 
           withdrawal when withdrawal.status == :confirmed ->
-            Logger.warning("Found withdrawal: #{inspect(withdrawal)}")
 
             # getting needed L1 properties: RPC URL and Main Rollup contract address
             config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
@@ -244,16 +242,12 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             outbox_contract =
               Rpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
-            Logger.warning("Outbox contract: #{outbox_contract}")
-
             case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
               nil ->
                 Logger.error("Cannot get size for proof")
                 {:error, :internal_error}
 
               l2_block_send_count ->
-                Logger.warning("Obtained size for proof: #{l2_block_send_count}")
-
                 # now we are ready to construct outbox proof
                 case Rpc.construct_outbox_proof(
                        @node_interface_address,
@@ -265,8 +259,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
                     proof_values =
                       proof
                       |> Enum.map(fn p -> "0x" <> Base.encode16(p, case: :lower) end)
-
-                    Logger.warning("proof_values: #{inspect(proof_values, pretty: true)}")
 
                     # finally encode function call
                     args = [
@@ -282,8 +274,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
                     ]
 
                     calldata = Encoder.encode_function_call(@execute_transaction_selector, args)
-
-                    Logger.warning("calldata: #{calldata}")
 
                     {:ok, [contract_address: outbox_contract, calldata: calldata]}
 
@@ -329,8 +319,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
                json_l1_rpc_named_arguments
              ) do
           {:ok, [node_created_event]} ->
-            # Logger.warning("NodeCreated event: #{inspect(node_created_event, pretty: true)}")
-
             [
               _execution_hash,
               {_, {{[l2_block_hash, _], _}, _}, _},
@@ -348,19 +336,13 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
               l2_block_hash
               |> Hash.Full.cast()
 
-            Logger.warning("L2 hash: #{Hash.to_string(l2_block_hash)}")
-
-            #{:ok, testhash} = Chain.string_to_block_hash("0x858b20ced616997c30efbcb331e8155b27c567c495a211aa269c3e1f5fa38fac")
-            #testblock = Chain.hash_to_block(testhash)
-            #Logger.warning("TESTBLOCK: #{inspect(testblock, pretty: true, limit: 20000)}")
-
             # getting L2 block with that hash
             l2_block_send_count =
               case Chain.hash_to_block(l2_block_hash) do
                 {:ok, block} -> Map.get(block, :send_count)
 
                 {:error, _} ->
-                  case EthereumJSONRPC.fetch_blocks_by_hash([l2_block_hash], json_l2_rpc_named_arguments, false) do
+                  case EthereumJSONRPC.fetch_blocks_by_hash([Hash.to_string(l2_block_hash)], json_l2_rpc_named_arguments, false) do
                     {:ok, blocks} ->
                       blocks.blocks_params
                       |> hd()
@@ -371,8 +353,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
                       nil
                   end
               end
-
-            Logger.warning("size for outbox proof: #{l2_block_send_count}")
 
             l2_block_send_count
 
