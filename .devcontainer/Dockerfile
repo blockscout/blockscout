@@ -1,6 +1,12 @@
-# Update the VARIANT arg in docker-compose.yml to pick an Elixir version:
-ARG VARIANT="1.17.2-otp-27"
-FROM elixir:${VARIANT}
+# Since this is a copy of https://github.com/blockscout/devcontainer-elixir/blob/main/Dockerfile
+# So after successful testing this file, the original one must be updated as well.
+ARG VARIANT="1.17.3-erlang-27.1-debian-bullseye-20240926"
+FROM hexpm/elixir:${VARIANT}
+
+# ARGs declared before FROM are not persisted beyond the FROM instruction.
+# They must be redeclared here to be available in the rest of the Dockerfile.
+ARG PHOENIX_VERSION="1.7.10"
+ARG NODE_VERSION="18"
 
 # This Dockerfile adds a non-root user with sudo access. Update the “remoteUser” property in
 # devcontainer.json to use it. More info: https://aka.ms/vscode-remote/containers/non-root-user.
@@ -12,16 +18,9 @@ ARG USER_GID=$USER_UID
 ARG INSTALL_ZSH="true"
 ARG UPGRADE_PACKAGES="true"
 ARG COMMON_SCRIPT_SOURCE="https://raw.githubusercontent.com/microsoft/vscode-dev-containers/main/script-library/common-debian.sh"
-ARG COMMON_SCRIPT_SHA="dev-mode"
 
-# Update the PHOENIX_VERSION arg in docker-compose.yml to pick an Phoenix version:
-ARG PHOENIX_VERSION="1.7.10"
-
-# [Optional] Setup nodejs
+# Options for setup nodejs
 ARG NODE_SCRIPT_SOURCE="https://raw.githubusercontent.com/microsoft/vscode-dev-containers/main/script-library/node-debian.sh"
-ARG NODE_SCRIPT_SHA="dev-mode"
-# Update the NODE_VERSION arg in docker-compose.yml to pick an Node.js version:
-ARG NODE_VERSION="none"
 ENV NVM_DIR=/usr/local/share/nvm
 ENV NVM_SYMLINK_CURRENT=true
 ENV PATH=${NVM_DIR}/current/bin:${PATH}
@@ -31,16 +30,12 @@ RUN apt-get update \
   && export DEBIAN_FRONTEND=noninteractive \
   && apt-get -y install --no-install-recommends curl ca-certificates 2>&1 \
   && curl -sSL ${COMMON_SCRIPT_SOURCE} -o /tmp/common-setup.sh \
-  && ([ "${COMMON_SCRIPT_SHA}" = "dev-mode" ] || (echo "${COMMON_SCRIPT_SHA} */tmp/common-setup.sh" | sha256sum -c -)) \
   && /bin/bash /tmp/common-setup.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" \
   #
-  # [Optional] Install Node.js for use with web applications
-  && if [ "$NODE_VERSION" != "none" ]; then \
-  curl -sSL ${NODE_SCRIPT_SOURCE} -o /tmp/node-setup.sh \
-  && ([ "${NODE_SCRIPT_SHA}" = "dev-mode" ] || (echo "${NODE_SCRIPT_SHA} */tmp/node-setup.sh" | sha256sum -c -)) \
+  # Install Node.js for use with web applications
+  && curl -sSL ${NODE_SCRIPT_SOURCE} -o /tmp/node-setup.sh \
   && /bin/bash /tmp/node-setup.sh "${NVM_DIR}" "${NODE_VERSION}" "${USERNAME}" \
-  && npm install -g cspell@latest; \
-  fi \
+  && npm install -g cspell@latest \
   #
   # Install dependencies
   && apt-get install -y build-essential inotify-tools \

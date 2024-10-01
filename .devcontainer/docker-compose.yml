@@ -1,17 +1,11 @@
-version: "3.8"
-
 services:
   elixir:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        # Elixir Version:
-        VARIANT: "1.17.2-otp-27"
-        # Phoenix Version:
-        PHOENIX_VERSION: "1.7.10"
-        # Node Version: 12, 14, ...
-        NODE_VERSION: "18"
+    image: ghcr.io/blockscout/devcontainer-elixir:1.17.3-erlang-27.1
+
+    # Uncomment next lines to use test Dockerfile with new Elixir version
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
 
     volumes:
       - ..:/workspace:cached
