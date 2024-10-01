@@ -2902,7 +2902,8 @@ defmodule Explorer.Chain do
       the `index` that are passed.
 
   """
-  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary(), [paging_options | necessity_by_association_option | api?]) :: [Log.t()]
+  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary(), [paging_options | necessity_by_association_option | api?]) ::
+          [Log.t()]
   def transaction_to_logs_by_topic0(transaction_hash, topic0, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -2924,7 +2925,7 @@ defmodule Explorer.Chain do
       |> join_associations(necessity_by_association)
 
     query
-      |> select_repo(options).all()
+    |> select_repo(options).all()
   end
 
   @doc """

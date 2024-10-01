@@ -626,7 +626,6 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     |> Repo.one()
   end
 
-
   @doc """
     Retrieves the numbers of the L1 blocks containing the confirmation transactions
     bounding the first interval where missed confirmation transactions could be found.

@@ -261,7 +261,7 @@ defmodule EthereumJSONRPC do
   Set `with_transactions` parameter to false to exclude tx data.
   """
   @spec fetch_blocks_by_hash([hash()], json_rpc_named_arguments, boolean()) ::
-    {:ok, Blocks.t()} | {:error, reason :: term}
+          {:ok, Blocks.t()} | {:error, reason :: term}
   def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments, with_transactions? \\ true) do
     block_hashes
     |> Enum.map(fn block_hash -> %{hash: block_hash} end)

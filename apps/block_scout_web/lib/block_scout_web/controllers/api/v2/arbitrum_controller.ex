@@ -75,28 +75,28 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     case ClaimRollupMessage.claim(msg_id) do
       {:ok, [contract_address: outbox_contract, calldata: calldata]} ->
         conn
-          |> put_status(200)
-          |> render(:arbitrum_claim_message, %{calldata: calldata, address: outbox_contract})
+        |> put_status(200)
+        |> render(:arbitrum_claim_message, %{calldata: calldata, address: outbox_contract})
 
       {:error, :not_found} ->
         conn
-          |> put_status(:not_found)
-          |> render(:message, %{message: "cannot find requested withdrawal"})
+        |> put_status(:not_found)
+        |> render(:message, %{message: "cannot find requested withdrawal"})
 
       {:error, :unconfirmed} ->
         conn
-          |> put_status(:bad_request)
-          |> render(:message, %{message: "withdrawal is unconfirmed yet"})
+        |> put_status(:bad_request)
+        |> render(:message, %{message: "withdrawal is unconfirmed yet"})
 
       {:error, :executed} ->
         conn
-          |> put_status(:bad_request)
-          |> render(:message, %{message: "withdrawal was executed already"})
+        |> put_status(:bad_request)
+        |> render(:message, %{message: "withdrawal was executed already"})
 
       {:error, _} ->
         conn
-          |> put_status(:not_found)
-          |> render(:message, %{message: "internal error occured"})
+        |> put_status(:not_found)
+        |> render(:message, %{message: "internal error occured"})
     end
   end
 
@@ -105,10 +105,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   """
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals(conn, %{"tx_hash" => tx_hash} = _params) do
-    hash = case Hash.Full.cast(tx_hash) do
-      {:ok, address} -> address
-      _ -> nil
-    end
+    hash =
+      case Hash.Full.cast(tx_hash) do
+        {:ok, address} -> address
+        _ -> nil
+      end
 
     Logger.warning("hash = #{inspect(hash, pretty: true)}")
 

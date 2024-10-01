@@ -274,20 +274,23 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       data
     ] = decode_data(event.data, @l2_to_l1_event_unindexed_params)
 
-    position = case quantity_to_integer(event.fourth_topic) do
-      nil -> Hash.to_integer(event.fourth_topic)
-      number -> number
-    end
+    position =
+      case quantity_to_integer(event.fourth_topic) do
+        nil -> Hash.to_integer(event.fourth_topic)
+        number -> number
+      end
 
-    caller = case Hash.Address.cast(caller) do
-      {:ok, address} -> address
-      _ -> nil
-    end
+    caller =
+      case Hash.Address.cast(caller) do
+        {:ok, address} -> address
+        _ -> nil
+      end
 
-    destination = case Hash.Address.cast(Hash.to_integer(event.second_topic)) do
-      {:ok, address} -> address
-      _ -> nil
-    end
+    destination =
+      case Hash.Address.cast(Hash.to_integer(event.second_topic)) do
+        {:ok, address} -> address
+        _ -> nil
+      end
 
     {position, caller, destination, arb_block_num, eth_block_num, timestamp, callvalue, data}
   end

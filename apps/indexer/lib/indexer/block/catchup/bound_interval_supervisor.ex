@@ -18,7 +18,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
         }
 
   # milliseconds
-  @block_interval 5_000
+  @block_interval 2_000
 
   @enforce_keys ~w(bound_interval fetcher)a
   defstruct bound_interval: nil,
@@ -217,13 +217,13 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
           BoundInterval.increase(bound_interval)
 
         _ ->
-          Logger.info(
-            "Index had to catch up.",
-            first_block_number: first_block_number,
-            last_block_number: last_block_number,
-            missing_block_count: missing_block_count,
-            shrunk: shrunk
-          )
+          # Logger.info(
+          #   "Index had to catch up.",
+          #   first_block_number: first_block_number,
+          #   last_block_number: last_block_number,
+          #   missing_block_count: missing_block_count,
+          #   shrunk: shrunk
+          # )
 
           BoundInterval.decrease(bound_interval)
       end
@@ -232,9 +232,9 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
     interval = new_bound_interval.current
 
-    Logger.info(fn ->
-      ["Checking if index needs to catch up in ", to_string(interval), "ms."]
-    end)
+    # Logger.info(fn ->
+    #   ["Checking if index needs to catch up in ", to_string(interval), "ms."]
+    # end)
 
     Process.send_after(self(), :catchup_index, interval)
 

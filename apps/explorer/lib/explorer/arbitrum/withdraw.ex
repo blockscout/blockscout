@@ -1,5 +1,4 @@
 defmodule Explorer.Arbitrum.Withdraw do
-
   @moduledoc """
     Models an L2->L1 withdraw on Arbitrum.
 
@@ -29,21 +28,23 @@ defmodule Explorer.Arbitrum.Withdraw do
   """
 
   @type t :: %__MODULE__{
-    message_id: message_id,
-    status: status,
-    caller: caller,
-    destination: destination,
-    arb_block_num: arb_block_num,
-    eth_block_num: eth_block_num,
-    l2_timestamp: l2_timestamp,
-    callvalue: callvalue,
-    data: data,
-    token: %{
-      address: token_address,
-      destination: token_destination,
-      amount: token_amount
-    } | nil
-  }
+          message_id: message_id,
+          status: status,
+          caller: caller,
+          destination: destination,
+          arb_block_num: arb_block_num,
+          eth_block_num: eth_block_num,
+          l2_timestamp: l2_timestamp,
+          callvalue: callvalue,
+          data: data,
+          token:
+            %{
+              address: token_address,
+              destination: token_destination,
+              amount: token_amount
+            }
+            | nil
+        }
 
   @typep message_id :: non_neg_integer()
   @typep status :: :unconfirmed | :confirmed | :executed
@@ -68,7 +69,6 @@ defmodule Explorer.Arbitrum.Withdraw do
     :l2_timestamp,
     :callvalue,
     :data,
-    token: nil,
+    token: nil
   ]
-
 end

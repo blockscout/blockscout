@@ -13,19 +13,19 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   import Indexer.Block.Fetcher,
     only: [
-      async_import_blobs: 2,
-      async_import_block_rewards: 2,
-      async_import_celo_epoch_block_operations: 2,
-      async_import_created_contract_codes: 2,
-      async_import_filecoin_addresses_info: 2,
-      async_import_internal_transactions: 2,
-      async_import_polygon_zkevm_bridge_l1_tokens: 1,
-      async_import_realtime_coin_balances: 1,
-      async_import_replaced_transactions: 2,
-      async_import_token_balances: 2,
-      async_import_token_instances: 1,
-      async_import_tokens: 2,
-      async_import_uncles: 2,
+      # async_import_blobs: 2,
+      # async_import_block_rewards: 2,
+      # async_import_celo_epoch_block_operations: 2,
+      # async_import_created_contract_codes: 2,
+      # async_import_filecoin_addresses_info: 2,
+      # async_import_internal_transactions: 2,
+      # async_import_polygon_zkevm_bridge_l1_tokens: 1,
+      # async_import_realtime_coin_balances: 1,
+      # async_import_replaced_transactions: 2,
+      # async_import_token_balances: 2,
+      # async_import_token_instances: 1,
+      # async_import_tokens: 2,
+      # async_import_uncles: 2,
       fetch_and_import_range: 2
     ]
 
@@ -218,7 +218,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @impl Block.Fetcher
   def import(_block_fetcher, %{block_rewards: block_rewards} = options) do
-    {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors)
+    {_, chain_import_block_rewards} = Map.pop(block_rewards, :errors)
 
     chain_import_options =
       options
@@ -227,11 +227,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
       |> put_in([:blocks, :params, Access.all(), :refetch_needed], false)
       |> put_in([:block_rewards], chain_import_block_rewards)
 
-    with {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
-      async_import_remaining_block_data(
-        imported,
-        %{block_rewards: %{errors: block_reward_errors}}
-      )
+    with {:import, {:ok, _} = ok} <- {:import, Chain.import(chain_import_options)} do
+      # async_import_remaining_block_data(
+      #   imported,
+      #   %{block_rewards: %{errors: block_reward_errors}}
+      # )
 
       ok
     end
@@ -450,24 +450,24 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Enum.any?(changesets, &(Map.get(&1, :message) == "Unknown block number"))
   end
 
-  defp async_import_remaining_block_data(
-         imported,
-         %{block_rewards: %{errors: block_reward_errors}}
-       ) do
-    realtime? = true
+  # defp async_import_remaining_block_data(
+  #        imported,
+  #        %{block_rewards: %{errors: block_reward_errors}}
+  #      ) do
+  #   realtime? = true
 
-    async_import_realtime_coin_balances(imported)
-    async_import_block_rewards(block_reward_errors, realtime?)
-    async_import_created_contract_codes(imported, realtime?)
-    async_import_internal_transactions(imported, realtime?)
-    async_import_tokens(imported, realtime?)
-    async_import_token_balances(imported, realtime?)
-    async_import_token_instances(imported)
-    async_import_uncles(imported, realtime?)
-    async_import_replaced_transactions(imported, realtime?)
-    async_import_blobs(imported, realtime?)
-    async_import_polygon_zkevm_bridge_l1_tokens(imported)
-    async_import_celo_epoch_block_operations(imported, realtime?)
-    async_import_filecoin_addresses_info(imported, realtime?)
-  end
+  #   async_import_realtime_coin_balances(imported)
+  #   async_import_block_rewards(block_reward_errors, realtime?)
+  #   async_import_created_contract_codes(imported, realtime?)
+  #   async_import_internal_transactions(imported, realtime?)
+  #   async_import_tokens(imported, realtime?)
+  #   async_import_token_balances(imported, realtime?)
+  #   async_import_token_instances(imported)
+  #   async_import_uncles(imported, realtime?)
+  #   async_import_replaced_transactions(imported, realtime?)
+  #   async_import_blobs(imported, realtime?)
+  #   async_import_polygon_zkevm_bridge_l1_tokens(imported)
+  #   async_import_celo_epoch_block_operations(imported, realtime?)
+  #   async_import_filecoin_addresses_info(imported, realtime?)
+  # end
 end

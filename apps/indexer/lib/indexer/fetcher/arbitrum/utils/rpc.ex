@@ -9,7 +9,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   alias EthereumJSONRPC.Transport
   alias Indexer.Helper, as: IndexerHelper
 
-
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
   @rpc_resend_attempts 20
 
@@ -104,7 +103,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
             %{"type" => "uint64", "name" => "firstChildBlock", "internalType" => "uint64"},
             %{"type" => "uint64", "name" => "latestChildNumber", "internalType" => "uint64"},
             %{"type" => "uint64", "name" => "createdAtBlock", "internalType" => "uint64"},
-            %{"type" => "bytes32", "name" => "nodeHash", "internalType" => "bytes32"},
+            %{"type" => "bytes32", "name" => "nodeHash", "internalType" => "bytes32"}
           ]
         }
       ],
@@ -178,7 +177,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           "internalType" => "bytes32[]",
           "name" => "proof",
           "type" => "bytes32[]"
-        },
+        }
       ],
       "stateMutability" => "view",
       "type" => "function"
@@ -281,9 +280,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     - A positive integer representing latest confirmed node index
   """
   @spec get_latest_confirmed_l2_to_l1_message_id(
-    EthereumJSONRPC.address(),
-    EthereumJSONRPC.json_rpc_named_arguments()
-  ) :: non_neg_integer()
+          EthereumJSONRPC.address(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: non_neg_integer()
   def get_latest_confirmed_l2_to_l1_message_id(rollup_address, json_rpc_named_arguments) do
     read_contract_and_handle_result_as_integer(
       rollup_address,
@@ -309,18 +308,20 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     - A positive integer representing latest confirmed node index
   """
   @spec get_node(
-    EthereumJSONRPC.address(),
-    non_neg_integer(),
-    EthereumJSONRPC.json_rpc_named_arguments()
-  ) :: any()
+          EthereumJSONRPC.address(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: any()
   def get_node(rollup_address, node_index, json_rpc_named_arguments) do
-    [%{
-      contract_address: rollup_address,
-      method_id: @selector_get_node,
-      args: [node_index]
-    }]
-      |> IndexerHelper.read_contracts_with_retries(@rollup_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
-      |> Kernel.elem(0)
+    [
+      %{
+        contract_address: rollup_address,
+        method_id: @selector_get_node,
+        args: [node_index]
+      }
+    ]
+    |> IndexerHelper.read_contracts_with_retries(@rollup_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
+    |> Kernel.elem(0)
   end
 
   @doc """
@@ -909,18 +910,24 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           non_neg_integer(),
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: {:ok, binary()} | {:error, :invalid}
-  def construct_outbox_proof(_, size, leaf, _) when size <= leaf  do
+  def construct_outbox_proof(_, size, leaf, _) when size <= leaf do
     {:error, :invalid}
   end
+
   def construct_outbox_proof(node_interface_address, size, leaf, json_rpc_named_arguments) do
-    case [%{
-      contract_address: node_interface_address,
-      method_id: @selector_construct_outbox_proof,
-      args: [size, leaf]
-    }]
-      |> IndexerHelper.read_contracts_with_retries(@node_interface_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
-      |> Kernel.elem(0)
-    do
+    case [
+           %{
+             contract_address: node_interface_address,
+             method_id: @selector_construct_outbox_proof,
+             args: [size, leaf]
+           }
+         ]
+         |> IndexerHelper.read_contracts_with_retries(
+           @node_interface_contract_abi,
+           json_rpc_named_arguments,
+           @rpc_resend_attempts
+         )
+         |> Kernel.elem(0) do
       [ok: value] -> {:ok, value}
       [error: err] -> {:error, err}
     end
@@ -943,10 +950,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
             Otherwise returns `false`.
   """
   @spec is_withdrawal_spent(
-    EthereumJSONRPC.address(),
-    non_neg_integer(),
-    EthereumJSONRPC.json_rpc_named_arguments()
-  ) :: boolean()
+          EthereumJSONRPC.address(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: boolean()
   def is_withdrawal_spent(outbox_contract, position, json_l1_rpc_named_arguments) do
     read_contract_and_handle_result_as_integer(
       outbox_contract,
