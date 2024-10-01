@@ -243,17 +243,27 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     end)
   end
 
-  # Parses an L2-to-L1 event, extracting relevant information from the event's data.
-  @spec l2_to_l1_event_parse(min_log) :: {
-    non_neg_integer(), # position,
-    Explorer.Chain.Hash.Address.t(), # caller,
-    Explorer.Chain.Hash.Address.t(), # destination,
-    non_neg_integer(), # arb_block_num,
-    non_neg_integer(), # eth_block_num,
-    non_neg_integer(), # timestamp,
-    non_neg_integer(), # callvalue,
-    binary() # data
-  }
+  @doc """
+    Parses an L2-to-L1 event, extracting relevant information from the event's data.
+
+    This function takes an L2ToL1Tx event emited by ArbSys contract and parses its fields
+    to extract needed message properties.
+
+    ## Parameters
+    - `event`: A log entry representing an L2-to-L1 message event.
+
+    ## Returns
+    - A tuple of fields of L2-to-L1 message with the following order:
+        [position,
+        caller,
+        destination,
+        arb_block_num,
+        eth_block_num,
+        timestamp,
+        callvalue,
+        data]
+  """
+  @spec l2_to_l1_event_parse(min_log) :: any()
   def l2_to_l1_event_parse(event) do
     [
       caller,
