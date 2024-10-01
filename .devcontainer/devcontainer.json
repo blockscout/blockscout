@@ -21,6 +21,9 @@
 			]
 		}
 	},
+	"features": {
+		"ghcr.io/stuartleeks/dev-container-features/shell-history:0": {}
+	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// This can be used to network with other containers or with the host. 
 	"forwardPorts": [
