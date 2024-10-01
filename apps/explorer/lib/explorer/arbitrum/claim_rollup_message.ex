@@ -32,9 +32,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           # GlobalState globalState
           {:tuple,
            [
-             # bytes32[2] `bytes32Vals`
+             # bytes32[2] bytes32Values
              {:array, {:bytes, 32}, 2},
-             # uint64[2] `u64Vals`
+             # uint64[2] u64Values
              {:array, {:uint, 64}, 2}
            ]},
           # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
@@ -46,9 +46,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           # GlobalState globalState
           {:tuple,
            [
-             # bytes32[2] `bytes32Vals`
+             # bytes32[2] bytes32Values
              {:array, {:bytes, 32}, 2},
-             # uint64[2] `u64Vals`
+             # uint64[2] u64Values
              {:array, {:uint, 64}, 2}
            ]},
           # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
@@ -130,64 +130,76 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     outbox_contract =
       Rpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
-    Chain.transaction_to_logs_by_topic0(tx_hash, @l2_to_l1_event)
+    logs = Chain.transaction_to_logs_by_topic0(tx_hash, @l2_to_l1_event)
+
+    logs
     |> Enum.map(fn log ->
-      # getting needed fields from the L2ToL1Tx event
-      {position, caller, destination, arb_block_num, eth_block_num, l2_timestamp, call_value, data} =
-        ArbitrumMessaging.l2_to_l1_event_parse(log)
-
-      status =
-        case Rpc.is_withdrawal_spent(outbox_contract, position, json_l1_rpc_named_arguments) do
-          true ->
-            :executed
-
-          false ->
-            case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
-              nil -> :unknown
-              size when size > position -> :confirmed
-              _ -> :unconfirmed
-            end
-        end
-
-      token = decode_withdraw_token_data(data)
-
-      data =
-        data
-        |> Base.encode16(case: :lower)
-
-      %Explorer.Arbitrum.Withdraw{
-        message_id: Hash.to_integer(log.fourth_topic),
-        status: status,
-        caller: caller,
-        destination: destination,
-        arb_block_num: arb_block_num,
-        eth_block_num: eth_block_num,
-        l2_timestamp: l2_timestamp,
-        callvalue: call_value,
-        data: "0x" <> data,
-        token: token
-      }
+      log_to_withdraw(log, outbox_contract, l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments)
     end)
+  end
+
+  defp log_to_withdraw(
+         log,
+         outbox_contract,
+         l1_rollup_address,
+         json_l1_rpc_named_arguments,
+         json_l2_rpc_named_arguments
+       ) do
+    # getting needed fields from the L2ToL1Tx event
+    {position, caller, destination, arb_block_num, eth_block_num, l2_timestamp, call_value, data} =
+      ArbitrumMessaging.l2_to_l1_event_parse(log)
+
+    status =
+      case Rpc.is_withdrawal_spent(outbox_contract, position, json_l1_rpc_named_arguments) do
+        true ->
+          :executed
+
+        false ->
+          case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
+            nil -> :unknown
+            size when size > position -> :confirmed
+            _ -> :unconfirmed
+          end
+      end
+
+    token = decode_withdraw_token_data(data)
+
+    data_hex =
+      data
+      |> Base.encode16(case: :lower)
+
+    %Explorer.Arbitrum.Withdraw{
+      message_id: Hash.to_integer(log.fourth_topic),
+      status: status,
+      caller: caller,
+      destination: destination,
+      arb_block_num: arb_block_num,
+      eth_block_num: eth_block_num,
+      l2_timestamp: l2_timestamp,
+      callvalue: call_value,
+      data: "0x" <> data_hex,
+      token: token
+    }
   end
 
   def decode_withdraw_token_data(<<0x2E567B36::32, rest_data::binary>>) do
     [token, _, to, amount, _] = ABI.decode(@finalize_inbound_transfer_selector, rest_data)
 
-    token =
+    token_bin =
       case Address.cast(token) do
         {:ok, address} -> address
         _ -> nil
       end
 
-    to =
+    to_bin =
       case Address.cast(to) do
         {:ok, address} -> address
         _ -> nil
       end
 
     %{
-      address: token,
-      destination: to,
+      address: token_bin,
+      destination: to_bin,
       amount: amount
     }
   end
@@ -220,9 +232,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         {:error, :not_found}
 
       msg ->
-        case transaction_to_withdrawals(msg.originating_transaction_hash)
-             |> Enum.filter(fn w -> w.message_id == message_id end)
-             |> List.first() do
+        case message_to_withdrawal(msg) do
           nil ->
             Logger.error(
               "Unable to find withdrawal with id #{message_id} in tx #{Hash.to_string(msg.originating_transaction_hash)}"
@@ -231,56 +241,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             {:error, :not_found}
 
           withdrawal when withdrawal.status == :confirmed ->
-            # getting needed L1 properties: RPC URL and Main Rollup contract address
-            config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
-            l1_rpc = config_common[:l1_rpc]
-            json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(l1_rpc)
-            json_l2_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-            l1_rollup_address = config_common[:l1_rollup_address]
-
-            outbox_contract =
-              Rpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
-
-            case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
-              nil ->
-                Logger.error("Cannot get size for proof")
-                {:error, :internal_error}
-
-              l2_block_send_count ->
-                # now we are ready to construct outbox proof
-                case Rpc.construct_outbox_proof(
-                       @node_interface_address,
-                       l2_block_send_count,
-                       withdrawal.message_id,
-                       json_l2_rpc_named_arguments
-                     ) do
-                  {:ok, [_send, _root, proof]} ->
-                    proof_values =
-                      proof
-                      |> Enum.map(fn p -> "0x" <> Base.encode16(p, case: :lower) end)
-
-                    # finally encode function call
-                    args = [
-                      proof_values,
-                      withdrawal.message_id,
-                      Hash.to_string(withdrawal.caller),
-                      Hash.to_string(withdrawal.destination),
-                      withdrawal.arb_block_num,
-                      withdrawal.eth_block_num,
-                      withdrawal.l2_timestamp,
-                      withdrawal.callvalue,
-                      withdrawal.data
-                    ]
-
-                    calldata = Encoder.encode_function_call(@execute_transaction_selector, args)
-
-                    {:ok, [contract_address: outbox_contract, calldata: calldata]}
-
-                  {:error, _} ->
-                    Logger.error("Unable to construct proof with size = #{l2_block_send_count}, leaf = #{message_id}")
-                    {:error, :internal_error}
-                end
-            end
+            construct_claim(withdrawal)
 
           w when w.status == :unconfirmed ->
             {:error, :unconfirmed}
@@ -289,6 +250,73 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             {:error, :executed}
         end
     end
+  end
+
+  defp message_to_withdrawal(msg) do
+    tx_withdrawals = transaction_to_withdrawals(msg.originating_transaction_hash)
+
+    tx_withdrawals
+    |> Enum.filter(fn w -> w.message_id == msg.message_id end)
+    |> List.first()
+  end
+
+  defp construct_claim(withdrawal) do
+    # getting needed L1 properties: RPC URL and Main Rollup contract address
+    config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
+    l1_rpc = config_common[:l1_rpc]
+    json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(l1_rpc)
+    json_l2_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    l1_rollup_address = config_common[:l1_rollup_address]
+
+    outbox_contract =
+      Rpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
+
+    case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
+      nil ->
+        Logger.error("Cannot get size for proof")
+        {:error, :internal_error}
+
+      l2_block_send_count ->
+        # now we are ready to construct outbox proof
+        case Rpc.construct_outbox_proof(
+               @node_interface_address,
+               l2_block_send_count,
+               withdrawal.message_id,
+               json_l2_rpc_named_arguments
+             ) do
+          {:ok, [_send, _root, proof]} ->
+            proof_values = raw_proof_to_hex(proof)
+
+            # finally encode function call
+            args = [
+              proof_values,
+              withdrawal.message_id,
+              Hash.to_string(withdrawal.caller),
+              Hash.to_string(withdrawal.destination),
+              withdrawal.arb_block_num,
+              withdrawal.eth_block_num,
+              withdrawal.l2_timestamp,
+              withdrawal.callvalue,
+              withdrawal.data
+            ]
+
+            calldata = Encoder.encode_function_call(@execute_transaction_selector, args)
+
+            {:ok, [contract_address: outbox_contract, calldata: calldata]}
+
+          {:error, _} ->
+            Logger.error(
+              "Unable to construct proof with size = #{l2_block_send_count}, leaf = #{withdrawal.message_id}"
+            )
+
+            {:error, :internal_error}
+        end
+    end
+  end
+
+  defp raw_proof_to_hex(proof) do
+    proof
+    |> Enum.map(fn p -> "0x" <> Base.encode16(p, case: :lower) end)
   end
 
   @spec get_size_for_proof(
@@ -335,30 +363,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
               l2_block_hash
               |> Hash.Full.cast()
 
-            # getting L2 block with that hash
-            l2_block_send_count =
-              case Chain.hash_to_block(l2_block_hash) do
-                {:ok, block} ->
-                  Map.get(block, :send_count)
-
-                {:error, _} ->
-                  case EthereumJSONRPC.fetch_blocks_by_hash(
-                         [Hash.to_string(l2_block_hash)],
-                         json_l2_rpc_named_arguments,
-                         false
-                       ) do
-                    {:ok, blocks} ->
-                      blocks.blocks_params
-                      |> hd()
-                      |> Map.get(:send_count)
-
-                    {:error, error} ->
-                      Logger.error("Failed to fetch L2 block by hash #{l2_block_hash}: #{inspect(error)}")
-                      nil
-                  end
-              end
-
-            l2_block_send_count
+            get_send_count_from_block_hash(l2_block_hash, json_l2_rpc_named_arguments)
 
           _ ->
             Logger.error("Cannot fetch NodeCreated event in L1 block #{node_creation_block_num}")
@@ -368,6 +373,29 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       [{:error, error}] ->
         Logger.error("Cannot fetch node creation block number: #{inspect(error)}")
         nil
+    end
+  end
+
+  defp get_send_count_from_block_hash(l2_block_hash, json_l2_rpc_named_arguments) do
+    case Chain.hash_to_block(l2_block_hash) do
+      {:ok, block} ->
+        Map.get(block, :send_count)
+
+      {:error, _} ->
+        case EthereumJSONRPC.fetch_blocks_by_hash(
+               [Hash.to_string(l2_block_hash)],
+               json_l2_rpc_named_arguments,
+               false
+             ) do
+          {:ok, blocks} ->
+            blocks.blocks_params
+            |> hd()
+            |> Map.get(:send_count)
+
+          {:error, error} ->
+            Logger.error("Failed to fetch L2 block by hash #{l2_block_hash}: #{inspect(error)}")
+            nil
+        end
     end
   end
 end

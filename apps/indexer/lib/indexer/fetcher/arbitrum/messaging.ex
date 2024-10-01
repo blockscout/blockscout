@@ -280,7 +280,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
         number -> number
       end
 
-    caller =
+    caller_bin =
       case Hash.Address.cast(caller) do
         {:ok, address} -> address
         _ -> nil
@@ -292,7 +292,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
         _ -> nil
       end
 
-    {position, caller, destination, arb_block_num, eth_block_num, timestamp, callvalue, data}
+    {position, caller_bin, destination, arb_block_num, eth_block_num, timestamp, callvalue, data}
   end
 
   # Determines the status of an L2-to-L1 message based on its block number and the highest
