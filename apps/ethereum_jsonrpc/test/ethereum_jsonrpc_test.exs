@@ -1058,7 +1058,7 @@ defmodule EthereumJSONRPCSyncTest do
            ]}
       end)
 
-      Application.put_env(:ethereum_jsonrpc, :disable_archive_balances?, "true")
+      Application.put_env(:ethereum_jsonrpc, :disable_archive_balances?, true)
       Application.put_env(:ethereum_jsonrpc, :archive_balances_window, 1)
 
       assert EthereumJSONRPC.fetch_balances(
