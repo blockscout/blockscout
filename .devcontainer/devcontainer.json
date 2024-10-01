@@ -3,7 +3,10 @@
 	"dockerComposeFile": "docker-compose.yml",
 	"service": "elixir",
 	"workspaceFolder": "/workspace",
-	"postCreateCommand": "git config --global --add safe.directory /workspace",
+	"postCreateCommand": {
+		"safe-directory": "git config --global --add safe.directory /workspace",
+		"deps": "mix deps.get"
+	},
 	// Configure tool-specific properties.
 	"customizations": {
 		// Configure properties specific to VS Code.
