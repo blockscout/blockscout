@@ -16,6 +16,7 @@ defmodule EthereumJSONRPC.Transaction do
     ]
 
   alias EthereumJSONRPC
+  alias EthereumJSONRPC.SignedAuthorization
 
   case Application.compile_env(:explorer, :chain_type) do
     :ethereum ->
@@ -75,7 +76,13 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   @type elixir :: %{
-          String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
+          String.t() =>
+            EthereumJSONRPC.address()
+            | EthereumJSONRPC.hash()
+            | String.t()
+            | non_neg_integer()
+            | [SignedAuthorization.params()]
+            | nil
         }
 
   @typedoc """
@@ -105,7 +112,7 @@ defmodule EthereumJSONRPC.Transaction do
    * `"maxPriorityFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max priority fee per unit of gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"maxFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"type"` - `t:EthereumJSONRPC.quantity/0` denotes transaction type. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
-   * `"authorizationList"` - `t:list/0` of `t:EthereumJSONRPC.signed_authorization/0` authorization tuples. Introduced in [EIP-7702](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-7702.md)
+   * `"authorizationList"` - `t:list/0` of `t:EthereumJSONRPC.SignedAuthorization.t/0` authorization tuples. Introduced in [EIP-7702](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-7702.md)
    #{case Application.compile_env(:explorer, :chain_type) do
     :ethereum -> """
        * `"maxFeePerBlobGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of blob gas used. Introduced in [EIP-4844](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4844.md)
@@ -129,7 +136,12 @@ defmodule EthereumJSONRPC.Transaction do
   """
   @type t :: %{
           String.t() =>
-            EthereumJSONRPC.address() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | String.t() | nil
+            EthereumJSONRPC.address()
+            | EthereumJSONRPC.hash()
+            | EthereumJSONRPC.quantity()
+            | String.t()
+            | [SignedAuthorization.t()]
+            | nil
         }
 
   @type params :: %{
@@ -152,7 +164,7 @@ defmodule EthereumJSONRPC.Transaction do
           max_priority_fee_per_gas: non_neg_integer(),
           max_fee_per_gas: non_neg_integer(),
           type: non_neg_integer(),
-          authorization_list: [EthereumJSONRPC.signed_authorization()]
+          authorization_list: [SignedAuthorization.params()]
         }
 
   @doc """
@@ -705,7 +717,7 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   defp entry_to_elixir({"authorizationList" = key, value}),
-    do: {key, value |> Enum.map(&EthereumJSONRPC.to_signed_authorization/1)}
+    do: {key, value |> Enum.map(&SignedAuthorization.to_params/1)}
 
   # Celo-specific fields
   if Application.compile_env(:explorer, :chain_type) == :celo do
