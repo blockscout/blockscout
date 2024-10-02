@@ -11,10 +11,11 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
 
   use Explorer.Schema
 
-  import Explorer.Chain, only: [select_repo: 1]
+  import Explorer.Chain, only: [select_repo: 1, get_last_fetched_counter: 1, upsert_last_fetched_counter: 1]
 
   alias Explorer.Chain.Transaction
 
+  @counter_type "scroll_l1_fee_params_fetcher_last_block_number"
   @required_attrs ~w(block_number tx_index name value)a
 
   @typedoc """
@@ -110,5 +111,36 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
 
       total + l1_fee_overhead + 4 * 16
     end
+  end
+
+  @doc """
+    Reads the block number from the `last_fetched_counters` table which was
+    the last handled L2 block on the previous launch of Indexer.Fetcher.Scroll.L1FeeParam module.
+
+    ## Returns
+    - The last L2 block number.
+    - Decimal.new(0) if this is the first launch of the module.
+  """
+  @spec last_l2_block_number() :: Decimal.t()
+  def last_l2_block_number do
+    get_last_fetched_counter(@counter_type)
+  end
+
+  @doc """
+    Updates the last handled L2 block by the Indexer.Fetcher.Scroll.L1FeeParam module.
+    The new block number is written to the `last_fetched_counters` table.
+
+    ## Parameters
+    - `block_number`: The number of the L2 block.
+
+    ## Returns
+    - nothing
+  """
+  @spec set_last_l2_block_number(non_neg_integer()) :: any()
+  def set_last_l2_block_number(block_number) do
+    upsert_last_fetched_counter(%{
+      counter_type: @counter_type,
+      value: block_number
+    })
   end
 end

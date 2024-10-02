@@ -358,4 +358,25 @@ defmodule Indexer.Fetcher.Optimism do
         nil
     end
   end
+
+  @doc """
+    Returns L1 RPC URL for an OP module.
+  """
+  @spec l1_rpc_url() :: binary()
+  def l1_rpc_url do
+    Application.get_all_env(:indexer)[__MODULE__][:optimism_l1_rpc]
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    before an OP fetcher starts.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    optimism_config = Application.get_all_env(:indexer)[__MODULE__]
+    not is_nil(optimism_config[:optimism_l1_system_config])
+  end
 end
