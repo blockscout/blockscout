@@ -24,9 +24,8 @@ defmodule EthereumJSONRPCTest do
         end
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
-          [%{id: id, method: "eth_getBlockByNumber"}], _options -> block_response(id, false, "0x1")
-          _json, _options -> {:ok, [%{id: 0, result: EthereumJSONRPC.integer_to_quantity(expected_fetched_balance)}]}
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+          {:ok, [%{id: 0, result: EthereumJSONRPC.integer_to_quantity(expected_fetched_balance)}]}
         end)
       end
 
@@ -36,7 +35,8 @@ defmodule EthereumJSONRPCTest do
                [
                  %{block_quantity: "0x1", hash_data: hash}
                ],
-               json_rpc_named_arguments
+               json_rpc_named_arguments,
+               1
              ) ==
                {:ok,
                 %FetchedBalances{
@@ -48,6 +48,25 @@ defmodule EthereumJSONRPCTest do
                     }
                   ]
                 }}
+    end
+
+    test "fetch latest block number from node if it wasn't provided", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
+          [%{id: id, method: "eth_getBlockByNumber"}], _options -> block_response(id, false, "0x1")
+          _json, _options -> {:ok, [%{id: 0, result: "0x1"}]}
+        end)
+      end
+
+      assert {:ok, %FetchedBalances{}} =
+               EthereumJSONRPC.fetch_balances(
+                 [
+                   %{block_quantity: "0x1", hash_data: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"}
+                 ],
+                 json_rpc_named_arguments
+               )
     end
 
     test "with all invalid hash_data returns errors", %{json_rpc_named_arguments: json_rpc_named_arguments} do
@@ -66,21 +85,17 @@ defmodule EthereumJSONRPCTest do
         end
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
-          [%{id: id, method: "eth_getBlockByNumber"}], _options ->
-            block_response(id, false, "0x1")
-
-          _json, _options ->
-            {:ok,
-             [
-               %{
-                 id: 0,
-                 error: %{
-                   code: -32602,
-                   message: expected_message
-                 }
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               error: %{
+                 code: -32602,
+                 message: expected_message
                }
-             ]}
+             }
+           ]}
         end)
       end
 
@@ -95,51 +110,47 @@ defmodule EthereumJSONRPCTest do
                 ],
                 params_list: []
               }} =
-               EthereumJSONRPC.fetch_balances([%{block_quantity: "0x1", hash_data: "0x0"}], json_rpc_named_arguments)
+               EthereumJSONRPC.fetch_balances([%{block_quantity: "0x1", hash_data: "0x0"}], json_rpc_named_arguments, 1)
     end
 
     test "with a mix of valid and invalid hash_data returns both", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
-          [%{id: id, method: "eth_getBlockByNumber"}], _options ->
-            block_response(id, false, "0x1")
-
-          _json, _options ->
-            {
-              :ok,
-              [
-                %{
-                  id: 0,
-                  result: "0x0"
-                },
-                %{
-                  id: 1,
-                  result: "0x1"
-                },
-                %{
-                  id: 2,
-                  error: %{
-                    code: -32602,
-                    message:
-                      "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
-                  }
-                },
-                %{
-                  id: 3,
-                  result: "0x3"
-                },
-                %{
-                  id: 4,
-                  error: %{
-                    code: -32602,
-                    message:
-                      "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
-                  }
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+          {
+            :ok,
+            [
+              %{
+                id: 0,
+                result: "0x0"
+              },
+              %{
+                id: 1,
+                result: "0x1"
+              },
+              %{
+                id: 2,
+                error: %{
+                  code: -32602,
+                  message:
+                    "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
                 }
-              ]
-            }
+              },
+              %{
+                id: 3,
+                result: "0x3"
+              },
+              %{
+                id: 4,
+                error: %{
+                  code: -32602,
+                  message:
+                    "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
+                }
+              }
+            ]
+          }
         end)
       end
 
@@ -172,7 +183,8 @@ defmodule EthereumJSONRPCTest do
                      hash_data: "0x5"
                    }
                  ],
-                 json_rpc_named_arguments
+                 json_rpc_named_arguments,
+                 53
                )
 
       assert is_list(params_list)

@@ -8,6 +8,7 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
   import Mox
 
   alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
 
   @moduletag :capture_log
@@ -20,6 +21,13 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
 
   setup do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
+    initial_config = Application.get_env(:explorer, Explorer.Chain.Cache.BlockNumber)
+    Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: true)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, initial_config)
+    end)
 
     :ok
   end
@@ -54,12 +62,9 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
         block_quantity = integer_to_quantity(block_number)
 
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, 2, fn
-          [%{id: id, method: "eth_getBalance", params: [^miner_hash_data, ^block_quantity]}], _options ->
-            {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
-
-          [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
-            {:ok, [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^miner_hash_data, ^block_quantity]}],
+                                _options ->
+          {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
         end)
 
         res = eth_block_number_fake_response(block_quantity)
@@ -128,12 +133,9 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
         block_quantity = integer_to_quantity(block_number)
 
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, 2, fn
-          [%{id: id, method: "eth_getBalance", params: [^miner_hash_data, ^block_quantity]}], _options ->
-            {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
-
-          [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
-            {:ok, [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^miner_hash_data, ^block_quantity]}],
+                                _options ->
+          {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
         end)
 
         res = eth_block_number_fake_response(block_quantity)
@@ -210,12 +212,9 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
         hash_data = to_string(hash)
 
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, 2, fn
-          [%{id: id, method: "eth_getBalance", params: [^hash_data, ^block_quantity]}], _options ->
-            {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
-
-          [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
-            {:ok, [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^hash_data, ^block_quantity]}],
+                                _options ->
+          {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
         end)
 
         res = eth_block_number_fake_response(block_quantity)
@@ -233,6 +232,8 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
           {:ok, [res]}
         end)
       end
+
+      BlockNumber.set_max(block_number)
 
       CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
@@ -291,21 +292,17 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
           end)
 
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, 2, fn
-          ^expected_requests, _options ->
-            {:ok,
-             Enum.map(expected_requests, fn %{id: id, params: [_, block_quantity]} ->
-               %{
-                 id: id,
-                 result:
-                   expected_balance_by_block_number
-                   |> Map.fetch!(quantity_to_integer(block_quantity))
-                   |> integer_to_quantity()
-               }
-             end)}
-
-          [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
-            {:ok, [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
+        |> expect(:json_rpc, fn ^expected_requests, _options ->
+          {:ok,
+           Enum.map(expected_requests, fn %{id: id, params: [_, block_quantity]} ->
+             %{
+               id: id,
+               result:
+                 expected_balance_by_block_number
+                 |> Map.fetch!(quantity_to_integer(block_quantity))
+                 |> integer_to_quantity()
+             }
+           end)}
         end)
       end
 
@@ -330,6 +327,8 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
                               _ ->
         {:ok, [res2]}
       end)
+
+      BlockNumber.set_max(2)
 
       case CoinBalanceCatchup.run(entries, json_rpc_named_arguments) do
         :ok ->
@@ -382,13 +381,11 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
       %Hash{bytes: address_hash_bytes} = address_hash()
       entries = [{address_hash_bytes, block_number()}]
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
-        [%{id: id, method: "eth_getBalance", params: [_, _]}], _ ->
-          {:ok, [%{id: id, error: %{code: 1, message: "Bad"}}]}
-
-        [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
-          {:ok, [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBalance", params: [_, _]}], _ ->
+        {:ok, [%{id: id, error: %{code: 1, message: "Bad"}}]}
       end)
+
+      BlockNumber.set_max(block_number())
 
       assert {:retry, ^entries} = CoinBalanceCatchup.run(entries, json_rpc_named_arguments)
     end
@@ -398,12 +395,8 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
       block_number = block_number()
       entries = [{address_hash_bytes, block_number}]
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
-        [%{id: id, method: "eth_getBalance", params: [_, _]}], _ ->
-          {:ok, [%{id: id, result: "0x1"}]}
-
-        [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
-          {:ok, [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBalance", params: [_, _]}], _ ->
+        {:ok, [%{id: id, result: "0x1"}]}
       end)
 
       block_quantity = integer_to_quantity(block_number)
@@ -422,6 +415,8 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
         {:ok, [res]}
       end)
 
+      BlockNumber.set_max(block_number)
+
       assert :ok = CoinBalanceCatchup.run(entries, json_rpc_named_arguments)
     end
 
@@ -430,39 +425,35 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
       bad_block_number = block_number()
       good_block_number = block_number()
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
-        [
-          %{
-            id: first_id,
-            method: "eth_getBalance",
-            params: [_, first_block_quantity]
-          },
-          %{
-            id: second_id,
-            method: "eth_getBalance",
-            params: [_, _]
-          }
-        ],
-        _ ->
-          responses =
-            case quantity_to_integer(first_block_quantity) do
-              ^good_block_number ->
-                [
-                  %{id: first_id, result: "0x1"},
-                  %{id: second_id, error: %{code: 2, message: "Bad"}}
-                ]
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [
+                                                  %{
+                                                    id: first_id,
+                                                    method: "eth_getBalance",
+                                                    params: [_, first_block_quantity]
+                                                  },
+                                                  %{
+                                                    id: second_id,
+                                                    method: "eth_getBalance",
+                                                    params: [_, _]
+                                                  }
+                                                ],
+                                                _ ->
+        responses =
+          case quantity_to_integer(first_block_quantity) do
+            ^good_block_number ->
+              [
+                %{id: first_id, result: "0x1"},
+                %{id: second_id, error: %{code: 2, message: "Bad"}}
+              ]
 
-              ^bad_block_number ->
-                [
-                  %{id: first_id, error: %{code: 1, message: "Bad"}},
-                  %{id: second_id, result: "0x2"}
-                ]
-            end
+            ^bad_block_number ->
+              [
+                %{id: first_id, error: %{code: 1, message: "Bad"}},
+                %{id: second_id, result: "0x2"}
+              ]
+          end
 
-          {:ok, responses}
-
-        [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _opts ->
-          {:ok, [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
+        {:ok, responses}
       end)
 
       good_block_quantity = integer_to_quantity(good_block_number)
@@ -480,6 +471,8 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
                               [] ->
         {:ok, [res_good]}
       end)
+
+      BlockNumber.set_max(good_block_number)
 
       assert {:retry, [{^address_hash_bytes, ^bad_block_number}]} =
                CoinBalanceCatchup.run(

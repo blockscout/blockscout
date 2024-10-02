@@ -403,14 +403,10 @@ defmodule Indexer.Block.FetcherTest do
             end)
             # async requests need to be grouped in one expect because the order is non-deterministic while multiple expect
             # calls on the same name/arity are used in order
-            |> expect(:json_rpc, 13, fn json, _options ->
+            |> expect(:json_rpc, 9, fn json, _options ->
               [request] = json
 
               case request do
-                %{id: id, method: "eth_getBlockByNumber", params: ["latest", false]} ->
-                  {:ok,
-                   [block_number() |> integer_to_quantity() |> eth_block_number_fake_response() |> Map.put(:id, id)]}
-
                 %{
                   id: 0,
                   jsonrpc: "2.0",

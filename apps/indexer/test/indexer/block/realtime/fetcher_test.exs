@@ -932,25 +932,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, 8, fn
-          [
-            %{
-              id: id,
-              jsonrpc: "2.0",
-              method: "eth_getBlockByNumber",
-              params: ["latest", false]
-            }
-          ],
-          _ ->
-            {:ok,
-             [
-               %{
-                 id: id,
-                 jsonrpc: "2.0",
-                 result: block_1_data
-               }
-             ]}
-
+        |> expect(:json_rpc, 6, fn
           [
             %{
               id: 0,
