@@ -333,7 +333,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     end)
   end
 
-  # Checks if the given request ID is a plain message ID (starts with 56 zero bytes).
+  # Checks if the given request ID is a plain message ID (starts with 56 zero
+  # characters that correspond to 28 zero bytes).
   @spec plain_message_id?(non_neg_integer()) :: boolean()
   defp plain_message_id?(request_id) when byte_size(request_id) == 66 do
     String.starts_with?(request_id, @zero_hex_prefix)
