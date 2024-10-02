@@ -75,6 +75,8 @@ defmodule EthereumJSONRPC.Transaction do
       @chain_type_fields quote(do: [])
   end
 
+  # todo: Check if it's possible to simplify by avoiding t -> elixir -> params conversions
+  # and directly convert t -> params.
   @type elixir :: %{
           String.t() =>
             EthereumJSONRPC.address()
