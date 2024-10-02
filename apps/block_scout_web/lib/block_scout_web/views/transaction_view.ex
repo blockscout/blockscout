@@ -449,7 +449,6 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def involves_contract?(%Transaction{from_address: from_address, to_address: to_address}) do
-    # TODO: do we need to handle EIP-7702 case here?
     Address.smart_contract?(from_address) || Address.smart_contract?(to_address)
   end
 

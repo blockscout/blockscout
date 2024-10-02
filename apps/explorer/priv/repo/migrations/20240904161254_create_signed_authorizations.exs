@@ -19,5 +19,7 @@ defmodule Explorer.Repo.Migrations.CreateSignedAuthorizations do
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
+
+    create(index(:signed_authorizations, [:authority]))
   end
 end

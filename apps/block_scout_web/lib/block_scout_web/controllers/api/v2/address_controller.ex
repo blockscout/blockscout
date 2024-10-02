@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       :names => :optional,
       :token => :optional,
       :proxy_implementations => :optional,
-      :signed_authorizations => :optional
+      :signed_authorization => :optional
     },
     api?: true
   ]

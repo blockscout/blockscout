@@ -106,7 +106,10 @@ defmodule Explorer.Chain.Address.Schema do
         has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
         has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
-        has_many(:signed_authorizations, SignedAuthorization, foreign_key: :authority, references: :hash)
+
+        # In practice, this is a one-to-many relationship, but we only need to check if any signed authorization
+        # exists for a given address. This done this way to avoid loading all signed authorizations for an address.
+        has_one(:signed_authorization, SignedAuthorization, foreign_key: :authority, references: :hash)
 
         timestamps()
 
@@ -130,8 +133,9 @@ defmodule Explorer.Chain.Address do
   alias Ecto.Changeset
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.{Address, Data, Hash}
   alias Explorer.{Chain, PagingOptions, Repo}
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
@@ -433,11 +437,9 @@ defmodule Explorer.Chain.Address do
   Checks if given address is EOA with code (EIP-7702)
   """
   @spec eoa_with_code?(any()) :: boolean() | nil
-  def eoa_with_code?(%__MODULE__{contract_code: nil}), do: false
-
-  # 0xef0100 ++ address
-  def eoa_with_code?(%__MODULE__{contract_code: %Explorer.Chain.Data{bytes: <<239, 1, 0>> <> <<_::binary-size(20)>>}}),
-    do: true
+  def eoa_with_code?(%__MODULE__{contract_code: %Data{bytes: code}}) do
+    EIP7702.get_delegate_address(code) != nil
+  end
 
   def eoa_with_code?(%NotLoaded{}), do: nil
   def eoa_with_code?(_), do: false

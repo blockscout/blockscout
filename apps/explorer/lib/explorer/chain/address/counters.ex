@@ -228,8 +228,7 @@ defmodule Explorer.Chain.Address.Counters do
 
   @spec address_to_gas_usage_count(Address.t()) :: Decimal.t() | nil
   def address_to_gas_usage_count(address) do
-    # TODO: How should we handle EOAs with code (EIP-7702)?
-    if Address.smart_contract?(address) do
+    if Address.smart_contract?(address) and not Address.eoa_with_code?(address) do
       incoming_transaction_gas_usage = address_to_incoming_transaction_gas_usage(address.hash)
 
       cond do

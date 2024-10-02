@@ -48,7 +48,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   end
 
   defp fetch?(address) when is_nil(address.nonce), do: true
-  defp fetch?(%{signed_authorizations: [_ | _]}), do: true
+  # if the address has a signed authorization, it might have a bytecode
+  # according to EIP-7702
+  defp fetch?(%{signed_authorization: %{authority: _}}), do: true
   defp fetch?(_), do: false
 
   defp fetch_and_broadcast_bytecode(address_hash, state) do
