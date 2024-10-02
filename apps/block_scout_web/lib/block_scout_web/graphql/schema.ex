@@ -4,8 +4,10 @@ defmodule BlockScoutWeb.GraphQL.Schema do
   use Absinthe.Schema
   use Absinthe.Relay.Schema, :modern
 
-  alias Absinthe.Middleware.Dataloader, as: AbsintheMiddlewareDataloader
+  alias Absinthe.Middleware.Dataloader, as: AbsintheDataloaderMiddleware
   alias Absinthe.Plugin, as: AbsinthePlugin
+
+  alias BlockScoutWeb.GraphQL.Middleware.ApiEnabled, as: ApiEnabledMiddleware
 
   alias BlockScoutWeb.GraphQL.Resolvers.{
     Address,
@@ -136,7 +138,11 @@ defmodule BlockScoutWeb.GraphQL.Schema do
     end
   end
 
+  def middleware(middleware, _field, _object) do
+    [ApiEnabledMiddleware | middleware]
+  end
+
   def plugins do
-    [AbsintheMiddlewareDataloader] ++ AbsinthePlugin.defaults()
+    [AbsintheDataloaderMiddleware] ++ AbsinthePlugin.defaults()
   end
 end

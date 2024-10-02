@@ -5,11 +5,23 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
   alias Explorer.Chain.Cache.{AddressSum, AddressSumMinusBurnt}
   alias Explorer.Chain.Wei
 
+  @cmc_token_supply_precision 9
+
   def tokensupply(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
          {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param),
          {:token, {:ok, token}} <- {:token, Chain.token_from_address_hash(address_hash)} do
-      render(conn, "tokensupply.json", total_supply: token.total_supply && Decimal.to_string(token.total_supply))
+      if Map.get(params, "cmc") == "true" do
+        conn
+        |> put_resp_content_type("text/plain")
+        |> send_resp(200, token.total_supply && to_cmc_total_supply(token.total_supply))
+      else
+        conn
+        |> render(
+          "tokensupply.json",
+          total_supply: token.total_supply && Decimal.to_string(token.total_supply)
+        )
+      end
     else
       {:contractaddress_param, :error} ->
         render(conn, :error, error: "Query parameter contract address is required")
@@ -75,6 +87,15 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
 
   defp to_address_hash(address_hash_string) do
     {:format, Chain.string_to_address_hash(address_hash_string)}
+  end
+
+  @spec to_cmc_total_supply(Decimal.t()) :: String.t()
+  defp to_cmc_total_supply(total_supply) do
+    total_supply
+    |> Wei.from(:wei)
+    |> Wei.to(:ether)
+    |> Decimal.round(@cmc_token_supply_precision)
+    |> Decimal.to_string()
   end
 
   def totalfees(conn, params) do

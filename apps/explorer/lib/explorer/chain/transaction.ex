@@ -773,6 +773,7 @@ defmodule Explorer.Chain.Transaction do
         proxy_implementation_addresses_map \\ %{}
       )
 
+  # skip decoding if there is no to_address
   def decoded_input_data(
         %__MODULE__{to_address: nil},
         _,
@@ -783,9 +784,11 @@ defmodule Explorer.Chain.Transaction do
       ),
       do: {{:error, :no_to_address}, full_abi_acc, methods_acc}
 
+  # skip decoding if transaction is not loaded
   def decoded_input_data(%NotLoaded{}, _, _, full_abi_acc, methods_acc, _proxy_implementation_addresses_map),
     do: {{:error, :not_loaded}, full_abi_acc, methods_acc}
 
+  # skip decoding if input is empty
   def decoded_input_data(
         %__MODULE__{input: %{bytes: bytes}},
         _,
@@ -798,6 +801,7 @@ defmodule Explorer.Chain.Transaction do
     {{:error, :no_input_data}, full_abi_acc, methods_acc}
   end
 
+  # skip decoding if to_address is not a contract unless DECODE_NOT_A_CONTRACT_CALLS is set
   if not Application.compile_env(:explorer, :decode_not_a_contract_calls) do
     def decoded_input_data(
           %__MODULE__{to_address: %{contract_code: nil}},
@@ -810,6 +814,7 @@ defmodule Explorer.Chain.Transaction do
         do: {{:error, :not_a_contract_call}, full_abi_acc, methods_acc}
   end
 
+  # if to_address's smart_contract is nil reduce to the case when to_address is not loaded
   def decoded_input_data(
         %__MODULE__{
           to_address: %{smart_contract: nil},
@@ -836,6 +841,7 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
+  # if to_address's smart_contract is not loaded reduce to the case when to_address is not loaded
   def decoded_input_data(
         %__MODULE__{
           to_address: %{smart_contract: %NotLoaded{}},
@@ -862,6 +868,7 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
+  # if to_address is not loaded try decoding by method candidates in the DB
   def decoded_input_data(
         %__MODULE__{
           to_address: %NotLoaded{},
@@ -899,6 +906,7 @@ defmodule Explorer.Chain.Transaction do
      full_abi_acc, methods_acc}
   end
 
+  # if to_address is not loaded and input is not a method call return error
   def decoded_input_data(
         %__MODULE__{to_address: %NotLoaded{}},
         _,
@@ -931,7 +939,7 @@ defmodule Explorer.Chain.Transaction do
            proxy_implementation_addresses_map
          ) do
       # In some cases transactions use methods of some unpredictable contracts, so we can try to look up for method in a whole DB
-      {{:error, :could_not_decode}, full_abi_acc} ->
+      {{:error, error}, full_abi_acc} when error in [:could_not_decode, :no_matching_function] ->
         case decoded_input_data(
                %__MODULE__{
                  to_address: %NotLoaded{},
