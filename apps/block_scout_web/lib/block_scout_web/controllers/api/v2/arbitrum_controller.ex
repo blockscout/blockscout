@@ -11,12 +11,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   import Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper, only: [calculate_celestia_data_key: 2]
 
-  alias Explorer.PagingOptions
+  alias Explorer.Arbitrum.ClaimRollupMessage
   alias Explorer.Chain.Arbitrum.{L1Batch, Message, Reader}
   alias Explorer.Chain.Hash
-  alias EthereumJSONRPC
-
-  alias Explorer.Arbitrum.ClaimRollupMessage
+  alias Explorer.PagingOptions
 
   require Logger
 

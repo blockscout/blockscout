@@ -949,12 +949,12 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     - `true` if message was created, confirmed and claimed on L1 chain.
             Otherwise returns `false`.
   """
-  @spec is_withdrawal_spent(
+  @spec withdrawal_spent?(
           EthereumJSONRPC.address(),
           non_neg_integer(),
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: boolean()
-  def is_withdrawal_spent(outbox_contract, position, json_l1_rpc_named_arguments) do
+  def withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
     read_contract_and_handle_result_as_integer(
       outbox_contract,
       @selector_is_spent,

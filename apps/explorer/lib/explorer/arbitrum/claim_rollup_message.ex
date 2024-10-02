@@ -1,14 +1,26 @@
 defmodule Explorer.Arbitrum.ClaimRollupMessage do
+  @moduledoc """
+  The module is responsible for getting withdrawal list from the Arbitrum transaction.
+  The associated transaction should emit at least one `L2ToL1Tx` event  which means
+  the L2 -> L1 message was initiated.
+
+  Also it helps to generate calldata for `executeTransaction` method of the `Outbox`
+  contact deployed on L1 to finalize initiated withdrawal
+
+  The details of L2-to-L1 messaging can be found in the following link:
+  https://docs.arbitrum.io/how-arbitrum-works/arbos/l2-l1-messaging
+  """
+
+  alias ABI.TypeDecoder
+  alias EthereumJSONRPC
+  alias EthereumJSONRPC.Encoder
   alias Explorer.Chain
+  alias Explorer.Chain.Arbitrum.Reader
   alias Explorer.Chain.Hash
   alias Explorer.Chain.Hash.Address
-  alias Explorer.Chain.Arbitrum.Reader
+  alias Indexer.Fetcher.Arbitrum.Messaging, as: ArbitrumMessaging
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
-  alias EthereumJSONRPC
-  alias ABI.TypeDecoder
-  alias EthereumJSONRPC.Encoder
-  alias Indexer.Fetcher.Arbitrum.Messaging, as: ArbitrumMessaging
 
   require Logger
 
@@ -150,7 +162,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       ArbitrumMessaging.l2_to_l1_event_parse(log)
 
     status =
-      case Rpc.is_withdrawal_spent(outbox_contract, position, json_l1_rpc_named_arguments) do
+      case Rpc.withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
         true ->
           :executed
 
@@ -182,7 +194,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     }
   end
 
-  def decode_withdraw_token_data(<<0x2E567B36::32, rest_data::binary>>) do
+  defp decode_withdraw_token_data(<<0x2E567B36::32, rest_data::binary>>) do
     [token, _, to, amount, _] = ABI.decode(@finalize_inbound_transfer_selector, rest_data)
 
     token_bin =
@@ -204,7 +216,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     }
   end
 
-  def decode_withdraw_token_data(_binary) do
+  defp decode_withdraw_token_data(_binary) do
     nil
   end
 
