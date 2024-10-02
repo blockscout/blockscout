@@ -230,7 +230,7 @@ defmodule Explorer.Chain.Mud do
   end
 
   @doc """
-  Returns the list of MUD systems registered for the given world.
+  Returns the list of first 1000 MUD systems registered for the given world.
   """
   @spec world_systems(Hash.Address.t()) :: [{Hash.Full.t(), Hash.Address.t()}]
   def world_systems(world) do

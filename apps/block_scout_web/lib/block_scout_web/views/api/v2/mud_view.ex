@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.API.V2.MudView do
   def render("system.json", %{system_id: system_id, abi: abi}) do
     %{
       name: system_id |> Table.from() |> Map.get(:table_full_name),
-      abi: abi |> Enum.map(fn r -> r end)
+      abi: abi
     }
   end
 
