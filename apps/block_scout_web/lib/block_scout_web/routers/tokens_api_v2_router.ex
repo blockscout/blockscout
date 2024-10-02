@@ -47,6 +47,12 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     pipe_through(:api_v2_no_forgery_protect)
 
     patch("/:address_hash_param/instances/:token_id/refetch-metadata", V2.TokenController, :refetch_metadata)
+
+    post(
+      "/:address_hash_param/instances/trigger-nft-collection-metadata-refetch",
+      V2.TokenController,
+      :trigger_nft_collection_metadata_refetch
+    )
   end
 
   scope "/", as: :api_v2 do

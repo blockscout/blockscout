@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   alias Explorer.Chain.Events.Subscriber
 
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenMetadataRefetch, as: TokenMetadataRefetchOnDemand
 
   describe "/tokens/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -1549,6 +1550,73 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         })
 
       assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+  end
+
+  describe "/tokens/{address_hash}/instances/trigger-nft-collection-metadata-refetch" do
+    setup :set_mox_from_context
+
+    setup :verify_on_exit!
+
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      Application.put_env(:block_scout_web, :sensitive_endpoints_api_key, "abc")
+      mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
+      start_supervised!(
+        {TokenMetadataRefetchOnDemand, [mocked_json_rpc_named_arguments, [name: TokenMetadataRefetchOnDemand]]}
+      )
+
+      %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :sensitive_endpoints_api_key, nil)
+      end)
+
+      :ok
+    end
+
+    test "token instance metadata on-demand re-fetcher is called", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      for id <- 1..5 do
+        insert(:token_instance,
+          token_id: id,
+          token_contract_address_hash: token.contract_address_hash,
+          metadata: %{}
+        )
+      end
+
+      request =
+        post(
+          conn,
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/trigger-nft-collection-metadata-refetch",
+          %{
+            "api_key" => "abc"
+          }
+        )
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      :timer.sleep(100)
+
+      token_instances_from_db = Repo.all(Instance, token_contract_address_hash: token.contract_address_hash)
+
+      assert(token_instances_from_db)
+
+      for token_instance_from_db <- token_instances_from_db do
+        assert token_instance_from_db.metadata == nil
+      end
+    end
+
+    test "don't trigger metadata re-fetch, if no admin api key is provided", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      request =
+        post(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/trigger-nft-collection-metadata-refetch")
+
+      assert %{"message" => "Wrong API key"} = json_response(request, 401)
     end
   end
 
