@@ -12,8 +12,42 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   require Logger
 
   alias Indexer.{BoundQueue, Helper}
+  alias Indexer.Fetcher.{Optimism, PolygonEdge}
 
   @fetcher_name :rollup_l1_reorg_monitor
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :optimism ->
+      @modules_can_use_reorg_monitor [
+        Indexer.Fetcher.Optimism.OutputRoot,
+        Indexer.Fetcher.Optimism.TransactionBatch,
+        Indexer.Fetcher.Optimism.WithdrawalEvent
+      ]
+
+    :polygon_edge ->
+      @modules_can_use_reorg_monitor [
+        Indexer.Fetcher.PolygonEdge.Deposit,
+        Indexer.Fetcher.PolygonEdge.WithdrawalExit
+      ]
+
+    :polygon_zkevm ->
+      @modules_can_use_reorg_monitor [
+        Indexer.Fetcher.PolygonZkevm.BridgeL1
+      ]
+
+    :scroll ->
+      @modules_can_use_reorg_monitor [
+        Indexer.Fetcher.Scroll.BridgeL1
+      ]
+
+    :shibarium ->
+      @modules_can_use_reorg_monitor [
+        Indexer.Fetcher.Shibarium.L1
+      ]
+
+    _ ->
+      @modules_can_use_reorg_monitor []
+  end
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -34,31 +68,13 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   def init(_args) do
     Logger.metadata(fetcher: @fetcher_name)
 
-    optimism_modules = [
-      Indexer.Fetcher.Optimism.OutputRoot,
-      Indexer.Fetcher.Optimism.TransactionBatch,
-      Indexer.Fetcher.Optimism.WithdrawalEvent
-    ]
-
-    modules_can_use_reorg_monitor =
-      optimism_modules ++
-        [
-          Indexer.Fetcher.PolygonEdge.Deposit,
-          Indexer.Fetcher.PolygonEdge.WithdrawalExit,
-          Indexer.Fetcher.PolygonZkevm.BridgeL1,
-          Indexer.Fetcher.Scroll.BridgeL1,
-          Indexer.Fetcher.Shibarium.L1
-        ]
-
     modules_using_reorg_monitor =
-      modules_can_use_reorg_monitor
-      |> Enum.reject(fn module ->
-        if module in optimism_modules do
-          optimism_config = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
-          is_nil(optimism_config[:optimism_l1_system_config])
+      @modules_can_use_reorg_monitor
+      |> Enum.filter(fn module ->
+        if Application.get_env(:explorer, :chain_type) == :optimism do
+          Optimism.requires_l1_reorg_monitor?()
         else
-          module_config = Application.get_all_env(:indexer)[module]
-          is_nil(module_config[:start_block]) and is_nil(module_config[:start_block_l1])
+          module.requires_l1_reorg_monitor?()
         end
       end)
 
@@ -66,30 +82,19 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
       # don't start reorg monitor as there is no module which would use it
       :ignore
     else
-      # As there cannot be different modules for different rollups at the same time,
-      # it's correct to only get the first item of the list.
-      # For example, Indexer.Fetcher.PolygonEdge.Deposit and Indexer.Fetcher.PolygonEdge.WithdrawalExit can be in the list
-      # because they are for the same rollup, but Indexer.Fetcher.Shibarium.L1 and Indexer.Fetcher.PolygonZkevm.BridgeL1 cannot (as they are for different rollups).
-      module_using_reorg_monitor = Enum.at(modules_using_reorg_monitor, 0)
+      chain_type = Application.get_env(:explorer, :chain_type)
 
       l1_rpc =
         cond do
-          Enum.member?(
-            [Indexer.Fetcher.PolygonEdge.Deposit, Indexer.Fetcher.PolygonEdge.WithdrawalExit],
-            module_using_reorg_monitor
-          ) ->
-            # there can be more than one PolygonEdge.* modules, so we get the common L1 RPC URL for them from Indexer.Fetcher.PolygonEdge
-            Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonEdge][:polygon_edge_l1_rpc]
+          chain_type == :optimism ->
+            Optimism.l1_rpc_url()
 
-          Enum.member?(
-            optimism_modules,
-            module_using_reorg_monitor
-          ) ->
-            # there can be more than one Optimism.* modules, so we get the common L1 RPC URL for them from Indexer.Fetcher.Optimism
-            Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:optimism_l1_rpc]
+          chain_type == :polygon_edge ->
+            PolygonEdge.l1_rpc_url()
 
           true ->
-            Application.get_all_env(:indexer)[module_using_reorg_monitor][:rpc]
+            module = Enum.at(modules_using_reorg_monitor, 0)
+            module.l1_rpc_url()
         end
 
       json_rpc_named_arguments = Helper.json_rpc_named_arguments(l1_rpc)

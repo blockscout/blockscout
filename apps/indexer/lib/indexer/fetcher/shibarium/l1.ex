@@ -318,6 +318,27 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     {:noreply, state}
   end
 
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary()
+  def l1_rpc_url do
+    Application.get_all_env(:indexer)[__MODULE__][:rpc]
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    for this module.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    module_config = Application.get_all_env(:indexer)[__MODULE__]
+    not is_nil(module_config[:start_block])
+  end
+
   defp filter_deposit_events(events) do
     Enum.filter(events, fn event ->
       topic0 = Enum.at(event["topics"], 0)

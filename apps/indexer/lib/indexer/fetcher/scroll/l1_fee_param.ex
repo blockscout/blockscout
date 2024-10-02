@@ -32,7 +32,6 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   alias Indexer.Helper
 
   @fetcher_name :scroll_l1_fee_params
-  @counter_type "scroll_l1_fee_params_fetcher_last_block_number"
   @eth_get_logs_range_size 250
 
   # 32-byte signature of the event OverheadUpdated(uint256 overhead)
@@ -96,7 +95,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     if Helper.address_correct?(env[:gas_oracle]) do
-      last_l2_block_number = Chain.get_last_fetched_counter(@counter_type)
+      last_l2_block_number = ScrollL1FeeParam.last_l2_block_number()
 
       {safe_block, safe_block_is_latest} = Helper.get_safe_block(json_rpc_named_arguments)
 
@@ -176,11 +175,8 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   def handle_l2_reorg(starting_block) do
     Repo.delete_all(from(p in ScrollL1FeeParam, where: p.block_number >= ^starting_block))
 
-    if not Decimal.lt?(Chain.get_last_fetched_counter(@counter_type), Decimal.new(starting_block)) do
-      Chain.upsert_last_fetched_counter(%{
-        counter_type: @counter_type,
-        value: starting_block - 1
-      })
+    if not Decimal.lt?(ScrollL1FeeParam.last_l2_block_number(), Decimal.new(starting_block)) do
+      ScrollL1FeeParam.set_last_l2_block_number(starting_block - 1)
     end
   end
 
@@ -305,10 +301,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
         timeout: :infinity
       })
 
-    Chain.upsert_last_fetched_counter(%{
-      counter_type: @counter_type,
-      value: block_end
-    })
+    ScrollL1FeeParam.set_last_l2_block_number(block_end)
 
     Enum.count(l1_fee_params)
   end

@@ -168,4 +168,25 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
       )
     end
   end
+
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary()
+  def l1_rpc_url do
+    Application.get_all_env(:indexer)[__MODULE__][:rpc]
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    for this module.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    module_config = Application.get_all_env(:indexer)[__MODULE__]
+    not is_nil(module_config[:start_block])
+  end
 end

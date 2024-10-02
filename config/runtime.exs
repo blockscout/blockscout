@@ -1098,7 +1098,7 @@ config :explorer, Explorer.Chain.Scroll.L1FeeParam,
 config :indexer, Indexer.Fetcher.Scroll.L1FeeParam,
   gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
 
-config :indexer, Indexer.Fetcher.Scroll.L1FeeParam.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
+config :indexer, Indexer.Fetcher.Scroll.L1FeeParam.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
 
 config :indexer, Indexer.Fetcher.Scroll.BridgeL1,
   rpc: System.get_env("INDEXER_SCROLL_L1_RPC"),
@@ -1108,9 +1108,9 @@ config :indexer, Indexer.Fetcher.Scroll.BridgeL1,
 config :indexer, Indexer.Fetcher.Scroll.BridgeL2,
   messenger_contract: System.get_env("INDEXER_SCROLL_L2_MESSENGER_CONTRACT")
 
-config :indexer, Indexer.Fetcher.Scroll.BridgeL1.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
+config :indexer, Indexer.Fetcher.Scroll.BridgeL1.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
 
-config :indexer, Indexer.Fetcher.Scroll.BridgeL2.Supervisor, enabled: ConfigHelper.chain_type() == :scroll
+config :indexer, Indexer.Fetcher.Scroll.BridgeL2.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
