@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Address.Schema do
     DecompiledSmartContract,
     Hash,
     InternalTransaction,
+    SignedAuthorization,
     SmartContract,
     Token,
     Transaction,
@@ -107,6 +108,10 @@ defmodule Explorer.Chain.Address.Schema do
         has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 
+        # In practice, this is a one-to-many relationship, but we only need to check if any signed authorization
+        # exists for a given address. This done this way to avoid loading all signed authorizations for an address.
+        has_one(:signed_authorization, SignedAuthorization, foreign_key: :authority, references: :hash)
+
         timestamps()
 
         unquote_splicing(@chain_type_fields)
@@ -130,8 +135,9 @@ defmodule Explorer.Chain.Address do
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.{Address, Data, Hash}
   alias Explorer.{Chain, PagingOptions, Repo}
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
@@ -429,6 +435,17 @@ defmodule Explorer.Chain.Address do
   def smart_contract?(%__MODULE__{contract_code: _}), do: true
   def smart_contract?(%NotLoaded{}), do: nil
   def smart_contract?(_), do: false
+
+  @doc """
+  Checks if given address is EOA with code (EIP-7702)
+  """
+  @spec eoa_with_code?(any()) :: boolean() | nil
+  def eoa_with_code?(%__MODULE__{contract_code: %Data{bytes: code}}) do
+    EIP7702.get_delegate_address(code) != nil
+  end
+
+  def eoa_with_code?(%NotLoaded{}), do: nil
+  def eoa_with_code?(_), do: false
 
   defp get_addresses(options) do
     accounts_with_n = fetch_top_addresses(options)

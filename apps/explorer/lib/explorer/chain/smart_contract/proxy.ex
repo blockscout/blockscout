@@ -15,6 +15,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     EIP1822,
     EIP1967,
     EIP2535,
+    EIP7702,
     EIP930,
     MasterCopy
   }
@@ -260,6 +261,20 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         proxy_abi,
         go_to_fallback?
       ],
+      :get_implementation_address_hash_string_eip7702
+    )
+  end
+
+  @doc """
+  Returns EIP-7702 implementation address or tries next proxy pattern
+  """
+  @spec get_implementation_address_hash_string_eip7702(Hash.Address.t(), any(), bool()) ::
+          %{implementation_address_hash_strings: [String.t()] | :error | nil, proxy_type: atom() | :unknown}
+  def get_implementation_address_hash_string_eip7702(proxy_address_hash, proxy_abi, go_to_fallback?) do
+    get_implementation_address_hash_string_by_module(
+      EIP7702,
+      :eip7702,
+      [proxy_address_hash, proxy_abi, go_to_fallback?],
       :get_implementation_address_hash_string_eip1967
     )
   end
