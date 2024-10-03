@@ -4,8 +4,11 @@
 	"service": "elixir",
 	"workspaceFolder": "/workspace",
 	"postCreateCommand": {
-		"safe-directory": "git config --global --add safe.directory /workspace",
+		"safe-directory": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 		"deps": "mix deps.get"
+	},
+	"remoteEnv": {
+		"PATH": "${containerEnv:PATH}:${containerWorkspaceFolder}/.devcontainer/bin"
 	},
 	// Configure tool-specific properties.
 	"customizations": {
