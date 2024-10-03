@@ -20,6 +20,7 @@ defmodule Explorer.Chain.Token.Instance do
   * `error` - error fetching token instance
   * `refetch_after` - when to refetch the token instance
   * `retries_count` - number of times the token instance has been retried
+  * `is_banned` - if the token instance is banned
   """
   @primary_key false
   typed_schema "token_instances" do
@@ -32,6 +33,7 @@ defmodule Explorer.Chain.Token.Instance do
     field(:is_unique, :boolean, virtual: true)
     field(:refetch_after, :utc_datetime_usec)
     field(:retries_count, :integer)
+    field(:is_banned, :boolean, default: false)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -59,7 +61,8 @@ defmodule Explorer.Chain.Token.Instance do
       :owner_updated_at_block,
       :owner_updated_at_log_index,
       :refetch_after,
-      :retries_count
+      :retries_count,
+      :is_banned
     ])
     |> validate_required([:token_id, :token_contract_address_hash])
     |> foreign_key_constraint(:token_contract_address_hash)
