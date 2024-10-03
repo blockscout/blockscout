@@ -62,6 +62,8 @@ Key benefits include:
 
 6. Once the devcontainer is built, you'll be working inside the containerized environment.
 
+7. If you modified the `devcontainer.json` file in step 3, you may want to execute `git update-index --assume-unchanged .devcontainer/devcontainer.json` in a terminal within your devcontainer to prevent the changes to `devcontainer.json` from appearing in `git status` and VS Code's Source Control.
+
 ### Additional Setup for Cursor.ai Users
 
 If you're using Cursor.ai instead of VSCode, you may encounter issues when trying to perform Git operations like pulling changes from the "Source Control" tab. To resolve this, you need to set up your Git configuration inside the devcontainer. Follow these steps:
