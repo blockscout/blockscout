@@ -10,7 +10,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
+      RELEASE_VERSION: 6.8.1
       DOCKER_CHAIN_NAME: arbitrum
     steps:
       - uses: actions/checkout@v4
