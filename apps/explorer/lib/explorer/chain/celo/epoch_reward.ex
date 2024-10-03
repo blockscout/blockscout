@@ -101,8 +101,8 @@ defmodule Explorer.Chain.Celo.EpochReward do
         select: {tt.log_index, tt},
         preload: [
           :token,
-          [from_address: [:names, :smart_contract, :proxy_implementations]],
-          [to_address: [:names, :smart_contract, :proxy_implementations]]
+          [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]],
+          [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]]
         ]
       )
 

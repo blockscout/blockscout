@@ -45,8 +45,8 @@ defmodule Explorer.Chain.Import.Runner.SignedAuthorizations do
       Instrumenter.block_import_stage_runner(
         fn -> insert(repo, changes_list, insert_options) end,
         :block_referencing,
-        :logs,
-        :logs
+        :signed_authorizations,
+        :signed_authorizations
       )
     end)
   end

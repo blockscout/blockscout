@@ -4,10 +4,3 @@ lib/explorer/smart_contract/vyper/publisher_worker.ex:1
 lib/explorer/smart_contract/solidity/publisher_worker.ex:8
 lib/explorer/smart_contract/vyper/publisher_worker.ex:8
 lib/phoenix/router.ex:402
-lib/explorer/smart_contract/reader.ex:435
-lib/explorer/exchange_rates/source.ex:139
-lib/explorer/exchange_rates/source.ex:142
-lib/block_scout_web/cldr.ex:1
-lib/block_scout_web/views/api/v2/transaction_view.ex:431
-lib/block_scout_web/views/api/v2/transaction_view.ex:472
-lib/explorer/chain/transaction.ex:171

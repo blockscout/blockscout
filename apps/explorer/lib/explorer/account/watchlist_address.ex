@@ -112,9 +112,6 @@ defmodule Explorer.Account.WatchlistAddress do
     else
       {:error, reason} ->
         add_error(changeset, :address_hash, reason)
-
-      _ ->
-        add_error(changeset, :address_hash, "Address error")
     end
   end
 

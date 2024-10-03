@@ -14,9 +14,13 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
+  alias Explorer.Chain
+  alias Explorer.Chain.Arbitrum.Message
   alias Indexer.Fetcher.Arbitrum.Utils.Db
 
   require Logger
+
+  @zero_hex_prefix "0x" <> String.duplicate("0", 56)
 
   @l2_to_l1_event_unindexed_params [
     :address,
@@ -26,17 +30,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     {:uint, 256},
     :bytes
   ]
-
-  @type arbitrum_message :: %{
-          direction: :to_l2 | :from_l2,
-          message_id: non_neg_integer(),
-          originator_address: binary(),
-          originating_transaction_hash: binary(),
-          origination_timestamp: DateTime.t(),
-          originating_transaction_block_number: non_neg_integer(),
-          completion_transaction_hash: binary(),
-          status: :initiated | :sent | :confirmed | :relayed
-        }
 
   @typep min_transaction :: %{
            :hash => binary(),
@@ -60,40 +53,57 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
          }
 
   @doc """
-    Filters a list of rollup transactions to identify L1-to-L2 messages and composes a map for each with the related message information.
+    Filters rollup transactions to identify L1-to-L2 messages and categorizes them.
 
-    This function filters a list of rollup transactions, selecting those where
-    `request_id` is not nil and is below 2^31, indicating they are L1-to-L2
-    message completions. These filtered transactions are then processed to
-    construct a detailed message structure for each.
+    This function processes a list of rollup transactions, identifying those with
+    non-nil `request_id` fields. It then separates these into two categories:
+    messages with plain message IDs and transactions with hashed message IDs.
 
     ## Parameters
     - `transactions`: A list of rollup transaction entries.
     - `report`: An optional boolean flag (default `true`) that, when `true`, logs
-      the number of processed L1-to-L2 messages if any are found.
+      the number of identified L1-to-L2 messages and transactions requiring
+      further processing.
 
     ## Returns
-    - A list of L1-to-L2 messages with detailed information and current status. Every
-      map in the list compatible with the database import operation. All messages in
-      this context are considered `:relayed` as they represent completed actions from
-      L1 to L2.
+    A tuple containing:
+    - A list of L1-to-L2 messages with detailed information, ready for database
+      import. All messages in this context are considered `:relayed` as they
+      represent completed actions from L1 to L2.
+    - A list of transactions with hashed message IDs that require further
+      processing for message ID matching.
   """
-  @spec filter_l1_to_l2_messages([min_transaction()]) :: [arbitrum_message]
-  @spec filter_l1_to_l2_messages([min_transaction()], boolean()) :: [arbitrum_message]
+  @spec filter_l1_to_l2_messages([min_transaction()]) :: {[Message.to_import()], [min_transaction()]}
+  @spec filter_l1_to_l2_messages([min_transaction()], boolean()) :: {[Message.to_import()], [min_transaction()]}
   def filter_l1_to_l2_messages(transactions, report \\ true)
       when is_list(transactions) and is_boolean(report) do
-    messages =
+    {transactions_with_proper_message_id, transactions_with_hashed_message_id} =
       transactions
       |> Enum.filter(fn tx ->
-        tx[:request_id] != nil and Bitwise.bsr(tx[:request_id], 31) == 0
+        tx[:request_id] != nil
       end)
+      |> Enum.split_with(fn tx ->
+        plain_message_id?(tx[:request_id])
+      end)
+
+    # Transform transactions with the plain message ID into messages
+    messages =
+      transactions_with_proper_message_id
       |> handle_filtered_l1_to_l2_messages()
 
-    if report && not (messages == []) do
-      log_info("#{length(messages)} completions of L1-to-L2 messages will be imported")
+    if report do
+      if not (messages == []) do
+        log_info("#{length(messages)} completions of L1-to-L2 messages will be imported")
+      end
+
+      if not (transactions_with_hashed_message_id == []) do
+        log_info(
+          "#{length(transactions_with_hashed_message_id)} completions of L1-to-L2 messages require message ID matching discovery"
+        )
+      end
     end
 
-    messages
+    {messages, transactions_with_hashed_message_id}
   end
 
   @doc """
@@ -110,7 +120,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     - A list of L2-to-L1 messages with detailed information and current status. Each map
     in the list is compatible with the database import operation.
   """
-  @spec filter_l2_to_l1_messages(maybe_improper_list(min_log, [])) :: [arbitrum_message]
+  @spec filter_l2_to_l1_messages(maybe_improper_list(min_log, [])) :: [Message.to_import()]
   def filter_l2_to_l1_messages(logs) when is_list(logs) do
     arbsys_contract = Application.get_env(:indexer, __MODULE__)[:arbsys_contract]
 
@@ -135,7 +145,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       in the list compatible with the database import operation. All messages in this context
       are considered `:relayed` as they represent completed actions from L1 to L2.
   """
-  @spec handle_filtered_l1_to_l2_messages(maybe_improper_list(min_transaction, [])) :: [arbitrum_message]
+  @spec handle_filtered_l1_to_l2_messages(maybe_improper_list(min_transaction, [])) :: [Message.to_import()]
   def handle_filtered_l1_to_l2_messages([]) do
     []
   end
@@ -145,7 +155,12 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     |> Enum.map(fn tx ->
       log_debug("L1 to L2 message #{tx.hash} found with the type #{tx.type}")
 
-      %{direction: :to_l2, message_id: tx.request_id, completion_transaction_hash: tx.hash, status: :relayed}
+      %{
+        direction: :to_l2,
+        message_id: quantity_to_integer(tx.request_id),
+        completion_transaction_hash: tx.hash,
+        status: :relayed
+      }
       |> complete_to_params()
     end)
   end
@@ -168,8 +183,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     - A list of L2-to-L1 messages with detailed information and current status, ready for
       database import.
   """
-  @spec handle_filtered_l2_to_l1_messages([min_log]) :: [arbitrum_message]
-  @spec handle_filtered_l2_to_l1_messages([min_log], module()) :: [arbitrum_message]
+  @spec handle_filtered_l2_to_l1_messages([min_log]) :: [Message.to_import()]
+  @spec handle_filtered_l2_to_l1_messages([min_log], module()) :: [Message.to_import()]
   def handle_filtered_l2_to_l1_messages(filtered_logs, caller \\ nil)
 
   def handle_filtered_l2_to_l1_messages([], _) do
@@ -211,21 +226,40 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
     # The check if messages are executed is required only for the case when l2-to-l1
     # messages are found by block catchup fetcher
-    updated_messages_map =
-      case caller do
-        nil ->
-          messages_map
+    caller
+    |> case do
+      nil ->
+        messages_map
 
-        _ ->
-          messages_map
-          |> find_and_update_executed_messages()
-      end
-
-    updated_messages_map
+      _ ->
+        messages_map
+        |> find_and_update_executed_messages()
+    end
     |> Map.values()
   end
 
+  @doc """
+    Imports a list of messages into the database.
+
+    ## Parameters
+    - `messages`: A list of messages to import into the database.
+
+    ## Returns
+    N/A
+  """
+  @spec import_to_db([Message.to_import()]) :: :ok
+  def import_to_db(messages) do
+    {:ok, _} =
+      Chain.import(%{
+        arbitrum_messages: %{params: messages},
+        timeout: :infinity
+      })
+
+    :ok
+  end
+
   # Converts an incomplete message structure into a complete parameters map for database updates.
+  @spec complete_to_params(map()) :: Message.to_import()
   defp complete_to_params(incomplete) do
     [
       :direction,
@@ -243,6 +277,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   end
 
   # Parses an L2-to-L1 event, extracting relevant information from the event's data.
+  @spec l2_to_l1_event_parse(min_log()) :: {non_neg_integer(), binary(), non_neg_integer(), DateTime.t()}
   defp l2_to_l1_event_parse(event) do
     [
       caller,
@@ -260,6 +295,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   # Determines the status of an L2-to-L1 message based on its block number and the highest
   # committed and confirmed block numbers.
+  @spec status_l2_to_l1_message(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+          :confirmed | :sent | :initiated
   defp status_l2_to_l1_message(msg_block, highest_committed_block, highest_confirmed_block) do
     cond do
       highest_confirmed_block >= msg_block -> :confirmed
@@ -278,6 +315,9 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   # ## Returns
   # - The updated map of messages with the `completion_transaction_hash` and `status` fields updated
   #   for messages that have been executed.
+  @spec find_and_update_executed_messages(%{non_neg_integer() => Message.to_import()}) :: %{
+          non_neg_integer() => Message.to_import()
+        }
   defp find_and_update_executed_messages(messages) do
     messages
     |> Map.keys()
@@ -291,5 +331,16 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
       Map.put(messages_acc, execution.message_id, message)
     end)
+  end
+
+  # Checks if the given request ID is a plain message ID (starts with 56 zero
+  # characters that correspond to 28 zero bytes).
+  @spec plain_message_id?(non_neg_integer()) :: boolean()
+  defp plain_message_id?(request_id) when byte_size(request_id) == 66 do
+    String.starts_with?(request_id, @zero_hex_prefix)
+  end
+
+  defp plain_message_id?(_) do
+    false
   end
 end

@@ -258,7 +258,7 @@ defmodule Explorer.Chain.TransactionTest do
     test "that a contract call transaction that has no verified contract returns a commensurate error" do
       transaction =
         :transaction
-        |> insert(to_address: insert(:contract_address))
+        |> insert(to_address: insert(:contract_address), input: "0x1234567891")
         |> Repo.preload(to_address: :smart_contract)
 
       assert {{:error, :contract_not_verified, []}, _, _} = Transaction.decoded_input_data(transaction, [])

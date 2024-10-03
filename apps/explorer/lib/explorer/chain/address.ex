@@ -104,6 +104,7 @@ defmodule Explorer.Chain.Address.Schema do
         )
 
         has_many(:names, Address.Name, foreign_key: :address_hash, references: :hash)
+        has_one(:scam_badge, Address.ScamBadgeToAddress, foreign_key: :address_hash, references: :hash)
         has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 
@@ -131,6 +132,7 @@ defmodule Explorer.Chain.Address do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
@@ -187,6 +189,7 @@ defmodule Explorer.Chain.Address do
      Solidity source code is in `smart_contract` `t:Explorer.Chain.SmartContract.t/0` `contract_source_code` *if* the
     contract has been verified
    * `names` - names known for the address
+   * `badges` - badges applied for the address
    * `inserted_at` - when this address was inserted
    * `updated_at` - when this address was last updated
    * `ens_domain_name` - virtual field for ENS domain name passing
@@ -471,6 +474,7 @@ defmodule Explorer.Chain.Address do
           )
 
         base_query
+        |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
         |> page_addresses(paging_options)
         |> limit(^paging_options.page_size)
         |> Chain.select_repo(options).all()

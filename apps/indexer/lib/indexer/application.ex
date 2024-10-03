@@ -12,31 +12,9 @@ defmodule Indexer.Application do
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
 
   alias Indexer.Memory
-  alias Prometheus.Registry
-
-  @default_prometheus_collectors [
-    Indexer.Prometheus.Collector.PendingBlockOperations
-  ]
-
-  case Application.compile_env(:explorer, :chain_type) do
-    :filecoin ->
-      @chain_type_prometheus_collectors [
-        Indexer.Prometheus.Collector.FilecoinPendingAddressOperations
-      ]
-
-    _ ->
-      @chain_type_prometheus_collectors []
-  end
-
-  @prometheus_collectors @default_prometheus_collectors ++
-                           @chain_type_prometheus_collectors
 
   @impl Application
   def start(_type, _args) do
-    for collector <- @prometheus_collectors do
-      Registry.register_collector(collector)
-    end
-
     memory_monitor_options =
       case Application.get_env(:indexer, :memory_limit) do
         nil -> %{}
