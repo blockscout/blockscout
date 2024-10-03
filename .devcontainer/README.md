@@ -66,19 +66,29 @@ Key benefits include:
 
 ### Additional Setup for Cursor.ai Users
 
-If you're using Cursor.ai instead of VSCode, you may encounter issues when trying to perform Git operations like pulling changes from the "Source Control" tab. To resolve this, you need to set up your Git configuration inside the devcontainer. Follow these steps:
+If you're using Cursor.ai instead of VSCode, you may need to perform some additional setup steps. Please note that these changes will not persist after reloading the devcontainer, so you may need to repeat these steps each time you start a new session.
 
-1. Open a terminal in your devcontainer.
-2. Set your Git username:
-   ```
-   git config --global user.name "Your Name"
-   ```
-3. Set your Git email:
-   ```
-   git config --global user.email "your.email@example.com"
-   ```
+1. **Git Configuration**: You may encounter issues when trying to perform Git operations from the terminal or the "Source Control" tab. To resolve this, set up your Git configuration inside the devcontainer:
 
-Replace "Your Name" and "your.email@example.com" with your actual name and email associated with your GitHub account. This configuration will allow you to perform Git operations smoothly within the Cursor.ai environment.
+   a. Open a terminal in your devcontainer.
+   b. Set your Git username:
+      ```
+      git config --global user.name "Your Name"
+      ```
+   c. Set your Git email:
+      ```
+      git config --global user.email "your.email@example.com"
+      ```
+
+   Replace "Your Name" and "your.email@example.com" with your actual name and email associated with your GitHub account.
+
+2. **ElixirLS: Elixir support and debugger** (JakeBecker.elixir-ls): This extension may not be automatically installed in Cursor.ai, even though it's specified in the devcontainer configuration. To install it manually:
+
+   a. Open the Extensions tab.
+   b. Search for "JakeBecker.elixir-ls".
+   c. Look for the extension "ElixirLS: Elixir support and debugger" by JakeBecker and click "Install".
+
+Remember, you may need to repeat these steps each time you start a new Cursor.ai session with the devcontainer.
 
 ### Signing in to GitHub for Pull Request Extension
 
