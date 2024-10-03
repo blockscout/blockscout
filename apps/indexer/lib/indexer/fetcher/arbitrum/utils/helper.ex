@@ -1,6 +1,7 @@
 defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   alias Explorer.Chain.Arbitrum.LifecycleTransaction
 
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
 
   @moduledoc """
@@ -204,5 +205,59 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
       end
     end)
     |> Enum.reverse()
+  end
+
+  @doc """
+    Converts a message ID to its hashed hexadecimal string representation.
+
+    This function takes a message ID (either as an integer or a hexadecimal string),
+    concatenates it with 256 zero bits, computes a hash of the concatenation, and
+    then converts the resulting hash to a hexadecimal string with a "0x" prefix.
+
+    ## Parameters
+    - `message_id`: The message ID to be hashed and converted. Can be either a
+      non-negative integer or a "0x"-prefixed hexadecimal string.
+
+    ## Returns
+    - A string representing the hashed message ID in hexadecimal format, prefixed
+      with "0x".
+
+    ## Examples
+
+        iex> get_hashed_message_id_as_hex_str(1490421)
+        "0x9d1614591a3e0ba8854206a716e49ffdffc679131820fa815b989fdef9e5554d"
+
+        iex> get_hashed_message_id_as_hex_str("0x000000000000000000000000000000000000000000000000000000000016bdf5")
+        "0x9d1614591a3e0ba8854206a716e49ffdffc679131820fa815b989fdef9e5554d"
+  """
+  @spec get_hashed_message_id_as_hex_str(non_neg_integer() | binary()) :: String.t()
+  def get_hashed_message_id_as_hex_str(message_id) do
+    message_id
+    |> hash_for_message_id()
+    |> bytes_to_hex_str()
+  end
+
+  # Calculates the hash for a given message ID.
+  #
+  # This function computes a 256-bit Keccak hash of the message ID. For integer
+  # inputs, it concatenates the 256-bit message ID with 256 zero bits before
+  # hashing. For hexadecimal string inputs, it first converts the string to an
+  # integer.
+  #
+  # ## Parameters
+  # - `message_id`: Either a non-negative integer or a "0x"-prefixed hexadecimal
+  #   string of 66 characters (including the "0x" prefix).
+  #
+  # ## Returns
+  # - A binary representing the 256-bit Keccak hash of the processed message ID.
+  @spec hash_for_message_id(non_neg_integer() | binary()) :: binary()
+  defp hash_for_message_id(message_id) when is_integer(message_id) do
+    # As per https://github.com/OffchainLabs/nitro/blob/849348e10cf1d9c023f4748dc1211bd363422485/arbos/parse_l2.go#L40
+    (<<message_id::size(256)>> <> <<0::size(256)>>)
+    |> ExKeccak.hash_256()
+  end
+
+  defp hash_for_message_id(message_id) when is_binary(message_id) and byte_size(message_id) == 66 do
+    hash_for_message_id(quantity_to_integer(message_id))
   end
 end
