@@ -210,6 +210,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  def render("authorization_list.json", %{signed_authorizations: signed_authorizations}) do
+    signed_authorizations
+    |> Enum.sort_by(& &1.index, :asc)
+    |> Enum.map(&prepare_signed_authorization/1)
+  end
+
   @doc """
     Decodes list of logs
   """
@@ -336,6 +342,18 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  def prepare_signed_authorization(signed_authorization) do
+    %{
+      "address" => signed_authorization.address,
+      "chain_id" => signed_authorization.chain_id,
+      "nonce" => signed_authorization.nonce,
+      "r" => signed_authorization.r,
+      "s" => signed_authorization.s,
+      "v" => signed_authorization.v,
+      "authority" => signed_authorization.authority
+    }
+  end
+
   defp get_tx_hash(%Transaction{} = tx), do: to_string(tx.hash)
   defp get_tx_hash(hash), do: to_string(hash)
 
@@ -450,7 +468,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "method" => Transaction.method_name(transaction, decoded_input),
       "tx_types" => tx_types(transaction),
       "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_tx? && conn)),
-      "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
+      "has_error_in_internal_txs" => transaction.has_error_in_internal_txs,
+      "authorization_list" => authorization_list(transaction.signed_authorizations)
     }
 
     result
@@ -480,6 +499,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   """
   def transaction_actions(actions) do
     render("transaction_actions.json", %{actions: actions})
+  end
+
+  def authorization_list(nil), do: []
+  def authorization_list(%NotLoaded{}), do: []
+
+  def authorization_list(signed_authorizations) do
+    render("authorization_list.json", %{signed_authorizations: signed_authorizations})
   end
 
   defp burnt_fees(transaction, max_fee_per_gas, base_fee_per_gas) do
@@ -608,7 +634,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
                | :token_creation
                | :token_transfer
                | :blob_transaction
-  def tx_types(tx, types \\ [], stage \\ :blob_transaction)
+               | :set_code_transaction
+  def tx_types(tx, types \\ [], stage \\ :set_code_transaction)
+
+  def tx_types(%Transaction{type: type} = tx, types, :set_code_transaction) do
+    # EIP-7702 set code transaction type
+    types =
+      if type == 4 do
+        [:set_code_transaction | types]
+      else
+        types
+      end
+
+    tx_types(tx, types, :blob_transaction)
+  end
 
   def tx_types(%Transaction{type: type} = tx, types, :blob_transaction) do
     # EIP-2718 blob transaction type

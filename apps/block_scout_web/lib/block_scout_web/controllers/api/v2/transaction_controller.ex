@@ -117,7 +117,9 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   @spec transaction(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def transaction(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
     necessity_by_association_with_actions =
-      Map.put(@transaction_necessity_by_association, :transaction_actions, :optional)
+      @transaction_necessity_by_association
+      |> Map.put(:transaction_actions, :optional)
+      |> Map.put(:signed_authorizations, :optional)
 
     necessity_by_association =
       case Application.get_env(:explorer, :chain_type) do
