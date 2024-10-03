@@ -16,7 +16,7 @@
 		"vscode": {
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
-				"jakebecker.elixir-ls",
+				"JakeBecker.elixir-ls",
 				"ckolkman.vscode-postgres",
 				"GitHub.copilot",
 				"GitHub.copilot-chat",
