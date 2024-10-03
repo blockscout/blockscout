@@ -152,6 +152,30 @@ The `bs` script in `.devcontainer/bin/` helps orchestrate common development tas
 
 For a full list of options, run `bs --help`.
 
+### Interacting with the Blockscout API
+
+For local devcontainer setups (not applicable to GitHub Codespaces), you can use API testing tools like Postman or Insomnia on your host machine to interact with the Blockscout API running in the container:
+
+1. Ensure the Blockscout server is running in the devcontainer.
+2. In the API testing tool on your host machine, use `http://127.0.0.1:4000` as the base URL.
+3. Example endpoint: `GET http://127.0.0.1:4000/api/v2/blocks`
+
+This allows testing API endpoints directly from your host machine while the server runs in the container.
+
+## Troubleshooting
+
+If you face issues with dependency compilation or dialyzer after container creation:
+
+1. Check for untracked files: `git ls-files --others`
+2. Remove compilation artifacts or generated files if present.
+3. For persistent issues, consider cleaning all untracked files (use with caution):
+   ```
+   git clean -fdX
+   bs --recompile
+   ```
+
+This ensures a clean compilation environment within the container.
+
 ## Upgrading Elixir Version
 
 To upgrade the Elixir version:
