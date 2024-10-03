@@ -170,14 +170,21 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Process.cancel_timer(timer)
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :stability do
-    defp fetch_validators_async do
-      GenServer.cast(Indexer.Fetcher.Stability.Validator, :update_validators_list)
-    end
-  else
-    defp fetch_validators_async do
-      :ignore
-    end
+  case Application.compile_env(:explorer, :chain_type) do
+    :stability ->
+      defp fetch_validators_async do
+        GenServer.cast(Indexer.Fetcher.Stability.Validator, :update_validators_list)
+      end
+
+    :blackfort ->
+      defp fetch_validators_async do
+        GenServer.cast(Indexer.Fetcher.Blackfort.Validator, :update_validators_list)
+      end
+
+    _ ->
+      defp fetch_validators_async do
+        :ignore
+      end
   end
 
   defp subscribe_to_new_heads(%__MODULE__{subscription: nil} = state, subscribe_named_arguments)

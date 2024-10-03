@@ -41,14 +41,17 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   responsible for L1-to-L2 messages and then re-requests these transactions
   through RPC. Results are utilized to construct messages. These messages are
   marked as `:relayed`, indicating that they have been successfully received on
-  L2 and are considered completed, and are then imported into the database. This
-  approach is adopted because it parallels the action of re-indexing existing
-  transactions to include Arbitrum-specific fields, which are absent in the
-  currently indexed transactions. However, permanently adding these fields to the
-  database model for the sake of historical message catch-up is impractical.
-  Therefore, to avoid the extensive process of re-indexing and to minimize changes
-  to the database schema, fetching the required data directly from an external
-  node via RPC is preferred for historical message discovery.
+  L2 and are considered completed, and are then imported into the database. If
+  it is determined that a message cannot be constructed because of a hashed
+  message ID, the transaction is scheduled for further asynchronous processing to
+  match it with the corresponding L1 transaction. This approach is adopted
+  because it parallels the action of re-indexing existing transactions to include
+  Arbitrum-specific fields, which are absent in the currently indexed
+  transactions. However, permanently adding these fields to the database model
+  for the sake of historical message catch-up is impractical. Therefore, to avoid
+  the extensive process of re-indexing and to minimize changes to the database
+  schema, fetching the required data directly from an external node via RPC is
+  preferred for historical message discovery.
   """
 
   use GenServer
@@ -64,7 +67,7 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   require Logger
 
   @wait_for_new_block_delay 15
-  @release_cpu_delay 1
+  @release_cpu_delay 2
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -167,43 +170,44 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
     {:noreply, %{state | data: new_data}}
   end
 
-  # Sets the initial parameters for discovering historical messages. This function
-  # inspects the database for missed messages and, if any are found, identifies the
-  # end blocks of the ranges for both L1-to-L2 and L2-to-L1 messages. If no missed
-  # messages are found, the block number before the latest indexed block will be used.
-  # These end blocks are used to initiate the discovery process in subsequent iterations.
+  # Sets the end blocks of the ranges for discovering historical L1-to-L2 and L2-to-L1 messages.
   #
-  # After identifying the initial values, the function immediately transitions to
-  # the L2-to-L1 message discovery process by sending the `:historical_msg_from_l2`
-  # message.
+  # There is likely a way to query the DB and discover the exact block of the
+  # first missed message (both L1-to-L2 and L2-to-L1) and start the discovery
+  # process from there. However, such a query is very expensive and can take a
+  # long time for chains with a high number of transactions. Instead, it's
+  # possible to start looking for missed messages from the block before the
+  # latest indexed block.
+  #
+  # Although this approach is not optimal for Blockscout instances where there
+  # are no missed messages (assumed to be the majority), it is still preferable
+  # to the first approach. The reason is that a finite number of relatively
+  # cheap queries (which can be tuned with `missed_messages_blocks_depth`) are
+  # preferable to one expensive query that becomes even more expensive as the
+  # number of indexed transactions grows.
+  #
+  # After identifying the initial values, the function immediately transitions
+  # to the L2-to-L1 message discovery process by sending the
+  # `:historical_msg_from_l2` message.
   #
   # ## Parameters
   # - `:init_worker`: The message that triggers the handler.
-  # - `state`: The current state of the fetcher containing the first rollup block
-  #   number and the number of the most recent block indexed.
+  # - `state`: The current state of the fetcher containing the number of the
+  #   most recent block indexed.
   #
   # ## Returns
-  # - `{:noreply, new_state}` where the end blocks for both L1-to-L2 and L2-to-L1
-  #   message discovery are established.
+  # - `{:noreply, new_state}` where `new_state` contains the updated state with
+  #   end blocks for both L1-to-L2 and L2-to-L1 message discovery established.
   @impl GenServer
-  def handle_info(
-        :init_worker,
-        %{config: %{rollup_rpc: %{first_block: rollup_first_block}}, data: %{new_block: just_received_block}} = state
-      ) do
-    historical_msg_from_l2_end_block =
-      Db.rollup_block_to_discover_missed_messages_from_l2(just_received_block, rollup_first_block)
-
-    historical_msg_to_l2_end_block =
-      Db.rollup_block_to_discover_missed_messages_to_l2(just_received_block, rollup_first_block)
-
+  def handle_info(:init_worker, %{data: %{new_block: just_received_block}} = state) do
     Process.send(self(), :historical_msg_from_l2, [])
 
     new_data =
       Map.merge(state.data, %{
         duration: 0,
         progressed: false,
-        historical_msg_from_l2_end_block: historical_msg_from_l2_end_block,
-        historical_msg_to_l2_end_block: historical_msg_to_l2_end_block
+        historical_msg_from_l2_end_block: just_received_block,
+        historical_msg_to_l2_end_block: just_received_block
       })
 
     {:noreply, %{state | data: new_data}}
@@ -267,8 +271,14 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   # `requestId` for every transaction. This RPC request is necessary because the
   # `requestId` field is not present in the transaction model of already indexed
   # transactions in the database. Results are used to construct messages, which are
-  # subsequently stored in the database. These imported messages are marked as
-  # `:relayed`, signifying that they represent completed actions from L1 to L2.
+  # subsequently stored in the database.
+  #
+  # Messages with plain (non-hashed) request IDs are imported into the database and
+  # marked as `:relayed`, representing completed actions from L1 to L2.
+  #
+  # For transactions where the `requestId` represents a hashed message ID, the
+  # function schedules asynchronous discovery to match them with corresponding L1
+  # transactions.
   #
   # After importing the messages, the function immediately switches to the process
   # of choosing a delay prior to the next iteration of historical message discovery

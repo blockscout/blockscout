@@ -84,6 +84,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => Address.checksum(address),
       "is_contract" => smart_contract?,
       "name" => address_name(address),
+      "is_scam" => address_marked_as_scam?(address),
       "proxy_type" => proxy_type,
       "implementations" => Proxy.proxy_object_info(implementation_address_hashes, implementation_names),
       "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
@@ -157,6 +158,12 @@ defmodule BlockScoutWeb.API.V2.Helper do
   end
 
   def address_name(_), do: nil
+
+  def address_marked_as_scam?(%Address{scam_badge: scam_badge}) when not is_nil(scam_badge) do
+    true
+  end
+
+  def address_marked_as_scam?(_), do: false
 
   def verified?(%Address{smart_contract: nil}), do: false
   def verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false

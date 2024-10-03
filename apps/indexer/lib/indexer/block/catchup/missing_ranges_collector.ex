@@ -60,7 +60,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
 
     ranges
     |> Enum.reverse()
-    |> Enum.flat_map(fn f..l -> Chain.missing_block_number_ranges(l..f) end)
+    |> Enum.flat_map(fn f..l//_ -> Chain.missing_block_number_ranges(l..f) end)
     |> MissingRangesManipulator.save_batch()
 
     if not is_nil(max_fetched_block_number) do
@@ -246,7 +246,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       |> RangesHelper.sanitize_ranges()
 
     case List.last(ranges) do
-      _from.._to ->
+      _from.._to//_ ->
         {:finite_ranges, ranges}
 
       nil ->

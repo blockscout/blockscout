@@ -189,8 +189,8 @@ defmodule EthereumJSONRPC do
   def fetch_balances(params_list, json_rpc_named_arguments, chunk_size \\ nil)
       when is_list(params_list) and is_list(json_rpc_named_arguments) do
     filtered_params =
-      if Application.get_env(:ethereum_jsonrpc, :disable_archive_balances?) do
-        {:ok, max_block_number} = fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+      with true <- Application.get_env(:ethereum_jsonrpc, :disable_archive_balances?),
+           {:ok, max_block_number} <- fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
         window = Application.get_env(:ethereum_jsonrpc, :archive_balances_window)
 
         params_list
@@ -200,7 +200,7 @@ defmodule EthereumJSONRPC do
           _ -> false
         end)
       else
-        params_list
+        _ -> params_list
       end
 
     filtered_params_in_range =
@@ -270,7 +270,7 @@ defmodule EthereumJSONRPC do
   Fetches blocks by block number range.
   """
   @spec fetch_blocks_by_range(Range.t(), json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
-  def fetch_blocks_by_range(_first.._last = range, json_rpc_named_arguments) do
+  def fetch_blocks_by_range(_first.._last//_ = range, json_rpc_named_arguments) do
     range
     |> Enum.map(fn number -> %{number: number} end)
     |> fetch_blocks_by_params(&Block.ByNumber.request/1, json_rpc_named_arguments)
@@ -495,6 +495,24 @@ defmodule EthereumJSONRPC do
   end
 
   def quantity_to_integer(_), do: nil
+
+  @doc """
+  Sanitizes ID in JSON RPC request following JSON RPC [spec](https://www.jsonrpc.org/specification#request_object:~:text=An%20identifier%20established%20by%20the%20Client%20that%20MUST%20contain%20a%20String%2C%20Number%2C%20or%20NULL%20value%20if%20included.%20If%20it%20is%20not%20included%20it%20is%20assumed%20to%20be%20a%20notification.%20The%20value%20SHOULD%20normally%20not%20be%20Null%20%5B1%5D%20and%20Numbers%20SHOULD%20NOT%20contain%20fractional%20parts%20%5B2%5D).
+  """
+  @spec sanitize_id(quantity) :: non_neg_integer() | String.t() | nil
+
+  def sanitize_id(integer) when is_integer(integer), do: integer
+
+  def sanitize_id(string) when is_binary(string) do
+    # match ID string and ID string without non-ASCII characters
+    if string == for(<<c <- string>>, c < 128, into: "", do: <<c>>) do
+      string
+    else
+      nil
+    end
+  end
+
+  def sanitize_id(_), do: nil
 
   @doc """
   Converts `t:non_neg_integer/0` to `t:quantity/0`

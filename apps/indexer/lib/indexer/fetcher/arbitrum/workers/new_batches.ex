@@ -1275,7 +1275,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         {nil, nil}
 
       %Arbitrum.L1Batch{start_block: start_block, end_block: end_block} ->
-        {start_block - 1, div(end_block - start_block, 2)}
+        {start_block - 1, half_of_block_range(start_block, end_block, :descending)}
     end
   end
 
@@ -1289,7 +1289,26 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         {nil, nil}
 
       %Arbitrum.L1Batch{start_block: start_block, end_block: end_block} ->
-        {end_block + 1, div(start_block - end_block, 2)}
+        {end_block + 1, half_of_block_range(start_block, end_block, :ascending)}
+    end
+  end
+
+  # Calculates half the range between two block numbers, with direction adjustment.
+  #
+  # ## Parameters
+  # - `start_block`: The starting block number.
+  # - `end_block`: The ending block number.
+  # - `direction`: The direction of calculation, either `:ascending` or `:descending`.
+  #
+  # ## Returns
+  # - An integer representing half the block range, adjusted for direction:
+  #   - For `:descending`, a positive integer >= 1.
+  #   - For `:ascending`, a negative integer <= -1.
+  @spec half_of_block_range(non_neg_integer(), non_neg_integer(), :ascending | :descending) :: integer()
+  defp half_of_block_range(start_block, end_block, direction) do
+    case direction do
+      :descending -> max(div(end_block - start_block + 1, 2), 1)
+      :ascending -> min(div(start_block - end_block - 1, 2), -1)
     end
   end
 

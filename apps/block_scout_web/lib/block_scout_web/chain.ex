@@ -508,6 +508,21 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: %{block_index: index}}]
   end
 
+  # Clause for `Explorer.Chain.Blackfort.Validator`,
+  #  returned by `BlockScoutWeb.API.V2.ValidatorController.blackfort_validators_list/2` (`/api/v2/validators/blackfort`)
+  def paging_options(%{
+        "address_hash" => address_hash_string
+      }) do
+    [
+      paging_options: %{
+        @default_paging_options
+        | key: %{
+            address_hash: parse_address_hash(address_hash_string)
+          }
+      }
+    ]
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def put_key_value_to_paging_options([paging_options: paging_options], key, value) do

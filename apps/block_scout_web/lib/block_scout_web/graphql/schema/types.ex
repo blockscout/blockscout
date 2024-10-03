@@ -1,3 +1,66 @@
+defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
+  @moduledoc false
+
+  alias BlockScoutWeb.GraphQL.Resolvers.{Block, InternalTransaction}
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :celo ->
+      @chain_type_fields quote(
+                           do: [
+                             field(:gas_token_contract_address_hash, :address_hash)
+                           ]
+                         )
+
+    _ ->
+      @chain_type_fields quote(do: [])
+  end
+
+  defmacro generate do
+    quote do
+      node object(:transaction, id_fetcher: &transaction_id_fetcher/2) do
+        field(:cumulative_gas_used, :decimal)
+        field(:error, :string)
+        field(:gas, :decimal)
+        field(:gas_price, :wei)
+        field(:gas_used, :decimal)
+        field(:hash, :full_hash)
+        field(:index, :integer)
+        field(:input, :string)
+        field(:nonce, :nonce_hash)
+        field(:r, :decimal)
+        field(:s, :decimal)
+        field(:status, :status)
+        field(:v, :decimal)
+        field(:value, :wei)
+        field(:block_hash, :full_hash)
+        field(:block_number, :integer)
+        field(:from_address_hash, :address_hash)
+        field(:to_address_hash, :address_hash)
+        field(:created_contract_address_hash, :address_hash)
+        field(:earliest_processing_start, :datetime)
+        field(:revert_reason, :string)
+        field(:max_priority_fee_per_gas, :wei)
+        field(:max_fee_per_gas, :wei)
+        field(:type, :integer)
+        field(:has_error_in_internal_txs, :boolean)
+
+        field :block, :block do
+          resolve(&Block.get_by/3)
+        end
+
+        connection field(:internal_transactions, node_type: :internal_transaction) do
+          arg(:count, :integer)
+          resolve(&InternalTransaction.get_by/3)
+
+          complexity(fn params, child_complexity -> process_complexity(params, child_complexity) end)
+        end
+
+        unquote_splicing(@chain_type_fields)
+      end
+    end
+  end
+end
+
 defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
   @moduledoc false
   case Application.compile_env(:explorer, :chain_type) do
@@ -42,7 +105,7 @@ end
 defmodule BlockScoutWeb.GraphQL.Schema.Types do
   @moduledoc false
 
-  require BlockScoutWeb.GraphQL.Schema.SmartContracts
+  require BlockScoutWeb.GraphQL.Schema.{Transaction, SmartContracts}
 
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
@@ -50,11 +113,13 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
   import Absinthe.Resolution.Helpers
 
   alias BlockScoutWeb.GraphQL.Resolvers.{
-    InternalTransaction,
+    Token,
+    TokenTransfer,
     Transaction
   }
 
   alias BlockScoutWeb.GraphQL.Schema.SmartContracts, as: SmartContractsSchema
+  alias BlockScoutWeb.GraphQL.Schema.Transaction, as: TransactionSchema
 
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.GraphQL.Schema.Scalars)
@@ -84,6 +149,13 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
       arg(:count, :integer)
       arg(:order, type: :sort_order, default_value: :desc)
       resolve(&Transaction.get_by/3)
+
+      complexity(fn params, child_complexity -> process_complexity(params, child_complexity) end)
+    end
+
+    connection field(:token_transfers, node_type: :token_transfer) do
+      arg(:count, :integer)
+      resolve(&TokenTransfer.get_by/3)
 
       complexity(fn params, child_complexity -> process_complexity(params, child_complexity) end)
     end
@@ -160,45 +232,36 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
     field(:to_address_hash, :address_hash)
     field(:token_contract_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
+
+    field :transaction, :transaction do
+      resolve(&Transaction.get_by/3)
+    end
+
+    field :token, :token do
+      resolve(&Token.get_by/3)
+    end
+  end
+
+  @desc """
+  Represents a token.
+  """
+  object :token do
+    field(:name, :string)
+    field(:symbol, :string)
+    field(:total_supply, :decimal)
+    field(:decimals, :decimal)
+    field(:type, :string)
+    field(:holder_count, :integer)
+    field(:circulating_market_cap, :decimal)
+    field(:icon_url, :string)
+    field(:volume_24h, :decimal)
+    field(:contract_address_hash, :address_hash)
   end
 
   @desc """
   Models a Web3 transaction.
   """
-  node object(:transaction, id_fetcher: &transaction_id_fetcher/2) do
-    field(:cumulative_gas_used, :decimal)
-    field(:error, :string)
-    field(:gas, :decimal)
-    field(:gas_price, :wei)
-    field(:gas_used, :decimal)
-    field(:hash, :full_hash)
-    field(:index, :integer)
-    field(:input, :string)
-    field(:nonce, :nonce_hash)
-    field(:r, :decimal)
-    field(:s, :decimal)
-    field(:status, :status)
-    field(:v, :decimal)
-    field(:value, :wei)
-    field(:block_hash, :full_hash)
-    field(:block_number, :integer)
-    field(:from_address_hash, :address_hash)
-    field(:to_address_hash, :address_hash)
-    field(:created_contract_address_hash, :address_hash)
-    field(:earliest_processing_start, :datetime)
-    field(:revert_reason, :string)
-    field(:max_priority_fee_per_gas, :wei)
-    field(:max_fee_per_gas, :wei)
-    field(:type, :integer)
-    field(:has_error_in_internal_txs, :boolean)
-
-    connection field(:internal_transactions, node_type: :internal_transaction) do
-      arg(:count, :integer)
-      resolve(&InternalTransaction.get_by/3)
-
-      complexity(fn params, child_complexity -> process_complexity(params, child_complexity) end)
-    end
-  end
+  TransactionSchema.generate()
 
   def token_transfer_id_fetcher(%{transaction_hash: transaction_hash, log_index: log_index}, _) do
     Jason.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index})

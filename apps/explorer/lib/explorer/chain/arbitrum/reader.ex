@@ -24,8 +24,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   # https://github.com/OffchainLabs/go-ethereum/blob/dff302de66598c36b964b971f72d35a95148e650/core/types/transaction.go#L44C2-L50
   @message_to_l2_eth_deposit 100
   @message_to_l2_submit_retryable_tx 105
-
-  @zero_wei 0
+  @to_l2_messages_transaction_types [
+    @message_to_l2_eth_deposit,
+    @message_to_l2_submit_retryable_tx
+  ]
 
   @doc """
     Retrieves the number of the latest L1 block where an L1-to-L2 message was discovered.
@@ -838,10 +840,6 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   # table. A message is considered missed if there is a transaction without a
   # matching message record.
   #
-  # For transactions that could be considered ETH deposits, it checks
-  # that the message value is not zero, as transactions with a zero value
-  # cannot be a deposit.
-  #
   # ## Returns
   #   - A query to retrieve missed L1-to-L2 messages.
   @spec missed_messages_to_l2_query() :: Ecto.Query.t()
@@ -849,10 +847,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     from(rollup_tx in Transaction,
       left_join: msg in Message,
       on: rollup_tx.hash == msg.completion_transaction_hash and msg.direction == :to_l2,
-      where:
-        (rollup_tx.type == ^@message_to_l2_submit_retryable_tx or
-           (rollup_tx.type == ^@message_to_l2_eth_deposit and rollup_tx.value != ^@zero_wei)) and
-          is_nil(msg.completion_transaction_hash)
+      where: rollup_tx.type in @to_l2_messages_transaction_types and is_nil(msg.completion_transaction_hash)
     )
   end
 
@@ -1336,5 +1331,22 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     # :optional is used since a block may not have any transactions
     |> Chain.join_associations(%{:transactions => :optional})
     |> Repo.all()
+  end
+
+  @doc """
+    Retrieves the message IDs of uncompleted L1-to-L2 messages.
+
+    ## Returns
+    - A list of the message IDs of uncompleted L1-to-L2 messages.
+  """
+  @spec get_uncompleted_l1_to_l2_messages_ids() :: [non_neg_integer()]
+  def get_uncompleted_l1_to_l2_messages_ids do
+    query =
+      from(msg in Message,
+        where: msg.direction == :to_l2 and is_nil(msg.completion_transaction_hash),
+        select: msg.message_id
+      )
+
+    Repo.all(query)
   end
 end
