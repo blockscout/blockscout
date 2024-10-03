@@ -7,7 +7,7 @@ source $(dirname $0)/utils
 # cd $(dirname $0)/../../
 
 # Source and exaport environment variables related to the backend configuration
-BLOCKSCOUT_CONFIG_FILE=".blockscout_config"
+BLOCKSCOUT_CONFIG_FILE=".devcontainer/.blockscout_config"
 if [ -f "./${BLOCKSCOUT_CONFIG_FILE}" ]; then
     set -a  # Automatically export all variables
     source ./${BLOCKSCOUT_CONFIG_FILE}

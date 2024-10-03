@@ -62,6 +62,22 @@ Key benefits include:
 
 6. Once the devcontainer is built, you'll be working inside the containerized environment.
 
+### Additional Setup for Cursor.ai Users
+
+If you're using Cursor.ai instead of VSCode, you may encounter issues when trying to perform Git operations like pulling changes from the "Source Control" tab. To resolve this, you need to set up your Git configuration inside the devcontainer. Follow these steps:
+
+1. Open a terminal in your devcontainer.
+2. Set your Git username:
+   ```
+   git config --global user.name "Your Name"
+   ```
+3. Set your Git email:
+   ```
+   git config --global user.email "your.email@example.com"
+   ```
+
+Replace "Your Name" and "your.email@example.com" with your actual name and email associated with your GitHub account. This configuration will allow you to perform Git operations smoothly within the Cursor.ai environment.
+
 ### Signing in to GitHub for Pull Request Extension
 
 1. In the devcontainer, click on the GitHub icon in the Primary sidebar.
@@ -106,8 +122,8 @@ These credentials are derived from the `DATABASE_URL` in the `bs` script.
 
 Before running the Blockscout server, you need to set up the configuration:
 
-1. Copy the `.blockscout_config.example` file to `.blockscout_config`.
-2. Adjust the settings in `.blockscout_config` as needed for your development environment.
+1. Copy the `.devcontainer/.blockscout_config.example` file to `.devcontainer/.blockscout_config`.
+2. Adjust the settings in `.devcontainer/.blockscout_config` as needed for your development environment.
 
 For a comprehensive list of environment variables that can be set in this configuration file, refer to the [Blockscout documentation](https://docs.blockscout.com/setup/env-variables).
 

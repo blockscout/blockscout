@@ -65,4 +65,4 @@ dump.rdb
 *.env.example
 *.env.local
 *.env.staging
-.blockscout_config
+.devcontainer/.blockscout_config
