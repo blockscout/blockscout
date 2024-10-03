@@ -162,7 +162,7 @@ For local devcontainer setups (not applicable to GitHub Codespaces), you can use
 
 This allows testing API endpoints directly from your host machine while the server runs in the container.
 
-## Troubleshooting
+### Troubleshooting
 
 If you face issues with dependency compilation or dialyzer after container creation:
 
