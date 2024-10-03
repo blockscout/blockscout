@@ -4,12 +4,13 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
+  alias BlockScoutWeb.Account.Api.V2.UserView
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Account.Identity
   alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Explorer.ThirdPartyIntegrations.Auth0
-  alias Plug.{Conn, CSRFProtection}
+  alias Plug.Conn
 
   action_fallback(BlockScoutWeb.Account.Api.V2.FallbackController)
 
@@ -73,15 +74,15 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
 
   @spec put_auth_to_session(Conn.t(), Ueberauth.Auth.t()) :: {:error, any()} | Conn.t()
   def put_auth_to_session(conn, auth) do
-    with {:ok, user} <- Identity.find_or_create(auth) do
-      CSRFProtection.get_csrf_token()
-
+    with {:ok, %{id: uid} = session} <- Identity.find_or_create(auth),
+         {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)} do
       conn
       |> Conn.fetch_session()
-      |> put_session(:current_user, user)
+      |> put_session(:current_user, session)
       |> delete_resp_cookie(Application.get_env(:block_scout_web, :invalid_session_key))
       |> put_status(200)
-      |> json(%{message: "Success"})
+      |> put_view(UserView)
+      |> render(:user_info, %{identity: identity |> Identity.put_session_info(session)})
     end
   end
 end

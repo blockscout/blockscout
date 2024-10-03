@@ -34,6 +34,9 @@ defmodule BlockScoutWeb.CaptchaHelper do
           _ -> false
         end
 
+      false ->
+        true
+
       _ ->
         false
     end
