@@ -349,7 +349,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       token when is_binary(token) ->
         client = OAuth.client(token: token)
 
-        case Client.get(client, "/api/v2/users/#{id}") do
+        case Client.get(client, "/api/v2/users/#{URI.encode(id)}") do
           {:ok, %OAuth2.Response{status_code: 200, body: %{"user_id" => ^id} = user}} ->
             {:ok, user}
 
@@ -400,10 +400,11 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
 
           {:ok, %OAuth2.Response{status_code: 200, body: [%{"user_id" => primary_user_id} = user]}} ->
             link_users(primary_user_id, identity_id, "email")
+            maybe_verify_email(user)
             {:ok, create_auth(user)}
 
           {:ok, %OAuth2.Response{status_code: 200, body: users}} when is_list(users) and length(users) > 1 ->
-            merge_users(users)
+            merge_users(users, identity_id, "email")
 
           {:error, %OAuth2.Response{status_code: 403, body: %{"errorCode" => "insufficient_scope"} = body}} ->
             Logger.error(["Failed to get web3 user. Insufficient scope: ", inspect(body)])
@@ -424,18 +425,22 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     {:ok, create_auth(user)}
   end
 
-  defp merge_users([primary_user | _] = users) do
+  defp merge_users([primary_user | _] = users, identity_id_to_link, provider_for_linking) do
     identity_map =
       users
       |> Enum.map(& &1["user_id"])
       |> Identity.find_identities()
       |> Map.new(&{&1.uid, &1})
 
+    users_map = users |> Enum.map(&{&1["user_id"], &1}) |> Map.new()
+
     case users |> Enum.map(&identity_map[&1["user_id"]]) |> Enum.reject(&is_nil(&1)) do
       [primary | to_merge] ->
         case Account.merge(primary, to_merge) do
           {:ok, _} ->
-            {:ok, create_auth(primary_user)}
+            link_users(primary.uid, identity_id_to_link, provider_for_linking)
+            maybe_verify_email(users_map[primary.uid])
+            {:ok, create_auth(users_map[primary.uid])}
 
           error ->
             Logger.error(["Error while merging users: ", inspect(error)])
@@ -443,9 +448,26 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
         end
 
       _ ->
+        link_users(primary_user["user_id"], identity_id_to_link, provider_for_linking)
+        maybe_verify_email(primary_user)
         {:ok, create_auth(primary_user)}
     end
   end
+
+  defp maybe_verify_email(%{"email_verified" => false, "user_id" => user_id}) do
+    with token when is_binary(token) <- get_m2m_jwt(),
+         client = OAuth.client(token: token),
+         body = %{"email_verified" => true},
+         headers = [{"Content-type", "application/json"}],
+         {:ok, %OAuth2.Response{status_code: 200, body: _user}} <-
+           Client.patch(client, "/api/v2/users/#{URI.encode(user_id)}", body, headers) do
+      :ok
+    else
+      error -> handle_common_errors(error, "Failed to patch email_verified to true")
+    end
+  end
+
+  defp maybe_verify_email(_), do: :ok
 
   defp cache_nonce_for_address(nonce, address) do
     case Redix.command(:redix, ["SET", cookie_key(address <> "siwe_nonce"), nonce, "EX", 300]) do
