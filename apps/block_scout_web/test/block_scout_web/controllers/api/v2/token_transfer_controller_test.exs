@@ -132,8 +132,6 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
       request = get(conn, "/api/v2/token-transfers")
       assert response = json_response(request, 200)
 
-      IO.inspect(response["next_page_params"], label: "next_page_params")
-
       request_2nd_page = get(conn, "/api/v2/token-transfers", response["next_page_params"])
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
