@@ -5,7 +5,11 @@ defmodule Explorer.Chain.InternalTransaction do
 
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Block, Data, Hash, PendingBlockOperation, Transaction, Wei}
+  alias Explorer.Chain.DenormalizationHelper
   alias Explorer.Chain.InternalTransaction.{Action, CallType, Result, Type}
+
+  @typep paging_options :: {:paging_options, PagingOptions.t()}
+  @typep api? :: {:api?, true | false}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -811,6 +815,32 @@ defmodule Explorer.Chain.InternalTransaction do
           internal_transaction.index
         )
     )
+  end
+
+  @spec fetch([paging_options | api?]) :: []
+  def fetch(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
+
+      _ ->
+        preloads =
+          DenormalizationHelper.extend_transaction_preload([
+            :block,
+            [from_address: [:names, :smart_contract, :proxy_implementations]],
+            [to_address: [:names, :smart_contract, :proxy_implementations]]
+          ])
+
+        __MODULE__
+        |> where_nonpending_block()
+        |> Chain.page_internal_transaction(paging_options)
+        |> order_by([internal_transaction], desc: internal_transaction.block_number, asc: internal_transaction.index)
+        |> limit(^paging_options.page_size)
+        |> preload(^preloads)
+        |> Chain.select_repo(options).all()
+    end
   end
 
   defp page_block_internal_transaction(query, %PagingOptions{key: %{block_index: block_index}}) do
