@@ -78,22 +78,25 @@ defmodule EthereumJSONRPC.Log do
       }
 
   """
-  def elixir_to_params(%{
-        "address" => address_hash,
-        "blockNumber" => block_number,
-        "blockHash" => block_hash,
-        "data" => data,
-        "logIndex" => index,
-        "topics" => topics,
-        "transactionHash" => transaction_hash
-      }) do
+  def elixir_to_params(
+        %{
+          "address" => address_hash,
+          "blockNumber" => block_number,
+          "blockHash" => block_hash,
+          "data" => data,
+          "logIndex" => index,
+          "topics" => topics,
+          "transactionHash" => transaction_hash
+        } = log
+      ) do
     %{
       address_hash: address_hash,
       block_number: block_number,
       block_hash: block_hash,
       data: data,
       index: index,
-      transaction_hash: transaction_hash
+      transaction_hash: transaction_hash,
+      transaction_index: log["transactionIndex"]
     }
     |> put_topics(topics)
   end
