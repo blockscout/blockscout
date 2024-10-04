@@ -14,7 +14,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
-  alias Explorer.Chain.Hash
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Message
   alias Explorer.Chain.Hash

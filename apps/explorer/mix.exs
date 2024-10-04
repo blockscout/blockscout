@@ -25,7 +25,14 @@ defmodule Explorer.Mixfile do
       ],
       start_permanent: Mix.env() == :prod,
       version: "6.8.1",
-      xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.Arbitrum.Messaging, Indexer.Fetcher.Arbitrum.Utils.Rpc]]
+      xref: [
+        exclude: [
+          BlockScoutWeb.Routers.WebRouter.Helpers,
+          Indexer.Helper,
+          Indexer.Fetcher.Arbitrum.Messaging,
+          Indexer.Fetcher.Arbitrum.Utils.Rpc
+        ]
+      ]
     ]
   end
 
