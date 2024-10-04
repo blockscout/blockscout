@@ -168,8 +168,8 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Address.t()]}
-  defp insert(repo, ordered_changes_list, %{timeout: timeout, timestamps: timestamps} = options)
-       when is_list(ordered_changes_list) do
+  def insert(repo, ordered_changes_list, %{timeout: timeout, timestamps: timestamps} = options)
+      when is_list(ordered_changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     Import.insert_changes_list(
