@@ -16,6 +16,8 @@ defmodule BlockScoutWeb.API.V2.MudController do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, Hash, Mud, Mud.Schema.FieldSchema, Mud.Table}
 
+  @api_true [api?: true]
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
@@ -91,6 +93,34 @@ defmodule BlockScoutWeb.API.V2.MudController do
       conn
       |> put_status(200)
       |> render(:tables, %{tables: tables, next_page_params: next_page_params})
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/mud/worlds/:world/systems` endpoint.
+  """
+  @spec world_systems(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def world_systems(conn, %{"world" => world_param} = _params) do
+    with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)} do
+      systems = world |> Mud.world_systems()
+
+      conn
+      |> put_status(200)
+      |> render(:systems, %{systems: systems})
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/mud/worlds/:world/systems/:system` endpoint.
+  """
+  @spec world_system(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def world_system(conn, %{"world" => world_param, "system" => system_param} = _params) do
+    with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)},
+         {:format, {:ok, system}} <- {:format, Hash.Address.cast(system_param)},
+         {:ok, system_id, abi} <- Mud.world_system(world, system, @api_true) do
+      conn
+      |> put_status(200)
+      |> render(:system, %{system_id: system_id, abi: abi})
     end
   end
 
