@@ -17,6 +17,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei}
   alias Indexer.Block.Fetcher.Receipts
+  alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Celo.EpochBlockOperations, as: CeloEpochBlockOperations
   alias Indexer.Fetcher.Celo.EpochLogs, as: CeloEpochLogs
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
@@ -137,7 +138,7 @@ defmodule Indexer.Block.Fetcher do
           callback_module: callback_module,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state,
-        _.._ = range,
+        _.._//_ = range,
         additional_options \\ %{}
       )
       when callback_module != nil do
@@ -186,7 +187,8 @@ defmodule Indexer.Block.Fetcher do
              do: PolygonZkevmBridge.parse(blocks, logs),
              else: []
            ),
-         arbitrum_xlevel_messages = ArbitrumMessaging.parse(transactions_with_receipts, logs),
+         {arbitrum_xlevel_messages, arbitrum_txs_for_further_handling} =
+           ArbitrumMessaging.parse(transactions_with_receipts, logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
          addresses =
@@ -265,6 +267,9 @@ defmodule Indexer.Block.Fetcher do
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
       update_withdrawals_cache(inserted[:withdrawals])
+
+      async_match_arbitrum_messages_to_l2(arbitrum_txs_for_further_handling)
+
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
@@ -738,5 +743,13 @@ defmodule Indexer.Block.Fetcher do
 
       Map.put(token_transfer, :token, token)
     end)
+  end
+
+  # Asynchronously schedules matching of Arbitrum L1-to-L2 messages where the message ID is hashed.
+  @spec async_match_arbitrum_messages_to_l2([map()]) :: :ok
+  defp async_match_arbitrum_messages_to_l2([]), do: :ok
+
+  defp async_match_arbitrum_messages_to_l2(txs_with_messages_from_l1) do
+    ArbitrumMessagesToL2Matcher.async_discover_match(txs_with_messages_from_l1)
   end
 end

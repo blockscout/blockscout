@@ -108,7 +108,9 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
     else
       _ ->
         Logger.error("Could not fetch Filecoin address info: #{to_string(address_hash)}")
-        :retry
+        # TODO: We should consider implementing retry logic when fetching
+        # becomes more stable
+        :ok
     end
   end
 
@@ -169,6 +171,10 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
       end
     )
     |> Repo.transaction()
+    |> tap(fn
+      {:ok, _} -> :ok
+      error -> Logger.error("Error updating address and removing pending operation: #{inspect(error)}")
+    end)
   end
 
   @spec fetch_address_info_using_beryx_api(PendingAddressOperation.t()) ::

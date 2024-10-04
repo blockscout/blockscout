@@ -224,7 +224,7 @@ defmodule Explorer.Chain.Log do
     else
       case Chain.find_contract_address(address_hash, address_options, false) do
         {:ok, %{smart_contract: smart_contract}} ->
-          full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, options)
+          full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, %{}, true, options)
           {full_abi, Map.put(acc, address_hash, full_abi)}
 
         _ ->

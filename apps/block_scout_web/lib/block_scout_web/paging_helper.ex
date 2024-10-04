@@ -334,4 +334,18 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_mud_records_sorting("key1", "asc"), do: [asc_nulls_first: :key1]
   defp do_mud_records_sorting("key1", "desc"), do: [desc_nulls_last: :key1]
   defp do_mud_records_sorting(_, _), do: []
+
+  @spec validators_blackfort_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def validators_blackfort_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_validators_blackfort_sorting(sort_field, order)]
+  end
+
+  def validators_blackfort_sorting(_), do: []
+
+  defp do_validators_blackfort_sorting("address_hash", "asc"), do: [asc_nulls_first: :address_hash]
+  defp do_validators_blackfort_sorting("address_hash", "desc"), do: [desc_nulls_last: :address_hash]
+
+  defp do_validators_blackfort_sorting(_, _), do: []
 end

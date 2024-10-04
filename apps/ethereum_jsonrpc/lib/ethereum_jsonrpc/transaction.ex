@@ -66,7 +66,7 @@ defmodule EthereumJSONRPC.Transaction do
     :arbitrum ->
       @chain_type_fields quote(
                            do: [
-                             request_id: non_neg_integer()
+                             request_id: EthereumJSONRPC.hash()
                            ]
                          )
 
@@ -662,7 +662,7 @@ defmodule EthereumJSONRPC.Transaction do
   #
   # "txType": to avoid FunctionClauseError when indexing Wanchain
   defp entry_to_elixir({key, value})
-       when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to txType executionNode requestRecord blobVersionedHashes),
+       when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to txType executionNode requestRecord blobVersionedHashes requestId),
        do: {key, value}
 
   # specific to Nethermind client
@@ -670,7 +670,7 @@ defmodule EthereumJSONRPC.Transaction do
     do: {"input", value}
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas maxFeePerBlobGas requestId) and
+       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas maxFeePerBlobGas) and
               quantity != nil do
     {key, quantity_to_integer(quantity)}
   end

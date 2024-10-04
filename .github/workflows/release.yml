@@ -13,7 +13,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
+      RELEASE_VERSION: 6.8.1
     steps:
       - uses: actions/checkout@v4
       - name: Setup repo
@@ -202,6 +202,35 @@ jobs:
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
+
+      - name: Build & Push Docker image with an old UI (indexer + API)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/oldUI.Dockerfile
+          push: true
+          cache-from: type=registry,ref=blockscout/blockscout:buildcache
+          cache-to: type=registry,ref=blockscout/blockscout:buildcache,mode=max
+          tags: blockscout/blockscout:${{ env.RELEASE_VERSION }}-with-old-ui
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            DISABLE_WEBAPP=false
+            API_V1_READ_METHODS_DISABLED=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_EXCHANGE_RATES_PERIOD=
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            ADMIN_PANEL_ENABLED=false
+            DECODE_NOT_A_CONTRACT_CALLS=false
+            MIXPANEL_URL=
+            MIXPANEL_TOKEN=
+            AMPLITUDE_URL=
+            AMPLITUDE_API_KEY=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
       # - name: Send release announcement to Slack workflow
       #   id: slack

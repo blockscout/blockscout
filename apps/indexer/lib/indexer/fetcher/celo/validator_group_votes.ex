@@ -133,7 +133,7 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
     end
   end
 
-  defp process_chunk(_..chunk_to_block = chunk, block_range, json_rpc_named_arguments) do
+  defp process_chunk(_..chunk_to_block//_ = chunk, block_range, json_rpc_named_arguments) do
     validator_group_votes =
       chunk
       |> fetch_logs_chunk(block_range, json_rpc_named_arguments)
@@ -156,8 +156,8 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
   end
 
   defp fetch_logs_chunk(
-         chunk_from_block..chunk_to_block,
-         from_block..to_block,
+         chunk_from_block..chunk_to_block//_,
+         from_block..to_block//_,
          json_rpc_named_arguments
        ) do
     IndexerHelper.log_blocks_chunk_handling(chunk_from_block, chunk_to_block, from_block, to_block, nil, :L1)

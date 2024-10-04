@@ -3,12 +3,13 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     Module to interact with Transaction Interpretation Service
   """
 
-  alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
+  alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
   alias HTTPoison.Response
 
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Utility.Microservice, only: [base_url: 2, check_enabled: 2]
 
   require Logger
@@ -19,9 +20,9 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @items_limit 50
   @internal_transaction_necessity_by_association [
     necessity_by_association: %{
-      [created_contract_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-      [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
+      [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+      [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+      [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
     }
   ]
 
@@ -106,12 +107,37 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp prepare_request_body(transaction) do
     transaction =
       Chain.select_repo(@api_true).preload(transaction, [
-        :transaction_actions,
         :block,
-        to_address: [:names, :smart_contract],
+        to_address: [:scam_badge, :names, :smart_contract],
         from_address: [:names, :smart_contract],
-        created_contract_address: [:names, :token, :smart_contract]
+        created_contract_address: [:scam_badge, :names, :token, :smart_contract]
       ])
+
+    token_transfers = transaction |> fetch_token_transfers() |> Enum.reverse()
+    internal_transactions = transaction |> fetch_internal_transactions() |> Enum.reverse()
+    logs = transaction |> fetch_logs() |> Enum.reverse()
+
+    [transaction_with_meta | other_elements] =
+      ([transaction | token_transfers] ++ internal_transactions ++ logs)
+      |> maybe_preload_metadata()
+
+    %{
+      logs: logs_with_meta,
+      token_transfers: token_transfers_with_meta,
+      internal_transactions: internal_transactions_with_meta
+    } =
+      Enum.reduce(other_elements, %{logs: [], token_transfers: [], internal_transactions: []}, fn element, acc ->
+        case element do
+          %InternalTransaction{} ->
+            Map.put(acc, :internal_transactions, [element | acc.internal_transactions])
+
+          %TokenTransfer{} ->
+            Map.put(acc, :token_transfers, [element | acc.token_transfers])
+
+          %Log{} ->
+            Map.put(acc, :logs, [element | acc.logs])
+        end
+      end)
 
     skip_sig_provider? = false
     {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true)
@@ -120,31 +146,31 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     %{
       data: %{
-        to: Helper.address_with_info(nil, transaction.to_address, transaction.to_address_hash, true),
+        to:
+          Helper.address_with_info(nil, transaction_with_meta.to_address, transaction_with_meta.to_address_hash, true),
         from:
           Helper.address_with_info(
             nil,
-            transaction.from_address,
-            transaction.from_address_hash,
+            transaction_with_meta.from_address,
+            transaction_with_meta.from_address_hash,
             true
           ),
-        hash: transaction.hash,
-        type: transaction.type,
-        value: transaction.value,
-        method: Transaction.method_name(transaction, Transaction.format_decoded_input(decoded_input)),
-        status: transaction.status,
-        actions: TransactionView.transaction_actions(transaction.transaction_actions),
-        tx_types: TransactionView.tx_types(transaction),
-        raw_input: transaction.input,
+        hash: transaction_with_meta.hash,
+        type: transaction_with_meta.type,
+        value: transaction_with_meta.value,
+        method: Transaction.method_name(transaction_with_meta, Transaction.format_decoded_input(decoded_input)),
+        status: transaction_with_meta.status,
+        tx_types: TransactionView.tx_types(transaction_with_meta),
+        raw_input: transaction_with_meta.input,
         decoded_input: decoded_input_data,
-        token_transfers: prepare_token_transfers(transaction, decoded_input),
-        internal_transactions: prepare_internal_transactions(transaction)
+        token_transfers: prepare_token_transfers(token_transfers_with_meta, decoded_input),
+        internal_transactions: prepare_internal_transactions(internal_transactions_with_meta, transaction_with_meta)
       },
-      logs_data: %{items: prepare_logs(transaction)}
+      logs_data: %{items: prepare_logs(logs_with_meta, transaction_with_meta)}
     }
   end
 
-  defp prepare_token_transfers(transaction, decoded_input) do
+  defp fetch_token_transfers(transaction) do
     full_options =
       [
         necessity_by_association: %{
@@ -158,10 +184,14 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     |> Chain.transaction_to_token_transfers(full_options)
     |> Chain.flat_1155_batch_token_transfers()
     |> Enum.take(@items_limit)
-    |> Enum.map(&TransactionView.prepare_token_transfer(&1, nil, decoded_input))
   end
 
-  defp prepare_internal_transactions(transaction) do
+  defp prepare_token_transfers(token_transfers, decoded_input) do
+    token_transfers
+    |> Enum.map(&TokenTransferView.prepare_token_transfer(&1, nil, decoded_input))
+  end
+
+  defp fetch_internal_transactions(transaction) do
     full_options =
       @internal_transaction_necessity_by_association
       |> Keyword.merge(@api_true)
@@ -169,7 +199,33 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     transaction.hash
     |> InternalTransaction.transaction_to_internal_transactions(full_options)
     |> Enum.take(@items_limit)
+  end
+
+  defp prepare_internal_transactions(internal_transactions, transaction) do
+    internal_transactions
     |> Enum.map(&TransactionView.prepare_internal_transaction(&1, transaction.block))
+  end
+
+  defp fetch_logs(transaction) do
+    full_options =
+      [
+        necessity_by_association: %{
+          [address: [:names, :smart_contract, :proxy_implementations]] => :optional
+        }
+      ]
+      |> Keyword.merge(@api_true)
+
+    transaction.hash
+    |> Chain.transaction_to_logs(full_options)
+    |> Enum.take(@items_limit)
+  end
+
+  defp prepare_logs(logs, transaction) do
+    decoded_logs = TransactionView.decode_logs(logs, false)
+
+    logs
+    |> Enum.zip(decoded_logs)
+    |> Enum.map(fn {log, decoded_log} -> TransactionView.prepare_log(log, transaction.hash, decoded_log, true) end)
   end
 
   defp user_op_to_logs_and_token_transfers(user_op, decoded_input) do
@@ -208,30 +264,9 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       |> TokenTransfer.logs_to_token_transfers(token_transfer_options)
       |> Chain.flat_1155_batch_token_transfers()
       |> Enum.take(@items_limit)
-      |> Enum.map(&TransactionView.prepare_token_transfer(&1, nil, decoded_input))
+      |> Enum.map(&TokenTransferView.prepare_token_transfer(&1, nil, decoded_input))
 
     {prepared_logs, prepared_token_transfers}
-  end
-
-  defp prepare_logs(transaction) do
-    full_options =
-      [
-        necessity_by_association: %{
-          [address: [:names, :smart_contract, :proxy_implementations]] => :optional
-        }
-      ]
-      |> Keyword.merge(@api_true)
-
-    logs =
-      transaction.hash
-      |> Chain.transaction_to_logs(full_options)
-      |> Enum.take(@items_limit)
-
-    decoded_logs = TransactionView.decode_logs(logs, false)
-
-    logs
-    |> Enum.zip(decoded_logs)
-    |> Enum.map(fn {log, decoded_log} -> TransactionView.prepare_log(log, transaction.hash, decoded_log, true) end)
   end
 
   defp preload_template_variables({:ok, %{"success" => true, "data" => %{"summaries" => summaries} = data}}) do

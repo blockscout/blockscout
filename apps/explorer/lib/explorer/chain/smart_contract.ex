@@ -113,6 +113,7 @@ defmodule Explorer.Chain.SmartContract do
 
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper
   alias Explorer.SmartContract.Solidity.Verifier
 
@@ -699,6 +700,10 @@ defmodule Explorer.Chain.SmartContract do
   """
   @spec get_verified_bytecode_twin_contract(Address.t(), any()) :: SmartContract.t() | nil
   def get_verified_bytecode_twin_contract(%Address{} = target_address, options \\ []) do
+    necessity_by_association = %{
+      :smart_contract_additional_sources => :optional
+    }
+
     case target_address do
       %{contract_code: %Chain.Data{bytes: contract_code_bytes}} ->
         target_address_hash = target_address.hash
@@ -715,6 +720,7 @@ defmodule Explorer.Chain.SmartContract do
           )
 
         verified_bytecode_twin_contract_query
+        |> Chain.join_associations(necessity_by_association)
         |> Chain.select_repo(options).one(timeout: 10_000)
 
       _ ->
@@ -1268,6 +1274,7 @@ defmodule Explorer.Chain.SmartContract do
     query = from(contract in __MODULE__)
 
     query
+    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
     |> filter_contracts(filter)
     |> search_contracts(search_string)
     |> SortingHelper.apply_sorting(sorting_options, @default_sorting)

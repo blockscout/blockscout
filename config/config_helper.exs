@@ -23,6 +23,7 @@ defmodule ConfigHelper do
         :zksync -> base_repos ++ [Explorer.Repo.ZkSync]
         :celo -> base_repos ++ [Explorer.Repo.Celo]
         :arbitrum -> base_repos ++ [Explorer.Repo.Arbitrum]
+        :blackfort -> base_repos ++ [Explorer.Repo.Blackfort]
         _ -> base_repos
       end
 
@@ -316,7 +317,8 @@ defmodule ConfigHelper do
     "suave",
     "zetachain",
     "zksync",
-    "celo"
+    "celo",
+    "blackfort"
   ]
 
   @spec chain_type() :: atom() | nil

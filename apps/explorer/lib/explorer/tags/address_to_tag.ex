@@ -1,6 +1,6 @@
 defmodule Explorer.Tags.AddressToTag do
   @moduledoc """
-  Represents ann Address to Tag relation.
+  Represents Address to Tag relation.
   """
 
   use Explorer.Schema
@@ -9,7 +9,7 @@ defmodule Explorer.Tags.AddressToTag do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.Tags.{AddressTag, AddressToTag}
+  alias Explorer.Tags.AddressTag
 
   # Notation.import_types(BlockScoutWeb.GraphQL.Schema.Types)
 
@@ -53,7 +53,7 @@ defmodule Explorer.Tags.AddressToTag do
   defp get_address_hashes_mapped_to_tag(tag_id) do
     query =
       from(
-        att in AddressToTag,
+        att in __MODULE__,
         where: att.tag_id == ^tag_id,
         select: att.address_hash
       )
@@ -62,6 +62,7 @@ defmodule Explorer.Tags.AddressToTag do
     |> Repo.all()
   end
 
+  @spec set_tag_to_addresses(non_neg_integer(), list()) :: any()
   def set_tag_to_addresses(tag_id, address_hash_string_list) do
     current_address_hashes = get_address_hashes_mapped_to_tag(tag_id)
 
@@ -105,10 +106,10 @@ defmodule Explorer.Tags.AddressToTag do
         end)
         |> Enum.filter(&(!is_nil(&1)))
 
-      if not Enum.empty?(addresses_to_delete) do
+      unless Enum.empty?(addresses_to_delete) do
         delete_query_base =
           from(
-            att in AddressToTag,
+            att in __MODULE__,
             where: att.tag_id == ^tag_id
           )
 
@@ -119,7 +120,7 @@ defmodule Explorer.Tags.AddressToTag do
         Repo.delete_all(delete_query)
       end
 
-      Repo.insert_all(AddressToTag, changeset_to_add_list,
+      Repo.insert_all(__MODULE__, changeset_to_add_list,
         on_conflict: :nothing,
         conflict_target: [:address_hash, :tag_id]
       )

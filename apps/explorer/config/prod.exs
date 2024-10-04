@@ -94,6 +94,11 @@ config :explorer, Explorer.Repo.ShrunkInternalTransactions,
   timeout: :timer.seconds(60),
   ssl_opts: [verify: :verify_none]
 
+config :explorer, Explorer.Repo.Blackfort,
+  prepare: :unnamed,
+  timeout: :timer.seconds(60),
+  ssl_opts: [verify: :verify_none]
+
 config :explorer, Explorer.Tracer, env: "production", disabled?: true
 
 config :logger, :explorer,

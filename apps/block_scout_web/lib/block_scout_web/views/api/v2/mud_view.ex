@@ -33,6 +33,25 @@ defmodule BlockScoutWeb.API.V2.MudView do
   end
 
   @doc """
+    Function to render GET requests to `/api/v2/mud/worlds/:world/systems` endpoint.
+  """
+  def render("systems.json", %{systems: systems}) do
+    %{
+      items: systems |> Enum.map(&prepare_system_for_list/1)
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/mud/worlds/:world/systems/:system` endpoint.
+  """
+  def render("system.json", %{system_id: system_id, abi: abi}) do
+    %{
+      name: system_id |> Table.from() |> Map.get(:table_full_name),
+      abi: abi
+    }
+  end
+
+  @doc """
     Function to render GET requests to `/api/v2/mud/worlds/:world/tables/:table_id/records` endpoint.
   """
   def render("records.json", %{
@@ -66,6 +85,13 @@ defmodule BlockScoutWeb.API.V2.MudView do
       "address" => Helper.address_with_info(address, address.hash),
       "tx_count" => address.transactions_count,
       "coin_balance" => if(address.fetched_coin_balance, do: address.fetched_coin_balance.value)
+    }
+  end
+
+  defp prepare_system_for_list({system_id, system}) do
+    %{
+      name: system_id |> Table.from() |> Map.get(:table_full_name),
+      address: system
     }
   end
 
