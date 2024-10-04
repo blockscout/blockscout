@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     Module to interact with Transaction Interpretation Service
   """
 
-  alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
+  alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
@@ -188,7 +188,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   defp prepare_token_transfers(token_transfers, decoded_input) do
     token_transfers
-    |> Enum.map(&TransactionView.prepare_token_transfer(&1, nil, decoded_input))
+    |> Enum.map(&TokenTransferView.prepare_token_transfer(&1, nil, decoded_input))
   end
 
   defp fetch_internal_transactions(transaction) do
@@ -264,7 +264,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       |> TokenTransfer.logs_to_token_transfers(token_transfer_options)
       |> Chain.flat_1155_batch_token_transfers()
       |> Enum.take(@items_limit)
-      |> Enum.map(&TransactionView.prepare_token_transfer(&1, nil, decoded_input))
+      |> Enum.map(&TokenTransferView.prepare_token_transfer(&1, nil, decoded_input))
 
     {prepared_logs, prepared_token_transfers}
   end

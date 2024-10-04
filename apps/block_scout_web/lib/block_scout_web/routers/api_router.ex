@@ -160,6 +160,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
+    scope "/token-transfers" do
+      get("/", V2.TokenTransferController, :token_transfers)
+    end
+
     scope "/blocks" do
       get("/", V2.BlockController, :blocks)
       get("/:block_hash_or_number", V2.BlockController, :block)

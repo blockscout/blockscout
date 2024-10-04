@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.API.V2.StabilityView do
   alias BlockScoutWeb.API.V2.{Helper, TokenView}
-  alias Explorer.Chain.{Hash, Log, Token, Transaction}
+  alias Explorer.Chain.{Log, Token, Transaction}
 
   @api_true [api?: true]
   @transaction_fee_event_signature "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
@@ -64,11 +64,12 @@ defmodule BlockScoutWeb.API.V2.StabilityView do
           "token" =>
             TokenView.render("token.json", %{
               token: transaction.transaction_fee_token,
-              contract_address_hash: bytes_to_address_hash(token_address_hash)
+              contract_address_hash: Transaction.bytes_to_address_hash(token_address_hash)
             }),
           "validator_address" =>
-            Helper.address_with_info(nil, nil, bytes_to_address_hash(validator_address_hash), false),
-          "dapp_address" => Helper.address_with_info(nil, nil, bytes_to_address_hash(dapp_address_hash), false),
+            Helper.address_with_info(nil, nil, Transaction.bytes_to_address_hash(validator_address_hash), false),
+          "dapp_address" =>
+            Helper.address_with_info(nil, nil, Transaction.bytes_to_address_hash(dapp_address_hash), false),
           "total_fee" => to_string(total_fee),
           "dapp_fee" => to_string(dapp_fee),
           "validator_fee" => to_string(validator_fee)
@@ -95,7 +96,8 @@ defmodule BlockScoutWeb.API.V2.StabilityView do
 
             [{"token", "address", false, token_address_hash}, _, _, _, _, _] = mapping
 
-            {token, new_tokens_acc} = check_tokens_acc(bytes_to_address_hash(token_address_hash), tokens_acc)
+            {token, new_tokens_acc} =
+              check_tokens_acc(Transaction.bytes_to_address_hash(token_address_hash), tokens_acc)
 
             {%Transaction{transaction | transaction_fee_log: mapping, transaction_fee_token: token}, new_tokens_acc}
 
@@ -121,6 +123,4 @@ defmodule BlockScoutWeb.API.V2.StabilityView do
       {token, Map.put(tokens_acc, token_address_hash, token)}
     end
   end
-
-  defp bytes_to_address_hash(bytes), do: %Hash{byte_count: 20, bytes: bytes}
 end
