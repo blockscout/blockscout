@@ -194,7 +194,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp extract_filters(params) do
     [
-      tx_types: prepare_tx_types(params["tx_types"]),
+      transaction_types: prepare_transaction_types(params["transaction_types"]),
       methods: params["methods"] |> prepare_methods(),
       age: prepare_age(params["age_from"], params["age_to"]),
       from_address_hashes:
@@ -224,16 +224,16 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     ]
   end
 
-  @allowed_tx_types ~w(COIN_TRANSFER ERC-20 ERC-404 ERC-721 ERC-1155)
+  @allowed_transaction_types ~w(COIN_TRANSFER ERC-20 ERC-404 ERC-721 ERC-1155)
 
-  defp prepare_tx_types(tx_types) when is_binary(tx_types) do
-    tx_types
+  defp prepare_transaction_types(transaction_types) when is_binary(transaction_types) do
+    transaction_types
     |> String.upcase()
     |> String.split(",")
-    |> Enum.filter(&(&1 in @allowed_tx_types))
+    |> Enum.filter(&(&1 in @allowed_transaction_types))
   end
 
-  defp prepare_tx_types(_), do: nil
+  defp prepare_transaction_types(_), do: nil
 
   defp prepare_methods(methods) when is_binary(methods) do
     methods
@@ -315,14 +315,15 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp paging_options(%{
          "block_number" => block_number_string,
-         "transaction_index" => tx_index_string,
-         "internal_transaction_index" => internal_tx_index_string,
+         "transaction_index" => transaction_index_string,
+         "internal_transaction_index" => internal_transaction_index_string,
          "token_transfer_index" => token_transfer_index_string,
          "token_transfer_batch_index" => token_transfer_batch_index_string
        }) do
     with {block_number, ""} <- block_number_string && Integer.parse(block_number_string),
-         {tx_index, ""} <- tx_index_string && Integer.parse(tx_index_string),
-         {:ok, internal_tx_index} <- parse_nullable_integer_paging_parameter(internal_tx_index_string),
+         {transaction_index, ""} <- transaction_index_string && Integer.parse(transaction_index_string),
+         {:ok, internal_transaction_index} <-
+           parse_nullable_integer_paging_parameter(internal_transaction_index_string),
          {:ok, token_transfer_index} <- parse_nullable_integer_paging_parameter(token_transfer_index_string),
          {:ok, token_transfer_batch_index} <- parse_nullable_integer_paging_parameter(token_transfer_batch_index_string) do
       [
@@ -330,8 +331,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
           default_paging_options()
           | key: %{
               block_number: block_number,
-              transaction_index: tx_index,
-              internal_transaction_index: internal_tx_index,
+              transaction_index: transaction_index,
+              internal_transaction_index: internal_transaction_index,
               token_transfer_index: token_transfer_index,
               token_transfer_batch_index: token_transfer_batch_index
             }
@@ -357,15 +358,15 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp paging_params(%AdvancedFilter{
          block_number: block_number,
-         transaction_index: tx_index,
-         internal_transaction_index: internal_tx_index,
+         transaction_index: transaction_index,
+         internal_transaction_index: internal_transaction_index,
          token_transfer_index: token_transfer_index,
          token_transfer_batch_index: token_transfer_batch_index
        }) do
     %{
       block_number: block_number,
-      transaction_index: tx_index,
-      internal_transaction_index: internal_tx_index,
+      transaction_index: transaction_index,
+      internal_transaction_index: internal_transaction_index,
       token_transfer_index: token_transfer_index,
       token_transfer_batch_index: token_transfer_batch_index
     }

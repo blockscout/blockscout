@@ -1,14 +1,14 @@
-<%= if @tx_tag.tx_hash do %>
+<%= if @tx_tag.transaction_hash do %>
   <tr>
     <td><%= @tx_tag.name %></td>
     <td>
       <div>
-        <%= link(@tx_tag.tx_hash,
-          to: transaction_path(BlockScoutWeb.Endpoint, :show, @tx_tag.tx_hash),
+        <%= link(@tx_tag.transaction_hash,
+          to: transaction_path(BlockScoutWeb.Endpoint, :show, @tx_tag.transaction_hash),
           "data-test": "transaction_hash_link",
           class: "text-truncate") %>
         <%= render BlockScoutWeb.CommonComponentsView, "_btn_copy.html",
-    additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: @tx_tag.tx_hash, aria_label: gettext("Copy Address"), title: gettext("Copy Address"), style: "display: inline-block; vertical-align: text-bottom; position: initial; margin-top: 1px;" %>
+    additional_classes: ["btn-copy-icon-small", "btn-copy-icon-custom", "btn-copy-icon-no-borders"], clipboard_text: @tx_tag.transaction_hash, aria_label: gettext("Copy Address"), title: gettext("Copy Address"), style: "display: inline-block; vertical-align: text-bottom; position: initial; margin-top: 1px;" %>
       </div>
     </td>
     <td>

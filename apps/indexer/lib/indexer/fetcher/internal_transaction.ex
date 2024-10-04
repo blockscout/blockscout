@@ -211,7 +211,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Logger.error(
           fn ->
             [
-              "failed to import first trace for tx: ",
+              "failed to import first trace for transaction: ",
               inspect(reason)
             ]
           end,

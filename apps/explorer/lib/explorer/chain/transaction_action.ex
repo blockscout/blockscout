@@ -63,8 +63,8 @@ defmodule Explorer.Chain.TransactionAction do
     timestamps()
   end
 
-  def changeset(%__MODULE__{} = tx_actions, attrs \\ %{}) do
-    tx_actions
+  def changeset(%__MODULE__{} = transaction_actions, attrs \\ %{}) do
+    transaction_actions
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:hash)

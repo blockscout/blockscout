@@ -141,7 +141,7 @@ price_chart_config =
 price_chart_legend_enabled? =
   ConfigHelper.parse_bool_env_var("SHOW_PRICE_CHART") || ConfigHelper.parse_bool_env_var("SHOW_PRICE_CHART_LEGEND")
 
-tx_chart_config =
+transaction_chart_config =
   if ConfigHelper.parse_bool_env_var("SHOW_TXS_CHART", "true") do
     %{transactions: [:transactions_per_day]}
   else
@@ -149,7 +149,7 @@ tx_chart_config =
   end
 
 config :block_scout_web, :chart,
-  chart_config: Map.merge(price_chart_config, tx_chart_config),
+  chart_config: Map.merge(price_chart_config, transaction_chart_config),
   price_chart_legend_enabled?: price_chart_legend_enabled?
 
 config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
@@ -850,7 +850,7 @@ config :indexer, Indexer.Fetcher.CoinBalance.Realtime,
   batch_size: coin_balances_batch_size,
   concurrency: coin_balances_concurrency
 
-config :indexer, Indexer.Fetcher.Optimism.TxnBatch.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.TransactionBatch.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.DisputeGame.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
@@ -873,7 +873,7 @@ config :indexer, Indexer.Fetcher.Optimism.Withdrawal,
   message_passer:
     System.get_env("INDEXER_OPTIMISM_L2_MESSAGE_PASSER_CONTRACT", "0x4200000000000000000000000000000000000016")
 
-config :indexer, Indexer.Fetcher.Optimism.TxnBatch,
+config :indexer, Indexer.Fetcher.Optimism.TransactionBatch,
   blocks_chunk_size: System.get_env("INDEXER_OPTIMISM_L1_BATCH_BLOCKS_CHUNK_SIZE", "4"),
   eip4844_blobs_api_url: System.get_env("INDEXER_OPTIMISM_L1_BATCH_BLOCKSCOUT_BLOBS_API_URL", ""),
   celestia_blobs_api_url: System.get_env("INDEXER_OPTIMISM_L1_BATCH_CELESTIA_BLOBS_API_URL", ""),
@@ -952,7 +952,7 @@ config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1.Supervisor,
 
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses,
   recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_RECHECK_INTERVAL", "20s"),
-  track_l1_tx_finalization:
+  track_l1_transaction_finalization:
     ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_L1_FINALIZATION_CHECK_ENABLED", "false"),
   messages_to_blocks_shift:
     ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_BATCHES_TRACKING_MESSAGES_TO_BLOCKS_SHIFT", 0),

@@ -17,7 +17,7 @@ defmodule Explorer.Account.WatchlistNotification do
     field(:block_number, :integer, null: false)
     field(:direction, :string, null: false)
     field(:method, :string, null: false)
-    field(:tx_fee, :decimal, null: false)
+    field(:transaction_fee, :decimal, null: false)
     field(:type, :string, null: false)
     field(:viewed_at, :integer, null: false)
     field(:name, Explorer.Encrypted.Binary, null: false)
@@ -41,7 +41,18 @@ defmodule Explorer.Account.WatchlistNotification do
   @doc false
   def changeset(watchlist_notifications, attrs) do
     watchlist_notifications
-    |> cast(attrs, [:amount, :direction, :name, :type, :method, :block_number, :tx_fee, :value, :decimals, :viewed_at])
+    |> cast(attrs, [
+      :amount,
+      :direction,
+      :name,
+      :type,
+      :method,
+      :block_number,
+      :transaction_fee,
+      :value,
+      :decimals,
+      :viewed_at
+    ])
     |> validate_required([
       :amount,
       :direction,
@@ -49,7 +60,7 @@ defmodule Explorer.Account.WatchlistNotification do
       :type,
       :method,
       :block_number,
-      :tx_fee,
+      :transaction_fee,
       :value,
       :decimals,
       :viewed_at

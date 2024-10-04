@@ -117,7 +117,7 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
     by the value of the recheck interval.
 
     ## Parameters
-    - `txs_with_timeouts`: A list of tuples, each containing a timeout and a
+    - `transactions_with_timeouts`: A list of tuples, each containing a timeout and a
       transaction with a potentially hashed request ID.
     - `state`: The current state of the task, including cached IDs of uncompleted
       messages and the recheck interval.
@@ -125,7 +125,7 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
     ## Returns
     - `{:ok, updated_state}` if all transactions were processed successfully and
       no retries are needed.
-    - `{:retry, txs_to_retry, updated_state}` if some transactions need to be
+    - `{:retry, transactions_to_retry, updated_state}` if some transactions need to be
       retried, either due to unmatched request IDs or unexpired timeouts.
 
     The returned state always includes an updated cache of IDs of uncompleted
@@ -140,18 +140,21 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
           {:ok, %{:uncompleted_messages => %{binary() => binary()}, optional(any()) => any()}}
           | {:retry, [{non_neg_integer(), min_transaction()}],
              %{:uncompleted_messages => %{binary() => binary()}, optional(any()) => any()}}
-  def run(txs_with_timeouts, %{uncompleted_messages: cached_uncompleted_messages_ids, recheck_interval: _} = state)
-      when is_list(txs_with_timeouts) do
+  def run(
+        transactions_with_timeouts,
+        %{uncompleted_messages: cached_uncompleted_messages_ids, recheck_interval: _} = state
+      )
+      when is_list(transactions_with_timeouts) do
     # For next handling only the transactions with expired timeouts are needed.
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    {txs, delayed_txs} =
-      txs_with_timeouts
-      |> Enum.reduce({[], []}, fn {timeout, tx}, {txs, delayed_txs} ->
+    {transactions, delayed_transactions} =
+      transactions_with_timeouts
+      |> Enum.reduce({[], []}, fn {timeout, transaction}, {transactions, delayed_transactions} ->
         if timeout > now do
-          {txs, [{timeout, tx} | delayed_txs]}
+          {transactions, [{timeout, transaction} | delayed_transactions]}
         else
-          {[tx | txs], delayed_txs}
+          {[transaction | transactions], delayed_transactions}
         end
       end)
 
@@ -159,45 +162,47 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
     # ids of the uncompleted messages and update the transactions with the decoded
     # request ids. If it required, the cache is updated.
     # Possible outcomes:
-    # - no transactions were updated, because the txs list is empty, the cache is updated
+    # - no transactions were updated, because the transactions list is empty, the cache is updated
     # - no transactions were updated, because no matches in both cache and DB were found, the cache is updated
     # - all matches were found in the cache, the cache is not updated
     # - all matches were found in the DB, the cache is updated
     # - some matches were found in the cache, but not all, the cache is not updated
-    {updated?, handled_txs, updated_cache} = update_txs_with_hashed_ids(txs, cached_uncompleted_messages_ids)
+    {updated?, handled_transactions, updated_cache} =
+      update_transactions_with_hashed_ids(transactions, cached_uncompleted_messages_ids)
+
     updated_state = %{state | uncompleted_messages: updated_cache}
 
-    case {updated?, txs == []} do
+    case {updated?, transactions == []} do
       {false, true} ->
         # There were no transactions with expired timeouts, so counters of the transactions
         # updated and the transactions are scheduled for retry.
-        {:retry, delayed_txs, updated_state}
+        {:retry, delayed_transactions, updated_state}
 
       {false, false} ->
         # Some of the transactions were with expired timeouts, but no matches were found
         # for these transaction in the cache or the DB. Timeouts for such transactions
         # are re-initialized and they are added to the list with transactions with
         # updated counters.
-        txs_to_retry =
-          delayed_txs ++ initialize_timeouts(handled_txs, now + state.recheck_interval)
+        transactions_to_retry =
+          delayed_transactions ++ initialize_timeouts(handled_transactions, now + state.recheck_interval)
 
-        {:retry, txs_to_retry, updated_state}
+        {:retry, transactions_to_retry, updated_state}
 
       {true, _} ->
-        {messages, txs_to_retry_wo_timeouts} = MessagingUtils.filter_l1_to_l2_messages(handled_txs)
+        {messages, transactions_to_retry_wo_timeouts} = MessagingUtils.filter_l1_to_l2_messages(handled_transactions)
 
         MessagingUtils.import_to_db(messages)
 
-        if txs_to_retry_wo_timeouts == [] and delayed_txs == [] do
+        if transactions_to_retry_wo_timeouts == [] and delayed_transactions == [] do
           {:ok, updated_state}
         else
           # Either some of the transactions with expired timeouts don't have a matching
           # request id in the cache or the DB, or there are transactions with non-expired
           # timeouts. All these transactions are needed to be scheduled for retry.
-          txs_to_retry =
-            delayed_txs ++ initialize_timeouts(txs_to_retry_wo_timeouts, now + state.recheck_interval)
+          transactions_to_retry =
+            delayed_transactions ++ initialize_timeouts(transactions_to_retry_wo_timeouts, now + state.recheck_interval)
 
-          {:retry, txs_to_retry, updated_state}
+          {:retry, transactions_to_retry, updated_state}
         end
     end
   end
@@ -209,19 +214,19 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
     require further matching.
 
     ## Parameters
-    - `txs_with_messages_from_l1`: A list of transactions containing L1-to-L2
+    - `transactions_with_messages_from_l1`: A list of transactions containing L1-to-L2
       messages with hashed message IDs.
 
     ## Returns
     - `:ok`
   """
   @spec async_discover_match([min_transaction()]) :: :ok
-  def async_discover_match(txs_with_messages_from_l1) do
+  def async_discover_match(transactions_with_messages_from_l1) do
     # Do nothing in case if the indexing chain is not Arbitrum or the feature is disabled.
     if MessagesToL2MatcherSupervisor.disabled?() do
       :ok
     else
-      BufferedTask.buffer(__MODULE__, Enum.map(txs_with_messages_from_l1, &{0, &1}), false)
+      BufferedTask.buffer(__MODULE__, Enum.map(transactions_with_messages_from_l1, &{0, &1}), false)
     end
   end
 
@@ -254,7 +259,7 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
   # no matches are found in the cache, it fetches fresh data from the database.
   #
   # ## Parameters
-  # - `txs`: A list of transactions with potentially hashed request IDs.
+  # - `transactions`: A list of transactions with potentially hashed request IDs.
   # - `cached_uncompleted_messages_ids`: A map of cached hashed message IDs to their
   #   original forms.
   #
@@ -269,28 +274,29 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
   # - If the cache is used successfully, it's returned as-is, even if potentially
   #   outdated.
   # - If the cache fails, fresh data is fetched and returned, updating the cache.
-  @spec update_txs_with_hashed_ids([min_transaction()], %{binary() => binary()}) ::
+  @spec update_transactions_with_hashed_ids([min_transaction()], %{binary() => binary()}) ::
           {boolean(), [min_transaction()], %{binary() => binary()}}
-  defp update_txs_with_hashed_ids([], cache), do: {false, [], cache}
+  defp update_transactions_with_hashed_ids([], cache), do: {false, [], cache}
 
-  defp update_txs_with_hashed_ids(txs, cached_uncompleted_messages_ids) do
+  defp update_transactions_with_hashed_ids(transactions, cached_uncompleted_messages_ids) do
     # Try to use the cached DB response first. That makes sense if historical
     # messages are being processed (by catchup block fetcher or by the missing
-    # messages handler). Since amount of txs provided to this function is limited
+    # messages handler). Since amount of transactions provided to this function is limited
     # it OK to inspect the cache before making a DB request.
-    case revise_txs_with_hashed_ids(txs, cached_uncompleted_messages_ids, true) do
+    case revise_transactions_with_hashed_ids(transactions, cached_uncompleted_messages_ids, true) do
       {_, false} ->
         # If no matches were found in the cache, try to fetch uncompleted messages from the DB.
         uncompleted_messages = get_hashed_ids_for_uncompleted_messages()
 
-        {updated_txs, updated?} = revise_txs_with_hashed_ids(txs, uncompleted_messages, false)
+        {updated_transactions, updated?} =
+          revise_transactions_with_hashed_ids(transactions, uncompleted_messages, false)
 
-        {updated?, updated_txs, uncompleted_messages}
+        {updated?, updated_transactions, uncompleted_messages}
 
-      {updated_txs, _} ->
+      {updated_transactions, _} ->
         # There could be a case when some hashed ids were not found since the cache is outdated
-        # such txs will be scheduled for retry and the cache will be updated then.
-        {true, updated_txs, cached_uncompleted_messages_ids}
+        # such transactions will be scheduled for retry and the cache will be updated then.
+        {true, updated_transactions, cached_uncompleted_messages_ids}
     end
   end
 
@@ -302,7 +308,7 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
   # (non-hashed) form.
   #
   # ## Parameters
-  # - `txs`: A list of transactions with potentially hashed request IDs.
+  # - `transactions`: A list of transactions with potentially hashed request IDs.
   # - `uncompleted_messages`: A map of hashed message IDs to their original forms.
   # - `report?`: A boolean flag indicating whether to log decoding attempts.
   #
@@ -310,27 +316,31 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
   # A tuple containing:
   # - An updated list of transactions, with some request IDs potentially replaced.
   # - A boolean indicating whether any transactions were updated.
-  @spec revise_txs_with_hashed_ids([min_transaction()], %{binary() => binary()}, boolean()) ::
+  @spec revise_transactions_with_hashed_ids([min_transaction()], %{binary() => binary()}, boolean()) ::
           {[min_transaction()], boolean()}
-  defp revise_txs_with_hashed_ids(txs, uncompleted_messages, report?) do
-    txs
-    |> Enum.reduce({[], false}, fn tx, {updated_txs, updated?} ->
-      if report?, do: log_info("Attempting to decode the request id #{tx.request_id} in the tx #{tx.hash}")
+  defp revise_transactions_with_hashed_ids(transactions, uncompleted_messages, report?) do
+    transactions
+    |> Enum.reduce({[], false}, fn transaction, {updated_transactions, updated?} ->
+      if report?,
+        do:
+          log_info(
+            "Attempting to decode the request id #{transaction.request_id} in the transaction #{transaction.hash}"
+          )
 
-      case Map.get(uncompleted_messages, tx.request_id) do
+      case Map.get(uncompleted_messages, transaction.request_id) do
         nil ->
-          {[tx | updated_txs], updated?}
+          {[transaction | updated_transactions], updated?}
 
         id ->
-          {[%{tx | request_id: id} | updated_txs], true}
+          {[%{transaction | request_id: id} | updated_transactions], true}
       end
     end)
   end
 
   # Assigns a uniform timeout to each transaction in the given list.
   @spec initialize_timeouts([min_transaction()], non_neg_integer()) :: [{non_neg_integer(), min_transaction()}]
-  defp initialize_timeouts(txs_to_retry, timeout) do
-    txs_to_retry
+  defp initialize_timeouts(transactions_to_retry, timeout) do
+    transactions_to_retry
     |> Enum.map(&{timeout, &1})
   end
 

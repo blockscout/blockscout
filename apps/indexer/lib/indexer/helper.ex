@@ -129,9 +129,9 @@ defmodule Indexer.Helper do
     - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
 
     ## Returns
-    `{block_num, latest}`: A tuple where
-    - `block_num` is the safe or latest block number.
-    - `latest` is a boolean, where `true` indicates that `block_num` is the latest block number fetched using the tag `latest`.
+    `{block_number, latest}`: A tuple where
+    - `block_number` is the safe or latest block number.
+    - `latest` is a boolean, where `true` indicates that `block_number` is the latest block number fetched using the tag `latest`.
   """
   @spec get_safe_block(EthereumJSONRPC.json_rpc_named_arguments()) :: {non_neg_integer(), boolean()}
   def get_safe_block(json_rpc_named_arguments) do

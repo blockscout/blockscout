@@ -23,10 +23,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
   # https://github.com/OffchainLabs/go-ethereum/blob/dff302de66598c36b964b971f72d35a95148e650/core/types/transaction.go#L44C2-L50
   @message_to_l2_eth_deposit 100
-  @message_to_l2_submit_retryable_tx 105
+  @message_to_l2_submit_retryable_transaction 105
   @to_l2_messages_transaction_types [
     @message_to_l2_eth_deposit,
-    @message_to_l2_submit_retryable_tx
+    @message_to_l2_submit_retryable_transaction
   ]
 
   @doc """
@@ -195,7 +195,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     Reads a list of L1 transactions by their hashes from the `arbitrum_lifecycle_l1_transactions` table and returns their IDs.
 
     ## Parameters
-    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+    - `l1_transaction_hashes`: A list of hashes to retrieve L1 transactions for.
 
     ## Returns
     - A list of tuples containing transaction hashes and IDs for the transaction
@@ -203,12 +203,12 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       list.
   """
   @spec lifecycle_transaction_ids([binary()]) :: [{Hash.t(), non_neg_integer}]
-  def lifecycle_transaction_ids(l1_tx_hashes) when is_list(l1_tx_hashes) do
+  def lifecycle_transaction_ids(l1_transaction_hashes) when is_list(l1_transaction_hashes) do
     query =
       from(
         lt in LifecycleTransaction,
         select: {lt.hash, lt.id},
-        where: lt.hash in ^l1_tx_hashes
+        where: lt.hash in ^l1_transaction_hashes
       )
 
     Repo.all(query)
@@ -218,7 +218,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     Reads a list of L1 transactions by their hashes from the `arbitrum_lifecycle_l1_transactions` table.
 
     ## Parameters
-    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+    - `l1_transaction_hashes`: A list of hashes to retrieve L1 transactions for.
 
     ## Returns
     - A list of `Explorer.Chain.Arbitrum.LifecycleTransaction` corresponding to the
@@ -226,11 +226,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       list.
   """
   @spec lifecycle_transactions([binary()]) :: [LifecycleTransaction.t()]
-  def lifecycle_transactions(l1_tx_hashes) when is_list(l1_tx_hashes) do
+  def lifecycle_transactions(l1_transaction_hashes) when is_list(l1_transaction_hashes) do
     query =
       from(
         lt in LifecycleTransaction,
-        where: lt.hash in ^l1_tx_hashes
+        where: lt.hash in ^l1_transaction_hashes
       )
 
     Repo.all(query)
@@ -477,11 +477,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def l1_block_of_latest_execution do
     query =
       from(
-        tx in LifecycleTransaction,
+        transaction in LifecycleTransaction,
         inner_join: ex in L1Execution,
-        on: tx.id == ex.execution_id,
-        select: tx.block_number,
-        order_by: [desc: tx.block_number],
+        on: transaction.id == ex.execution_id,
+        select: transaction.block_number,
+        order_by: [desc: transaction.block_number],
         limit: 1
       )
 
@@ -499,11 +499,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def l1_block_of_earliest_execution do
     query =
       from(
-        tx in LifecycleTransaction,
+        transaction in LifecycleTransaction,
         inner_join: ex in L1Execution,
-        on: tx.id == ex.execution_id,
-        select: tx.block_number,
-        order_by: [asc: tx.block_number],
+        on: transaction.id == ex.execution_id,
+        select: transaction.block_number,
+        order_by: [asc: transaction.block_number],
         limit: 1
       )
 
@@ -672,11 +672,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     main_query =
       from(
         subquery in subquery(confirmed_combined_ranges_query),
-        inner_join: tx_cur in LifecycleTransaction,
-        on: subquery.confirmation_id == tx_cur.id,
-        left_join: tx_prev in LifecycleTransaction,
-        on: subquery.prev_confirmation_id == tx_prev.id,
-        select: {tx_prev.block_number, tx_cur.block_number},
+        inner_join: current_transaction in LifecycleTransaction,
+        on: subquery.confirmation_id == current_transaction.id,
+        left_join: previous_transaction in LifecycleTransaction,
+        on: subquery.prev_confirmation_id == previous_transaction.id,
+        select: {previous_transaction.block_number, current_transaction.block_number},
         where: subquery.min_block_num - 1 != subquery.prev_max_number or is_nil(subquery.prev_max_number),
         order_by: [desc: subquery.min_block_num],
         limit: 1
@@ -1052,7 +1052,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   """
   @spec batch_transactions(non_neg_integer() | binary(), api?: boolean()) :: [BatchTransaction.t()]
   def batch_transactions(batch_number, options) do
-    query = from(tx in BatchTransaction, where: tx.batch_number == ^batch_number)
+    query = from(transaction in BatchTransaction, where: transaction.batch_number == ^batch_number)
 
     select_repo(options).all(query)
   end

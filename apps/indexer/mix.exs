@@ -20,7 +20,7 @@ defmodule Indexer.MixProject do
           Explorer.Chain.Optimism.Deposit,
           Explorer.Chain.Optimism.FrameSequence,
           Explorer.Chain.Optimism.OutputRoot,
-          Explorer.Chain.Optimism.TxnBatch,
+          Explorer.Chain.Optimism.TransactionBatch,
           Explorer.Chain.Optimism.Withdrawal,
           Explorer.Chain.Optimism.WithdrawalEvent
         ]

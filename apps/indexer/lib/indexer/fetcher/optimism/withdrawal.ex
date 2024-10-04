@@ -61,8 +61,10 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
-         {:ok, last_l2_tx} <- Optimism.get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
-         {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_tx)} do
+         {:ok, last_l2_transaction} <-
+           Optimism.get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
+         {:l2_transaction_not_found, false} <-
+           {:l2_transaction_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_transaction)} do
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -92,7 +94,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
 
         {:stop, :normal, state}
 
-      {:l2_tx_not_found, true} ->
+      {:l2_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L2 transaction from RPC by its hash. Probably, there was a reorg on L2 chain. Please, check op_withdrawals table."
         )

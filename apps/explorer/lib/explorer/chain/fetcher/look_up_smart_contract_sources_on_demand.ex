@@ -40,11 +40,11 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   defp fetch_sources(address_hash_string, address_contract_code, only_full?) do
     Publisher.broadcast(%{eth_bytecode_db_lookup_started: [address_hash_string]}, :on_demand)
 
-    creation_tx_input = contract_creation_input(address_hash_string)
+    creation_transaction_input = contract_creation_input(address_hash_string)
 
     with {:ok, %{"sourceType" => type, "matchType" => match_type} = source} <-
            %{}
-           |> prepare_bytecode_for_microservice(creation_tx_input, Data.to_string(address_contract_code))
+           |> prepare_bytecode_for_microservice(creation_transaction_input, Data.to_string(address_contract_code))
            |> EthBytecodeDBInterface.search_contract(address_hash_string),
          :ok <- check_match_type(match_type, only_full?),
          {:ok, _} <- process_contract_source(type, source, address_hash_string) do

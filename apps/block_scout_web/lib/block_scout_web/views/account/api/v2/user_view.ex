@@ -161,7 +161,11 @@ defmodule BlockScoutWeb.Account.Api.V2.UserView do
   def prepare_transaction_tag(nil), do: nil
 
   def prepare_transaction_tag(transaction_tag) do
-    %{"id" => transaction_tag.id, "transaction_hash" => transaction_tag.tx_hash, "name" => transaction_tag.name}
+    %{
+      "id" => transaction_tag.id,
+      "transaction_hash" => transaction_tag.transaction_hash,
+      "name" => transaction_tag.name
+    }
   end
 
   def prepare_public_tags_request(public_tags_request) do

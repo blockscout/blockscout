@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.GraphQL.Celo.QueryFields do
   defmacro generate do
     quote do
       @desc "Gets token transfer transactions."
-      connection field(:token_transfer_txs, node_type: :transfer_tx) do
+      connection field(:token_transfer_transactions, node_type: :transfer_transaction) do
         arg(:address_hash, :address_hash)
         arg(:count, :integer)
 

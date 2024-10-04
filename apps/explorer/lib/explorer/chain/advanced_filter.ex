@@ -54,7 +54,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     field(:token_transfer_batch_index, :integer, null: true)
   end
 
-  @typep tx_types :: {:tx_types, [String.t()] | nil}
+  @typep transaction_types :: {:transaction_types, [String.t()] | nil}
   @typep methods :: {:methods, [String.t()] | nil}
   @typep age :: {:age, [{:from, DateTime.t() | nil} | {:to, DateTime.t() | nil}] | nil}
   @typep from_address_hashes :: {:from_address_hashes, [Hash.Address.t()] | nil}
@@ -64,7 +64,7 @@ defmodule Explorer.Chain.AdvancedFilter do
   @typep token_contract_address_hashes ::
            {:token_contract_address_hashes, [{:include, [Hash.Address.t()]} | {:include, [Hash.Address.t()]}] | nil}
   @type options :: [
-          tx_types()
+          transaction_types()
           | methods()
           | age()
           | from_address_hashes()
@@ -122,14 +122,14 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp only_transactions?(options) do
-    transaction_types = options[:tx_types]
+    transaction_types = options[:transaction_types]
     tokens_to_include = options[:token_contract_address_hashes][:include]
 
     transaction_types == ["COIN_TRANSFER"] or tokens_to_include == ["native"]
   end
 
   defp only_token_transfers?(options) do
-    transaction_types = options[:tx_types]
+    transaction_types = options[:transaction_types]
     tokens_to_include = options[:token_contract_address_hashes][:include]
     tokens_to_exclude = options[:token_contract_address_hashes][:exclude]
 
@@ -270,11 +270,14 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp page_transactions(query, %PagingOptions{
          key: %{
            block_number: block_number,
-           transaction_index: tx_index
+           transaction_index: transaction_index
          }
        }) do
     dynamic_condition =
-      dynamic(^page_block_number_dynamic(:transaction, block_number) or ^page_tx_index_dynamic(block_number, tx_index))
+      dynamic(
+        ^page_block_number_dynamic(:transaction, block_number) or
+          ^page_transaction_index_dynamic(block_number, transaction_index)
+      )
 
     query |> where(^dynamic_condition)
   end
@@ -309,17 +312,17 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp page_internal_transactions(query, %PagingOptions{
          key: %{
            block_number: block_number,
-           transaction_index: tx_index,
+           transaction_index: transaction_index,
            internal_transaction_index: nil
          }
        }) do
-    case {block_number, tx_index} do
+    case {block_number, transaction_index} do
       {0, 0} ->
-        query |> where(as(:transaction).block_number == ^block_number and as(:transaction).index == ^tx_index)
+        query |> where(as(:transaction).block_number == ^block_number and as(:transaction).index == ^transaction_index)
 
-      {0, tx_index} ->
+      {0, transaction_index} ->
         query
-        |> where(as(:transaction).block_number == ^block_number and as(:transaction).index <= ^tx_index)
+        |> where(as(:transaction).block_number == ^block_number and as(:transaction).index <= ^transaction_index)
 
       {block_number, 0} ->
         query |> where(as(:transaction).block_number < ^block_number)
@@ -328,7 +331,7 @@ defmodule Explorer.Chain.AdvancedFilter do
         query
         |> where(
           as(:transaction).block_number < ^block_number or
-            (as(:transaction).block_number == ^block_number and as(:transaction).index <= ^tx_index)
+            (as(:transaction).block_number == ^block_number and as(:transaction).index <= ^transaction_index)
         )
     end
   end
@@ -336,14 +339,15 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp page_internal_transactions(query, %PagingOptions{
          key: %{
            block_number: block_number,
-           transaction_index: tx_index,
+           transaction_index: transaction_index,
            internal_transaction_index: it_index
          }
        }) do
     dynamic_condition =
       dynamic(
-        ^page_block_number_dynamic(:transaction, block_number) or ^page_tx_index_dynamic(block_number, tx_index) or
-          ^page_it_index_dynamic(block_number, tx_index, it_index)
+        ^page_block_number_dynamic(:transaction, block_number) or
+          ^page_transaction_index_dynamic(block_number, transaction_index) or
+          ^page_it_index_dynamic(block_number, transaction_index, it_index)
       )
 
     query
@@ -386,28 +390,31 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp page_token_transfers(query, %PagingOptions{
          key: %{
            block_number: block_number,
-           transaction_index: tx_index,
+           transaction_index: transaction_index,
            token_transfer_index: nil,
            internal_transaction_index: nil
          }
        }) do
-    case {block_number, tx_index} do
+    case {block_number, transaction_index} do
       {0, 0} ->
-        query |> where(as(:transaction).block_number == ^block_number and as(:transaction).index == ^tx_index)
+        query |> where(as(:transaction).block_number == ^block_number and as(:transaction).index == ^transaction_index)
 
-      {0, tx_index} ->
+      {0, transaction_index} ->
         query
-        |> where([token_transfer], token_transfer.block_number == ^block_number and as(:transaction).index < ^tx_index)
+        |> where(
+          [token_transfer],
+          token_transfer.block_number == ^block_number and as(:transaction).index < ^transaction_index
+        )
 
       {block_number, 0} ->
         query |> where([token_transfer], token_transfer.block_number < ^block_number)
 
-      {block_number, tx_index} ->
+      {block_number, transaction_index} ->
         query
         |> where(
           [token_transfer],
           token_transfer.block_number < ^block_number or
-            (token_transfer.block_number == ^block_number and as(:transaction).index <= ^tx_index)
+            (token_transfer.block_number == ^block_number and as(:transaction).index <= ^transaction_index)
         )
     end
   end
@@ -415,13 +422,14 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp page_token_transfers(query, %PagingOptions{
          key: %{
            block_number: block_number,
-           transaction_index: tx_index,
+           transaction_index: transaction_index,
            token_transfer_index: nil
          }
        }) do
     dynamic_condition =
       dynamic(
-        ^page_block_number_dynamic(:token_transfer, block_number) or ^page_tx_index_dynamic(block_number, tx_index)
+        ^page_block_number_dynamic(:token_transfer, block_number) or
+          ^page_transaction_index_dynamic(block_number, transaction_index)
       )
 
     query |> where(^dynamic_condition)
@@ -463,18 +471,21 @@ defmodule Explorer.Chain.AdvancedFilter do
     dynamic(false)
   end
 
-  defp page_tx_index_dynamic(block_number, tx_index) when tx_index > 0 do
-    dynamic([transaction: tx], tx.block_number == ^block_number and tx.index < ^tx_index)
+  defp page_transaction_index_dynamic(block_number, transaction_index) when transaction_index > 0 do
+    dynamic(
+      [transaction: transaction],
+      transaction.block_number == ^block_number and transaction.index < ^transaction_index
+    )
   end
 
-  defp page_tx_index_dynamic(_, _) do
+  defp page_transaction_index_dynamic(_, _) do
     dynamic(false)
   end
 
-  defp page_it_index_dynamic(block_number, tx_index, it_index) when it_index > 0 do
+  defp page_it_index_dynamic(block_number, transaction_index, it_index) when it_index > 0 do
     dynamic(
-      [transaction: tx, internal_transaction: it],
-      tx.block_number == ^block_number and tx.index == ^tx_index and
+      [transaction: transaction, internal_transaction: it],
+      transaction.block_number == ^block_number and transaction.index == ^transaction_index and
         it.index < ^it_index
     )
   end
@@ -520,7 +531,7 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp apply_token_transfers_filters(query, options) do
     query
-    |> filter_by_tx_type(options[:tx_types])
+    |> filter_by_transaction_type(options[:transaction_types])
     |> filter_token_transfers_by_methods(options[:methods])
     |> filter_by_token(options[:token_contract_address_hashes][:include], :include)
     |> filter_by_token(options[:token_contract_address_hashes][:exclude], :exclude)
@@ -545,11 +556,11 @@ defmodule Explorer.Chain.AdvancedFilter do
     query |> where(not is_nil(as(:transaction).block_number) and not is_nil(as(:transaction).index))
   end
 
-  defp filter_by_tx_type(query, [_ | _] = tx_types) do
-    query |> where([token_transfer], token_transfer.token_type in ^tx_types)
+  defp filter_by_transaction_type(query, [_ | _] = transaction_types) do
+    query |> where([token_transfer], token_transfer.token_type in ^transaction_types)
   end
 
-  defp filter_by_tx_type(query, _), do: query
+  defp filter_by_transaction_type(query, _), do: query
 
   defp filter_transactions_by_methods(query, [_ | _] = methods) do
     prepared_methods = prepare_methods(methods)

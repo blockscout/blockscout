@@ -1,9 +1,9 @@
-defmodule Explorer.Chain.Optimism.TxnBatch do
+defmodule Explorer.Chain.Optimism.TransactionBatch do
   @moduledoc """
     Models a batch of transactions for Optimism.
 
     Changes in the schema should be reflected in the bulk import module:
-    - Explorer.Chain.Import.Runner.Optimism.TxnBatches
+    - Explorer.Chain.Import.Runner.Optimism.TransactionBatches
 
     Migrations:
     - Explorer.Repo.Migrations.AddOpTransactionBatchesTable
@@ -96,7 +96,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
   end
 
   @doc """
-    Lists `t:Explorer.Chain.Optimism.TxnBatch.t/0`'s' in descending order based on l2_block_number.
+    Lists `t:Explorer.Chain.Optimism.TransactionBatch.t/0`'s' in descending order based on l2_block_number.
 
     ## Parameters
     - `options`: A keyword list of options that may include whether to use a replica database,
@@ -131,7 +131,7 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
 
         base_query
         |> join_association(:frame_sequence, :required)
-        |> page_txn_batches(paging_options)
+        |> page_transaction_batches(paging_options)
         |> limit(^paging_options.page_size)
         |> select_repo(options).all()
     end
@@ -275,9 +275,9 @@ defmodule Explorer.Chain.Optimism.TxnBatch do
     bytes_before <> <<byte>> <> bytes_after
   end
 
-  defp page_txn_batches(query, %PagingOptions{key: nil}), do: query
+  defp page_transaction_batches(query, %PagingOptions{key: nil}), do: query
 
-  defp page_txn_batches(query, %PagingOptions{key: {block_number}}) do
+  defp page_transaction_batches(query, %PagingOptions{key: {block_number}}) do
     from(tb in query, where: tb.l2_block_number < ^block_number)
   end
 end

@@ -163,7 +163,7 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("transactions:#{transaction_hash}", "raw_trace", %{raw_trace_origin: transaction_hash})
   end
 
-  # internal txs broadcast disabled on the indexer level, therefore it out of scope of the refactoring within https://github.com/blockscout/blockscout/pull/7474
+  # internal transactions broadcast disabled on the indexer level, therefore it out of scope of the refactoring within https://github.com/blockscout/blockscout/pull/7474
   def handle_event({:chain_event, :internal_transactions, :realtime, internal_transactions}) do
     internal_transactions
     |> Stream.map(
@@ -215,9 +215,9 @@ defmodule BlockScoutWeb.Notifier do
     transactions
     |> Repo.preload(preloads)
     |> broadcast_transactions_websocket_v2()
-    |> Enum.map(fn tx ->
+    |> Enum.map(fn transaction ->
       # Disable parsing of token transfers from websocket for transaction tab because we display token transfers at a separate tab
-      Map.put(tx, :token_transfers, [])
+      Map.put(transaction, :token_transfers, [])
     end)
     |> Enum.each(&broadcast_transaction/1)
   end

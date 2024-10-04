@@ -28,7 +28,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
                }}, []} = GasPriceOracle.get_average_gas_price(3, 35, 60, 90)
     end
 
-    test "returns gas prices for blocks with failed txs in the DB" do
+    test "returns gas prices for blocks with failed transactions in the DB" do
       block = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
 
       :transaction

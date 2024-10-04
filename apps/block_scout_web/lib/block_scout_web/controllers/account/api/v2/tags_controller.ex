@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.Account.Api.V2.TagsController do
 
     personal_tags =
       if is_nil(current_user(conn)) do
-        %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
+        %{personal_tags: [], watchlist_names: [], personal_transaction_tag: nil}
       else
         uid = current_user(conn).id
 
@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.Account.Api.V2.TagsController do
           })
         else
           _ ->
-            %{personal_tags: [], watchlist_names: [], personal_tx_tag: nil}
+            %{personal_tags: [], watchlist_names: [], personal_transaction_tag: nil}
         end
       end
 

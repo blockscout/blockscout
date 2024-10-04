@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   end
 
   @doc """
-  Build the request body as for the tx interpreter POST request.
+  Build the request body as for the transaction interpreter POST request.
   """
   @spec get_request_body(Transaction.t()) :: map()
   def get_request_body(transaction) do
@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   end
 
   @doc """
-  Build the request body as for the tx interpreter POST request.
+  Build the request body as for the transaction interpreter POST request.
   """
   @spec get_user_op_request_body(map()) :: map()
   def get_user_op_request_body(user_op) do
@@ -160,7 +160,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         value: transaction_with_meta.value,
         method: Transaction.method_name(transaction_with_meta, Transaction.format_decoded_input(decoded_input)),
         status: transaction_with_meta.status,
-        tx_types: TransactionView.tx_types(transaction_with_meta),
+        transaction_types: TransactionView.transaction_types(transaction_with_meta),
         raw_input: transaction_with_meta.input,
         decoded_input: decoded_input_data,
         token_transfers: prepare_token_transfers(token_transfers_with_meta, decoded_input),
@@ -333,7 +333,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     user_op_from = user_op["sender"]
     user_op_to = user_op["execute_target"] || user_op["sender"]
 
-    {mock_tx, decoded_input, decoded_input_json} = decode_user_op_calldata(user_op_hash, user_op_call_data)
+    {mock_transaction, decoded_input, decoded_input_json} = decode_user_op_calldata(user_op_hash, user_op_call_data)
 
     {prepared_logs, prepared_token_transfers} = user_op_to_logs_and_token_transfers(user_op, decoded_input)
 
@@ -352,10 +352,10 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         hash: user_op_hash,
         type: 0,
         value: "0",
-        method: Transaction.method_name(mock_tx, Transaction.format_decoded_input(decoded_input), true),
+        method: Transaction.method_name(mock_transaction, Transaction.format_decoded_input(decoded_input), true),
         status: user_op["status"],
         actions: [],
-        tx_types: [],
+        transaction_types: [],
         raw_input: user_op_call_data,
         decoded_input: decoded_input_json,
         token_transfers: prepared_token_transfers
@@ -365,7 +365,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   end
 
   @doc """
-  Decodes user_op["call_data"] and return {mock_tx, decoded_input, decoded_input_json}
+  Decodes user_op["call_data"] and return {mock_transaction, decoded_input, decoded_input_json}
   """
   @spec decode_user_op_calldata(binary(), binary() | nil) :: {Transaction.t(), tuple(), map()} | {nil, nil, nil}
   def decode_user_op_calldata(_user_op_hash, nil), do: {nil, nil, nil}
@@ -375,7 +375,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     {:ok, op_hash} = Chain.string_to_transaction_hash(user_op_hash)
 
-    mock_tx = %Transaction{
+    mock_transaction = %Transaction{
       to_address: %NotLoaded{},
       input: input,
       hash: op_hash
@@ -383,8 +383,10 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     skip_sig_provider? = false
 
-    {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(mock_tx, skip_sig_provider?, @api_true)
+    {decoded_input, _abi_acc, _methods_acc} =
+      Transaction.decoded_input_data(mock_transaction, skip_sig_provider?, @api_true)
 
-    {mock_tx, decoded_input, decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()}
+    {mock_transaction, decoded_input,
+     decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()}
   end
 end

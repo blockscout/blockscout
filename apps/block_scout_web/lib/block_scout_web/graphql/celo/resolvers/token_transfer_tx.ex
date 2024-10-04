@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.GraphQL.Celo.Resolvers.TokenTransferTx do
       end
 
     address_hash
-    |> GraphQL.token_tx_transfers_query_for_address(offset, limit)
+    |> GraphQL.token_transaction_transfers_query_for_address(offset, limit)
     |> Connection.from_query(&Repo.all/1, connection_args, options(args))
   end
 

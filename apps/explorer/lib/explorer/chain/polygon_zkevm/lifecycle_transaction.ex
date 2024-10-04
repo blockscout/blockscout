@@ -24,8 +24,8 @@ defmodule Explorer.Chain.PolygonZkevm.LifecycleTransaction do
     Validates that the `attrs` are valid.
   """
   @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
-  def changeset(%__MODULE__{} = txn, attrs \\ %{}) do
-    txn
+  def changeset(%__MODULE__{} = transaction, attrs \\ %{}) do
+    transaction
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> unique_constraint(:id)
