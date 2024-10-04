@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenTransferView, TokenView}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper, InternalTransactionView, TokenTransferView, TokenView}
 
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
@@ -151,7 +151,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         block: block
       }) do
     %{
-      "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1, block)),
+      "items" => Enum.map(internal_transactions, &InternalTransactionView.prepare_internal_transaction(&1, block)),
       "next_page_params" => next_page_params
     }
   end
@@ -161,7 +161,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         next_page_params: next_page_params
       }) do
     %{
-      "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1)),
+      "items" => Enum.map(internal_transactions, &InternalTransactionView.prepare_internal_transaction(&1)),
       "next_page_params" => next_page_params
     }
   end
@@ -237,32 +237,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "protocol" => action.protocol,
       "type" => action.type,
       "data" => action.data
-    }
-  end
-
-  def prepare_internal_transaction(internal_transaction, block \\ nil) do
-    %{
-      "error" => internal_transaction.error,
-      "success" => is_nil(internal_transaction.error),
-      "type" => internal_transaction.call_type || internal_transaction.type,
-      "transaction_hash" => internal_transaction.transaction_hash,
-      "from" =>
-        Helper.address_with_info(nil, internal_transaction.from_address, internal_transaction.from_address_hash, false),
-      "to" =>
-        Helper.address_with_info(nil, internal_transaction.to_address, internal_transaction.to_address_hash, false),
-      "created_contract" =>
-        Helper.address_with_info(
-          nil,
-          internal_transaction.created_contract_address,
-          internal_transaction.created_contract_address_hash,
-          false
-        ),
-      "value" => internal_transaction.value,
-      "block" => internal_transaction.block_number,
-      "timestamp" => (block && block.timestamp) || internal_transaction.block.timestamp,
-      "index" => internal_transaction.index,
-      "gas_limit" => internal_transaction.gas,
-      "block_index" => internal_transaction.block_index
     }
   end
 
