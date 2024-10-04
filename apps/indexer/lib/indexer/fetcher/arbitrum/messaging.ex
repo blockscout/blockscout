@@ -208,7 +208,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
           %{
             direction: :from_l2,
             message_id: message_id,
-            originator_address: caller,
+            originator_address: caller.bytes,
             originating_transaction_hash: event.transaction_hash,
             origination_timestamp: Timex.from_unix(timestamp),
             originating_transaction_block_number: blocknum,
@@ -297,7 +297,16 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
         callvalue,
         data]
   """
-  @spec l2_to_l1_event_parse(any()) :: any()
+  @spec l2_to_l1_event_parse(any()) :: {
+          non_neg_integer(),
+          Hash.Address.t(),
+          Hash.Address.t(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          binary()
+        }
   def l2_to_l1_event_parse(event) do
     [
       caller,
@@ -314,19 +323,11 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
         number -> number
       end
 
-    caller_bin =
-      case Hash.Address.cast(caller) do
-        {:ok, address} -> address
-        _ -> nil
-      end
+    {:ok, caller_addr} = Hash.Address.cast(caller)
 
-    destination =
-      case Hash.Address.cast(Hash.to_integer(event.second_topic)) do
-        {:ok, address} -> address
-        _ -> nil
-      end
+    {:ok, destination} = Hash.Address.cast(Hash.to_integer(event.second_topic))
 
-    {position, caller_bin, destination, arb_block_num, eth_block_num, timestamp, callvalue, data}
+    {position, caller_addr, destination, arb_block_num, eth_block_num, timestamp, callvalue, data}
   end
 
   # Determines the status of an L2-to-L1 message based on its block number and the highest
