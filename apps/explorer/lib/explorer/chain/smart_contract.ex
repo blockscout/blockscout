@@ -568,28 +568,30 @@ defmodule Explorer.Chain.SmartContract do
     Extracts creation bytecode (`init`) and transaction (`tx`) or
       internal transaction (`internal_tx`) where the contract was created.
   """
-  @spec creation_tx_with_bytecode(binary() | Hash.t()) ::
-          %{init: binary(), tx: Transaction.t()} | %{init: binary(), internal_tx: InternalTransaction.t()} | nil
-  def creation_tx_with_bytecode(address_hash) do
-    creation_tx_query =
+  @spec creation_transaction_with_bytecode(binary() | Hash.t()) ::
+          %{init: binary(), transaction: Transaction.t()}
+          | %{init: binary(), internal_tx: InternalTransaction.t()}
+          | nil
+  def creation_transaction_with_bytecode(address_hash) do
+    creation_transaction_query =
       from(
-        tx in Transaction,
-        where: tx.created_contract_address_hash == ^address_hash,
-        where: tx.status == ^1,
-        order_by: [desc: tx.block_number],
+        transaction in Transaction,
+        where: transaction.created_contract_address_hash == ^address_hash,
+        where: transaction.status == ^1,
+        order_by: [desc: transaction.block_number],
         limit: ^1
       )
 
-    tx =
-      creation_tx_query
+    transaction =
+      creation_transaction_query
       |> Repo.one()
 
-    if tx do
-      with %{input: input} <- tx do
-        %{init: Data.to_string(input), tx: tx}
+    if transaction do
+      with %{input: input} <- transaction do
+        %{init: Data.to_string(input), transaction: transaction}
       end
     else
-      creation_int_tx_query =
+      creation_int_transaction_query =
         from(
           itx in InternalTransaction,
           join: t in assoc(itx, :transaction),
@@ -597,7 +599,7 @@ defmodule Explorer.Chain.SmartContract do
           where: t.status == ^1
         )
 
-      internal_tx = creation_int_tx_query |> Repo.one()
+      internal_tx = creation_int_transaction_query |> Repo.one()
 
       case internal_tx do
         %{init: init} ->

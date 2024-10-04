@@ -33,7 +33,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
     ## Returns
     - `:ok`
   """
-  @spec monitor_lifecycle_txs(%{
+  @spec monitor_lifecycle_transactions(%{
           :config => %{
             :l1_rpc => %{
               :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
@@ -43,7 +43,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
           },
           optional(any()) => any()
         }) :: :ok
-  def monitor_lifecycle_txs(%{config: %{l1_rpc: %{json_rpc_named_arguments: json_rpc_named_arguments}}} = _state) do
+  def monitor_lifecycle_transactions(
+        %{config: %{l1_rpc: %{json_rpc_named_arguments: json_rpc_named_arguments}}} = _state
+      ) do
     {:ok, safe_block} =
       IndexerHelper.get_block_number_by_tag(
         "safe",
@@ -51,20 +53,20 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
         Rpc.get_resend_attempts()
       )
 
-    lifecycle_txs = Db.lifecycle_unfinalized_transactions(safe_block)
+    lifecycle_transactions = Db.lifecycle_unfinalized_transactions(safe_block)
 
-    if length(lifecycle_txs) > 0 do
-      log_info("Discovered #{length(lifecycle_txs)} lifecycle transaction to be finalized")
+    if length(lifecycle_transactions) > 0 do
+      log_info("Discovered #{length(lifecycle_transactions)} lifecycle transaction to be finalized")
 
-      updated_lifecycle_txs =
-        lifecycle_txs
-        |> Enum.map(fn tx ->
-          Map.put(tx, :status, :finalized)
+      updated_lifecycle_transactions =
+        lifecycle_transactions
+        |> Enum.map(fn transaction ->
+          Map.put(transaction, :status, :finalized)
         end)
 
       {:ok, _} =
         Chain.import(%{
-          arbitrum_lifecycle_transactions: %{params: updated_lifecycle_txs},
+          arbitrum_lifecycle_transactions: %{params: updated_lifecycle_transactions},
           timeout: :infinity
         })
     end

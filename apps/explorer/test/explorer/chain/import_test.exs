@@ -655,7 +655,7 @@ defmodule Explorer.Chain.ImportTest do
         }
       }
 
-      internal_txs_options = %{
+      internal_transactions_options = %{
         internal_transactions: %{
           params: [
             %{
@@ -685,7 +685,7 @@ defmodule Explorer.Chain.ImportTest do
       {:ok, block_hash_casted} = Explorer.Chain.Hash.Full.cast(block_hash)
       assert [^block_hash_casted] = Explorer.Repo.all(PendingBlockOperation.block_hashes())
 
-      assert {:ok, _} = Import.all(internal_txs_options)
+      assert {:ok, _} = Import.all(internal_transactions_options)
 
       assert [] == Explorer.Repo.all(PendingBlockOperation.block_hashes())
     end
@@ -746,7 +746,7 @@ defmodule Explorer.Chain.ImportTest do
         }
       }
 
-      internal_txs_options = %{
+      internal_transactions_options = %{
         internal_transactions: %{
           params: [
             %{
@@ -775,7 +775,7 @@ defmodule Explorer.Chain.ImportTest do
       {:ok, block_hash_casted} = Explorer.Chain.Hash.Full.cast(block_hash)
       assert [^block_hash_casted] = Explorer.Repo.all(PendingBlockOperation.block_hashes())
 
-      assert {:ok, _} = Import.all(internal_txs_options)
+      assert {:ok, _} = Import.all(internal_transactions_options)
 
       assert [] == Explorer.Repo.all(PendingBlockOperation.block_hashes())
     end

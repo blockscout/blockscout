@@ -129,7 +129,7 @@ defmodule Explorer.Account.Notifier.Notify do
         block_number: summary.block_number,
         amount: summary.amount,
         subject: summary.subject,
-        tx_fee: summary.tx_fee,
+        transaction_fee: summary.transaction_fee,
         name: summary.name,
         type: summary.type,
         from_address_hash_hash: hash_to_lower_case_string(summary.from_address_hash),

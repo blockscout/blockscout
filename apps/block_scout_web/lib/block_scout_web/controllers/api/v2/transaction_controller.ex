@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
-  alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
+  alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
   }
 
-  @token_transfers_in_tx_necessity_by_association %{
+  @token_transfers_in_transaction_necessity_by_association %{
     [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
     [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
     token: :required
@@ -160,7 +160,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              api?: true
            ),
          preloaded <-
-           Chain.preload_token_transfers(transaction, @token_transfers_in_tx_necessity_by_association, @api_true, false) do
+           Chain.preload_token_transfers(
+             transaction,
+             @token_transfers_in_transaction_necessity_by_association,
+             @api_true,
+             false
+           ) do
       conn
       |> put_status(200)
       |> render(:transaction, %{
@@ -208,7 +213,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     transactions =
       batch_number
       |> PolygonZkevmReader.batch_transactions(api?: true)
-      |> Enum.map(fn tx -> tx.hash end)
+      |> Enum.map(fn transaction -> transaction.hash end)
       |> Chain.hashes_to_transactions(api?: true, necessity_by_association: @transaction_necessity_by_association)
 
     conn
@@ -245,8 +250,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def optimism_batch(conn, %{"batch_number" => batch_number_string} = params) do
     {batch_number, ""} = Integer.parse(batch_number_string)
 
-    l2_block_number_from = OptimismTxnBatch.edge_l2_block_number(batch_number, :min)
-    l2_block_number_to = OptimismTxnBatch.edge_l2_block_number(batch_number, :max)
+    l2_block_number_from = OptimismTransactionBatch.edge_l2_block_number(batch_number, :min)
+    l2_block_number_to = OptimismTransactionBatch.edge_l2_block_number(batch_number, :max)
 
     transactions_plus_one =
       if is_nil(l2_block_number_from) or is_nil(l2_block_number_to) do
@@ -307,7 +312,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     transactions_plus_one =
       batch_number
       |> batch_transactions_fun.(@api_true)
-      |> Enum.map(fn tx -> tx.tx_hash end)
+      |> Enum.map(fn transaction -> transaction.transaction_hash end)
       |> Chain.hashes_to_transactions(full_options)
 
     {transactions, next_page} = split_list_by_page(transactions_plus_one)
@@ -462,7 +467,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:logs, %{
-        tx_hash: transaction_hash,
+        transaction_hash: transaction_hash,
         logs: logs |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
@@ -556,7 +561,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       {response, code} =
         case TransactionInterpretationService.interpret(transaction) do
           {:ok, response} -> {response, 200}
-          {:error, %Jason.DecodeError{}} -> {%{error: "Error while tx interpreter response decoding"}, 500}
+          {:error, %Jason.DecodeError{}} -> {%{error: "Error while transaction interpreter response decoding"}, 500}
           {{:error, error}, code} -> {%{error: error}, code}
         end
 

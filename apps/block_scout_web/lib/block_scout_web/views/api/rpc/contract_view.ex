@@ -267,13 +267,13 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   defp address_to_response(address) do
     creator_hash = AddressView.from_address_hash(address)
-    creation_tx = creator_hash && AddressView.transaction_hash(address)
+    creation_transaction = creator_hash && AddressView.transaction_hash(address)
 
-    creation_tx &&
+    creation_transaction &&
       %{
         "contractAddress" => to_string(address.hash),
         "contractCreator" => to_string(creator_hash),
-        "txHash" => to_string(creation_tx)
+        "txHash" => to_string(creation_transaction)
       }
   end
 end

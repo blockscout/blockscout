@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
       {response, code} =
         case TransactionInterpretationService.interpret_user_operation(user_op) do
           {:ok, response} -> {response, 200}
-          {:error, %Jason.DecodeError{}} -> {%{error: "Error while tx interpreter response decoding"}, 500}
+          {:error, %Jason.DecodeError{}} -> {%{error: "Error while transaction interpreter response decoding"}, 500}
           {{:error, error}, code} -> {%{error: error}, code}
         end
 
@@ -233,10 +233,10 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   defp try_to_decode_call_data(%{"call_data" => _call_data} = user_op) do
     user_op_hash = user_op["hash"]
 
-    {_mock_tx, _decoded_call_data, decoded_call_data_json} =
+    {_mock_transaction, _decoded_call_data, decoded_call_data_json} =
       TransactionInterpretationService.decode_user_op_calldata(user_op_hash, user_op["call_data"])
 
-    {_mock_tx, _decoded_execute_call_data, decoded_execute_call_data_json} =
+    {_mock_transaction, _decoded_execute_call_data, decoded_execute_call_data_json} =
       TransactionInterpretationService.decode_user_op_calldata(user_op_hash, user_op["execute_call_data"])
 
     user_op

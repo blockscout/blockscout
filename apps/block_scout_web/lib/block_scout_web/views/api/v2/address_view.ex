@@ -73,11 +73,15 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   @spec prepare_address(
           {atom() | %{:fetched_coin_balance => any(), :hash => any(), optional(any()) => any()}, any()}
           | Explorer.Chain.Address.t()
-        ) :: %{optional(:coin_balance) => any(), optional(:tx_count) => binary(), optional(<<_::32, _::_*8>>) => any()}
-  def prepare_address({address, tx_count}) do
+        ) :: %{
+          optional(:coin_balance) => any(),
+          optional(:transaction_count) => binary(),
+          optional(<<_::32, _::_*8>>) => any()
+        }
+  def prepare_address({address, transaction_count}) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
-    |> Map.put(:tx_count, to_string(tx_count))
+    |> Map.put(:transaction_count, to_string(transaction_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 
@@ -93,13 +97,14 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
     creation_transaction = Address.creation_transaction(address)
     creator_hash = creation_transaction && creation_transaction.from_address_hash
-    creation_tx = creator_hash && AddressView.transaction_hash(address)
     token = address.token && TokenView.render("token.json", %{token: address.token})
 
     extended_info =
       Map.merge(base_info, %{
         "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
-        "creation_tx_hash" => creation_tx,
+        "creation_transaction_hash" => creation_transaction,
+        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `creation_transaction_hash` property
+        "creation_tx_hash" => creation_transaction,
         "token" => token,
         "coin_balance" => balance,
         "exchange_rate" => exchange_rate,

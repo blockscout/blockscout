@@ -21,8 +21,8 @@ defmodule Explorer.Chain.Cache.StateChanges do
 
   @type id :: Hash.t()
 
-  def element_to_id(%__MODULE__{transaction_hash: tx_hash}) do
-    tx_hash
+  def element_to_id(%__MODULE__{transaction_hash: transaction_hash}) do
+    transaction_hash
   end
 
   # in order to always keep just requested changes

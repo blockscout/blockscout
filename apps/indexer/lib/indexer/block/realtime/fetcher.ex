@@ -37,7 +37,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
-  alias Indexer.Fetcher.Optimism.TxnBatch, as: OptimismTxnBatch
+  alias Indexer.Fetcher.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Indexer.Fetcher.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Indexer.Fetcher.PolygonEdge.{DepositExecute, Withdrawal}
   alias Indexer.Fetcher.PolygonZkevm.BridgeL2, as: PolygonZkevmBridgeL2
@@ -322,7 +322,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp remove_optimism_assets_by_number(block_number_to_fetch) do
     if Application.get_env(:explorer, :chain_type) == :optimism do
-      OptimismTxnBatch.handle_l2_reorg(block_number_to_fetch)
+      OptimismTransactionBatch.handle_l2_reorg(block_number_to_fetch)
       OptimismWithdrawal.remove(block_number_to_fetch)
     end
   end

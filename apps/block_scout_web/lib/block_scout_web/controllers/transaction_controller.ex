@@ -167,7 +167,7 @@ defmodule BlockScoutWeb.TransactionController do
             transaction: transaction,
             from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
             to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-            tx_tags:
+            transaction_tags:
               get_transaction_with_addresses_tags(
                 transaction,
                 current_user(conn)
@@ -196,7 +196,7 @@ defmodule BlockScoutWeb.TransactionController do
             transaction: transaction,
             from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
             to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-            tx_tags:
+            transaction_tags:
               get_transaction_with_addresses_tags(
                 transaction,
                 current_user(conn)

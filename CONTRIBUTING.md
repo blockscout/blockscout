@@ -59,3 +59,27 @@ There is a [PULL_REQUEST_TEMPLATE.md](PULL_REQUEST_TEMPLATE.md) for this reposit
     * What was changed for incompatible changes
 
 See [#255](https://github.com/blockscout/blockscout/pull/255) as an example PR that uses GitHub keywords and a Changelog to explain multiple changes.
+
+## Basic Naming Convention
+
+When contributing to the codebase, please adhere to the following naming conventions to ensure clarity and consistency:
+
+- Use full names for entities. Avoid abbreviations or shorthand.
+  - Instead of "tx" or "txn", use "transaction".
+  - Instead of "txs", use "transactions".
+  - Instead of "tx_hash" or "txn_hash", use "transaction_hash".
+  - Instead of "block_num", use "block_number".
+- Ensure that variable names are descriptive and convey the purpose or content clearly.
+- Consistent naming helps in maintaining readability and understanding of the code, especially for new contributors.
+
+By following these conventions, we can maintain a clean and understandable codebase.
+
+
+### API V2 Naming Convention
+
+When contributing to the API v2, please adhere to the following naming conventions for response fields to ensure clarity and consistency:
+
+- The block number should be returned as a number in the `block_number` property.
+- The transaction hash should be returned as a hex string in the `transaction_hash` property.
+- All fields that contain the "index" suffix should be returned as numbers.
+

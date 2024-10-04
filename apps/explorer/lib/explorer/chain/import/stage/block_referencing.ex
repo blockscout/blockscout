@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
     optimism: [
       Runner.Optimism.FrameSequences,
       Runner.Optimism.FrameSequenceBlobs,
-      Runner.Optimism.TxnBatches,
+      Runner.Optimism.TransactionBatches,
       Runner.Optimism.OutputRoots,
       Runner.Optimism.DisputeGames,
       Runner.Optimism.Deposits,

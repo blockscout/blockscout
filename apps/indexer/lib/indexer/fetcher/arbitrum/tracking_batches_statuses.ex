@@ -26,7 +26,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       rollup blocks.
     - `:check_historical_executions`: Manages historical executions of L2-to-L1
       messages.
-    - `:check_lifecycle_txs_finalization`: Finalizes the status of lifecycle
+    - `:check_lifecycle_transactions_finalization`: Finalizes the status of lifecycle
       transactions, confirming the blocks and messages involved.
 
     Discovery of rollup transaction batches is executed by requesting logs on L1
@@ -88,7 +88,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     config_tracker = Application.get_all_env(:indexer)[__MODULE__]
     recheck_interval = config_tracker[:recheck_interval]
     messages_to_blocks_shift = config_tracker[:messages_to_blocks_shift]
-    track_l1_tx_finalization = config_tracker[:track_l1_tx_finalization]
+    track_l1_transaction_finalization = config_tracker[:track_l1_transaction_finalization]
     finalized_confirmations = config_tracker[:finalized_confirmations]
     confirmation_batches_depth = config_tracker[:confirmation_batches_depth]
     new_batches_limit = config_tracker[:new_batches_limit]
@@ -104,7 +104,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
            json_rpc_named_arguments: IndexerHelper.json_rpc_named_arguments(l1_rpc),
            logs_block_range: l1_rpc_block_range,
            chunk_size: l1_rpc_chunk_size,
-           track_finalization: track_l1_tx_finalization,
+           track_finalization: track_l1_transaction_finalization,
            finalized_confirmations: finalized_confirmations
          },
          rollup_rpc: %{
@@ -417,7 +417,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # are executed.
   #
   # After processing, it immediately transitions to finalizing lifecycle transactions
-  # by sending the `:check_lifecycle_txs_finalization` message.
+  # by sending the `:check_lifecycle_transactions_finalization` message.
   #
   # ## Parameters
   # - `:check_historical_executions`: The message that triggers the function.
@@ -432,7 +432,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {handle_duration, {:ok, start_block}} =
       :timer.tc(&NewL1Executions.discover_historical_l1_messages_executions/1, [state])
 
-    Process.send(self(), :check_lifecycle_txs_finalization, [])
+    Process.send(self(), :check_lifecycle_transactions_finalization, [])
 
     new_data =
       Map.merge(state.data, %{
@@ -454,17 +454,17 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # message is delayed to account for the time spent on the previous handlers' execution.
   #
   # ## Parameters
-  # - `:check_lifecycle_txs_finalization`: The message that triggers the function.
+  # - `:check_lifecycle_transactions_finalization`: The message that triggers the function.
   # - `state`: The current state of the fetcher, containing the configuration needed for
   #            the lifecycle transactions status update.
   #
   # ## Returns
   # - `{:noreply, new_state}` where `new_state` is the updated state with the reset duration.
   @impl GenServer
-  def handle_info(:check_lifecycle_txs_finalization, state) do
+  def handle_info(:check_lifecycle_transactions_finalization, state) do
     {handle_duration, _} =
       if state.config.l1_rpc.track_finalization do
-        :timer.tc(&L1Finalization.monitor_lifecycle_txs/1, [state])
+        :timer.tc(&L1Finalization.monitor_lifecycle_transactions/1, [state])
       else
         {0, nil}
       end

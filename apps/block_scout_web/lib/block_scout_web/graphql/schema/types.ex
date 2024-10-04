@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
         field(:max_priority_fee_per_gas, :wei)
         field(:max_fee_per_gas, :wei)
         field(:type, :integer)
-        field(:has_error_in_internal_txs, :boolean)
+        field(:has_error_in_internal_transactions, :boolean)
 
         field :block, :block do
           resolve(&Block.get_by/3)

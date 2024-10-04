@@ -45,7 +45,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                               field(:l1_fee_scalar, :decimal)
                               field(:l1_gas_price, Wei)
                               field(:l1_gas_used, :decimal)
-                              field(:l1_tx_origin, Hash.Full)
+                              field(:l1_transaction_origin, Hash.Full)
                               field(:l1_block_number, :integer)
                             end,
                             2
@@ -113,7 +113,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                           elem(
                             quote do
                               has_one(:zksync_batch_transaction, ZkSyncBatchTransaction,
-                                foreign_key: :tx_hash,
+                                foreign_key: :transaction_hash,
                                 references: :hash
                               )
 
@@ -153,7 +153,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                               field(:gas_used_for_l1, :decimal)
 
                               has_one(:arbitrum_batch_transaction, ArbitrumBatchTransaction,
-                                foreign_key: :tx_hash,
+                                foreign_key: :transaction_hash,
                                 references: :hash
                               )
 
@@ -217,7 +217,7 @@ defmodule Explorer.Chain.Transaction.Schema do
         field(:max_priority_fee_per_gas, Wei)
         field(:max_fee_per_gas, Wei)
         field(:type, :integer)
-        field(:has_error_in_internal_txs, :boolean)
+        field(:has_error_in_internal_transactions, :boolean)
         field(:has_token_transfers, :boolean, virtual: true)
 
         # stability virtual fields
@@ -317,11 +317,11 @@ defmodule Explorer.Chain.Transaction do
                      block_consensus block_timestamp created_contract_address_hash
                      cumulative_gas_used earliest_processing_start error gas_price
                      gas_used index created_contract_code_indexed_at status
-                     to_address_hash revert_reason type has_error_in_internal_txs r s v)a
+                     to_address_hash revert_reason type has_error_in_internal_transactions r s v)a
 
   @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
                                 :optimism ->
-                                  ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_tx_origin l1_block_number)a
+                                  ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_transaction_origin l1_block_number)a
 
                                 :suave ->
                                   ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
@@ -482,7 +482,7 @@ defmodule Explorer.Chain.Transaction do
    * `max_priority_fee_per_gas` - User defined maximum fee (tip) per unit of gas paid to validator for transaction prioritization.
    * `max_fee_per_gas` - Maximum total amount per unit of gas a user is willing to pay for a transaction, including base fee and priority fee.
    * `type` - New transaction type identifier introduced in EIP 2718 (Berlin HF)
-   * `has_error_in_internal_txs` - shows if the internal transactions related to transaction have errors
+   * `has_error_in_internal_transactions` - shows if the internal transactions related to transaction have errors
    * `execution_node` - execution node address (used by Suave)
    * `execution_node_hash` - foreign key of `execution_node` (used by Suave)
    * `wrapped_type` - transaction type from the `wrapped` field (used by Suave)
@@ -764,7 +764,7 @@ defmodule Explorer.Chain.Transaction do
              error_type: {:error, any()} | {:error, :contract_not_verified | :contract_verified, list()},
              success_type: {:ok | binary(), any()} | {:ok, binary(), binary(), list()}
   def decoded_input_data(
-        tx,
+        transaction,
         skip_sig_provider? \\ false,
         options,
         methods_map \\ %{},
@@ -1680,7 +1680,7 @@ defmodule Explorer.Chain.Transaction do
   @spec page_transaction(Ecto.Query.t() | atom, Explorer.PagingOptions.t()) :: Ecto.Query.t()
   def page_transaction(query, %PagingOptions{key: nil}), do: query
 
-  def page_transaction(query, %PagingOptions{is_pending_tx: true} = options),
+  def page_transaction(query, %PagingOptions{is_pending_transaction: true} = options),
     do: page_pending_transaction(query, options)
 
   def page_transaction(query, %PagingOptions{key: {0, index}, is_index_in_asc_order: true}) do
@@ -1754,12 +1754,12 @@ defmodule Explorer.Chain.Transaction do
   def put_has_token_transfers_to_tx(query, true), do: query
 
   def put_has_token_transfers_to_tx(query, false) do
-    from(tx in query,
+    from(transaction in query,
       select_merge: %{
         has_token_transfers:
           fragment(
             "(SELECT transaction_hash FROM token_transfers WHERE transaction_hash = ? LIMIT 1) IS NOT NULL",
-            tx.hash
+            transaction.hash
           )
       }
     )
@@ -1770,7 +1770,7 @@ defmodule Explorer.Chain.Transaction do
   """
   @spec dynamic_fee :: Ecto.Query.dynamic_expr()
   def dynamic_fee do
-    dynamic([tx], tx.gas_price * fragment("COALESCE(?, ?)", tx.gas_used, tx.gas))
+    dynamic([transaction], transaction.gas_price * fragment("COALESCE(?, ?)", transaction.gas_used, transaction.gas))
   end
 
   @doc """
@@ -1780,10 +1780,11 @@ defmodule Explorer.Chain.Transaction do
           required(String.t()) => Decimal.t() | Wei.t() | non_neg_integer | DateTime.t() | Hash.t()
         }
   def address_transactions_next_page_params(
-        %__MODULE__{block_number: block_number, index: index, inserted_at: inserted_at, hash: hash, value: value} = tx
+        %__MODULE__{block_number: block_number, index: index, inserted_at: inserted_at, hash: hash, value: value} =
+          transaction
       ) do
     %{
-      "fee" => tx |> fee(:wei) |> elem(1),
+      "fee" => transaction |> fee(:wei) |> elem(1),
       "value" => value,
       "block_number" => block_number,
       "index" => index,
@@ -1824,8 +1825,8 @@ defmodule Explorer.Chain.Transaction do
   @spec fee(Transaction.t(), :ether | :gwei | :wei) :: {:maximum, Decimal.t()} | {:actual, Decimal.t() | nil}
   def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
-  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = tx, unit) do
-    {:maximum, fee(tx, gas_price, gas, unit)}
+  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = transaction, unit) do
+    {:maximum, fee(transaction, gas_price, gas, unit)}
   end
 
   def fee(%Transaction{gas_price: nil, gas_used: gas_used} = transaction, unit) do
@@ -1842,13 +1843,13 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used} = tx, unit) do
-    {:actual, fee(tx, gas_price, gas_used, unit)}
+  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used} = transaction, unit) do
+    {:actual, fee(transaction, gas_price, gas_used, unit)}
   end
 
-  defp fee(tx, gas_price, gas, unit) do
+  defp fee(transaction, gas_price, gas, unit) do
     l1_fee =
-      case Map.get(tx, :l1_fee) do
+      case Map.get(transaction, :l1_fee) do
         nil -> Wei.from(Decimal.new(0), :wei)
         value -> value
       end
@@ -1926,8 +1927,8 @@ defmodule Explorer.Chain.Transaction do
     Returns the number of transactions included into the blocks of the specified block range.
     Only consensus blocks are taken into account.
   """
-  @spec tx_count_for_block_range(Range.t()) :: non_neg_integer()
-  def tx_count_for_block_range(from..to//_) do
+  @spec transaction_count_for_block_range(Range.t()) :: non_neg_integer()
+  def transaction_count_for_block_range(from..to//_) do
     Repo.replica().aggregate(
       from(
         t in Transaction,

@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.PagingHelper do
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}, [:pending | _]) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
-      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_tx: true}]
+      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
     else
       _ ->
         [paging_options: @default_paging_options]
@@ -274,8 +274,8 @@ defmodule BlockScoutWeb.PagingHelper do
 
   defp do_smart_contracts_sorting("balance", "asc"), do: [{:asc_nulls_first, :fetched_coin_balance, :address}]
   defp do_smart_contracts_sorting("balance", "desc"), do: [{:desc_nulls_last, :fetched_coin_balance, :address}]
-  defp do_smart_contracts_sorting("txs_count", "asc"), do: [{:asc_nulls_first, :transactions_count, :address}]
-  defp do_smart_contracts_sorting("txs_count", "desc"), do: [{:desc_nulls_last, :transactions_count, :address}]
+  defp do_smart_contracts_sorting("transactions_count", "asc"), do: [{:asc_nulls_first, :transactions_count, :address}]
+  defp do_smart_contracts_sorting("transactions_count", "desc"), do: [{:desc_nulls_last, :transactions_count, :address}]
   defp do_smart_contracts_sorting(_, _), do: []
 
   @spec address_transactions_sorting(%{required(String.t()) => String.t()}) :: [

@@ -135,8 +135,10 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          {:start_block_valid, true} <-
            {:start_block_valid, start_block <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments = json_rpc_named_arguments(rpc),
-         {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
+         {:ok, last_l1_transaction} <-
+           Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:l1_transaction_not_found, false} <-
+           {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {:ok, block_check_interval, latest_block} <- get_block_check_interval(json_rpc_named_arguments),
          {:start_block_valid, true} <- {:start_block_valid, start_block <= latest_block} do
       recalculate_cached_count()
@@ -204,7 +206,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
         {:stop, :normal, %{}}
 
-      {:l1_tx_not_found, true} ->
+      {:l1_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check shibarium_bridge table."
         )
