@@ -113,7 +113,7 @@ defmodule Explorer.Chain.Supply.RSK do
 
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    case EthereumJSONRPC.fetch_balances(params, json_rpc_named_arguments) do
+    case EthereumJSONRPC.fetch_balances(params, json_rpc_named_arguments, max_number) do
       {:ok,
        %FetchedBalances{
          errors: [],
