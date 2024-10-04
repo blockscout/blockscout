@@ -46,7 +46,8 @@ defmodule EthereumJSONRPC.Log do
         index: 0,
         second_topic: nil,
         third_topic: nil,
-        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+        transaction_index: 0
       }
 
       iex> EthereumJSONRPC.Log.elixir_to_params(
@@ -74,7 +75,8 @@ defmodule EthereumJSONRPC.Log do
         index: 0,
         second_topic: "0x000000000000000000000000c15bf627accd3b054075c7880425f903106be72a",
         third_topic: "0x000000000000000000000000a59eb37750f9c8f2e11aac6700e62ef89187e4ed",
-        transaction_hash: "0xf9b663b4e9b1fdc94eb27b5cfba04eb03d2f7b3fa0b24eb2e1af34f823f2b89e"
+        transaction_hash: "0xf9b663b4e9b1fdc94eb27b5cfba04eb03d2f7b3fa0b24eb2e1af34f823f2b89e",
+        transaction_index: 0
       }
 
   """
