@@ -404,7 +404,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
             {:ok, create_auth(user)}
 
           {:ok, %OAuth2.Response{status_code: 200, body: users}} when is_list(users) and length(users) > 1 ->
-            merge_users(users, identity_id, "email")
+            merge_email_users(users, identity_id, "email")
 
           {:error, %OAuth2.Response{status_code: 403, body: %{"errorCode" => "insufficient_scope"} = body}} ->
             Logger.error(["Failed to get web3 user. Insufficient scope: ", inspect(body)])
@@ -425,7 +425,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     {:ok, create_auth(user)}
   end
 
-  defp merge_users([primary_user | _] = users, identity_id_to_link, provider_for_linking) do
+  defp merge_web3_users([primary_user | _] = users) do
     identity_map =
       users
       |> Enum.map(& &1["user_id"])
@@ -434,23 +434,58 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
 
     users_map = users |> Enum.map(&{&1["user_id"], &1}) |> Map.new()
 
-    case users |> Enum.map(&identity_map[&1["user_id"]]) |> Enum.reject(&is_nil(&1)) do
-      [primary | to_merge] ->
-        case Account.merge(primary, to_merge) do
-          {:ok, _} ->
-            link_users(primary.uid, identity_id_to_link, provider_for_linking)
-            maybe_verify_email(users_map[primary.uid])
-            {:ok, create_auth(users_map[primary.uid])}
-
-          error ->
-            Logger.error(["Error while merging users: ", inspect(error)])
-            :error
+    case users |> Enum.map(&identity_map[&1["user_id"]]) |> Enum.reject(&is_nil(&1)) |> Account.merge() do
+      {{:ok, 0}, nil} ->
+        unless match?(%{"user_metadata" => %{"web3_address_hash" => _}}, primary_user) do
+          update_user_with_web3_address(
+            primary_user["user_id"],
+            primary_user |> create_auth() |> Identity.address_hash_from_auth()
+          )
         end
 
-      _ ->
+        {:ok, create_auth(primary_user)}
+
+      {{:ok, _}, primary_identity} ->
+        primary_user_from_db = users_map[primary_identity.uid]
+
+        unless match?(%{"user_metadata" => %{"web3_address_hash" => _}}, primary_user_from_db) do
+          update_user_with_web3_address(
+            primary_user_from_db["user_id"],
+            primary_user_from_db |> create_auth() |> Identity.address_hash_from_auth()
+          )
+        end
+
+        {:ok, create_auth(primary_user_from_db)}
+
+      error ->
+        Logger.error(["Error while merging users with the same address: ", inspect(error)])
+        :error
+    end
+  end
+
+  defp merge_email_users([primary_user | _] = users, identity_id_to_link, provider_for_linking) do
+    identity_map =
+      users
+      |> Enum.map(& &1["user_id"])
+      |> Identity.find_identities()
+      |> Map.new(&{&1.uid, &1})
+
+    users_map = users |> Enum.map(&{&1["user_id"], &1}) |> Map.new()
+
+    case users |> Enum.map(&identity_map[&1["user_id"]]) |> Enum.reject(&is_nil(&1)) |> Account.merge() do
+      {{:ok, 0}, nil} ->
         link_users(primary_user["user_id"], identity_id_to_link, provider_for_linking)
         maybe_verify_email(primary_user)
         {:ok, create_auth(primary_user)}
+
+      {{:ok, _}, primary_identity} ->
+        link_users(primary_identity.uid, identity_id_to_link, provider_for_linking)
+        maybe_verify_email(users_map[primary_identity.uid])
+        {:ok, create_auth(users_map[primary_identity.uid])}
+
+      error ->
+        Logger.error(["Error while merging users with the same email: ", inspect(error)])
+        :error
     end
   end
 
@@ -488,7 +523,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
         create_web3_user(address, signature)
 
       {:ok, users} when is_list(users) and length(users) > 1 ->
-        Logger.error(["Failed to get web3 user. Multiple accounts with the same address found: ", inspect(users)])
+        merge_web3_users(users)
         :error
 
       other ->

@@ -258,7 +258,15 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
       Explorer.Mox.HTTPoison
       |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"success" => true})}}
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             Jason.encode!(%{
+               "success" => true,
+               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+             })
+         }}
       end)
 
       address = insert(:address)
@@ -296,7 +304,15 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
       Explorer.Mox.HTTPoison
       |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"success" => true})}}
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             Jason.encode!(%{
+               "success" => true,
+               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+             })
+         }}
       end)
 
       address = insert(:address)
@@ -334,7 +350,15 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
       Explorer.Mox.HTTPoison
       |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"success" => true})}}
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             Jason.encode!(%{
+               "success" => true,
+               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+             })
+         }}
       end)
 
       address = insert(:address)
@@ -409,7 +433,15 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
       Explorer.Mox.HTTPoison
       |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"success" => true})}}
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             Jason.encode!(%{
+               "success" => true,
+               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+             })
+         }}
       end)
 
       address = insert(:address)
@@ -472,7 +504,15 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
       Explorer.Mox.HTTPoison
       |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{"success" => true})}}
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             Jason.encode!(%{
+               "success" => true,
+               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+             })
+         }}
       end)
 
       address = insert(:address)

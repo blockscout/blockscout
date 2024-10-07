@@ -29,10 +29,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
              []
            ) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        case Jason.decode!(body) do
-          %{"success" => true} = resp -> success?(resp)
-          _ -> false
-        end
+        body |> Jason.decode!() |> success?()
 
       false ->
         true
@@ -42,11 +39,18 @@ defmodule BlockScoutWeb.CaptchaHelper do
     end
   end
 
-  defp success?(%{"score" => score}) do
-    check_recaptcha_v3_score(score)
+  # v3 case
+  defp success?(%{"success" => true, "score" => score, "hostname" => hostname}) do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host] == hostname &&
+      check_recaptcha_v3_score(score)
   end
 
-  defp success?(_resp), do: true
+  # v2 case
+  defp success?(%{"success" => true, "hostname" => hostname}) do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host] == hostname
+  end
+
+  defp success?(_resp), do: false
 
   defp check_recaptcha_v3_score(score) do
     if score >= 0.5 do
