@@ -10,14 +10,9 @@ defmodule BlockScoutWeb.Account.Api.V2.AddressController do
   action_fallback(BlockScoutWeb.Account.Api.V2.FallbackController)
 
   def link_address(conn, %{"message" => message, "signature" => signature}) do
-    case conn |> Conn.fetch_session() |> current_user() do
-      %{uid: id} ->
-        with {:ok, auth} <- Auth0.link_address(id, message, signature) do
-          AuthenticateController.put_auth_to_session(conn, auth)
-        end
-
-      _ ->
-        {:auth, nil}
+    with %{uid: id} <- conn |> Conn.fetch_session() |> current_user(),
+         {:ok, auth} <- Auth0.link_address(id, message, signature) do
+      AuthenticateController.put_auth_to_session(conn, auth)
     end
   end
 end
