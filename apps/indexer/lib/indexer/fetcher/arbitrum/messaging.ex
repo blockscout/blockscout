@@ -39,16 +39,17 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
            optional(any()) => any()
          }
 
+  @typep hex_value :: binary() | Hash.t()
   @typep min_log :: %{
            :data => binary(),
            :index => non_neg_integer(),
-           :first_topic => binary(),
-           :second_topic => binary(),
-           :third_topic => binary(),
-           :fourth_topic => binary(),
-           :address_hash => binary(),
-           :transaction_hash => binary(),
-           :block_hash => binary(),
+           :first_topic => hex_value,
+           :second_topic => hex_value,
+           :third_topic => hex_value,
+           :fourth_topic => hex_value,
+           :address_hash => hex_value,
+           :transaction_hash => hex_value,
+           :block_hash => hex_value,
            :block_number => non_neg_integer(),
            optional(any()) => any()
          }
@@ -297,7 +298,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
         callvalue,
         data]
   """
-  @spec l2_to_l1_event_parse(any()) :: {
+  @spec l2_to_l1_event_parse(min_log) :: {
           non_neg_integer(),
           Hash.Address.t(),
           Hash.Address.t(),
@@ -317,17 +318,27 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       data
     ] = decode_data(event.data, @l2_to_l1_event_unindexed_params)
 
-    position =
-      case quantity_to_integer(event.fourth_topic) do
-        nil -> Hash.to_integer(event.fourth_topic)
-        number -> number
-      end
+    position = hex_value_to_integer(event.fourth_topic)
 
     {:ok, caller_addr} = Hash.Address.cast(caller)
 
-    {:ok, destination} = Hash.Address.cast(Hash.to_integer(event.second_topic))
+    {:ok, destination} = Hash.Address.cast(hex_value_to_integer(event.second_topic))
 
     {position, caller_addr, destination, arb_block_num, eth_block_num, timestamp, callvalue, data}
+  end
+
+  @spec hex_value_to_integer(binary() | Hash.t()) :: non_neg_integer()
+  defp hex_value_to_integer(value) do
+    case value do
+      binary when is_binary(binary) ->
+        case quantity_to_integer(binary) do
+          nil -> 0
+          number -> number
+        end
+
+      _ ->
+        Hash.to_integer(value)
+    end
   end
 
   # Determines the status of an L2-to-L1 message based on its block number and the highest
