@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.TransactionView
-  alias Explorer.Chain.Scroll.L1FeeParam
+  alias Explorer.Chain.Scroll.{L1FeeParam, Reader}
   alias Explorer.Chain.{Data, Transaction}
 
   @api_true [api?: true]
@@ -96,7 +96,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
        when name in [:scalar, :commit_scalar, :blob_scalar, :overhead, :l1_base_fee, :l1_blob_base_fee] do
     name_init = :"#{name}#{:_init}"
 
-    case L1FeeParam.get_for_transaction(name, transaction, @api_true) do
+    case Reader.get_l1_fee_param_for_transaction(name, transaction, @api_true) do
       nil -> config[name_init]
       value -> value
     end

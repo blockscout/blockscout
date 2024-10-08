@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Scroll.Reader do
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Scroll.Bridge
+  alias Explorer.Chain.Scroll.{Bridge, L1FeeParam}
   alias Explorer.{Chain, PagingOptions, Repo}
 
   @doc """
@@ -50,6 +50,35 @@ defmodule Explorer.Chain.Scroll.Reader do
     query
     |> Repo.one()
     |> Kernel.||({0, nil})
+  end
+
+  @doc """
+    Gets a value of the specified L1 Fee parameter for the given transaction from database.
+    If a parameter is not defined for the transaction block number and index, the function returns `nil`.
+
+    ## Parameters
+    - `name`: A name of the parameter.
+    - `transaction`: Transaction structure containing block number and transaction index within the block.
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - The parameter value, or `nil` if not defined.
+  """
+  @spec get_l1_fee_param_for_transaction(atom(), Transaction.t(), list()) :: non_neg_integer() | nil
+  def get_l1_fee_param_for_transaction(name, transaction, options \\ [])
+      when name in [:overhead, :scalar, :commit_scalar, :blob_scalar, :l1_base_fee, :l1_blob_base_fee] do
+    query =
+      from(p in L1FeeParam,
+        select: p.value,
+        where:
+          p.name == ^name and
+            (p.block_number < ^transaction.block_number or
+               (p.block_number == ^transaction.block_number and p.tx_index < ^transaction.index)),
+        order_by: [desc: p.block_number, desc: p.tx_index],
+        limit: 1
+      )
+
+    select_repo(options).one(query)
   end
 
   @doc """
