@@ -19,13 +19,6 @@ defmodule BlockScoutWeb.GraphQL.Celo.Resolvers.TokenTransferTx do
     |> Connection.from_query(&Repo.all/1, connection_args, options(args))
   end
 
-  def get_by(_, args, _) do
-    connection_args = Map.take(args, [:after, :before, :first, :last])
-
-    GraphQL.token_tx_transfers_query()
-    |> Connection.from_query(&Repo.all/1, connection_args, options(args))
-  end
-
   defp options(%{before: _}), do: []
 
   defp options(%{count: count}), do: [count: count]
