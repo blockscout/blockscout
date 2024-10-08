@@ -71,17 +71,20 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
       |> Transaction.l2_fee(:wei)
       |> TransactionView.format_fee()
 
-    out_json
-    |> add_optional_transaction_field(transaction, :l1_fee)
-    |> add_optional_transaction_field(transaction, :queue_index)
-    |> Map.put("l1_fee_scalar", l1_fee_scalar)
-    |> Map.put("l1_fee_commit_scalar", l1_fee_commit_scalar)
-    |> Map.put("l1_fee_blob_scalar", l1_fee_blob_scalar)
-    |> Map.put("l1_fee_overhead", l1_fee_overhead)
-    |> Map.put("l1_base_fee", l1_base_fee)
-    |> Map.put("l1_blob_base_fee", l1_blob_base_fee)
-    |> Map.put("l1_gas_used", l1_gas_used)
-    |> Map.put("l2_fee", l2_fee)
+    params =
+      %{}
+      |> add_optional_transaction_field(transaction, :l1_fee)
+      |> add_optional_transaction_field(transaction, :queue_index)
+      |> Map.put("l1_fee_scalar", l1_fee_scalar)
+      |> Map.put("l1_fee_commit_scalar", l1_fee_commit_scalar)
+      |> Map.put("l1_fee_blob_scalar", l1_fee_blob_scalar)
+      |> Map.put("l1_fee_overhead", l1_fee_overhead)
+      |> Map.put("l1_base_fee", l1_base_fee)
+      |> Map.put("l1_blob_base_fee", l1_blob_base_fee)
+      |> Map.put("l1_gas_used", l1_gas_used)
+      |> Map.put("l2_fee", l2_fee)
+
+    Map.put(out_json, "scroll", params)
   end
 
   defp add_optional_transaction_field(out_json, transaction, field) do

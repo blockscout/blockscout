@@ -1882,23 +1882,25 @@ defmodule Explorer.Chain.Transaction do
   def fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
   def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil} = tx, unit) do
-    {:maximum, fee(tx, gas_price, gas, unit)}
+    {:maximum, fee_calc(tx, gas_price, gas, unit)}
   end
 
-  def fee(%Transaction{gas_price: nil, gas_used: gas_used} = transaction, unit) do
-    if Application.get_env(:explorer, :chain_type) == :optimism do
+  if Application.compile_env(:explorer, :chain_type) == :optimism do
+    def fee(%Transaction{gas_price: nil, gas_used: _gas_used}, _unit) do
       {:actual, nil}
-    else
+    end
+  else
+    def fee(%Transaction{gas_price: nil, gas_used: gas_used} = transaction, unit) do
       gas_price = effective_gas_price(transaction)
-      {:actual, gas_price && l2_fee(gas_price, gas_used, unit)}
+      {:actual, gas_price && l2_fee_calc(gas_price, gas_used, unit)}
     end
   end
 
   def fee(%Transaction{gas_price: gas_price, gas_used: gas_used} = tx, unit) do
-    {:actual, fee(tx, gas_price, gas_used, unit)}
+    {:actual, fee_calc(tx, gas_price, gas_used, unit)}
   end
 
-  defp fee(tx, gas_price, gas_used, unit) do
+  defp fee_calc(tx, gas_price, gas_used, unit) do
     l1_fee =
       case Map.get(tx, :l1_fee) do
         nil -> Wei.from(Decimal.new(0), :wei)
@@ -1906,7 +1908,7 @@ defmodule Explorer.Chain.Transaction do
       end
 
     gas_price
-    |> l2_fee(gas_used, unit)
+    |> l2_fee_calc(gas_used, unit)
     |> Wei.from(unit)
     |> Wei.sum(l1_fee)
     |> Wei.to(unit)
@@ -1920,19 +1922,19 @@ defmodule Explorer.Chain.Transaction do
   def l2_fee(%Transaction{gas: _gas, gas_price: nil, gas_used: nil}, _unit), do: {:maximum, nil}
 
   def l2_fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
-    {:maximum, l2_fee(gas_price, gas, unit)}
+    {:maximum, l2_fee_calc(gas_price, gas, unit)}
   end
 
   def l2_fee(%Transaction{gas_price: nil, gas_used: gas_used} = tx, unit) do
     gas_price = effective_gas_price(tx)
-    {:actual, gas_price && l2_fee(gas_price, gas_used, unit)}
+    {:actual, gas_price && l2_fee_calc(gas_price, gas_used, unit)}
   end
 
   def l2_fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
-    {:actual, l2_fee(gas_price, gas_used, unit)}
+    {:actual, l2_fee_calc(gas_price, gas_used, unit)}
   end
 
-  defp l2_fee(gas_price, gas_used, unit) do
+  defp l2_fee_calc(gas_price, gas_used, unit) do
     gas_price
     |> Wei.to(unit)
     |> Decimal.mult(gas_used)
