@@ -239,6 +239,21 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     ]
   end
 
+  # Scans the L1 Gas Oracle contract for the events and saves the found parameter changes
+  # into `scroll_l1_fee_params` database table for the given L2 block range.
+  #
+  # The scanning process starts from the `l2_block_start` and ends with the `l2_block_end`.
+  # The block range is divided by chunks to avoid RPC node overloading.
+  #
+  # ## Parameters
+  # - `l2_block_start`: The start L2 block of the range.
+  # - `l2_block_end`: The end L2 block of the range.
+  # - `gas_oracle`: The L1 Gas Oracle contract address.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - Nothing is returned.
+  @spec scan_block_range(non_neg_integer(), non_neg_integer(), binary(), list()) :: any()
   defp scan_block_range(l2_block_start, l2_block_end, gas_oracle, json_rpc_named_arguments) do
     chunks_number = ceil((l2_block_end - l2_block_start + 1) / @eth_get_logs_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
@@ -270,6 +285,20 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     end)
   end
 
+  # Scans the L1 Gas Oracle contract for the events and saves the found parameter changes
+  # into `scroll_l1_fee_params` database table for the given L2 block range.
+  #
+  # The scanning process starts from the `block_start` and ends with the `block_end`.
+  #
+  # ## Parameters
+  # - `gas_oracle`: The L1 Gas Oracle contract address.
+  # - `block_start`: The start L2 block of the range.
+  # - `block_end`: The end L2 block of the range.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - The number of found and saved items.
+  @spec find_and_save_params(binary(), non_neg_integer(), non_neg_integer(), list()) :: non_neg_integer()
   defp find_and_save_params(
          gas_oracle,
          block_start,
