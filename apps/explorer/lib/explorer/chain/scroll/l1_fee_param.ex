@@ -11,12 +11,26 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
 
   use Explorer.Schema
 
-  import Explorer.Chain, only: [select_repo: 1, get_last_fetched_counter: 1, upsert_last_fetched_counter: 1]
+  import Explorer.Chain, only: [get_last_fetched_counter: 1, upsert_last_fetched_counter: 1]
 
   alias Explorer.Chain.Transaction
 
   @counter_type "scroll_l1_fee_params_fetcher_last_block_number"
   @required_attrs ~w(block_number tx_index name value)a
+
+  @typedoc """
+    Descriptor of the L1 Fee Parameter change:
+    * `block_number` - A block number of the transaction where the given parameter value was changed.
+    * `tx_index` - An index of the transaction (within the block) where the given parameter value was changed.
+    * `name` - A name of the parameter (can be one of: `overhead`, `scalar`, `commit_scalar`, `blob_scalar`, `l1_base_fee`, `l1_blob_base_fee`).
+    * `value` - A new value of the parameter.
+  """
+  @type to_import :: %{
+          block_number: non_neg_integer(),
+          tx_index: non_neg_integer(),
+          name: :overhead | :scalar | :commit_scalar | :blob_scalar | :l1_base_fee | :l1_blob_base_fee,
+          value: non_neg_integer()
+        }
 
   @typedoc """
     * `block_number` - A block number of the transaction where the given parameter was changed.
@@ -48,35 +62,6 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> unique_constraint([:block_number, :tx_index])
-  end
-
-  @doc """
-    Gets a value of the specified parameter for the given transaction from database.
-    If a parameter is not defined for the transaction block number and index, the function returns `nil`.
-
-    ## Parameters
-    - `name`: A name of the parameter.
-    - `transaction`: Transaction structure containing block number and transaction index within the block.
-    - `options`: A keyword list of options that may include whether to use a replica database.
-
-    ## Returns
-    - The parameter value, or `nil` if not defined.
-  """
-  @spec get_for_transaction(atom(), Transaction.t(), list()) :: non_neg_integer() | nil
-  def get_for_transaction(name, transaction, options \\ [])
-      when name in [:overhead, :scalar, :commit_scalar, :blob_scalar, :l1_base_fee, :l1_blob_base_fee] do
-    query =
-      from(p in __MODULE__,
-        select: p.value,
-        where:
-          p.name == ^name and
-            (p.block_number < ^transaction.block_number or
-               (p.block_number == ^transaction.block_number and p.tx_index < ^transaction.index)),
-        order_by: [desc: p.block_number, desc: p.tx_index],
-        limit: 1
-      )
-
-    select_repo(options).one(query)
   end
 
   @doc """
