@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
     only: [get_logs_all: 3, import_operations: 1, prepare_operations: 7]
 
   alias Explorer.Chain.PolygonZkevm.{Bridge, Reader}
+  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
@@ -208,7 +209,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)
