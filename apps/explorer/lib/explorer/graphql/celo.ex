@@ -86,6 +86,16 @@ defmodule Explorer.GraphQL.Celo do
     )
   end
 
+  @doc """
+  Constructs a query to fetch token transfers within a given transaction.
+
+  ## Parameters
+    - tx_hash: the hash of the transaction
+
+  ## Returns
+   - Ecto query
+  """
+  @spec token_tx_transfers_query_by_txhash(Hash.Full.t()) :: Ecto.Query.t()
   def token_tx_transfers_query_by_txhash(tx_hash) do
     query = token_tx_transfers_query()
 
