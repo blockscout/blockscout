@@ -151,11 +151,17 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
     Handles L1 block reorg: removes all Deposit rows from the `scroll_bridge` table
     created beginning from the reorged block.
 
+    We only store block number for the initiating transaction of the L1->L2 or L2->L1 message,
+    so the `block_number` column doesn't contain L2 block numbers for messages initiated on L1 layer (i.e. for Deposits),
+    and that doesn't contain L1 block numbers for messages initiated on L2 layer (i.e. for Withdrawals).
+    This is the reason why we can only remove rows for Deposit operations from the `scroll_bridge` table
+    when a reorg happens on L1 layer.
+
     ## Parameters
-    - `reorg_block`: the block number where reorg has occurred.
+    - `reorg_block`: The block number where reorg has occurred.
 
     ## Returns
-    - nothing
+    - Nothing.
   """
   @spec reorg_handle(non_neg_integer()) :: any()
   def reorg_handle(reorg_block) do
