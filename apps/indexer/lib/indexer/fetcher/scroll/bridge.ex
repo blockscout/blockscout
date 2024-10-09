@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
 
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
-  alias Indexer.Fetcher.RollupL1ReorgMonitor
+  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Fetcher.Scroll.BridgeL1
   alias Indexer.Helper, as: IndexerHelper
 
@@ -94,7 +94,7 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(module)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(module)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting

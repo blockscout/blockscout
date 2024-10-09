@@ -15,7 +15,8 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
   alias Explorer.Application.Constants
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot}
-  alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
+  alias Explorer.Chain.RollupReorgMonitorQueue
+  alias Indexer.Fetcher.Optimism
   alias Indexer.Helper, as: IndexerHelper
 
   @fetcher_name :optimism_output_roots
@@ -112,7 +113,7 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} = Repo.delete_all(from(r in OutputRoot, where: r.l1_block_number >= ^reorg_block))
