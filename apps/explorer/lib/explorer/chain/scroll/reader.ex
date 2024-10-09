@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Scroll.Reader do
 
   alias Explorer.Chain.Scroll.{Bridge, L1FeeParam}
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Chain.Transaction
 
   @doc """
     Gets last known L1 item (deposit) from scroll_bridge table.

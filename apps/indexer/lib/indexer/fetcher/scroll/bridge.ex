@@ -228,6 +228,17 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
     end)
   end
 
+  # Constructs a map defining block timestamps by block numbers (key-value pairs)
+  # from the list of events. The keys of the resulting map consist of block numbers,
+  # the values are timestamps.
+  #
+  # ## Parameters
+  # - `events`: The list of events based on which the map is constructed.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - A dictionary associating block timestamps with the their numbers.
+  @spec blocks_to_timestamps(list(), list()) :: map()
   defp blocks_to_timestamps(events, json_rpc_named_arguments) do
     events
     |> IndexerHelper.get_blocks_by_events(json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
@@ -238,6 +249,21 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
     end)
   end
 
+  # Parses the `SentMessage` event to retrieve message sender address,
+  # target address, amount, index, body. This components are returned
+  # in the tuple.
+  #
+  # ## Parameters
+  # - `event`: A map describing the event which needs to be parsed.
+  #
+  # ## Returns
+  # - `{sender, target, amount, index, message}` where
+  #   the `sender` is the message sender address,
+  #   the `target` is the target address,
+  #   the `amount` is the amount of the native token sent within this message,
+  #   the `index` is the message numeric index,
+  #   the `message` is the message body.
+  @spec sent_message_event_parse(map()) :: {binary(), binary(), non_neg_integer(), non_neg_integer(), binary()}
   defp sent_message_event_parse(event) do
     sender =
       event.second_topic
@@ -259,6 +285,15 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
     {sender, target, amount, index, message}
   end
 
+  # Determines the type of the bridge operation based on the event and the chain layer (L1 or L2).
+  #
+  # ## Parameters
+  # - `first_topic`: The signature of the event (in 0x-prefixed hex string).
+  # - `is_l1`: A boolean flag defining whether the chain layer is L1.
+  #
+  # ## Returns
+  # - :deposit or :withdrawal
+  @spec operation_type(binary(), boolean()) :: :deposit | :withdrawal
   defp operation_type(first_topic, is_l1) do
     if first_topic == @sent_message_event do
       if is_l1, do: :deposit, else: :withdrawal
@@ -267,6 +302,17 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
     end
   end
 
+  # Extends the resulting map with the key-value pair. Used by the `prepare_operations` function.
+  # If the value is `nil`, the key-value pair is not added.
+  #
+  # ## Parameters
+  # - `result`: The resulting map to be extended.
+  # - `key`: The key component of the key-value pair.
+  # - `value`: The value component of the key-value pair.
+  #
+  # ## Returns
+  # - The extended map.
+  @spec extend_result(map(), atom(), any()) :: map()
   defp extend_result(result, _key, value) when is_nil(value), do: result
   defp extend_result(result, key, value) when is_atom(key), do: Map.put(result, key, value)
 end
