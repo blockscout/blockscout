@@ -10,7 +10,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: ${{ vars.RELEASE_VERSION }}
+      RELEASE_VERSION: 6.8.1
       DOCKER_CHAIN_NAME: celo
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +36,7 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
+            API_GRAPHQL_MAX_COMPLEXITY=6650
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false

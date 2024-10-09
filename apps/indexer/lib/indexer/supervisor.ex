@@ -47,6 +47,7 @@ defmodule Indexer.Supervisor do
     Withdrawal
   }
 
+  alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Arbitrum.RollupMessagesCatchup, as: ArbitrumRollupMessagesCatchup
   alias Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses, as: ArbitrumTrackingBatchesStatuses
   alias Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1, as: ArbitrumTrackingMessagesOnL1
@@ -202,6 +203,7 @@ defmodule Indexer.Supervisor do
         configure(ArbitrumRollupMessagesCatchup.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
+        {ArbitrumMessagesToL2Matcher.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),

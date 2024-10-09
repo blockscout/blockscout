@@ -973,6 +973,9 @@ config :indexer, Indexer.Fetcher.Arbitrum.RollupMessagesCatchup,
 config :indexer, Indexer.Fetcher.Arbitrum.RollupMessagesCatchup.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BRIDGE_MESSAGES_TRACKING_ENABLED")
 
+config :indexer, Indexer.Fetcher.Arbitrum.MessagesToL2Matcher.Supervisor,
+  disabled?: not ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BRIDGE_MESSAGES_TRACKING_ENABLED")
+
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
   disabled?:
     ConfigHelper.chain_type() != :rsk || ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ROOTSTOCK_DATA_FETCHER")

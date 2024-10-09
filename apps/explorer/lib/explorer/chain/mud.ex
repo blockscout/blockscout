@@ -10,10 +10,11 @@ defmodule Explorer.Chain.Mud do
       order_by: 3,
       select: 3,
       where: 3,
-      limit: 2
+      limit: 2,
+      join: 5
     ]
 
-  alias ABI.TypeDecoder
+  alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.{Chain, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
@@ -23,12 +24,11 @@ defmodule Explorer.Chain.Mud do
     Hash,
     Mud,
     Mud.Schema,
-    Mud.Schema.FieldSchema
+    Mud.Schema.FieldSchema,
+    SmartContract
   }
 
   require Logger
-
-  @schema_prefix "mud"
 
   @store_tables_table_id Base.decode16!("746273746f72650000000000000000005461626c657300000000000000000000",
                            case: :lower
@@ -40,6 +40,42 @@ defmodule Explorer.Chain.Mud do
     value_schema: FieldSchema.from("0x006003025f5f5fc4c40000000000000000000000000000000000000000000000"),
     key_names: ["tableId"],
     value_names: ["fieldLayout", "keySchema", "valueSchema", "abiEncodedKeyNames", "abiEncodedValueNames"]
+  }
+
+  @world_system_registry_table_id Base.decode16!("7462776f726c6400000000000000000053797374656d52656769737472790000",
+                                    case: :lower
+                                  )
+
+  # https://github.com/latticexyz/mud/blob/5a6c03c6bc02c980ca051dadd8e20560ac25c771/packages/world/src/codegen/tables/SystemRegistry.sol#L24-L32
+  @world_system_registry_schema %Schema{
+    key_schema: FieldSchema.from("0x0014010061000000000000000000000000000000000000000000000000000000"),
+    value_schema: FieldSchema.from("0x002001005f000000000000000000000000000000000000000000000000000000"),
+    key_names: ["system"],
+    value_names: ["systemId"]
+  }
+
+  @world_function_selector_table_id Base.decode16!("7462776f726c6400000000000000000046756e6374696f6e53656c6563746f72",
+                                      case: :lower
+                                    )
+
+  # https://github.com/latticexyz/mud/blob/5a6c03c6bc02c980ca051dadd8e20560ac25c771/packages/world/src/codegen/tables/FunctionSelectors.sol#L24-L32
+  @world_function_selector_schema %Schema{
+    key_schema: FieldSchema.from("0x0004010043000000000000000000000000000000000000000000000000000000"),
+    value_schema: FieldSchema.from("0x002402005f430000000000000000000000000000000000000000000000000000"),
+    key_names: ["worldFunctionSelector"],
+    value_names: ["systemId", "systemFunctionSelector"]
+  }
+
+  @world_function_signature_table_id Base.decode16!("6f74776f726c6400000000000000000046756e6374696f6e5369676e61747572",
+                                       case: :lower
+                                     )
+
+  # https://github.com/latticexyz/mud/blob/5a6c03c6bc02c980ca051dadd8e20560ac25c771/packages/world/src/codegen/tables/FunctionSignatures.sol#L21-L29
+  @world_function_signature_schema %Schema{
+    key_schema: FieldSchema.from("0x0004010043000000000000000000000000000000000000000000000000000000"),
+    value_schema: FieldSchema.from("0x00000001c5000000000000000000000000000000000000000000000000000000"),
+    key_names: ["functionSelector"],
+    value_names: ["functionSignature"]
   }
 
   @primary_key false
@@ -191,6 +227,128 @@ defmodule Explorer.Chain.Mud do
     |> SortingHelper.apply_sorting(sorting, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
     |> Repo.Mud.all()
+  end
+
+  @doc """
+  Returns the list of first 1000 MUD systems registered for the given world.
+  """
+  @spec world_systems(Hash.Address.t()) :: [{Hash.Full.t(), Hash.Address.t()}]
+  def world_systems(world) do
+    Mud
+    |> where([r], r.address == ^world and r.table_id == ^@world_system_registry_table_id and r.is_deleted == false)
+    |> limit(1000)
+    |> Repo.Mud.all()
+    |> Enum.map(&decode_record(&1, @world_system_registry_schema))
+    |> Enum.map(fn s ->
+      with {:ok, system_id} <- Hash.Full.cast(s["systemId"]),
+           {:ok, system} <- Hash.Address.cast(s["system"]) do
+        {system_id, system}
+      end
+    end)
+    |> Enum.reject(&(&1 == :error))
+  end
+
+  @doc """
+  Returns reconstructed ABI of the MUD system in the given world.
+  """
+  @spec world_system(Hash.Address.t(), Hash.Address.t(), Keyword.t()) ::
+          {:ok, Hash.Full.t(), [FunctionSelector.t()]} | {:error, :not_found}
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  def world_system(world, system, options \\ []) do
+    # pad to 32 bytes
+    padded_system_address_hash = %Data{bytes: <<0::size(96)>> <> system.bytes}
+
+    # If we were to access MUD tables in SQL, it would look like:
+    # SELECT sr.*, fsl.*, fsg.*
+    # FROM tb.world.SystemRegistry sr
+    # JOIN tb.world.FunctionSelector fsl ON fsl.systemId = sr.systemId
+    # JOIN tb.world.FunctionSignature fsg ON fsg.functionSelector = fsl.worldFunctionSelector
+    # WHERE sr.system = $1
+    {system_records, function_selector_signature_records} =
+      Mud
+      |> where(
+        [r],
+        r.address == ^world and r.table_id == ^@world_system_registry_table_id and r.is_deleted == false and
+          r.key_bytes == ^padded_system_address_hash
+      )
+      |> join(
+        :left,
+        [r],
+        r2 in Mud,
+        on:
+          r2.address == ^world and r2.table_id == ^@world_function_selector_table_id and r2.is_deleted == false and
+            fragment("substring(? FOR 32)", r2.static_data) == r.static_data
+      )
+      |> join(
+        :left,
+        [r, r2],
+        r3 in Mud,
+        on:
+          r3.address == ^world and r3.table_id == ^@world_function_signature_table_id and r3.is_deleted == false and
+            r3.key_bytes == r2.key_bytes
+      )
+      |> select([r, r2, r3], {r, {r2, r3}})
+      |> limit(1000)
+      |> Repo.Mud.all()
+      |> Enum.unzip()
+
+    with false <- Enum.empty?(system_records),
+         system_record = Enum.at(system_records, 0),
+         {:ok, system_id} <- Hash.Full.cast(system_record.static_data.bytes) do
+      {:ok, system_id, reconstruct_system_abi(system, function_selector_signature_records, options)}
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  @spec reconstruct_system_abi(Hash.Address.t(), [{Mud.t(), Mud.t()}], Keyword.t()) :: [FunctionSelector.t()]
+  defp reconstruct_system_abi(system, function_selector_signature_records, options) do
+    system_contract = SmartContract.address_hash_to_smart_contract(system, options)
+
+    # fetch verified contract ABI, if any
+    verified_system_abi =
+      ((system_contract && system_contract.abi) || [])
+      |> ABI.parse_specification()
+      |> Enum.filter(&(&1.type == :function))
+      |> Enum.into(%{}, fn selector -> {"0x" <> Base.encode16(selector.method_id, case: :lower), selector} end)
+
+    function_selector_signature_records
+    |> Enum.reject(&(&1 == {nil, nil}))
+    |> Enum.map(fn {function_selector_record, function_signature_record} ->
+      function_selector = function_selector_record |> decode_record(@world_function_selector_schema)
+
+      # if the external world function selector is present in the verified ABI, we use it
+      world_function_selector =
+        verified_system_abi |> Map.get(function_selector |> Map.get("worldFunctionSelector"))
+
+      if world_function_selector do
+        world_function_selector
+      else
+        abi_method = parse_function_signature(function_signature_record)
+
+        # if the internal system function selector is present in the verified ABI,
+        # then it has the same arguments as the external world function, but a different name,
+        # so we use it after replacing the function name accordingly.
+        # in case neither of the selectors were found in the verified ABI, we use the ABI crafted from the method signature
+        verified_system_abi
+        |> Map.get(function_selector |> Map.get("systemFunctionSelector"), abi_method)
+        |> Map.put(:function, abi_method.function)
+      end
+    end)
+  end
+
+  @spec parse_function_signature(Mud.t()) :: FunctionSelector.t()
+  defp parse_function_signature(function_signature_record) do
+    raw_abi_method =
+      function_signature_record
+      |> decode_record(@world_function_signature_schema)
+      |> Map.get("functionSignature")
+      |> FunctionSelector.decode()
+
+    raw_abi_method
+    |> Map.put(:type, :function)
+    |> Map.put(:state_mutability, :payable)
+    |> Map.put(:input_names, 0..(Enum.count(raw_abi_method.types) - 1) |> Enum.map(&"arg#{&1}"))
   end
 
   @doc """
@@ -406,4 +564,81 @@ defmodule Explorer.Chain.Mud do
         raise "Unknown type: #{type}"
     end
   end
+end
+
+defimpl Jason.Encoder, for: ABI.FunctionSelector do
+  alias Jason.Encode
+
+  def encode(data, opts) do
+    function_inputs = encode_arguments(data.types, data.input_names)
+
+    inputs =
+      if data.inputs_indexed do
+        function_inputs
+        |> Enum.zip(data.inputs_indexed)
+        |> Enum.map(fn {r, indexed} -> Map.put(r, "indexed", indexed) end)
+      else
+        function_inputs
+      end
+
+    Encode.map(
+      %{
+        "type" => data.type,
+        "name" => data.function,
+        "inputs" => inputs,
+        "outputs" => encode_arguments(data.returns, data.return_names),
+        "stateMutability" => encode_state_mutability(data.state_mutability)
+      },
+      opts
+    )
+  end
+
+  defp encode_arguments(types, names) do
+    types
+    |> Enum.zip(names)
+    |> Enum.map(fn {type, name} ->
+      %{
+        "type" => encode_type(type),
+        "name" => name,
+        "components" => encode_components(type)
+      }
+      |> Map.reject(fn {key, value} -> {key, value} == {"components", nil} end)
+    end)
+  end
+
+  defp encode_type(:bool), do: "bool"
+  defp encode_type(:string), do: "string"
+  defp encode_type(:bytes), do: "bytes"
+  defp encode_type(:address), do: "address"
+  defp encode_type(:function), do: "function"
+  defp encode_type({:int, size}), do: "int#{size}"
+  defp encode_type({:uint, size}), do: "uint#{size}"
+  defp encode_type({:fixed, element_count, precision}), do: "fixed#{element_count}x#{precision}"
+  defp encode_type({:ufixed, element_count, precision}), do: "ufixed#{element_count}x#{precision}"
+  defp encode_type({:bytes, size}), do: "bytes#{size}"
+  defp encode_type({:array, type}), do: "#{encode_type(type)}[]"
+  defp encode_type({:array, type, element_count}), do: "#{encode_type(type)}[#{element_count}]"
+  defp encode_type({:tuple, _types}), do: "tuple"
+
+  defp encode_components({:array, type}), do: encode_components(type)
+  defp encode_components({:array, type, _element_count}), do: encode_components(type)
+
+  defp encode_components({:tuple, types}),
+    do:
+      types
+      |> Enum.with_index()
+      |> Enum.map(fn {type, index} ->
+        %{
+          "type" => encode_type(type),
+          "name" => "arg#{index}"
+        }
+      end)
+
+  defp encode_components(_), do: nil
+
+  defp encode_state_mutability(:pure), do: "pure"
+  defp encode_state_mutability(:view), do: "view"
+  defp encode_state_mutability(:non_payable), do: "nonpayable"
+  defp encode_state_mutability(:payable), do: "payable"
+  defp encode_state_mutability(_), do: nil
 end
