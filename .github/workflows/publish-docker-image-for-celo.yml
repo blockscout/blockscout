@@ -36,7 +36,7 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            API_GRAPHQL_MAX_COMPLEXITY=6650
+            API_GRAPHQL_MAX_COMPLEXITY=10400
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false
