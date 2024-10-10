@@ -240,6 +240,10 @@ defmodule Indexer.Supervisor do
         {BlockReward.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
       )
 
+    all_fetchers = [
+      {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
+    ]
+
     Supervisor.init(
       all_fetchers,
       strategy: :one_for_one

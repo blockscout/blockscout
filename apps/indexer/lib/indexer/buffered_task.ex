@@ -621,6 +621,7 @@ defmodule Indexer.BufferedTask do
   def start_link({module, base_init_opts}, genserver_opts \\ []) do
     default_opts = Application.get_all_env(:indexer)
     init_opts = Keyword.merge(default_opts, base_init_opts)
+    dbg("FETCHING START TIME IS #{DateTime.utc_now() |> DateTime.to_unix()}")
     GenServer.start_link(__MODULE__, {module, init_opts}, genserver_opts)
   end
 
