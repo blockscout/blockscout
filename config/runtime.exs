@@ -1068,6 +1068,31 @@ config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
   enabled: celo_epoch_fetchers_enabled?,
   disabled?: not celo_epoch_fetchers_enabled?
 
+config :indexer, Indexer.Fetcher.Scroll.L1FeeParam, gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
+
+config :explorer, Explorer.Chain.Scroll.L1FeeParam,
+  curie_upgrade_block: ConfigHelper.parse_integer_env_var("SCROLL_L2_CURIE_UPGRADE_BLOCK", 0),
+  scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_SCALAR_INIT", 0),
+  overhead_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_OVERHEAD_INIT", 0),
+  commit_scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_COMMIT_SCALAR_INIT", 0),
+  blob_scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BLOB_SCALAR_INIT", 0),
+  l1_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BASE_FEE_INIT", 0),
+  l1_blob_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BLOB_BASE_FEE_INIT", 0)
+
+config :indexer, Indexer.Fetcher.Scroll.L1FeeParam.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
+
+config :indexer, Indexer.Fetcher.Scroll.BridgeL1,
+  rpc: System.get_env("INDEXER_SCROLL_L1_RPC"),
+  messenger_contract: System.get_env("INDEXER_SCROLL_L1_MESSENGER_CONTRACT"),
+  start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_SCROLL_L1_MESSENGER_START_BLOCK")
+
+config :indexer, Indexer.Fetcher.Scroll.BridgeL2,
+  messenger_contract: System.get_env("INDEXER_SCROLL_L2_MESSENGER_CONTRACT")
+
+config :indexer, Indexer.Fetcher.Scroll.BridgeL1.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
+
+config :indexer, Indexer.Fetcher.Scroll.BridgeL2.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
+
 config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
   base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3/mainnet"),
   api_token: System.get_env("BERYX_API_TOKEN")

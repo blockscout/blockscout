@@ -62,6 +62,10 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.Arbitrum.BatchTransactions,
       Runner.Arbitrum.DaMultiPurposeRecords
     ],
+    scroll: [
+      Runner.Scroll.BridgeOperations,
+      Runner.Scroll.L1FeeParams
+    ],
     celo: [
       Runner.Celo.ValidatorGroupVotes,
       Runner.Celo.ElectionRewards,
