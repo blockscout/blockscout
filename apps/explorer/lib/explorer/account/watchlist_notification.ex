@@ -9,6 +9,7 @@ defmodule Explorer.Account.WatchlistNotification do
   import Ecto.Changeset
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
+  alias Ecto.Multi
   alias Explorer.Repo
   alias Explorer.Account.{Watchlist, WatchlistAddress}
 
@@ -83,5 +84,24 @@ defmodule Explorer.Account.WatchlistNotification do
 
   defp watchlist_notification_30_days_limit do
     Application.get_env(:explorer, Explorer.Account)[:notifications_limit_for_30_days]
+  end
+
+  @spec merge(Multi.t()) :: Multi.t()
+  def merge(multi) do
+    multi
+    |> Multi.run(:merge_watchlist_notifications, fn repo,
+                                                    %{
+                                                      acquire_primary_watchlist: [primary_watchlist | _],
+                                                      acquire_watchlists_to_merge: watchlists_to_merge
+                                                    } ->
+      primary_watchlist_id = primary_watchlist.id
+      watchlists_to_merge_ids = Enum.map(watchlists_to_merge, & &1.id)
+
+      {:ok,
+       repo.update_all(
+         from(notification in __MODULE__, where: notification.watchlist_id in ^watchlists_to_merge_ids),
+         set: [watchlist_id: primary_watchlist_id]
+       )}
+    end)
   end
 end
