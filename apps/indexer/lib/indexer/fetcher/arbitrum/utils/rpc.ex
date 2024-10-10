@@ -20,6 +20,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   @selector_sequencer_inbox "ee35f327"
   # bridge()
   @selector_bridge "e78cea92"
+  # latestConfirmed()
+  @selector_latest_confirmed "65f7f80d"
+  # getNode(uint64 nodeNum)
+  @selector_get_node "92c8134c"
   @rollup_contract_abi [
     %{
       "inputs" => [],
@@ -59,6 +63,52 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       ],
       "stateMutability" => "view",
       "type" => "function"
+    },
+    %{
+      "inputs" => [],
+      "name" => "latestConfirmed",
+      "outputs" => [
+        %{
+          "internalType" => "uint64",
+          "name" => "",
+          "type" => "uint64"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [
+        %{
+          "internalType" => "uint64",
+          "name" => "",
+          "type" => "uint64"
+        }
+      ],
+      "name" => "getNode",
+      "outputs" => [
+        %{
+          "type" => "tuple",
+          "name" => "",
+          "internalType" => "struct Node",
+          "components" => [
+            %{"type" => "bytes32", "name" => "stateHash", "internalType" => "bytes32"},
+            %{"type" => "bytes32", "name" => "challengeHash", "internalType" => "bytes32"},
+            %{"type" => "bytes32", "name" => "confirmData", "internalType" => "bytes32"},
+            %{"type" => "uint64", "name" => "prevNum", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "deadlineBlock", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "noChildConfirmedBeforeBlock", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "stakerCount", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "childStakerCount", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "firstChildBlock", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "latestChildNumber", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "createdAtBlock", "internalType" => "uint64"},
+            %{"type" => "bytes32", "name" => "nodeHash", "internalType" => "bytes32"}
+          ]
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
     }
   ]
 
@@ -76,6 +126,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
   # findBatchContainingBlock(uint64 blockNum)
   @selector_find_batch_containing_block "81f1adaf"
+  # constructOutboxProof(uint64 size, uint64 leaf)
+  @selector_construct_outbox_proof "42696350"
   @node_interface_contract_abi [
     %{
       "inputs" => [
@@ -91,6 +143,64 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           "internalType" => "uint64",
           "name" => "batch",
           "type" => "uint64"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [
+        %{
+          "internalType" => "uint64",
+          "name" => "size",
+          "type" => "uint64"
+        },
+        %{
+          "internalType" => "uint64",
+          "name" => "leaf",
+          "type" => "uint64"
+        }
+      ],
+      "name" => "constructOutboxProof",
+      "outputs" => [
+        %{
+          "internalType" => "bytes32",
+          "name" => "send",
+          "type" => "bytes32"
+        },
+        %{
+          "internalType" => "bytes32",
+          "name" => "root",
+          "type" => "bytes32"
+        },
+        %{
+          "internalType" => "bytes32[]",
+          "name" => "proof",
+          "type" => "bytes32[]"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
+
+  # isSpent(uint256 index)
+  @selector_is_spent "5a129efe"
+  @outbox_contract_abi [
+    %{
+      "inputs" => [
+        %{
+          "internalType" => "uint256",
+          "name" => "index",
+          "type" => "uint256"
+        }
+      ],
+      "name" => "isSpent",
+      "outputs" => [
+        %{
+          "internalType" => "bool",
+          "name" => "",
+          "type" => "bool"
         }
       ],
       "stateMutability" => "view",
@@ -153,6 +263,65 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       [@selector_sequencer_inbox, @selector_outbox],
       json_rpc_named_arguments
     )
+  end
+
+  @doc """
+    Retrieves the latest confirmed node index for withdrawals Merkle tree.
+
+    This function fetches an actual confirmed L2->L1 node from the Arbitrum rollup address.
+    It invokes contract method `latestConfirmed()` to obtain the required information.
+
+    ## Parameters
+    - `rollup_address`: The address of the Arbitrum rollup contract from which
+                        information is being retrieved.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A positive integer representing latest confirmed node index
+  """
+  @spec get_latest_confirmed_l2_to_l1_message_id(
+          EthereumJSONRPC.address(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: non_neg_integer()
+  def get_latest_confirmed_l2_to_l1_message_id(rollup_address, json_rpc_named_arguments) do
+    read_contract_and_handle_result_as_integer(
+      rollup_address,
+      @selector_latest_confirmed,
+      [],
+      @rollup_contract_abi,
+      json_rpc_named_arguments
+    )
+  end
+
+  @doc """
+    Retrieves rollup node by index
+
+    This function fetches node information by specified index
+    It invokes Rollup contract method `getNode()` to obtain the required data.
+
+    ## Parameters
+    - `rollup_address`: The address of the Arbitrum rollup contract from which
+                        information is being retrieved.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    - A positive integer representing latest confirmed node index
+  """
+  @spec get_node(
+          EthereumJSONRPC.address(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: any()
+  def get_node(rollup_address, node_index, json_rpc_named_arguments) do
+    [
+      %{
+        contract_address: rollup_address,
+        method_id: @selector_get_node,
+        args: [node_index]
+      }
+    ]
+    |> IndexerHelper.read_contracts_with_retries(@rollup_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
+    |> Kernel.elem(0)
   end
 
   @doc """
@@ -719,6 +888,84 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     {batch_number, Map.put(cache, block_number, batch_number)}
   end
 
+  # Calculates the proof needed to claim L2->L1 message
+  #
+  # This function calls the `constructOutboxProof` method of the Node Interface
+  # to obtain the data needed for manual message claiming
+  #
+  # Parameters:
+  # - `node_interface_address`: The address of the node interface contract.
+  # - `size`: Index of the latest confirmed node (cumulative number of
+  #    confirmed L2->L1 transactions)
+  # - `leaf`: position of the L2->L1 message (`position` field of the associated
+  #    `L2ToL1Tx` event). It should be less than `size`
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC
+  #   connection.
+  #
+  # Returns:
+  # `{:ok, [send, root, proof]}`, where
+  #    `proof` - an array of 32-bytes values which are needed to execute messages.
+  # `{:error, _}` in case of size less or equal leaf or RPC error
+  @spec construct_outbox_proof(
+          EthereumJSONRPC.address(),
+          non_neg_integer(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:ok, any()} | {:error, :invalid}
+  def construct_outbox_proof(_, size, leaf, _) when size <= leaf do
+    {:error, :invalid}
+  end
+
+  def construct_outbox_proof(node_interface_address, size, leaf, json_rpc_named_arguments) do
+    case [
+           %{
+             contract_address: node_interface_address,
+             method_id: @selector_construct_outbox_proof,
+             args: [size, leaf]
+           }
+         ]
+         |> IndexerHelper.read_contracts_with_retries(
+           @node_interface_contract_abi,
+           json_rpc_named_arguments,
+           @rpc_resend_attempts
+         )
+         |> Kernel.elem(0) do
+      [ok: value] -> {:ok, value}
+      [error: err] -> {:error, err}
+    end
+  end
+
+  @doc """
+    Check is outgoing L2->L1 message was spent.
+
+    To do that we should invoke `isSpent(uint256 index)` method for
+    `Outbox` contract deployed on 1 chain
+
+    ## Parameters
+    - `outbox_contract`: address of the Outbox contract (L1 chain)
+    - `index`: position (index) of the requested L2->L1 message.
+    - `json_l1_rpc_named_arguments`: Configuration parameters for the JSON RPC
+        connection for L1 chain.
+
+    ## Returns
+    - `true` if message was created, confirmed and claimed on L1 chain.
+            Otherwise returns `false`.
+  """
+  @spec withdrawal_spent?(
+          EthereumJSONRPC.address(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: boolean()
+  def withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
+    read_contract_and_handle_result_as_integer(
+      outbox_contract,
+      @selector_is_spent,
+      [position],
+      @outbox_contract_abi,
+      json_l1_rpc_named_arguments
+    )
+  end
+
   # Calls one contract method and processes the result as an integer.
   @spec read_contract_and_handle_result_as_integer(
           EthereumJSONRPC.address(),
@@ -726,7 +973,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           [term()],
           [map()],
           EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: non_neg_integer()
+        ) :: non_neg_integer() | boolean()
   defp read_contract_and_handle_result_as_integer(
          contract_address,
          method_selector,
