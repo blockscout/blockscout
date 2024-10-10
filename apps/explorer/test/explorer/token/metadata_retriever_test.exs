@@ -763,7 +763,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
       Explorer.Mox.HTTPoison
       |> expect(:get, fn "https://ipfs.io/ipfs/QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP",
-                         [{"x-apikey", "mykey"}],
+                         [{"x-apikey", "mykey"}, {"User-Agent", _}],
                          _options ->
         {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(result)}}
       end)
