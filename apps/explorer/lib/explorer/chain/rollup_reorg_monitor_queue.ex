@@ -82,6 +82,8 @@ defmodule Explorer.Chain.RollupReorgMonitorQueue do
   #
   # ## Returns
   # - An atom defining the table name.
+  #
+  # sobelow_skip ["DOS.BinToAtom"]
   @spec reorg_table_name(module()) :: atom()
   defp reorg_table_name(module) do
     :"#{module}#{:_reorgs}"
