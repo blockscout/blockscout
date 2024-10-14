@@ -67,6 +67,10 @@ defmodule Explorer.Chain.Scroll.Reader do
   """
   @spec get_l1_fee_param_for_transaction(atom(), Transaction.t(), list()) :: non_neg_integer() | nil
   def get_l1_fee_param_for_transaction(name, transaction, options \\ [])
+
+  def get_l1_fee_param_for_transaction(_name, %{block_number: 0, index: 0}, _options), do: nil
+
+  def get_l1_fee_param_for_transaction(name, transaction, options)
       when name in [:overhead, :scalar, :commit_scalar, :blob_scalar, :l1_base_fee, :l1_blob_base_fee] do
     query =
       from(p in L1FeeParam,
