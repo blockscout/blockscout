@@ -67,8 +67,10 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
   @doc """
     Calculates gas used on L1 for the specified L2 transaction.
     The returning value depends on the transaction block number:
-    if that's after Curie upgrade, the function returns 0.
+    if that's after Curie upgrade, the function returns 0 as all transactions are put into blob.
     Otherwise, the value is calculated based on transaction data (and includes the given overhead).
+    See https://github.com/scroll-tech/go-ethereum/blob/9ec83a509ac7f6dd2d0beb054eb14c19f3e67a72/rollup/fees/rollup_fee.go#L171-L195
+    for the implementation and https://scroll.io/blog/compressing-the-gas-scrolls-curie-upgrade for the Curie upgrade description.
 
     ## Parameters
     - `transaction`: Transaction structure containing block number and transaction data.
