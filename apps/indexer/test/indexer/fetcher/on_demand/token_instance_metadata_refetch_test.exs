@@ -33,6 +33,12 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
     setup do
       Subscriber.to(:fetched_token_instance_metadata, :on_demand)
 
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :http_adapter, HTTPoison)
+      end)
+
       :ok
     end
 
@@ -53,8 +59,6 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
-
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
 
       Explorer.Mox.HTTPoison
       |> expect(:get, fn ^url, _headers, _options ->
@@ -83,8 +87,6 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
         {:chain_event, :fetched_token_instance_metadata, :on_demand,
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
-
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "do run the update on the token instance with no metadata fetched initially" do
@@ -104,8 +106,6 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
-
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
 
       Explorer.Mox.HTTPoison
       |> expect(:get, fn ^url, _headers, _options ->
@@ -133,8 +133,6 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
         {:chain_event, :fetched_token_instance_metadata, :on_demand,
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
-
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
     test "updates token_instance_metadata_refetch_attempts table" do
@@ -154,8 +152,6 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
       token_contract_address_hash_string = to_string(token.contract_address_hash)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
-
-      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
 
       Explorer.Mox.HTTPoison
       |> expect(:get, fn ^url, _headers, _options ->
@@ -186,8 +182,6 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
         {:chain_event, :fetched_token_instance_metadata, :on_demand,
          [^token_contract_address_hash_string, ^token_id, %{metadata: ^metadata}]}
       )
-
-      Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
   end
 end
