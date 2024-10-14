@@ -526,6 +526,7 @@ defmodule EthereumJSONRPC.Block do
   @spec chain_type_fields(params, elixir) :: params
   case @chain_type do
     :rsk ->
+      @spec chain_type_fields(params, elixir) :: params
       defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
@@ -538,6 +539,7 @@ defmodule EthereumJSONRPC.Block do
       end
 
     :ethereum ->
+      @spec chain_type_fields(params, elixir) :: params
       defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
@@ -549,6 +551,7 @@ defmodule EthereumJSONRPC.Block do
       end
 
     :arbitrum ->
+      @spec chain_type_fields(params, elixir) :: params
       defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
