@@ -324,7 +324,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "hash" => transaction.hash,
       "result" => status,
       "status" => transaction.status,
-      "block" => transaction.block_number,
+      "block_number" => transaction.block_number,
       "timestamp" => block_timestamp(transaction),
       "from" =>
         Helper.address_with_info(

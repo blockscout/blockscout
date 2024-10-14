@@ -1465,14 +1465,14 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
-    assert transaction.block_number == json["block"]
+    assert transaction.block_number == json["block_number"]
     assert to_string(transaction.value.value) == json["value"]
     assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
   end
 
   defp compare_item(%InternalTransaction{} = internal_tx, json) do
-    assert internal_tx.block_number == json["block"]
+    assert internal_tx.block_number == json["block_number"]
     assert to_string(internal_tx.gas) == json["gas_limit"]
     assert internal_tx.index == json["index"]
     assert to_string(internal_tx.transaction_hash) == json["transaction_hash"]
@@ -1501,7 +1501,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   defp compare_item(%Transaction{} = transaction, json, wl_names) do
     assert to_string(transaction.hash) == json["hash"]
-    assert transaction.block_number == json["block"]
+    assert transaction.block_number == json["block_number"]
     assert to_string(transaction.value.value) == json["value"]
     assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]

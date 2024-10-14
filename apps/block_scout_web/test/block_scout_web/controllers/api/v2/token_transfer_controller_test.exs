@@ -148,8 +148,8 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
     assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
     assert token_transfer.transaction.block_timestamp == Timex.parse!(json["timestamp"], "{ISO:Extended:Z}")
     assert json["method"] == nil
-    assert to_string(token_transfer.block_number) == json["block_number"]
-    assert to_string(token_transfer.log_index) == json["log_index"]
+    assert token_transfer.block_number == json["block_number"]
+    assert token_transfer.log_index == json["log_index"]
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, third_page_resp, token_transfers) do

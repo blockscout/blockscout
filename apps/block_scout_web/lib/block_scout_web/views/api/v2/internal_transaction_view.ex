@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.InternalTransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.Helper
+  alias BlockScoutWeb.API.V2.{Helper, TransactionView}
 
   def render("internal_transaction.json", %{internal_transaction: nil}) do
     nil
@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
       "error" => internal_transaction.error,
       "success" => is_nil(internal_transaction.error),
       "type" => internal_transaction.call_type || internal_transaction.type,
-      "transaction_hash" => internal_transaction.transaction_hash,
+      "tx_hash" => internal_transaction.transaction_hash,
       "from" =>
         Helper.address_with_info(nil, internal_transaction.from_address, internal_transaction.from_address_hash, false),
       "to" =>
@@ -42,8 +42,9 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
           false
         ),
       "value" => internal_transaction.value,
-      "block" => internal_transaction.block_number,
-      "timestamp" => (block && block.timestamp) || internal_transaction.block.timestamp,
+      "block_number" => internal_transaction.block_number,
+      "timestamp" =>
+        TransactionView.block_timestamp(block) || TransactionView.block_timestamp(internal_transaction.block),
       "index" => internal_transaction.index,
       "gas_limit" => internal_transaction.gas,
       "block_index" => internal_transaction.block_index

@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   @api_true [api?: true]
 
   @doc """
-    Function to handle GET requests to `/api/v2/internal_transactions` endpoint.
+    Function to handle GET requests to `/api/v2/internal-transactions` endpoint.
   """
   @spec internal_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def internal_transactions(conn, params) do
