@@ -32,7 +32,6 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   alias Indexer.Helper
 
   @fetcher_name :scroll_l1_fee_params
-  @eth_get_logs_range_size 250
 
   # 32-byte signature of the event OverheadUpdated(uint256 overhead)
   @overhead_updated_event "0x32740b35c0ea213650f60d44366b4fb211c9033b50714e4a1d34e65d5beb9bb4"
@@ -107,6 +106,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
          safe_block: safe_block,
          safe_block_is_latest: safe_block_is_latest,
          gas_oracle: env[:gas_oracle],
+         eth_get_logs_range_size: Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:eth_get_logs_range_size],
          json_rpc_named_arguments: json_rpc_named_arguments
        }}
     else
@@ -138,17 +138,18 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
           safe_block: safe_block,
           safe_block_is_latest: safe_block_is_latest,
           gas_oracle: gas_oracle,
+          eth_get_logs_range_size: eth_get_logs_range_size,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
     # find and fill all events between start_block and "safe" block
     # the "safe" block can be "latest" (when safe_block_is_latest == true)
-    scan_block_range(start_block, safe_block, gas_oracle, json_rpc_named_arguments)
+    scan_block_range(start_block, safe_block, gas_oracle, eth_get_logs_range_size, json_rpc_named_arguments)
 
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
       {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments)
-      scan_block_range(safe_block + 1, latest_block, gas_oracle, json_rpc_named_arguments)
+      scan_block_range(safe_block + 1, latest_block, gas_oracle, eth_get_logs_range_size, json_rpc_named_arguments)
     end
 
     {:stop, :normal, state}
@@ -249,18 +250,19 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   # - `l2_block_start`: The start L2 block of the range.
   # - `l2_block_end`: The end L2 block of the range.
   # - `gas_oracle`: The L1 Gas Oracle contract address.
+  # - `eth_get_logs_range_size`: Max size of the blocks chunk.
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
   #
   # ## Returns
   # - Nothing is returned.
-  @spec scan_block_range(non_neg_integer(), non_neg_integer(), binary(), list()) :: any()
-  defp scan_block_range(l2_block_start, l2_block_end, gas_oracle, json_rpc_named_arguments) do
-    chunks_number = ceil((l2_block_end - l2_block_start + 1) / @eth_get_logs_range_size)
+  @spec scan_block_range(non_neg_integer(), non_neg_integer(), binary(), non_neg_integer(), list()) :: any()
+  defp scan_block_range(l2_block_start, l2_block_end, gas_oracle, eth_get_logs_range_size, json_rpc_named_arguments) do
+    chunks_number = ceil((l2_block_end - l2_block_start + 1) / eth_get_logs_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
     Enum.reduce(chunk_range, 0, fn current_chunk, count_acc ->
-      chunk_start = l2_block_start + @eth_get_logs_range_size * current_chunk
-      chunk_end = min(chunk_start + @eth_get_logs_range_size - 1, l2_block_end)
+      chunk_start = l2_block_start + eth_get_logs_range_size * current_chunk
+      chunk_end = min(chunk_start + eth_get_logs_range_size - 1, l2_block_end)
 
       Helper.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, :L2)
 

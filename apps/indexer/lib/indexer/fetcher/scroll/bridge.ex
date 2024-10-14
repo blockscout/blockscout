@@ -26,8 +26,6 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
   # 32-byte signature of the event RelayedMessage(bytes32 indexed messageHash)
   @relayed_message_event "0x4641df4a962071e12719d8c8c8e5ac7fc4d97b927346a3d7a335b1f7517e133c"
 
-  @eth_get_logs_range_size 1000
-
   @doc """
   The main function that scans RPC node for the message logs (events), parses them,
   and imports to the database (scroll_bridge table).
@@ -66,10 +64,11 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
       end
 
     time_before = Timex.now()
+    eth_get_logs_range_size = Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:eth_get_logs_range_size]
 
     last_written_block =
       start_block..end_block
-      |> Enum.chunk_every(@eth_get_logs_range_size)
+      |> Enum.chunk_every(eth_get_logs_range_size)
       |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
         chunk_start = List.first(current_chunk)
         chunk_end = List.last(current_chunk)
