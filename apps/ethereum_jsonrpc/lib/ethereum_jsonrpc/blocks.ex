@@ -178,6 +178,9 @@ defmodule EthereumJSONRPC.Blocks do
               send_count: nil,\
               l1_block_number: nil,\
       """
+    :zilliqa -> """
+              view: nil,\
+    """
     _ -> ""
   end}
           uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"]

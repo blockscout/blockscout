@@ -85,6 +85,10 @@ defmodule EthereumJSONRPC.BlockTest do
             l1_block_number: nil
           }
 
+      :zilliqa ->
+        defp chain_type_fields,
+          do: %{view: nil}
+
       _ ->
         defp chain_type_fields, do: %{}
     end

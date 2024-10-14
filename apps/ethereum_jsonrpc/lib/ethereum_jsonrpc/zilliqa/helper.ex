@@ -68,8 +68,17 @@ defmodule EthereumJSONRPC.Zilliqa.Helper do
            zilliqa_nested_quorum_certificates_params: aggregate_nested_quorum_certificates_params_acc
          }
        ) do
-    quorum_certificates =
-      Block.elixir_to_zilliqa_quorum_certificate(elixir_block)
+    quorum_certificates_map =
+      elixir_block
+      |> Block.elixir_to_zilliqa_quorum_certificate()
+      |> case do
+        nil ->
+          %{zilliqa_quorum_certificates_params: quorum_certificates_params_acc}
+
+        quorum_certificate ->
+          quorum_certificate_params = QuorumCertificate.to_params(quorum_certificate)
+          %{zilliqa_quorum_certificates_params: [quorum_certificate_params | quorum_certificates_params_acc]}
+      end
 
     aggregated_quorum_certificate_map =
       elixir_block
@@ -97,13 +106,6 @@ defmodule EthereumJSONRPC.Zilliqa.Helper do
           }
       end
 
-    quorum_certificates_params = QuorumCertificate.to_params(quorum_certificates)
-
-    %{
-      zilliqa_quorum_certificates_params: [
-        quorum_certificates_params | quorum_certificates_params_acc
-      ]
-    }
-    |> Map.merge(aggregated_quorum_certificate_map)
+    Map.merge(quorum_certificates_map, aggregated_quorum_certificate_map)
   end
 end

@@ -219,6 +219,15 @@ defmodule EthereumJSONRPC.Block do
           "sendCount" => 91,\
           "l1BlockNumber" => 19828534,\
       """
+    :zilliqa -> """
+          "view" => "0x115cca",\
+          "quorumCertificate" => %{\
+            "block_hash" => "0x4b8939a7fb0d7de4b288bafd4d5caa02f53abf3c1e348fca5038eebbf68248fa",\
+            "cosigned" => "[1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",\
+            "signature" => "0xa78c7f3e07e1df963ddeda17a1e5afd97c7c8a6fc8e0616249c22a2a1cc91f8eef6073cab8ba22b50cc7b38090f1ad9109473d30f24d57858d1f28c6679b3c4deeb800e5572b5e15604596594d506d3103a44d8b707da581f1a4b82310aeecb6",\
+            "view" => "0x115cc7"\
+          },\
+      """
     _ -> ""
   end}
       ...>     "uncles" => []
@@ -260,6 +269,9 @@ defmodule EthereumJSONRPC.Block do
             send_root: "0xc71ee2cf4201f65590aa6c052270dc41e926e628f213e268a58d9a8d8f739f82",\
             send_count: 91,\
             l1_block_number: 19828534,\
+      """
+    :zilliqa -> """
+            view: "0x115cca",\
       """
     _ -> ""
   end}
@@ -328,6 +340,9 @@ defmodule EthereumJSONRPC.Block do
             send_root: nil,\
             send_count: nil,\
             l1_block_number: nil,\
+      """
+    :zilliqa -> """
+            view: nil,\
       """
     _ -> ""
   end}
@@ -776,15 +791,20 @@ defmodule EthereumJSONRPC.Block do
   @doc """
   Get `t:EthereumJSONRPC.Zilliqa.QuorumCertificate.elixir/0` from `t:elixir/0`.
   """
-  @spec elixir_to_zilliqa_quorum_certificate(elixir()) :: ZilliqaQuorumCertificate.t()
+  @spec elixir_to_zilliqa_quorum_certificate(elixir()) :: ZilliqaQuorumCertificate.t() | nil
   def elixir_to_zilliqa_quorum_certificate(%{"quorumCertificate" => quorum_certificate}),
     do: quorum_certificate
+
+  # WARN: This clause is introduced as a workaround to fix tests. HOWEVER, it
+  # allows the block with a `quorumCertificate` field to be successfully
+  # imported. This is a temporary solution and should be addressed in the future.
+  def elixir_to_zilliqa_quorum_certificate(_), do: nil
 
   @doc """
   Get `t:EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate.elixir/0` from `t:elixir/0`.
   """
   @spec elixir_to_zilliqa_aggregate_quorum_certificate(elixir()) ::
-          ZilliqaAggregateQuorumCertificate.t()
+          ZilliqaAggregateQuorumCertificate.t() | nil
   def elixir_to_zilliqa_aggregate_quorum_certificate(%{
         "aggregateQuorumCertificate" => aggregate_quorum_certificate
       }),
