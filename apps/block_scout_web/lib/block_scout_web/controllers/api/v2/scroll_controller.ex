@@ -10,6 +10,8 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
 
   alias Explorer.Chain.Scroll.Reader
 
+  @api_true [api?: true]
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
@@ -20,7 +22,7 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     {deposits, next_page} =
       params
       |> paging_options()
-      |> Keyword.put(:api?, true)
+      |> Keyword.merge(@api_true)
       |> Reader.deposits()
       |> split_list_by_page()
 
@@ -54,7 +56,7 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     {withdrawals, next_page} =
       params
       |> paging_options()
-      |> Keyword.put(:api?, true)
+      |> Keyword.merge(@api_true)
       |> Reader.withdrawals()
       |> split_list_by_page()
 
