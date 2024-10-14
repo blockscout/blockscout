@@ -1,4 +1,4 @@
-defmodule EthereumJsonrpc.MixProject do
+defmodule EthereumJSONRPC.MixProject do
   use Mix.Project
 
   def project do

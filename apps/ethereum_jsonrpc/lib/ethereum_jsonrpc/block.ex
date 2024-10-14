@@ -8,6 +8,10 @@ defmodule EthereumJSONRPC.Block do
 
   alias EthereumJSONRPC.{Transactions, Uncles, Withdrawals}
 
+  alias EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate, as: ZilliqaAggregateQuorumCertificate
+  alias EthereumJSONRPC.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
+  alias EthereumJSONRPC.Zilliqa.NestedQuorumCertificates, as: ZilliqaNestedQuorumCertificates
+
   # Because proof of stake does not naturally produce uncles like proof of work,
   # the list of these in each block is empty, and the hash of this list
   # (sha3Uncles) is the RLP-encoded hash of an empty list.
@@ -43,11 +47,35 @@ defmodule EthereumJSONRPC.Block do
                            ]
                          )
 
+    :zilliqa ->
+      @chain_type_fields quote(
+                           do: [
+                             zilliqa_quorum_certificates: [
+                               ZilliqaQuorumCertificate.t()
+                             ],
+                             zilliqa_aggregate_quorum_certificates: [
+                               ZilliqaAggregateQuorumCertificate.t()
+                             ],
+                             zilliqa_nested_quorum_certificates: [
+                               ZilliqaNestedQuorumCertificates.t()
+                             ]
+                           ]
+                         )
+
     _ ->
       @chain_type_fields quote(do: [])
   end
 
-  @type elixir :: %{String.t() => non_neg_integer | DateTime.t() | String.t() | nil}
+  @type elixir :: %{
+          String.t() =>
+            non_neg_integer
+            | DateTime.t()
+            | String.t()
+            | ZilliqaQuorumCertificate.t()
+            | ZilliqaAggregateQuorumCertificate.t()
+            | ZilliqaNestedQuorumCertificates.t()
+            | nil
+        }
   @type params :: %{
           unquote_splicing(@chain_type_fields),
           difficulty: pos_integer(),
@@ -492,6 +520,7 @@ defmodule EthereumJSONRPC.Block do
 
   case Application.compile_env(:explorer, :chain_type) do
     :rsk ->
+      @spec chain_type_fields(params, elixir) :: params
       defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
@@ -504,6 +533,7 @@ defmodule EthereumJSONRPC.Block do
       end
 
     :ethereum ->
+      @spec chain_type_fields(params, elixir) :: params
       defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
@@ -515,12 +545,22 @@ defmodule EthereumJSONRPC.Block do
       end
 
     :arbitrum ->
+      @spec chain_type_fields(params, elixir) :: params
       defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
           send_count: Map.get(elixir, "sendCount"),
           send_root: Map.get(elixir, "sendRoot"),
           l1_block_number: Map.get(elixir, "l1BlockNumber")
+        })
+      end
+
+    :zilliqa ->
+      @spec chain_type_fields(params, elixir) :: params
+      defp chain_type_fields(params, elixir) do
+        params
+        |> Map.merge(%{
+          view: Map.get(elixir, "view")
         })
       end
 
@@ -734,6 +774,25 @@ defmodule EthereumJSONRPC.Block do
   def elixir_to_withdrawals(_), do: []
 
   @doc """
+  Get `t:EthereumJSONRPC.Zilliqa.QuorumCertificate.elixir/0` from `t:elixir/0`.
+  """
+  @spec elixir_to_zilliqa_quorum_certificate(elixir()) :: ZilliqaQuorumCertificate.t()
+  def elixir_to_zilliqa_quorum_certificate(%{"quorumCertificate" => quorum_certificate}),
+    do: quorum_certificate
+
+  @doc """
+  Get `t:EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate.elixir/0` from `t:elixir/0`.
+  """
+  @spec elixir_to_zilliqa_aggregate_quorum_certificate(elixir()) ::
+          ZilliqaAggregateQuorumCertificate.t()
+  def elixir_to_zilliqa_aggregate_quorum_certificate(%{
+        "aggregateQuorumCertificate" => aggregate_quorum_certificate
+      }),
+      do: aggregate_quorum_certificate
+
+  def elixir_to_zilliqa_aggregate_quorum_certificate(_), do: nil
+
+  @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0` and the timestamps to `t:DateTime.t/0`
 
       iex> EthereumJSONRPC.Block.to_elixir(
@@ -834,7 +893,7 @@ defmodule EthereumJSONRPC.Block do
 
   defp entry_to_elixir({key, quantity}, _block)
        when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number size
-                      cumulativeDifficulty totalDifficulty paidFees minimumGasPrice blobGasUsed
+                      cumulativeDifficulty totalDifficulty paidFees blobGasUsed
                       excessBlobGas l1BlockNumber sendCount) and
               not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
@@ -870,6 +929,26 @@ defmodule EthereumJSONRPC.Block do
   defp entry_to_elixir({"withdrawals" = key, withdrawals}, %{"hash" => block_hash, "number" => block_number})
        when not is_nil(block_number) do
     {key, Withdrawals.to_elixir(withdrawals, block_hash, quantity_to_integer(block_number))}
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :zilliqa ->
+      defp entry_to_elixir({"view" = key, quantity}, _block) when not is_nil(quantity) do
+        {key, quantity_to_integer(quantity)}
+      end
+
+      defp entry_to_elixir({"quorumCertificate" = key, entry}, %{"hash" => block_hash}) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        {key, EthereumJSONRPC.Zilliqa.QuorumCertificate.new(entry, block_hash)}
+      end
+
+      defp entry_to_elixir({"aggregateQuorumCertificate" = key, entry}, %{"hash" => block_hash}) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        {key, EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate.new(entry, block_hash)}
+      end
+
+    _ ->
+      :ok
   end
 
   # bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningHeader bitcoinMergedMiningMerkleProof hashForMergedMining - RSK https://github.com/blockscout/blockscout/pull/2934

@@ -8,7 +8,40 @@ defmodule EthereumJSONRPC.Blocks do
 
   @type elixir :: [Block.elixir()]
   @type params :: [Block.params()]
+
+  @default_struct_fields [
+    blocks_params: [],
+    block_second_degree_relations_params: [],
+    transactions_params: [],
+    withdrawals_params: [],
+    errors: []
+  ]
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :zilliqa ->
+      @chain_type_fields quote(
+                           do: [
+                             zilliqa_quorum_certificates_params: EthereumJSONRPC.Zilliqa.QuorumCertificates.params(),
+                             zilliqa_aggregate_quorum_certificates_params:
+                               EthereumJSONRPC.Zilliqa.AggregateQuorumCertificates.params(),
+                             zilliqa_nested_quorum_certificates_params:
+                               EthereumJSONRPC.Zilliqa.NestedQuorumCertificates.params()
+                           ]
+                         )
+
+      @chain_type_struct_fields [
+        zilliqa_quorum_certificates_params: [],
+        zilliqa_aggregate_quorum_certificates_params: [],
+        zilliqa_nested_quorum_certificates_params: []
+      ]
+
+    _ ->
+      @chain_type_struct_fields []
+      @chain_type_fields quote(do: [])
+  end
+
   @type t :: %__MODULE__{
+          unquote_splicing(@chain_type_fields),
           blocks_params: [map()],
           block_second_degree_relations_params: [map()],
           transactions_params: [map()],
@@ -16,11 +49,7 @@ defmodule EthereumJSONRPC.Blocks do
           errors: [Transport.error()]
         }
 
-  defstruct blocks_params: [],
-            block_second_degree_relations_params: [],
-            transactions_params: [],
-            withdrawals_params: [],
-            errors: []
+  defstruct @default_struct_fields ++ @chain_type_struct_fields
 
   def requests(id_to_params, request) when is_map(id_to_params) and is_function(request, 1) do
     Enum.map(id_to_params, fn {id, params} ->
@@ -62,6 +91,21 @@ defmodule EthereumJSONRPC.Blocks do
       transactions_params: transactions_params,
       withdrawals_params: withdrawals_params
     }
+    |> extend_with_chain_type_fields(elixir_blocks)
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :zilliqa ->
+      @spec extend_with_chain_type_fields(t(), [Block.elixir()]) :: t()
+      defp extend_with_chain_type_fields(%__MODULE__{} = blocks, elixir_blocks) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        EthereumJSONRPC.Zilliqa.Helper.extend_blocks_struct(blocks, elixir_blocks)
+      end
+
+    _ ->
+      defp extend_with_chain_type_fields(%__MODULE__{} = blocks, _elixir_blocks) do
+        blocks
+      end
   end
 
   @doc """
