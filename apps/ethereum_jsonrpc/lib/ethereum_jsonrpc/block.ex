@@ -9,8 +9,8 @@ defmodule EthereumJSONRPC.Block do
   alias EthereumJSONRPC.{Transactions, Uncles, Withdrawals}
 
   alias EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate, as: ZilliqaAggregateQuorumCertificate
-  alias EthereumJSONRPC.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
   alias EthereumJSONRPC.Zilliqa.NestedQuorumCertificates, as: ZilliqaNestedQuorumCertificates
+  alias EthereumJSONRPC.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
 
   # Because proof of stake does not naturally produce uncles like proof of work,
   # the list of these in each block is empty, and the hash of this list
@@ -71,9 +71,7 @@ defmodule EthereumJSONRPC.Block do
             non_neg_integer
             | DateTime.t()
             | String.t()
-            | ZilliqaQuorumCertificate.t()
-            | ZilliqaAggregateQuorumCertificate.t()
-            | ZilliqaNestedQuorumCertificates.t()
+            | map()
             | nil
         }
   @type params :: %{
