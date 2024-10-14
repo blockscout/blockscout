@@ -1068,6 +1068,9 @@ config :indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor,
   enabled: celo_epoch_fetchers_enabled?,
   disabled?: not celo_epoch_fetchers_enabled?
 
+config :indexer, Indexer.Fetcher.Scroll,
+  eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_ETH_GET_LOGS_RANGE_SIZE", 250)
+
 config :indexer, Indexer.Fetcher.Scroll.L1FeeParam, gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
 
 config :explorer, Explorer.Chain.Scroll.L1FeeParam,
