@@ -28,7 +28,13 @@ defmodule EthereumJSONRPC.SignedAuthorization do
         }
 
   @doc """
-  Converts `t:t/0` to `t:params/0`
+    Converts a signed authorization map into its corresponding parameters map format.
+
+    ## Parameters
+    - `raw`: Map with signed authorization data.
+
+    ## Returns
+    - Parameters map in the `params()` format.
   """
   @spec to_params(t()) :: params()
   def to_params(raw) do
