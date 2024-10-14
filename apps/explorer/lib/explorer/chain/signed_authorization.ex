@@ -8,7 +8,19 @@ defmodule Explorer.Chain.SignedAuthorization do
   @optional_attrs ~w(authority)a
   @required_attrs ~w(transaction_hash index chain_id address nonce r s v)a
 
-  @type t :: %__MODULE__{
+  @typedoc """
+  Descriptor of the signed authorization tuple from EIP-7702 set code transactions:
+    * `transaction_hash` - the hash of the associated transaction.
+    * `index` - the index of this authorization in the authorization list.
+    * `chain_id` - the ID of the chain for which the authorization was created.
+    * `address` - the address of the delegate contract.
+    * `nonce` - the signature nonce.
+    * `v` - the 'v' component of the signature.
+    * `r` - the 'r' component of the signature.
+    * `s` - the 's' component of the signature.
+    * `authority` - the signer of the authorization.
+  """
+  @type to_import :: %__MODULE__{
           transaction_hash: Hash.Full,
           index: :integer,
           chain_id: :integer,
@@ -20,16 +32,30 @@ defmodule Explorer.Chain.SignedAuthorization do
           authority: Hash.Address
         }
 
+  @typedoc """
+    * `transaction_hash` - the hash of the associated transaction.
+    * `index` - the index of this authorization in the authorization list.
+    * `chain_id` - the ID of the chain for which the authorization was created.
+    * `address` - the address of the delegate contract.
+    * `nonce` - the signature nonce.
+    * `v` - the 'v' component of the signature.
+    * `r` - the 'r' component of the signature.
+    * `s` - the 's' component of the signature.
+    * `authority` - the signer of the authorization.
+    * `inserted_at` - timestamp indicating when the signed authorization was created.
+    * `updated_at` - timestamp indicating when the signed authorization was last updated.
+    * `transaction` - an instance of `Explorer.Chain.Transaction` referenced by `transaction_hash`.
+  """
   @primary_key false
-  schema "signed_authorizations" do
-    field(:index, :integer, primary_key: true)
-    field(:chain_id, :integer)
-    field(:address, Hash.Address)
-    field(:nonce, :integer)
-    field(:r, :decimal)
-    field(:s, :decimal)
-    field(:v, :integer)
-    field(:authority, Hash.Address)
+  typed_schema "signed_authorizations" do
+    field(:index, :integer, primary_key: true, null: false)
+    field(:chain_id, :integer, null: false)
+    field(:address, Hash.Address, null: false)
+    field(:nonce, :integer, null: false)
+    field(:r, :decimal, null: false)
+    field(:s, :decimal, null: false)
+    field(:v, :integer, null: false)
+    field(:authority, Hash.Address, null: true)
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
@@ -47,11 +73,7 @@ defmodule Explorer.Chain.SignedAuthorization do
   @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
   def changeset(%__MODULE__{} = struct, attrs \\ %{}) do
     struct
-    |> cast(
-      attrs,
-      @required_attrs ++
-        @optional_attrs
-    )
+    |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:transaction_hash)
   end
