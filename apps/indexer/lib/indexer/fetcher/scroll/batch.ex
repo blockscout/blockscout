@@ -23,6 +23,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   alias ABI.{FunctionSelector, TypeDecoder}
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain.Block.Range, as: BlockRange
+  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Chain.Scroll.{Batch, BatchBundle, Reader}
   alias Explorer.{Chain, Repo}
   alias Indexer.Fetcher.RollupL1ReorgMonitor
@@ -204,7 +205,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)
@@ -236,6 +237,27 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary()
+  def l1_rpc_url do
+    Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll.BridgeL1][:rpc]
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    for this module.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    module_config = Application.get_all_env(:indexer)[__MODULE__]
+    not is_nil(module_config[:start_block])
   end
 
   # Fetches `CommitBatch` and `FinalizeBatch` events of the Scroll Chain contract from an RPC node
@@ -391,8 +413,8 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         if event.first_topic == @commit_batch_event do
           commit_block_number = quantity_to_integer(event.block_number)
 
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           l2_block_range =
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             if batch_number == 0 do
               {:ok, range} = BlockRange.cast("[0,0]")
               range

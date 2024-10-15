@@ -18,38 +18,39 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
   @fetcher_name :rollup_l1_reorg_monitor
 
-  case Application.compile_env(:explorer, :chain_type) do
-    :optimism ->
-      @modules_can_use_reorg_monitor [
-        Indexer.Fetcher.Optimism.OutputRoot,
-        Indexer.Fetcher.Optimism.TransactionBatch,
-        Indexer.Fetcher.Optimism.WithdrawalEvent
-      ]
+  @modules_can_use_reorg_monitor (case Application.compile_env(:explorer, :chain_type) do
+                                    :optimism ->
+                                      [
+                                        Indexer.Fetcher.Optimism.OutputRoot,
+                                        Indexer.Fetcher.Optimism.TransactionBatch,
+                                        Indexer.Fetcher.Optimism.WithdrawalEvent
+                                      ]
 
-    :polygon_edge ->
-      @modules_can_use_reorg_monitor [
-        Indexer.Fetcher.PolygonEdge.Deposit,
-        Indexer.Fetcher.PolygonEdge.WithdrawalExit
-      ]
+                                    :polygon_edge ->
+                                      [
+                                        Indexer.Fetcher.PolygonEdge.Deposit,
+                                        Indexer.Fetcher.PolygonEdge.WithdrawalExit
+                                      ]
 
-    :polygon_zkevm ->
-      @modules_can_use_reorg_monitor [
-        Indexer.Fetcher.PolygonZkevm.BridgeL1
-      ]
+                                    :polygon_zkevm ->
+                                      [
+                                        Indexer.Fetcher.PolygonZkevm.BridgeL1
+                                      ]
 
-    :scroll ->
-      @modules_can_use_reorg_monitor [
-        Indexer.Fetcher.Scroll.BridgeL1
-      ]
+                                    :scroll ->
+                                      [
+                                        Indexer.Fetcher.Scroll.Batch,
+                                        Indexer.Fetcher.Scroll.BridgeL1
+                                      ]
 
-    :shibarium ->
-      @modules_can_use_reorg_monitor [
-        Indexer.Fetcher.Shibarium.L1
-      ]
+                                    :shibarium ->
+                                      [
+                                        Indexer.Fetcher.Shibarium.L1
+                                      ]
 
-    _ ->
-      @modules_can_use_reorg_monitor []
-  end
+                                    _ ->
+                                      []
+                                  end)
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -112,9 +113,6 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
           chain_type == :polygon_edge ->
             PolygonEdge.l1_rpc_url()
-
-          module_using_reorg_monitor == Indexer.Fetcher.Scroll.Batch ->
-            Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll.BridgeL1][:rpc]
 
           true ->
             module = Enum.at(modules_using_reorg_monitor, 0)

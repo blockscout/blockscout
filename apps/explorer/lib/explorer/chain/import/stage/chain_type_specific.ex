@@ -53,6 +53,8 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Arbitrum.DaMultiPurposeRecords
     ],
     scroll: [
+      Runner.Scroll.BatchBundles,
+      Runner.Scroll.Batches,
       Runner.Scroll.BridgeOperations,
       Runner.Scroll.L1FeeParams
     ],
