@@ -17,7 +17,7 @@ defmodule Explorer.Counters.Helper do
     timestamp in milliseconds.
 
     ## Returns
-    - The number of millisecondssince the Unix epoch.
+    - The number of milliseconds since the Unix epoch.
   """
   @spec current_time() :: non_neg_integer()
   def current_time do
