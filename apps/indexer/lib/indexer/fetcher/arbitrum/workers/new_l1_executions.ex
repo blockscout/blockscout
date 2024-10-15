@@ -305,8 +305,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       |> Enum.reduce([], fn execution, updated_executions ->
         updated =
           execution
-          |> Map.put(:execution_id, lifecycle_txs[execution.execution_tx_hash].id)
-          |> Map.drop([:execution_tx_hash])
+          |> Map.put(:execution_id, lifecycle_txs[execution.execution_transaction_hash].id)
+          |> Map.drop([:execution_transaction_hash])
 
         [updated | updated_executions]
       end)
@@ -340,14 +340,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       |> Enum.reduce({[], %{}, %{}}, fn event, {executions, lifecycle_txs, blocks_requests} ->
         msg_id = outbox_transaction_executed_event_parse(event)
 
-        l1_tx_hash_raw = event["transactionHash"]
-        l1_tx_hash = Rpc.string_hash_to_bytes_hash(l1_tx_hash_raw)
+        l1_transaction_hash_raw = event["transactionHash"]
+        l1_transaction_hash = Rpc.string_hash_to_bytes_hash(l1_transaction_hash_raw)
         l1_blk_num = quantity_to_integer(event["blockNumber"])
 
         updated_executions = [
           %{
             message_id: msg_id,
-            execution_tx_hash: l1_tx_hash
+            execution_transaction_hash: l1_transaction_hash
           }
           | executions
         ]
@@ -355,8 +355,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
         updated_lifecycle_txs =
           Map.put(
             lifecycle_txs,
-            l1_tx_hash,
-            %{hash: l1_tx_hash, block_number: l1_blk_num}
+            l1_transaction_hash,
+            %{hash: l1_transaction_hash, block_number: l1_blk_num}
           )
 
         updated_blocks_requests =
@@ -366,7 +366,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
             BlockByNumber.request(%{id: 0, number: l1_blk_num}, false, true)
           )
 
-        log_debug("Execution for L2 message ##{msg_id} found in #{l1_tx_hash_raw}")
+        log_debug("Execution for L2 message ##{msg_id} found in #{l1_transaction_hash_raw}")
 
         {updated_executions, updated_lifecycle_txs, updated_blocks_requests}
       end)

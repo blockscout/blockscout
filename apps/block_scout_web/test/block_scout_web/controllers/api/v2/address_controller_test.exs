@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "public_tags" => [],
         "watchlist_names" => [],
         "creator_address_hash" => nil,
-        "creation_tx_hash" => nil,
+        "creation_transaction_hash" => nil,
         "token" => nil,
         "coin_balance" => nil,
         "proxy_type" => nil,
@@ -115,7 +115,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert pattern_response["public_tags"] == response["public_tags"]
       assert pattern_response["watchlist_names"] == response["watchlist_names"]
       assert pattern_response["creator_address_hash"] == response["creator_address_hash"]
-      assert pattern_response["creation_tx_hash"] == response["creation_tx_hash"]
+      assert pattern_response["creation_transaction_hash"] == response["creation_transaction_hash"]
       assert pattern_response["token"] == response["token"]
       assert pattern_response["coin_balance"] == response["coin_balance"]
       assert pattern_response["implementation_address"] == response["implementation_address"]
@@ -194,7 +194,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       name = implementation_contract.name
       from = Address.checksum(tx.from_address_hash)
-      tx_hash = to_string(tx.hash)
+      transaction_hash = to_string(tx.hash)
       address_hash = Address.checksum(proxy_address.hash)
 
       {:ok, implementation_contract_address_hash} =
@@ -220,7 +220,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "public_tags" => [],
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
-               "creation_tx_hash" => ^tx_hash,
+               "creation_transaction_hash" => ^transaction_hash,
                "proxy_type" => "eip1167",
                "implementations" => [
                  %{"address" => ^checksummed_implementation_contract_address_hash, "name" => ^name}
@@ -248,7 +248,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       name = smart_contract.name
       from = Address.checksum(tx.from_address_hash)
-      tx_hash = to_string(tx.hash)
+      transaction_hash = to_string(tx.hash)
       address_hash = Address.checksum(smart_contract.address_hash)
 
       implementation_address = insert(:address)
@@ -266,7 +266,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "public_tags" => [],
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
-               "creation_tx_hash" => ^tx_hash,
+               "creation_transaction_hash" => ^transaction_hash,
                "proxy_type" => "eip1967",
                "implementations" => [%{"address" => ^implementation_address_hash_string, "name" => nil}]
              } = json_response(request, 200)
@@ -443,7 +443,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       address = insert(:address)
 
       tx = insert(:transaction, from_address: address) |> with_block()
-      pending_tx = insert(:transaction, from_address: address)
+      pending_transaction = insert(:transaction, from_address: address)
 
       insert(:transaction) |> with_block()
       insert(:transaction)
@@ -453,7 +453,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 2
       assert response["next_page_params"] == nil
-      compare_item(pending_tx, Enum.at(response["items"], 0))
+      compare_item(pending_transaction, Enum.at(response["items"], 0))
       compare_item(tx, Enum.at(response["items"], 1))
     end
 
@@ -3324,7 +3324,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   defp compare_item(%TokenTransfer{} = token_transfer, json) do
     assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
-    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+    assert to_string(token_transfer.transaction_hash) == json["transaction_hash"]
     assert json["timestamp"] != nil
     assert json["method"] != nil
     assert to_string(token_transfer.block_hash) == json["block_hash"]
@@ -3374,7 +3374,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert log.index == json["index"]
     assert to_string(log.data) == json["data"]
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
-    assert to_string(log.transaction_hash) == json["tx_hash"]
+    assert to_string(log.transaction_hash) == json["transaction_hash"]
     assert json["block_number"] == log.block_number
     assert json["block_hash"] == to_string(log.block_hash)
   end

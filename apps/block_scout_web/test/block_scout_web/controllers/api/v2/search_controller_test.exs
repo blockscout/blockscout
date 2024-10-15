@@ -213,7 +213,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       item = Enum.at(response["items"], 0)
 
       assert item["type"] == "transaction"
-      assert item["tx_hash"] == to_string(tx.hash)
+      assert item["transaction_hash"] == to_string(tx.hash)
       assert item["url"] =~ to_string(tx.hash)
       assert item["timestamp"] == nil
     end
@@ -230,7 +230,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       item = Enum.at(response["items"], 0)
 
       assert item["type"] == "transaction"
-      assert item["tx_hash"] == to_string(tx.hash)
+      assert item["transaction_hash"] == to_string(tx.hash)
       assert item["url"] =~ to_string(tx.hash)
       assert item["timestamp"] == Repo.preload(tx, [:block]).block.timestamp |> to_string() |> String.replace(" ", "T")
     end

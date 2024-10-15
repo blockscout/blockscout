@@ -199,7 +199,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  describe "/transactions/{tx_hash}" do
+  describe "/transactions/{transaction_hash}" do
     test "return 404 on non existing tx", %{conn: conn} do
       tx = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}")
@@ -282,7 +282,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  describe "/transactions/{tx_hash}/internal-transactions" do
+  describe "/transactions/{transaction_hash}/internal-transactions" do
     test "return 404 on non existing tx", %{conn: conn} do
       tx = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/internal-transactions")
@@ -399,7 +399,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  describe "/transactions/{tx_hash}/logs" do
+  describe "/transactions/{transaction_hash}/logs" do
     test "return 404 on non existing tx", %{conn: conn} do
       tx = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/logs")
@@ -491,7 +491,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  describe "/transactions/{tx_hash}/token-transfers" do
+  describe "/transactions/{transaction_hash}/token-transfers" do
     test "return 404 on non existing tx", %{conn: conn} do
       tx = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/token-transfers")
@@ -921,7 +921,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  describe "/transactions/{tx_hash}/state-changes" do
+  describe "/transactions/{transaction_hash}/state-changes" do
     test "return 404 on non existing tx", %{conn: conn} do
       tx = build(:transaction)
       request = get(conn, "/api/v2/transactions/#{to_string(tx.hash)}/state-changes")
@@ -1283,7 +1283,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
-  describe "/transactions/{tx_hash}/raw-trace" do
+  describe "/transactions/{transaction_hash}/raw-trace" do
     test "returns raw trace from node", %{conn: conn} do
       transaction =
         :transaction
@@ -1484,14 +1484,14 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert to_string(log.data) == json["data"]
     assert log.index == json["index"]
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
-    assert to_string(log.transaction_hash) == json["tx_hash"]
+    assert to_string(log.transaction_hash) == json["transaction_hash"]
     assert json["block_number"] == log.block_number
   end
 
   defp compare_item(%TokenTransfer{} = token_transfer, json) do
     assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
-    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+    assert to_string(token_transfer.transaction_hash) == json["transaction_hash"]
     assert json["timestamp"] == nil
     assert json["method"] == nil
     assert to_string(token_transfer.block_hash) == json["block_hash"]

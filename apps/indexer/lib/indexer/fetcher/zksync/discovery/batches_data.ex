@@ -70,8 +70,8 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
 
     ## Parameters
     - `batches`: A list of maps describing batches. Each map is expected to define the following
-                 elements: `commit_tx_hash`, `commit_timestamp`, `prove_tx_hash`, `prove_timestamp`,
-                 `executed_tx_hash`, `executed_timestamp`.
+                 elements: `commit_transaction_hash`, `commit_timestamp`, `prove_transaction_hash`, `prove_timestamp`,
+                 `executed_transaction_hash`, `executed_timestamp`.
 
     ## Returns
     - `l1_txs`: A map where keys are L1 transaction hashes, and values are maps containing
@@ -84,9 +84,9 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
       batches
       |> Enum.reduce(%{}, fn batch, l1_txs ->
         [
-          %{hash: batch.commit_tx_hash, timestamp: batch.commit_timestamp},
-          %{hash: batch.prove_tx_hash, timestamp: batch.prove_timestamp},
-          %{hash: batch.executed_tx_hash, timestamp: batch.executed_timestamp}
+          %{hash: batch.commit_transaction_hash, timestamp: batch.commit_timestamp},
+          %{hash: batch.prove_transaction_hash, timestamp: batch.prove_timestamp},
+          %{hash: batch.executed_transaction_hash, timestamp: batch.executed_timestamp}
         ]
         |> Enum.reduce(l1_txs, fn l1_tx, acc ->
           # checks if l1_tx is not empty and adds to acc
@@ -396,11 +396,11 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
             l2_txs
 
           new_txs ->
-            Enum.reduce(new_txs, l2_txs, fn l2_tx_hash, l2_txs ->
+            Enum.reduce(new_txs, l2_txs, fn l2_transaction_hash, l2_txs ->
               [
                 %{
                   batch_number: block.batch_number,
-                  tx_hash: l2_tx_hash
+                  transaction_hash: l2_transaction_hash
                 }
                 | l2_txs
               ]

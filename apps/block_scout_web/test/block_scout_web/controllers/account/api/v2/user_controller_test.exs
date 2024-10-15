@@ -274,32 +274,32 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
     end
 
     test "post private transaction tag", %{conn: conn} do
-      tx_hash_non_existing = to_string(build(:transaction).hash)
-      tx_hash = to_string(insert(:transaction).hash)
+      transaction_hash_non_existing = to_string(build(:transaction).hash)
+      transaction_hash = to_string(insert(:transaction).hash)
 
       assert conn
              |> post("/api/account/v2/user/tags/transaction", %{
-               "transaction_hash" => tx_hash_non_existing,
+               "transaction_hash" => transaction_hash_non_existing,
                "name" => "MyName"
              })
              |> doc(description: "Error on try to create private transaction tag for tx does not exist")
-             |> json_response(422) == %{"errors" => %{"tx_hash" => ["Transaction does not exist"]}}
+             |> json_response(422) == %{"errors" => %{"transaction_hash" => ["Transaction does not exist"]}}
 
       tag_transaction_response =
         conn
         |> post("/api/account/v2/user/tags/transaction", %{
-          "transaction_hash" => tx_hash,
+          "transaction_hash" => transaction_hash,
           "name" => "MyName"
         })
         |> doc(description: "Create private transaction tag")
         |> json_response(200)
 
       conn
-      |> get("/api/account/v2/tags/transaction/#{tx_hash}")
+      |> get("/api/account/v2/tags/transaction/#{transaction_hash}")
       |> doc(description: "Get tags for transaction")
       |> json_response(200)
 
-      assert tag_transaction_response["transaction_hash"] == tx_hash
+      assert tag_transaction_response["transaction_hash"] == transaction_hash
       assert tag_transaction_response["name"] == "MyName"
       assert tag_transaction_response["id"]
     end
@@ -384,22 +384,22 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
       zipped = Enum.zip(transactions, names)
 
       created =
-        Enum.map(zipped, fn {tx_hash, name} ->
+        Enum.map(zipped, fn {transaction_hash, name} ->
           id =
             (conn
              |> post("/api/account/v2/user/tags/transaction", %{
-               "transaction_hash" => tx_hash,
+               "transaction_hash" => transaction_hash,
                "name" => name
              })
              |> json_response(200))["id"]
 
-          {tx_hash, %{"label" => name}, %{"transaction_hash" => tx_hash, "id" => id, "name" => name}}
+          {transaction_hash, %{"label" => name}, %{"transaction_hash" => transaction_hash, "id" => id, "name" => name}}
         end)
 
-      assert Enum.all?(created, fn {tx_hash, map_tag, _} ->
+      assert Enum.all?(created, fn {transaction_hash, map_tag, _} ->
                response =
                  conn
-                 |> get("/api/account/v2/tags/transaction/#{tx_hash}")
+                 |> get("/api/account/v2/tags/transaction/#{transaction_hash}")
                  |> json_response(200)
 
                response["personal_tx_tag"] == map_tag
@@ -421,22 +421,22 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
       zipped = Enum.zip(transactions, names)
 
       created =
-        Enum.map(zipped, fn {tx_hash, name} ->
+        Enum.map(zipped, fn {transaction_hash, name} ->
           id =
             (conn
              |> post("/api/account/v2/user/tags/transaction", %{
-               "transaction_hash" => tx_hash,
+               "transaction_hash" => transaction_hash,
                "name" => name
              })
              |> json_response(200))["id"]
 
-          {tx_hash, %{"label" => name}, %{"transaction_hash" => tx_hash, "id" => id, "name" => name}}
+          {transaction_hash, %{"label" => name}, %{"transaction_hash" => transaction_hash, "id" => id, "name" => name}}
         end)
 
-      assert Enum.all?(created, fn {tx_hash, map_tag, _} ->
+      assert Enum.all?(created, fn {transaction_hash, map_tag, _} ->
                response =
                  conn
-                 |> get("/api/account/v2/tags/transaction/#{tx_hash}")
+                 |> get("/api/account/v2/tags/transaction/#{transaction_hash}")
                  |> json_response(200)
 
                response["personal_tx_tag"] == map_tag
@@ -1227,7 +1227,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
   end
 
   defp compare_item(%TagTransaction{} = tag_transaction, json) do
-    assert json["transaction_hash"] == to_string(tag_transaction.tx_hash)
+    assert json["transaction_hash"] == to_string(tag_transaction.transaction_hash)
     assert json["name"] == tag_transaction.name
     assert json["id"] == tag_transaction.id
   end

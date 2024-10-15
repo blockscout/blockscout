@@ -52,7 +52,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Committed do
       expected_batch_number ->
         log_info("Checking if the batch #{expected_batch_number} was committed")
 
-        {next_action, tx_hash, l1_txs} =
+        {next_action, transaction_hash, l1_txs} =
           check_if_batch_status_changed(expected_batch_number, :commit_tx, json_l2_rpc_named_arguments)
 
         case next_action do
@@ -61,10 +61,10 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Committed do
 
           :look_for_batches ->
             log_info("The batch #{expected_batch_number} looks like committed")
-            commit_tx_receipt = Rpc.fetch_tx_receipt_by_hash(tx_hash, json_l1_rpc_named_arguments)
+            commit_tx_receipt = Rpc.fetch_tx_receipt_by_hash(transaction_hash, json_l1_rpc_named_arguments)
             batches_numbers_from_rpc = get_committed_batches_from_logs(commit_tx_receipt["logs"])
 
-            associate_and_import_or_prepare_for_recovery(batches_numbers_from_rpc, l1_txs, tx_hash, :commit_id)
+            associate_and_import_or_prepare_for_recovery(batches_numbers_from_rpc, l1_txs, transaction_hash, :commit_id)
         end
     end
   end

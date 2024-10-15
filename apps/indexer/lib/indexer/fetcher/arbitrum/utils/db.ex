@@ -89,7 +89,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     `arbitrum_lifecycle_l1_transactions` table and converts them to maps.
 
     ## Parameters
-    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+    - `l1_transaction_hashes`: A list of hashes to retrieve L1 transactions for.
 
     ## Returns
     - A list of maps representing the `Explorer.Chain.Arbitrum.LifecycleTransaction`
@@ -97,8 +97,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       compatible with the database import operation.
   """
   @spec lifecycle_transactions([binary()]) :: [Arbitrum.LifecycleTransaction.to_import()]
-  def lifecycle_transactions(l1_tx_hashes) do
-    l1_tx_hashes
+  def lifecycle_transactions(l1_transaction_hashes) do
+    l1_transaction_hashes
     |> Reader.lifecycle_transactions()
     |> Enum.map(&lifecycle_transaction_to_map/1)
   end

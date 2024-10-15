@@ -13,16 +13,16 @@ defmodule Explorer.Account.TagTransaction do
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
   typed_schema "account_tag_transactions" do
-    field(:tx_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
+    field(:transaction_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:name, Explorer.Encrypted.Binary, null: false)
-    field(:tx_hash, Explorer.Encrypted.TransactionHash, null: false)
+    field(:transaction_hash, Explorer.Encrypted.TransactionHash, null: false)
 
     belongs_to(:identity, Identity, null: false)
 
     timestamps()
   end
 
-  @attrs ~w(name identity_id tx_hash)a
+  @attrs ~w(name identity_id transaction_hash)a
 
   def changeset do
     %__MODULE__{}
@@ -36,7 +36,7 @@ defmodule Explorer.Account.TagTransaction do
     |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 35)
     |> put_hashed_fields()
-    |> unique_constraint([:identity_id, :tx_hash_hash], message: "Transaction tag already exists")
+    |> unique_constraint([:identity_id, :transaction_hash_hash], message: "Transaction tag already exists")
     |> tag_transaction_count_constraint()
     |> check_transaction_existence()
   end
@@ -50,20 +50,20 @@ defmodule Explorer.Account.TagTransaction do
   defp put_hashed_fields(changeset) do
     # Using force_change instead of put_change due to https://github.com/danielberkompas/cloak_ecto/issues/53
     changeset
-    |> force_change(:tx_hash_hash, hash_to_lower_case_string(get_field(changeset, :tx_hash)))
+    |> force_change(:transaction_hash_hash, hash_to_lower_case_string(get_field(changeset, :transaction_hash)))
   end
 
-  defp check_transaction_existence(%Changeset{changes: %{tx_hash: tx_hash}} = changeset) do
-    check_transaction_existence_inner(changeset, tx_hash)
+  defp check_transaction_existence(%Changeset{changes: %{transaction_hash: transaction_hash}} = changeset) do
+    check_transaction_existence_inner(changeset, transaction_hash)
   end
 
   defp check_transaction_existence(changeset), do: changeset
 
-  defp check_transaction_existence_inner(changeset, tx_hash) do
-    if match?({:ok, _}, Chain.hash_to_transaction(tx_hash)) do
+  defp check_transaction_existence_inner(changeset, transaction_hash) do
+    if match?({:ok, _}, Chain.hash_to_transaction(transaction_hash)) do
       changeset
     else
-      add_error(changeset, :tx_hash, "Transaction does not exist")
+      add_error(changeset, :transaction_hash, "Transaction does not exist")
     end
   end
 
@@ -122,17 +122,17 @@ defmodule Explorer.Account.TagTransaction do
 
   defp page_transaction_tags(query, _), do: query
 
-  def tag_transaction_by_transaction_hash_and_identity_id_query(tx_hash, identity_id)
-      when not is_nil(tx_hash) and not is_nil(identity_id) do
+  def tag_transaction_by_transaction_hash_and_identity_id_query(transaction_hash, identity_id)
+      when not is_nil(transaction_hash) and not is_nil(identity_id) do
     __MODULE__
-    |> where([tag], tag.identity_id == ^identity_id and tag.tx_hash == ^tx_hash)
+    |> where([tag], tag.identity_id == ^identity_id and tag.transaction_hash == ^transaction_hash)
   end
 
   def tag_transaction_by_transaction_hash_and_identity_id_query(_, _), do: nil
 
-  def get_tag_transaction_by_transaction_hash_and_identity_id(tx_hash, identity_id)
-      when not is_nil(tx_hash) and not is_nil(identity_id) do
-    tx_hash
+  def get_tag_transaction_by_transaction_hash_and_identity_id(transaction_hash, identity_id)
+      when not is_nil(transaction_hash) and not is_nil(identity_id) do
+    transaction_hash
     |> hash_to_lower_case_string()
     |> tag_transaction_by_transaction_hash_and_identity_id_query(identity_id)
     |> Repo.account_repo().one()

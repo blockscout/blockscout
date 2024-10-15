@@ -112,7 +112,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                           elem(
                             quote do
                               has_one(:zksync_batch_transaction, ZkSyncBatchTransaction,
-                                foreign_key: :tx_hash,
+                                foreign_key: :transaction_hash,
                                 references: :hash
                               )
 
@@ -152,7 +152,7 @@ defmodule Explorer.Chain.Transaction.Schema do
                               field(:gas_used_for_l1, :decimal)
 
                               has_one(:arbitrum_batch_transaction, ArbitrumBatchTransaction,
-                                foreign_key: :tx_hash,
+                                foreign_key: :transaction_hash,
                                 references: :hash
                               )
 

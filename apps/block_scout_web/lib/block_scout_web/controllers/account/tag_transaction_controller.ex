@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.Account.TagTransactionController do
 
     case TagTransaction.create(%{
            name: tag_address["name"],
-           tx_hash: tag_address["tx_hash"],
+           transaction_hash: tag_address["transaction_hash"],
            identity_id: current_user.id
          }) do
       {:ok, _} ->

@@ -65,7 +65,7 @@ defmodule Explorer.Account.Notifier.NotifyTest do
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction, to_address: %Chain.Address{hash: address_hash}))
 
       {_, fee} = Transaction.fee(tx, :gwei)
@@ -104,7 +104,7 @@ defmodule Explorer.Account.Notifier.NotifyTest do
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction, to_address: %Chain.Address{hash: address_hash}))
 
       {_, fee} = Transaction.fee(tx, :gwei)
@@ -131,7 +131,7 @@ defmodule Explorer.Account.Notifier.NotifyTest do
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction, to_address: address))
 
       Notify.call([tx])

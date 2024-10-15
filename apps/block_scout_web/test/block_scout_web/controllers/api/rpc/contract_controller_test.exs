@@ -741,7 +741,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
       name = implementation_contract.name
       from = Address.checksum(tx.from_address_hash)
-      tx_hash = to_string(tx.hash)
+      transaction_hash = to_string(tx.hash)
       address_hash = Address.checksum(proxy_address.hash)
 
       {:ok, implementation_contract_address_hash} =
@@ -1170,7 +1170,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           %{
             "contractAddress" => contract_address,
             "contractCreator" => contract_creator,
-            "txHash" => tx_hash
+            "txHash" => transaction_hash
           }
         ]
       } =
@@ -1180,7 +1180,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
       assert contract_address == to_string(address.hash)
       assert contract_creator == to_string(transaction.from_address_hash)
-      assert tx_hash == to_string(transaction.hash)
+      assert transaction_hash == to_string(transaction.hash)
     end
   end
 

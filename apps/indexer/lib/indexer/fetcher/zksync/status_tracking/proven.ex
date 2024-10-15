@@ -50,7 +50,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
       expected_batch_number ->
         log_info("Checking if the batch #{expected_batch_number} was proven")
 
-        {next_action, tx_hash, l1_txs} =
+        {next_action, transaction_hash, l1_txs} =
           check_if_batch_status_changed(expected_batch_number, :prove_tx, json_l2_rpc_named_arguments)
 
         case next_action do
@@ -59,10 +59,10 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
 
           :look_for_batches ->
             log_info("The batch #{expected_batch_number} looks like proven")
-            prove_tx = Rpc.fetch_tx_by_hash(tx_hash, json_l1_rpc_named_arguments)
+            prove_tx = Rpc.fetch_tx_by_hash(transaction_hash, json_l1_rpc_named_arguments)
             batches_numbers_from_rpc = get_proven_batches_from_calldata(prove_tx["input"])
 
-            associate_and_import_or_prepare_for_recovery(batches_numbers_from_rpc, l1_txs, tx_hash, :prove_id)
+            associate_and_import_or_prepare_for_recovery(batches_numbers_from_rpc, l1_txs, transaction_hash, :prove_id)
         end
     end
   end

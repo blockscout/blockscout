@@ -627,13 +627,13 @@ defmodule EthereumJSONRPC.Filecoin do
     |> Enum.reduce(
       {[], 0},
       # counter is the index of the internal transaction in transaction
-      fn %{"transactionHash" => tx_hash, "transactionPosition" => transaction_index} = calls_result,
+      fn %{"transactionHash" => transaction_hash, "transactionPosition" => transaction_index} = calls_result,
          {tx_acc, counter} ->
         last_tx_response_from_accumulator = List.first(tx_acc)
 
         next_counter =
           with {:empty_accumulator, false} <- {:empty_accumulator, is_nil(last_tx_response_from_accumulator)},
-               true <- tx_hash !== last_tx_response_from_accumulator["transactionHash"] do
+               true <- transaction_hash !== last_tx_response_from_accumulator["transactionHash"] do
             0
           else
             {:empty_accumulator, true} ->
@@ -648,7 +648,7 @@ defmodule EthereumJSONRPC.Filecoin do
             Map.merge(
               %{
                 "blockNumber" => block_number,
-                "transactionHash" => tx_hash,
+                "transactionHash" => transaction_hash,
                 "transactionIndex" => transaction_index,
                 "index" => next_counter
               },

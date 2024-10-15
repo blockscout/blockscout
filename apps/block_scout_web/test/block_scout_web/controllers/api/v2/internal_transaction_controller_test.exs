@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
   defp compare_item(%InternalTransaction{} = internal_transaction, json) do
     assert Address.checksum(internal_transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(internal_transaction.to_address_hash) == json["to"]["hash"]
-    assert to_string(internal_transaction.transaction_hash) == json["tx_hash"]
+    assert to_string(internal_transaction.transaction_hash) == json["transaction_hash"]
     assert internal_transaction.block_number == json["block_number"]
     assert internal_transaction.block_index == json["block_index"]
   end

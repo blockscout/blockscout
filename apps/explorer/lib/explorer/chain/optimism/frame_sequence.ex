@@ -16,7 +16,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
   import Explorer.Chain, only: [default_paging_options: 0, select_repo: 1]
 
   alias Explorer.Chain.{Hash, Transaction}
-  alias Explorer.Chain.Optimism.{FrameSequenceBlob, TxnBatch}
+  alias Explorer.Chain.Optimism.{FrameSequenceBlob, TransactionBatch}
   alias Explorer.PagingOptions
 
   @required_attrs ~w(id l1_transaction_hashes l1_timestamp)a
@@ -25,7 +25,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
     * `l1_transaction_hashes` - The list of L1 transaction hashes where the frame sequence is stored.
     * `l1_timestamp` - UTC timestamp of the last L1 transaction of `l1_transaction_hashes` list.
     * `view_ready` - Boolean flag indicating if the frame sequence is ready for displaying on UI.
-    * `transaction_batches` - Instances of `Explorer.Chain.Optimism.TxnBatch` bound with this frame sequence.
+    * `transaction_batches` - Instances of `Explorer.Chain.Optimism.TransactionBatch` bound with this frame sequence.
     * `blobs` - Instances of `Explorer.Chain.Optimism.FrameSequenceBlob` bound with this frame sequence.
   """
   @primary_key {:id, :integer, autogenerate: false}
@@ -34,7 +34,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
     field(:l1_timestamp, :utc_datetime_usec)
     field(:view_ready, :boolean)
 
-    has_many(:transaction_batches, TxnBatch, foreign_key: :frame_sequence_id)
+    has_many(:transaction_batches, TransactionBatch, foreign_key: :frame_sequence_id)
     has_many(:blobs, FrameSequenceBlob, foreign_key: :frame_sequence_id)
 
     timestamps()
@@ -104,8 +104,8 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
     batch = select_repo(options).one(query)
 
     if not is_nil(batch) do
-      l2_block_number_from = TxnBatch.edge_l2_block_number(internal_id, :min)
-      l2_block_number_to = TxnBatch.edge_l2_block_number(internal_id, :max)
+      l2_block_number_from = TransactionBatch.edge_l2_block_number(internal_id, :min)
+      l2_block_number_to = TransactionBatch.edge_l2_block_number(internal_id, :max)
       tx_count = Transaction.tx_count_for_block_range(l2_block_number_from..l2_block_number_to)
 
       {batch_data_container, blobs} = FrameSequenceBlob.list(internal_id, options)
@@ -116,7 +116,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
         "l2_block_start" => l2_block_number_from,
         "l2_block_end" => l2_block_number_to,
         "tx_count" => tx_count,
-        "l1_tx_hashes" => batch.l1_transaction_hashes,
+        "l1_transaction_hashes" => batch.l1_transaction_hashes,
         "batch_data_container" => batch_data_container
       }
 

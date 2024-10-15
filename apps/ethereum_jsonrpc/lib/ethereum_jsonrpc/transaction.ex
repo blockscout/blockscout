@@ -504,7 +504,7 @@ defmodule EthereumJSONRPC.Transaction do
         ])
 
       :optimism ->
-        # we need to put blobVersionedHashes for Indexer.Fetcher.Optimism.TxnBatch module
+        # we need to put blobVersionedHashes for Indexer.Fetcher.Optimism.TransactionBatch module
         put_if_present(params, elixir, [
           {"l1TxOrigin", :l1_tx_origin},
           {"l1BlockNumber", :l1_block_number},

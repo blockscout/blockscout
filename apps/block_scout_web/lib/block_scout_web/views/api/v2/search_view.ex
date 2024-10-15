@@ -92,12 +92,12 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "transaction"} = search_result) do
-    tx_hash = hash_to_string(search_result.tx_hash)
+    transaction_hash = hash_to_string(search_result.transaction_hash)
 
     %{
       "type" => search_result.type,
-      "tx_hash" => tx_hash,
-      "url" => transaction_path(Endpoint, :show, tx_hash),
+      "transaction_hash" => transaction_hash,
+      "url" => transaction_path(Endpoint, :show, transaction_hash),
       "timestamp" => search_result.timestamp,
       "priority" => search_result.priority
     }

@@ -102,7 +102,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     Constructs a JSON RPC request to retrieve a transaction by its hash.
 
     ## Parameters
-    - `%{hash: tx_hash, id: id}`: A map containing the transaction hash (`tx_hash`) and
+    - `%{hash: transaction_hash, id: id}`: A map containing the transaction hash (`transaction_hash`) and
       an identifier (`id`) for the request, which can be used later to establish
       correspondence between requests and responses.
 
@@ -111,9 +111,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       the transaction details associated with the given hash.
   """
   @spec transaction_by_hash_request(%{hash: EthereumJSONRPC.hash(), id: non_neg_integer()}) :: Transport.request()
-  def transaction_by_hash_request(%{id: id, hash: tx_hash})
-      when is_binary(tx_hash) and is_integer(id) do
-    EthereumJSONRPC.request(%{id: id, method: "eth_getTransactionByHash", params: [tx_hash]})
+  def transaction_by_hash_request(%{id: id, hash: transaction_hash})
+      when is_binary(transaction_hash) and is_integer(id) do
+    EthereumJSONRPC.request(%{id: id, method: "eth_getTransactionByHash", params: [transaction_hash]})
   end
 
   @doc """
@@ -771,7 +771,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
   defp json_tx_id_to_hash(hash) do
     case hash do
-      "0x" <> tx_hash -> tx_hash
+      "0x" <> transaction_hash -> transaction_hash
       nil -> @zero_hash
     end
   end

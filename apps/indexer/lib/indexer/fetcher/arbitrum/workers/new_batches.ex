@@ -784,7 +784,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       |> Enum.reduce([], fn batch, updated_batches_list ->
         [
           batch
-          |> Map.put(:commitment_id, get_l1_tx_id_by_hash(lifecycle_txs, batch.tx_hash))
+          |> Map.put(:commitment_id, get_l1_tx_id_by_hash(lifecycle_txs, batch.transaction_hash))
           |> Map.put(
             :transactions_count,
             case tx_counts_per_batch[batch.number] do
@@ -792,7 +792,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               value -> value
             end
           )
-          |> Map.drop([:tx_hash])
+          |> Map.drop([:transaction_hash])
           | updated_batches_list
         ]
       end)
@@ -864,7 +864,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               :number => non_neg_integer(),
               :before_acc => binary(),
               :after_acc => binary(),
-              :tx_hash => binary()
+              :transaction_hash => binary()
             }
           },
           [EthereumJSONRPC.Transport.request()],
@@ -875,11 +875,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     {batches, txs_requests, blocks_requests, existing_commitment_txs} =
       logs
       |> Enum.reduce({%{}, [], %{}, %{}}, fn event, acc ->
-        tx_hash_raw = event["transactionHash"]
+        transaction_hash_raw = event["transactionHash"]
         blk_num = quantity_to_integer(event["blockNumber"])
 
         handle_new_batch_data(
-          {sequencer_batch_delivered_event_parse(event), tx_hash_raw, blk_num},
+          {sequencer_batch_delivered_event_parse(event), transaction_hash_raw, blk_num},
           existing_batches,
           acc
         )
@@ -932,7 +932,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               :number => non_neg_integer(),
               :before_acc => binary(),
               :after_acc => binary(),
-              :tx_hash => binary()
+              :transaction_hash => binary()
             }
           },
           [EthereumJSONRPC.Transport.request()],
@@ -948,17 +948,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp handle_new_batch_data({{batch_num, _, _}, _, _}, _, acc) when batch_num == 0, do: acc
 
   defp handle_new_batch_data(
-         {{batch_num, before_acc, after_acc}, tx_hash_raw, blk_num},
+         {{batch_num, before_acc, after_acc}, transaction_hash_raw, blk_num},
          existing_batches,
          {batches, txs_requests, blocks_requests, existing_commitment_txs}
        ) do
-    tx_hash = Rpc.string_hash_to_bytes_hash(tx_hash_raw)
+    transaction_hash = Rpc.string_hash_to_bytes_hash(transaction_hash_raw)
 
     {updated_batches, updated_txs_requests, updated_existing_commitment_txs} =
       if batch_num in existing_batches do
-        {batches, txs_requests, Map.put(existing_commitment_txs, tx_hash, blk_num)}
+        {batches, txs_requests, Map.put(existing_commitment_txs, transaction_hash, blk_num)}
       else
-        log_info("New batch #{batch_num} found in #{tx_hash_raw}")
+        log_info("New batch #{batch_num} found in #{transaction_hash_raw}")
 
         updated_batches =
           Map.put(
@@ -968,12 +968,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
               number: batch_num,
               before_acc: before_acc,
               after_acc: after_acc,
-              tx_hash: tx_hash
+              transaction_hash: transaction_hash
             }
           )
 
         updated_txs_requests = [
-          Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash_raw})
+          Rpc.transaction_by_hash_request(%{id: 0, hash: transaction_hash_raw})
           | txs_requests
         ]
 
@@ -1074,7 +1074,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       |> Rpc.make_chunked_request(json_rpc_named_arguments, "eth_getTransactionByHash")
       |> Enum.reduce({l1_txs, updated_batches, da_info}, fn resp, {txs_map, batches_map, da_info_list} ->
         block_num = quantity_to_integer(resp["blockNumber"])
-        tx_hash = Rpc.string_hash_to_bytes_hash(resp["hash"])
+        transaction_hash = Rpc.string_hash_to_bytes_hash(resp["hash"])
 
         # Although they are called messages in the functions' ABI, in fact they are
         # rollup blocks
@@ -1112,8 +1112,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           )
 
         updated_txs_map =
-          Map.put(txs_map, tx_hash, %{
-            hash: tx_hash,
+          Map.put(txs_map, transaction_hash, %{
+            hash: transaction_hash,
             block_number: block_num,
             timestamp: blocks_to_ts[block_num],
             status:
@@ -1473,7 +1473,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       updated_txs_list =
         block.transactions
         |> Enum.reduce(txs_list, fn tx, acc ->
-          [%{tx_hash: tx.hash.bytes, batch_number: batch_num} | acc]
+          [%{transaction_hash: tx.hash.bytes, batch_number: batch_num} | acc]
         end)
 
       updated_blocks_map =
@@ -1676,8 +1676,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
             txs_list
 
           new_txs ->
-            Enum.reduce(new_txs, txs_list, fn l2_tx_hash, txs_list ->
-              [%{tx_hash: l2_tx_hash, batch_number: batch_num} | txs_list]
+            Enum.reduce(new_txs, txs_list, fn l2_transaction_hash, txs_list ->
+              [%{transaction_hash: l2_transaction_hash, batch_number: batch_num} | txs_list]
             end)
         end
 

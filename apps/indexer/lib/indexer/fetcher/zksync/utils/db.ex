@@ -8,11 +8,11 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_warning: 1, log_info: 1]
 
   @json_batch_fields_absent_in_db_batch [
-    :commit_tx_hash,
+    :commit_transaction_hash,
     :commit_timestamp,
-    :prove_tx_hash,
+    :prove_transaction_hash,
     :prove_timestamp,
-    :executed_tx_hash,
+    :executed_transaction_hash,
     :executed_timestamp
   ]
 

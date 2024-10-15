@@ -195,7 +195,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     Reads a list of L1 transactions by their hashes from the `arbitrum_lifecycle_l1_transactions` table and returns their IDs.
 
     ## Parameters
-    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+    - `l1_transaction_hashes`: A list of hashes to retrieve L1 transactions for.
 
     ## Returns
     - A list of tuples containing transaction hashes and IDs for the transaction
@@ -203,12 +203,12 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       list.
   """
   @spec lifecycle_transaction_ids([binary()]) :: [{Hash.t(), non_neg_integer}]
-  def lifecycle_transaction_ids(l1_tx_hashes) when is_list(l1_tx_hashes) do
+  def lifecycle_transaction_ids(l1_transaction_hashes) when is_list(l1_transaction_hashes) do
     query =
       from(
         lt in LifecycleTransaction,
         select: {lt.hash, lt.id},
-        where: lt.hash in ^l1_tx_hashes
+        where: lt.hash in ^l1_transaction_hashes
       )
 
     Repo.all(query)
@@ -218,7 +218,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     Reads a list of L1 transactions by their hashes from the `arbitrum_lifecycle_l1_transactions` table.
 
     ## Parameters
-    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+    - `l1_transaction_hashes`: A list of hashes to retrieve L1 transactions for.
 
     ## Returns
     - A list of `Explorer.Chain.Arbitrum.LifecycleTransaction` corresponding to the
@@ -226,11 +226,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       list.
   """
   @spec lifecycle_transactions([binary()]) :: [LifecycleTransaction.t()]
-  def lifecycle_transactions(l1_tx_hashes) when is_list(l1_tx_hashes) do
+  def lifecycle_transactions(l1_transaction_hashes) when is_list(l1_transaction_hashes) do
     query =
       from(
         lt in LifecycleTransaction,
-        where: lt.hash in ^l1_tx_hashes
+        where: lt.hash in ^l1_transaction_hashes
       )
 
     Repo.all(query)

@@ -98,7 +98,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     extended_info =
       Map.merge(base_info, %{
         "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
-        "creation_tx_hash" => creation_tx,
+        "creation_transaction_hash" => creation_tx,
         "token" => token,
         "coin_balance" => balance,
         "exchange_rate" => exchange_rate,

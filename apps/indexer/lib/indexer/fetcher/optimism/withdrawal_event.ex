@@ -164,12 +164,12 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end
   end
 
-  defp get_transaction_input_by_hash(blocks, tx_hashes) do
+  defp get_transaction_input_by_hash(blocks, transaction_hashes) do
     Enum.reduce(blocks, %{}, fn block, acc ->
       block
       |> Map.get("transactions", [])
       |> Enum.filter(fn tx ->
-        Enum.member?(tx_hashes, tx["hash"])
+        Enum.member?(transaction_hashes, tx["hash"])
       end)
       |> Enum.map(fn tx ->
         {tx["hash"], tx["input"]}
@@ -184,7 +184,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
       events
       |> get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
 
-    tx_hashes =
+    transaction_hashes =
       events
       |> Enum.reduce([], fn event, acc ->
         if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
@@ -194,7 +194,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         end
       end)
 
-    input_by_hash = get_transaction_input_by_hash(blocks, tx_hashes)
+    input_by_hash = get_transaction_input_by_hash(blocks, transaction_hashes)
 
     timestamps =
       blocks
@@ -206,13 +206,13 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
     events
     |> Enum.map(fn event ->
-      tx_hash = event["transactionHash"]
+      transaction_hash = event["transactionHash"]
 
       {l1_event_type, game_index} =
         if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
           game_index =
             input_by_hash
-            |> Map.get(tx_hash)
+            |> Map.get(transaction_hash)
             |> input_to_game_index()
 
           {"WithdrawalProven", game_index}
@@ -226,7 +226,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         withdrawal_hash: Enum.at(event["topics"], 1),
         l1_event_type: l1_event_type,
         l1_timestamp: Map.get(timestamps, l1_block_number),
-        l1_transaction_hash: tx_hash,
+        l1_transaction_hash: transaction_hash,
         l1_block_number: l1_block_number,
         game_index: game_index
       }

@@ -410,7 +410,7 @@ defmodule Explorer.Chain.Search do
 
   defp valid_full_hash?(string_input) do
     case Chain.string_to_transaction_hash(string_input) do
-      {:ok, _tx_hash} -> true
+      {:ok, _transaction_hash} -> true
       _ -> false
     end
   end
@@ -419,7 +419,7 @@ defmodule Explorer.Chain.Search do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       transaction_search_fields =
         search_fields()
-        |> Map.put(:tx_hash, dynamic([transaction], transaction.hash))
+        |> Map.put(:transaction_hash, dynamic([transaction], transaction.hash))
         |> Map.put(:block_hash, dynamic([transaction], transaction.block_hash))
         |> Map.put(:type, "transaction")
         |> Map.put(:block_number, dynamic([transaction], transaction.block_number))
@@ -433,7 +433,7 @@ defmodule Explorer.Chain.Search do
     else
       transaction_search_fields =
         search_fields()
-        |> Map.put(:tx_hash, dynamic([transaction, _], transaction.hash))
+        |> Map.put(:transaction_hash, dynamic([transaction, _], transaction.hash))
         |> Map.put(:block_hash, dynamic([transaction, _], transaction.block_hash))
         |> Map.put(:type, "transaction")
         |> Map.put(:block_number, dynamic([transaction, _], transaction.block_number))
@@ -513,7 +513,7 @@ defmodule Explorer.Chain.Search do
   defp page_search_results(query, %PagingOptions{key: nil}), do: query
 
   defp page_search_results(query, %PagingOptions{
-         key: {_address_hash, _tx_hash, _block_hash, holder_count, name, inserted_at, item_type}
+         key: {_address_hash, _transaction_hash, _block_hash, holder_count, name, inserted_at, item_type}
        })
        when holder_count in [nil, ""] do
     where(
@@ -528,7 +528,7 @@ defmodule Explorer.Chain.Search do
 
   # credo:disable-for-next-line
   defp page_search_results(query, %PagingOptions{
-         key: {_address_hash, _tx_hash, _block_hash, holder_count, name, inserted_at, item_type}
+         key: {_address_hash, _transaction_hash, _block_hash, holder_count, name, inserted_at, item_type}
        }) do
     where(
       query,
@@ -653,7 +653,7 @@ defmodule Explorer.Chain.Search do
   defp search_fields do
     %{
       address_hash: dynamic([_], type(^nil, :binary)),
-      tx_hash: dynamic([_], type(^nil, :binary)),
+      transaction_hash: dynamic([_], type(^nil, :binary)),
       user_operation_hash: dynamic([_], type(^nil, :binary)),
       blob_hash: dynamic([_], type(^nil, :binary)),
       block_hash: dynamic([_], type(^nil, :binary)),

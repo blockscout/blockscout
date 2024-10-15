@@ -660,7 +660,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   #     database. Each transaction is compatible with the database import operation.
   @spec parse_logs_for_new_confirmations([%{String.t() => any()}]) ::
           {
-            %{binary() => %{l1_tx_hash: binary(), l1_block_num: non_neg_integer()}},
+            %{binary() => %{l1_transaction_hash: binary(), l1_block_num: non_neg_integer()}},
             %{binary() => %{hash: binary(), block_number: non_neg_integer()}},
             [EthereumJSONRPC.Transport.request()],
             [Arbitrum.LifecycleTransaction.to_import()]
@@ -669,8 +669,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     transaction_hashes =
       logs
       |> Enum.reduce(%{}, fn event, acc ->
-        l1_tx_hash_raw = event["transactionHash"]
-        Map.put_new(acc, l1_tx_hash_raw, Rpc.string_hash_to_bytes_hash(l1_tx_hash_raw))
+        l1_transaction_hash_raw = event["transactionHash"]
+        Map.put_new(acc, l1_transaction_hash_raw, Rpc.string_hash_to_bytes_hash(l1_transaction_hash_raw))
       end)
 
     existing_lifecycle_txs =
@@ -686,29 +686,29 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       |> Enum.reduce({%{}, %{}, %{}}, fn event, {block_to_txs, lifecycle_txs, blocks_requests} ->
         rollup_block_hash = send_root_updated_event_parse(event)
 
-        l1_tx_hash_raw = event["transactionHash"]
-        l1_tx_hash = transaction_hashes[l1_tx_hash_raw]
+        l1_transaction_hash_raw = event["transactionHash"]
+        l1_transaction_hash = transaction_hashes[l1_transaction_hash_raw]
         l1_blk_num = quantity_to_integer(event["blockNumber"])
 
         # There is no need to include the found block hash for the consequent confirmed
         # blocks discovery step since it is assumed that already existing lifecycle
         # transactions are already linked with the corresponding rollup blocks.
         updated_block_to_txs =
-          if Map.has_key?(existing_lifecycle_txs, l1_tx_hash) do
+          if Map.has_key?(existing_lifecycle_txs, l1_transaction_hash) do
             block_to_txs
           else
             Map.put(
               block_to_txs,
               rollup_block_hash,
-              %{l1_tx_hash: l1_tx_hash, l1_block_num: l1_blk_num}
+              %{l1_transaction_hash: l1_transaction_hash, l1_block_num: l1_blk_num}
             )
           end
 
         updated_lifecycle_txs =
           Map.put(
             lifecycle_txs,
-            l1_tx_hash,
-            %{hash: l1_tx_hash, block_number: l1_blk_num}
+            l1_transaction_hash,
+            %{hash: l1_transaction_hash, block_number: l1_blk_num}
           )
 
         updated_blocks_requests =
@@ -718,7 +718,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             BlockByNumber.request(%{id: 0, number: l1_blk_num}, false, true)
           )
 
-        log_info("New confirmation for the rollup block #{rollup_block_hash} found in #{l1_tx_hash_raw}")
+        log_info("New confirmation for the rollup block #{rollup_block_hash} found in #{l1_transaction_hash_raw}")
 
         {updated_block_to_txs, updated_lifecycle_txs, updated_blocks_requests}
       end)
@@ -744,7 +744,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # - A list of rollup blocks each associated with the transaction's hash that
   #   confirms the block.
   @spec discover_rollup_blocks(
-          %{binary() => %{l1_tx_hash: binary(), l1_block_num: non_neg_integer()}},
+          %{binary() => %{l1_transaction_hash: binary(), l1_block_num: non_neg_integer()}},
           %{
             :logs_block_range => non_neg_integer(),
             :outbox_address => binary(),
@@ -792,7 +792,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         if length(confirmed_blocks) > 0 do
           log_info("Found #{length(confirmed_blocks)} confirmed blocks")
 
-          add_confirmation_transaction(confirmed_blocks, block_to_l1_txs[block_num].l1_tx_hash) ++
+          add_confirmation_transaction(confirmed_blocks, block_to_l1_txs[block_num].l1_transaction_hash) ++
             updated_rollup_blocks
         else
           log_info("Either no unconfirmed blocks found or DB inconsistency error discovered")
@@ -1413,12 +1413,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   # Adds the confirmation transaction hash to each rollup block description in the list.
   @spec add_confirmation_transaction([Arbitrum.BatchBlock.to_import()], binary()) :: [Arbitrum.BatchBlock.to_import()]
-  defp add_confirmation_transaction(block_descriptions_list, confirm_tx_hash) do
+  defp add_confirmation_transaction(block_descriptions_list, confirm_transaction_hash) do
     block_descriptions_list
     |> Enum.reduce([], fn block_descr, updated ->
       new_block_descr =
         block_descr
-        |> Map.put(:confirmation_transaction, confirm_tx_hash)
+        |> Map.put(:confirmation_transaction, confirm_transaction_hash)
 
       [new_block_descr | updated]
     end)
@@ -1432,9 +1432,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   defp take_lifecycle_txs_for_confirmed_blocks(confirmed_rollup_blocks, lifecycle_txs) do
     confirmed_rollup_blocks
     |> Enum.reduce(%{}, fn block_descr, updated_txs ->
-      confirmation_tx_hash = block_descr.confirmation_transaction
+      confirmation_transaction_hash = block_descr.confirmation_transaction
 
-      Map.put_new(updated_txs, confirmation_tx_hash, lifecycle_txs[confirmation_tx_hash])
+      Map.put_new(updated_txs, confirmation_transaction_hash, lifecycle_txs[confirmation_transaction_hash])
     end)
   end
 

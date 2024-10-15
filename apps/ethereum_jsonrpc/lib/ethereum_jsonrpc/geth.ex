@@ -162,11 +162,11 @@ defmodule EthereumJSONRPC.Geth do
   end
 
   defp extract_transactions_params(block_number, tx_result, counter) do
-    Enum.reduce(tx_result, {[], 0, counter}, fn %{"txHash" => tx_hash, "result" => calls_result},
+    Enum.reduce(tx_result, {[], 0, counter}, fn %{"txHash" => transaction_hash, "result" => calls_result},
                                                 {tx_acc, inner_counter, counter} ->
       {
         [
-          {%{block_number: block_number, hash_data: tx_hash, transaction_index: inner_counter, id: counter},
+          {%{block_number: block_number, hash_data: transaction_hash, transaction_index: inner_counter, id: counter},
            %{id: counter, result: calls_result}}
           | tx_acc
         ],

@@ -602,12 +602,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  defp get_trivial_tx_hashes_with_error_in_internal_tx(internal_transactions) do
+  defp get_trivial_transaction_hashes_with_error_in_internal_transaction(internal_transactions) do
     internal_transactions
-    |> Enum.filter(fn internal_tx ->
-      internal_tx[:index] != 0 && !is_nil(internal_tx[:error])
+    |> Enum.filter(fn internal_transaction ->
+      internal_transaction[:index] != 0 && !is_nil(internal_transaction[:error])
     end)
-    |> Enum.map(fn internal_tx -> internal_tx[:transaction_hash] end)
+    |> Enum.map(fn internal_transaction -> internal_transaction[:transaction_hash] end)
     |> MapSet.new()
   end
 
@@ -650,7 +650,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
          transaction_receipt_from_node \\ nil
        ) do
     valid_internal_transactions_count = Enum.count(valid_internal_transactions)
-    txs_with_error_in_internal_txs = get_trivial_tx_hashes_with_error_in_internal_tx(valid_internal_transactions)
+
+    txs_with_error_in_internal_txs =
+      get_trivial_transaction_hashes_with_error_in_internal_transaction(valid_internal_transactions)
 
     set =
       generate_transaction_set_to_update(

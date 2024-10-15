@@ -445,9 +445,9 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     end
   end
 
-  defp get_receipt_logs(tx_hashes, json_rpc_named_arguments, retries) do
+  defp get_receipt_logs(transaction_hashes, json_rpc_named_arguments, retries) do
     reqs =
-      tx_hashes
+      transaction_hashes
       |> Enum.with_index()
       |> Enum.map(fn {hash, id} ->
         request(%{

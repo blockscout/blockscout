@@ -14,7 +14,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           from_address: from_address,
           to_address: to_address,
           block_number: block_number,
-          hash: tx_hash
+          hash: transaction_hash
         } = with_block(insert(:transaction))
 
       {_, fee} = Transaction.fee(tx, :gwei)
@@ -29,7 +29,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "ETH",
                  subject: "Coin transaction",
                  to_address_hash: to_address.hash,
-                 transaction_hash: tx_hash,
+                 transaction_hash: transaction_hash,
                  tx_fee: fee,
                  type: "COIN"
                }
@@ -41,7 +41,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = insert(:transaction)
 
       assert Summary.process(tx) == []
@@ -57,7 +57,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
         %Transaction{
           from_address: _from_address,
           block_number: _block_number,
-          hash: tx_hash
+          hash: transaction_hash
         } =
         :transaction
         |> insert(from_address: address, to_address: nil)
@@ -76,7 +76,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "ETH",
                  subject: "Contract creation",
                  to_address_hash: contract_address.hash,
-                 transaction_hash: tx_hash,
+                 transaction_hash: transaction_hash,
                  tx_fee: fee,
                  type: "COIN"
                }
@@ -89,7 +89,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -138,7 +138,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -184,7 +184,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -230,7 +230,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -276,7 +276,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -328,7 +328,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =

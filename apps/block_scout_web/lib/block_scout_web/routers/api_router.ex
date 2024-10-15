@@ -251,9 +251,9 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/optimism" do
       if Application.compile_env(:explorer, :chain_type) == :optimism do
-        get("/txn-batches", V2.OptimismController, :txn_batches)
-        get("/txn-batches/count", V2.OptimismController, :txn_batches_count)
-        get("/txn-batches/:l2_block_range_start/:l2_block_range_end", V2.OptimismController, :txn_batches)
+        get("/txn-batches", V2.OptimismController, :transaction_batches)
+        get("/txn-batches/count", V2.OptimismController, :transaction_batches_count)
+        get("/txn-batches/:l2_block_range_start/:l2_block_range_end", V2.OptimismController, :transaction_batches)
         get("/batches", V2.OptimismController, :batches)
         get("/batches/count", V2.OptimismController, :batches_count)
         get("/batches/da/celestia/:height/:commitment", V2.OptimismController, :batch_by_celestia_blob)

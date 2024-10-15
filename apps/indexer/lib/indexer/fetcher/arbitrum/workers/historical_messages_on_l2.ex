@@ -293,11 +293,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   end
 
   # Constructs a list of `eth_getTransactionByHash` requests for a given list of transaction hashes.
-  defp build_transaction_requests(tx_hashes) do
-    tx_hashes
-    |> Enum.reduce([], fn tx_hash, requests_list ->
+  defp build_transaction_requests(transaction_hashes) do
+    transaction_hashes
+    |> Enum.reduce([], fn transaction_hash, requests_list ->
       [
-        Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash})
+        Rpc.transaction_by_hash_request(%{id: 0, hash: transaction_hash})
         | requests_list
       ]
     end)

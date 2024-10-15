@@ -42,7 +42,8 @@ defmodule Explorer.Account.Notifier.EmailTest do
 
   describe "composing email" do
     test "compose_email" do
-      {:ok, tx_hash} = string_to_transaction_hash("0x5d5ff210261f1b2d6e4af22ea494f428f9997d4ab614a629d4f1390004b3e80d")
+      {:ok, transaction_hash} =
+        string_to_transaction_hash("0x5d5ff210261f1b2d6e4af22ea494f428f9997d4ab614a629d4f1390004b3e80d")
 
       {:ok, from_hash} = string_to_address_hash("0x092D537737E767Dae48c28aE509f34094496f030")
 
@@ -67,7 +68,7 @@ defmodule Explorer.Account.Notifier.EmailTest do
 
       watchlist_notification = %WatchlistNotification{
         watchlist_address: watchlist_address,
-        transaction_hash: tx_hash,
+        transaction_hash: transaction_hash,
         from_address_hash: from_hash,
         to_address_hash: to_hash,
         direction: "incoming",

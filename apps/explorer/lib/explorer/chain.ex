@@ -1346,7 +1346,7 @@ defmodule Explorer.Chain do
 
   # preload_to_detect_tt?: we don't need to preload more than one token transfer in case the tx inside the list (we don't show any token transfers on tx tile in new UI)
   def preload_token_transfers(
-        %Transaction{hash: tx_hash, block_hash: block_hash} = transaction,
+        %Transaction{hash: transaction_hash, block_hash: block_hash} = transaction,
         necessity_by_association,
         options,
         preload_to_detect_tt? \\ true
@@ -1359,12 +1359,12 @@ defmodule Explorer.Chain do
       token_transfers =
         TokenTransfer
         |> (&if(is_nil(block_hash),
-              do: where(&1, [token_transfer], token_transfer.transaction_hash == ^tx_hash),
+              do: where(&1, [token_transfer], token_transfer.transaction_hash == ^transaction_hash),
               else:
                 where(
                   &1,
                   [token_transfer],
-                  token_transfer.transaction_hash == ^tx_hash and token_transfer.block_hash == ^block_hash
+                  token_transfer.transaction_hash == ^transaction_hash and token_transfer.block_hash == ^block_hash
                 )
             )).()
         |> limit(^limit)
@@ -4211,7 +4211,7 @@ defmodule Explorer.Chain do
     |> Enum.map(fn {{task, res}, balance} ->
       case res do
         {:ok, hash} ->
-          put_tx_hash(hash, balance)
+          put_transaction_hash(hash, balance)
 
         {:exit, _reason} ->
           balance
@@ -4223,7 +4223,7 @@ defmodule Explorer.Chain do
     end)
   end
 
-  defp put_tx_hash(hash, coin_balance),
+  defp put_transaction_hash(hash, coin_balance),
     do: if(hash, do: %CoinBalance{coin_balance | transaction_hash: hash}, else: coin_balance)
 
   defp add_block_timestamp_to_balances(

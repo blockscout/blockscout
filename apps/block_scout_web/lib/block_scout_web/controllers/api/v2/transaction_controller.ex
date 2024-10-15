@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
-  alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
+  alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
@@ -243,8 +243,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def optimism_batch(conn, %{"batch_number" => batch_number_string} = params) do
     {batch_number, ""} = Integer.parse(batch_number_string)
 
-    l2_block_number_from = OptimismTxnBatch.edge_l2_block_number(batch_number, :min)
-    l2_block_number_to = OptimismTxnBatch.edge_l2_block_number(batch_number, :max)
+    l2_block_number_from = OptimismTransactionBatch.edge_l2_block_number(batch_number, :min)
+    l2_block_number_to = OptimismTransactionBatch.edge_l2_block_number(batch_number, :max)
 
     transactions_plus_one =
       if is_nil(l2_block_number_from) or is_nil(l2_block_number_to) do
@@ -305,7 +305,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     transactions_plus_one =
       batch_number
       |> batch_transactions_fun.(@api_true)
-      |> Enum.map(fn tx -> tx.tx_hash end)
+      |> Enum.map(fn tx -> tx.transaction_hash end)
       |> Chain.hashes_to_transactions(full_options)
 
     {transactions, next_page} = split_list_by_page(transactions_plus_one)
@@ -460,7 +460,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:logs, %{
-        tx_hash: transaction_hash,
+        transaction_hash: transaction_hash,
         logs: logs |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })

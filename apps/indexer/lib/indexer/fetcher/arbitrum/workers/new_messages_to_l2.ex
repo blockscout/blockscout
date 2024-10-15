@@ -316,14 +316,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
         {msg_id, type, ts} = message_delivered_event_parse(event)
 
         if type in @types_of_l1_messages_forwarded_to_l2 do
-          tx_hash = event["transactionHash"]
+          transaction_hash = event["transactionHash"]
           blk_num = quantity_to_integer(event["blockNumber"])
 
           updated_messages = [
             %{
               direction: :to_l2,
               message_id: msg_id,
-              originating_transaction_hash: tx_hash,
+              originating_transaction_hash: transaction_hash,
               origination_timestamp: ts,
               originating_transaction_block_number: blk_num
             }
@@ -333,11 +333,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
           updated_txs_requests =
             Map.put(
               txs_requests,
-              tx_hash,
-              Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash})
+              transaction_hash,
+              Rpc.transaction_by_hash_request(%{id: 0, hash: transaction_hash})
             )
 
-          log_debug("L1 to L2 message #{tx_hash} found with the type #{type}")
+          log_debug("L1 to L2 message #{transaction_hash} found with the type #{type}")
 
           {updated_messages, updated_txs_requests}
         else

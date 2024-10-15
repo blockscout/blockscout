@@ -98,9 +98,9 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.Workers do
       |> Enum.reduce([], fn batch, batches ->
         [
           batch
-          |> Map.put(:commit_id, get_l1_tx_id_by_hash(l1_txs, batch.commit_tx_hash))
-          |> Map.put(:prove_id, get_l1_tx_id_by_hash(l1_txs, batch.prove_tx_hash))
-          |> Map.put(:execute_id, get_l1_tx_id_by_hash(l1_txs, batch.executed_tx_hash))
+          |> Map.put(:commit_id, get_l1_tx_id_by_hash(l1_txs, batch.commit_transaction_hash))
+          |> Map.put(:prove_id, get_l1_tx_id_by_hash(l1_txs, batch.prove_transaction_hash))
+          |> Map.put(:execute_id, get_l1_tx_id_by_hash(l1_txs, batch.executed_transaction_hash))
           |> Db.prune_json_batch()
           | batches
         ]

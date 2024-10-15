@@ -166,12 +166,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def render("logs.json", %{logs: logs, next_page_params: next_page_params, tx_hash: tx_hash}) do
+  def render("logs.json", %{logs: logs, next_page_params: next_page_params, transaction_hash: transaction_hash}) do
     decoded_logs = decode_logs(logs, false)
 
     %{
       "items" =>
-        logs |> Enum.zip(decoded_logs) |> Enum.map(fn {log, decoded_log} -> prepare_log(log, tx_hash, decoded_log) end),
+        logs
+        |> Enum.zip(decoded_logs)
+        |> Enum.map(fn {log, decoded_log} -> prepare_log(log, transaction_hash, decoded_log) end),
       "next_page_params" => next_page_params
     }
   end
@@ -244,7 +246,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     decoded = process_decoded_log(decoded_log)
 
     %{
-      "tx_hash" => get_tx_hash(transaction_or_hash),
+      "transaction_hash" => get_transaction_hash(transaction_or_hash),
       "address" => Helper.address_with_info(nil, log.address, log.address_hash, tags_for_address_needed?),
       "topics" => [
         log.first_topic,
@@ -261,8 +263,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  defp get_tx_hash(%Transaction{} = tx), do: to_string(tx.hash)
-  defp get_tx_hash(hash), do: to_string(hash)
+  defp get_transaction_hash(%Transaction{} = tx), do: to_string(tx.hash)
+  defp get_transaction_hash(hash), do: to_string(hash)
 
   defp smart_contract_info(%Transaction{} = tx),
     do: Helper.address_with_info(nil, tx.to_address, tx.to_address_hash, false)

@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
       "error" => internal_transaction.error,
       "success" => is_nil(internal_transaction.error),
       "type" => internal_transaction.call_type || internal_transaction.type,
-      "tx_hash" => internal_transaction.transaction_hash,
+      "transaction_hash" => internal_transaction.transaction_hash,
       "from" =>
         Helper.address_with_info(nil, internal_transaction.from_address, internal_transaction.from_address_hash, false),
       "to" =>
