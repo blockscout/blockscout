@@ -1904,7 +1904,7 @@ defmodule Explorer.Chain do
         po in PendingBlockOperation,
         where: not is_nil(po.block_number),
         select: po.block_number,
-        order_by: [desc: po.block_number]
+        order_by: [asc: po.block_number]
       )
 
     query
