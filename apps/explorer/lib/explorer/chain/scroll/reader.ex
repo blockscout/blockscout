@@ -70,18 +70,44 @@ defmodule Explorer.Chain.Scroll.Reader do
 
   def get_l1_fee_param_for_transaction(_name, %{block_number: 0, index: 0}, _options), do: nil
 
+  # credo:disable-for-next-line /Complexity/
   def get_l1_fee_param_for_transaction(name, transaction, options)
       when name in [:overhead, :scalar, :commit_scalar, :blob_scalar, :l1_base_fee, :l1_blob_base_fee] do
     query =
-      from(p in L1FeeParam,
-        select: p.value,
-        where:
-          p.name == ^name and
-            (p.block_number < ^transaction.block_number or
-               (p.block_number == ^transaction.block_number and p.tx_index < ^transaction.index)),
-        order_by: [desc: p.block_number, desc: p.tx_index],
-        limit: 1
-      )
+      cond do
+        transaction.block_number == 0 ->
+          # transaction.index is greater than 0 here
+          from(p in L1FeeParam,
+            select: p.value,
+            where:
+              p.name == ^name and
+                (p.block_number == 0 and p.tx_index < ^transaction.index),
+            order_by: [desc: p.block_number, desc: p.tx_index],
+            limit: 1
+          )
+
+        transaction.index == 0 ->
+          # transaction.block_number is greater than 0 here
+          from(p in L1FeeParam,
+            select: p.value,
+            where:
+              p.name == ^name and
+                p.block_number < ^transaction.block_number,
+            order_by: [desc: p.block_number, desc: p.tx_index],
+            limit: 1
+          )
+
+        true ->
+          from(p in L1FeeParam,
+            select: p.value,
+            where:
+              p.name == ^name and
+                (p.block_number < ^transaction.block_number or
+                   (p.block_number == ^transaction.block_number and p.tx_index < ^transaction.index)),
+            order_by: [desc: p.block_number, desc: p.tx_index],
+            limit: 1
+          )
+      end
 
     select_repo(options).one(query)
   end
