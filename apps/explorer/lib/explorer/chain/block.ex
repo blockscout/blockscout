@@ -19,7 +19,6 @@ defmodule Explorer.Chain.Block.Schema do
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
   alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
-  alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
   alias Explorer.Chain.Zilliqa.AggregateQuorumCertificate, as: ZilliqaAggregateQuorumCertificate
   alias Explorer.Chain.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
@@ -112,8 +111,6 @@ defmodule Explorer.Chain.Block.Schema do
                         :zilliqa ->
                           elem(
                             quote do
-                              field(:zilliqa_view, :integer)
-
                               has_one(:zilliqa_quorum_certificate, ZilliqaQuorumCertificate,
                                 foreign_key: :block_hash,
                                 references: :hash
@@ -203,9 +200,6 @@ defmodule Explorer.Chain.Block do
 
                                 :arbitrum ->
                                   ~w(send_count send_root l1_block_number)a
-
-                                :zilliqa ->
-                                  ~w(zilliqa_view)a
 
                                 _ ->
                                   ~w()a
