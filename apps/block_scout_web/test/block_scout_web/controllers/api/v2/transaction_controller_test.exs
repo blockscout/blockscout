@@ -1495,7 +1495,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert json["timestamp"] == nil
     assert json["method"] == nil
     assert to_string(token_transfer.block_hash) == json["block_hash"]
-    assert to_string(token_transfer.log_index) == json["log_index"]
+    assert token_transfer.log_index == json["log_index"]
     assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
   end
 

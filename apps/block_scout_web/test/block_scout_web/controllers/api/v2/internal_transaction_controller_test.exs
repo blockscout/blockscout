@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       assert response["next_page_params"] == nil
     end
 
-    test "internal trasnactions with next_page_params", %{conn: conn} do
+    test "internal transactions with next_page_params", %{conn: conn} do
       internal_transactions =
         for i <- 0..50 do
           tx = insert(:transaction) |> with_block()
