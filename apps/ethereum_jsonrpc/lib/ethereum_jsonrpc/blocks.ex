@@ -179,7 +179,7 @@ defmodule EthereumJSONRPC.Blocks do
               l1_block_number: nil,\
       """
     :zilliqa -> """
-                view: nil,\
+                zilliqa_view: nil,\
       """
     _ -> ""
   end}

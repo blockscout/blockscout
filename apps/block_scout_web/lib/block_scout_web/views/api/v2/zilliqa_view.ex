@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
 
   def extend_block_json_response(out_json, %Block{} = block, true) do
     zilliqa_json =
-      %{}
+      %{view: Map.get(block, :zilliqa_view)}
       |> add_quorum_certificate(block)
       |> add_aggregate_quorum_certificate(block)
 

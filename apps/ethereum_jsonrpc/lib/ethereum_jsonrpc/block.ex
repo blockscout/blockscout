@@ -269,7 +269,7 @@ defmodule EthereumJSONRPC.Block do
             l1_block_number: 19828534,\
       """
     :zilliqa -> """
-            view: "0x115cca",\
+            zilliqa_view: "0x115cca",\
       """
     _ -> ""
   end}
@@ -340,7 +340,7 @@ defmodule EthereumJSONRPC.Block do
             l1_block_number: nil,\
       """
     :zilliqa -> """
-            view: nil,\
+            zilliqa_view: nil,\
       """
     _ -> ""
   end}
@@ -573,7 +573,7 @@ defmodule EthereumJSONRPC.Block do
       defp chain_type_fields(params, elixir) do
         params
         |> Map.merge(%{
-          view: Map.get(elixir, "view")
+          zilliqa_view: Map.get(elixir, "view")
         })
       end
 
