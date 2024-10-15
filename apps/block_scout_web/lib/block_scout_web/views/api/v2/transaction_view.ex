@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Block, Log, Token, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Log, SignedAuthorization, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
@@ -342,6 +342,16 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  @doc """
+    Extracts the necessary fields from the signed authorization for the API response.
+
+    ## Parameters
+    - `signed_authorization`: A `SignedAuthorization.t()` struct containing the signed authorization data.
+
+    ## Returns
+    - A map with the necessary fields for the API response.
+  """
+  @spec prepare_signed_authorization(SignedAuthorization.t()) :: map()
   def prepare_signed_authorization(signed_authorization) do
     %{
       "address" => signed_authorization.address,
@@ -504,6 +514,16 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def authorization_list(nil), do: []
   def authorization_list(%NotLoaded{}), do: []
 
+  @doc """
+    Renders the authorization list for a transaction.
+
+    ## Parameters
+    - `signed_authorizations`: A list of `SignedAuthorization.t()` structs.
+
+    ## Returns
+    - A list of maps with the necessary fields for the API response.
+  """
+  @spec authorization_list([SignedAuthorization.t()]) :: [map()]
   def authorization_list(signed_authorizations) do
     render("authorization_list.json", %{signed_authorizations: signed_authorizations})
   end

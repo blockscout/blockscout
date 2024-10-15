@@ -18,6 +18,14 @@ defmodule EthereumJSONRPC.SignedAuthorization do
           String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.quantity()
         }
 
+  @typedoc """
+  * `"chain_id"` - specifies the chain for which the authorization was created.
+  * `"address"` - address of the delegate contract.
+  * `"nonce"` - signature nonce.
+  * `"v"` - v component of the signature.
+  * `"r"` - r component of the signature.
+  * `"s"` - s component of the signature.
+  """
   @type params :: %{
           chain_id: non_neg_integer(),
           address: EthereumJSONRPC.address(),

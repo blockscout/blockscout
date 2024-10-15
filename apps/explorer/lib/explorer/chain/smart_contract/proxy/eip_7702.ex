@@ -8,7 +8,19 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   alias Explorer.Chain.SmartContract.Proxy
 
   @doc """
-  Get delegate address hash string following EIP-7702
+    Retrieves the delegate address hash string for an EIP-7702 compatible EOA.
+
+    This function fetches the contract code for the given address and extracts
+    the delegate address according to the EIP-7702 specification.
+
+    ## Parameters
+    - `address_hash`: The address of the contract to check.
+    - `options`: Optional keyword list of options (default: `[]`).
+
+    ## Returns
+    - The delegate address in the hex string format if found and successfully decoded.
+    - `nil` if the address doesn't exist, has no contract code, or the delegate address
+      couldn't be extracted or decoded.
   """
   @spec get_implementation_address_hash_string(Hash.Address.t(), Keyword.t()) :: String.t() | nil
   def get_implementation_address_hash_string(address_hash, options \\ []) do
@@ -30,7 +42,24 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   end
 
   @doc """
-  Extracts the EIP-7702 delegate address from the bytecode
+    Extracts the EIP-7702 delegate address from the bytecode.
+
+    This function analyzes the given bytecode to identify and extract the delegate
+    address according to the EIP-7702 specification.
+
+    ## Parameters
+    - `contract_code_bytes`: The binary representation of the contract bytecode.
+
+    ## Returns
+    - A string representation of the delegate address prefixed with "0x" if found.
+    - `nil` if the delegate address is not present in the bytecode.
+
+    ## Examples
+      iex> get_delegate_address(<<239, 1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20>>)
+      "0x0102030405060708090a0b0c0d0e0f10111213"
+
+      iex> get_delegate_address(<<1, 2, 3>>)
+      nil
   """
   @spec get_delegate_address(binary()) :: String.t() | nil
   def get_delegate_address(contract_code_bytes) do

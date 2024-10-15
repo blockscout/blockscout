@@ -38,7 +38,8 @@ defmodule Indexer.Transform.SignedAuthorizations do
     )
   end
 
-  # authority = ecrecover(keccak(MAGIC || rlp([chain_id, address, nonce])), y_parity, r, s]
+  # This function recovers the signer address from the signed authorization data using this formula:
+  #   authority = ecrecover(keccak(MAGIC || rlp([chain_id, address, nonce])), y_parity, r, s]
   defp recover_authority(signed_authorization) do
     {:ok, %{bytes: address}} = Hash.Address.cast(signed_authorization.address)
 

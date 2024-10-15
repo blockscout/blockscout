@@ -117,7 +117,20 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   end
 
   @doc """
-  Decodes address output into 20 bytes address hash
+    Decodes and formats an address output from a smart contract ABI.
+
+    This function handles various input formats and edge cases when decoding
+    address outputs from smart contract function calls or events.
+
+    ## Parameters
+    - `address`: The address output to decode. Can be `nil`, `"0x"`, a binary string, or `:error`.
+
+    ## Returns
+    - `nil` if the input is `nil`.
+    - The burn address hash string if the input is `"0x"`.
+    - A formatted address string if the input is a valid binary string.
+    - `:error` if the input is `:error`.
+    - `nil` for any other input type.
   """
   @spec abi_decode_address_output(any()) :: nil | :error | binary()
   def abi_decode_address_output(nil), do: nil
