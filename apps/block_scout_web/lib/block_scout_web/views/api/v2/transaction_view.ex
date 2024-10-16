@@ -511,9 +511,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     render("transaction_actions.json", %{actions: actions})
   end
 
-  def authorization_list(nil), do: []
-  def authorization_list(%NotLoaded{}), do: []
-
   @doc """
     Renders the authorization list for a transaction.
 
@@ -524,6 +521,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     - A list of maps with the necessary fields for the API response.
   """
   @spec authorization_list([SignedAuthorization.t()]) :: [map()]
+  def authorization_list(nil), do: []
+  def authorization_list(%NotLoaded{}), do: []
+
   def authorization_list(signed_authorizations) do
     render("authorization_list.json", %{signed_authorizations: signed_authorizations})
   end
