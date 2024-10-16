@@ -354,13 +354,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   @spec prepare_signed_authorization(SignedAuthorization.t()) :: map()
   def prepare_signed_authorization(signed_authorization) do
     %{
-      "address" => signed_authorization.address,
+      "address" => Address.checksum(signed_authorization.address),
       "chain_id" => signed_authorization.chain_id,
       "nonce" => signed_authorization.nonce,
       "r" => signed_authorization.r,
       "s" => signed_authorization.s,
       "v" => signed_authorization.v,
-      "authority" => signed_authorization.authority
+      "authority" => Address.checksum(signed_authorization.authority)
     }
   end
 
