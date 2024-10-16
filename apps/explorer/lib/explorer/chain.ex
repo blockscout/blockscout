@@ -257,6 +257,7 @@ defmodule Explorer.Chain do
   defp common_where_limit_order(query, paging_options) do
     query
     |> InternalTransaction.where_is_different_from_parent_transaction()
+    # todo: replace `index_int_tx_desc_order` with `index_internal_transaction_desc_order` in the next line when new frontend is bound to `index_internal_transaction_desc_order` property
     |> page_internal_transaction(paging_options, %{index_int_tx_desc_order: true})
     |> limit(^paging_options.page_size)
     |> order_by(
@@ -286,7 +287,7 @@ defmodule Explorer.Chain do
     |> Transaction.address_to_transactions_tasks_query(true)
     |> Transaction.not_pending_transactions()
     |> join_associations(necessity_by_association)
-    |> Transaction.put_has_token_transfers_to_tx(false)
+    |> Transaction.put_has_token_transfers_to_transaction(false)
     |> Transaction.matching_address_queries_list(direction, address_hashes)
     |> Enum.map(fn query -> Task.async(fn -> select_repo(options).all(query) end) end)
   end
@@ -571,7 +572,7 @@ defmodule Explorer.Chain do
     |> where([_, block], block.hash == ^block_hash)
     |> apply_filter_by_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
-    |> Transaction.put_has_token_transfers_to_tx(old_ui?)
+    |> Transaction.put_has_token_transfers_to_transaction(old_ui?)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> select_repo(options).all()
     |> (&if(old_ui?,
@@ -593,7 +594,7 @@ defmodule Explorer.Chain do
     |> fetch_transactions_in_descending_order_by_block_and_index()
     |> where(execution_node_hash: ^execution_node_hash)
     |> join_associations(necessity_by_association)
-    |> Transaction.put_has_token_transfers_to_tx(false)
+    |> Transaction.put_has_token_transfers_to_transaction(false)
     |> (& &1).()
     |> select_repo(options).all()
     |> (&Enum.map(&1, fn transaction ->
@@ -2683,7 +2684,7 @@ defmodule Explorer.Chain do
         |> apply_filter_by_method_id_to_transactions(method_id_filter)
         |> apply_filter_by_type_to_transactions(type_filter)
         |> join_associations(necessity_by_association)
-        |> Transaction.put_has_token_transfers_to_tx(old_ui?)
+        |> Transaction.put_has_token_transfers_to_transaction(old_ui?)
         |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
         |> select_repo(options).all()
         |> (&if(old_ui?,
@@ -3153,12 +3154,12 @@ defmodule Explorer.Chain do
         limit: ^1
       )
 
-    tx_input =
+    transaction_input =
       creation_transaction_query
       |> Repo.one()
 
-    if tx_input do
-      with %{init: input, created_contract_code: created_contract_code} <- tx_input do
+    if transaction_input do
+      with %{init: input, created_contract_code: created_contract_code} <- transaction_input do
         %{init: Data.to_string(input), created_contract_code: Data.to_string(created_contract_code)}
       end
     else
@@ -3428,16 +3429,25 @@ defmodule Explorer.Chain do
     where(query, [coin_balance], coin_balance.block_number < ^block_number)
   end
 
+  # todo: replace `index_int_tx_desc_order` with `index_internal_transaction_desc_order` in the next clause when new frontend is bound to `index_internal_transaction_desc_order` property
   def page_internal_transaction(_, _, _ \\ %{index_int_tx_desc_order: false})
 
   def page_internal_transaction(query, %PagingOptions{key: nil}, _), do: query
 
+  # todo: keep next clause for compatibility with frontend and remove when new frontend is bound to `index_internal_transaction_desc_order` property
   def page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}, %{
         index_int_tx_desc_order: desc
       }) do
-    hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, desc)
+    hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, desc)
   end
 
+  def page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}, %{
+        index_internal_transaction_desc_order: desc
+      }) do
+    hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, desc)
+  end
+
+  # todo: keep next clause for compatibility with frontend and remove when new frontend is bound to `index_internal_transaction_desc_order` property
   def page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_int_tx_desc_order: desc}) do
     if desc do
       query
@@ -3446,6 +3456,15 @@ defmodule Explorer.Chain do
     end
   end
 
+  def page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_internal_transaction_desc_order: desc}) do
+    if desc do
+      query
+    else
+      where(query, [internal_transaction], internal_transaction.index > 0)
+    end
+  end
+
+  # todo: keep next clause for compatibility with frontend and remove when new frontend is bound to `index_internal_transaction_desc_order` property
   def page_internal_transaction(query, %PagingOptions{key: {index}}, %{index_int_tx_desc_order: desc}) do
     if desc do
       where(query, [internal_transaction], internal_transaction.index < ^index)
@@ -3454,7 +3473,15 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp hardcoded_where_for_page_int_tx(query, 0, 0, index, false),
+  def page_internal_transaction(query, %PagingOptions{key: {index}}, %{index_internal_transaction_desc_order: desc}) do
+    if desc do
+      where(query, [internal_transaction], internal_transaction.index < ^index)
+    else
+      where(query, [internal_transaction], internal_transaction.index > ^index)
+    end
+  end
+
+  defp hardcoded_where_for_page_internal_transaction(query, 0, 0, index, false),
     do:
       where(
         query,
@@ -3463,7 +3490,7 @@ defmodule Explorer.Chain do
           internal_transaction.transaction_index == 0 and internal_transaction.index > ^index
       )
 
-  defp hardcoded_where_for_page_int_tx(query, block_number, 0, index, false),
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, 0, index, false),
     do:
       where(
         query,
@@ -3473,7 +3500,7 @@ defmodule Explorer.Chain do
              internal_transaction.transaction_index == 0 and internal_transaction.index > ^index)
       )
 
-  defp hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, false),
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, false),
     do:
       where(
         query,
@@ -3485,7 +3512,7 @@ defmodule Explorer.Chain do
              internal_transaction.transaction_index == ^transaction_index and internal_transaction.index > ^index)
       )
 
-  defp hardcoded_where_for_page_int_tx(query, 0, 0, index, true),
+  defp hardcoded_where_for_page_internal_transaction(query, 0, 0, index, true),
     do:
       where(
         query,
@@ -3494,7 +3521,7 @@ defmodule Explorer.Chain do
           internal_transaction.transaction_index == 0 and internal_transaction.index < ^index
       )
 
-  defp hardcoded_where_for_page_int_tx(query, block_number, 0, 0, true),
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, 0, 0, true),
     do:
       where(
         query,
@@ -3502,7 +3529,7 @@ defmodule Explorer.Chain do
         internal_transaction.block_number < ^block_number
       )
 
-  defp hardcoded_where_for_page_int_tx(query, block_number, 0, index, true),
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, 0, index, true),
     do:
       where(
         query,
@@ -3512,7 +3539,7 @@ defmodule Explorer.Chain do
              internal_transaction.transaction_index == 0 and internal_transaction.index < ^index)
       )
 
-  defp hardcoded_where_for_page_int_tx(query, block_number, transaction_index, 0, true),
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, 0, true),
     do:
       where(
         query,
@@ -3522,7 +3549,7 @@ defmodule Explorer.Chain do
              internal_transaction.transaction_index < ^transaction_index)
       )
 
-  defp hardcoded_where_for_page_int_tx(query, block_number, transaction_index, index, true),
+  defp hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, true),
     do:
       where(
         query,

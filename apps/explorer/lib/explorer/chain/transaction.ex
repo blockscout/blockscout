@@ -1554,7 +1554,7 @@ defmodule Explorer.Chain.Transaction do
     |> address_to_transactions_tasks_query(false, old_ui?)
     |> not_dropped_or_replaced_transactions()
     |> Chain.join_associations(necessity_by_association)
-    |> put_has_token_transfers_to_tx(old_ui?)
+    |> put_has_token_transfers_to_transaction(old_ui?)
     |> matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query) end) end)
   end
@@ -1803,10 +1803,10 @@ defmodule Explorer.Chain.Transaction do
   Adds a `has_token_transfers` field to the query via `select_merge` if second argument is `false` and returns
   the query untouched otherwise.
   """
-  @spec put_has_token_transfers_to_tx(Ecto.Query.t() | atom, boolean) :: Ecto.Query.t()
-  def put_has_token_transfers_to_tx(query, true), do: query
+  @spec put_has_token_transfers_to_transaction(Ecto.Query.t() | atom, boolean) :: Ecto.Query.t()
+  def put_has_token_transfers_to_transaction(query, true), do: query
 
-  def put_has_token_transfers_to_tx(query, false) do
+  def put_has_token_transfers_to_transaction(query, false) do
     from(transaction in query,
       select_merge: %{
         has_token_transfers:

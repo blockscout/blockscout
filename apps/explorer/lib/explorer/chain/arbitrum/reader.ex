@@ -112,7 +112,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     missed_messages_to_l2_query()
     |> order_by(desc: :block_number)
     |> limit(1)
-    |> select([rollup_tx], rollup_tx.block_number)
+    |> select([rollup_transaction], rollup_transaction.block_number)
     |> Repo.one(timeout: :infinity)
   end
 
@@ -826,9 +826,12 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @spec transactions_for_missed_messages_to_l2(non_neg_integer(), non_neg_integer()) :: [Hash.t()]
   def transactions_for_missed_messages_to_l2(start_block, end_block) do
     missed_messages_to_l2_query()
-    |> where([rollup_tx], rollup_tx.block_number >= ^start_block and rollup_tx.block_number <= ^end_block)
+    |> where(
+      [rollup_transaction],
+      rollup_transaction.block_number >= ^start_block and rollup_transaction.block_number <= ^end_block
+    )
     |> order_by(desc: :block_timestamp)
-    |> select([rollup_tx], rollup_tx.hash)
+    |> select([rollup_transaction], rollup_transaction.hash)
     |> Repo.all()
   end
 
@@ -844,10 +847,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   #   - A query to retrieve missed L1-to-L2 messages.
   @spec missed_messages_to_l2_query() :: Ecto.Query.t()
   defp missed_messages_to_l2_query do
-    from(rollup_tx in Transaction,
+    from(rollup_transaction in Transaction,
       left_join: msg in Message,
-      on: rollup_tx.hash == msg.completion_transaction_hash and msg.direction == :to_l2,
-      where: rollup_tx.type in @to_l2_messages_transaction_types and is_nil(msg.completion_transaction_hash)
+      on: rollup_transaction.hash == msg.completion_transaction_hash and msg.direction == :to_l2,
+      where: rollup_transaction.type in @to_l2_messages_transaction_types and is_nil(msg.completion_transaction_hash)
     )
   end
 

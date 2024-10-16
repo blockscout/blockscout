@@ -608,10 +608,10 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert Enum.count(internal_transactions) > 0
 
-      last_int_tx = List.last(internal_transactions)
+      last_internal_transaction = List.last(internal_transactions)
 
-      assert last_int_tx.type == :call
-      assert last_int_tx.call_type == :invalid
+      assert last_internal_transaction.type == :call
+      assert last_internal_transaction.call_type == :invalid
     end
   end
 

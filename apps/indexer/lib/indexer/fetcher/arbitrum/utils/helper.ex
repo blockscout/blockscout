@@ -65,12 +65,12 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
       when is_map(lifecycle_transactions) and is_map(blocks_to_ts) and is_boolean(track_finalization?) do
     lifecycle_transactions
     |> Map.keys()
-    |> Enum.reduce(%{}, fn tx_key, updated_transactions ->
+    |> Enum.reduce(%{}, fn transaction_key, updated_transactions ->
       Map.put(
         updated_transactions,
-        tx_key,
-        Map.merge(lifecycle_transactions[tx_key], %{
-          timestamp: blocks_to_ts[lifecycle_transactions[tx_key].block_number],
+        transaction_key,
+        Map.merge(lifecycle_transactions[transaction_key], %{
+          timestamp: blocks_to_ts[lifecycle_transactions[transaction_key].block_number],
           status:
             if track_finalization? do
               :unfinalized
@@ -88,7 +88,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
     This function checks if the given lifecycle transaction has the same block number
     and timestamp as the provided values. If they are the same, it returns `{:same, nil}`.
     If they differ, it updates the transaction with the new block number and timestamp,
-    logs the update, and returns `{:updated, updated_tx}`.
+    logs the update, and returns `{:updated, updated_transaction}`.
 
     ## Parameters
     - `transaction`: The lifecycle transaction to compare and potentially update.
@@ -97,7 +97,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
 
     ## Returns
     - `{:same, nil}` if the transaction block number and timestamp are the same as the provided values.
-    - `{:updated, updated_tx}` if the transaction was updated with the new block number and timestamp.
+    - `{:updated, updated_transaction}` if the transaction was updated with the new block number and timestamp.
   """
   @spec compare_lifecycle_transaction_and_update(
           LifecycleTransaction.to_import(),

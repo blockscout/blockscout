@@ -50,8 +50,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         )
       end
 
-      second_tx = :transaction |> insert() |> with_block()
-      insert_list(50, :token_transfer, transaction: second_tx, block_number: second_tx.block_number)
+      second_transaction = :transaction |> insert() |> with_block()
+      insert_list(50, :token_transfer, transaction: second_transaction, block_number: second_transaction.block_number)
 
       request = get(conn, "/api/v2/advanced-filters")
       assert response = json_response(request, 200)
@@ -74,11 +74,11 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         )
       end
 
-      second_tx = :transaction |> insert() |> with_block()
+      second_transaction = :transaction |> insert() |> with_block()
 
       insert_list(5, :token_transfer,
-        transaction: second_tx,
-        block_number: second_tx.block_number,
+        transaction: second_transaction,
+        block_number: second_transaction.block_number,
         token_type: "ERC-1155",
         token_ids: 0..10 |> Enum.to_list(),
         amounts: 10..20 |> Enum.to_list()
@@ -105,12 +105,12 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         )
       end
 
-      second_tx = :transaction |> insert() |> with_block()
+      second_transaction = :transaction |> insert() |> with_block()
 
       for i <- 0..49 do
         insert(:internal_transaction,
-          transaction: second_tx,
-          block_hash: second_tx.block_hash,
+          transaction: second_transaction,
+          block_hash: second_transaction.block_hash,
           index: i,
           block_index: i
         )
