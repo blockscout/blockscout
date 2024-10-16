@@ -520,7 +520,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     ## Returns
     - A list of maps with the necessary fields for the API response.
   """
-  @spec authorization_list([SignedAuthorization.t()]) :: [map()]
+  @spec authorization_list(nil | NotLoaded.t() | [SignedAuthorization.t()]) :: [map()]
   def authorization_list(nil), do: []
   def authorization_list(%NotLoaded{}), do: []
 
