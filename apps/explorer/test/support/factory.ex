@@ -819,6 +819,8 @@ defmodule Explorer.Factory do
     from_address_hash = address_hash_from_zero_padded_hash_string(log.second_topic)
 
     # `to_address` is the only thing that isn't created from the token_transfer_log_factory
+    to_address = build(:address, hash: to_address_hash)
+    from_address = build(:address, hash: from_address_hash)
     contract_code = Map.fetch!(contract_code_info(), :bytecode)
 
     token_address = insert(:contract_address, contract_code: contract_code)
@@ -829,8 +831,8 @@ defmodule Explorer.Factory do
       block: block,
       amount: Decimal.new(1),
       block_number: block.number,
-      from_address_hash: from_address_hash,
-      to_address_hash: to_address_hash,
+      from_address: from_address,
+      to_address: to_address,
       token_contract_address: token_address,
       token_type: token.type,
       transaction: log.transaction,
