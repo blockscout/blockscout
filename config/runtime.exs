@@ -1087,7 +1087,8 @@ config :indexer, Indexer.Fetcher.Filecoin.AddressInfo,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_FILECOIN_ADDRESS_INFO_CONCURRENCY", 1)
 
 config :indexer, Indexer.Fetcher.Scroll,
-  eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_ETH_GET_LOGS_RANGE_SIZE", 250)
+  eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_ETH_GET_LOGS_RANGE_SIZE", 250),
+  rpc: System.get_env("INDEXER_SCROLL_L1_RPC")
 
 config :indexer, Indexer.Fetcher.Scroll.L1FeeParam,
   gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
@@ -1104,7 +1105,6 @@ config :explorer, Explorer.Chain.Scroll.L1FeeParam,
 config :indexer, Indexer.Fetcher.Scroll.L1FeeParam.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
 
 config :indexer, Indexer.Fetcher.Scroll.BridgeL1,
-  rpc: System.get_env("INDEXER_SCROLL_L1_RPC"),
   messenger_contract: System.get_env("INDEXER_SCROLL_L1_MESSENGER_CONTRACT"),
   start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_SCROLL_L1_MESSENGER_START_BLOCK")
 

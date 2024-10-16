@@ -26,7 +26,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Chain.Scroll.{Batch, BatchBundle, Reader}
   alias Explorer.{Chain, Repo}
-  alias Indexer.Fetcher.RollupL1ReorgMonitor
+  alias Indexer.Fetcher.{RollupL1ReorgMonitor, Scroll}
   alias Indexer.Helper
 
   # 32-byte signature of the event CommitBatch(uint256 indexed batchIndex, bytes32 indexed batchHash)
@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
          {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
-         rpc = Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll.BridgeL1][:rpc],
+         rpc = l1_rpc_url(),
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
          {:scroll_chain_contract_address_is_valid, true} <-
            {:scroll_chain_contract_address_is_valid, Helper.address_correct?(env[:scroll_chain_contract])},
@@ -241,10 +241,11 @@ defmodule Indexer.Fetcher.Scroll.Batch do
 
   @doc """
     Returns L1 RPC URL for this module.
+    Returns `nil` if not defined.
   """
-  @spec l1_rpc_url() :: binary()
+  @spec l1_rpc_url() :: binary() | nil
   def l1_rpc_url do
-    Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll.BridgeL1][:rpc]
+    Scroll.l1_rpc_url()
   end
 
   @doc """

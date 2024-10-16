@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
 
   alias Explorer.Chain.Scroll.{Bridge, Reader}
   alias Explorer.Repo
-  alias Indexer.Fetcher.RollupL1ReorgMonitor
+  alias Indexer.Fetcher.{RollupL1ReorgMonitor, Scroll}
   alias Indexer.Fetcher.Scroll.Bridge, as: BridgeFetcher
   alias Indexer.Helper
 
@@ -66,7 +66,7 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
          {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
-         rpc = env[:rpc],
+         rpc = l1_rpc_url(),
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
          {:messenger_contract_address_is_valid, true} <-
            {:messenger_contract_address_is_valid, Helper.address_correct?(env[:messenger_contract])},
@@ -177,10 +177,11 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
 
   @doc """
     Returns L1 RPC URL for this module.
+    Returns `nil` if not defined.
   """
-  @spec l1_rpc_url() :: binary()
+  @spec l1_rpc_url() :: binary() | nil
   def l1_rpc_url do
-    Application.get_all_env(:indexer)[__MODULE__][:rpc]
+    Scroll.l1_rpc_url()
   end
 
   @doc """
