@@ -35,7 +35,6 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   # 32-byte signature of the event FinalizeBatch(uint256 indexed batchIndex, bytes32 indexed batchHash, bytes32 stateRoot, bytes32 withdrawRoot)
   @finalize_batch_event "0x26ba82f907317eedc97d0cbef23de76a43dd6edb563bdb6e9407645b950a7a2d"
 
-  @eth_get_logs_range_size 1000
   @fetcher_name :scroll_batch
 
   def child_spec(start_link_arguments) do
@@ -92,8 +91,10 @@ defmodule Indexer.Fetcher.Scroll.Batch do
            {:start_block_valid,
             (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block,
             last_l1_block_number, safe_block},
-         {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)} do
+         {:ok, last_l1_transaction} <-
+           Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:l1_transaction_not_found, false} <-
+           {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)} do
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -102,7 +103,8 @@ defmodule Indexer.Fetcher.Scroll.Batch do
          scroll_chain_contract: env[:scroll_chain_contract],
          json_rpc_named_arguments: json_rpc_named_arguments,
          end_block: safe_block,
-         start_block: max(start_block, last_l1_block_number)
+         start_block: max(start_block, last_l1_block_number),
+         eth_get_logs_range_size: Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:eth_get_logs_range_size]
        }}
     else
       {:start_block_undefined, true} ->
@@ -134,7 +136,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
 
         {:stop, :normal, %{}}
 
-      {:l1_tx_not_found, true} ->
+      {:l1_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check scroll_batches table."
         )
@@ -173,14 +175,15 @@ defmodule Indexer.Fetcher.Scroll.Batch do
           scroll_chain_contract: scroll_chain_contract,
           json_rpc_named_arguments: json_rpc_named_arguments,
           end_block: end_block,
-          start_block: start_block
+          start_block: start_block,
+          eth_get_logs_range_size: eth_get_logs_range_size
         } = state
       ) do
     time_before = Timex.now()
 
     last_written_block =
       start_block..end_block
-      |> Enum.chunk_every(@eth_get_logs_range_size)
+      |> Enum.chunk_every(eth_get_logs_range_size)
       |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
         chunk_start = List.first(current_chunk)
         chunk_end = List.last(current_chunk)
@@ -278,12 +281,12 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     Logs.elixir_to_params(result)
   end
 
-  defp get_transaction_input_by_hash(blocks, tx_hashes) do
+  defp get_transaction_input_by_hash(blocks, transaction_hashes) do
     Enum.reduce(blocks, %{}, fn block, acc ->
       block
       |> Map.get("transactions", [])
       |> Enum.filter(fn tx ->
-        Enum.member?(tx_hashes, tx["hash"])
+        Enum.member?(transaction_hashes, tx["hash"])
       end)
       |> Enum.map(fn tx ->
         {tx["hash"], tx["input"]}
@@ -383,7 +386,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   defp prepare_items(events, json_rpc_named_arguments) do
     blocks = Helper.get_blocks_by_events(events, json_rpc_named_arguments, Helper.infinite_retries_number(), true)
 
-    commit_tx_hashes =
+    commit_transaction_hashes =
       events
       |> Enum.reduce([], fn event, acc ->
         if event.first_topic == @commit_batch_event do
@@ -393,7 +396,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         end
       end)
 
-    commit_tx_input_by_hash = get_transaction_input_by_hash(blocks, commit_tx_hashes)
+    commit_transaction_input_by_hash = get_transaction_input_by_hash(blocks, commit_transaction_hashes)
 
     timestamps =
       blocks
@@ -414,13 +417,13 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         if event.first_topic == @commit_batch_event do
           commit_block_number = quantity_to_integer(event.block_number)
 
+          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
           l2_block_range =
-            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             if batch_number == 0 do
               {:ok, range} = BlockRange.cast("[0,0]")
               range
             else
-              commit_tx_input_by_hash
+              commit_transaction_input_by_hash
               |> Map.get(event.transaction_hash)
               |> input_to_l2_block_range()
             end

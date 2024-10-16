@@ -16,32 +16,32 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
   alias Explorer.Chain.Transaction
 
   @counter_type "scroll_l1_fee_params_fetcher_last_block_number"
-  @required_attrs ~w(block_number tx_index name value)a
+  @required_attrs ~w(block_number transaction_index name value)a
 
   @typedoc """
     Descriptor of the L1 Fee Parameter change:
     * `block_number` - A block number of the transaction where the given parameter value was changed.
-    * `tx_index` - An index of the transaction (within the block) where the given parameter value was changed.
+    * `transaction_index` - An index of the transaction (within the block) where the given parameter value was changed.
     * `name` - A name of the parameter (can be one of: `overhead`, `scalar`, `commit_scalar`, `blob_scalar`, `l1_base_fee`, `l1_blob_base_fee`).
     * `value` - A new value of the parameter.
   """
   @type to_import :: %{
           block_number: non_neg_integer(),
-          tx_index: non_neg_integer(),
+          transaction_index: non_neg_integer(),
           name: :overhead | :scalar | :commit_scalar | :blob_scalar | :l1_base_fee | :l1_blob_base_fee,
           value: non_neg_integer()
         }
 
   @typedoc """
     * `block_number` - A block number of the transaction where the given parameter was changed.
-    * `tx_index` - An index of the transaction (within the block) where the given parameter was changed.
+    * `transaction_index` - An index of the transaction (within the block) where the given parameter was changed.
     * `name` - A name of the parameter (can be one of: `overhead`, `scalar`, `commit_scalar`, `blob_scalar`, `l1_base_fee`, `l1_blob_base_fee`).
     * `value` - A new value of the parameter.
   """
   @primary_key false
   typed_schema "scroll_l1_fee_params" do
     field(:block_number, :integer, primary_key: true)
-    field(:tx_index, :integer, primary_key: true)
+    field(:transaction_index, :integer, primary_key: true)
 
     field(:name, Ecto.Enum,
       values: [:overhead, :scalar, :commit_scalar, :blob_scalar, :l1_base_fee, :l1_blob_base_fee],
@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
     params
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
-    |> unique_constraint([:block_number, :tx_index])
+    |> unique_constraint([:block_number, :transaction_index])
   end
 
   @doc """

@@ -189,13 +189,13 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     - `first_topic`: The 32-byte hash of an event signature (in the form of `0x` prefixed hex string).
     - `data`: The event data containing a changed parameter.
     - `block_number`: The number of the block when the event transaction appeared.
-    - `tx_index`: The event transaction index withing the `block_number` block.
+    - `transaction_index`: The event transaction index withing the `block_number` block.
 
     ## Returns
     - A map for one row for `Chain.import` function.
   """
   @spec event_to_param(binary(), Data.t(), non_neg_integer(), non_neg_integer()) :: map()
-  def event_to_param(first_topic, data, block_number, tx_index)
+  def event_to_param(first_topic, data, block_number, transaction_index)
       when first_topic in [
              @overhead_updated_event,
              @scalar_updated_event,
@@ -218,7 +218,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
 
     %{
       block_number: block_number,
-      tx_index: tx_index,
+      transaction_index: transaction_index,
       name: name,
       value: value
     }

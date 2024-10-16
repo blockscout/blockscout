@@ -559,13 +559,13 @@ defmodule Indexer.Helper do
     - `events`: The list of events to retrieve block numbers from.
     - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
     - `retries`: Number of retry attempts if the request fails.
-    - `tx_details`: Whether to include transaction details into the resulting list of blocks.
+    - `transaction_details`: Whether to include transaction details into the resulting list of blocks.
 
     ## Returns
     - The list of blocks. The list is empty if the HTTP response returns error.
   """
   @spec get_blocks_by_events(list(), list(), non_neg_integer(), boolean()) :: list()
-  def get_blocks_by_events(events, json_rpc_named_arguments, retries, tx_details \\ false) do
+  def get_blocks_by_events(events, json_rpc_named_arguments, retries, transaction_details \\ false) do
     events
     |> Enum.reduce(%{}, fn event, acc ->
       block_number = Map.get(event, :block_number, event["blockNumber"])
@@ -574,7 +574,7 @@ defmodule Indexer.Helper do
     |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
     |> Stream.with_index()
     |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-    |> Blocks.requests(&ByNumber.request(&1, tx_details, false))
+    |> Blocks.requests(&ByNumber.request(&1, transaction_details, false))
     |> Enum.chunk_every(@block_by_number_chunk_size)
     |> Enum.reduce([], fn current_requests, results_acc ->
       error_message =

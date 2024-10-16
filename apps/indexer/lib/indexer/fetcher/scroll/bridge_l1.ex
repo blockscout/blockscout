@@ -80,8 +80,10 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
            {:start_block_valid,
             (start_block <= last_l1_block_number || last_l1_block_number == 0) && start_block <= safe_block,
             last_l1_block_number, safe_block},
-         {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)} do
+         {:ok, last_l1_transaction} <-
+           Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:l1_transaction_not_found, false} <-
+           {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)} do
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -122,7 +124,7 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
 
         {:stop, :normal, %{}}
 
-      {:l1_tx_not_found, true} ->
+      {:l1_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check scroll_bridge table."
         )
