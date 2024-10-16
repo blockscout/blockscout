@@ -77,8 +77,23 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
           block_hash: block.hash
         )
 
-      _tt2 = insert(:token_transfer, block: block, block_number: block.number, log_index: log2.index)
-      _tt3 = insert(:token_transfer, block: block, block_number: block.number, log_index: log3.index)
+      _tt2 =
+        insert(:token_transfer,
+          block: block,
+          block_number: block.number,
+          log_index: log2.index,
+          transaction: tx1,
+          transaction_hash: tx1.hash
+        )
+
+      _tt3 =
+        insert(:token_transfer,
+          block: block,
+          block_number: block.number,
+          log_index: log3.index,
+          transaction: tx2,
+          transaction_hash: tx2.hash
+        )
 
       Instance.changeset(instance, %{owner_updated_at_block: block.number, owner_updated_at_log_index: log1.index})
       |> Repo.update!()

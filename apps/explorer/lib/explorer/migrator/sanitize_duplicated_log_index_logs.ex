@@ -10,8 +10,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
   import Ecto.Query
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.Log
-  alias Explorer.Chain.TokenTransfer
+  alias Explorer.Chain.{Log, TokenTransfer}
   alias Explorer.Chain.Token.Instance
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Repo
@@ -51,7 +50,8 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
     limit = batch_size() * concurrency()
 
     ids =
-      unprocessed_data_query(block_number, block_number + limit)
+      block_number
+      |> unprocessed_data_query(block_number + limit)
       |> Repo.all(timeout: :infinity)
       |> Enum.group_by(& &1.block_hash)
       |> Map.to_list()
@@ -170,14 +170,10 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
 
       nft_updates_map =
         token_transfers
-        |> Enum.filter(&(&1.token_type == "ERC-721"))
+        |> Enum.filter(&(&1.token_type == "ERC-721" && &1.block_consensus))
         |> Enum.reduce(%{}, fn token_transfer, acc ->
-          if token_transfer.block_consensus do
-            id = token_transfer_to_index(token_transfer)
-            Map.put(acc, {token_transfer.block_number, token_transfer.log_index}, ids_to_new_index[id])
-          else
-            acc
-          end
+          id = token_transfer_to_index(token_transfer)
+          Map.put(acc, {token_transfer.block_number, token_transfer.log_index}, ids_to_new_index[id])
         end)
 
       Instance
