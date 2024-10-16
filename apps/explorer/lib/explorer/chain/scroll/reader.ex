@@ -4,22 +4,110 @@ defmodule Explorer.Chain.Scroll.Reader do
   import Ecto.Query,
     only: [
       from: 2,
-      limit: 2
+      limit: 2,
+      order_by: 2,
+      where: 2
     ]
 
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain.Scroll.{Bridge, L1FeeParam}
+  alias Explorer.Chain.Scroll.{Batch, BatchBundle, Bridge, L1FeeParam}
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Transaction
 
   @doc """
-    Gets last known L1 item (deposit) from scroll_bridge table.
-    Returns block number and L1 transaction hash bound to that deposit.
-    If not found, returns zero block number and nil as the transaction hash.
+    Reads a batch by its number from database.
+
+    ## Parameters
+    - `number`: The batch number. If `:latest`, the function gets
+                the latest batch from the `scroll_batches` table.
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - {:ok, batch} when the batch is found in the table.
+    - {:error, :not_found} when the batch is not found.
   """
-  @spec last_l1_item() :: {non_neg_integer(), binary() | nil}
-  def last_l1_item do
+  @spec batch(non_neg_integer() | :latest, list()) :: {:ok, map()} | {:error, :not_found}
+  def batch(number, options \\ [])
+
+  def batch(:latest, options) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    Batch
+    |> order_by(desc: :number)
+    |> limit(1)
+    |> Chain.join_associations(necessity_by_association)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      batch -> {:ok, batch}
+    end
+  end
+
+  def batch(number, options) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    Batch
+    |> where(number: ^number)
+    |> Chain.join_associations(necessity_by_association)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      batch -> {:ok, batch}
+    end
+  end
+
+  @doc """
+    Gets last known L1 batch item from the `scroll_batches` table.
+
+    ## Returns
+    - A tuple `{block_number, tx_hash}` - the block number and L1 transaction hash bound to the batch.
+    - If the batch is not found, returns `{0, nil}`.
+  """
+  @spec last_l1_batch_item() :: {non_neg_integer(), binary() | nil}
+  def last_l1_batch_item do
+    query =
+      from(b in Batch,
+        select: {b.commit_block_number, b.commit_transaction_hash},
+        order_by: [desc: b.number],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||({0, nil})
+  end
+
+  @doc """
+    Gets `final_batch_number` from the last known L1 bundle.
+
+    ## Returns
+    - The `final_batch_number` of the last L1 bundle.
+    - If there are no bundles, returns -1.
+  """
+  @spec last_final_batch_number() :: integer()
+  def last_final_batch_number do
+    query =
+      from(bb in BatchBundle,
+        select: bb.final_batch_number,
+        order_by: [desc: bb.id],
+        limit: 1
+      )
+
+    query
+    |> Repo.one()
+    |> Kernel.||(-1)
+  end
+
+  @doc """
+    Gets the last known L1 bridge item (deposit) from the `scroll_bridge` table.
+
+    ## Returns
+    - A tuple `{block_number, tx_hash}` - the block number and L1 transaction hash bound to the deposit.
+    - If the deposit is not found, returns `{0, nil}`.
+  """
+  @spec last_l1_bridge_item() :: {non_neg_integer(), binary() | nil}
+  def last_l1_bridge_item do
     query =
       from(b in Bridge,
         select: {b.block_number, b.l1_transaction_hash},
@@ -34,12 +122,14 @@ defmodule Explorer.Chain.Scroll.Reader do
   end
 
   @doc """
-    Gets last known L2 item (withdrawal) from scroll_bridge table.
-    Returns block number and L2 transaction hash bound to that withdrawal.
-    If not found, returns zero block number and nil as the transaction hash.
+    Gets the last known L2 bridge item (withdrawal) from the `scroll_bridge` table.
+
+    ## Returns
+    - A tuple `{block_number, tx_hash}` - the block number and L2 transaction hash bound to the withdrawal.
+    - If the withdrawal is not found, returns `{0, nil}`.
   """
-  @spec last_l2_item() :: {non_neg_integer(), binary() | nil}
-  def last_l2_item do
+  @spec last_l2_bridge_item() :: {non_neg_integer(), binary() | nil}
+  def last_l2_bridge_item do
     query =
       from(b in Bridge,
         select: {b.block_number, b.l2_transaction_hash},
