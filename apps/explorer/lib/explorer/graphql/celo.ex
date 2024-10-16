@@ -90,18 +90,18 @@ defmodule Explorer.GraphQL.Celo do
   Constructs a query to fetch token transfers within a given transaction.
 
   ## Parameters
-    - tx_hash: the hash of the transaction
+    - transaction_hash: the hash of the transaction
 
   ## Returns
    - Ecto query
   """
   @spec token_transaction_transfers_query_by_transaction_hash(Hash.Full.t()) :: Ecto.Query.t()
-  def token_transaction_transfers_query_by_transaction_hash(tx_hash) do
+  def token_transaction_transfers_query_by_transaction_hash(transaction_hash) do
     query = token_transaction_transfers_query()
 
     from(
       t in subquery(query),
-      where: t.transaction_hash == ^tx_hash,
+      where: t.transaction_hash == ^transaction_hash,
       order_by: [t.log_index]
     )
   end

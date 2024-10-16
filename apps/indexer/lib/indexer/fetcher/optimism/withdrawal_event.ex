@@ -280,10 +280,10 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     method_signature = String.slice(input, 0..9)
 
     if method_signature == "0x4870496f" do
-      # the signature of `proveWithdrawalTransaction(tuple _tx, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+      # the signature of `proveWithdrawalTransaction(tuple _transaction, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
 
       # to get (slice) `_disputeGameIndex` from the transaction input, we need to know its offset in the input string (represented as 0x...):
-      # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_tx` tuple offset, totally is 74
+      # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
       game_index_offset = String.length(method_signature) + 32 * 2
       game_index_length = 32 * 2
 

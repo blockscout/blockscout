@@ -296,7 +296,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @empty_response})
   end
 
-  def call(conn, {:tx_interpreter_enabled, false}) do
+  def call(conn, {:transaction_interpreter_enabled, false}) do
     conn
     |> put_status(:forbidden)
     |> put_view(ApiView)

@@ -1546,8 +1546,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       new_ts = l1_block_to_ts[new_block_num]
 
       case ArbitrumHelper.compare_lifecycle_transaction_and_update(transaction, {new_block_num, new_ts}, "confirmation") do
-        {:updated, updated_tx} ->
-          [updated_tx | updated_transactions]
+        {:updated, updated_transaction} ->
+          [updated_transaction | updated_transactions]
 
         _ ->
           updated_transactions

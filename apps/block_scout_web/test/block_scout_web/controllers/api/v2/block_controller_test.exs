@@ -503,13 +503,13 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
     assert withdrawal.index == json["index"]
   end
 
-  defp compare_item(%InternalTransaction{} = internal_tx, json) do
-    assert internal_tx.block_number == json["block_number"]
-    assert to_string(internal_tx.gas) == json["gas_limit"]
-    assert internal_tx.index == json["index"]
-    assert to_string(internal_tx.transaction_hash) == json["transaction_hash"]
-    assert Address.checksum(internal_tx.from_address_hash) == json["from"]["hash"]
-    assert Address.checksum(internal_tx.to_address_hash) == json["to"]["hash"]
+  defp compare_item(%InternalTransaction{} = internal_transaction, json) do
+    assert internal_transaction.block_number == json["block_number"]
+    assert to_string(internal_transaction.gas) == json["gas_limit"]
+    assert internal_transaction.index == json["index"]
+    assert to_string(internal_transaction.transaction_hash) == json["transaction_hash"]
+    assert Address.checksum(internal_transaction.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(internal_transaction.to_address_hash) == json["to"]["hash"]
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, list) do

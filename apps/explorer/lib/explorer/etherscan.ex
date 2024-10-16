@@ -787,9 +787,9 @@ defmodule Explorer.Etherscan do
       {:ok, date} ->
         query =
           from(
-            tx_stats in TransactionStats,
-            where: tx_stats.date == ^date,
-            select: tx_stats.total_fee
+            transaction_stats in TransactionStats,
+            where: transaction_stats.date == ^date,
+            select: transaction_stats.total_fee
           )
 
         total_fees = Repo.replica().one(query)

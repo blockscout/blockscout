@@ -598,24 +598,24 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       inputs_acc
   end
 
-  defp celestia_blob_to_input("0x" <> tx_input, transaction_hash, blobs_api_url) do
-    tx_input
+  defp celestia_blob_to_input("0x" <> transaction_input, transaction_hash, blobs_api_url) do
+    transaction_input
     |> Base.decode16!(case: :mixed)
     |> celestia_blob_to_input(transaction_hash, blobs_api_url)
   end
 
-  defp celestia_blob_to_input(tx_input, _transaction_hash, blobs_api_url)
-       when byte_size(tx_input) == 1 + 8 + 32 and blobs_api_url != "" do
+  defp celestia_blob_to_input(transaction_input, _transaction_hash, blobs_api_url)
+       when byte_size(transaction_input) == 1 + 8 + 32 and blobs_api_url != "" do
     # the first byte encodes Celestia sign 0xCE
 
     # the next 8 bytes encode little-endian Celestia blob height
     height =
-      tx_input
+      transaction_input
       |> binary_part(1, 8)
       |> :binary.decode_unsigned(:little)
 
     # the next 32 bytes contain the commitment
-    commitment = binary_part(tx_input, 1 + 8, 32)
+    commitment = binary_part(transaction_input, 1 + 8, 32)
     commitment_string = Base.encode16(commitment, case: :lower)
 
     url = blobs_api_url <> "?height=#{height}&commitment=" <> commitment_string
@@ -648,13 +648,13 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end
   end
 
-  defp celestia_blob_to_input(_tx_input, transaction_hash, blobs_api_url) when blobs_api_url != "" do
+  defp celestia_blob_to_input(_transaction_input, transaction_hash, blobs_api_url) when blobs_api_url != "" do
     Logger.error("L1 transaction with Celestia commitment has incorrect input length. Tx hash: #{transaction_hash}")
 
     []
   end
 
-  defp celestia_blob_to_input(_tx_input, _transaction_hash, "") do
+  defp celestia_blob_to_input(_transaction_input, _transaction_hash, "") do
     Logger.error(
       "Cannot read Celestia blobs from the server as the API URL is not defined. Please, check INDEXER_OPTIMISM_L1_BATCH_CELESTIA_BLOBS_API_URL env variable."
     )
@@ -1335,8 +1335,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end
   end
 
-  defp first_byte("0x" <> tx_input) do
-    tx_input
+  defp first_byte("0x" <> transaction_input) do
+    transaction_input
     |> Base.decode16!(case: :mixed)
     |> first_byte()
   end
@@ -1345,7 +1345,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     version_byte
   end
 
-  defp first_byte(_tx_input) do
+  defp first_byte(_transaction_input) do
     nil
   end
 

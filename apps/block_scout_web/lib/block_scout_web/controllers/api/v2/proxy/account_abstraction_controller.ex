@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/operations/:user_operation_hash_param/summary` endpoint.
   """
   @spec summary(Plug.Conn.t(), map()) ::
-          {:error | :format | :tx_interpreter_enabled | non_neg_integer(), any()} | Plug.Conn.t()
+          {:error | :format | :transaction_interpreter_enabled | non_neg_integer(), any()} | Plug.Conn.t()
   def summary(conn, %{"operation_hash_param" => operation_hash_string, "just_request_body" => "true"}) do
     with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_transaction_hash(operation_hash_string)},
          {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
@@ -35,7 +35,8 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
 
   def summary(conn, %{"operation_hash_param" => operation_hash_string}) do
     with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_transaction_hash(operation_hash_string)},
-         {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
+         {:transaction_interpreter_enabled, true} <-
+           {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
          {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
       {response, code} =
         case TransactionInterpretationService.interpret_user_operation(user_op) do

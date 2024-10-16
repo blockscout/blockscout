@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
 
   alias Explorer.Chain.Arbitrum
 
-  @enforce_keys [:batch_number, :height, :tx_commitment, :raw]
+  @enforce_keys [:batch_number, :height, :transaction_commitment, :raw]
   defstruct @enforce_keys
 
   @typedoc """
@@ -19,25 +19,25 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
     * `batch_number` - The batch number in Arbitrum rollup associated with the
                        Celestia data.
     * `height` - The height of the block in Celestia.
-    * `tx_commitment` - Data commitment in Celestia.
+    * `transaction_commitment` - Data commitment in Celestia.
     * `raw` - Unparsed blob pointer data containing data root, proof, etc.
   """
   @type t :: %__MODULE__{
           batch_number: non_neg_integer(),
           height: non_neg_integer(),
-          tx_commitment: binary(),
+          transaction_commitment: binary(),
           raw: binary()
         }
 
   @typedoc """
   Celestia Blob Descriptor struct:
     * `height` - The height of the block in Celestia.
-    * `tx_commitment` - Data commitment in Celestia.
+    * `transaction_commitment` - Data commitment in Celestia.
     * `raw` - Unparsed blob pointer data containing data root, proof, etc.
   """
   @type blob_descriptor :: %{
           :height => non_neg_integer(),
-          :tx_commitment => String.t(),
+          :transaction_commitment => String.t(),
           :raw => String.t()
         }
 
@@ -67,14 +67,15 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
           _key::big-unsigned-integer-size(64),
           _num_leaves::big-unsigned-integer-size(64),
           _tuple_root_nonce::big-unsigned-integer-size(64),
-          tx_commitment::binary-size(32),
+          transaction_commitment::binary-size(32),
           _data_root::binary-size(32),
           _side_nodes_length::big-unsigned-integer-size(64),
           _rest::binary
         >> = raw
       ) do
     # https://github.com/celestiaorg/nitro-contracts/blob/celestia/blobstream/src/bridge/SequencerInbox.sol#L334-L360
-    {:ok, :in_celestia, %__MODULE__{batch_number: batch_number, height: height, tx_commitment: tx_commitment, raw: raw}}
+    {:ok, :in_celestia,
+     %__MODULE__{batch_number: batch_number, height: height, transaction_commitment: transaction_commitment, raw: raw}}
   end
 
   def parse_batch_accompanying_data(_, _) do
@@ -96,14 +97,14 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
   def prepare_for_import(source, %__MODULE__{} = da_info) do
     data = %{
       height: da_info.height,
-      tx_commitment: ArbitrumHelper.bytes_to_hex_str(da_info.tx_commitment),
+      transaction_commitment: ArbitrumHelper.bytes_to_hex_str(da_info.transaction_commitment),
       raw: ArbitrumHelper.bytes_to_hex_str(da_info.raw)
     }
 
     [
       %{
         data_type: 0,
-        data_key: calculate_celestia_data_key(da_info.height, da_info.tx_commitment),
+        data_key: calculate_celestia_data_key(da_info.height, da_info.transaction_commitment),
         data: data,
         batch_number: da_info.batch_number
       }

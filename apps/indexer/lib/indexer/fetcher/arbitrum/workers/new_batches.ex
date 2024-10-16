@@ -1730,8 +1730,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         ]
   defp extend_batches_with_commitment_transactions(batches, lifecycle_transactions) do
     Enum.map(batches, fn batch ->
-      lifecycle_tx = Enum.find(lifecycle_transactions, fn transaction -> transaction.id == batch.commitment_id end)
-      Map.put(batch, :commitment_transaction, lifecycle_tx)
+      lifecycle_transaction =
+        Enum.find(lifecycle_transactions, fn transaction -> transaction.id == batch.commitment_id end)
+
+      Map.put(batch, :commitment_transaction, lifecycle_transaction)
     end)
   end
 end
