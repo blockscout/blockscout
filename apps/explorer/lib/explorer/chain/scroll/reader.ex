@@ -31,9 +31,12 @@ defmodule Explorer.Chain.Scroll.Reader do
   def batch(number, options \\ [])
 
   def batch(:latest, options) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     Batch
     |> order_by(desc: :number)
     |> limit(1)
+    |> Chain.join_associations(necessity_by_association)
     |> select_repo(options).one()
     |> case do
       nil -> {:error, :not_found}
