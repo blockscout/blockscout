@@ -85,10 +85,10 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
 
     coin_balances_before_block = transaction_to_coin_balances(transaction, previous_block_number, options)
 
-    coin_balances_before_tx =
+    coin_balances_before_transaction =
       StateChange.coin_balances_before(transaction, block_transactions, coin_balances_before_block)
 
-    native_coin_entries = StateChange.native_coin_entries(transaction, coin_balances_before_tx)
+    native_coin_entries = StateChange.native_coin_entries(transaction, coin_balances_before_transaction)
 
     token_balances_before =
       transaction.token_transfers

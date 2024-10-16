@@ -185,8 +185,9 @@ defmodule Explorer.SmartContract.Helper do
         %{init: init, transaction: transaction} ->
           {init, deployed_bytecode, transaction |> transaction_to_metadata(init) |> Map.merge(metadata)}
 
-        %{init: init, internal_tx: internal_tx} ->
-          {init, deployed_bytecode, internal_tx |> internal_transaction_to_metadata(init) |> Map.merge(metadata)}
+        %{init: init, internal_transaction: internal_transaction} ->
+          {init, deployed_bytecode,
+           internal_transaction |> internal_transaction_to_metadata(init) |> Map.merge(metadata)}
 
         _ ->
           {nil, deployed_bytecode, metadata}
@@ -204,12 +205,12 @@ defmodule Explorer.SmartContract.Helper do
     }
   end
 
-  defp internal_transaction_to_metadata(internal_tx, init) do
+  defp internal_transaction_to_metadata(internal_transaction, init) do
     %{
-      "blockNumber" => to_string(internal_tx.block_number),
-      "transactionHash" => to_string(internal_tx.transaction_hash),
-      "transactionIndex" => to_string(internal_tx.transaction_index),
-      "deployer" => to_string(internal_tx.from_address_hash),
+      "blockNumber" => to_string(internal_transaction.block_number),
+      "transactionHash" => to_string(internal_transaction.transaction_hash),
+      "transactionIndex" => to_string(internal_transaction.transaction_index),
+      "deployer" => to_string(internal_transaction.from_address_hash),
       "creationCode" => to_string(init)
     }
   end

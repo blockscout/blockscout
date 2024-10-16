@@ -525,7 +525,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   def summary(conn, %{"transaction_hash_param" => transaction_hash_string, "just_request_body" => "true"} = params) do
-    with {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
+    with {:transaction_interpreter_enabled, true} <-
+           {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
          {:ok, transaction, _transaction_hash} <-
            validate_transaction(transaction_hash_string, params,
              necessity_by_association: %{
@@ -546,10 +547,11 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           {:format, :error}
           | {:not_found, {:error, :not_found}}
           | {:restricted_access, true}
-          | {:tx_interpreter_enabled, boolean}
+          | {:transaction_interpreter_enabled, boolean}
           | Plug.Conn.t()
   def summary(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
-    with {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
+    with {:transaction_interpreter_enabled, true} <-
+           {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
          {:ok, transaction, _transaction_hash} <-
            validate_transaction(transaction_hash_string, params,
              necessity_by_association: %{
