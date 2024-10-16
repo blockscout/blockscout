@@ -881,8 +881,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
       end
 
-      defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
-        if single_tx? do
+      defp chain_type_fields(result, transaction, single_transaction?, _conn, _watchlist_names) do
+        if single_transaction? do
           # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.ScrollView.extend_transaction_json_response(result, transaction)
         else

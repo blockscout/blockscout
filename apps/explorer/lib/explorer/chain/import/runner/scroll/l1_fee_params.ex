@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Import.Runner.Scroll.L1FeeParams do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce L1FeeParam ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_number, &1.tx_index, &1.name})
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_number, &1.transaction_index, &1.name})
 
     {:ok, inserted} =
       Import.insert_changes_list(
@@ -72,7 +72,7 @@ defmodule Explorer.Chain.Import.Runner.Scroll.L1FeeParams do
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: [:block_number, :tx_index, :name],
+        conflict_target: [:block_number, :transaction_index, :name],
         on_conflict: on_conflict
       )
 
@@ -85,7 +85,7 @@ defmodule Explorer.Chain.Import.Runner.Scroll.L1FeeParams do
       update: [
         set: [
           # Don't update `block_number` as it is part of the composite primary key and used for the conflict target
-          # Don't update `tx_index` as it is part of the composite primary key and used for the conflict target
+          # Don't update `transaction_index` as it is part of the composite primary key and used for the conflict target
           # Don't update `name` as it is part of the composite primary key and used for the conflict target
           value: fragment("EXCLUDED.value"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", param.inserted_at),

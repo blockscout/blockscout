@@ -23,6 +23,24 @@ defmodule Explorer.Chain.Scroll.Batch do
   @required_attrs ~w(number commit_transaction_hash commit_block_number commit_timestamp l2_block_range)a
 
   @typedoc """
+    Descriptor of the batch:
+    * `number` - A unique batch number.
+    * `commit_transaction_hash` - A hash of the commit transaction on L1.
+    * `commit_block_number` - A block number of the commit transaction on L1.
+    * `commit_timestamp` - A timestamp of the commit block.
+    * `bundle_id` - An identifier of the batch bundle from the `scroll_batch_bundles` database table.
+    * `l2_block_range` - A range of L2 blocks included into the batch.
+  """
+  @type to_import :: %{
+          number: non_neg_integer(),
+          commit_transaction_hash: Hash.t(),
+          commit_block_number: non_neg_integer(),
+          commit_timestamp: DateTime.t(),
+          bundle_id: non_neg_integer() | nil,
+          l2_block_range: BlockRange.t()
+        }
+
+  @typedoc """
     * `number` - A unique batch number.
     * `commit_transaction_hash` - A hash of the commit transaction on L1.
     * `commit_block_number` - A block number of the commit transaction on L1.

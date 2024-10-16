@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Scroll.Reader do
     Gets last known L1 batch item from the `scroll_batches` table.
 
     ## Returns
-    - A tuple `{block_number, tx_hash}` - the block number and L1 transaction hash bound to the batch.
+    - A tuple `{block_number, transaction_hash}` - the block number and L1 transaction hash bound to the batch.
     - If the batch is not found, returns `{0, nil}`.
   """
   @spec last_l1_batch_item() :: {non_neg_integer(), binary() | nil}
@@ -103,7 +103,7 @@ defmodule Explorer.Chain.Scroll.Reader do
     Gets the last known L1 bridge item (deposit) from the `scroll_bridge` table.
 
     ## Returns
-    - A tuple `{block_number, tx_hash}` - the block number and L1 transaction hash bound to the deposit.
+    - A tuple `{block_number, transaction_hash}` - the block number and L1 transaction hash bound to the deposit.
     - If the deposit is not found, returns `{0, nil}`.
   """
   @spec last_l1_bridge_item() :: {non_neg_integer(), binary() | nil}
@@ -125,7 +125,7 @@ defmodule Explorer.Chain.Scroll.Reader do
     Gets the last known L2 bridge item (withdrawal) from the `scroll_bridge` table.
 
     ## Returns
-    - A tuple `{block_number, tx_hash}` - the block number and L2 transaction hash bound to the withdrawal.
+    - A tuple `{block_number, transaction_hash}` - the block number and L2 transaction hash bound to the withdrawal.
     - If the withdrawal is not found, returns `{0, nil}`.
   """
   @spec last_l2_bridge_item() :: {non_neg_integer(), binary() | nil}
@@ -171,8 +171,8 @@ defmodule Explorer.Chain.Scroll.Reader do
             select: p.value,
             where:
               p.name == ^name and
-                (p.block_number == 0 and p.tx_index < ^transaction.index),
-            order_by: [desc: p.block_number, desc: p.tx_index],
+                (p.block_number == 0 and p.transaction_index < ^transaction.index),
+            order_by: [desc: p.block_number, desc: p.transaction_index],
             limit: 1
           )
 
@@ -183,7 +183,7 @@ defmodule Explorer.Chain.Scroll.Reader do
             where:
               p.name == ^name and
                 p.block_number < ^transaction.block_number,
-            order_by: [desc: p.block_number, desc: p.tx_index],
+            order_by: [desc: p.block_number, desc: p.transaction_index],
             limit: 1
           )
 
@@ -193,8 +193,8 @@ defmodule Explorer.Chain.Scroll.Reader do
             where:
               p.name == ^name and
                 (p.block_number < ^transaction.block_number or
-                   (p.block_number == ^transaction.block_number and p.tx_index < ^transaction.index)),
-            order_by: [desc: p.block_number, desc: p.tx_index],
+                   (p.block_number == ^transaction.block_number and p.transaction_index < ^transaction.index)),
+            order_by: [desc: p.block_number, desc: p.transaction_index],
             limit: 1
           )
       end
