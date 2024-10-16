@@ -292,8 +292,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
         [position,
         caller,
         destination,
-        arb_block_num,
-        eth_block_num,
+        arb_block_number,
+        eth_block_number,
         timestamp,
         callvalue,
         data]
@@ -311,8 +311,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   def l2_to_l1_event_parse(event) do
     [
       caller,
-      arb_block_num,
-      eth_block_num,
+      arb_block_number,
+      eth_block_number,
       timestamp,
       callvalue,
       data
@@ -324,7 +324,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
     {:ok, destination} = Hash.Address.cast(hex_value_to_integer(event.second_topic))
 
-    {position, caller_addr, destination, arb_block_num, eth_block_num, timestamp, callvalue, data}
+    {position, caller_addr, destination, arb_block_number, eth_block_number, timestamp, callvalue, data}
   end
 
   @spec hex_value_to_integer(binary() | Hash.t()) :: non_neg_integer()

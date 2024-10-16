@@ -10,11 +10,10 @@ defmodule Explorer.Arbitrum.Withdraw do
   Descriptor of the L2ToL1Tx event message on Arbitrum rollups:
     * `message_id` - The ID of the message used for referencing.
     * `status` - The status of the withdrawal: `:unknown`, `:unconfirmed`, `:confirmed`, `:executed`
-    * `tx_hash` - The transaction (L2 chain) hash which emit this event
     * `caller` - The sender of the withdraw transaction.
     * `destination` - The receiver of the funds on L1 chain.
-    * `arb_block_num` - The number of the block where originating transaction is included.
-    * `eth_block_num` - The associated block number on the destination chain.
+    * `arb_block_number` - The number of the block where originating transaction is included.
+    * `eth_block_number` - The associated block number on the destination chain.
     * `l2_timestamp` - The timestamp of the originating transaction.
     * `callvalue` - The amount of the native coins to withdraw
     * `data` - Raw transaction data which will be sent to the destination address on L1 chain
@@ -32,8 +31,8 @@ defmodule Explorer.Arbitrum.Withdraw do
           status: status,
           caller: caller,
           destination: destination,
-          arb_block_num: arb_block_num,
-          eth_block_num: eth_block_num,
+          arb_block_number: arb_block_number,
+          eth_block_number: eth_block_number,
           l2_timestamp: l2_timestamp,
           callvalue: callvalue,
           data: data,
@@ -50,8 +49,8 @@ defmodule Explorer.Arbitrum.Withdraw do
   @typep status :: :unconfirmed | :confirmed | :executed
   @typep caller :: Hash.Address.t()
   @typep destination :: Hash.Address.t()
-  @typep arb_block_num :: non_neg_integer()
-  @typep eth_block_num :: non_neg_integer()
+  @typep arb_block_number :: non_neg_integer()
+  @typep eth_block_number :: non_neg_integer()
   @typep l2_timestamp :: non_neg_integer()
   @typep callvalue :: non_neg_integer()
   @typep data :: binary()
@@ -64,8 +63,8 @@ defmodule Explorer.Arbitrum.Withdraw do
     :status,
     :caller,
     :destination,
-    :arb_block_num,
-    :eth_block_num,
+    :arb_block_number,
+    :eth_block_number,
     :l2_timestamp,
     :callvalue,
     :data,

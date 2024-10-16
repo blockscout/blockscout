@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         next_page,
         messages,
         params,
-        fn %Message{message_id: msg_id} -> %{"id" => msg_id} end
+        fn %Message{message_id: message_id} -> %{"id" => message_id} end
       )
 
     conn
@@ -67,10 +67,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/messages/claim/:position` endpoint.
   """
   @spec claim_message(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def claim_message(conn, %{"position" => msg_id} = _params) do
-    msg_id = String.to_integer(msg_id)
+  def claim_message(conn, %{"position" => message_id} = _params) do
+    message_id = String.to_integer(message_id)
 
-    case ClaimRollupMessage.claim(msg_id) do
+    case ClaimRollupMessage.claim(message_id) do
       {:ok, [contract_address: outbox_contract, calldata: calldata]} ->
         conn
         |> put_status(200)
@@ -99,12 +99,12 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/arbitrum/messages/withdrawals/:tx_hash` endpoint.
+    Function to handle GET requests to `/api/v2/arbitrum/messages/withdrawals/:transaction_hash` endpoint.
   """
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def withdrawals(conn, %{"tx_hash" => tx_hash} = _params) do
+  def withdrawals(conn, %{"transaction_hash" => transaction_hash} = _params) do
     hash =
-      case Hash.Full.cast(tx_hash) do
+      case Hash.Full.cast(transaction_hash) do
         {:ok, address} -> address
         _ -> nil
       end

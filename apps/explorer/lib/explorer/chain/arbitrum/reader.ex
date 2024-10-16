@@ -611,17 +611,17 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     Retrieves L2-to-L1 message by message id.
 
     ## Parameters
-    - `msg_id`: message ID
+    - `message_id`: message ID
 
     ## Returns
     - Instance of `Explorer.Chain.Arbitrum.Message` with the provided message id,
       or nil if message with the given id doesn't exist.
   """
   @spec l2_to_l1_message_with_id(non_neg_integer()) :: Message.t() | nil
-  def l2_to_l1_message_with_id(msg_id) do
+  def l2_to_l1_message_with_id(message_id) do
     query =
-      from(msg in Message,
-        where: msg.message_id == ^msg_id
+      from(message in Message,
+        where: message.message_id == ^message_id
       )
 
     query

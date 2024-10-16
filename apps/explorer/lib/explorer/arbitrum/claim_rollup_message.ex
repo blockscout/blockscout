@@ -125,14 +125,14 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     But in general the transaction can include several messages
 
     ## Parameters
-    - `tx_hash`: The transaction hash which will scanned for L2ToL1Tx events.
+    - `transaction_hash`: The transaction hash which will scanned for L2ToL1Tx events.
 
     ## Returns
     - Array of `Explorer.Arbitrum.Withdraw.t()` objects each of them represent
       a single message originated by the given transaction.
   """
   @spec transaction_to_withdrawals(Hash.Full.t()) :: [Explorer.Arbitrum.Withdraw.t()]
-  def transaction_to_withdrawals(tx_hash) do
+  def transaction_to_withdrawals(transaction_hash) do
     # getting needed L1 properties: RPC URL and Main Rollup contract address
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
     json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
@@ -142,7 +142,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     outbox_contract =
       Rpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
-    logs = Chain.transaction_to_logs_by_topic0(tx_hash, @l2_to_l1_event)
+    logs = Chain.transaction_to_logs_by_topic0(transaction_hash, @l2_to_l1_event)
 
     logs
     |> Enum.map(fn log ->
@@ -158,7 +158,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
          json_l2_rpc_named_arguments
        ) do
     # getting needed fields from the L2ToL1Tx event
-    {position, caller, destination, arb_block_num, eth_block_num, l2_timestamp, call_value, data} =
+    {position, caller, destination, arb_block_number, eth_block_number, l2_timestamp, call_value, data} =
       ArbitrumMessaging.l2_to_l1_event_parse(log)
 
     status =
@@ -185,8 +185,8 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       status: status,
       caller: caller,
       destination: destination,
-      arb_block_num: arb_block_num,
-      eth_block_num: eth_block_num,
+      arb_block_number: arb_block_number,
+      eth_block_number: eth_block_number,
       l2_timestamp: l2_timestamp,
       callvalue: call_value,
       data: "0x" <> data_hex,
@@ -247,7 +247,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         case message_to_withdrawal(msg) do
           nil ->
             Logger.error(
-              "Unable to find withdrawal with id #{message_id} in tx #{Hash.to_string(msg.originating_transaction_hash)}"
+              "Unable to find withdrawal with id #{message_id} in transaction #{Hash.to_string(msg.originating_transaction_hash)}"
             )
 
             {:error, :not_found}
@@ -264,11 +264,11 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  defp message_to_withdrawal(msg) do
-    tx_withdrawals = transaction_to_withdrawals(msg.originating_transaction_hash)
+  defp message_to_withdrawal(message) do
+    transaction_withdrawals = transaction_to_withdrawals(message.originating_transaction_hash)
 
-    tx_withdrawals
-    |> Enum.filter(fn w -> w.message_id == msg.message_id end)
+    transaction_withdrawals
+    |> Enum.filter(fn w -> w.message_id == message.message_id end)
     |> List.first()
   end
 
@@ -305,8 +305,8 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
               withdrawal.message_id,
               Hash.to_string(withdrawal.caller),
               Hash.to_string(withdrawal.destination),
-              withdrawal.arb_block_num,
-              withdrawal.eth_block_num,
+              withdrawal.arb_block_number,
+              withdrawal.eth_block_number,
               withdrawal.l2_timestamp,
               withdrawal.callvalue,
               withdrawal.data
@@ -347,12 +347,12 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     # getting block number (L1) where latest confirmed node was created
     case Rpc.get_node(l1_rollup_address, latest_confirmed, json_l1_rpc_named_arguments) do
       [{:ok, [fields]}] ->
-        node_creation_block_num = Kernel.elem(fields, 10)
+        node_creation_block_number = Kernel.elem(fields, 10)
 
         # request NodeCreated event from that block
         case IndexerHelper.get_logs(
-               node_creation_block_num,
-               node_creation_block_num,
+               node_creation_block_number,
+               node_creation_block_number,
                l1_rollup_address,
                [@node_created_event],
                json_l1_rpc_named_arguments
@@ -378,7 +378,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             get_send_count_from_block_hash(l2_block_hash, json_l2_rpc_named_arguments)
 
           _ ->
-            Logger.error("Cannot fetch NodeCreated event in L1 block #{node_creation_block_num}")
+            Logger.error("Cannot fetch NodeCreated event in L1 block #{node_creation_block_number}")
             nil
         end
 
