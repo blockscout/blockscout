@@ -8,6 +8,7 @@ defmodule Explorer.Migrator.FillingMigration do
   @callback last_unprocessed_identifiers(map()) :: {[any()], map()}
   @callback update_batch([any()]) :: any()
   @callback update_cache :: any()
+  @callback on_finish :: any()
 
   defmacro __using__(_opts) do
     quote do
@@ -53,6 +54,7 @@ defmodule Explorer.Migrator.FillingMigration do
       def handle_info(:migrate_batch, state) do
         case last_unprocessed_identifiers(state) do
           {[], new_state} ->
+            on_finish()
             update_cache()
             MigrationStatus.set_status(migration_name(), "completed")
             {:stop, :normal, new_state}
@@ -86,6 +88,12 @@ defmodule Explorer.Migrator.FillingMigration do
 
         Application.get_env(:explorer, __MODULE__)[:concurrency] || default
       end
+
+      def on_finish do
+        :ignore
+      end
+
+      defoverridable init: 1, on_finish: 0
     end
   end
 end
