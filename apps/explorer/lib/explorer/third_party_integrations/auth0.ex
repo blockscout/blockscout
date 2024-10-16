@@ -443,7 +443,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
           )
         end
 
-        {:ok, create_auth(primary_user)}
+        {:ok, primary_user}
 
       {{:ok, _}, primary_identity} ->
         primary_user_from_db = users_map[primary_identity.uid]
@@ -455,7 +455,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
           )
         end
 
-        {:ok, create_auth(primary_user_from_db)}
+        {:ok, primary_user_from_db}
 
       error ->
         Logger.error(["Error while merging users with the same address: ", inspect(error)])
@@ -524,7 +524,6 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
 
       {:ok, users} when is_list(users) and length(users) > 1 ->
         merge_web3_users(users)
-        :error
 
       other ->
         other
