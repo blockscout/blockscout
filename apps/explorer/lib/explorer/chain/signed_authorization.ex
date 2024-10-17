@@ -21,15 +21,15 @@ defmodule Explorer.Chain.SignedAuthorization do
     * `authority` - the signer of the authorization.
   """
   @type to_import :: %__MODULE__{
-          transaction_hash: Hash.Full,
-          index: :integer,
-          chain_id: :integer,
-          address: Hash.Address,
-          nonce: :integer,
-          r: :decimal,
-          s: :decimal,
-          v: :integer,
-          authority: Hash.Address
+          transaction_hash: binary(),
+          index: non_neg_integer(),
+          chain_id: non_neg_integer(),
+          address: binary(),
+          nonce: non_neg_integer(),
+          r: non_neg_integer(),
+          s: non_neg_integer(),
+          v: non_neg_integer(),
+          authority: binary() | nil
         }
 
   @typedoc """
