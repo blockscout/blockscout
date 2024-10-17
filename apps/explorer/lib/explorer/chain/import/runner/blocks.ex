@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
-  alias Explorer.Chain.Import.Runner.{TokenInstances, Tokens}
+  alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Utility.MissingRangesManipulator
 
@@ -158,6 +158,23 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :address_referencing,
         :blocks,
         :derive_transaction_forks
+      )
+    end)
+    |> Multi.run(:delete_address_coin_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_address_coin_balances(repo, non_consensus_blocks, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_address_coin_balances
+      )
+    end)
+    |> Multi.run(:derive_address_fetched_coin_balances, fn repo,
+                                                           %{delete_address_coin_balances: delete_address_coin_balances} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> derive_address_fetched_coin_balances(repo, delete_address_coin_balances, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :derive_address_fetched_coin_balances
       )
     end)
     |> Multi.run(:delete_address_token_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
@@ -462,6 +479,66 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       timeout: timeout,
       timestamps: timestamps
     )
+  end
+
+  defp delete_address_coin_balances(_repo, [], _options), do: {:ok, []}
+
+  defp delete_address_coin_balances(repo, non_consensus_blocks, %{timeout: timeout}) do
+    non_consensus_block_numbers = Enum.map(non_consensus_blocks, fn {number, _hash} -> number end)
+
+    ordered_query =
+      from(cb in Address.CoinBalance,
+        where: cb.block_number in ^non_consensus_block_numbers,
+        select: map(cb, [:address_hash, :block_number]),
+        # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
+        order_by: [cb.address_hash, cb.block_number],
+        lock: "FOR UPDATE"
+      )
+
+    query =
+      from(cb in Address.CoinBalance,
+        select: cb.address_hash,
+        inner_join: ordered_address_coin_balance in subquery(ordered_query),
+        on:
+          ordered_address_coin_balance.address_hash == cb.address_hash and
+            ordered_address_coin_balance.block_number == cb.block_number
+      )
+
+    try do
+      {_count, deleted_coin_balances_address_hashes} = repo.delete_all(query, timeout: timeout)
+
+      {:ok, deleted_coin_balances_address_hashes}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, block_numbers: non_consensus_block_numbers}}
+    end
+  end
+
+  defp derive_address_fetched_coin_balances(_repo, [], _options), do: {:ok, []}
+
+  defp derive_address_fetched_coin_balances(repo, deleted_balances_address_hashes, options) do
+    last_balances_query =
+      from(cb in Address.CoinBalance,
+        where: cb.address_hash in ^deleted_balances_address_hashes,
+        where: not is_nil(cb.value),
+        distinct: cb.address_hash,
+        order_by: [asc: cb.address_hash, desc: cb.block_number],
+        select: %{
+          hash: cb.address_hash,
+          fetched_coin_balance: cb.value,
+          fetched_coin_balance_block_number: cb.block_number
+        }
+      )
+
+    addresses_params =
+      last_balances_query
+      |> repo.all()
+      |> Enum.sort_by(& &1.hash)
+
+    addresses_options =
+      Map.put(options, :on_conflict, {:replace, [:fetched_coin_balance, :fetched_coin_balance_block_number]})
+
+    Addresses.insert(repo, addresses_params, addresses_options)
   end
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}
