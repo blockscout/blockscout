@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.GraphQL.Celo.Resolvers.TokenTransferTx do
+defmodule BlockScoutWeb.GraphQL.Celo.Resolvers.TokenTransferTransaction do
   @moduledoc false
 
   alias Absinthe.Relay.Connection

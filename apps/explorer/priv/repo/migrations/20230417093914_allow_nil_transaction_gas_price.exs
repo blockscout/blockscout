@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AllowNilTxGasPrice do
+defmodule Explorer.Repo.Migrations.AllowNilTransactionGasPrice do
   use Ecto.Migration
 
   def change do
