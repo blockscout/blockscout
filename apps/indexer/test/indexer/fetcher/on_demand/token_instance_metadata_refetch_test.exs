@@ -89,7 +89,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
       )
     end
 
-    test "do run the update on the token instance with no metadata fetched initially" do
+    test "run the update on the token instance with no metadata fetched initially" do
       token = insert(:token, name: "Super Token", type: "ERC-721")
       token_id = 1
 
