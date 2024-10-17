@@ -20,7 +20,9 @@ defmodule Indexer.Transform.SignedAuthorizations do
     ## Returns
     A list of signed authorizations ready for database import.
   """
-  @spec parse([map()]) :: [SignedAuthorization.to_import()]
+  @spec parse([
+          %{optional(:authorization_list) => [EthereumJSONRPC.SignedAuthorization.params()], optional(any()) => any()}
+        ]) :: [SignedAuthorization.to_import()]
   def parse(transactions_with_receipts) do
     transactions_with_receipts
     |> Enum.filter(&Map.has_key?(&1, :authorization_list))
@@ -40,6 +42,7 @@ defmodule Indexer.Transform.SignedAuthorizations do
 
   # This function recovers the signer address from the signed authorization data using this formula:
   #   authority = ecrecover(keccak(MAGIC || rlp([chain_id, address, nonce])), y_parity, r, s]
+  @spec recover_authority(EthereumJSONRPC.SignedAuthorization.params()) :: String.t() | nil
   defp recover_authority(signed_authorization) do
     {:ok, %{bytes: address}} = Hash.Address.cast(signed_authorization.address)
 
@@ -54,6 +57,8 @@ defmodule Indexer.Transform.SignedAuthorizations do
     authority
   end
 
+  # This function uses eleptic curve recovery to get the address from the signed message and the signature.
+  @spec ec_recover(binary(), non_neg_integer(), non_neg_integer(), non_neg_integer()) :: EthereumJSONRPC.address() | nil
   defp ec_recover(signed_message, r, s, v) do
     r_bytes = <<r::integer-size(256)>>
     s_bytes = <<s::integer-size(256)>>
