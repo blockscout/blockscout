@@ -66,6 +66,11 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.Celo.ValidatorGroupVotes,
       Runner.Celo.ElectionRewards,
       Runner.Celo.EpochRewards
+    ],
+    zilliqa: [
+      Runner.Zilliqa.AggregateQuorumCertificates,
+      Runner.Zilliqa.NestedQuorumCertificates,
+      Runner.Zilliqa.QuorumCertificates
     ]
   }
 

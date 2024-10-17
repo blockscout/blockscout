@@ -142,7 +142,7 @@ defmodule Indexer.Block.Fetcher do
         additional_options \\ %{}
       )
       when callback_module != nil do
-    {fetch_time, fetched_blocks} =
+    {fetch_time, fetch_result} =
       :timer.tc(fn -> EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments) end)
 
     with {:blocks,
@@ -153,7 +153,7 @@ defmodule Indexer.Block.Fetcher do
              withdrawals_params: withdrawals_params,
              block_second_degree_relations_params: block_second_degree_relations_params,
              errors: blocks_errors
-           }}} <- {:blocks, fetched_blocks},
+           } = fetched_blocks}} <- {:blocks, fetch_result},
          blocks = TransformBlocks.transform_blocks(blocks_params),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: receipt_logs, receipts: receipts} = receipt_params,
@@ -238,16 +238,18 @@ defmodule Indexer.Block.Fetcher do
            withdrawals: %{params: withdrawals_params},
            token_instances: %{params: token_instances}
          },
-         chain_type_import_options = %{
-           transactions_with_receipts: transactions_with_receipts,
-           optimism_withdrawals: optimism_withdrawals,
-           polygon_edge_withdrawals: polygon_edge_withdrawals,
-           polygon_edge_deposit_executes: polygon_edge_deposit_executes,
-           polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
-           shibarium_bridge_operations: shibarium_bridge_operations,
-           celo_gas_tokens: celo_gas_tokens,
-           arbitrum_messages: arbitrum_xlevel_messages
-         },
+         chain_type_import_options =
+           %{
+             transactions_with_receipts: transactions_with_receipts,
+             optimism_withdrawals: optimism_withdrawals,
+             polygon_edge_withdrawals: polygon_edge_withdrawals,
+             polygon_edge_deposit_executes: polygon_edge_deposit_executes,
+             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+             shibarium_bridge_operations: shibarium_bridge_operations,
+             celo_gas_tokens: celo_gas_tokens,
+             arbitrum_messages: arbitrum_xlevel_messages
+           }
+           |> extend_with_zilliqa_import_options(fetched_blocks),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
@@ -277,6 +279,7 @@ defmodule Indexer.Block.Fetcher do
     end
   end
 
+  # credo:disable-for-next-line /Complexity/
   defp import_options(basic_import_options, %{
          transactions_with_receipts: transactions_with_receipts,
          optimism_withdrawals: optimism_withdrawals,
@@ -285,7 +288,10 @@ defmodule Indexer.Block.Fetcher do
          polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
          shibarium_bridge_operations: shibarium_bridge_operations,
          celo_gas_tokens: celo_gas_tokens,
-         arbitrum_messages: arbitrum_xlevel_messages
+         arbitrum_messages: arbitrum_xlevel_messages,
+         zilliqa_quorum_certificates: zilliqa_quorum_certificates,
+         zilliqa_aggregate_quorum_certificates: zilliqa_aggregate_quorum_certificates,
+         zilliqa_nested_quorum_certificates: zilliqa_nested_quorum_certificates
        }) do
     case Application.get_env(:explorer, :chain_type) do
       :ethereum ->
@@ -327,9 +333,24 @@ defmodule Indexer.Block.Fetcher do
         basic_import_options
         |> Map.put_new(:arbitrum_messages, %{params: arbitrum_xlevel_messages})
 
+      :zilliqa ->
+        basic_import_options
+        |> Map.put_new(:zilliqa_quorum_certificates, %{params: zilliqa_quorum_certificates})
+        |> Map.put_new(:zilliqa_aggregate_quorum_certificates, %{params: zilliqa_aggregate_quorum_certificates})
+        |> Map.put_new(:zilliqa_nested_quorum_certificates, %{params: zilliqa_nested_quorum_certificates})
+
       _ ->
         basic_import_options
     end
+  end
+
+  defp extend_with_zilliqa_import_options(chain_type_import_options, fetched_blocks) do
+    chain_type_import_options
+    |> Map.merge(%{
+      zilliqa_quorum_certificates: Map.get(fetched_blocks, :zilliqa_quorum_certificates_params, []),
+      zilliqa_aggregate_quorum_certificates: Map.get(fetched_blocks, :zilliqa_aggregate_quorum_certificates_params, []),
+      zilliqa_nested_quorum_certificates: Map.get(fetched_blocks, :zilliqa_nested_quorum_certificates_params, [])
+    })
   end
 
   defp update_block_cache([]), do: :ok
