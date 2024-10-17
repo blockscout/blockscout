@@ -7,7 +7,7 @@ defmodule Explorer.Account.WatchlistAddress do
 
   import Ecto.Changeset
 
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Notifier.ForbiddenAddress
   alias Explorer.Account.Watchlist
   alias Explorer.{Chain, PagingOptions, Repo}
@@ -19,6 +19,7 @@ defmodule Explorer.Account.WatchlistAddress do
     field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:name, Explorer.Encrypted.Binary, null: false)
     field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:user_created, :boolean, null: false, default: true)
 
     belongs_to(:watchlist, Watchlist, null: false)
 
@@ -209,4 +210,23 @@ defmodule Explorer.Account.WatchlistAddress do
   end
 
   def preload_address_fetched_coin_balance(watchlist), do: watchlist
+
+  @spec merge(Multi.t()) :: Multi.t()
+  def merge(multi) do
+    multi
+    |> Multi.run(:merge_watchlist_addresses, fn repo,
+                                                %{
+                                                  acquire_primary_watchlist: [primary_watchlist | _],
+                                                  acquire_watchlists_to_merge: watchlists_to_merge
+                                                } ->
+      primary_watchlist_id = primary_watchlist.id
+      watchlists_to_merge_ids = Enum.map(watchlists_to_merge, & &1.id)
+
+      {:ok,
+       repo.update_all(
+         from(key in __MODULE__, where: key.watchlist_id in ^watchlists_to_merge_ids),
+         set: [watchlist_id: primary_watchlist_id, user_created: false]
+       )}
+    end)
+  end
 end
