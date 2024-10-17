@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Scroll.Reader do
 
   alias Explorer.Chain.Scroll.{Batch, BatchBundle, Bridge, L1FeeParam}
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Block, Transaction}
 
   @doc """
     Reads a batch by its number from database.
@@ -54,6 +54,83 @@ defmodule Explorer.Chain.Scroll.Reader do
     |> case do
       nil -> {:error, :not_found}
       batch -> {:ok, batch}
+    end
+  end
+
+  @doc """
+    Lists `t:Explorer.Chain.Scroll.Batch.t/0`'s' in descending order based on the `number`.
+
+    ## Parameters
+    - `options`: A keyword list of options that may include whether to use a replica database and paging options.
+
+    ## Returns
+    - A list of found entities sorted by `number` in descending order.
+  """
+  @spec batches(list()) :: [Batch.t()]
+  def batches(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
+
+      _ ->
+        base_query =
+          from(b in Batch,
+            order_by: [desc: b.number]
+          )
+
+        base_query
+        |> Chain.join_association(:bundle, :optional)
+        |> page_batches(paging_options)
+        |> limit(^paging_options.page_size)
+        |> select_repo(options).all()
+    end
+  end
+
+  @doc """
+    Retrieves a list of rollup blocks included into a specified batch.
+
+    This function constructs and executes a database query to retrieve a list of rollup blocks,
+    considering pagination options specified in the `options` parameter. These options dictate
+    the number of items to retrieve and how many items to skip from the top.
+
+    ## Parameters
+    - `batch_number`: The batch number.
+    - `options`: A keyword list of options specifying pagination, association necessity, and
+      whether to use a replica database.
+
+    ## Returns
+    - A list of `Explorer.Chain.Block` entries belonging to the specified batch.
+  """
+  @spec batch_blocks(non_neg_integer() | binary(),
+          necessity_by_association: %{atom() => :optional | :required},
+          api?: boolean(),
+          paging_options: PagingOptions.t()
+        ) :: [Block.t()]
+  def batch_blocks(batch_number, options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+    api = Keyword.get(options, :api?, false)
+
+    case batch(batch_number, api?: api) do
+      {:ok, batch} ->
+        query =
+          from(
+            b in Block,
+            where:
+              b.number >= ^batch.l2_block_range.from and b.number <= ^batch.l2_block_range.to and b.consensus == true
+          )
+
+        query
+        |> page_batch_blocks(paging_options)
+        |> limit(^paging_options.page_size)
+        |> order_by(desc: :number)
+        |> Chain.join_associations(necessity_by_association)
+        |> select_repo(options).all()
+
+      _ ->
+        []
     end
   end
 
@@ -294,6 +371,20 @@ defmodule Explorer.Chain.Scroll.Reader do
       )
 
     select_repo(options).aggregate(query, :count, timeout: :infinity)
+  end
+
+  defp page_batches(query, %PagingOptions{key: nil}), do: query
+
+  defp page_batches(query, %PagingOptions{key: {number}}) do
+    from(b in query, where: b.number < ^number)
+  end
+
+  defp page_batch_blocks(query, %PagingOptions{key: nil}), do: query
+
+  defp page_batch_blocks(query, %PagingOptions{key: {0}}), do: query
+
+  defp page_batch_blocks(query, %PagingOptions{key: {block_number}}) do
+    from(b in query, where: b.number < ^block_number)
   end
 
   defp page_deposits_or_withdrawals(query, %PagingOptions{key: nil}), do: query
