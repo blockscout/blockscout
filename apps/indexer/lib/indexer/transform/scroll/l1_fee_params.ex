@@ -6,9 +6,6 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
 
   require Logger
 
-  alias Indexer.Fetcher.Scroll.L1FeeParam, as: ScrollL1FeeParam
-  alias Indexer.Helper
-
   @doc """
     Takes logs from the realtime fetcher, filters them
     by signatures (L1 Gas Oracle events), and prepares an output for
@@ -20,39 +17,51 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
     - `logs`: A list of log entries to filter for L1 Gas Oracle events.
 
     ## Returns
-    - A list of items ready for database import.
+    - A list of items ready for database import. The list can be empty.
   """
-  def parse(logs) do
-    prev_metadata = Logger.metadata()
-    Logger.metadata(fetcher: :scroll_l1_fee_params_realtime)
+  @spec parse(list()) :: list()
+  def parse(logs)
 
-    gas_oracle = Application.get_env(:indexer, ScrollL1FeeParam)[:gas_oracle]
+  if Application.compile_env(:explorer, :chain_type) == :scroll do
+    def parse(logs) do
+      prev_metadata = Logger.metadata()
+      Logger.metadata(fetcher: :scroll_l1_fee_params_realtime)
 
-    items =
-      with false <- Application.get_env(:explorer, :chain_type) != :scroll,
-           true <- Helper.address_correct?(gas_oracle) do
-        gas_oracle = String.downcase(gas_oracle)
+      # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+      gas_oracle = Application.get_env(:indexer, Indexer.Fetcher.Scroll.L1FeeParam)[:gas_oracle]
 
-        logs
-        |> Enum.filter(fn log ->
-          !is_nil(log.first_topic) && String.downcase(log.first_topic) in ScrollL1FeeParam.event_signatures() &&
-            String.downcase(Helper.address_hash_to_string(log.address_hash)) == gas_oracle
-        end)
-        |> Enum.map(fn log ->
-          Logger.info("Event for parameter update found.")
-          ScrollL1FeeParam.event_to_param(log.first_topic, log.data, log.block_number, log.transaction_index)
-        end)
-      else
-        true ->
-          []
+      # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
+      items =
+        if Indexer.Helper.address_correct?(gas_oracle) do
+          gas_oracle = String.downcase(gas_oracle)
 
-        false ->
+          logs
+          |> Enum.filter(fn log ->
+            # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
+            !is_nil(log.first_topic) &&
+              String.downcase(log.first_topic) in Indexer.Fetcher.Scroll.L1FeeParam.event_signatures() &&
+              String.downcase(Indexer.Helper.address_hash_to_string(log.address_hash)) == gas_oracle
+          end)
+          |> Enum.map(fn log ->
+            Logger.info("Event for parameter update found.")
+            # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+            Indexer.Fetcher.Scroll.L1FeeParam.event_to_param(
+              log.first_topic,
+              log.data,
+              log.block_number,
+              log.transaction_index
+            )
+          end)
+        else
           Logger.error("L1 Gas Oracle contract address is incorrect. Cannot use #{__MODULE__} for parsing logs.")
           []
-      end
+        end
 
-    Logger.reset_metadata(prev_metadata)
+      Logger.reset_metadata(prev_metadata)
 
-    items
+      items
+    end
+  else
+    def parse(_logs), do: []
   end
 end

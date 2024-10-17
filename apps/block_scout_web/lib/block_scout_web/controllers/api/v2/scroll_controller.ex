@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
       delete_parameters_from_next_page_params: 1
     ]
 
-  alias Explorer.Chain.Scroll.{Batch, Reader}
+  alias Explorer.Chain.Scroll.Reader
 
   @api_true [api?: true]
 
@@ -28,7 +28,11 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
   def batch(conn, %{"number" => number}) do
     {number, ""} = Integer.parse(number)
 
-    {_, batch} = Reader.batch(number, necessity_by_association: @batch_necessity_by_association, api?: true)
+    options =
+      [necessity_by_association: @batch_necessity_by_association]
+      |> Keyword.merge(@api_true)
+
+    {_, batch} = Reader.batch(number, options)
 
     if batch == :not_found do
       {:error, :not_found}
@@ -47,8 +51,8 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     {batches, next_page} =
       params
       |> paging_options()
-      |> Keyword.put(:api?, true)
-      |> Batch.list()
+      |> Keyword.merge(@api_true)
+      |> Reader.batches()
       |> split_list_by_page()
 
     next_page_params = next_page_params(next_page, batches, delete_parameters_from_next_page_params(params))
@@ -140,7 +144,7 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
   end
 
   defp batch_latest_number do
-    case Reader.batch(:latest, api?: true) do
+    case Reader.batch(:latest, @api_true) do
       {:ok, batch} -> batch.number
       {:error, :not_found} -> -1
     end
