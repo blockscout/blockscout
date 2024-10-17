@@ -56,6 +56,9 @@ defmodule Explorer.Chain.Transaction.StateChange do
     end
   end
 
+  defp update_coin_balances_from_internal_tx(%InternalTransaction{call_type: :delegatecall}, coin_balances),
+    do: coin_balances
+
   defp update_coin_balances_from_internal_tx(%InternalTransaction{index: 0}, coin_balances), do: coin_balances
 
   defp update_coin_balances_from_internal_tx(internal_tx, coin_balances) do

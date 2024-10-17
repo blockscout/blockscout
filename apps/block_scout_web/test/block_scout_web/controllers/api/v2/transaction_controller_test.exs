@@ -1039,7 +1039,11 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       internal_transaction_from = insert(:address)
       internal_transaction_to = insert(:address)
 
+      internal_transaction_from_delegatecall = insert(:address)
+      internal_transaction_to_delegatecall = insert(:address)
+
       insert(:internal_transaction,
+        call_type: :call,
         transaction: transaction,
         index: 0,
         block_number: transaction.block_number,
@@ -1053,13 +1057,30 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         to_address: internal_transaction_to
       )
 
+      # must be ignored, hence we expect only 5 state changes
       insert(:internal_transaction,
+        call_type: :delegatecall,
         transaction: transaction,
         index: 1,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
         block_index: 1,
+        value: %Wei{value: Decimal.new(7)},
+        from_address_hash: internal_transaction_from_delegatecall.hash,
+        from_address: internal_transaction_from_delegatecall,
+        to_address_hash: internal_transaction_to_delegatecall.hash,
+        to_address: internal_transaction_to_delegatecall
+      )
+
+      insert(:internal_transaction,
+        call_type: :call,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        block_hash: transaction.block_hash,
+        block_index: 2,
         value: %Wei{value: Decimal.new(7)},
         from_address_hash: internal_transaction_from.hash,
         from_address: internal_transaction_from,
@@ -1070,31 +1091,36 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       insert(:address_coin_balance,
         address: transaction.from_address,
         address_hash: transaction.from_address_hash,
-        block_number: block_before.number
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
       )
 
       insert(:address_coin_balance,
         address: transaction.to_address,
         address_hash: transaction.to_address_hash,
-        block_number: block_before.number
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
       )
 
       insert(:address_coin_balance,
         address: transaction.block.miner,
         address_hash: transaction.block.miner_hash,
-        block_number: block_before.number
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
       )
 
       insert(:address_coin_balance,
         address: internal_transaction_from,
         address_hash: internal_transaction_from.hash,
-        block_number: block_before.number
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
       )
 
       insert(:address_coin_balance,
         address: internal_transaction_to,
         address_hash: internal_transaction_to.hash,
-        block_number: block_before.number
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
       )
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")

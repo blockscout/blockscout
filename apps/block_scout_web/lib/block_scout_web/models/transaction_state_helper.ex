@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
 
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{BlockNumberHelper, Transaction, Wei}
+  alias Explorer.Chain.{BlockNumberHelper, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Cache.StateChanges
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
@@ -113,6 +113,8 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
       &internal_transaction_to_coin_balances(&1, previous_block_number, options, &2)
     )
   end
+
+  defp internal_transaction_to_coin_balances(%InternalTransaction{call_type: :delegatecall}, _, _, acc), do: acc
 
   defp internal_transaction_to_coin_balances(internal_transaction, previous_block_number, options, acc) do
     if internal_transaction.value |> Wei.to(:wei) |> Decimal.positive?() do
