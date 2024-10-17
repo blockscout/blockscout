@@ -3,7 +3,8 @@ defmodule EthereumJSONRPC.HTTP do
   JSONRPC over HTTP
   """
 
-  alias EthereumJSONRPC.{DecodeError, Transport, Utility.EndpointAvailabilityObserver}
+  alias EthereumJSONRPC.{DecodeError, Transport}
+  alias EthereumJSONRPC.Utility.{CommonHelper, EndpointAvailabilityObserver}
 
   require Logger
 
@@ -238,23 +239,34 @@ defmodule EthereumJSONRPC.HTTP do
   defp url(options, method) when is_list(options) and is_binary(method) do
     with {:ok, method_to_url} <- Keyword.fetch(options, :method_to_url),
          {:ok, method_atom} <- to_existing_atom(method),
-         {:ok, url} <- Keyword.fetch(method_to_url, method_atom) do
-      {url_type, fallback_url} =
-        case method_atom do
-          :eth_call -> {:eth_call, options[:fallback_eth_call_url]}
-          _ -> {:trace, options[:fallback_trace_url]}
-        end
+         {:ok, url_type} <- Keyword.fetch(method_to_url, method_atom) do
+      fallback_urls = CommonHelper.url_type_to_urls(url_type, options, :fallback)
 
-      {url_type, EndpointAvailabilityObserver.maybe_replace_url(url, fallback_url, url_type)}
+      url =
+        url_type
+        |> CommonHelper.url_type_to_urls(options)
+        |> EndpointAvailabilityObserver.maybe_replace_urls(fallback_urls, url_type)
+        |> select_single_url()
+
+      {url_type, url}
     else
       _ ->
-        url =
-          options
-          |> Keyword.fetch!(:url)
-          |> EndpointAvailabilityObserver.maybe_replace_url(options[:fallback_url], :http)
+        url_type = :http
 
-        {:http, url}
+        url =
+          url_type
+          |> CommonHelper.url_type_to_urls(options)
+          |> EndpointAvailabilityObserver.maybe_replace_urls(options[:fallback_urls], url_type)
+          |> select_single_url()
+
+        {url_type, url}
     end
+  end
+
+  defp select_single_url([]), do: nil
+
+  defp select_single_url(urls) do
+    Enum.random(urls)
   end
 
   defp to_existing_atom(string) do
