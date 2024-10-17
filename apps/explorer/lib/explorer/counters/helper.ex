@@ -10,6 +10,16 @@ defmodule Explorer.Counters.Helper do
     read_concurrency: true
   ]
 
+  @doc """
+    Returns the current time in milliseconds since the Unix epoch.
+
+    This function retrieves the current UTC time and converts it to Unix
+    timestamp in milliseconds.
+
+    ## Returns
+    - The number of milliseconds since the Unix epoch.
+  """
+  @spec current_time() :: non_neg_integer()
   def current_time do
     utc_now = DateTime.utc_now()
 

@@ -44,6 +44,7 @@ defmodule Indexer.Block.Fetcher do
     Addresses,
     AddressTokenBalances,
     MintTransfers,
+    SignedAuthorizations,
     TokenInstances,
     TokenTransfers,
     TransactionActions
@@ -236,7 +237,8 @@ defmodule Indexer.Block.Fetcher do
            tokens: %{params: tokens},
            transactions: %{params: transactions_with_receipts},
            withdrawals: %{params: withdrawals_params},
-           token_instances: %{params: token_instances}
+           token_instances: %{params: token_instances},
+           signed_authorizations: %{params: SignedAuthorizations.parse(transactions_with_receipts)}
          },
          chain_type_import_options = %{
            transactions_with_receipts: transactions_with_receipts,
