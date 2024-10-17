@@ -131,7 +131,7 @@ defmodule Explorer.Chain.Address do
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction}
   alias Explorer.{Chain, PagingOptions, Repo}
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
@@ -223,7 +223,7 @@ defmodule Explorer.Chain.Address do
   end
 
   @spec get(Hash.Address.t(), [Chain.necessity_by_association_option() | Chain.api?()]) :: t() | nil
-  def get(hash, options) do
+  def get(hash, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     query = from(address in Address, where: address.hash == ^hash)
@@ -561,4 +561,26 @@ defmodule Explorer.Chain.Address do
         {[], nil}
     end
   end
+
+  @doc """
+  Retrieves the creation transaction for a given address.
+
+  ## Parameters
+  - `address`: The address for which to find the creation transaction.
+
+  ## Returns
+  - `nil` if no creation transaction is found.
+  - `%InternalTransaction{}` if the creation transaction is an internal transaction.
+  - `%Transaction{}` if the creation transaction is a regular transaction.
+  """
+  @spec creation_transaction(any()) :: nil | InternalTransaction.t() | Transaction.t()
+  def creation_transaction(%__MODULE__{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contracts_creation_internal_transaction
+  end
+
+  def creation_transaction(%__MODULE__{contracts_creation_transaction: %Transaction{}} = address) do
+    address.contracts_creation_transaction
+  end
+
+  def creation_transaction(_address), do: nil
 end
