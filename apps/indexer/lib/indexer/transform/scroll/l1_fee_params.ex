@@ -37,7 +37,7 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
 
           logs
           |> Enum.filter(fn log ->
-            # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
+            # credo:disable-for-lines:3 Credo.Check.Design.AliasUsage
             !is_nil(log.first_topic) &&
               String.downcase(log.first_topic) in Indexer.Fetcher.Scroll.L1FeeParam.event_signatures() &&
               String.downcase(Indexer.Helper.address_hash_to_string(log.address_hash)) == gas_oracle
