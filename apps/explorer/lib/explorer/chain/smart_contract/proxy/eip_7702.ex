@@ -23,6 +23,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
       couldn't be extracted or decoded.
   """
   @spec get_implementation_address_hash_string(Hash.Address.t(), Keyword.t()) :: String.t() | nil
+  @spec get_implementation_address_hash_string(Hash.Address.t()) :: String.t() | nil
   def get_implementation_address_hash_string(address_hash, options \\ []) do
     case Chain.select_repo(options).get(Address, address_hash) do
       nil ->
