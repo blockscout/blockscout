@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddTxHashInsertedAtIndex do
+defmodule Explorer.Repo.Migrations.AddTransactionHashInsertedAtIndex do
   use Ecto.Migration
 
   def change do
