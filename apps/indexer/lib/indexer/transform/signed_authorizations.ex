@@ -57,7 +57,7 @@ defmodule Indexer.Transform.SignedAuthorizations do
     authority
   end
 
-  # This function uses eleptic curve recovery to get the address from the signed message and the signature.
+  # This function uses elliptic curve recovery to get the address from the signed message and the signature.
   @spec ec_recover(binary(), non_neg_integer(), non_neg_integer(), non_neg_integer()) :: EthereumJSONRPC.address() | nil
   defp ec_recover(signed_message, r, s, v) do
     r_bytes = <<r::integer-size(256)>>
