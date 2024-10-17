@@ -143,6 +143,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/optimism-batch/:batch_number", V2.TransactionController, :optimism_batch)
       end
 
+      if Application.compile_env(:explorer, :chain_type) == :scroll do
+        get("/scroll-batch/:batch_number", V2.TransactionController, :scroll_batch)
+      end
+
       if Application.compile_env(:explorer, :chain_type) == :suave do
         get("/execution-node/:execution_node_hash_param", V2.TransactionController, :execution_node)
       end
@@ -182,6 +186,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
       if Application.compile_env(:explorer, :chain_type) == :optimism do
         get("/optimism-batch/:batch_number", V2.BlockController, :optimism_batch)
+      end
+
+      if Application.compile_env(:explorer, :chain_type) == :scroll do
+        get("/scroll-batch/:batch_number", V2.BlockController, :scroll_batch)
       end
     end
 
@@ -271,6 +279,18 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/deposits/count", V2.PolygonEdgeController, :deposits_count)
         get("/withdrawals", V2.PolygonEdgeController, :withdrawals)
         get("/withdrawals/count", V2.PolygonEdgeController, :withdrawals_count)
+      end
+    end
+
+    scope "/scroll" do
+      if Application.compile_env(:explorer, :chain_type) == :scroll do
+        get("/batches", V2.ScrollController, :batches)
+        get("/batches/count", V2.ScrollController, :batches_count)
+        get("/batches/:number", V2.ScrollController, :batch)
+        get("/deposits", V2.ScrollController, :deposits)
+        get("/deposits/count", V2.ScrollController, :deposits_count)
+        get("/withdrawals", V2.ScrollController, :withdrawals)
+        get("/withdrawals/count", V2.ScrollController, :withdrawals_count)
       end
     end
 

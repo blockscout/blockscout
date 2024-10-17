@@ -27,6 +27,13 @@ defmodule EthereumJSONRPC.Receipt do
                            ]
                          )
 
+    :scroll ->
+      @chain_type_fields quote(
+                           do: [
+                             l1_fee: non_neg_integer()
+                           ]
+                         )
+
     :arbitrum ->
       @chain_type_fields quote(
                            do: [
@@ -121,6 +128,9 @@ defmodule EthereumJSONRPC.Receipt do
           l1_gas_price: 0,\
           l1_gas_used: 0\
       """
+    :scroll -> """
+          l1_fee: 0\
+      """
     :arbitrum -> """
           gas_used_for_l1: nil\
       """
@@ -169,6 +179,9 @@ defmodule EthereumJSONRPC.Receipt do
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
           l1_gas_used: 0\
+      """
+    :scroll -> """
+          l1_fee: 0\
       """
     :arbitrum -> """
           gas_used_for_l1: nil\
@@ -235,6 +248,14 @@ defmodule EthereumJSONRPC.Receipt do
           l1_fee_scalar: Map.get(elixir, "l1FeeScalar", 0),
           l1_gas_price: Map.get(elixir, "l1GasPrice", 0),
           l1_gas_used: Map.get(elixir, "l1GasUsed", 0)
+        })
+      end
+
+    :scroll ->
+      defp chain_type_fields(params, elixir) do
+        params
+        |> Map.merge(%{
+          l1_fee: Map.get(elixir, "l1Fee", 0)
         })
       end
 

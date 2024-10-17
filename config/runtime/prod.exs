@@ -88,6 +88,12 @@ config :explorer, Explorer.Repo.PolygonZkevm,
   pool_size: 1,
   ssl: ExplorerConfigHelper.ssl_enabled?()
 
+# Configures Scroll database
+config :explorer, Explorer.Repo.Scroll,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: 1,
+  ssl: ExplorerConfigHelper.ssl_enabled?()
+
 # Configures ZkSync database
 config :explorer, Explorer.Repo.ZkSync,
   url: System.get_env("DATABASE_URL"),
