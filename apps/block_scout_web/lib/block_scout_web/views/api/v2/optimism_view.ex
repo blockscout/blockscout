@@ -172,6 +172,10 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l1_transaction_hash" => deposit.l1_transaction_hash,
             # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hash` property
             "l1_tx_hash" => deposit.l1_transaction_hash,
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_origin` property
+            "l1_tx_origin" => deposit.l1_transaction_origin,
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_gas_limit` property
+            "l2_tx_gas_limit" => deposit.l2_transaction.gas,
             "l1_transaction_origin" => deposit.l1_transaction_origin,
             "l2_transaction_gas_limit" => deposit.l2_transaction.gas
           }
