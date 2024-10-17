@@ -15,14 +15,18 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       "number" => batch.number,
       "timestamp" => batch.timestamp,
       "root_hash" => batch.root_hash,
-      "l1_tx_count" => batch.l1_tx_count,
-      "l2_tx_count" => batch.l2_tx_count,
+      "l1_transaction_count" => batch.l1_transaction_count,
+      "l2_transaction_count" => batch.l2_transaction_count,
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_count` property
+      "l1_tx_count" => batch.l1_transaction_count,
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_count` property
+      "l2_tx_count" => batch.l2_transaction_count,
       "l1_gas_price" => batch.l1_gas_price,
       "l2_fair_gas_price" => batch.l2_fair_gas_price,
       "start_block" => batch.start_block,
       "end_block" => batch.end_block
     }
-    |> add_l1_txs_info_and_status(batch)
+    |> add_l1_transactions_info_and_status(batch)
   end
 
   @doc """
@@ -64,9 +68,11 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       %{
         "number" => batch.number,
         "timestamp" => batch.timestamp,
-        "tx_count" => batch.l1_tx_count + batch.l2_tx_count
+        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
+        "tx_count" => batch.l1_transaction_count + batch.l2_transaction_count,
+        "transaction_count" => batch.l1_transaction_count + batch.l2_transaction_count
       }
-      |> add_l1_txs_info_and_status(batch)
+      |> add_l1_transactions_info_and_status(batch)
     end)
   end
 
@@ -119,7 +125,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
   defp do_add_zksync_info(out_json, zksync_entity) do
     res =
       %{}
-      |> do_add_l1_txs_info_and_status(%{
+      |> do_add_l1_transactions_info_and_status(%{
         batch_number: get_batch_number(zksync_entity),
         commit_transaction: zksync_entity.zksync_commit_transaction,
         prove_transaction: zksync_entity.zksync_prove_transaction,
@@ -138,22 +144,22 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
     end
   end
 
-  defp add_l1_txs_info_and_status(out_json, %TransactionBatch{} = batch) do
-    do_add_l1_txs_info_and_status(out_json, batch)
+  defp add_l1_transactions_info_and_status(out_json, %TransactionBatch{} = batch) do
+    do_add_l1_transactions_info_and_status(out_json, batch)
   end
 
-  defp do_add_l1_txs_info_and_status(out_json, zksync_item) do
-    l1_txs = get_associated_l1_txs(zksync_item)
+  defp do_add_l1_transactions_info_and_status(out_json, zksync_item) do
+    l1_transactions = get_associated_l1_transactions(zksync_item)
 
     out_json
     |> Map.merge(%{
       "status" => batch_status(zksync_item),
-      "commit_transaction_hash" => APIV2Helper.get_2map_data(l1_txs, :commit_transaction, :hash),
-      "commit_transaction_timestamp" => APIV2Helper.get_2map_data(l1_txs, :commit_transaction, :ts),
-      "prove_transaction_hash" => APIV2Helper.get_2map_data(l1_txs, :prove_transaction, :hash),
-      "prove_transaction_timestamp" => APIV2Helper.get_2map_data(l1_txs, :prove_transaction, :ts),
-      "execute_transaction_hash" => APIV2Helper.get_2map_data(l1_txs, :execute_transaction, :hash),
-      "execute_transaction_timestamp" => APIV2Helper.get_2map_data(l1_txs, :execute_transaction, :ts)
+      "commit_transaction_hash" => APIV2Helper.get_2map_data(l1_transactions, :commit_transaction, :hash),
+      "commit_transaction_timestamp" => APIV2Helper.get_2map_data(l1_transactions, :commit_transaction, :ts),
+      "prove_transaction_hash" => APIV2Helper.get_2map_data(l1_transactions, :prove_transaction, :hash),
+      "prove_transaction_timestamp" => APIV2Helper.get_2map_data(l1_transactions, :prove_transaction, :ts),
+      "execute_transaction_hash" => APIV2Helper.get_2map_data(l1_transactions, :execute_transaction, :hash),
+      "execute_transaction_timestamp" => APIV2Helper.get_2map_data(l1_transactions, :execute_transaction, :ts)
     })
   end
 
@@ -165,13 +171,13 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
   #
   # ## Returns
   # A map containing nesting maps describing corresponding L1 transactions
-  defp get_associated_l1_txs(zksync_item) do
+  defp get_associated_l1_transactions(zksync_item) do
     [:commit_transaction, :prove_transaction, :execute_transaction]
-    |> Enum.reduce(%{}, fn key, l1_txs ->
+    |> Enum.reduce(%{}, fn key, l1_transactions ->
       case Map.get(zksync_item, key) do
-        nil -> Map.put(l1_txs, key, nil)
-        %Ecto.Association.NotLoaded{} -> Map.put(l1_txs, key, nil)
-        value -> Map.put(l1_txs, key, %{hash: value.hash, ts: value.timestamp})
+        nil -> Map.put(l1_transactions, key, nil)
+        %Ecto.Association.NotLoaded{} -> Map.put(l1_transactions, key, nil)
+        value -> Map.put(l1_transactions, key, %{hash: value.hash, ts: value.timestamp})
       end
     end)
   end

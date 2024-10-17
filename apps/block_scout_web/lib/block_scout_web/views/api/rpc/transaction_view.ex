@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   end
 
   def render("gettxreceiptstatus.json", %{status: status}) do
-    prepared_status = prepare_tx_receipt_status(status)
+    prepared_status = prepare_transaction_receipt_status(status)
     RPCView.render("show.json", data: %{"status" => prepared_status})
   end
 
@@ -27,13 +27,13 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
     RPCView.render("error.json", assigns)
   end
 
-  defp prepare_tx_receipt_status(""), do: ""
+  defp prepare_transaction_receipt_status(""), do: ""
 
-  defp prepare_tx_receipt_status(nil), do: ""
+  defp prepare_transaction_receipt_status(nil), do: ""
 
-  defp prepare_tx_receipt_status(:ok), do: "1"
+  defp prepare_transaction_receipt_status(:ok), do: "1"
 
-  defp prepare_tx_receipt_status(_), do: "0"
+  defp prepare_transaction_receipt_status(_), do: "0"
 
   defp prepare_error("") do
     %{

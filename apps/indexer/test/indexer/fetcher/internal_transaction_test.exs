@@ -604,14 +604,14 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert nil == Repo.get(PendingBlockOperation, block_hash)
 
-      int_txs = Repo.all(from(i in Chain.InternalTransaction, where: i.block_hash == ^block_hash))
+      internal_transactions = Repo.all(from(i in Chain.InternalTransaction, where: i.block_hash == ^block_hash))
 
-      assert Enum.count(int_txs) > 0
+      assert Enum.count(internal_transactions) > 0
 
-      last_int_tx = List.last(int_txs)
+      last_internal_transaction = List.last(internal_transactions)
 
-      assert last_int_tx.type == :call
-      assert last_int_tx.call_type == :invalid
+      assert last_internal_transaction.type == :call
+      assert last_internal_transaction.call_type == :invalid
     end
   end
 

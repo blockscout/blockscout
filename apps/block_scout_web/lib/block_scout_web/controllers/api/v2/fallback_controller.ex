@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @vyper_smart_contract_is_not_supported "Vyper smart-contracts are not supported by SolidityScan"
   @unverified_smart_contract "Smart-contract is unverified"
   @empty_response "Empty response"
-  @tx_interpreter_service_disabled "Transaction Interpretation Service is disabled"
+  @transaction_interpreter_service_disabled "Transaction Interpretation Service is disabled"
   @disabled "API endpoint is disabled"
   @service_disabled "Service is disabled"
 
@@ -296,11 +296,11 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @empty_response})
   end
 
-  def call(conn, {:tx_interpreter_enabled, false}) do
+  def call(conn, {:transaction_interpreter_enabled, false}) do
     conn
     |> put_status(:forbidden)
     |> put_view(ApiView)
-    |> render(:message, %{message: @tx_interpreter_service_disabled})
+    |> render(:message, %{message: @transaction_interpreter_service_disabled})
   end
 
   def call(conn, {:disabled, _}) do

@@ -67,16 +67,16 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     end
   end
 
-  defp json_tx_id_to_hash(hash) do
+  defp json_transaction_id_to_hash(hash) do
     case hash do
-      "0x" <> tx_hash -> tx_hash
+      "0x" <> transaction_hash -> transaction_hash
       nil -> @zero_hash
     end
   end
 
   defp string_hash_to_bytes_hash(hash) do
     hash
-    |> json_tx_id_to_hash()
+    |> json_transaction_id_to_hash()
     |> Base.decode16!(case: :mixed)
   end
 
@@ -99,14 +99,14 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     %{
       "number" => {:number, :ok},
       "timestamp" => {:timestamp, :ts_to_datetime},
-      "l1TxCount" => {:l1_tx_count, :ok},
-      "l2TxCount" => {:l2_tx_count, :ok},
+      "l1TxCount" => {:l1_transaction_count, :ok},
+      "l2TxCount" => {:l2_transaction_count, :ok},
       "rootHash" => {:root_hash, :str_to_byteshash},
-      "commitTxHash" => {:commit_tx_hash, :str_to_byteshash},
+      "commitTxHash" => {:commit_transaction_hash, :str_to_byteshash},
       "committedAt" => {:commit_timestamp, :iso8601_to_datetime},
-      "proveTxHash" => {:prove_tx_hash, :str_to_byteshash},
+      "proveTxHash" => {:prove_transaction_hash, :str_to_byteshash},
       "provenAt" => {:prove_timestamp, :iso8601_to_datetime},
-      "executeTxHash" => {:executed_tx_hash, :str_to_byteshash},
+      "executeTxHash" => {:executed_transaction_hash, :str_to_byteshash},
       "executedAt" => {:executed_timestamp, :iso8601_to_datetime},
       "l1GasPrice" => {:l1_gas_price, :ok},
       "l2FairGasPrice" => {:l2_fair_gas_price, :ok}
@@ -122,7 +122,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
         case transform_type do
           :iso8601_to_datetime -> from_iso8601_to_datetime(value_in_json_response)
           :ts_to_datetime -> IndexerHelper.timestamp_to_datetime(value_in_json_response)
-          :str_to_txhash -> json_tx_id_to_hash(value_in_json_response)
+          :str_to_txhash -> json_transaction_id_to_hash(value_in_json_response)
           :str_to_byteshash -> string_hash_to_bytes_hash(value_in_json_response)
           _ -> value_in_json_response
         end
@@ -146,8 +146,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     %{
       number: batch.number,
       timestamp: batch.timestamp,
-      l1_tx_count: batch.l1_tx_count,
-      l2_tx_count: batch.l2_tx_count,
+      l1_transaction_count: batch.l1_transaction_count,
+      l2_transaction_count: batch.l2_transaction_count,
       root_hash: batch.root_hash.bytes,
       l1_gas_price: batch.l1_gas_price,
       l2_fair_gas_price: batch.l2_fair_gas_price,
@@ -200,10 +200,10 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     ## Returns
     - A map containing details of the transaction.
   """
-  @spec fetch_tx_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
-  def fetch_tx_by_hash(raw_hash, json_rpc_named_arguments)
+  @spec fetch_transaction_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
+  def fetch_transaction_by_hash(raw_hash, json_rpc_named_arguments)
       when is_binary(raw_hash) and is_list(json_rpc_named_arguments) do
-    hash = prepare_tx_hash(raw_hash)
+    hash = prepare_transaction_hash(raw_hash)
 
     req =
       EthereumJSONRPC.request(%{
@@ -231,10 +231,10 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     ## Returns
     - A map containing the receipt details of the transaction.
   """
-  @spec fetch_tx_receipt_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
-  def fetch_tx_receipt_by_hash(raw_hash, json_rpc_named_arguments)
+  @spec fetch_transaction_receipt_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
+  def fetch_transaction_receipt_by_hash(raw_hash, json_rpc_named_arguments)
       when is_binary(raw_hash) and is_list(json_rpc_named_arguments) do
-    hash = prepare_tx_hash(raw_hash)
+    hash = prepare_transaction_hash(raw_hash)
 
     req =
       EthereumJSONRPC.request(%{
@@ -377,8 +377,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   end
 
   # Converts a transaction hash represented as binary to a hexadecimal string
-  @spec prepare_tx_hash(binary()) :: binary()
-  defp prepare_tx_hash(raw_hash) do
+  @spec prepare_transaction_hash(binary()) :: binary()
+  defp prepare_transaction_hash(raw_hash) do
     case raw_hash do
       "0x" <> <<_::binary-size(64)>> -> raw_hash
       _ -> "0x" <> Base.encode16(raw_hash, case: :lower)

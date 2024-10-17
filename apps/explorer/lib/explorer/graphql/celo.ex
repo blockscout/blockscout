@@ -20,8 +20,8 @@ defmodule Explorer.GraphQL.Celo do
   @doc """
   Constructs a paginated query for token transfers involving a specific address.
   """
-  @spec token_tx_transfers_query_for_address(Hash.Address.t(), integer(), integer()) :: Ecto.Query.t()
-  def token_tx_transfers_query_for_address(address_hash, offset, limit) do
+  @spec token_transaction_transfers_query_for_address(Hash.Address.t(), integer(), integer()) :: Ecto.Query.t()
+  def token_transaction_transfers_query_for_address(address_hash, offset, limit) do
     page = floor(offset / limit) + 1
     growing_limit = limit * (page + 1)
 
@@ -51,26 +51,26 @@ defmodule Explorer.GraphQL.Celo do
       from(
         tt in subquery(tokens),
         as: :token_transfer,
-        inner_join: tx in Transaction,
+        inner_join: transaction in Transaction,
         as: :transaction,
-        on: tx.hash == tt.transaction_hash,
+        on: transaction.hash == tt.transaction_hash,
         inner_join: b in Block,
-        on: tx.block_hash == b.hash,
+        on: transaction.block_hash == b.hash,
         left_join: token in Token,
-        on: tx.gas_token_contract_address_hash == token.contract_address_hash,
+        on: transaction.gas_token_contract_address_hash == token.contract_address_hash,
         select: %{
           transaction_hash: tt.transaction_hash,
           to_address_hash: tt.to_address_hash,
           from_address_hash: tt.from_address_hash,
-          gas_used: tx.gas_used,
-          gas_price: tx.gas_price,
-          fee_currency: tx.gas_token_contract_address_hash,
+          gas_used: transaction.gas_used,
+          gas_price: transaction.gas_price,
+          fee_currency: transaction.gas_token_contract_address_hash,
           fee_token: fragment("coalesce(?, 'CELO')", token.symbol),
-          # gateway_fee: tx.gateway_fee,
-          # gateway_fee_recipient: tx.gas_fee_recipient_hash,
+          # gateway_fee: transaction.gateway_fee,
+          # gateway_fee_recipient: transaction.gas_fee_recipient_hash,
           timestamp: b.timestamp,
-          input: tx.input,
-          nonce: tx.nonce,
+          input: transaction.input,
+          nonce: transaction.nonce,
           block_number: tt.block_number
         }
       )
@@ -90,18 +90,18 @@ defmodule Explorer.GraphQL.Celo do
   Constructs a query to fetch token transfers within a given transaction.
 
   ## Parameters
-    - tx_hash: the hash of the transaction
+    - transaction_hash: the hash of the transaction
 
   ## Returns
    - Ecto query
   """
-  @spec token_tx_transfers_query_by_txhash(Hash.Full.t()) :: Ecto.Query.t()
-  def token_tx_transfers_query_by_txhash(tx_hash) do
-    query = token_tx_transfers_query()
+  @spec token_transaction_transfers_query_by_transaction_hash(Hash.Full.t()) :: Ecto.Query.t()
+  def token_transaction_transfers_query_by_transaction_hash(transaction_hash) do
+    query = token_transaction_transfers_query()
 
     from(
       t in subquery(query),
-      where: t.transaction_hash == ^tx_hash,
+      where: t.transaction_hash == ^transaction_hash,
       order_by: [t.log_index]
     )
   end
@@ -109,9 +109,9 @@ defmodule Explorer.GraphQL.Celo do
   @doc """
   Constructs a query for token transfers filtered by a specific address.
   """
-  @spec token_tx_transfers_query_by_address(Hash.Address.t()) :: Ecto.Query.t()
-  def token_tx_transfers_query_by_address(address_hash) do
-    token_tx_transfers_query()
+  @spec token_transaction_transfers_query_by_address(Hash.Address.t()) :: Ecto.Query.t()
+  def token_transaction_transfers_query_by_address(address_hash) do
+    token_transaction_transfers_query()
     |> where([t], t.from_address_hash == ^address_hash or t.to_address_hash == ^address_hash)
     |> order_by([transaction: t], desc: t.block_number, asc: t.nonce)
   end
@@ -119,13 +119,13 @@ defmodule Explorer.GraphQL.Celo do
   @doc """
   Constructs a query to fetch detailed token transfer information.
   """
-  @spec token_tx_transfers_query() :: Ecto.Query.t()
-  def token_tx_transfers_query do
+  @spec token_transaction_transfers_query() :: Ecto.Query.t()
+  def token_transaction_transfers_query do
     from(
       tt in TokenTransfer,
-      inner_join: tx in Transaction,
+      inner_join: transaction in Transaction,
       as: :transaction,
-      on: tx.hash == tt.transaction_hash,
+      on: transaction.hash == tt.transaction_hash,
       inner_join: b in Block,
       on: tt.block_number == b.number,
       # left_join: wf in CeloWalletAccounts,
@@ -135,10 +135,10 @@ defmodule Explorer.GraphQL.Celo do
       left_join: token in Token,
       on: tt.token_contract_address_hash == token.contract_address_hash,
       select: %{
-        gas_used: tx.gas_used,
-        gas_price: tx.gas_price,
+        gas_used: transaction.gas_used,
+        gas_price: transaction.gas_price,
         timestamp: b.timestamp,
-        input: tx.input,
+        input: transaction.input,
         transaction_hash: tt.transaction_hash,
         from_address_hash: tt.from_address_hash,
         to_address_hash: tt.to_address_hash,
@@ -149,7 +149,7 @@ defmodule Explorer.GraphQL.Celo do
         # comment: tt.comment,
         token: token.symbol,
         token_address: token.contract_address_hash,
-        nonce: tx.nonce,
+        nonce: transaction.nonce,
         block_number: tt.block_number,
         token_type: token.type,
         token_id: fragment("(COALESCE(?, ARRAY[]::Decimal[]))[1]", tt.token_ids)

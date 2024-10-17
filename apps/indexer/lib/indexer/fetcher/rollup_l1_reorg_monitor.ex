@@ -33,7 +33,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
     optimism_modules = [
       Indexer.Fetcher.Optimism.OutputRoot,
-      Indexer.Fetcher.Optimism.TxnBatch,
+      Indexer.Fetcher.Optimism.TransactionBatch,
       Indexer.Fetcher.Optimism.WithdrawalEvent
     ]
 

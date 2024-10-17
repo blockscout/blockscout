@@ -54,8 +54,8 @@ defmodule Mix.Tasks.Encrypt do
       element
       |> Changeset.change(%{
         encrypted_name: element.name,
-        encrypted_tx_hash: element.tx_hash,
-        tx_hash_hash: element.tx_hash |> to_string() |> String.downcase()
+        encrypted_transaction_hash: element.transaction_hash,
+        transaction_hash_hash: element.transaction_hash |> to_string() |> String.downcase()
       })
       |> Account.update!()
     end)

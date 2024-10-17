@@ -244,8 +244,9 @@ defmodule Indexer.Fetcher.Optimism do
          {last_l1_block_number, last_l1_transaction_hash} <- caller.get_last_l1_item(),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
-         {:ok, last_l1_tx} <- get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
+         {:ok, last_l1_transaction} <- get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:l1_transaction_not_found, false} <-
+           {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {:ok, block_check_interval, last_safe_block} <- get_block_check_interval(json_rpc_named_arguments) do
       contract_address =
         if caller == Indexer.Fetcher.Optimism.WithdrawalEvent do
@@ -298,7 +299,7 @@ defmodule Indexer.Fetcher.Optimism do
 
         {:stop, :normal, %{}}
 
-      {:l1_tx_not_found, true} ->
+      {:l1_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check #{table_name} table."
         )

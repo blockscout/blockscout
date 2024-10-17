@@ -501,18 +501,18 @@ defmodule Indexer.Transform.Addresses do
           (entity_items = Map.get(fetched_data, entity_key)) != nil,
           do: extract_addresses_from_collection(entity_items, entity_fields, state)
 
-    tx_actions_addresses =
+    transaction_actions_addresses =
       fetched_data
       |> Map.get(:transaction_actions, [])
-      |> Enum.map(fn tx_action ->
-        tx_action.data
+      |> Enum.map(fn transaction_action ->
+        transaction_action.data
         |> Map.get(:block_number)
-        |> find_tx_action_addresses(tx_action.data)
+        |> find_transaction_action_addresses(transaction_action.data)
       end)
       |> List.flatten()
 
     addresses
-    |> Enum.concat(tx_actions_addresses)
+    |> Enum.concat(transaction_actions_addresses)
     |> List.flatten()
     |> merge_addresses()
   end
@@ -522,16 +522,16 @@ defmodule Indexer.Transform.Addresses do
 
   def extract_addresses_from_item(item, fields, state), do: Enum.flat_map(fields, &extract_fields(&1, item, state))
 
-  defp find_tx_action_addresses(block_number, data, accumulator \\ [])
+  defp find_transaction_action_addresses(block_number, data, accumulator \\ [])
 
-  defp find_tx_action_addresses(block_number, data, accumulator) when is_map(data) or is_list(data) do
+  defp find_transaction_action_addresses(block_number, data, accumulator) when is_map(data) or is_list(data) do
     Enum.reduce(data, accumulator, fn
-      {_, value}, acc -> find_tx_action_addresses(block_number, value, acc)
-      value, acc -> find_tx_action_addresses(block_number, value, acc)
+      {_, value}, acc -> find_transaction_action_addresses(block_number, value, acc)
+      value, acc -> find_transaction_action_addresses(block_number, value, acc)
     end)
   end
 
-  defp find_tx_action_addresses(block_number, value, accumulator) when is_binary(value) do
+  defp find_transaction_action_addresses(block_number, value, accumulator) when is_binary(value) do
     if Helper.address_correct?(value) do
       [%{:fetched_coin_balance_block_number => block_number, :hash => value} | accumulator]
     else
@@ -539,7 +539,7 @@ defmodule Indexer.Transform.Addresses do
     end
   end
 
-  defp find_tx_action_addresses(_block_number, _value, accumulator), do: accumulator
+  defp find_transaction_action_addresses(_block_number, _value, accumulator), do: accumulator
 
   def merge_addresses(addresses) when is_list(addresses) do
     addresses

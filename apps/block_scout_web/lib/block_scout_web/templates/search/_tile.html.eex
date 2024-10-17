@@ -1,4 +1,4 @@
-<tr data-identifier-hash="<%= @result.address_hash %>-<%= if @result.tx_hash, do: Base.encode16(@result.tx_hash, case: :lower), else: "" %>-<%= if @result.block_hash, do: Base.encode16(@result.block_hash, case: :lower), else: "" %>">
+<tr data-identifier-hash="<%= @result.address_hash %>-<%= if @result.transaction_hash, do: Base.encode16(@result.transaction_hash, case: :lower), else: "" %>-<%= if @result.block_hash, do: Base.encode16(@result.block_hash, case: :lower), else: "" %>">
   <!-- incremented number by order in the list -->
   <%= render BlockScoutWeb.SearchView, "_empty_td.html" %>
   <%= case @result.type do %>
@@ -79,7 +79,7 @@
         <% "transaction" -> %>
             <%= render BlockScoutWeb.TransactionView,
             "_link.html",
-            transaction_hash: "0x" <> Base.encode16(@result.tx_hash, case: :lower) %>
+            transaction_hash: "0x" <> Base.encode16(@result.transaction_hash, case: :lower) %>
         <% "user_operation" -> %>
             <%= "0x" <> Base.encode16(@result.user_operation_hash, case: :lower) %>
         <% "blob" -> %>

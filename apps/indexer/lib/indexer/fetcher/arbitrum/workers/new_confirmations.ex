@@ -492,7 +492,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         l1_rpc_config.json_rpc_named_arguments
       )
 
-    {retcode, {lifecycle_txs, rollup_blocks, confirmed_txs}} =
+    {retcode, {lifecycle_transactions, rollup_blocks, confirmed_transactions}} =
       handle_confirmations_from_logs(
         logs,
         l1_rpc_config,
@@ -501,9 +501,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
     {:ok, _} =
       Chain.import(%{
-        arbitrum_lifecycle_transactions: %{params: lifecycle_txs},
+        arbitrum_lifecycle_transactions: %{params: lifecycle_transactions},
         arbitrum_batch_blocks: %{params: rollup_blocks},
-        arbitrum_messages: %{params: confirmed_txs},
+        arbitrum_messages: %{params: confirmed_transactions},
         timeout: :infinity
       })
 
@@ -529,9 +529,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # - `outbox_address`: The address of the Arbitrum outbox contract.
   #
   # ## Returns
-  # - `{retcode, {lifecycle_txs, rollup_blocks, confirmed_txs}}` where
+  # - `{retcode, {lifecycle_transactions, rollup_blocks, confirmed_transactions}}` where
   #   - `retcode` is either `:ok` or `:confirmation_missed`
-  #   - `lifecycle_txs` is a list of lifecycle transactions confirming blocks in the
+  #   - `lifecycle_transactions` is a list of lifecycle transactions confirming blocks in the
   #     rollup
   #   - `rollup_blocks` is a list of rollup blocks associated with the corresponding
   #     lifecycle transactions
@@ -566,24 +566,24 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     # On this step there could be lifecycle transactions for the rollup blocks which are
     # already confirmed. It is only possible in the scenario when the confirmation
     # discovery process does not wait for the safe L1 block. In this case:
-    # - rollup_blocks_to_l1_txs will not contain the corresponding block hash associated
+    # - rollup_blocks_to_l1_transactions will not contain the corresponding block hash associated
     #   with the L1 transaction hash
-    # - lifecycle_txs_basic will contain all discovered lifecycle transactions
+    # - lifecycle_transactions_basic will contain all discovered lifecycle transactions
     # - blocks_requests will contain all requests to fetch block data for the lifecycle
     #   transactions
-    # - existing_lifecycle_txs will contain lifecycle transactions which was found in the
+    # - existing_lifecycle_transactions will contain lifecycle transactions which was found in the
     #   logs and already imported into the database.
-    {rollup_blocks_to_l1_txs, lifecycle_txs_basic, blocks_requests, existing_lifecycle_txs} =
+    {rollup_blocks_to_l1_transactions, lifecycle_transactions_basic, blocks_requests, existing_lifecycle_transactions} =
       parse_logs_for_new_confirmations(logs)
 
     # This step must be run only if there are hashes of the confirmed rollup blocks
-    # in rollup_blocks_to_l1_txs - when there are newly discovered confirmations.
+    # in rollup_blocks_to_l1_transactions - when there are newly discovered confirmations.
     rollup_blocks =
-      if Enum.empty?(rollup_blocks_to_l1_txs) do
+      if Enum.empty?(rollup_blocks_to_l1_transactions) do
         []
       else
         discover_rollup_blocks(
-          rollup_blocks_to_l1_txs,
+          rollup_blocks_to_l1_transactions,
           %{
             json_rpc_named_arguments: l1_rpc_config.json_rpc_named_arguments,
             logs_block_range: l1_rpc_config.logs_block_range,
@@ -593,17 +593,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       end
 
     # Will return %{} if there are no new confirmations
-    applicable_lifecycle_txs = take_lifecycle_txs_for_confirmed_blocks(rollup_blocks, lifecycle_txs_basic)
+    applicable_lifecycle_transactions =
+      take_lifecycle_transactions_for_confirmed_blocks(rollup_blocks, lifecycle_transactions_basic)
 
     # Will contain :ok if no new confirmations are found
     retcode =
-      if Enum.count(lifecycle_txs_basic) != Enum.count(applicable_lifecycle_txs) + length(existing_lifecycle_txs) do
+      if Enum.count(lifecycle_transactions_basic) !=
+           Enum.count(applicable_lifecycle_transactions) + length(existing_lifecycle_transactions) do
         :confirmation_missed
       else
         :ok
       end
 
-    if Enum.empty?(applicable_lifecycle_txs) and existing_lifecycle_txs == [] do
+    if Enum.empty?(applicable_lifecycle_transactions) and existing_lifecycle_transactions == [] do
       # Only if both new confirmations and already existing confirmations are empty
       {retcode, {[], [], []}}
     else
@@ -615,9 +617,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         )
 
       # The lifecycle transactions for the new confirmations are finalized here.
-      {lifecycle_txs_for_new_confirmations, rollup_blocks, highest_confirmed_block_number} =
-        finalize_lifecycle_txs_and_confirmed_blocks(
-          applicable_lifecycle_txs,
+      {lifecycle_transactions_for_new_confirmations, rollup_blocks, highest_confirmed_block_number} =
+        finalize_lifecycle_transactions_and_confirmed_blocks(
+          applicable_lifecycle_transactions,
           rollup_blocks,
           l1_blocks_to_ts,
           l1_rpc_config.track_finalization
@@ -625,16 +627,20 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
       # The lifecycle transactions for the already existing confirmations are updated here
       # to ensure correct L1 block number and timestamp that could appear due to re-orgs.
-      lifecycle_txs =
-        lifecycle_txs_for_new_confirmations ++
-          update_lifecycle_txs_for_new_blocks(existing_lifecycle_txs, lifecycle_txs_basic, l1_blocks_to_ts)
+      lifecycle_transactions =
+        lifecycle_transactions_for_new_confirmations ++
+          update_lifecycle_transactions_for_new_blocks(
+            existing_lifecycle_transactions,
+            lifecycle_transactions_basic,
+            l1_blocks_to_ts
+          )
 
       # Drawback of marking messages as confirmed during a new confirmation handling
       # is that the status change could become stuck if confirmations are not handled.
       # For example, due to DB inconsistency: some blocks/batches are missed.
       confirmed_messages = get_confirmed_l2_to_l1_messages(highest_confirmed_block_number)
 
-      {retcode, {lifecycle_txs, rollup_blocks, confirmed_messages}}
+      {retcode, {lifecycle_transactions, rollup_blocks, confirmed_messages}}
     end
   end
 
@@ -660,7 +666,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   #     database. Each transaction is compatible with the database import operation.
   @spec parse_logs_for_new_confirmations([%{String.t() => any()}]) ::
           {
-            %{binary() => %{l1_tx_hash: binary(), l1_block_num: non_neg_integer()}},
+            %{binary() => %{l1_transaction_hash: binary(), l1_block_num: non_neg_integer()}},
             %{binary() => %{hash: binary(), block_number: non_neg_integer()}},
             [EthereumJSONRPC.Transport.request()],
             [Arbitrum.LifecycleTransaction.to_import()]
@@ -669,46 +675,46 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     transaction_hashes =
       logs
       |> Enum.reduce(%{}, fn event, acc ->
-        l1_tx_hash_raw = event["transactionHash"]
-        Map.put_new(acc, l1_tx_hash_raw, Rpc.string_hash_to_bytes_hash(l1_tx_hash_raw))
+        l1_transaction_hash_raw = event["transactionHash"]
+        Map.put_new(acc, l1_transaction_hash_raw, Rpc.string_hash_to_bytes_hash(l1_transaction_hash_raw))
       end)
 
-    existing_lifecycle_txs =
+    existing_lifecycle_transactions =
       transaction_hashes
       |> Map.values()
       |> Db.lifecycle_transactions()
-      |> Enum.reduce(%{}, fn tx, acc ->
-        Map.put(acc, tx.hash, tx)
+      |> Enum.reduce(%{}, fn transaction, acc ->
+        Map.put(acc, transaction.hash, transaction)
       end)
 
-    {rollup_block_to_l1_txs, lifecycle_txs, blocks_requests} =
+    {rollup_block_to_l1_transactions, lifecycle_transactions, blocks_requests} =
       logs
-      |> Enum.reduce({%{}, %{}, %{}}, fn event, {block_to_txs, lifecycle_txs, blocks_requests} ->
+      |> Enum.reduce({%{}, %{}, %{}}, fn event, {block_to_transactions, lifecycle_transactions, blocks_requests} ->
         rollup_block_hash = send_root_updated_event_parse(event)
 
-        l1_tx_hash_raw = event["transactionHash"]
-        l1_tx_hash = transaction_hashes[l1_tx_hash_raw]
+        l1_transaction_hash_raw = event["transactionHash"]
+        l1_transaction_hash = transaction_hashes[l1_transaction_hash_raw]
         l1_blk_num = quantity_to_integer(event["blockNumber"])
 
         # There is no need to include the found block hash for the consequent confirmed
         # blocks discovery step since it is assumed that already existing lifecycle
         # transactions are already linked with the corresponding rollup blocks.
-        updated_block_to_txs =
-          if Map.has_key?(existing_lifecycle_txs, l1_tx_hash) do
-            block_to_txs
+        updated_block_to_transactions =
+          if Map.has_key?(existing_lifecycle_transactions, l1_transaction_hash) do
+            block_to_transactions
           else
             Map.put(
-              block_to_txs,
+              block_to_transactions,
               rollup_block_hash,
-              %{l1_tx_hash: l1_tx_hash, l1_block_num: l1_blk_num}
+              %{l1_transaction_hash: l1_transaction_hash, l1_block_num: l1_blk_num}
             )
           end
 
-        updated_lifecycle_txs =
+        updated_lifecycle_transactions =
           Map.put(
-            lifecycle_txs,
-            l1_tx_hash,
-            %{hash: l1_tx_hash, block_number: l1_blk_num}
+            lifecycle_transactions,
+            l1_transaction_hash,
+            %{hash: l1_transaction_hash, block_number: l1_blk_num}
           )
 
         updated_blocks_requests =
@@ -718,12 +724,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             BlockByNumber.request(%{id: 0, number: l1_blk_num}, false, true)
           )
 
-        log_info("New confirmation for the rollup block #{rollup_block_hash} found in #{l1_tx_hash_raw}")
+        log_info("New confirmation for the rollup block #{rollup_block_hash} found in #{l1_transaction_hash_raw}")
 
-        {updated_block_to_txs, updated_lifecycle_txs, updated_blocks_requests}
+        {updated_block_to_transactions, updated_lifecycle_transactions, updated_blocks_requests}
       end)
 
-    {rollup_block_to_l1_txs, lifecycle_txs, Map.values(blocks_requests), Map.values(existing_lifecycle_txs)}
+    {rollup_block_to_l1_transactions, lifecycle_transactions, Map.values(blocks_requests),
+     Map.values(existing_lifecycle_transactions)}
   end
 
   # Transforms rollup block hashes to numbers and associates them with their confirmation descriptions.
@@ -737,14 +744,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # confirmations.
   #
   # ## Parameters
-  # - `rollup_blocks_to_l1_txs`: A map of rollup block hashes to confirmation descriptions.
+  # - `rollup_blocks_to_l1_transactions`: A map of rollup block hashes to confirmation descriptions.
   # - `outbox_config`: Configuration for the Arbitrum outbox contract.
   #
   # ## Returns
   # - A list of rollup blocks each associated with the transaction's hash that
   #   confirms the block.
   @spec discover_rollup_blocks(
-          %{binary() => %{l1_tx_hash: binary(), l1_block_num: non_neg_integer()}},
+          %{binary() => %{l1_transaction_hash: binary(), l1_block_num: non_neg_integer()}},
           %{
             :logs_block_range => non_neg_integer(),
             :outbox_address => binary(),
@@ -752,9 +759,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             optional(any()) => any()
           }
         ) :: [Arbitrum.BatchBlock.to_import()]
-  defp discover_rollup_blocks(rollup_blocks_to_l1_txs, outbox_config) do
-    block_to_l1_txs =
-      rollup_blocks_to_l1_txs
+  defp discover_rollup_blocks(rollup_blocks_to_l1_transactions, outbox_config) do
+    block_to_l1_transactions =
+      rollup_blocks_to_l1_transactions
       |> Map.keys()
       |> Enum.reduce(%{}, fn block_hash, transformed ->
         rollup_block_num = Db.rollup_block_hash_to_num(block_hash)
@@ -767,24 +774,24 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             transformed
 
           value ->
-            Map.put(transformed, value, rollup_blocks_to_l1_txs[block_hash])
+            Map.put(transformed, value, rollup_blocks_to_l1_transactions[block_hash])
         end
       end)
 
-    if Enum.empty?(block_to_l1_txs) do
+    if Enum.empty?(block_to_l1_transactions) do
       []
     else
       # Oldest (with the lowest number) block is first
-      rollup_block_numbers = Enum.sort(Map.keys(block_to_l1_txs), :asc)
+      rollup_block_numbers = Enum.sort(Map.keys(block_to_l1_transactions), :asc)
 
       rollup_block_numbers
-      |> Enum.reduce([], fn block_num, updated_rollup_blocks ->
-        log_info("Attempting to mark all rollup blocks including ##{block_num} and lower as confirmed")
+      |> Enum.reduce([], fn block_number, updated_rollup_blocks ->
+        log_info("Attempting to mark all rollup blocks including ##{block_number} and lower as confirmed")
 
         {_, confirmed_blocks} =
           discover_rollup_blocks_belonging_to_one_confirmation(
-            block_num,
-            block_to_l1_txs[block_num],
+            block_number,
+            block_to_l1_transactions[block_number],
             outbox_config
           )
 
@@ -792,7 +799,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         if length(confirmed_blocks) > 0 do
           log_info("Found #{length(confirmed_blocks)} confirmed blocks")
 
-          add_confirmation_transaction(confirmed_blocks, block_to_l1_txs[block_num].l1_tx_hash) ++
+          add_confirmation_transaction(confirmed_blocks, block_to_l1_transactions[block_number].l1_transaction_hash) ++
             updated_rollup_blocks
         else
           log_info("Either no unconfirmed blocks found or DB inconsistency error discovered")
@@ -1413,28 +1420,32 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   # Adds the confirmation transaction hash to each rollup block description in the list.
   @spec add_confirmation_transaction([Arbitrum.BatchBlock.to_import()], binary()) :: [Arbitrum.BatchBlock.to_import()]
-  defp add_confirmation_transaction(block_descriptions_list, confirm_tx_hash) do
+  defp add_confirmation_transaction(block_descriptions_list, confirm_transaction_hash) do
     block_descriptions_list
     |> Enum.reduce([], fn block_descr, updated ->
       new_block_descr =
         block_descr
-        |> Map.put(:confirmation_transaction, confirm_tx_hash)
+        |> Map.put(:confirmation_transaction, confirm_transaction_hash)
 
       [new_block_descr | updated]
     end)
   end
 
   # Selects lifecycle transaction descriptions used for confirming a given list of rollup blocks.
-  @spec take_lifecycle_txs_for_confirmed_blocks(
+  @spec take_lifecycle_transactions_for_confirmed_blocks(
           [Arbitrum.BatchBlock.to_import()],
           %{binary() => %{hash: binary(), block_number: non_neg_integer()}}
         ) :: %{binary() => %{hash: binary(), block_number: non_neg_integer()}}
-  defp take_lifecycle_txs_for_confirmed_blocks(confirmed_rollup_blocks, lifecycle_txs) do
+  defp take_lifecycle_transactions_for_confirmed_blocks(confirmed_rollup_blocks, lifecycle_transactions) do
     confirmed_rollup_blocks
-    |> Enum.reduce(%{}, fn block_descr, updated_txs ->
-      confirmation_tx_hash = block_descr.confirmation_transaction
+    |> Enum.reduce(%{}, fn block_descr, updated_transactions ->
+      confirmation_transaction_hash = block_descr.confirmation_transaction
 
-      Map.put_new(updated_txs, confirmation_tx_hash, lifecycle_txs[confirmation_tx_hash])
+      Map.put_new(
+        updated_transactions,
+        confirmation_transaction_hash,
+        lifecycle_transactions[confirmation_transaction_hash]
+      )
     end)
   end
 
@@ -1448,7 +1459,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # for import.
   #
   # ## Parameters
-  # - `basic_lifecycle_txs`: The initial list of partially filled lifecycle transaction
+  # - `basic_lifecycle_transactions`: The initial list of partially filled lifecycle transaction
   #                          descriptions.
   # - `confirmed_rollup_blocks`: Rollup blocks to be considered as confirmed.
   # - `l1_blocks_requests`: RPC requests of `eth_getBlockByNumber` to fetch L1 block data
@@ -1461,7 +1472,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   #   - The map of lifecycle transactions where each transaction is ready for import.
   #   - The list of confirmed rollup blocks, ready for import.
   #   - The highest confirmed block number processed during this run.
-  @spec finalize_lifecycle_txs_and_confirmed_blocks(
+  @spec finalize_lifecycle_transactions_and_confirmed_blocks(
           %{binary() => %{hash: binary(), block_number: non_neg_integer()}},
           [Arbitrum.BatchBlock.to_import()],
           %{required(EthereumJSONRPC.block_number()) => DateTime.t()},
@@ -1471,27 +1482,27 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           [Arbitrum.BatchBlock.to_import()],
           integer()
         }
-  defp finalize_lifecycle_txs_and_confirmed_blocks(
-         basic_lifecycle_txs,
+  defp finalize_lifecycle_transactions_and_confirmed_blocks(
+         basic_lifecycle_transactions,
          confirmed_rollup_blocks,
          l1_blocks_to_ts,
          track_finalization?
        )
 
-  defp finalize_lifecycle_txs_and_confirmed_blocks(basic_lifecycle_txs, _, _, _)
-       when map_size(basic_lifecycle_txs) == 0 do
+  defp finalize_lifecycle_transactions_and_confirmed_blocks(basic_lifecycle_transactions, _, _, _)
+       when map_size(basic_lifecycle_transactions) == 0 do
     {[], [], -1}
   end
 
-  defp finalize_lifecycle_txs_and_confirmed_blocks(
-         basic_lifecycle_txs,
+  defp finalize_lifecycle_transactions_and_confirmed_blocks(
+         basic_lifecycle_transactions,
          confirmed_rollup_blocks,
          l1_blocks_to_ts,
          track_finalization?
        ) do
-    lifecycle_txs =
-      basic_lifecycle_txs
-      |> ArbitrumHelper.extend_lifecycle_txs_with_ts_and_status(l1_blocks_to_ts, track_finalization?)
+    lifecycle_transactions =
+      basic_lifecycle_transactions
+      |> ArbitrumHelper.extend_lifecycle_transactions_with_ts_and_status(l1_blocks_to_ts, track_finalization?)
       |> Db.get_indices_for_l1_transactions()
 
     {updated_rollup_blocks, highest_confirmed_block_number} =
@@ -1501,41 +1512,45 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
         updated_block =
           block
-          |> Map.put(:confirmation_id, lifecycle_txs[block.confirmation_transaction].id)
+          |> Map.put(:confirmation_id, lifecycle_transactions[block.confirmation_transaction].id)
           |> Map.drop([:confirmation_transaction])
 
         {[updated_block | updated_list], chosen_highest_confirmed}
       end)
 
-    {Map.values(lifecycle_txs), updated_rollup_blocks, highest_confirmed_block_number}
+    {Map.values(lifecycle_transactions), updated_rollup_blocks, highest_confirmed_block_number}
   end
 
   # Updates lifecycle transactions with new L1 block numbers and timestamps which could appear due to re-orgs.
   #
   # ## Parameters
-  # - `existing_commitment_txs`: A list of existing confirmation transactions to be checked and updated.
-  # - `tx_to_l1_block`: A map from transaction hashes to their corresponding new L1 block numbers.
+  # - `existing_commitment_transactions`: A list of existing confirmation transactions to be checked and updated.
+  # - `transaction_to_l1_block`: A map from transaction hashes to their corresponding new L1 block numbers.
   # - `l1_block_to_ts`: A map from L1 block numbers to their corresponding new timestamps.
   #
   # ## Returns
   # - A list of updated confirmation transactions with new block numbers and timestamps.
-  @spec update_lifecycle_txs_for_new_blocks(
+  @spec update_lifecycle_transactions_for_new_blocks(
           [Arbitrum.LifecycleTransaction.to_import()],
           %{binary() => non_neg_integer()},
           %{non_neg_integer() => DateTime.t()}
         ) :: [Arbitrum.LifecycleTransaction.to_import()]
-  defp update_lifecycle_txs_for_new_blocks(existing_commitment_txs, tx_to_l1_block, l1_block_to_ts) do
-    existing_commitment_txs
-    |> Enum.reduce([], fn tx, updated_txs ->
-      new_block_num = tx_to_l1_block[tx.hash].block_number
+  defp update_lifecycle_transactions_for_new_blocks(
+         existing_commitment_transactions,
+         transaction_to_l1_block,
+         l1_block_to_ts
+       ) do
+    existing_commitment_transactions
+    |> Enum.reduce([], fn transaction, updated_transactions ->
+      new_block_num = transaction_to_l1_block[transaction.hash].block_number
       new_ts = l1_block_to_ts[new_block_num]
 
-      case ArbitrumHelper.compare_lifecycle_tx_and_update(tx, {new_block_num, new_ts}, "confirmation") do
-        {:updated, updated_tx} ->
-          [updated_tx | updated_txs]
+      case ArbitrumHelper.compare_lifecycle_transaction_and_update(transaction, {new_block_num, new_ts}, "confirmation") do
+        {:updated, updated_transaction} ->
+          [updated_transaction | updated_transactions]
 
         _ ->
-          updated_txs
+          updated_transactions
       end
     end)
   end
@@ -1551,8 +1566,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   defp get_confirmed_l2_to_l1_messages(block_number) do
     block_number
     |> Db.sent_l2_to_l1_messages()
-    |> Enum.map(fn tx ->
-      Map.put(tx, :status, :confirmed)
+    |> Enum.map(fn transaction ->
+      Map.put(transaction, :status, :confirmed)
     end)
   end
 end

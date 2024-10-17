@@ -187,7 +187,7 @@ defmodule Indexer.Block.Fetcher do
              do: PolygonZkevmBridge.parse(blocks, logs),
              else: []
            ),
-         {arbitrum_xlevel_messages, arbitrum_txs_for_further_handling} =
+         {arbitrum_xlevel_messages, arbitrum_transactions_for_further_handling} =
            ArbitrumMessaging.parse(transactions_with_receipts, logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
@@ -253,13 +253,13 @@ defmodule Indexer.Block.Fetcher do
              state,
              basic_import_options |> Map.merge(additional_options) |> import_options(chain_type_import_options)
            ),
-         {:tx_actions, {:ok, inserted_tx_actions}} <-
-           {:tx_actions,
+         {:transaction_actions, {:ok, inserted_transaction_actions}} <-
+           {:transaction_actions,
             Chain.import(%{
               transaction_actions: %{params: transaction_actions},
               timeout: :infinity
             })} do
-      inserted = Map.merge(inserted, inserted_tx_actions)
+      inserted = Map.merge(inserted, inserted_transaction_actions)
       Prometheus.Instrumenter.block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
@@ -268,7 +268,7 @@ defmodule Indexer.Block.Fetcher do
       update_uncles_cache(inserted[:block_second_degree_relations])
       update_withdrawals_cache(inserted[:withdrawals])
 
-      async_match_arbitrum_messages_to_l2(arbitrum_txs_for_further_handling)
+      async_match_arbitrum_messages_to_l2(arbitrum_transactions_for_further_handling)
 
       result
     else
@@ -749,7 +749,7 @@ defmodule Indexer.Block.Fetcher do
   @spec async_match_arbitrum_messages_to_l2([map()]) :: :ok
   defp async_match_arbitrum_messages_to_l2([]), do: :ok
 
-  defp async_match_arbitrum_messages_to_l2(txs_with_messages_from_l1) do
-    ArbitrumMessagesToL2Matcher.async_discover_match(txs_with_messages_from_l1)
+  defp async_match_arbitrum_messages_to_l2(transactions_with_messages_from_l1) do
+    ArbitrumMessagesToL2Matcher.async_discover_match(transactions_with_messages_from_l1)
   end
 end

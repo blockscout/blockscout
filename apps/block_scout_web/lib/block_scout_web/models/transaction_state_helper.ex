@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   end
 
   defp do_state_changes(%Transaction{} = transaction, options) do
-    block_txs =
+    block_transactions =
       transaction.block_hash
       |> Chain.block_to_transactions(
         paging_options: %PagingOptions{key: nil, page_size: nil},
@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
       |> Repo.preload([:token_transfers, :internal_transactions])
 
     transaction =
-      block_txs
+      block_transactions
       |> Enum.find(&(&1.hash == transaction.hash))
       |> Repo.preload(
         token_transfers: [
@@ -85,14 +85,15 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
 
     coin_balances_before_block = transaction_to_coin_balances(transaction, previous_block_number, options)
 
-    coin_balances_before_tx = StateChange.coin_balances_before(transaction, block_txs, coin_balances_before_block)
+    coin_balances_before_transaction =
+      StateChange.coin_balances_before(transaction, block_transactions, coin_balances_before_block)
 
-    native_coin_entries = StateChange.native_coin_entries(transaction, coin_balances_before_tx)
+    native_coin_entries = StateChange.native_coin_entries(transaction, coin_balances_before_transaction)
 
     token_balances_before =
       transaction.token_transfers
       |> Enum.reduce(%{}, &token_transfers_to_balances_reducer(&1, &2, previous_block_number, options))
-      |> StateChange.token_balances_before(transaction, block_txs)
+      |> StateChange.token_balances_before(transaction, block_transactions)
 
     tokens_entries = StateChange.token_entries(transaction.token_transfers, token_balances_before)
 

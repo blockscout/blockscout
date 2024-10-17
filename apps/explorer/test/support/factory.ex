@@ -186,7 +186,7 @@ defmodule Explorer.Factory do
   end
 
   def tag_transaction_db_factory(%{user: user}) do
-    %TagTransaction{name: sequence("name"), tx_hash: insert(:transaction).hash, identity_id: user.id}
+    %TagTransaction{name: sequence("name"), transaction_hash: insert(:transaction).hash, identity_id: user.id}
   end
 
   def address_to_tag_factory do

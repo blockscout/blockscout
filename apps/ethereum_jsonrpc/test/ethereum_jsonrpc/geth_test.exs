@@ -359,11 +359,12 @@ defmodule EthereumJSONRPC.GethTest do
 
       Application.put_env(:ethereum_jsonrpc, Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
 
-      call_tracer_internal_txs = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
+      call_tracer_internal_transactions =
+        Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
 
       Application.put_env(:ethereum_jsonrpc, Geth, tracer: "js", debug_trace_timeout: "5s")
 
-      assert call_tracer_internal_txs ==
+      assert call_tracer_internal_transactions ==
                Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
     end
 
@@ -431,11 +432,12 @@ defmodule EthereumJSONRPC.GethTest do
 
       Application.put_env(:ethereum_jsonrpc, Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
 
-      call_tracer_internal_txs = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
+      call_tracer_internal_transactions =
+        Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
 
       Application.put_env(:ethereum_jsonrpc, Geth, tracer: "js", debug_trace_timeout: "5s")
 
-      assert call_tracer_internal_txs ==
+      assert call_tracer_internal_transactions ==
                Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
     end
 
