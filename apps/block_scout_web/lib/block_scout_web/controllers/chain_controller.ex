@@ -97,13 +97,13 @@ defmodule BlockScoutWeb.ChainController do
     encoded_results =
       results
       |> Enum.map(fn item ->
-        tx_hash_bytes = Map.get(item, :tx_hash)
+        transaction_hash_bytes = Map.get(item, :transaction_hash)
         block_hash_bytes = Map.get(item, :block_hash)
 
         item =
-          if tx_hash_bytes do
+          if transaction_hash_bytes do
             item
-            |> Map.replace(:tx_hash, "0x" <> Base.encode16(tx_hash_bytes, case: :lower))
+            |> Map.replace(:transaction_hash, "0x" <> Base.encode16(transaction_hash_bytes, case: :lower))
           else
             item
           end

@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.GraphQL.Celo.Resolvers.TokenTransfer do
 
   def get_by(%{transaction_hash: hash}, args, _) do
     hash
-    |> GraphQL.token_tx_transfers_query_by_txhash()
+    |> GraphQL.token_transaction_transfers_query_by_transaction_hash()
     |> Connection.from_query(&Repo.all/1, args, options(args))
   end
 

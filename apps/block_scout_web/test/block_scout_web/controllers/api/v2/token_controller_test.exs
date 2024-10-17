@@ -131,12 +131,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       token_transfers =
         for _ <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             token_contract_address: token.contract_address
           )
         end
@@ -161,12 +161,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       tt =
         for _ <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             token_contract_address: token.contract_address,
             token_ids: Enum.map(0..50, fn _x -> id end),
             token_type: "ERC-1155",
@@ -195,12 +195,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       token_transfers =
         for i <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             token_contract_address: token.contract_address,
             token_ids: [i],
             token_type: "ERC-721"
@@ -220,13 +220,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "check that pagination works fine with 1155 batches #1 (large batch)", %{conn: conn} do
       token = insert(:token, type: "ERC-1155")
-      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt =
         insert(:token_transfer,
-          transaction: tx,
-          block: tx.block,
-          block_number: tx.block_number,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..50, fn x -> x end),
           token_type: "ERC-1155",
@@ -253,13 +253,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          %{conn: conn} do
       token = insert(:token, type: "ERC-1155")
 
-      tx_1 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction_1 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt_1 =
         insert(:token_transfer,
-          transaction: tx_1,
-          block: tx_1.block,
-          block_number: tx_1.block_number,
+          transaction: transaction_1,
+          block: transaction_1.block,
+          block_number: transaction_1.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
           token_type: "ERC-1155",
@@ -271,13 +271,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           %TokenTransfer{tt_1 | token_ids: [i], amount: i}
         end
 
-      tx_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt_2 =
         insert(:token_transfer,
-          transaction: tx_2,
-          block: tx_2.block,
-          block_number: tx_2.block_number,
+          transaction: transaction_2,
+          block: transaction_2.block,
+          block_number: transaction_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..49, fn x -> x end),
           token_type: "ERC-1155",
@@ -291,9 +291,9 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       tt_3 =
         insert(:token_transfer,
-          transaction: tx_2,
-          block: tx_2.block,
-          block_number: tx_2.block_number,
+          transaction: transaction_2,
+          block: transaction_2.block,
+          block_number: transaction_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: [50],
           token_type: "ERC-1155",
@@ -314,13 +314,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     test "check that pagination works fine with 1155 batches #3", %{conn: conn} do
       token = insert(:token, type: "ERC-1155")
 
-      tx_1 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction_1 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt_1 =
         insert(:token_transfer,
-          transaction: tx_1,
-          block: tx_1.block,
-          block_number: tx_1.block_number,
+          transaction: transaction_1,
+          block: transaction_1.block,
+          block_number: transaction_1.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
           token_type: "ERC-1155",
@@ -332,13 +332,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           %TokenTransfer{tt_1 | token_ids: [i], amount: i}
         end
 
-      tx_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt_2 =
         insert(:token_transfer,
-          transaction: tx_2,
-          block: tx_2.block,
-          block_number: tx_2.block_number,
+          transaction: transaction_2,
+          block: transaction_2.block,
+          block_number: transaction_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..50, fn x -> x end),
           token_type: "ERC-1155",
@@ -1237,12 +1237,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       token_transfers =
         for _i <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             token_contract_address: token.contract_address,
             token_ids: [id],
             token_type: "ERC-721"
@@ -1271,13 +1271,13 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       insert(:token_instance, token_id: id, token_contract_address_hash: token.contract_address_hash)
 
-      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt =
         insert(:token_transfer,
-          transaction: tx,
-          block: tx.block,
-          block_number: tx.block_number,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..50, fn _x -> id end),
           token_type: "ERC-1155",
@@ -1299,14 +1299,14 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       amount = 101
       insert(:token_instance, token_id: id, token_contract_address_hash: token.contract_address_hash)
 
-      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt =
         for _ <- 0..50 do
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             token_contract_address: token.contract_address,
             token_ids: Enum.map(0..50, fn x -> x end) ++ [id],
             token_type: "ERC-1155",
@@ -1573,11 +1573,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   def compare_item(%TokenTransfer{} = token_transfer, json) do
     assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
-    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+    assert to_string(token_transfer.transaction_hash) == json["transaction_hash"]
     assert json["timestamp"] != nil
     assert json["method"] != nil
     assert to_string(token_transfer.block_hash) == json["block_hash"]
-    assert to_string(token_transfer.log_index) == json["log_index"]
+    assert token_transfer.log_index == json["log_index"]
     assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
   end
 

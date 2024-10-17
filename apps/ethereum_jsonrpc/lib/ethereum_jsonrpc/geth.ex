@@ -152,23 +152,23 @@ defmodule EthereumJSONRPC.Geth do
 
   def to_transactions_params(blocks_responses, id_to_params) do
     blocks_responses
-    |> Enum.reduce({[], 0}, fn %{id: id, result: tx_result}, {blocks_acc, counter} ->
+    |> Enum.reduce({[], 0}, fn %{id: id, result: transaction_result}, {blocks_acc, counter} ->
       {transactions_params, _, new_counter} =
-        extract_transactions_params(Map.fetch!(id_to_params, id), tx_result, counter)
+        extract_transactions_params(Map.fetch!(id_to_params, id), transaction_result, counter)
 
       {transactions_params ++ blocks_acc, new_counter}
     end)
     |> elem(0)
   end
 
-  defp extract_transactions_params(block_number, tx_result, counter) do
-    Enum.reduce(tx_result, {[], 0, counter}, fn %{"txHash" => tx_hash, "result" => calls_result},
-                                                {tx_acc, inner_counter, counter} ->
+  defp extract_transactions_params(block_number, transaction_result, counter) do
+    Enum.reduce(transaction_result, {[], 0, counter}, fn %{"txHash" => transaction_hash, "result" => calls_result},
+                                                         {transaction_acc, inner_counter, counter} ->
       {
         [
-          {%{block_number: block_number, hash_data: tx_hash, transaction_index: inner_counter, id: counter},
+          {%{block_number: block_number, hash_data: transaction_hash, transaction_index: inner_counter, id: counter},
            %{id: counter, result: calls_result}}
-          | tx_acc
+          | transaction_acc
         ],
         inner_counter + 1,
         counter + 1
@@ -261,14 +261,14 @@ defmodule EthereumJSONRPC.Geth do
              request(%{id: id, method: "eth_getTransactionReceipt", params: [hash_data]})
            end)
            |> json_rpc(json_rpc_named_arguments),
-         {:ok, txs} <-
+         {:ok, transactions} <-
            id_to_params
            |> Enum.map(fn {id, %{hash_data: hash_data}} ->
              request(%{id: id, method: "eth_getTransactionByHash", params: [hash_data]})
            end)
            |> json_rpc(json_rpc_named_arguments) do
       receipts_map = Enum.into(receipts, %{}, fn %{id: id, result: receipt} -> {id, receipt} end)
-      txs_map = Enum.into(txs, %{}, fn %{id: id, result: tx} -> {id, tx} end)
+      transactions_map = Enum.into(transactions, %{}, fn %{id: id, result: transaction} -> {id, transaction} end)
 
       tracer =
         if Application.get_env(:ethereum_jsonrpc, __MODULE__)[:tracer] == "polygon_edge",
@@ -282,7 +282,7 @@ defmodule EthereumJSONRPC.Geth do
 
         %{id: id, result: %{"structLogs" => _} = result} ->
           debug_trace_transaction_response_to_internal_transactions_params(
-            %{id: id, result: tracer.replay(result, Map.fetch!(receipts_map, id), Map.fetch!(txs_map, id))},
+            %{id: id, result: tracer.replay(result, Map.fetch!(receipts_map, id), Map.fetch!(transactions_map, id))},
             id_to_params
           )
       end)

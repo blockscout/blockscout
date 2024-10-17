@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
   alias Explorer.Chain.Celo.Reader, as: CeloReader
   alias Explorer.Chain.InternalTransaction
-  alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
+  alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
 
   case Application.compile_env(:explorer, :chain_type) do
     :ethereum ->
@@ -212,7 +212,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
     {blocks, next_page} =
       batch_number
-      |> OptimismTxnBatch.batch_blocks(full_options)
+      |> OptimismTransactionBatch.batch_blocks(full_options)
       |> split_list_by_page()
 
     next_page_params = next_page |> next_page_params(blocks, delete_parameters_from_next_page_params(params))

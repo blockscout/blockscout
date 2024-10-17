@@ -620,7 +620,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       consensus_block_2 = insert(:block, %{hash: hash_2, number: block_number - 2})
 
       for _ <- 0..10 do
-        tx =
+        transaction =
           :transaction
           |> insert()
           |> with_block(consensus_block_2)
@@ -628,7 +628,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         insert(:token_transfer,
           token_ids: [id],
           token_type: "ERC-721",
-          transaction: tx,
+          transaction: transaction,
           token_contract_address: tt.token_contract_address,
           block_number: consensus_block_2.number,
           block: consensus_block_2

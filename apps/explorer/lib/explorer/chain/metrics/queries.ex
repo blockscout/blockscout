@@ -35,17 +35,17 @@ defmodule Explorer.Chain.Metrics.Queries do
   def success_transactions_number_query do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       Transaction
-      |> where([tx], tx.block_timestamp >= ago(^update_period_hours(), "hour"))
-      |> where([tx], tx.block_consensus == true)
-      |> where([tx], tx.status == ^1)
-      |> select([tx], count(tx.hash))
+      |> where([transaction], transaction.block_timestamp >= ago(^update_period_hours(), "hour"))
+      |> where([transaction], transaction.block_consensus == true)
+      |> where([transaction], transaction.status == ^1)
+      |> select([transaction], count(transaction.hash))
     else
       Transaction
-      |> join(:inner, [tx], block in assoc(tx, :block))
-      |> where([tx, block], block.timestamp >= ago(^update_period_hours(), "hour"))
-      |> where([tx, block], block.consensus == true)
-      |> where([tx, block], tx.status == ^1)
-      |> select([tx, block], count(tx.hash))
+      |> join(:inner, [transaction], block in assoc(transaction, :block))
+      |> where([transaction, block], block.timestamp >= ago(^update_period_hours(), "hour"))
+      |> where([transaction, block], block.consensus == true)
+      |> where([transaction, block], transaction.status == ^1)
+      |> select([transaction, block], count(transaction.hash))
     end
   end
 
@@ -57,30 +57,30 @@ defmodule Explorer.Chain.Metrics.Queries do
     transactions_query =
       if DenormalizationHelper.transactions_denormalization_finished?() do
         Transaction
-        |> where([tx], not is_nil(tx.created_contract_address_hash))
-        |> where([tx], tx.block_timestamp >= ago(^update_period_hours(), "hour"))
-        |> where([tx], tx.block_consensus == true)
-        |> where([tx], tx.status == ^1)
-        |> select([tx], tx.created_contract_address_hash)
+        |> where([transaction], not is_nil(transaction.created_contract_address_hash))
+        |> where([transaction], transaction.block_timestamp >= ago(^update_period_hours(), "hour"))
+        |> where([transaction], transaction.block_consensus == true)
+        |> where([transaction], transaction.status == ^1)
+        |> select([transaction], transaction.created_contract_address_hash)
       else
         Transaction
-        |> join(:inner, [tx], block in assoc(tx, :block))
-        |> where([tx], not is_nil(tx.created_contract_address_hash))
-        |> where([tx, block], block.consensus == true)
-        |> where([tx, block], block.timestamp >= ago(^update_period_hours(), "hour"))
-        |> where([tx, block], tx.status == ^1)
-        |> select([tx, block], tx.created_contract_address_hash)
+        |> join(:inner, [transaction], block in assoc(transaction, :block))
+        |> where([transaction], not is_nil(transaction.created_contract_address_hash))
+        |> where([transaction, block], block.consensus == true)
+        |> where([transaction, block], block.timestamp >= ago(^update_period_hours(), "hour"))
+        |> where([transaction, block], transaction.status == ^1)
+        |> select([transaction, block], transaction.created_contract_address_hash)
       end
 
     # todo: this part is too slow, need to optimize
     # internal_transactions_query =
     #   InternalTransaction
     #   |> join(:inner, [it], transaction in assoc(it, :transaction))
-    #   |> where([it, tx], not is_nil(it.created_contract_address_hash))
-    #   |> where([it, tx], tx.block_timestamp >= ago(^update_period_hours(), "hour"))
-    #   |> where([it, tx], tx.block_consensus == true)
-    #   |> where([it, tx], tx.status == ^1)
-    #   |> select([it, tx], it.created_contract_address_hash)
+    #   |> where([it, transaction], not is_nil(it.created_contract_address_hash))
+    #   |> where([it, transaction], transaction.block_timestamp >= ago(^update_period_hours(), "hour"))
+    #   |> where([it, transaction], transaction.block_consensus == true)
+    #   |> where([it, transaction], transaction.status == ^1)
+    #   |> select([it, transaction], it.created_contract_address_hash)
     #   |> wrapped_union_subquery()
 
     # query =
@@ -143,15 +143,15 @@ defmodule Explorer.Chain.Metrics.Queries do
   def simplified_active_addresses_number_query do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       Transaction
-      |> where([tx], tx.block_timestamp >= ago(^update_period_hours(), "hour"))
-      |> where([tx], tx.block_consensus == true)
-      |> select([tx], fragment("COUNT(DISTINCT(?))", tx.from_address_hash))
+      |> where([transaction], transaction.block_timestamp >= ago(^update_period_hours(), "hour"))
+      |> where([transaction], transaction.block_consensus == true)
+      |> select([transaction], fragment("COUNT(DISTINCT(?))", transaction.from_address_hash))
     else
       Transaction
-      |> join(:inner, [tx], block in assoc(tx, :block))
-      |> where([tx, block], block.timestamp >= ago(^update_period_hours(), "hour"))
-      |> where([tx, block], block.consensus == true)
-      |> select([tx], fragment("COUNT(DISTINCT(?))", tx.from_address_hash))
+      |> join(:inner, [transaction], block in assoc(transaction, :block))
+      |> where([transaction, block], block.timestamp >= ago(^update_period_hours(), "hour"))
+      |> where([transaction, block], block.consensus == true)
+      |> select([transaction], fragment("COUNT(DISTINCT(?))", transaction.from_address_hash))
     end
   end
 
@@ -164,31 +164,31 @@ defmodule Explorer.Chain.Metrics.Queries do
     transactions_query =
       if DenormalizationHelper.transactions_denormalization_finished?() do
         Transaction
-        |> where([tx], tx.block_timestamp >= ago(^update_period_hours(), "hour"))
-        |> where([tx], tx.block_consensus == true)
+        |> where([transaction], transaction.block_timestamp >= ago(^update_period_hours(), "hour"))
+        |> where([transaction], transaction.block_consensus == true)
         |> distinct(true)
-        |> select([tx], %{
+        |> select([transaction], %{
           address_hash:
             fragment(
               "UNNEST(ARRAY[?, ?, ?])",
-              tx.from_address_hash,
-              tx.to_address_hash,
-              tx.created_contract_address_hash
+              transaction.from_address_hash,
+              transaction.to_address_hash,
+              transaction.created_contract_address_hash
             )
         })
       else
         Transaction
-        |> join(:inner, [tx], block in assoc(tx, :block))
-        |> where([tx, block], block.timestamp >= ago(^update_period_hours(), "hour"))
-        |> where([tx, block], block.consensus == true)
+        |> join(:inner, [transaction], block in assoc(transaction, :block))
+        |> where([transaction, block], block.timestamp >= ago(^update_period_hours(), "hour"))
+        |> where([transaction, block], block.consensus == true)
         |> distinct(true)
-        |> select([tx, block], %{
+        |> select([transaction, block], %{
           address_hash:
             fragment(
               "UNNEST(ARRAY[?, ?, ?])",
-              tx.from_address_hash,
-              tx.to_address_hash,
-              tx.created_contract_address_hash
+              transaction.from_address_hash,
+              transaction.to_address_hash,
+              transaction.created_contract_address_hash
             )
         })
       end
@@ -197,10 +197,10 @@ defmodule Explorer.Chain.Metrics.Queries do
       if DenormalizationHelper.transactions_denormalization_finished?() do
         InternalTransaction
         |> join(:inner, [it], transaction in assoc(it, :transaction))
-        |> where([it, tx], tx.block_timestamp >= ago(^update_period_hours(), "hour"))
-        |> where([it, tx], tx.block_consensus == true)
-        |> where([it, tx], tx.status == ^1)
-        |> select([it, tx], %{
+        |> where([it, transaction], transaction.block_timestamp >= ago(^update_period_hours(), "hour"))
+        |> where([it, transaction], transaction.block_consensus == true)
+        |> where([it, transaction], transaction.status == ^1)
+        |> select([it, transaction], %{
           address_hash:
             fragment(
               "UNNEST(ARRAY[?, ?, ?])",
@@ -213,11 +213,11 @@ defmodule Explorer.Chain.Metrics.Queries do
       else
         InternalTransaction
         |> join(:inner, [it], transaction in assoc(it, :transaction))
-        |> join(:inner, [tx], block in assoc(tx, :block))
-        |> where([it, tx, block], tx.block_timestamp >= ago(^update_period_hours(), "hour"))
-        |> where([it, tx, block], block.consensus == true)
-        |> where([it, tx, block], tx.status == ^1)
-        |> select([it, tx, block], %{
+        |> join(:inner, [transaction], block in assoc(transaction, :block))
+        |> where([it, transaction, block], transaction.block_timestamp >= ago(^update_period_hours(), "hour"))
+        |> where([it, transaction, block], block.consensus == true)
+        |> where([it, transaction, block], transaction.status == ^1)
+        |> select([it, transaction, block], %{
           address_hash:
             fragment(
               "UNNEST(ARRAY[?, ?, ?])",
@@ -233,10 +233,10 @@ defmodule Explorer.Chain.Metrics.Queries do
       if DenormalizationHelper.transactions_denormalization_finished?() do
         TokenTransfer
         |> join(:inner, [tt], transaction in assoc(tt, :transaction))
-        |> where([tt, tx], tx.block_timestamp >= ago(^update_period_hours(), "hour"))
-        |> where([tt, tx], tx.block_consensus == true)
-        |> where([tt, tx], tx.status == ^1)
-        |> select([tt, tx], %{
+        |> where([tt, transaction], transaction.block_timestamp >= ago(^update_period_hours(), "hour"))
+        |> where([tt, transaction], transaction.block_consensus == true)
+        |> where([tt, transaction], transaction.status == ^1)
+        |> select([tt, transaction], %{
           address_hash:
             fragment("UNNEST(ARRAY[?, ?, ?])", tt.from_address_hash, tt.to_address_hash, tt.token_contract_address_hash)
         })
@@ -244,11 +244,11 @@ defmodule Explorer.Chain.Metrics.Queries do
       else
         TokenTransfer
         |> join(:inner, [tt], transaction in assoc(tt, :transaction))
-        |> join(:inner, [tx], block in assoc(tx, :block))
-        |> where([tt, tx, block], tx.block_timestamp >= ago(^update_period_hours(), "hour"))
-        |> where([tt, tx, block], block.consensus == true)
-        |> where([tt, tx, block], tx.status == ^1)
-        |> select([tt, tx, block], %{
+        |> join(:inner, [transaction], block in assoc(transaction, :block))
+        |> where([tt, transaction, block], transaction.block_timestamp >= ago(^update_period_hours(), "hour"))
+        |> where([tt, transaction, block], block.consensus == true)
+        |> where([tt, transaction, block], transaction.status == ^1)
+        |> select([tt, transaction, block], %{
           address_hash:
             fragment("UNNEST(ARRAY[?, ?, ?])", tt.from_address_hash, tt.to_address_hash, tt.token_contract_address_hash)
         })

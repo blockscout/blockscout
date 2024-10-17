@@ -24,11 +24,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     the next available indices are assigned.
 
     ## Parameters
-    - `new_l1_txs`: A map of L1 transaction descriptions. The keys of the map are
+    - `new_l1_transactions`: A map of L1 transaction descriptions. The keys of the map are
       transaction hashes.
 
     ## Returns
-    - `l1_txs`: A map of L1 transaction descriptions. Each element is extended with
+    - `l1_transactions`: A map of L1 transaction descriptions. Each element is extended with
       the key `:id`, representing the index of the L1 transaction in the
       `arbitrum_lifecycle_l1_transactions` table.
   """
@@ -42,46 +42,46 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
           }
         }) :: %{binary() => Arbitrum.LifecycleTransaction.to_import()}
   # TODO: consider a way to remove duplicate with ZkSync.Utils.Db
-  def get_indices_for_l1_transactions(new_l1_txs)
-      when is_map(new_l1_txs) do
+  def get_indices_for_l1_transactions(new_l1_transactions)
+      when is_map(new_l1_transactions) do
     # Get indices for l1 transactions previously handled
-    l1_txs =
-      new_l1_txs
+    l1_transactions =
+      new_l1_transactions
       |> Map.keys()
       |> Reader.lifecycle_transaction_ids()
-      |> Enum.reduce(new_l1_txs, fn {hash, id}, txs ->
-        {_, txs} =
-          Map.get_and_update!(txs, hash.bytes, fn l1_tx ->
-            {l1_tx, Map.put(l1_tx, :id, id)}
+      |> Enum.reduce(new_l1_transactions, fn {hash, id}, transactions ->
+        {_, transactions} =
+          Map.get_and_update!(transactions, hash.bytes, fn l1_transaction ->
+            {l1_transaction, Map.put(l1_transaction, :id, id)}
           end)
 
-        txs
+        transactions
       end)
 
     # Get the next index for the first new transaction based
     # on the indices existing in DB
-    l1_tx_next_id = Reader.next_lifecycle_transaction_id()
+    l1_transaction_next_id = Reader.next_lifecycle_transaction_id()
 
     # Assign new indices for the transactions which are not in
     # the l1 transactions table yet
-    {updated_l1_txs, _} =
-      l1_txs
+    {updated_l1_transactions, _} =
+      l1_transactions
       |> Map.keys()
       |> Enum.reduce(
-        {l1_txs, l1_tx_next_id},
-        fn hash, {txs, next_id} ->
-          tx = txs[hash]
-          id = Map.get(tx, :id)
+        {l1_transactions, l1_transaction_next_id},
+        fn hash, {transactions, next_id} ->
+          transaction = transactions[hash]
+          id = Map.get(transaction, :id)
 
           if is_nil(id) do
-            {Map.put(txs, hash, Map.put(tx, :id, next_id)), next_id + 1}
+            {Map.put(transactions, hash, Map.put(transaction, :id, next_id)), next_id + 1}
           else
-            {txs, next_id}
+            {transactions, next_id}
           end
         end
       )
 
-    updated_l1_txs
+    updated_l1_transactions
   end
 
   @doc """
@@ -89,7 +89,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     `arbitrum_lifecycle_l1_transactions` table and converts them to maps.
 
     ## Parameters
-    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+    - `l1_transaction_hashes`: A list of hashes to retrieve L1 transactions for.
 
     ## Returns
     - A list of maps representing the `Explorer.Chain.Arbitrum.LifecycleTransaction`
@@ -97,8 +97,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       compatible with the database import operation.
   """
   @spec lifecycle_transactions([binary()]) :: [Arbitrum.LifecycleTransaction.to_import()]
-  def lifecycle_transactions(l1_tx_hashes) do
-    l1_tx_hashes
+  def lifecycle_transactions(l1_transaction_hashes) do
+    l1_transaction_hashes
     |> Reader.lifecycle_transactions()
     |> Enum.map(&lifecycle_transaction_to_map/1)
   end
@@ -904,9 +904,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @spec lifecycle_transaction_to_map(Arbitrum.LifecycleTransaction.t()) :: Arbitrum.LifecycleTransaction.to_import()
-  defp lifecycle_transaction_to_map(tx) do
+  defp lifecycle_transaction_to_map(transaction) do
     [:id, :hash, :block_number, :timestamp, :status]
-    |> db_record_to_map(tx)
+    |> db_record_to_map(transaction)
   end
 
   @spec rollup_block_to_map(Arbitrum.BatchBlock.t()) :: Arbitrum.BatchBlock.to_import()

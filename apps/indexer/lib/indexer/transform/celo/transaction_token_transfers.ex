@@ -49,23 +49,25 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
     token_transfers =
       if Application.get_env(:explorer, :chain_type) == :celo do
         transactions
-        |> Enum.filter(fn tx -> tx.value > 0 end)
-        |> Enum.map(fn tx ->
-          to_address_hash = Map.get(tx, :to_address_hash) || Map.get(tx, :created_contract_address_hash)
-          log_index = -1 * (tx.index + 1) * @transaction_buffer_size
-          {:ok, celo_token_address} = CeloCoreContracts.get_address(:celo_token, tx.block_number)
+        |> Enum.filter(fn transaction -> transaction.value > 0 end)
+        |> Enum.map(fn transaction ->
+          to_address_hash =
+            Map.get(transaction, :to_address_hash) || Map.get(transaction, :created_contract_address_hash)
+
+          log_index = -1 * (transaction.index + 1) * @transaction_buffer_size
+          {:ok, celo_token_address} = CeloCoreContracts.get_address(:celo_token, transaction.block_number)
 
           %{
-            amount: Decimal.new(tx.value),
-            block_hash: tx.block_hash,
-            block_number: tx.block_number,
-            from_address_hash: tx.from_address_hash,
+            amount: Decimal.new(transaction.value),
+            block_hash: transaction.block_hash,
+            block_number: transaction.block_number,
+            from_address_hash: transaction.from_address_hash,
             log_index: log_index,
             to_address_hash: to_address_hash,
             token_contract_address_hash: celo_token_address,
             token_ids: nil,
             token_type: @token_type,
-            transaction_hash: tx.hash
+            transaction_hash: transaction.hash
           }
         end)
         |> tap(&Logger.debug("Found #{length(&1)} Celo token transfers."))
@@ -86,28 +88,33 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
   def parse_internal_transactions(internal_transactions, block_number_to_block_hash) do
     token_transfers =
       internal_transactions
-      |> Enum.filter(fn itx ->
-        itx.value > 0 &&
-          itx.index > 0 &&
-          not Map.has_key?(itx, :error) &&
-          (not Map.has_key?(itx, :call_type) || itx.call_type != "delegatecall")
+      |> Enum.filter(fn internal_transaction ->
+        internal_transaction.value > 0 &&
+          internal_transaction.index > 0 &&
+          not Map.has_key?(internal_transaction, :error) &&
+          (not Map.has_key?(internal_transaction, :call_type) || internal_transaction.call_type != "delegatecall")
       end)
-      |> Enum.map(fn itx ->
-        to_address_hash = Map.get(itx, :to_address_hash) || Map.get(itx, :created_contract_address_hash)
-        log_index = -1 * (itx.transaction_index * @transaction_buffer_size + itx.index)
-        {:ok, celo_token_address} = CeloCoreContracts.get_address(:celo_token, itx.block_number)
+      |> Enum.map(fn internal_transaction ->
+        to_address_hash =
+          Map.get(internal_transaction, :to_address_hash) ||
+            Map.get(internal_transaction, :created_contract_address_hash)
+
+        log_index =
+          -1 * (internal_transaction.transaction_index * @transaction_buffer_size + internal_transaction.index)
+
+        {:ok, celo_token_address} = CeloCoreContracts.get_address(:celo_token, internal_transaction.block_number)
 
         %{
-          amount: Decimal.new(itx.value),
-          block_hash: block_number_to_block_hash[itx.block_number],
-          block_number: itx.block_number,
-          from_address_hash: itx.from_address_hash,
+          amount: Decimal.new(internal_transaction.value),
+          block_hash: block_number_to_block_hash[internal_transaction.block_number],
+          block_number: internal_transaction.block_number,
+          from_address_hash: internal_transaction.from_address_hash,
           log_index: log_index,
           to_address_hash: to_address_hash,
           token_contract_address_hash: celo_token_address,
           token_ids: nil,
           token_type: @token_type,
-          transaction_hash: itx.transaction_hash
+          transaction_hash: internal_transaction.transaction_hash
         }
       end)
 

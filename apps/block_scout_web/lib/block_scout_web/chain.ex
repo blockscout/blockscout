@@ -181,21 +181,21 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_options(%{
         "address_hash" => address_hash_string,
-        "tx_hash" => tx_hash_string,
+        "transaction_hash" => transaction_hash_string,
         "block_hash" => block_hash_string,
         "holder_count" => holder_count_string,
         "name" => name_string,
         "inserted_at" => inserted_at_string,
         "item_type" => item_type_string
       })
-      when is_binary(address_hash_string) and is_binary(tx_hash_string) and is_binary(block_hash_string) and
+      when is_binary(address_hash_string) and is_binary(transaction_hash_string) and is_binary(block_hash_string) and
              is_binary(holder_count_string) and is_binary(name_string) and is_binary(inserted_at_string) and
              is_binary(item_type_string) do
     [
       paging_options: %{
         @default_paging_options
         | key:
-            {address_hash_string, tx_hash_string, block_hash_string, holder_count_string, name_string,
+            {address_hash_string, transaction_hash_string, block_hash_string, holder_count_string, name_string,
              inserted_at_string, item_type_string}
       }
     ]
@@ -376,7 +376,7 @@ defmodule BlockScoutWeb.Chain do
       when is_binary(inserted_at_string) and is_binary(hash_string) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
-      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_tx: true}]
+      [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
     else
       _ ->
         [paging_options: @default_paging_options]
@@ -406,7 +406,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def paging_options(%{"smart_contract_id" => id_str} = params) do
-    transactions_count = parse_integer(params["tx_count"])
+    transactions_count = parse_integer(params["transaction_count"])
     coin_balance = parse_integer(params["coin_balance"])
     id = parse_integer(id_str)
 
@@ -425,10 +425,10 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{"l1_block_number" => block_number, "tx_hash" => tx_hash}) do
+  def paging_options(%{"l1_block_number" => block_number, "transaction_hash" => transaction_hash}) do
     with {block_number, ""} <- Integer.parse(block_number),
-         {:ok, tx_hash} <- string_to_transaction_hash(tx_hash) do
-      [paging_options: %{@default_paging_options | key: {block_number, tx_hash}}]
+         {:ok, transaction_hash} <- string_to_transaction_hash(transaction_hash) do
+      [paging_options: %{@default_paging_options | key: {block_number, transaction_hash}}]
     else
       _ ->
         [paging_options: @default_paging_options]
@@ -707,8 +707,8 @@ defmodule BlockScoutWeb.Chain do
     %{"smart_contract_id" => smart_contract.id}
   end
 
-  defp paging_params(%OptimismDeposit{l1_block_number: l1_block_number, l2_transaction_hash: l2_tx_hash}) do
-    %{"l1_block_number" => l1_block_number, "tx_hash" => l2_tx_hash}
+  defp paging_params(%OptimismDeposit{l1_block_number: l1_block_number, l2_transaction_hash: l2_transaction_hash}) do
+    %{"l1_block_number" => l1_block_number, "transaction_hash" => l2_transaction_hash}
   end
 
   defp paging_params(%OptimismOutputRoot{l2_output_index: index}) do
@@ -718,7 +718,7 @@ defmodule BlockScoutWeb.Chain do
   defp paging_params(%SmartContract{} = smart_contract) do
     %{
       "smart_contract_id" => smart_contract.id,
-      "tx_count" => smart_contract.address.transactions_count,
+      "transaction_count" => smart_contract.address.transactions_count,
       "coin_balance" =>
         smart_contract.address.fetched_coin_balance && Wei.to(smart_contract.address.fetched_coin_balance, :wei)
     }
@@ -744,7 +744,7 @@ defmodule BlockScoutWeb.Chain do
   # clause for search results pagination
   defp paging_params(%{
          address_hash: address_hash,
-         tx_hash: tx_hash,
+         transaction_hash: transaction_hash,
          block_hash: block_hash,
          holder_count: holder_count,
          name: name,
@@ -755,7 +755,7 @@ defmodule BlockScoutWeb.Chain do
 
     %{
       "address_hash" => address_hash,
-      "tx_hash" => tx_hash,
+      "transaction_hash" => transaction_hash,
       "block_hash" => block_hash,
       "holder_count" => holder_count,
       "name" => name,
