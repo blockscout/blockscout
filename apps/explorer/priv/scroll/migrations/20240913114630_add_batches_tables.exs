@@ -29,5 +29,6 @@ defmodule Explorer.Repo.Scroll.Migrations.AddBatchesTables do
 
     create(index(:scroll_batch_bundles, :finalize_block_number))
     create(index(:scroll_batches, :commit_block_number))
+    create(index(:scroll_batches, :l2_block_range))
   end
 end

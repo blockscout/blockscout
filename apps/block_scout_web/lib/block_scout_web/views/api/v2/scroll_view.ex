@@ -139,6 +139,8 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
       |> Transaction.l2_fee(:wei)
       |> TransactionView.format_fee()
 
+    l2_block_status = l2_block_status(transaction.block_number)
+
     params =
       %{}
       |> add_optional_transaction_field(transaction, :l1_fee)
@@ -151,6 +153,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
       |> Map.put("l1_blob_base_fee", l1_blob_base_fee)
       |> Map.put("l1_gas_used", l1_gas_used)
       |> Map.put("l2_fee", l2_fee)
+      |> Map.put("l2_block_status", l2_block_status)
 
     Map.put(out_json, "scroll", params)
   end
@@ -170,6 +173,15 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
     case Reader.get_l1_fee_param_for_transaction(name, transaction, @api_true) do
       nil -> config[name_init]
       value -> value
+    end
+  end
+
+  @spec l2_block_status(non_neg_integer()) :: binary()
+  defp l2_block_status(block_number) do
+    case Reader.batch_by_l2_block_number(block_number, @api_true) do
+      {_batch_number, nil} -> "Committed"
+      {_batch_number, _bundle_id} -> "Finalized"
+      nil -> "Confirmed by Sequencer"
     end
   end
 end
