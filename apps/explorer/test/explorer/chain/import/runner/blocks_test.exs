@@ -203,6 +203,34 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       end)
     end
 
+    test "coin balances are deleted and new balances are derived if some blocks lost consensus",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      %{hash: address_hash} = address = insert(:address)
+
+      prev_block_number = block_number - 1
+
+      insert(:address_coin_balance, address: address, block_number: block_number)
+      %{value: prev_value} = insert(:address_coin_balance, address: address, block_number: prev_block_number)
+
+      assert count(Address.CoinBalance) == 2
+
+      insert(:block, number: block_number, consensus: true)
+
+      assert {:ok,
+              %{
+                delete_address_coin_balances: [^address_hash],
+                derive_address_fetched_coin_balances: [
+                  %{
+                    hash: ^address_hash,
+                    fetched_coin_balance: ^prev_value,
+                    fetched_coin_balance_block_number: ^prev_block_number
+                  }
+                ]
+              }} = run_block_consensus_change(block, true, options)
+
+      assert %{value: ^prev_value, block_number: ^prev_block_number} = Repo.one(Address.CoinBalance)
+    end
+
     test "delete_address_current_token_balances deletes rows with matching block number when consensus is true",
          %{consensus_block: %{number: block_number} = block, options: options} do
       %Address.CurrentTokenBalance{address_hash: address_hash, token_contract_address_hash: token_contract_address_hash} =
