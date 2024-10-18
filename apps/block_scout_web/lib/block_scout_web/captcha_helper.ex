@@ -56,13 +56,13 @@ defmodule BlockScoutWeb.CaptchaHelper do
 
   # v3 case
   defp success?(%{"success" => true, "score" => score, "hostname" => hostname}) do
-    (check_hostname?() || Helper.get_app_host() == hostname) &&
+    (!check_hostname?() || Helper.get_app_host() == hostname) &&
       check_recaptcha_v3_score(score)
   end
 
   # v2 case
   defp success?(%{"success" => true, "hostname" => hostname}) do
-    check_hostname?() || Helper.get_app_host() == hostname
+    !check_hostname?() || Helper.get_app_host() == hostname
   end
 
   defp success?(_resp), do: false
