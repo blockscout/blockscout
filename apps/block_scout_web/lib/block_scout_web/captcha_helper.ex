@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.CaptchaHelper do
   A helper for CAPTCHA
   """
 
+  alias Explorer.Helper
+
   @spec recaptcha_passed?(%{String.t() => String.t()} | nil) :: bool
   def recaptcha_passed?(%{"recaptcha_v3_response" => recaptcha_response}) do
     re_captcha_v3_secret_key = Application.get_env(:block_scout_web, :recaptcha)[:v3_secret_key]
@@ -41,13 +43,13 @@ defmodule BlockScoutWeb.CaptchaHelper do
 
   # v3 case
   defp success?(%{"success" => true, "score" => score, "hostname" => hostname}) do
-    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host] == hostname &&
+    (check_hostname?() || Helper.get_app_host() == hostname) &&
       check_recaptcha_v3_score(score)
   end
 
   # v2 case
   defp success?(%{"success" => true, "hostname" => hostname}) do
-    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host] == hostname
+    check_hostname?() || Helper.get_app_host() == hostname
   end
 
   defp success?(_resp), do: false
@@ -58,5 +60,9 @@ defmodule BlockScoutWeb.CaptchaHelper do
     else
       false
     end
+  end
+
+  defp check_hostname? do
+    Application.get_env(:block_scout_web, :recaptcha)[:check_hostname?]
   end
 end

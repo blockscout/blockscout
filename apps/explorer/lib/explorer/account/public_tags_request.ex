@@ -7,7 +7,7 @@ defmodule Explorer.Account.PublicTagsRequest do
   alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Identity
   alias Explorer.Chain.Hash
-  alias Explorer.Repo
+  alias Explorer.{Helper, Repo}
   alias Explorer.ThirdPartyIntegrations.AirTable
 
   import Ecto.Changeset
@@ -44,9 +44,7 @@ defmodule Explorer.Account.PublicTagsRequest do
     association_fields = request.__struct__.__schema__(:associations)
     waste_fields = association_fields ++ @local_fields
 
-    network =
-      Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host] <>
-        Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
+    network = Helper.get_app_host() <> Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:path]
 
     request |> Map.from_struct() |> Map.drop(waste_fields) |> Map.put(:network, network)
   end

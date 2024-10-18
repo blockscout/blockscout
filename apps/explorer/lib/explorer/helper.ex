@@ -265,4 +265,9 @@ defmodule Explorer.Helper do
       |> DateTime.diff(now, :second)
     end
   end
+
+  @spec get_app_host :: String.t()
+  def get_app_host do
+    Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+  end
 end

@@ -153,12 +153,12 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     {int_chain_id, _} = Integer.parse(Application.get_env(:block_scout_web, :chain_id))
 
     message = %Siwe.Message{
-      domain: Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host],
+      domain: Helper.get_app_host(),
       address: address,
       statement: "Sign in to Blockscout Account V2 via Ethereum account",
       uri:
         Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:scheme] <>
-          "://" <> Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host],
+          "://" <> Helper.get_app_host(),
       version: "1",
       chain_id: int_chain_id,
       nonce: nonce,
