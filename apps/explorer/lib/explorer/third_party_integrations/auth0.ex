@@ -368,7 +368,9 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       token when is_binary(token) ->
         client = OAuth.client(token: token)
 
-        case Client.get(client, "/api/v2/users", [], params: %{"q" => ~s(email:"#{email}")}) do
+        case Client.get(client, "/api/v2/users", [],
+               params: %{"q" => ~s(email:"#{email}" OR user_metadata.email:"#{email}")}
+             ) do
           {:ok, %OAuth2.Response{status_code: 200, body: users}} when is_list(users) ->
             {:ok, users}
 
@@ -552,7 +554,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   defp update_user_email(user_id, email) do
     with token when is_binary(token) <- get_m2m_jwt(),
          client = OAuth.client(token: token),
-         body = %{"email" => email, "email_verified" => true},
+         body = %{"user_metadata" => %{"email" => email}},
          headers = [{"Content-type", "application/json"}],
          {:ok, %OAuth2.Response{status_code: 200, body: user}} <-
            Client.patch(client, "/api/v2/users/#{URI.encode(user_id)}", body, headers) do

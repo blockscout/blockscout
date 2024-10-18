@@ -14,7 +14,7 @@ defmodule Explorer.Account.Identity do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
   alias Ueberauth.Auth
-  alias Ueberauth.Auth.Info
+  alias Ueberauth.Auth.{Extra, Info}
 
   @type session :: %{
           optional(:name) => String.t(),
@@ -162,35 +162,32 @@ defmodule Explorer.Account.Identity do
     end)
   end
 
-  defp session_info(
-         %Auth{extra: %Ueberauth.Auth.Extra{raw_info: %{user: %{"email_verified" => false}}}} = auth,
-         identity
-       ) do
-    %{
-      id: identity.id,
-      uid: auth.uid,
-      email: email_from_auth(auth),
-      nickname: nickname_from_auth(auth),
-      avatar: avatar_from_auth(auth),
-      address_hash: address_hash_from_auth(auth),
-      email_verified: false
-    }
-  end
-
   defp session_info(auth, identity) do
-    %{watchlists: [watchlist | _]} = Repo.account_repo().preload(identity, :watchlists)
+    if email_verified_from_auth(auth) do
+      %{watchlists: [watchlist | _]} = Repo.account_repo().preload(identity, :watchlists)
 
-    %{
-      id: identity.id,
-      uid: auth.uid,
-      email: email_from_auth(auth),
-      name: name_from_auth(auth),
-      nickname: nickname_from_auth(auth),
-      avatar: avatar_from_auth(auth),
-      address_hash: address_hash_from_auth(auth),
-      watchlist_id: watchlist.id,
-      email_verified: true
-    }
+      %{
+        id: identity.id,
+        uid: auth.uid,
+        email: email_from_auth(auth),
+        name: name_from_auth(auth),
+        nickname: nickname_from_auth(auth),
+        avatar: avatar_from_auth(auth),
+        address_hash: address_hash_from_auth(auth),
+        watchlist_id: watchlist.id,
+        email_verified: true
+      }
+    else
+      %{
+        id: identity.id,
+        uid: auth.uid,
+        email: email_from_auth(auth),
+        nickname: nickname_from_auth(auth),
+        avatar: avatar_from_auth(auth),
+        address_hash: address_hash_from_auth(auth),
+        email_verified: false
+      }
+    end
   end
 
   defp update_identity_map(auth) do
@@ -208,6 +205,9 @@ defmodule Explorer.Account.Identity do
 
   # facebook does it this way
   defp avatar_from_auth(%{info: %{image: image}}), do: image
+
+  defp email_from_auth(%Auth{extra: %Extra{raw_info: %{user: %{"user_metadata" => %{"email" => email}}}}}),
+    do: email
 
   defp email_from_auth(%{info: %{email: email}}), do: email
 
@@ -230,7 +230,7 @@ defmodule Explorer.Account.Identity do
 
   @spec address_hash_from_auth(Auth.t()) :: String.t() | nil
   def address_hash_from_auth(%Auth{
-        extra: %Ueberauth.Auth.Extra{raw_info: %{user: %{"user_metadata" => %{"web3_address_hash" => address_hash}}}}
+        extra: %Extra{raw_info: %{user: %{"user_metadata" => %{"web3_address_hash" => address_hash}}}}
       }) do
     address_hash
   end
@@ -247,4 +247,10 @@ defmodule Explorer.Account.Identity do
         end
     end
   end
+
+  defp email_verified_from_auth(%Auth{extra: %Extra{raw_info: %{user: %{"user_metadata" => %{"email" => _email}}}}}),
+    do: true
+
+  defp email_verified_from_auth(%Auth{extra: %Extra{raw_info: %{user: %{"email_verified" => false}}}}), do: false
+  defp email_verified_from_auth(_), do: true
 end
