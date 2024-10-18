@@ -14,7 +14,6 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
   alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Helper
-  alias Indexer.Fetcher.{Optimism, PolygonEdge}
 
   @fetcher_name :rollup_l1_reorg_monitor
 
@@ -92,32 +91,13 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
     modules_using_reorg_monitor =
       @modules_can_use_reorg_monitor
-      |> Enum.filter(fn module ->
-        if Application.get_env(:explorer, :chain_type) == :optimism do
-          Optimism.requires_l1_reorg_monitor?()
-        else
-          module.requires_l1_reorg_monitor?()
-        end
-      end)
+      |> Enum.filter(& &1.requires_l1_reorg_monitor?())
 
     if Enum.empty?(modules_using_reorg_monitor) do
       # don't start reorg monitor as there is no module which would use it
       :ignore
     else
-      chain_type = Application.get_env(:explorer, :chain_type)
-
-      l1_rpc =
-        cond do
-          chain_type == :optimism ->
-            Optimism.l1_rpc_url()
-
-          chain_type == :polygon_edge ->
-            PolygonEdge.l1_rpc_url()
-
-          true ->
-            module = Enum.at(modules_using_reorg_monitor, 0)
-            module.l1_rpc_url()
-        end
+      l1_rpc = Enum.at(modules_using_reorg_monitor, 0).l1_rpc_url()
 
       json_rpc_named_arguments = Helper.json_rpc_named_arguments(l1_rpc)
 

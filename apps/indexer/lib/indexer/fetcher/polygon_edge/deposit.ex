@@ -112,6 +112,14 @@ defmodule Indexer.Fetcher.PolygonEdge.Deposit do
   end
 
   @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary() | nil
+  def l1_rpc_url do
+    PolygonEdge.l1_rpc_url()
+  end
+
+  @doc """
     Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
     for this module.
 

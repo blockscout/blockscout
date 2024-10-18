@@ -229,7 +229,7 @@ defmodule Indexer.Fetcher.Optimism do
 
     optimism_env = Application.get_all_env(:indexer)[__MODULE__]
     system_config = optimism_env[:optimism_l1_system_config]
-    optimism_l1_rpc = optimism_env[:optimism_l1_rpc]
+    optimism_l1_rpc = l1_rpc_url()
 
     with {:system_config_valid, true} <- {:system_config_valid, Helper.address_correct?(system_config)},
          {:reorg_monitor_started, true} <-
@@ -363,7 +363,7 @@ defmodule Indexer.Fetcher.Optimism do
   @doc """
     Returns L1 RPC URL for an OP module.
   """
-  @spec l1_rpc_url() :: binary()
+  @spec l1_rpc_url() :: binary() | nil
   def l1_rpc_url do
     Application.get_all_env(:indexer)[__MODULE__][:optimism_l1_rpc]
   end
