@@ -2572,12 +2572,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       erc_721_tt =
         for x <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             from_address: address,
             token_contract_address: erc_721_token.contract_address,
             token_ids: [x]

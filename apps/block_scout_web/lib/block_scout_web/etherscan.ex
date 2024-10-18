@@ -1149,7 +1149,7 @@ defmodule BlockScoutWeb.Etherscan do
       confirmations: @confirmation_type,
       success: %{
         type: "boolean",
-        definition: "Flag for success during tx execution",
+        definition: "Flag for success during transaction execution",
         example: ~s(true)
       },
       from: @address_hash_type,

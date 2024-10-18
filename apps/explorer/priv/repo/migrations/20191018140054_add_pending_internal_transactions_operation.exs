@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddPendingInternalTxsOperation do
+defmodule Explorer.Repo.Migrations.AddPendingInternalTransactionsOperation do
   use Ecto.Migration
 
   def change do

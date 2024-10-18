@@ -66,13 +66,14 @@ defmodule Indexer.Fetcher.PolygonEdge do
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments = json_rpc_named_arguments(polygon_edge_l1_rpc),
-         {:ok, last_l1_tx} <-
+         {:ok, last_l1_transaction} <-
            Helper.get_transaction_by_hash(
              last_l1_transaction_hash,
              json_rpc_named_arguments,
              Helper.infinite_retries_number()
            ),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
+         {:l1_transaction_not_found, false} <-
+           {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {:ok, block_check_interval, last_safe_block} <-
            Helper.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
@@ -112,7 +113,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
 
         :ignore
 
-      {:l1_tx_not_found, true} ->
+      {:l1_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check #{table_name} table."
         )
@@ -147,13 +148,14 @@ defmodule Indexer.Fetcher.PolygonEdge do
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
-         {:ok, last_l2_tx} <-
+         {:ok, last_l2_transaction} <-
            Helper.get_transaction_by_hash(
              last_l2_transaction_hash,
              json_rpc_named_arguments,
              Helper.infinite_retries_number()
            ),
-         {:l2_tx_not_found, false} <- {:l2_tx_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_tx)} do
+         {:l2_transaction_not_found, false} <-
+           {:l2_transaction_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_transaction)} do
       Process.send(pid, :continue, [])
 
       {:ok,
@@ -184,7 +186,7 @@ defmodule Indexer.Fetcher.PolygonEdge do
 
         :ignore
 
-      {:l2_tx_not_found, true} ->
+      {:l2_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L2 transaction from RPC by its hash. Probably, there was a reorg on L2 chain. Please, check #{table_name} table."
         )

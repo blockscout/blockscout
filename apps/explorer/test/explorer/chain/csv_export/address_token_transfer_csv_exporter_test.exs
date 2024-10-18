@@ -26,7 +26,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
         |> Enum.to_list()
         |> Enum.drop(1)
         |> Enum.map(fn [
-                         [[], tx_hash],
+                         [[], transaction_hash],
                          _,
                          [[], block_number],
                          _,
@@ -54,7 +54,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
                          _
                        ] ->
           %{
-            tx_hash: tx_hash,
+            transaction_hash: transaction_hash,
             block_number: block_number,
             timestamp: timestamp,
             from_address: from_address,
@@ -71,7 +71,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
         end)
 
       assert result.block_number == to_string(transaction.block_number)
-      assert result.tx_hash == to_string(transaction.hash)
+      assert result.transaction_hash == to_string(transaction.hash)
       assert result.from_address == Address.checksum(token_transfer.from_address_hash)
       assert result.to_address == Address.checksum(token_transfer.to_address_hash)
       assert result.timestamp == to_string(transaction.block_timestamp)

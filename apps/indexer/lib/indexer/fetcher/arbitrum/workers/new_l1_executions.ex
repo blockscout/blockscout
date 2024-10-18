@@ -199,14 +199,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
         l1_rpc_config.json_rpc_named_arguments
       )
 
-    {lifecycle_txs, executions} = get_executions_from_logs(logs, l1_rpc_config)
+    {lifecycle_transactions, executions} = get_executions_from_logs(logs, l1_rpc_config)
 
     unless executions == [] do
       log_info("Executions for #{length(executions)} L2 messages will be imported")
 
       {:ok, _} =
         Chain.import(%{
-          arbitrum_lifecycle_transactions: %{params: lifecycle_txs},
+          arbitrum_lifecycle_transactions: %{params: lifecycle_transactions},
           arbitrum_l1_executions: %{params: executions},
           timeout: :infinity
         })
@@ -291,13 +291,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
            track_finalization: track_finalization?
          } = _l1_rpc_config
        ) do
-    {basics_executions, basic_lifecycle_txs, blocks_requests} = parse_logs_for_new_executions(logs)
+    {basics_executions, basic_lifecycle_transactions, blocks_requests} = parse_logs_for_new_executions(logs)
 
     blocks_to_ts = Rpc.execute_blocks_requests_and_get_ts(blocks_requests, json_rpc_named_arguments, chunk_size)
 
-    lifecycle_txs =
-      basic_lifecycle_txs
-      |> ArbitrumHelper.extend_lifecycle_txs_with_ts_and_status(blocks_to_ts, track_finalization?)
+    lifecycle_transactions =
+      basic_lifecycle_transactions
+      |> ArbitrumHelper.extend_lifecycle_transactions_with_ts_and_status(blocks_to_ts, track_finalization?)
       |> Db.get_indices_for_l1_transactions()
 
     executions =
@@ -305,13 +305,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       |> Enum.reduce([], fn execution, updated_executions ->
         updated =
           execution
-          |> Map.put(:execution_id, lifecycle_txs[execution.execution_tx_hash].id)
-          |> Map.drop([:execution_tx_hash])
+          |> Map.put(:execution_id, lifecycle_transactions[execution.execution_transaction_hash].id)
+          |> Map.drop([:execution_transaction_hash])
 
         [updated | updated_executions]
       end)
 
-    {Map.values(lifecycle_txs), executions}
+    {Map.values(lifecycle_transactions), executions}
   end
 
   # Parses logs to extract new execution transactions for L2-to-L1 messages.
@@ -330,33 +330,33 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   # - A tuple containing:
   #   - `executions`: A list of details for execution transactions related to
   #     L2-to-L1 messages.
-  #   - `lifecycle_txs`: A map of lifecycle transaction details, keyed by L1
+  #   - `lifecycle_transactions`: A map of lifecycle transaction details, keyed by L1
   #     transaction hash.
   #   - `blocks_requests`: A list of RPC requests for fetching block data where
   #     the executions occurred.
   defp parse_logs_for_new_executions(logs) do
-    {executions, lifecycle_txs, blocks_requests} =
+    {executions, lifecycle_transactions, blocks_requests} =
       logs
-      |> Enum.reduce({[], %{}, %{}}, fn event, {executions, lifecycle_txs, blocks_requests} ->
+      |> Enum.reduce({[], %{}, %{}}, fn event, {executions, lifecycle_transactions, blocks_requests} ->
         msg_id = outbox_transaction_executed_event_parse(event)
 
-        l1_tx_hash_raw = event["transactionHash"]
-        l1_tx_hash = Rpc.string_hash_to_bytes_hash(l1_tx_hash_raw)
+        l1_transaction_hash_raw = event["transactionHash"]
+        l1_transaction_hash = Rpc.string_hash_to_bytes_hash(l1_transaction_hash_raw)
         l1_blk_num = quantity_to_integer(event["blockNumber"])
 
         updated_executions = [
           %{
             message_id: msg_id,
-            execution_tx_hash: l1_tx_hash
+            execution_transaction_hash: l1_transaction_hash
           }
           | executions
         ]
 
-        updated_lifecycle_txs =
+        updated_lifecycle_transactions =
           Map.put(
-            lifecycle_txs,
-            l1_tx_hash,
-            %{hash: l1_tx_hash, block_number: l1_blk_num}
+            lifecycle_transactions,
+            l1_transaction_hash,
+            %{hash: l1_transaction_hash, block_number: l1_blk_num}
           )
 
         updated_blocks_requests =
@@ -366,12 +366,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
             BlockByNumber.request(%{id: 0, number: l1_blk_num}, false, true)
           )
 
-        log_debug("Execution for L2 message ##{msg_id} found in #{l1_tx_hash_raw}")
+        log_debug("Execution for L2 message ##{msg_id} found in #{l1_transaction_hash_raw}")
 
-        {updated_executions, updated_lifecycle_txs, updated_blocks_requests}
+        {updated_executions, updated_lifecycle_transactions, updated_blocks_requests}
       end)
 
-    {executions, lifecycle_txs, Map.values(blocks_requests)}
+    {executions, lifecycle_transactions, Map.values(blocks_requests)}
   end
 
   # Parses `OutBoxTransactionExecuted` event data to extract the transaction index parameter

@@ -19,10 +19,10 @@
     </url>
   <% end %>
 
-  <% txs = Chain.recent_transactions(params, [:validated]) %>
-  <%= for tx <- txs do %>
+  <% transactions = Chain.recent_transactions(params, [:validated]) %>
+  <%= for transaction <- transactions do %>
     <url>
-      <loc><%= host %>/tx/<%= to_string(tx.hash) %></loc>
+      <loc><%= host %>/tx/<%= to_string(transaction.hash) %></loc>
       <lastmod><%= date %></lastmod>
     </url>
   <% end %>

@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.PendingTxs do
+defmodule Explorer.Repo.Migrations.PendingTransactions do
   use Ecto.Migration
 
   def up do

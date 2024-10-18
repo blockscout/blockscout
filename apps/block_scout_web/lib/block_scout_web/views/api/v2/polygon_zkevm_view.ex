@@ -9,19 +9,19 @@ defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
   """
   @spec render(binary(), map()) :: map() | non_neg_integer()
   def render("zkevm_batch.json", %{batch: batch}) do
-    sequence_tx_hash =
+    sequence_transaction_hash =
       if Map.has_key?(batch, :sequence_transaction) and not is_nil(batch.sequence_transaction) do
         batch.sequence_transaction.hash
       end
 
-    verify_tx_hash =
+    verify_transaction_hash =
       if Map.has_key?(batch, :verify_transaction) and not is_nil(batch.verify_transaction) do
         batch.verify_transaction.hash
       end
 
     l2_transactions =
       if Map.has_key?(batch, :l2_transactions) do
-        Enum.map(batch.l2_transactions, fn tx -> tx.hash end)
+        Enum.map(batch.l2_transactions, fn transaction -> transaction.hash end)
       end
 
     %{
@@ -31,8 +31,12 @@ defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
       "transactions" => l2_transactions,
       "global_exit_root" => batch.global_exit_root,
       "acc_input_hash" => batch.acc_input_hash,
-      "sequence_tx_hash" => sequence_tx_hash,
-      "verify_tx_hash" => verify_tx_hash,
+      "sequence_transaction_hash" => sequence_transaction_hash,
+      "verify_transaction_hash" => verify_transaction_hash,
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `sequence_transaction_hash` property
+      "sequence_tx_hash" => sequence_transaction_hash,
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `verify_transaction_hash` property
+      "verify_tx_hash" => verify_transaction_hash,
       "state_root" => batch.state_root
     }
   end
@@ -141,12 +145,12 @@ defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
 
   defp render_zkevm_batches(batches) do
     Enum.map(batches, fn batch ->
-      sequence_tx_hash =
+      sequence_transaction_hash =
         if not is_nil(batch.sequence_transaction) do
           batch.sequence_transaction.hash
         end
 
-      verify_tx_hash =
+      verify_transaction_hash =
         if not is_nil(batch.verify_transaction) do
           batch.verify_transaction.hash
         end
@@ -155,9 +159,15 @@ defmodule BlockScoutWeb.API.V2.PolygonZkevmView do
         "number" => batch.number,
         "status" => batch_status(batch),
         "timestamp" => batch.timestamp,
+        "transaction_count" => batch.l2_transactions_count,
+        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
         "tx_count" => batch.l2_transactions_count,
-        "sequence_tx_hash" => sequence_tx_hash,
-        "verify_tx_hash" => verify_tx_hash
+        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `sequence_transaction_hash` property
+        "sequence_tx_hash" => sequence_transaction_hash,
+        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `verify_transaction_hash` property
+        "verify_tx_hash" => verify_transaction_hash,
+        "sequence_transaction_hash" => sequence_transaction_hash,
+        "verify_transaction_hash" => verify_transaction_hash
       }
     end)
   end

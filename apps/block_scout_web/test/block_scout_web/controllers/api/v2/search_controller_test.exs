@@ -202,9 +202,9 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
     end
 
     test "search transaction", %{conn: conn} do
-      tx = insert(:transaction, block_timestamp: nil)
+      transaction = insert(:transaction, block_timestamp: nil)
 
-      request = get(conn, "/api/v2/search?q=#{tx.hash}")
+      request = get(conn, "/api/v2/search?q=#{transaction.hash}")
       assert response = json_response(request, 200)
 
       assert Enum.count(response["items"]) == 1
@@ -213,15 +213,15 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       item = Enum.at(response["items"], 0)
 
       assert item["type"] == "transaction"
-      assert item["tx_hash"] == to_string(tx.hash)
-      assert item["url"] =~ to_string(tx.hash)
+      assert item["transaction_hash"] == to_string(transaction.hash)
+      assert item["url"] =~ to_string(transaction.hash)
       assert item["timestamp"] == nil
     end
 
     test "search transaction with timestamp", %{conn: conn} do
-      tx = :transaction |> insert() |> with_block()
+      transaction = :transaction |> insert() |> with_block()
 
-      request = get(conn, "/api/v2/search?q=#{tx.hash}")
+      request = get(conn, "/api/v2/search?q=#{transaction.hash}")
       assert response = json_response(request, 200)
 
       assert Enum.count(response["items"]) == 1
@@ -230,9 +230,11 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       item = Enum.at(response["items"], 0)
 
       assert item["type"] == "transaction"
-      assert item["tx_hash"] == to_string(tx.hash)
-      assert item["url"] =~ to_string(tx.hash)
-      assert item["timestamp"] == Repo.preload(tx, [:block]).block.timestamp |> to_string() |> String.replace(" ", "T")
+      assert item["transaction_hash"] == to_string(transaction.hash)
+      assert item["url"] =~ to_string(transaction.hash)
+
+      assert item["timestamp"] ==
+               Repo.preload(transaction, [:block]).block.timestamp |> to_string() |> String.replace(" ", "T")
     end
 
     test "search tags", %{conn: conn} do

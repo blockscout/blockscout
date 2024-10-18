@@ -70,11 +70,11 @@ defmodule BlockScoutWeb.API.V2.ImportController do
          {:not_found, {:ok, address}} <- {:not_found, Chain.hash_to_address(address_hash, @api_true, false)},
          {:already_verified, smart_contract} when is_nil(smart_contract) <-
            {:already_verified, SmartContract.address_hash_to_smart_contract(address_hash, @api_true)} do
-      creation_tx_input = contract_creation_input(address.hash)
+      creation_transaction_input = contract_creation_input(address.hash)
 
       with {:ok, %{"sourceType" => type} = source} <-
              %{}
-             |> prepare_bytecode_for_microservice(creation_tx_input, Data.to_string(address.contract_code))
+             |> prepare_bytecode_for_microservice(creation_transaction_input, Data.to_string(address.contract_code))
              |> EthBytecodeDBInterface.search_contract_in_eth_bytecode_internal_db(
                address_hash_string,
                params_to_contract_search_options(params)

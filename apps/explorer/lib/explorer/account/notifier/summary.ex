@@ -19,7 +19,7 @@ defmodule Explorer.Account.Notifier.Summary do
     :method,
     :block_number,
     :amount,
-    :tx_fee,
+    :transaction_fee,
     :name,
     :subject,
     :type
@@ -81,7 +81,7 @@ defmodule Explorer.Account.Notifier.Summary do
       to_address_hash: transaction.to_address_hash,
       block_number: transaction.block_number,
       amount: amount(transaction),
-      tx_fee: fee(transaction),
+      transaction_fee: fee(transaction),
       name: Explorer.coin_name(),
       subject: "Coin transaction",
       type: "COIN"
@@ -96,7 +96,7 @@ defmodule Explorer.Account.Notifier.Summary do
       to_address_hash: transaction.created_contract_address_hash,
       block_number: transaction.block_number,
       amount: amount(transaction),
-      tx_fee: fee(transaction),
+      transaction_fee: fee(transaction),
       name: Explorer.coin_name(),
       subject: "Contract creation",
       type: "COIN"
@@ -121,7 +121,7 @@ defmodule Explorer.Account.Notifier.Summary do
           block_number: transfer.block_number,
           amount: amount(transfer),
           subject: transfer.token.type,
-          tx_fee: fee(transaction),
+          transaction_fee: fee(transaction),
           name: token_name(transfer),
           type: transfer.token.type
         }
@@ -135,7 +135,7 @@ defmodule Explorer.Account.Notifier.Summary do
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
           subject: to_string(transfer.token_ids && List.first(transfer.token_ids)),
-          tx_fee: fee(transaction),
+          transaction_fee: fee(transaction),
           name: token_name(transfer),
           type: transfer.token.type
         }
@@ -149,7 +149,7 @@ defmodule Explorer.Account.Notifier.Summary do
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
           subject: token_ids(transfer),
-          tx_fee: fee(transaction),
+          transaction_fee: fee(transaction),
           name: token_name(transfer),
           type: transfer.token.type
         }
@@ -165,7 +165,7 @@ defmodule Explorer.Account.Notifier.Summary do
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
           subject: if(token_ids_string == "", do: transfer.token.type, else: token_ids_string),
-          tx_fee: fee(transaction),
+          transaction_fee: fee(transaction),
           name: token_name(transfer),
           type: transfer.token.type
         }
