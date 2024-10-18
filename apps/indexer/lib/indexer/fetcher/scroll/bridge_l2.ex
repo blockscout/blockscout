@@ -81,7 +81,7 @@ defmodule Indexer.Fetcher.Scroll.BridgeL2 do
          messenger_contract: env[:messenger_contract],
          json_rpc_named_arguments: json_rpc_named_arguments,
          end_block: latest_block,
-         start_block: max(1, last_l2_block_number)
+         start_block: max(env[:start_block], last_l2_block_number)
        }}
     else
       {:messenger_contract_address_is_valid, false} ->

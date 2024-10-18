@@ -20,8 +20,9 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
 
   alias Explorer.Chain.Scroll.{Bridge, Reader}
   alias Explorer.Repo
-  alias Indexer.Fetcher.{RollupL1ReorgMonitor, Scroll}
+  alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Fetcher.Scroll.Bridge, as: BridgeFetcher
+  alias Indexer.Fetcher.Scroll.Helper, as: ScrollHelper
   alias Indexer.Helper
 
   @fetcher_name :scroll_bridge_l1
@@ -183,7 +184,7 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
   """
   @spec l1_rpc_url() :: binary() | nil
   def l1_rpc_url do
-    Scroll.l1_rpc_url()
+    ScrollHelper.l1_rpc_url()
   end
 
   @doc """
