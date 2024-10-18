@@ -185,10 +185,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     target_contract =
       if smart_contract_verified, do: smart_contract, else: bytecode_twin_contract
 
+    verified_twin_address_hash = bytecode_twin_contract && Address.checksum(bytecode_twin_contract.address_hash)
+
     %{
-      "verified_twin_address_hash" =>
-        bytecode_twin_contract &&
-          Address.checksum(bytecode_twin_contract.address_hash),
+      "verified_twin_address_hash" => verified_twin_address_hash,
       "is_verified" => smart_contract_verified,
       "is_changed_bytecode" => smart_contract_verified && smart_contract.is_changed_bytecode,
       "is_partially_verified" => smart_contract.partially_verified && smart_contract_verified,
@@ -241,6 +241,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     }
     |> Map.merge(bytecode_info(address))
     |> add_zksync_info(target_contract)
+    |> chain_type_fields(%{address_hash: verified_twin_address_hash, field_prefix: "verified_twin"})
   end
 
   def prepare_smart_contract(address, implementations, proxy_type, conn) do
@@ -450,5 +451,18 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   def render_json(value, _type) do
     to_string(value)
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :filecoin ->
+      defp chain_type_fields(result, params) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address(result, params)
+      end
+
+    _ ->
+      defp chain_type_fields(result, _address) do
+        result
+      end
   end
 end

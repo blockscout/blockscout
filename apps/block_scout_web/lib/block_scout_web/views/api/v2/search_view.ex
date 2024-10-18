@@ -6,11 +6,14 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   alias Explorer.Chain.{Address, Beacon.Blob, Block, Hash, Transaction, UserOperation}
 
   def render("search_results.json", %{search_results: search_results, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(search_results, &prepare_search_result/1), "next_page_params" => next_page_params}
+    %{
+      "items" => search_results |> Enum.map(&prepare_search_result/1) |> chain_type_fields(),
+      "next_page_params" => next_page_params
+    }
   end
 
   def render("search_results.json", %{search_results: search_results}) do
-    Enum.map(search_results, &prepare_search_result/1)
+    search_results |> Enum.map(&prepare_search_result/1) |> chain_type_fields()
   end
 
   def render("search_results.json", %{result: {:ok, result}}) do
@@ -158,5 +161,18 @@ defmodule BlockScoutWeb.API.V2.SearchView do
 
   defp redirect_search_results(%Blob{} = item) do
     %{"type" => "blob", "parameter" => to_string(item.hash)}
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :filecoin ->
+      defp chain_type_fields(result) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address_to_search_results(result)
+      end
+
+    _ ->
+      defp chain_type_fields(result) do
+        result
+      end
   end
 end

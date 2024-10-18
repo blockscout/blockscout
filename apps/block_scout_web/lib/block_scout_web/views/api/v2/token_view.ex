@@ -42,6 +42,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "circulating_market_cap" => token.circulating_market_cap
     }
     |> maybe_append_bridged_info(token)
+    |> chain_type_fields(%{address: token.contract_address, field_prefix: nil})
   end
 
   def render("token_balances.json", %{
@@ -138,5 +139,18 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     else
       map
     end
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :filecoin ->
+      defp chain_type_fields(result, params) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.put_filecoin_robust_address(result, params)
+      end
+
+    _ ->
+      defp chain_type_fields(result, _params) do
+        result
+      end
   end
 end
