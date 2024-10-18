@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
       end)
       |> Enum.uniq()
 
-    {decoded_transactions, _, _} = Transaction.decode_transactions(transactions, true, @api_true)
+    decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
 
     decoded_transactions_map =
       transactions

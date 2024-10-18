@@ -102,6 +102,13 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
       assert implementation_1.updated_at == implementation_2.updated_at &&
                contract_1.updated_at == contract_2.updated_at
+
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+
+      Application.put_env(:explorer, :proxy, proxy)
     end
 
     test "get_implementation/1 for twins contract" do

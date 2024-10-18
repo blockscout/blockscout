@@ -1095,7 +1095,11 @@ defmodule Explorer.Chain do
 
   """
   @spec hashes_to_addresses([Hash.Address.t()], [necessity_by_association_option | api?]) :: [Address.t()]
-  def hashes_to_addresses(hashes, options \\ []) when is_list(hashes) do
+  def hashes_to_addresses(hashes, options \\ [])
+
+  def hashes_to_addresses([], _), do: []
+
+  def hashes_to_addresses(hashes, options) when is_list(hashes) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     query =

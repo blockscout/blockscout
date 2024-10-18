@@ -140,7 +140,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       end)
 
     skip_sig_provider? = false
-    {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true)
+    decoded_input = Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true)
 
     decoded_input_data = decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()
 
@@ -383,7 +383,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     skip_sig_provider? = false
 
-    {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(mock_tx, skip_sig_provider?, @api_true)
+    decoded_input = Transaction.decoded_input_data(mock_tx, skip_sig_provider?, @api_true)
 
     {mock_tx, decoded_input, decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()}
   end

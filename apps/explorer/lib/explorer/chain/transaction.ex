@@ -303,7 +303,6 @@ defmodule Explorer.Chain.Transaction do
     Data,
     DenormalizationHelper,
     Hash,
-    SmartContract,
     SmartContract.Proxy,
     TokenTransfer,
     Transaction,
@@ -737,17 +736,14 @@ defmodule Explorer.Chain.Transaction do
             {:ok, identifier, text, mapping}
 
           _ ->
-            {result, _, _} =
-              decoded_input_data(
-                %Transaction{
-                  to_address: smart_contract,
-                  hash: hash,
-                  input: %Data{bytes: binary_revert_reason}
-                },
-                options
-              )
-
-            result
+            decoded_input_data(
+              %Transaction{
+                to_address: smart_contract,
+                hash: hash,
+                input: %Data{bytes: binary_revert_reason}
+              },
+              options
+            )
         end
 
       _ ->
@@ -760,23 +756,19 @@ defmodule Explorer.Chain.Transaction do
           NotLoaded.t() | Transaction.t(),
           boolean(),
           [Chain.api?()],
-          full_abi_acc,
-          methods_acc,
-          proxy_implementation_addresses_map
-        ) ::
-          {error_type | success_type, full_abi_acc, methods_acc}
-        when full_abi_acc: map(),
-             methods_acc: map(),
-             proxy_implementation_addresses_map: map(),
+          methods_map,
+          proxy_implementation_abi_map
+        ) :: error_type | success_type
+        when methods_map: map(),
+             proxy_implementation_abi_map: map(),
              error_type: {:error, any()} | {:error, :contract_not_verified | :contract_verified, list()},
              success_type: {:ok | binary(), any()} | {:ok, binary(), binary(), list()}
   def decoded_input_data(
         tx,
         skip_sig_provider? \\ false,
         options,
-        full_abi_acc \\ %{},
-        methods_acc \\ %{},
-        proxy_implementation_addresses_map \\ %{}
+        methods_map \\ %{},
+        proxy_implementation_abi_map \\ %{}
       )
 
   # skip decoding if there is no to_address
@@ -784,27 +776,25 @@ defmodule Explorer.Chain.Transaction do
         %__MODULE__{to_address: nil},
         _,
         _,
-        full_abi_acc,
-        methods_acc,
-        _proxy_implementation_addresses_map
+        _,
+        _
       ),
-      do: {{:error, :no_to_address}, full_abi_acc, methods_acc}
+      do: {:error, :no_to_address}
 
   # skip decoding if transaction is not loaded
-  def decoded_input_data(%NotLoaded{}, _, _, full_abi_acc, methods_acc, _proxy_implementation_addresses_map),
-    do: {{:error, :not_loaded}, full_abi_acc, methods_acc}
+  def decoded_input_data(%NotLoaded{}, _, _, _, _),
+    do: {:error, :not_loaded}
 
   # skip decoding if input is empty
   def decoded_input_data(
         %__MODULE__{input: %{bytes: bytes}},
         _,
         _,
-        full_abi_acc,
-        methods_acc,
-        _proxy_implementation_addresses_map
+        _,
+        _
       )
       when bytes in [nil, <<>>] do
-    {{:error, :no_input_data}, full_abi_acc, methods_acc}
+    {:error, :no_input_data}
   end
 
   # skip decoding if to_address is not a contract unless DECODE_NOT_A_CONTRACT_CALLS is set
@@ -813,11 +803,10 @@ defmodule Explorer.Chain.Transaction do
           %__MODULE__{to_address: %{contract_code: nil}},
           _,
           _,
-          full_abi_acc,
-          methods_acc,
-          _proxy_implementation_addresses_map
+          _,
+          _
         ),
-        do: {{:error, :not_a_contract_call}, full_abi_acc, methods_acc}
+        do: {:error, :not_a_contract_call}
   end
 
   # if to_address's smart_contract is nil reduce to the case when to_address is not loaded
@@ -829,9 +818,8 @@ defmodule Explorer.Chain.Transaction do
         },
         skip_sig_provider?,
         options,
-        full_abi_acc,
-        methods_acc,
-        proxy_implementation_addresses_map
+        methods_map,
+        proxy_implementation_abi_map
       ) do
     decoded_input_data(
       %__MODULE__{
@@ -841,9 +829,8 @@ defmodule Explorer.Chain.Transaction do
       },
       skip_sig_provider?,
       options,
-      full_abi_acc,
-      methods_acc,
-      proxy_implementation_addresses_map
+      methods_map,
+      proxy_implementation_abi_map
     )
   end
 
@@ -856,9 +843,8 @@ defmodule Explorer.Chain.Transaction do
         },
         skip_sig_provider?,
         options,
-        full_abi_acc,
-        methods_acc,
-        proxy_implementation_addresses_map
+        methods_map,
+        proxy_implementation_abi_map
       ) do
     decoded_input_data(
       %__MODULE__{
@@ -868,9 +854,8 @@ defmodule Explorer.Chain.Transaction do
       },
       skip_sig_provider?,
       options,
-      full_abi_acc,
-      methods_acc,
-      proxy_implementation_addresses_map
+      methods_map,
+      proxy_implementation_abi_map
     )
   end
 
@@ -883,33 +868,26 @@ defmodule Explorer.Chain.Transaction do
         },
         skip_sig_provider?,
         options,
-        full_abi_acc,
-        methods_acc,
-        proxy_implementation_addresses_map
+        methods_map,
+        _proxy_implementation_abi_map
       ) do
-    {methods, methods_acc} =
-      method_id
-      |> check_methods_cache(methods_acc, options)
+    methods = check_methods_cache(method_id, methods_map, options)
 
     candidates =
       methods
       |> Enum.flat_map(fn candidate ->
         case do_decoded_input_data(
                data,
-               %SmartContract{abi: [candidate.abi], address_hash: nil},
-               hash,
-               options,
-               %{},
-               proxy_implementation_addresses_map
+               [candidate.abi],
+               hash
              ) do
-          {{:ok, _, _, _} = decoded, _} -> [decoded]
+          {:ok, _, _, _} = decoded -> [decoded]
           _ -> []
         end
       end)
 
-    {{:error, :contract_not_verified,
-      if(candidates == [], do: decode_function_call_via_sig_provider(input, hash, skip_sig_provider?), else: candidates)},
-     full_abi_acc, methods_acc}
+    {:error, :contract_not_verified,
+     if(candidates == [], do: decode_function_call_via_sig_provider(input, hash, skip_sig_provider?), else: candidates)}
   end
 
   # if to_address is not loaded and input is not a method call return error
@@ -917,11 +895,10 @@ defmodule Explorer.Chain.Transaction do
         %__MODULE__{to_address: %NotLoaded{}},
         _,
         _,
-        full_abi_acc,
-        methods_acc,
-        _proxy_implementation_addresses_map
+        _,
+        _
       ) do
-    {{:error, :contract_not_verified, []}, full_abi_acc, methods_acc}
+    {:error, :contract_not_verified, []}
   end
 
   def decoded_input_data(
@@ -932,20 +909,14 @@ defmodule Explorer.Chain.Transaction do
         },
         skip_sig_provider?,
         options,
-        full_abi_acc,
-        methods_acc,
-        proxy_implementation_addresses_map
+        methods_map,
+        proxy_implementation_abi_map
       ) do
-    case do_decoded_input_data(
-           data,
-           smart_contract,
-           hash,
-           options,
-           full_abi_acc,
-           proxy_implementation_addresses_map
-         ) do
+    full_abi = check_full_abi_cache(smart_contract, proxy_implementation_abi_map, options)
+
+    case do_decoded_input_data(data, full_abi, hash) do
       # In some cases transactions use methods of some unpredictable contracts, so we can try to look up for method in a whole DB
-      {{:error, error}, full_abi_acc} when error in [:could_not_decode, :no_matching_function] ->
+      {:error, error} when error in [:could_not_decode, :no_matching_function] ->
         case decoded_input_data(
                %__MODULE__{
                  to_address: %NotLoaded{},
@@ -954,22 +925,21 @@ defmodule Explorer.Chain.Transaction do
                },
                skip_sig_provider?,
                options,
-               full_abi_acc,
-               methods_acc,
-               proxy_implementation_addresses_map
+               methods_map,
+               proxy_implementation_abi_map
              ) do
-          {{:error, :contract_not_verified, []}, full_abi_acc, methods_acc} ->
-            {decode_function_call_via_sig_provider_wrapper(input, hash, skip_sig_provider?), full_abi_acc, methods_acc}
+          {:error, :contract_not_verified, []} ->
+            decode_function_call_via_sig_provider_wrapper(input, hash, skip_sig_provider?)
 
-          {{:error, :contract_not_verified, candidates}, full_abi_acc, methods_acc} ->
-            {{:error, :contract_verified, candidates}, full_abi_acc, methods_acc}
+          {:error, :contract_not_verified, candidates} ->
+            {:error, :contract_verified, candidates}
 
-          {_, full_abi_acc, methods_acc} ->
-            {{:error, :could_not_decode}, full_abi_acc, methods_acc}
+          _ ->
+            {:error, :could_not_decode}
         end
 
-      {output, full_abi_acc} ->
-        {output, full_abi_acc, methods_acc}
+      output ->
+        output
     end
   end
 
@@ -983,24 +953,13 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defp do_decoded_input_data(
-         data,
-         smart_contract,
-         hash,
-         options,
-         full_abi_acc,
-         proxy_implementation_addresses_map \\ %{}
-       ) do
-    {full_abi, full_abi_acc} =
-      check_full_abi_cache(smart_contract, full_abi_acc, options, proxy_implementation_addresses_map)
-
-    {with(
-       {:ok, {selector, values}} <- find_and_decode(full_abi, data, hash),
-       {:ok, mapping} <- selector_mapping(selector, values, hash),
-       identifier <- Base.encode16(selector.method_id, case: :lower),
-       text <- function_call(selector.function, mapping),
-       do: {:ok, identifier, text, mapping}
-     ), full_abi_acc}
+  defp do_decoded_input_data(data, full_abi, hash) do
+    with {:ok, {selector, values}} <- find_and_decode(full_abi, data, hash),
+         {:ok, mapping} <- selector_mapping(selector, values, hash),
+         identifier <- Base.encode16(selector.method_id, case: :lower),
+         text <- function_call(selector.function, mapping) do
+      {:ok, identifier, text, mapping}
+    end
   end
 
   defp decode_function_call_via_sig_provider(%{bytes: data} = input, hash, skip_sig_provider?) do
@@ -1010,8 +969,7 @@ defmodule Explorer.Chain.Transaction do
          true <- is_list(result),
          false <- Enum.empty?(result),
          abi <- [result |> List.first() |> Map.put("outputs", []) |> Map.put("type", "function")],
-         {{:ok, _, _, _} = candidate, _} <-
-           do_decoded_input_data(data, %SmartContract{abi: abi, address_hash: nil}, hash, [], %{}) do
+         {:ok, _, _, _} = candidate <- do_decoded_input_data(data, abi, hash) do
       [candidate]
     else
       _ ->
@@ -1019,39 +977,22 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defp check_methods_cache(method_id, methods_acc, options) do
-    if Map.has_key?(methods_acc, method_id) do
-      {methods_acc[method_id], methods_acc}
-    else
-      candidates_query = ContractMethod.find_contract_method_query(method_id, 1)
-
-      result =
-        candidates_query
-        |> Chain.select_repo(options).all()
-
-      {result, Map.put(methods_acc, method_id, result)}
-    end
+  defp check_methods_cache(method_id, methods_map, options) do
+    Map.get_lazy(methods_map, method_id, fn ->
+      method_id
+      |> ContractMethod.find_contract_method_query(1)
+      |> Chain.select_repo(options).all()
+    end)
   end
 
   defp check_full_abi_cache(
-         %{address_hash: address_hash} = smart_contract,
-         full_abi_acc,
-         options,
-         proxy_implementation_addresses_map
+         smart_contract,
+         proxy_implementation_abi_map,
+         options
        ) do
-    if !is_nil(address_hash) && Map.has_key?(full_abi_acc, address_hash) do
-      {full_abi_acc[address_hash], full_abi_acc}
-    else
-      full_abi =
-        Proxy.combine_proxy_implementation_abi(
-          smart_contract,
-          proxy_implementation_addresses_map,
-          false,
-          options
-        )
-
-      {full_abi, Map.put(full_abi_acc, address_hash, full_abi)}
-    end
+    Map.get_lazy(proxy_implementation_abi_map, smart_contract, fn ->
+      Proxy.combine_proxy_implementation_abi(smart_contract, options)
+    end)
   end
 
   def get_method_name(
@@ -1071,10 +1012,10 @@ defmodule Explorer.Chain.Transaction do
              true,
              []
            ) do
-        {{:error, :contract_not_verified, [{:ok, _method_id, decoded_func, _}]}, _, _} ->
+        {:error, :contract_not_verified, [{:ok, _method_id, decoded_func, _}]} ->
           parse_method_name(decoded_func)
 
-        {{:error, :contract_not_verified, []}, _, _} ->
+        {:error, :contract_not_verified, []} ->
           "0x" <> Base.encode16(method_id, case: :lower)
 
         _ ->
@@ -2000,35 +1941,59 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Receives as input list of transactions and returns tuple {decoded_input_data, abi_acc, methods_acc}
+  Receives as input list of transactions and returns decoded_input_data
   Where
     - `decoded_input_data` is list of results: either `{:ok, _identifier, _text, _mapping}` or `nil`
-    - `abi_acc` is list of all smart contracts ABIs fetched during decoding
-    - `methods_acc` is list of all smart contracts methods fetched from `contract_methods` table during decoding
   """
-  @spec decode_transactions([Transaction.t()], boolean(), Keyword.t()) :: {[any()], map(), map()}
+  @spec decode_transactions([Transaction.t()], boolean(), Keyword.t()) :: [nil | {:ok, String.t(), String.t(), map()}]
   def decode_transactions(transactions, skip_sig_provider?, opts) do
-    proxy_implementation_addresses_map = combine_proxy_implementation_addresses_map(transactions)
+    proxy_implementation_abi_map = combine_proxy_implementation_abi_map(transactions)
 
-    {results, abi_acc, methods_acc} =
-      Enum.reduce(transactions, {[], %{}, %{}}, fn transaction, {results, abi_acc, methods_acc} ->
-        {result, abi_acc, methods_acc} =
-          decoded_input_data(
-            transaction,
-            skip_sig_provider?,
-            opts,
-            abi_acc,
-            methods_acc,
-            proxy_implementation_addresses_map
-          )
-
-        {[format_decoded_input(result) | results], abi_acc, methods_acc}
+    # first we assemble an empty methods map, so that decoded_input_data will skip ContractMethod.t() lookup and decoding
+    empty_methods_map =
+      transactions
+      |> Enum.flat_map(fn
+        %{input: <<method_id::binary-size(4), _::binary>>} -> [method_id]
+        _ -> []
       end)
+      |> Enum.into(%{}, &{&1, []})
 
-    {Enum.reverse(results), abi_acc, methods_acc}
+    # try to decode transaction using full abi data from proxy_implementation_abi_map
+    decoded_transactions =
+      transactions
+      |> Enum.map(fn transaction ->
+        transaction
+        |> decoded_input_data(skip_sig_provider?, opts, empty_methods_map, proxy_implementation_abi_map)
+        |> format_decoded_input()
+      end)
+      |> Enum.zip(transactions)
+
+    # assemble a new methods map from methods in non-decoded transactions
+    methods_map =
+      decoded_transactions
+      |> Enum.flat_map(fn
+        {nil, %{input: <<method_id::binary-size(4), _::binary>>}} -> [method_id]
+        _ -> []
+      end)
+      |> Enum.uniq()
+      |> ContractMethod.find_contract_methods(opts)
+      |> Enum.into(%{}, &{&1.identifier, [&1]})
+
+    # decode remaining transaction using methods map
+    decoded_transactions
+    |> Enum.map(fn
+      {nil, transaction} ->
+        transaction
+        |> Map.put(:to_address, %NotLoaded{})
+        |> decoded_input_data(skip_sig_provider?, opts, methods_map, proxy_implementation_abi_map)
+        |> format_decoded_input()
+
+      {decoded, _} ->
+        decoded
+    end)
   end
 
-  defp combine_proxy_implementation_addresses_map(transactions) do
+  defp combine_proxy_implementation_abi_map(transactions) do
     # parse unique address hashes of smart-contracts from to_address and created_contract_address properties of the transactions list
     unique_to_address_hashes =
       transactions
@@ -2043,32 +2008,34 @@ defmodule Explorer.Chain.Transaction do
     multiple_proxy_implementations =
       Implementation.get_proxy_implementations_for_multiple_proxies(unique_to_address_hashes)
 
-    # query from the DB address objects with smart_contract preload for all found above implementation addresses
-    implementation_addresses_with_smart_contracts =
+    # query from the DB address objects with smart_contract preload for all found above proxy and implementation addresses
+    addresses_with_smart_contracts =
       multiple_proxy_implementations
       |> Enum.flat_map(fn proxy_implementations -> proxy_implementations.address_hashes end)
+      |> Enum.concat(unique_to_address_hashes)
       |> Chain.hashes_to_addresses(necessity_by_association: %{smart_contract: :optional})
       |> Enum.into(%{}, &{&1.hash, &1})
 
-    # combine map %{proxy_address_hash => the list of implementations as Address.t() object with preloaded SmartContract.t()}
+    # combine map %{proxy_address_hash => combined proxy abi}
     multiple_proxy_implementations
-    |> Enum.reduce(%{}, fn proxy_implementations, proxy_implementation_addresses_map ->
-      implementation_addresses_with_smart_contract_preload =
-        proxy_implementations.address_hashes
-        |> Enum.map(fn implementation_address_hash ->
-          Map.get(implementation_addresses_with_smart_contracts, implementation_address_hash)
+    |> Enum.into(%{}, fn proxy_implementations ->
+      full_abi =
+        [proxy_implementations.proxy_address_hash | proxy_implementations.address_hashes]
+        |> Enum.map(&Map.get(addresses_with_smart_contracts, &1))
+        |> Enum.flat_map(fn
+          %{smart_contract: %{abi: abi}} when is_list(abi) -> abi
+          _ -> []
         end)
         |> Enum.filter(&(!is_nil(&1)))
 
-      proxy_implementation_addresses_map
-      |> Map.put(proxy_implementations.proxy_address_hash, implementation_addresses_with_smart_contract_preload)
+      {proxy_implementations.proxy_address_hash, full_abi}
     end)
   end
 
   @doc """
   Receives as input result of decoded_input_data/5, returns either nil or decoded input in format: {:ok, _identifier, _text, _mapping}
   """
-  @spec format_decoded_input(any()) :: nil | tuple()
+  @spec format_decoded_input(any()) :: nil | {:ok, String.t(), String.t(), map()}
   def format_decoded_input({:error, _, []}), do: nil
   def format_decoded_input({:error, _, candidates}), do: Enum.at(candidates, 0)
   def format_decoded_input({:ok, _identifier, _text, _mapping} = decoded), do: decoded

@@ -19,7 +19,6 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
 
     transactions
     |> Transaction.decode_transactions(true, api?: true)
-    |> elem(0)
     |> Enum.zip(transactions)
     |> to_csv_format(address_hash, exchange_rate)
     |> Helper.dump_to_stream()
