@@ -3,15 +3,15 @@ defmodule Explorer.Repo.Migrations.InternalTransactionsAddToAddressHashIndex do
 
   def change do
     execute(
-      "CREATE INDEX IF NOT EXISTS internal_transactions_from_address_hash_partial_index on public.internal_transactions(from_address_hash, block_number DESC, transaction_index DESC, index DESC) WHERE (((type = 'call') AND (index > 0)) OR (type != 'call'));"
+      "CREATE INDEX IF NOT EXISTS internal_transactions_from_address_hash_partial_index on internal_transactions(from_address_hash, block_number DESC, transaction_index DESC, index DESC) WHERE (((type = 'call') AND (index > 0)) OR (type != 'call'));"
     )
 
     execute(
-      "CREATE INDEX IF NOT EXISTS internal_transactions_to_address_hash_partial_index on public.internal_transactions(to_address_hash, block_number DESC, transaction_index DESC, index DESC) WHERE (((type = 'call') AND (index > 0)) OR (type != 'call'));"
+      "CREATE INDEX IF NOT EXISTS internal_transactions_to_address_hash_partial_index on internal_transactions(to_address_hash, block_number DESC, transaction_index DESC, index DESC) WHERE (((type = 'call') AND (index > 0)) OR (type != 'call'));"
     )
 
     execute(
-      "CREATE INDEX IF NOT EXISTS internal_transactions_created_contract_address_hash_partial_index on public.internal_transactions(created_contract_address_hash, block_number DESC, transaction_index DESC, index DESC) WHERE (((type = 'call') AND (index > 0)) OR (type != 'call'));"
+      "CREATE INDEX IF NOT EXISTS internal_transactions_created_contract_address_hash_partial_index on internal_transactions(created_contract_address_hash, block_number DESC, transaction_index DESC, index DESC) WHERE (((type = 'call') AND (index > 0)) OR (type != 'call'));"
     )
 
     drop_if_exists(
