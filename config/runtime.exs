@@ -43,7 +43,8 @@ config :block_scout_web, :recaptcha,
   v2_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY"),
   v3_client_key: System.get_env("RE_CAPTCHA_V3_CLIENT_KEY"),
   v3_secret_key: System.get_env("RE_CAPTCHA_V3_SECRET_KEY"),
-  is_disabled: ConfigHelper.parse_bool_env_var("RE_CAPTCHA_DISABLED")
+  is_disabled: ConfigHelper.parse_bool_env_var("RE_CAPTCHA_DISABLED"),
+  check_hostname?: ConfigHelper.parse_bool_env_var("RE_CAPTCHA_CHECK_HOSTNAME", "true")
 
 network_path =
   "NETWORK_PATH"
@@ -553,7 +554,9 @@ config :explorer, Explorer.Account,
     sender: System.get_env("ACCOUNT_SENDGRID_SENDER"),
     template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
   ],
-  resend_interval: ConfigHelper.parse_time_env_var("ACCOUNT_VERIFICATION_EMAIL_RESEND_INTERVAL", "5m"),
+  verification_email_resend_interval:
+    ConfigHelper.parse_time_env_var("ACCOUNT_VERIFICATION_EMAIL_RESEND_INTERVAL", "5m"),
+  otp_resend_interval: ConfigHelper.parse_time_env_var("ACCOUNT_OTP_RESEND_INTERVAL", "1m"),
   private_tags_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_PRIVATE_TAGS_LIMIT", 2000),
   watchlist_addresses_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_ADDRESSES_LIMIT", 15),
   notifications_limit_for_30_days:

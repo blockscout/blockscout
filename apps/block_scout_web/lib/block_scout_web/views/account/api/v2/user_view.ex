@@ -9,7 +9,13 @@ defmodule BlockScoutWeb.Account.Api.V2.UserView do
   end
 
   def render("user_info.json", %{identity: identity}) do
-    %{"name" => identity.name, "email" => identity.email, "avatar" => identity.avatar, "nickname" => identity.nickname}
+    %{
+      "name" => identity.name,
+      "email" => identity.email,
+      "avatar" => identity.avatar,
+      "nickname" => identity.nickname,
+      "address_hash" => identity.address_hash
+    }
   end
 
   def render("watchlist_addresses.json", %{

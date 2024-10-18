@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Account.{
+    Identity,
     TagAddress,
     TagTransaction,
     WatchlistAddress
@@ -9,12 +10,11 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
 
   alias Explorer.Chain.Address
   alias Explorer.Repo
-  alias BlockScoutWeb.Models.UserFromAuth
 
   setup %{conn: conn} do
     auth = build(:auth)
 
-    {:ok, user} = UserFromAuth.find_or_create(auth)
+    {:ok, user} = Identity.find_or_create(auth)
 
     {:ok, user: user, conn: Plug.Test.init_test_session(conn, current_user: user)}
   end
@@ -30,7 +30,8 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
                "nickname" => user.nickname,
                "name" => user.name,
                "email" => user.email,
-               "avatar" => user.avatar
+               "avatar" => user.avatar,
+               "address_hash" => user.address_hash
              }
     end
 
