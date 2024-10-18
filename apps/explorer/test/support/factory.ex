@@ -825,11 +825,12 @@ defmodule Explorer.Factory do
 
     token_address = insert(:contract_address, contract_code: contract_code)
     token = insert(:token, contract_address: token_address)
+    block = build(:block)
 
     %TokenTransfer{
-      block: build(:block),
+      block: block,
       amount: Decimal.new(1),
-      block_number: block_number(),
+      block_number: block.number,
       from_address: from_address,
       to_address: to_address,
       token_contract_address: token_address,
