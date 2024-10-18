@@ -15,12 +15,6 @@ defmodule Indexer.Application do
 
   @impl Application
   def start(_type, _args) do
-    memory_monitor_options =
-      case Application.get_env(:indexer, :memory_limit) do
-        nil -> %{}
-        integer when is_integer(integer) -> %{limit: integer}
-      end
-
     memory_monitor_name = Memory.Monitor
 
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
@@ -46,7 +40,7 @@ defmodule Indexer.Application do
 
     base_children = [
       :hackney_pool.child_spec(:token_instance_fetcher, max_connections: pool_size),
-      {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
+      {Memory.Monitor, [%{}, [name: memory_monitor_name]]},
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
       {ContractCodeOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenInstanceMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
