@@ -9,6 +9,6 @@ defmodule Indexer.Fetcher.Scroll.Helper do
   """
   @spec l1_rpc_url() :: binary() | nil
   def l1_rpc_url do
-    Application.get_all_env(:indexer)[__MODULE__][:rpc]
+    Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:rpc]
   end
 end

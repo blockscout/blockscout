@@ -135,6 +135,28 @@ defmodule Explorer.Chain.Scroll.Reader do
   end
 
   @doc """
+    Gets batch number and its bundle id (if defined) by the L2 block number.
+
+    ## Parameters
+    - `block_number`: The L2 block number for which the batch should be determined.
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - A tuple `{batch_number, bundle_id}`.
+    - `nil` if the batch is not found.
+  """
+  @spec batch_by_l2_block_number(non_neg_integer()) :: {non_neg_integer(), non_neg_integer() | nil} | nil
+  def batch_by_l2_block_number(block_number, options \\ []) do
+    select_repo(options).one(
+      from(
+        b in Batch,
+        where: fragment("int8range(?, ?) <@ l2_block_range", ^block_number, ^(block_number + 1)),
+        select: {b.number, b.bundle_id}
+      )
+    )
+  end
+
+  @doc """
     Gets last known L1 batch item from the `scroll_batches` table.
 
     ## Returns
