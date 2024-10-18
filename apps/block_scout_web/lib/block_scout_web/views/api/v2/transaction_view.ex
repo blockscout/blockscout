@@ -1,15 +1,14 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenView}
+  alias BlockScoutWeb.API.V2.{ApiView, Helper, TokenTransferView, TokenView}
 
   alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
-  alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
   alias BlockScoutWeb.TransactionStateView
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Block, Log, Token, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Log, SignedAuthorization, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
@@ -123,7 +122,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "items" =>
         token_transfers
         |> Enum.zip(decoded_transactions)
-        |> Enum.map(fn {tt, decoded_input} -> prepare_token_transfer(tt, conn, decoded_input) end),
+        |> Enum.map(fn {tt, decoded_input} -> TokenTransferView.prepare_token_transfer(tt, conn, decoded_input) end),
       "next_page_params" => next_page_params
     }
   end
@@ -134,12 +133,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     token_transfers
     |> Enum.zip(decoded_transactions)
-    |> Enum.map(fn {tt, decoded_input} -> prepare_token_transfer(tt, conn, decoded_input) end)
+    |> Enum.map(fn {tt, decoded_input} -> TokenTransferView.prepare_token_transfer(tt, conn, decoded_input) end)
   end
 
   def render("token_transfer.json", %{token_transfer: token_transfer, conn: conn}) do
     [decoded_transaction] = Transaction.decode_transactions([token_transfer.transaction], true, @api_true)
-    prepare_token_transfer(token_transfer, conn, decoded_transaction)
+    TokenTransferView.prepare_token_transfer(token_transfer, conn, decoded_transaction)
   end
 
   def render("transaction_actions.json", %{actions: actions}) do
@@ -210,6 +209,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
+  def render("authorization_list.json", %{signed_authorizations: signed_authorizations}) do
+    signed_authorizations
+    |> Enum.sort_by(& &1.index, :asc)
+    |> Enum.map(&prepare_signed_authorization/1)
+  end
+
   @doc """
     Decodes list of logs
   """
@@ -233,60 +238,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     Enum.reverse(result)
   end
 
-  def prepare_token_transfer(token_transfer, _conn, decoded_input) do
-    %{
-      "tx_hash" => token_transfer.transaction_hash,
-      "from" => Helper.address_with_info(nil, token_transfer.from_address, token_transfer.from_address_hash, false),
-      "to" => Helper.address_with_info(nil, token_transfer.to_address, token_transfer.to_address_hash, false),
-      "total" => prepare_token_transfer_total(token_transfer),
-      "token" => TokenView.render("token.json", %{token: token_transfer.token}),
-      "type" => Chain.get_token_transfer_type(token_transfer),
-      "timestamp" =>
-        if(match?(%NotLoaded{}, token_transfer.block),
-          do: block_timestamp(token_transfer.transaction),
-          else: block_timestamp(token_transfer.block)
-        ),
-      "method" => Transaction.method_name(token_transfer.transaction, decoded_input, true),
-      "block_hash" => to_string(token_transfer.block_hash),
-      "block_number" => to_string(token_transfer.block_number),
-      "log_index" => to_string(token_transfer.log_index)
-    }
-  end
-
   def prepare_transaction_action(action) do
     %{
       "protocol" => action.protocol,
       "type" => action.type,
       "data" => action.data
     }
-  end
-
-  # credo:disable-for-next-line /Complexity/
-  def prepare_token_transfer_total(token_transfer) do
-    case TokensHelper.token_transfer_amount_for_api(token_transfer) do
-      {:ok, :erc721_instance} ->
-        %{"token_id" => token_transfer.token_ids && List.first(token_transfer.token_ids)}
-
-      {:ok, :erc1155_erc404_instance, value, decimals} ->
-        %{
-          "token_id" => token_transfer.token_ids && List.first(token_transfer.token_ids),
-          "value" => value,
-          "decimals" => decimals
-        }
-
-      {:ok, :erc1155_erc404_instance, values, token_ids, decimals} ->
-        %{
-          "token_id" => token_ids && List.first(token_ids),
-          "value" => values && List.first(values),
-          "decimals" => decimals
-        }
-
-      {:ok, value, decimals} ->
-        %{"value" => value, "decimals" => decimals}
-
-      _ ->
-        nil
-    end
   end
 
   def prepare_internal_transaction(internal_transaction, block \\ nil) do
@@ -333,6 +290,28 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "smart_contract" => smart_contract_info(transaction_or_hash),
       "block_number" => log.block_number,
       "block_hash" => log.block_hash
+    }
+  end
+
+  @doc """
+    Extracts the necessary fields from the signed authorization for the API response.
+
+    ## Parameters
+    - `signed_authorization`: A `SignedAuthorization.t()` struct containing the signed authorization data.
+
+    ## Returns
+    - A map with the necessary fields for the API response.
+  """
+  @spec prepare_signed_authorization(SignedAuthorization.t()) :: map()
+  def prepare_signed_authorization(signed_authorization) do
+    %{
+      "address" => Address.checksum(signed_authorization.address),
+      "chain_id" => signed_authorization.chain_id,
+      "nonce" => signed_authorization.nonce,
+      "r" => signed_authorization.r,
+      "s" => signed_authorization.s,
+      "v" => signed_authorization.v,
+      "authority" => Address.checksum(signed_authorization.authority)
     }
   end
 
@@ -450,7 +429,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "method" => Transaction.method_name(transaction, decoded_input),
       "tx_types" => tx_types(transaction),
       "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_tx? && conn)),
-      "has_error_in_internal_txs" => transaction.has_error_in_internal_txs
+      "has_error_in_internal_txs" => transaction.has_error_in_internal_txs,
+      "authorization_list" => authorization_list(transaction.signed_authorizations)
     }
 
     result
@@ -480,6 +460,23 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   """
   def transaction_actions(actions) do
     render("transaction_actions.json", %{actions: actions})
+  end
+
+  @doc """
+    Renders the authorization list for a transaction.
+
+    ## Parameters
+    - `signed_authorizations`: A list of `SignedAuthorization.t()` structs.
+
+    ## Returns
+    - A list of maps with the necessary fields for the API response.
+  """
+  @spec authorization_list(nil | NotLoaded.t() | [SignedAuthorization.t()]) :: [map()]
+  def authorization_list(nil), do: []
+  def authorization_list(%NotLoaded{}), do: []
+
+  def authorization_list(signed_authorizations) do
+    render("authorization_list.json", %{signed_authorizations: signed_authorizations})
   end
 
   defp burnt_fees(transaction, max_fee_per_gas, base_fee_per_gas) do
@@ -608,7 +605,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
                | :token_creation
                | :token_transfer
                | :blob_transaction
-  def tx_types(tx, types \\ [], stage \\ :blob_transaction)
+               | :set_code_transaction
+  def tx_types(tx, types \\ [], stage \\ :set_code_transaction)
+
+  def tx_types(%Transaction{type: type} = tx, types, :set_code_transaction) do
+    # EIP-7702 set code transaction type
+    types =
+      if type == 4 do
+        [:set_code_transaction | types]
+      else
+        types
+      end
+
+    tx_types(tx, types, :blob_transaction)
+  end
 
   def tx_types(%Transaction{type: type} = tx, types, :blob_transaction) do
     # EIP-2718 blob transaction type
@@ -701,10 +711,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  defp block_timestamp(%Transaction{block_timestamp: block_ts}) when not is_nil(block_ts), do: block_ts
-  defp block_timestamp(%Transaction{block: %Block{} = block}), do: block.timestamp
-  defp block_timestamp(%Block{} = block), do: block.timestamp
-  defp block_timestamp(_), do: nil
+  @doc """
+  Returns block's timestamp from Block/Transaction
+  """
+  @spec block_timestamp(any()) :: :utc_datetime_usec | nil
+  def block_timestamp(%Transaction{block_timestamp: block_ts}) when not is_nil(block_ts), do: block_ts
+  def block_timestamp(%Transaction{block: %Block{} = block}), do: block.timestamp
+  def block_timestamp(%Block{} = block), do: block.timestamp
+  def block_timestamp(_), do: nil
 
   defp prepare_state_change(%StateChange{} = state_change) do
     coin_or_transfer =
@@ -747,7 +761,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     change =
       if is_list(state_change.coin_or_token_transfers) and coin_or_transfer.token.type == "ERC-721" do
         for {direction, token_transfer} <- state_change.coin_or_token_transfers do
-          %{"total" => prepare_token_transfer_total(token_transfer), "direction" => direction}
+          %{"total" => TokenTransferView.prepare_token_transfer_total(token_transfer), "direction" => direction}
         end
       else
         state_change.balance_diff

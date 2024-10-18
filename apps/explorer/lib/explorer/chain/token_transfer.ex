@@ -282,6 +282,49 @@ defmodule Explorer.Chain.TokenTransfer do
     end
   end
 
+  @spec fetch([paging_options | api?]) :: []
+  def fetch(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    token_type = Keyword.get(options, :token_type)
+
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
+
+      _ ->
+        preloads =
+          DenormalizationHelper.extend_transaction_preload([
+            :transaction,
+            :token,
+            [from_address: [:names, :smart_contract, :proxy_implementations]],
+            [to_address: [:names, :smart_contract, :proxy_implementations]]
+          ])
+
+        only_consensus_transfers_query()
+        |> preload(^preloads)
+        |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+        |> maybe_filter_by_token_type(token_type)
+        |> page_token_transfer(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Chain.select_repo(options).all()
+    end
+  end
+
+  defp maybe_filter_by_token_type(query, token_types) do
+    if Enum.empty?(token_types) do
+      query
+    else
+      if DenormalizationHelper.tt_denormalization_finished?() do
+        query
+        |> where([tt], tt.token_type in ^token_types)
+      else
+        query
+        |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+        |> where([tt, block, token], token.type in ^token_types)
+      end
+    end
+  end
+
   @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
   def count_token_transfers_from_token_hash(token_address_hash) do
     query =

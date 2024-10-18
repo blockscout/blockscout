@@ -41,14 +41,17 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   responsible for L1-to-L2 messages and then re-requests these transactions
   through RPC. Results are utilized to construct messages. These messages are
   marked as `:relayed`, indicating that they have been successfully received on
-  L2 and are considered completed, and are then imported into the database. This
-  approach is adopted because it parallels the action of re-indexing existing
-  transactions to include Arbitrum-specific fields, which are absent in the
-  currently indexed transactions. However, permanently adding these fields to the
-  database model for the sake of historical message catch-up is impractical.
-  Therefore, to avoid the extensive process of re-indexing and to minimize changes
-  to the database schema, fetching the required data directly from an external
-  node via RPC is preferred for historical message discovery.
+  L2 and are considered completed, and are then imported into the database. If
+  it is determined that a message cannot be constructed because of a hashed
+  message ID, the transaction is scheduled for further asynchronous processing to
+  match it with the corresponding L1 transaction. This approach is adopted
+  because it parallels the action of re-indexing existing transactions to include
+  Arbitrum-specific fields, which are absent in the currently indexed
+  transactions. However, permanently adding these fields to the database model
+  for the sake of historical message catch-up is impractical. Therefore, to avoid
+  the extensive process of re-indexing and to minimize changes to the database
+  schema, fetching the required data directly from an external node via RPC is
+  preferred for historical message discovery.
   """
 
   use GenServer
@@ -268,8 +271,14 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   # `requestId` for every transaction. This RPC request is necessary because the
   # `requestId` field is not present in the transaction model of already indexed
   # transactions in the database. Results are used to construct messages, which are
-  # subsequently stored in the database. These imported messages are marked as
-  # `:relayed`, signifying that they represent completed actions from L1 to L2.
+  # subsequently stored in the database.
+  #
+  # Messages with plain (non-hashed) request IDs are imported into the database and
+  # marked as `:relayed`, representing completed actions from L1 to L2.
+  #
+  # For transactions where the `requestId` represents a hashed message ID, the
+  # function schedules asynchronous discovery to match them with corresponding L1
+  # transactions.
   #
   # After importing the messages, the function immediately switches to the process
   # of choosing a delay prior to the next iteration of historical message discovery

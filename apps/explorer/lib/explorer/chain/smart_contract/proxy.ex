@@ -15,6 +15,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     EIP1822,
     EIP1967,
     EIP2535,
+    EIP7702,
     EIP930,
     MasterCopy
   }
@@ -116,7 +117,20 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   end
 
   @doc """
-  Decodes address output into 20 bytes address hash
+    Decodes and formats an address output from a smart contract ABI.
+
+    This function handles various input formats and edge cases when decoding
+    address outputs from smart contract function calls or events.
+
+    ## Parameters
+    - `address`: The address output to decode. Can be `nil`, `"0x"`, a binary string, or `:error`.
+
+    ## Returns
+    - `nil` if the input is `nil`.
+    - The burn address hash string if the input is `"0x"`.
+    - A formatted address string if the input is a valid binary string.
+    - `:error` if the input is `:error`.
+    - `nil` for any other input type.
   """
   @spec abi_decode_address_output(any()) :: nil | :error | binary()
   def abi_decode_address_output(nil), do: nil
@@ -153,16 +167,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   end
 
   def get_implementation_abi_from_proxy(_, _), do: []
-
-  @doc """
-  Checks if the ABI of the smart-contract follows GnosisSafe proxy pattern
-  """
-  @spec gnosis_safe_contract?([map()]) :: boolean()
-  def gnosis_safe_contract?(abi) when not is_nil(abi) do
-    if get_master_copy_pattern(abi), do: true, else: false
-  end
-
-  def gnosis_safe_contract?(abi) when is_nil(abi), do: false
 
   @doc """
   Checks if the input of the smart-contract follows master-copy (or Safe) proxy pattern before
@@ -260,6 +264,20 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         proxy_abi,
         go_to_fallback?
       ],
+      :get_implementation_address_hash_string_eip7702
+    )
+  end
+
+  @doc """
+  Returns EIP-7702 implementation address or tries next proxy pattern
+  """
+  @spec get_implementation_address_hash_string_eip7702(Hash.Address.t(), any(), bool()) ::
+          %{implementation_address_hash_strings: [String.t()] | :error | nil, proxy_type: atom() | :unknown}
+  def get_implementation_address_hash_string_eip7702(proxy_address_hash, proxy_abi, go_to_fallback?) do
+    get_implementation_address_hash_string_by_module(
+      EIP7702,
+      :eip7702,
+      [proxy_address_hash, proxy_abi, go_to_fallback?],
       :get_implementation_address_hash_string_eip1967
     )
   end

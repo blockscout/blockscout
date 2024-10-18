@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Transaction.Schema do
     Hash,
     InternalTransaction,
     Log,
+    SignedAuthorization,
     TokenTransfer,
     TransactionAction,
     Wei
@@ -268,6 +269,11 @@ defmodule Explorer.Chain.Transaction.Schema do
           foreign_key: :created_contract_address_hash,
           references: :hash,
           type: Hash.Address
+        )
+
+        has_many(:signed_authorizations, SignedAuthorization,
+          foreign_key: :transaction_hash,
+          references: :hash
         )
 
         unquote_splicing(@chain_type_fields)
@@ -1899,12 +1905,13 @@ defmodule Explorer.Chain.Transaction do
 
   @doc """
   Dynamically adds to/from for `transactions` query based on whether the target address EOA or smart-contract
-  todo: pay attention to [EIP-5003](https://eips.ethereum.org/EIPS/eip-5003): if it will be included, this logic should be rolled back.
+  EOAs with code (EIP-7702) are treated as regular EOAs.
   """
   @spec where_transactions_to_from(Hash.Address.t()) :: any()
   def where_transactions_to_from(address_hash) do
     with {:ok, address} <- Chain.hash_to_address(address_hash),
-         true <- Address.smart_contract?(address) do
+         true <- Address.smart_contract?(address),
+         false <- Address.eoa_with_code?(address) do
       dynamic([transaction], transaction.to_address_hash == ^address_hash)
     else
       _ ->
@@ -2019,6 +2026,7 @@ defmodule Explorer.Chain.Transaction do
           %{smart_contract: %{abi: abi}} when is_list(abi) -> abi
           _ -> []
         end)
+        |> Enum.filter(&(!is_nil(&1)))
 
       {proxy_implementations.proxy_address_hash, full_abi}
     end)

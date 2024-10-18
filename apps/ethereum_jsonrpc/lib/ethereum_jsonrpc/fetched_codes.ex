@@ -15,7 +15,22 @@ defmodule EthereumJSONRPC.FetchedCodes do
   @type t :: %__MODULE__{params_list: [FetchedCode.params()], errors: [FetchedCode.error()]}
 
   @doc """
-  `eth_getCode` requests for `id_to_params`.
+    Generates a list of `eth_getCode` JSON-RPC requests for the given parameters.
+
+    This function takes a map of request IDs to parameter maps and transforms them
+    into a list of JSON-RPC request structures for fetching contract code.
+
+    ## Parameters
+    - `id_to_params`: A map where keys are request IDs and values are maps
+      containing `block_quantity` and `address` for each request.
+
+    ## Returns
+    A list of maps, each representing a JSON-RPC request with the following
+    structure:
+    - `jsonrpc`: The JSON-RPC version (always "2.0").
+    - `id`: The request identifier.
+    - `method`: The RPC method name (always "eth_getCode").
+    - `params`: A list containing the contract address and block identifier.
   """
   @spec requests(%{id => %{block_quantity: block_quantity, address: address}}) :: [
           %{jsonrpc: String.t(), id: id, method: String.t(), params: [address | block_quantity]}
@@ -30,8 +45,27 @@ defmodule EthereumJSONRPC.FetchedCodes do
   end
 
   @doc """
-  Converts `responses` to `t/0`.
+   Processes responses from `eth_getCode` JSON-RPC calls and converts them into a structured format.
+
+   This function takes a list of responses from `eth_getCode` calls and a map of
+   request IDs to their corresponding parameters. It sanitizes the responses,
+   processes each one, and accumulates the results into a `FetchedCodes` struct.
+
+   ## Parameters
+   - `responses`: A list of response maps from `eth_getCode` calls. Each map
+     contains an `:id` key and either a `:result` or `:error` key.
+   - `id_to_params`: A map where keys are request IDs and values are maps
+     containing `block_quantity` and `address` for each request.
+
+   ## Returns
+   A `FetchedCodes` struct containing:
+   - `params_list`: A list of successfully fetched code parameters.
+   - `errors`: A list of errors encountered during the process.
   """
+  @spec from_responses(
+          [%{:id => EthereumJSONRPC.request_id(), optional(:error) => map(), optional(:result) => String.t()}],
+          %{non_neg_integer() => %{block_quantity: String.t(), address: String.t()}}
+        ) :: t()
   def from_responses(responses, id_to_params) do
     responses
     |> EthereumJSONRPC.sanitize_responses(id_to_params)

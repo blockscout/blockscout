@@ -34,6 +34,17 @@ defmodule EthereumJSONRPC.FetchedBalances do
   end
 
   @doc """
+  Merges two `t/0` to one `t/0`.
+  """
+  @spec merge(t(), t()) :: t()
+  def merge(%{params_list: params_list_1, errors: errors_1}, %{params_list: params_list_2, errors: errors_2}) do
+    %__MODULE__{
+      params_list: params_list_1 ++ params_list_2,
+      errors: errors_1 ++ errors_2
+    }
+  end
+
+  @doc """
   `eth_getBalance` requests for `id_to_params`.
   """
   @spec requests(%{id => %{block_quantity: block_quantity, hash_data: hash_data}}) :: [

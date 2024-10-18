@@ -1903,12 +1903,14 @@ defmodule Explorer.Chain do
         when accumulator: term()
   def stream_blocks_with_unfetched_internal_transactions(initial, reducer, limited? \\ false)
       when is_function(reducer, 2) do
+    direction = Application.get_env(:indexer, :internal_transactions_fetch_order)
+
     query =
       from(
         po in PendingBlockOperation,
         where: not is_nil(po.block_number),
         select: po.block_number,
-        order_by: [desc: po.block_number]
+        order_by: [{^direction, po.block_number}]
       )
 
     query

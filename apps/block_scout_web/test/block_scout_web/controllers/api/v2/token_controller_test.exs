@@ -1550,6 +1550,69 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert %{"message" => "Not found"} = json_response(request, 404)
     end
+
+    test "fetch token instance metadata for existing token instance with no metadata", %{conn: conn} do
+      BlockScoutWeb.TestCaptchaHelper
+      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+
+      token = insert(:token, type: "ERC-721")
+      token_id = 1
+
+      insert(:token_instance,
+        token_id: token_id,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: nil
+      )
+
+      metadata = %{"name" => "Super Token"}
+      url = "http://metadata.endpoint.com"
+      token_contract_address_hash_string = to_string(token.contract_address_hash)
+
+      TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+
+      Application.put_env(:explorer, :http_adapter, Explorer.Mox.HTTPoison)
+
+      Explorer.Mox.HTTPoison
+      |> expect(:get, fn ^url, _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(metadata)}}
+      end)
+
+      topic = "token_instances:#{token_contract_address_hash_string}"
+
+      {:ok, _reply, _socket} =
+        BlockScoutWeb.UserSocketV2
+        |> socket("no_id", %{})
+        |> subscribe_and_join(topic)
+
+      request =
+        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{
+          "recaptcha_response" => "123"
+        })
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      :timer.sleep(100)
+
+      assert_receive(
+        {:chain_event, :fetched_token_instance_metadata, :on_demand,
+         [^token_contract_address_hash_string, ^token_id, ^metadata]}
+      )
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       event: "fetched_token_instance_metadata",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
+
+      token_instance_from_db =
+        Repo.get_by(Instance, token_id: token_id, token_contract_address_hash: token.contract_address_hash)
+
+      assert(token_instance_from_db)
+      assert token_instance_from_db.metadata == metadata
+
+      Application.put_env(:explorer, :http_adapter, HTTPoison)
+    end
   end
 
   def compare_item(%Address{} = address, json) do

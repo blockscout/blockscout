@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Address.Schema do
     DecompiledSmartContract,
     Hash,
     InternalTransaction,
+    SignedAuthorization,
     SmartContract,
     Token,
     Transaction,
@@ -107,6 +108,10 @@ defmodule Explorer.Chain.Address.Schema do
         has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
 
+        # In practice, this is a one-to-many relationship, but we only need to check if any signed authorization
+        # exists for a given address. This done this way to avoid loading all signed authorizations for an address.
+        has_one(:signed_authorization, SignedAuthorization, foreign_key: :authority, references: :hash)
+
         timestamps()
 
         unquote_splicing(@chain_type_fields)
@@ -130,8 +135,9 @@ defmodule Explorer.Chain.Address do
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.{Address, Data, Hash}
   alias Explorer.{Chain, PagingOptions, Repo}
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
@@ -422,13 +428,49 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
-  Checks if given address is smart-contract
+    Determines if the given address is a smart contract.
+
+    This function checks the contract code of an address to determine if it's a
+    smart contract.
+
+    ## Parameters
+    - `address`: The address to check. Can be an `Address` struct or any other value.
+
+    ## Returns
+    - `true` if the address is a smart contract
+    - `false` if the address is not a smart contract
+    - `nil` if the contract code hasn't been loaded
   """
   @spec smart_contract?(any()) :: boolean() | nil
   def smart_contract?(%__MODULE__{contract_code: nil}), do: false
   def smart_contract?(%__MODULE__{contract_code: _}), do: true
   def smart_contract?(%NotLoaded{}), do: nil
   def smart_contract?(_), do: false
+
+  @doc """
+    Checks if the given address is an Externally Owned Account (EOA) with code,
+    as defined in EIP-7702.
+
+    This function determines whether an address represents an EOA that has
+    associated code, which is a special case introduced by EIP-7702. It checks
+    the contract code of the address for the presence of a delegate address
+    according to the EIP-7702 specification.
+
+    ## Parameters
+    - `address`: The address to check. Can be an `Address` struct or any other value.
+
+    ## Returns
+    - `true` if the address is an EOA with code (EIP-7702 compliant)
+    - `false` if the address is not an EOA with code
+    - `nil` if the contract code hasn't been loaded
+  """
+  @spec eoa_with_code?(any()) :: boolean() | nil
+  def eoa_with_code?(%__MODULE__{contract_code: %Data{bytes: code}}) do
+    EIP7702.get_delegate_address(code) != nil
+  end
+
+  def eoa_with_code?(%NotLoaded{}), do: nil
+  def eoa_with_code?(_), do: false
 
   defp get_addresses(options) do
     accounts_with_n = fetch_top_addresses(options)
@@ -529,7 +571,18 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
-  Sets contract_code for the given Explorer.Chain.Address
+   Sets the contract code for the given address.
+
+   This function updates the contract code and the `updated_at` timestamp for an
+   address in the database.
+
+   ## Parameters
+   - `address_hash`: The hash of the address to update.
+   - `contract_code`: The new contract code to set.
+
+   ## Returns
+   A tuple `{count, nil}`, where `count` is the number of rows updated
+   (typically 1 if the address exists, 0 otherwise).
   """
   @spec set_contract_code(Hash.Address.t(), binary()) :: {non_neg_integer(), nil}
   def set_contract_code(address_hash, contract_code) when not is_nil(address_hash) and is_binary(contract_code) do
