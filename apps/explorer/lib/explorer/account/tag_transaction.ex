@@ -124,6 +124,21 @@ defmodule Explorer.Account.TagTransaction do
 
   defp page_transaction_tags(query, _), do: query
 
+  @doc """
+  Retrieves tag transactions for a given transaction hash and identity ID.
+
+  This function queries the database for all tag transactions that match both
+  the provided transaction hash and identity ID.
+
+  ## Parameters
+  - `tx_hash`: The transaction hash to search for. Can be a `String.t()`,
+    `Explorer.Chain.Hash.Full.t()`, or `nil`.
+  - `identity_id`: The identity ID to search for. Can be an `integer()` or `nil`.
+
+  ## Returns
+  - A list of `Explorer.Account.TagTransaction` structs if matching records are found.
+  - `nil` if either `tx_hash` or `identity_id` is `nil`.
+  """
   @spec get_tag_transaction_by_transaction_hash_and_identity_id(String.t() | Hash.Full.t() | nil, integer() | nil) ::
           [__MODULE__.t()] | nil
   def get_tag_transaction_by_transaction_hash_and_identity_id(transaction_hash, identity_id)
@@ -172,6 +187,21 @@ defmodule Explorer.Account.TagTransaction do
 
   def get_max_tags_count, do: Application.get_env(:explorer, Explorer.Account)[:private_tags_limit]
 
+  @doc """
+  Merges transaction tags from multiple identities into a primary identity.
+
+  This function updates the `identity_id` of all transaction tags belonging to the
+  identities specified in `ids_to_merge` to the `primary_id`. It's designed to
+  be used as part of an Ecto.Multi transaction.
+
+  ## Parameters
+  - `multi`: An Ecto.Multi struct to which this operation will be added.
+  - `primary_id`: The ID of the primary identity that will own the merged keys.
+  - `ids_to_merge`: A list of identity IDs whose transaction tags will be merged.
+
+  ## Returns
+  - An updated Ecto.Multi struct with the merge operation added.
+  """
   @spec merge(Multi.t(), integer(), [integer()]) :: Multi.t()
   def merge(multi, primary_id, ids_to_merge) do
     Multi.run(multi, :merge_tag_transactions, fn repo, _ ->

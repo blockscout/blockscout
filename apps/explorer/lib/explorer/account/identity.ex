@@ -62,7 +62,17 @@ defmodule Explorer.Account.Identity do
   end
 
   @doc """
-  Populate Identity virtual fields with data from user-stored session.
+  Populates Identity virtual fields with data from user-stored session.
+
+  This function updates the virtual fields of an Identity struct with
+  information from the user's session.
+
+  ## Parameters
+  - `identity`: The Identity struct to be updated.
+  - `session`: A map containing session information.
+
+  ## Returns
+  - An updated Identity struct with populated virtual fields.
   """
   @spec put_session_info(t(), session()) :: t()
   def put_session_info(identity, %{name: name, nickname: nickname, address_hash: address_hash}) do
@@ -82,6 +92,21 @@ defmodule Explorer.Account.Identity do
     }
   end
 
+  @doc """
+  Finds an existing Identity or creates a new one based on authentication data.
+
+  This function attempts to find an Identity matching the given authentication
+  data. If not found, it creates a new Identity.
+
+  ## Parameters
+  - `auth`: An Auth struct containing authentication information.
+
+  ## Returns
+  - `{:ok, session()}`: A tuple containing the atom `:ok` and a session map if
+    the Identity is found or successfully created.
+  - `{:error, Ecto.Changeset.t()}`: A tuple containing the atom `:error` and a
+    changeset if there was an error creating the Identity.
+  """
   @spec find_or_create(Auth.t()) :: {:ok, session()} | {:error, Ecto.Changeset.t()}
   def find_or_create(%Auth{} = auth) do
     case find_identity(auth) do
@@ -132,6 +157,18 @@ defmodule Explorer.Account.Identity do
          do: {:ok, identity}
   end
 
+  @doc """
+  Finds an Identity based on authentication data or ID.
+
+  This function searches for an Identity using either authentication data or
+  an ID.
+
+  ## Parameters
+  - `auth_or_uid`: Either an Auth struct or an integer ID.
+
+  ## Returns
+  - The found Identity struct or nil if not found.
+  """
   @spec find_identity(Auth.t() | integer()) :: t() | nil
   def find_identity(auth_or_uid) do
     Repo.account_repo().one(query_identity(auth_or_uid))
@@ -145,6 +182,18 @@ defmodule Explorer.Account.Identity do
     from(i in __MODULE__, where: i.id == ^id)
   end
 
+  @doc """
+  Finds multiple Identities based on a list of user IDs.
+
+  This function retrieves multiple Identity structs that match the given list
+  of user IDs.
+
+  ## Parameters
+  - `user_ids`: A list of user ID strings.
+
+  ## Returns
+  - A list of found Identity structs.
+  """
   @spec find_identities([String.t()]) :: [t()]
   def find_identities(user_ids) do
     Repo.account_repo().all(query_identities(user_ids))
@@ -154,6 +203,19 @@ defmodule Explorer.Account.Identity do
     from(i in __MODULE__, where: i.uid_hash in ^user_ids)
   end
 
+  @doc """
+  Deletes multiple Identities as part of a Multi transaction.
+
+  This function adds a step to a Multi transaction to delete Identities with
+  the specified IDs.
+
+  ## Parameters
+  - `multi`: The Multi struct to which the delete operation will be added.
+  - `ids_to_merge`: A list of Identity IDs to be deleted.
+
+  ## Returns
+  - An updated Multi struct with the delete operation added.
+  """
   @spec delete(Multi.t(), [integer()]) :: Multi.t()
   def delete(multi, ids_to_merge) do
     Multi.run(multi, :delete_identities, fn repo, _ ->
@@ -228,6 +290,18 @@ defmodule Explorer.Account.Identity do
     end
   end
 
+  @doc """
+  Extracts the address hash from authentication data.
+
+  This function attempts to extract an Ethereum address hash from the
+  authentication data, either from user metadata or by parsing the UID.
+
+  ## Parameters
+  - `auth`: An Auth struct containing authentication information.
+
+  ## Returns
+  - A string representation of the Ethereum address hash, or nil if not found.
+  """
   @spec address_hash_from_auth(Auth.t()) :: String.t() | nil
   def address_hash_from_auth(%Auth{
         extra: %Extra{raw_info: %{user: %{"user_metadata" => %{"web3_address_hash" => address_hash}}}}

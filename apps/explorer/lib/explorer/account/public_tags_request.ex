@@ -251,6 +251,21 @@ defmodule Explorer.Account.PublicTagsRequest do
 
   def get_max_public_tags_request_count, do: @max_public_tags_request_per_account
 
+  @doc """
+  Merges public tags requests from multiple identities into a primary identity.
+
+  This function updates the `identity_id` of all public tags requests belonging to the
+  identities specified in `ids_to_merge` to the `primary_id`. It's designed to
+  be used as part of an Ecto.Multi transaction.
+
+  ## Parameters
+  - `multi`: An Ecto.Multi struct to which this operation will be added.
+  - `primary_id`: The ID of the primary identity that will own the merged keys.
+  - `ids_to_merge`: A list of identity IDs whose public tags requests will be merged.
+
+  ## Returns
+  - An updated Ecto.Multi struct with the merge operation added.
+  """
   @spec merge(Multi.t(), integer(), [integer()]) :: Multi.t()
   def merge(multi, primary_id, ids_to_merge) do
     Multi.run(multi, :merge_public_tags_requests, fn repo, _ ->

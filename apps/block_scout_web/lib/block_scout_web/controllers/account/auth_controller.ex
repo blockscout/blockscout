@@ -89,8 +89,7 @@ defmodule BlockScoutWeb.Account.AuthController do
     ConfigHelper.network_path()
   end
 
-  @spec redirect_path(String.t()) :: String.t()
-  def redirect_path(path) when is_binary(path) do
+  defp redirect_path(path) when is_binary(path) do
     case URI.parse(path) do
       %URI{path: "/" <> path} ->
         "/" <> path
@@ -103,5 +102,5 @@ defmodule BlockScoutWeb.Account.AuthController do
     end
   end
 
-  def redirect_path(_), do: root()
+  defp redirect_path(_), do: root()
 end

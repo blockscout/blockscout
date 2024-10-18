@@ -13,9 +13,22 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
 
   @redis_key "auth0"
 
+  @request_siwe_message "Request Sign in with Ethereum message via /api/account/v2/siwe_message"
+  @wrong_nonce "Wrong nonce in message"
+  @misconfiguration_detected "Misconfiguration detected, please contact support."
+  @disabled_otp_error_description "Grant type 'http://auth0.com/oauth/grant-type/passwordless/otp' not allowed for the client."
+  @users_path "/api/v2/users"
+  @json_content_type [{"Content-type", "application/json"}]
+
   @doc """
-    Function responsible for retrieving machine to machine JWT for interacting with Auth0 Management API.
-    Firstly it tries to access cached token and if there is no cached one, token will be requested from Auth0
+  Retrieves a machine-to-machine JWT for interacting with the Auth0 Management API.
+
+  This function first attempts to access a cached token. If no cached token is
+  found, it requests a new token from Auth0 and caches it for future use.
+
+  ## Returns
+  - `nil` if token retrieval fails
+  - `String.t()` containing the JWT if successful
   """
   @spec get_m2m_jwt() :: nil | String.t()
   def get_m2m_jwt do
@@ -34,9 +47,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       "grant_type" => "client_credentials"
     }
 
-    headers = [{"Content-type", "application/json"}]
-
-    case HTTPoison.post("https://#{config[:domain]}/oauth/token", Jason.encode!(body), headers, []) do
+    case HTTPoison.post("https://#{config[:domain]}/oauth/token", Jason.encode!(body), @json_content_type, []) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         case Jason.decode!(body) do
           %{"access_token" => token, "expires_in" => ttl} ->
@@ -52,7 +63,16 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   end
 
   @doc """
-    Generates key from chain_id and cookie hash for storing in Redis
+  Generates a key from chain_id and cookie hash for storing in Redis.
+
+  This function combines the chain_id (if available) with the provided hash to
+  create a unique key for Redis storage.
+
+  ## Parameters
+  - `hash`: The hash to be combined with the chain_id
+
+  ## Returns
+  - `String.t()` representing the generated key
   """
   @spec cookie_key(binary) :: String.t()
   def cookie_key(hash) do
@@ -70,6 +90,21 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     token
   end
 
+  @doc """
+  Sends a one-time password (OTP) for linking an email to an existing account.
+
+  This function checks if the email is already associated with an account before
+  sending the OTP. If the email is already in use, it returns an error.
+
+  ## Parameters
+  - `email`: The email address to send the OTP to
+  - `ip`: The IP address of the requester
+
+  ## Returns
+  - `:ok` if the OTP was sent successfully
+  - `{:error, String.t()}` error with the description
+  - `:error` if there was an unexpected error
+  """
   @spec send_otp_for_linking(String.t(), String.t()) :: :error | :ok | {:error, String.t()}
   def send_otp_for_linking(email, ip) do
     case find_users_by_email(email) do
@@ -84,6 +119,22 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     end
   end
 
+  @doc """
+  Sends a one-time password (OTP) to the specified email address.
+
+  This function checks if the email is associated with an existing user before
+  sending the OTP. If the user exists, it checks time interval and sends the OTP
+  or reports when the user can request a new OTP.
+
+  ## Parameters
+  - `email`: The email address to send the OTP to
+  - `ip`: The IP address of the requester
+
+  ## Returns
+  - `:ok` if the OTP was sent successfully
+  - `:error` if there was an unexpected error
+  - `{:interval, integer()}` if the user need to wait before sending the OTP
+  """
   @spec send_otp(String.t(), String.t()) :: :error | :ok | {:interval, integer()}
   def send_otp(email, ip) do
     case find_users_by_email(email) do
@@ -98,6 +149,22 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     end
   end
 
+  @doc """
+  Links an email to an existing user account using a one-time password (OTP).
+
+  This function verifies the OTP, creates a new identity for the email, and links
+  it to the existing user account.
+
+  ## Parameters
+  - `primary_user_id`: The ID of the existing user account
+  - `email`: The email address to be linked
+  - `otp`: The one-time password for verification
+
+  ## Returns
+  - `{:ok, Auth.t()}` if the email was successfully linked
+  - `{:error, String.t()}` error with the description
+  - `:error` if there was an unexpected error
+  """
   @spec link_email(String.t(), String.t(), String.t()) :: :error | {:ok, Auth.t()} | {:error, String.t()}
   def link_email(primary_user_id, email, otp) do
     case find_users_by_email(email) do
@@ -117,6 +184,21 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     end
   end
 
+  @doc """
+  Confirms a one-time password (OTP) and retrieves authentication information.
+
+  This function verifies the OTP for the given email and returns the
+  authentication information if successful.
+
+  ## Parameters
+  - `email`: The email address associated with the OTP
+  - `otp`: The one-time password to be confirmed
+
+  ## Returns
+  - `{:ok, Auth.t()}` if the OTP is confirmed and authentication is successful
+  - `{:error, String.t()}` error with the description
+  - `:error` if there was an unexpected error
+  """
   @spec confirm_otp_and_get_auth(String.t(), String.t()) :: :error | {:error, String.t()} | {:ok, Auth.t()}
   def confirm_otp_and_get_auth(email, otp) do
     with {:ok, token} <- confirm_otp(email, otp),
@@ -133,6 +215,19 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     end
   end
 
+  @doc """
+  Updates the session with the user's address hash.
+
+  This function checks if the session already has an address hash. If not, it
+  retrieves the user's information and adds the address hash to the session.
+
+  ## Parameters
+  - `session`: The current session map (Identity.session())
+
+  ## Returns
+  - `{:old, Identity.session()}` if the session already has an address hash
+  - `{:new, Identity.session()}` if the address hash was added to the session
+  """
   @spec update_session_with_address_hash(Identity.session()) :: {:old, Identity.session()} | {:new, Identity.session()}
   def update_session_with_address_hash(%{address_hash: _} = session), do: {:old, session}
 
@@ -147,6 +242,19 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     end
   end
 
+  @doc """
+  Generates a Sign-In with Ethereum (SIWE) message for the given address.
+
+  This function creates a SIWE message with a unique nonce, caches the nonce,
+  and returns the formatted message string.
+
+  ## Parameters
+  - `address`: The Ethereum address for which to generate the SIWE message
+
+  ## Returns
+  - `{:ok, String.t()}` containing the generated SIWE message
+  - `{:error, String.t()}` error with the description
+  """
   @spec generate_siwe_message(String.t()) :: {:ok, String.t()} | {:error, String.t()}
   def generate_siwe_message(address) do
     nonce = Siwe.generate_nonce()
@@ -172,14 +280,31 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     else
       {:cache, {:error, error}} ->
         Logger.error("Error while caching nonce: #{inspect(error)}")
-        {:error, "Misconfiguration detected, please contact support."}
+        {:error, @misconfiguration_detected}
 
       {:message, {:error, error}} ->
-        Logger.error("Error while generating Siwe Message: #{inspect(error)}")
+        Logger.error("Error while generating Sign in with Ethereum Message: #{inspect(error)}")
         {:error, error}
     end
   end
 
+  @doc """
+  Links an Ethereum address to an existing user account.
+
+  This function verifies the SIWE message and signature, checks for existing
+  users with the same address, and updates the user's account with the new
+  address.
+
+  ## Parameters
+  - `user_id`: The ID of the existing user account
+  - `message`: The SIWE message
+  - `signature`: The signature of the SIWE message
+
+  ## Returns
+  - `{:ok, Auth.t()}` if the address was successfully linked
+  - `{:error, String.t()}` error with the description
+  - `:error` if there was an unexpected error
+  """
   @spec link_address(String.t(), String.t(), String.t()) :: :error | {:error, String.t()} | {:ok, Auth.t()}
   def link_address(user_id, message, signature) do
     with {:signature, {:ok, %{nonce: nonce, address: address}}} <-
@@ -192,10 +317,10 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       {:ok, create_auth(user)}
     else
       {:nonce, {:ok, _}} ->
-        {:error, "Wrong nonce in message"}
+        {:error, @wrong_nonce}
 
       {:nonce, _} ->
-        {:error, "Request siwe message via /api/account/v2/siwe_message"}
+        {:error, @request_siwe_message}
 
       {:signature, error} ->
         error
@@ -211,6 +336,21 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     end
   end
 
+  @doc """
+  Authenticates a user using a Sign-In with Ethereum (SIWE) message and signature.
+
+  This function verifies the SIWE message and signature, finds or creates a user
+  associated with the Ethereum address, and returns the authentication information.
+
+  ## Parameters
+  - `message`: The SIWE message
+  - `signature`: The signature of the SIWE message
+
+  ## Returns
+  - `{:ok, Auth.t()}` if authentication is successful
+  - `{:error, String.t()}` error with the description
+  - `:error` if there was an unexpected error
+  """
   @spec get_auth_with_web3(String.t(), String.t()) :: :error | {:error, String.t()} | {:ok, Auth.t()}
   def get_auth_with_web3(message, signature) do
     with {:signature, {:ok, %{nonce: nonce, address: address}}} <-
@@ -222,10 +362,10 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       {:ok, create_auth(user)}
     else
       {:nonce, {:ok, _}} ->
-        {:error, "Wrong nonce in message"}
+        {:error, @wrong_nonce}
 
       {:nonce, _} ->
-        {:error, "Request siwe message via /api/account/v2/siwe_message"}
+        {:error, @request_siwe_message}
 
       {_step, error} ->
         error
@@ -268,7 +408,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       }
       |> put_client_id_and_secret()
 
-    headers = [{"Content-type", "application/json"}, {"auth0-forwarded-for", ip}]
+    headers = [{"auth0-forwarded-for", ip} | @json_content_type]
 
     case Client.post(client, "/passwordless/start", body, headers) do
       {:ok, %OAuth2.Response{status_code: 200}} ->
@@ -295,7 +435,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   defp get_user_from_token(token) do
     Logger.error("No id_token in token: #{inspect(Map.update(token, :access_token, "xxx", fn _ -> "xxx" end))}")
 
-    {:error, "Misconfiguration detected, please contact support."}
+    {:error, @misconfiguration_detected}
   end
 
   defp confirm_otp(email, otp) do
@@ -310,9 +450,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       }
       |> put_client_id_and_secret()
 
-    headers = [{"Content-type", "application/json"}]
-
-    case Client.post(client, "/oauth/token", body, headers) do
+    case Client.post(client, "/oauth/token", body, @json_content_type) do
       {:ok, %OAuth2.Response{status_code: 200, body: body}} ->
         {:ok, AccessToken.new(body)}
 
@@ -322,13 +460,12 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
          body:
            %{
              "error" => "unauthorized_client",
-             "error_description" =>
-               "Grant type 'http://auth0.com/oauth/grant-type/passwordless/otp' not allowed for the client.",
+             "error_description" => @disabled_otp_error_description,
              "error_uri" => "https://auth0.com/docs/clients/client-grant-types"
            } = body
        }} ->
         Logger.error("Need to enable OTP: #{inspect(body)}")
-        {:error, "Misconfiguration detected, please contact support."}
+        {:error, @misconfiguration_detected}
 
       {:error,
        %OAuth2.Response{
@@ -349,7 +486,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       token when is_binary(token) ->
         client = OAuth.client(token: token)
 
-        case Client.get(client, "/api/v2/users/#{URI.encode(id)}") do
+        case Client.get(client, "#{@users_path}/#{URI.encode(id)}") do
           {:ok, %OAuth2.Response{status_code: 200, body: %{"user_id" => ^id} = user}} ->
             {:ok, user}
 
@@ -368,7 +505,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       token when is_binary(token) ->
         client = OAuth.client(token: token)
 
-        case Client.get(client, "/api/v2/users", [],
+        case Client.get(client, @users_path, [],
                params: %{"q" => ~s(email:"#{email}" OR user_metadata.email:"#{email}")}
              ) do
           {:ok, %OAuth2.Response{status_code: 200, body: users}} when is_list(users) ->
@@ -376,7 +513,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
 
           {:error, %OAuth2.Response{status_code: 403, body: %{"errorCode" => "insufficient_scope"} = body}} ->
             Logger.error(["Failed to get web3 user. Insufficient scope: ", inspect(body)])
-            {:error, "Misconfiguration detected, please contact support."}
+            {:error, @misconfiguration_detected}
 
           other ->
             Logger.error(["Error while getting web3 user: ", inspect(other)])
@@ -385,7 +522,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
 
       nil ->
         Logger.error("Failed to get M2M JWT")
-        {:error, "Misconfiguration detected, please contact support."}
+        {:error, @misconfiguration_detected}
     end
   end
 
@@ -394,9 +531,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       token when is_binary(token) ->
         client = OAuth.client(token: token)
 
-        case Client.get(client, "/api/v2/users", [],
-               params: %{"q" => ~s(email:"#{email}" AND NOT user_id:"#{user_id}")}
-             ) do
+        case Client.get(client, @users_path, [], params: %{"q" => ~s(email:"#{email}" AND NOT user_id:"#{user_id}")}) do
           {:ok, %OAuth2.Response{status_code: 200, body: []}} ->
             {:ok, create_auth(user)}
 
@@ -410,7 +545,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
 
           {:error, %OAuth2.Response{status_code: 403, body: %{"errorCode" => "insufficient_scope"} = body}} ->
             Logger.error(["Failed to get web3 user. Insufficient scope: ", inspect(body)])
-            {:error, "Misconfiguration detected, please contact support."}
+            {:error, @misconfiguration_detected}
 
           other ->
             Logger.error(["Error while getting web3 user: ", inspect(other)])
@@ -419,7 +554,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
 
       nil ->
         Logger.error("Failed to get M2M JWT")
-        {:error, "Misconfiguration detected, please contact support."}
+        {:error, @misconfiguration_detected}
     end
   end
 
@@ -495,9 +630,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     with token when is_binary(token) <- get_m2m_jwt(),
          client = OAuth.client(token: token),
          body = %{"email_verified" => true},
-         headers = [{"Content-type", "application/json"}],
          {:ok, %OAuth2.Response{status_code: 200, body: _user}} <-
-           Client.patch(client, "/api/v2/users/#{URI.encode(user_id)}", body, headers) do
+           Client.patch(client, "#{@users_path}/#{URI.encode(user_id)}", body, @json_content_type) do
       :ok
     else
       error -> handle_common_errors(error, "Failed to patch email_verified to true")
@@ -538,7 +672,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
          {:ok, %OAuth2.Response{status_code: 200, body: users}} when is_list(users) <-
            Client.get(
              client,
-             "/api/v2/users",
+             @users_path,
              [],
              params: %{
                "q" =>
@@ -555,9 +689,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     with token when is_binary(token) <- get_m2m_jwt(),
          client = OAuth.client(token: token),
          body = %{"user_metadata" => %{"email" => email}},
-         headers = [{"Content-type", "application/json"}],
          {:ok, %OAuth2.Response{status_code: 200, body: user}} <-
-           Client.patch(client, "/api/v2/users/#{URI.encode(user_id)}", body, headers) do
+           Client.patch(client, "#{@users_path}/#{URI.encode(user_id)}", body, @json_content_type) do
       {:ok, user}
     else
       error -> handle_common_errors(error, "Failed to update user email")
@@ -568,9 +701,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     with token when is_binary(token) <- get_m2m_jwt(),
          client = OAuth.client(token: token),
          body = %{"user_metadata" => %{"web3_address_hash" => address}},
-         headers = [{"Content-type", "application/json"}],
          {:ok, %OAuth2.Response{status_code: 200, body: user}} <-
-           Client.patch(client, "/api/v2/users/#{URI.encode(user_id)}", body, headers) do
+           Client.patch(client, "#{@users_path}/#{URI.encode(user_id)}", body, @json_content_type) do
       {:ok, user}
     else
       error -> handle_common_errors(error, "Failed to update user address")
@@ -587,9 +719,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
            connection: "Username-Password-Authentication",
            user_metadata: %{web3_address_hash: address}
          },
-         headers = [{"Content-type", "application/json"}],
          {:ok, %OAuth2.Response{status_code: 201, body: user}} <-
-           Client.post(client, "/api/v2/users", body, headers) do
+           Client.post(client, @users_path, body, @json_content_type) do
       {:ok, user}
     else
       {:error,
@@ -606,7 +737,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
           inspect(body)
         ])
 
-        {:error, "Misconfiguration detected, please contact support."}
+        {:error, @misconfiguration_detected}
 
       error ->
         handle_common_errors(error, "Failed to create web3 user")
@@ -620,9 +751,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
            provider: provider,
            user_id: secondary_identity_id
          },
-         headers = [{"Content-type", "application/json"}],
          {:ok, %OAuth2.Response{status_code: 201}} <-
-           Client.post(client, "/api/v2/users/#{URI.encode(primary_user_id)}/identities", body, headers) do
+           Client.post(client, "#{@users_path}/#{URI.encode(primary_user_id)}/identities", body, @json_content_type) do
       :ok
     else
       error -> handle_common_errors(error, "Failed to link accounts")
@@ -658,11 +788,11 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     case error do
       nil ->
         Logger.error("Failed to get M2M JWT")
-        {:error, "Misconfiguration detected, please contact support."}
+        {:error, @misconfiguration_detected}
 
       {:error, %OAuth2.Response{status_code: 403, body: %{"errorCode" => "insufficient_scope"} = body}} ->
         Logger.error(["#{error_msg}. Insufficient scope: ", inspect(body)])
-        {:error, "Misconfiguration detected, please contact support."}
+        {:error, @misconfiguration_detected}
 
       other ->
         Logger.error(["#{error_msg}: ", inspect(other)])

@@ -5412,6 +5412,22 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Retrieves the ID of a WatchlistAddress entry for a given watchlist and address.
+
+  This function queries the WatchlistAddress table to find an entry that matches
+  both the provided watchlist ID and address hash. It returns the ID of the first
+  matching entry, if found.
+
+  ## Parameters
+  - `watchlist_id`: The ID of the watchlist to search within.
+  - `address_hash`: The address hash to look for, as a `Hash.Address.t()` struct.
+
+  ## Returns
+  - An integer representing the ID of the matching WatchlistAddress entry, if found.
+  - `nil` if no matching entry is found or if either input is `nil`.
+  """
+  @spec select_watchlist_address_id(integer() | nil, Hash.Address.t() | nil) :: integer() | nil
   def select_watchlist_address_id(watchlist_id, address_hash)
       when not is_nil(watchlist_id) and not is_nil(address_hash) do
     wa_ids =

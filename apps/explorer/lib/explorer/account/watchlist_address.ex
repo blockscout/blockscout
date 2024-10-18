@@ -211,6 +211,37 @@ defmodule Explorer.Account.WatchlistAddress do
 
   def preload_address_fetched_coin_balance(watchlist), do: watchlist
 
+  @doc """
+  Merges watchlist addresses into a primary watchlist.
+
+  This function is used to merge multiple watchlists into a single primary watchlist. It updates
+  the `watchlist_id` of all addresses belonging to the watchlists being merged to point to the
+  primary watchlist.
+
+  ## Parameters
+
+    * `multi` - An `Ecto.Multi` struct representing the current multi-operation transaction.
+
+  ## Returns
+
+  Returns an updated `Ecto.Multi` struct with an additional `:merge_watchlist_addresses` operation.
+
+  ## Operation Details
+
+  The function adds a `:merge_watchlist_addresses` operation to the `Ecto.Multi` struct. This operation:
+
+  1. Identifies the primary watchlist and the watchlists to be merged from the results of previous operations.
+  2. Updates all watchlist addresses associated with the watchlists being merged:
+     - Sets their `watchlist_id` to the ID of the primary watchlist.
+     - Sets their `user_created` flag to `false`.
+
+  ## Notes
+
+  - This function assumes that the `Explorer.Account.Watchlist.acquire_for_merge/3` function has been called previously in the
+    `Ecto.Multi` chain to provide the necessary data for the merge operation.
+  - After this operation, all addresses from the merged watchlists will be associated with the
+    primary watchlist, and their `user_created` status will be set to `false`.
+  """
   @spec merge(Multi.t()) :: Multi.t()
   def merge(multi) do
     multi

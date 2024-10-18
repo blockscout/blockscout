@@ -179,6 +179,21 @@ defmodule Explorer.Account.TagAddress do
 
   def get_max_tags_count, do: Application.get_env(:explorer, Explorer.Account)[:private_tags_limit]
 
+  @doc """
+  Merges address tags from multiple identities into a primary identity.
+
+  This function updates the `identity_id` of all address tags belonging to the
+  identities specified in `ids_to_merge` to the `primary_id`. It's designed to
+  be used as part of an Ecto.Multi transaction.
+
+  ## Parameters
+  - `multi`: An Ecto.Multi struct to which this operation will be added.
+  - `primary_id`: The ID of the primary identity that will own the merged keys.
+  - `ids_to_merge`: A list of identity IDs whose address tags will be merged.
+
+  ## Returns
+  - An updated Ecto.Multi struct with the merge operation added.
+  """
   @spec merge(Multi.t(), integer(), [integer()]) :: Multi.t()
   def merge(multi, primary_id, ids_to_merge) do
     Multi.run(multi, :merge_tag_addresses, fn repo, _ ->

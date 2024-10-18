@@ -5,6 +5,19 @@ defmodule BlockScoutWeb.CaptchaHelper do
 
   alias Explorer.Helper
 
+  @doc """
+  Verifies if the CAPTCHA challenge has been passed based on the provided parameters.
+
+  This function handles both reCAPTCHA v3 and v2 responses, as well as cases where
+  CAPTCHA is disabled.
+
+  ## Parameters
+  - `params`: A map containing CAPTCHA response parameters or nil.
+
+  ## Returns
+  - `true` if the CAPTCHA challenge is passed or disabled.
+  - `false` if the CAPTCHA challenge fails or an error occurs during verification.
+  """
   @spec recaptcha_passed?(%{String.t() => String.t()} | nil) :: bool
   def recaptcha_passed?(%{"recaptcha_v3_response" => recaptcha_response}) do
     re_captcha_v3_secret_key = Application.get_env(:block_scout_web, :recaptcha)[:v3_secret_key]
@@ -18,7 +31,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
 
   def recaptcha_passed?(_), do: Application.get_env(:block_scout_web, :recaptcha)[:is_disabled]
 
-  def do_recaptcha_passed?(recaptcha_secret_key, recaptcha_response) do
+  defp do_recaptcha_passed?(recaptcha_secret_key, recaptcha_response) do
     body = "secret=#{recaptcha_secret_key}&response=#{recaptcha_response}"
 
     headers = [{"Content-type", "application/x-www-form-urlencoded"}]

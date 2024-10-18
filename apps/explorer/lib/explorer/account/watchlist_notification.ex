@@ -97,6 +97,39 @@ defmodule Explorer.Account.WatchlistNotification do
     Application.get_env(:explorer, Explorer.Account)[:notifications_limit_for_30_days]
   end
 
+  @doc """
+  Merges watchlist notifications into a primary watchlist.
+
+  This function is used to merge notifications from multiple watchlists into a single primary watchlist.
+  It updates the `watchlist_id` of all notifications belonging to the watchlists being merged to point
+  to the primary watchlist.
+
+  ## Parameters
+
+    * `multi` - An `Ecto.Multi` struct representing the current multi-operation transaction.
+
+  ## Returns
+
+  Returns an updated `Ecto.Multi` struct with an additional `:merge_watchlist_notifications` operation.
+
+  ## Operation Details
+
+  The function adds a `:merge_watchlist_notifications` operation to the `Ecto.Multi` struct. This operation:
+
+  1. Identifies the primary watchlist and the watchlists to be merged from the results of previous operations.
+  2. Updates all notifications associated with the watchlists being merged:
+     - Sets their `watchlist_id` to the ID of the primary watchlist.
+
+
+  ## Notes
+
+  - This function assumes that the `Explorer.Account.Watchlist.acquire_for_merge/3` function has been called previously in the
+    `Ecto.Multi` chain to provide the necessary data for the merge operation.
+  - After this operation, all notifications from the merged watchlists will be associated with the
+    primary watchlist.
+  - This function is typically used as part of a larger watchlist merging process, which may include
+    merging other related data such as watchlist addresses.
+  """
   @spec merge(Multi.t()) :: Multi.t()
   def merge(multi) do
     multi
