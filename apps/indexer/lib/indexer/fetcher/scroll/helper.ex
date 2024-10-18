@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.Scroll do
+defmodule Indexer.Fetcher.Scroll.Helper do
   @moduledoc """
-    A module to define common Scroll configuration parameters.
+    A module to define common Scroll indexer functions.
   """
 
   @doc """

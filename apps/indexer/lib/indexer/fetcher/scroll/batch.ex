@@ -26,7 +26,8 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Chain.Scroll.{Batch, BatchBundle, Reader}
   alias Explorer.{Chain, Repo}
-  alias Indexer.Fetcher.{RollupL1ReorgMonitor, Scroll}
+  alias Indexer.Fetcher.RollupL1ReorgMonitor
+  alias Indexer.Fetcher.Scroll.Helper, as: ScrollHelper
   alias Indexer.Helper
 
   # 32-byte signature of the event CommitBatch(uint256 indexed batchIndex, bytes32 indexed batchHash)
@@ -248,7 +249,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   """
   @spec l1_rpc_url() :: binary() | nil
   def l1_rpc_url do
-    Scroll.l1_rpc_url()
+    ScrollHelper.l1_rpc_url()
   end
 
   @doc """
