@@ -37,7 +37,11 @@ if Application.compile_env(:explorer, :chain_type) == :filecoin do
       })
     end
 
-    @spec preload_and_put_filecoin_robust_address(map(), map()) :: map()
+    @spec preload_and_put_filecoin_robust_address(map(), %{
+            address_hash: String.t() | nil,
+            field_prefix: String.t() | nil
+          }) ::
+            map()
     def preload_and_put_filecoin_robust_address(result, %{address_hash: address_hash} = params)
         when not is_nil(address_hash) do
       case Address.get(address_hash, @api_true) do
@@ -64,7 +68,11 @@ if Application.compile_env(:explorer, :chain_type) == :filecoin do
 
     The updated result with the Filecoin robust address added.
     """
-    @spec put_filecoin_robust_address(map(), map()) :: map()
+    @spec put_filecoin_robust_address(map(), %{
+            required(:address) => Address.t(),
+            required(:field_prefix) => String.t() | nil,
+            optional(any) => any
+          }) :: map()
     def put_filecoin_robust_address(result, %{
           address: %Address{filecoin_robust: filecoin_robust},
           field_prefix: field_prefix
