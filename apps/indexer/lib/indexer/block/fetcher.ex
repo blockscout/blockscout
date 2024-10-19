@@ -759,13 +759,13 @@ defmodule Indexer.Block.Fetcher do
   defp maybe_set_new_log_index(logs) do
     logs
     |> Enum.group_by(& &1.block_hash)
-    |> Enum.map(fn {block_hash, logs} ->
-      if logs |> Enum.frequencies_by(& &1.index) |> Map.values() |> Enum.max() == 1 do
-        logs
+    |> Enum.map(fn {block_hash, logs_per_block} ->
+      if logs_per_block |> Enum.frequencies_by(& &1.index) |> Map.values() |> Enum.max() == 1 do
+        logs_per_block
       else
         Logger.error("Found logs with same index within one block: #{block_hash}")
 
-        logs
+        logs_per_block
         |> Enum.sort_by(&{&1.transaction_index, &1.index, &1.transaction_hash})
         # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         |> Enum.map_reduce(0, fn log, index ->

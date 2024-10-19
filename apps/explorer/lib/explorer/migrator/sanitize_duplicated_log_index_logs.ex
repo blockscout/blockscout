@@ -1,8 +1,7 @@
 defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
   @moduledoc """
-  Module responsible for sanitizing duplicated log index logs in the database.
-
-  The migration process involves identifying and updating duplicated log index logs, updating the corresponding token transfers and token instances.
+  This module is responsible for sanitizing duplicate log index entries in the database.
+  The migration process includes identifying duplicate log indexes and updating the related token transfers and token instances accordingly.
   """
 
   use Explorer.Migrator.FillingMigration
@@ -18,27 +17,6 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
   require Logger
 
   @migration_name "sanitize_duplicated_log_index_logs"
-
-  def init(_) do
-    """
-    CREATE TYPE log_id AS (
-      tx_hash bytea,
-      block_hash bytea,
-      log_index integer
-    );
-    """
-    |> Repo.query!([], timeout: :infinity)
-
-    """
-    CREATE TYPE nft_id AS (
-      block_number bigint,
-      log_index integer
-    );
-    """
-    |> Repo.query!([], timeout: :infinity)
-
-    {:ok, %{}, {:continue, :ok}}
-  end
 
   @impl FillingMigration
   def migration_name, do: @migration_name
@@ -105,8 +83,8 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
       end)
 
     prepared_ids =
-      Enum.map(ids, fn {tx_hash, block_hash, log_index} ->
-        {tx_hash.bytes, block_hash.bytes, log_index}
+      Enum.map(ids, fn {transaction_hash, block_hash, log_index} ->
+        {transaction_hash.bytes, block_hash.bytes, log_index}
       end)
 
     Repo.transaction(fn ->
@@ -238,11 +216,45 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
     {token_transfer.transaction_hash, token_transfer.block_hash, token_transfer.log_index}
   end
 
+  @doc """
+  Callback function that is executed before the migration process starts.
+  """
   @impl FillingMigration
+  def before_start do
+    """
+    DO $$
+    BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'log_id') THEN
+      CREATE TYPE log_id AS (
+      transaction_hash bytea,
+      block_hash bytea,
+      log_index integer
+    );
+    END IF;
+    END$$;
+    """
+    |> Repo.query!()
+
+    """
+    DO $$
+    BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'nft_id') THEN
+      CREATE TYPE nft_id AS (
+      block_number bigint,
+      log_index integer
+    );
+    END IF;
+    END$$;
+    """
+    |> Repo.query!()
+
+    :ok
+  end
 
   @doc """
   Callback function that is executed when the migration process finishes.
   """
+  @impl FillingMigration
   def on_finish do
     """
     DROP TYPE log_id;

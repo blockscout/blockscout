@@ -9,6 +9,7 @@ defmodule Explorer.Migrator.FillingMigration do
   @callback update_batch([any()]) :: any()
   @callback update_cache :: any()
   @callback on_finish :: any()
+  @callback before_start :: any()
 
   defmacro __using__(_opts) do
     quote do
@@ -45,6 +46,7 @@ defmodule Explorer.Migrator.FillingMigration do
 
           migration_status ->
             MigrationStatus.set_status(migration_name(), "started")
+            before_start()
             schedule_batch_migration()
             {:noreply, (migration_status && migration_status.meta) || %{}}
         end
@@ -93,7 +95,11 @@ defmodule Explorer.Migrator.FillingMigration do
         :ignore
       end
 
-      defoverridable init: 1, on_finish: 0
+      def before_start do
+        :ignore
+      end
+
+      defoverridable on_finish: 0, before_start: 0
     end
   end
 end
