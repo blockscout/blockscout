@@ -75,6 +75,14 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :arbitrum_confirmation_transaction => :optional
       }
 
+    :zilliqa ->
+      @chain_type_transaction_necessity_by_association %{}
+      @chain_type_block_necessity_by_association %{
+        :zilliqa_quorum_certificate => :optional,
+        :zilliqa_aggregate_quorum_certificate => :optional,
+        [zilliqa_aggregate_quorum_certificate: [:nested_quorum_certificates]] => :optional
+      }
+
     _ ->
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{}
