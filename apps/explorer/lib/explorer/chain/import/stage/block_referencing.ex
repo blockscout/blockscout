@@ -16,7 +16,7 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
       Runner.Tokens,
       Runner.TokenInstances,
       Runner.TransactionActions,
-      Runner.Withdrawals
+      Runner.Withdrawals,
       Runner.SignedAuthorizations
     ]
   end
