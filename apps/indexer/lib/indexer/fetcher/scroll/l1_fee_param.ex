@@ -7,7 +7,13 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     parameters). These points and values are then used by API to correctly display L1 fee
     parameters of L2 transaction (such as `overhead`, `scalar`, etc.)
 
-    Example:
+    This fetcher handles the events that were not handled by the realtime block fetcher
+    (namely `Indexer.Transform.Scroll.L1FeeParams` module). There are three possible cases when it happens:
+    1. A Blockscout instance is deployed for a chain that already has blocks.
+    2. A Blockscout instance is upgraded, and the functionality to discover fee parameter changes only becomes available after the upgrade.
+    3. The block fetcher process (or entire instance) was halted for some time.
+
+    Example of the parameter value change:
 
     Let's assume that the `scalar` parameter is initially set to 100. An owner decided
     to change it to 200. It initiates a transaction that is included into block number 800
