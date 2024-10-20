@@ -1090,8 +1090,7 @@ config :indexer, Indexer.Fetcher.Scroll,
   eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_ETH_GET_LOGS_RANGE_SIZE", 250),
   rpc: System.get_env("INDEXER_SCROLL_L1_RPC")
 
-config :indexer, Indexer.Fetcher.Scroll.L1FeeParam,
-  gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
+config :indexer, Indexer.Fetcher.Scroll.L1FeeParam, gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
 
 config :explorer, Explorer.Chain.Scroll.L1FeeParam,
   curie_upgrade_block: ConfigHelper.parse_integer_env_var("SCROLL_L2_CURIE_UPGRADE_BLOCK", 0),
