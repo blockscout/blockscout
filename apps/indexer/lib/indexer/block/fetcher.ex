@@ -767,11 +767,7 @@ defmodule Indexer.Block.Fetcher do
 
         logs_per_block
         |> Enum.sort_by(&{&1.transaction_index, &1.index, &1.transaction_hash})
-        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-        |> Enum.map_reduce(0, fn log, index ->
-          {%{log | index: index}, index + 1}
-        end)
-        |> elem(0)
+        |> Enum.with_index(&%{&1 | index: &2})
       end
     end)
     |> List.flatten()
