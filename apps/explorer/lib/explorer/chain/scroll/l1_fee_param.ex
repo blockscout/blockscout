@@ -106,11 +106,13 @@ defmodule Explorer.Chain.Scroll.L1FeeParam do
 
     ## Returns
     - The last L2 block number.
-    - Decimal.new(0) if this is the first launch of the module.
+    - Zero if this is the first launch of the module.
   """
-  @spec last_l2_block_number() :: Decimal.t()
+  @spec last_l2_block_number() :: non_neg_integer()
   def last_l2_block_number do
-    get_last_fetched_counter(@counter_type)
+    @counter_type
+    |> get_last_fetched_counter()
+    |> Decimal.to_integer()
   end
 
   @doc """

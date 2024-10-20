@@ -108,7 +108,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
 
       {:noreply,
        %{
-         start_block: min(Decimal.to_integer(Decimal.add(last_l2_block_number, 1)), safe_block),
+         start_block: min(last_l2_block_number + 1, safe_block),
          safe_block: safe_block,
          safe_block_is_latest: safe_block_is_latest,
          gas_oracle: env[:gas_oracle],
@@ -182,7 +182,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   def handle_l2_reorg(starting_block) do
     Repo.delete_all(from(p in ScrollL1FeeParam, where: p.block_number >= ^starting_block))
 
-    if not Decimal.lt?(ScrollL1FeeParam.last_l2_block_number(), Decimal.new(starting_block)) do
+    if ScrollL1FeeParam.last_l2_block_number() >= starting_block do
       ScrollL1FeeParam.set_last_l2_block_number(starting_block - 1)
     end
   end
