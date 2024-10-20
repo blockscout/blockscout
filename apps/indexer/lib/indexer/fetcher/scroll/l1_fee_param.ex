@@ -297,6 +297,8 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   # into `scroll_l1_fee_params` database table for the given L2 block range.
   #
   # The scanning process starts from the `block_start` and ends with the `block_end`.
+  # The `block_end` block number is stored in the `last_fetched_counters` database table
+  # to be able to start from that point at the next launch of the fetcher.
   #
   # ## Parameters
   # - `gas_oracle`: The L1 Gas Oracle contract address.
