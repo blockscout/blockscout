@@ -14,23 +14,11 @@ if Application.compile_env(:explorer, :chain_type) == :filecoin do
     Filecoin native addressing.
     """
     @spec extend_address_json_response(map(), Address.t()) :: map()
-    def extend_address_json_response(result, %Address{} = address) do
-      filecoin_id = Map.get(address, :filecoin_id)
-      filecoin_robust = Map.get(address, :filecoin_robust)
-      filecoin_actor_type = Map.get(address, :filecoin_actor_type)
-
-      is_fetched =
-        Enum.all?(
-          [
-            filecoin_id,
-            filecoin_robust,
-            filecoin_actor_type
-          ],
-          &(not is_nil(&1))
-        )
-
+    def extend_address_json_response(
+          result,
+          %Address{filecoin_id: filecoin_id, filecoin_robust: filecoin_robust, filecoin_actor_type: filecoin_actor_type}
+        ) do
       Map.put(result, :filecoin, %{
-        is_fetched: is_fetched,
         id: filecoin_id,
         robust: filecoin_robust,
         actor_type: filecoin_actor_type
@@ -42,16 +30,10 @@ if Application.compile_env(:explorer, :chain_type) == :filecoin do
             field_prefix: String.t() | nil
           }) ::
             map()
-    def preload_and_put_filecoin_robust_address(result, %{address_hash: address_hash} = params)
-        when not is_nil(address_hash) do
-      case Address.get(address_hash, @api_true) do
-        nil -> result
-        address -> put_filecoin_robust_address(result, Map.put(params, :address, address))
-      end
-    end
+    def preload_and_put_filecoin_robust_address(result, %{address_hash: address_hash} = params) do
+      address = address_hash && Address.get(address_hash, @api_true)
 
-    def preload_and_put_filecoin_robust_address(result, _params) do
-      result
+      put_filecoin_robust_address(result, Map.put(params, :address, address))
     end
 
     @doc """
@@ -77,12 +59,16 @@ if Application.compile_env(:explorer, :chain_type) == :filecoin do
           address: %Address{filecoin_robust: filecoin_robust},
           field_prefix: field_prefix
         }) do
-      field_name = (field_prefix && "#{field_prefix}_filecoin_robust_address") || "filecoin_robust_address"
-      Map.put(result, field_name, filecoin_robust)
+      put_filecoin_robust_address_internal(result, filecoin_robust, field_prefix)
     end
 
-    def put_filecoin_robust_address(result, _) do
-      result
+    def put_filecoin_robust_address(result, %{field_prefix: field_prefix}) do
+      put_filecoin_robust_address_internal(result, nil, field_prefix)
+    end
+
+    defp put_filecoin_robust_address_internal(result, filecoin_robust, field_prefix) do
+      field_name = (field_prefix && "#{field_prefix}_filecoin_robust_address") || "filecoin_robust_address"
+      Map.put(result, field_name, filecoin_robust)
     end
 
     @doc """
@@ -109,7 +95,7 @@ if Application.compile_env(:explorer, :chain_type) == :filecoin do
       |> Enum.map(fn
         %{"address" => address_hash} = result when not is_nil(address_hash) ->
           address = addresses_map[String.downcase(address_hash)] |> List.first()
-          Map.put(result, "filecoin_robust_address", address && address.filecoin_robust)
+          put_filecoin_robust_address(result, %{address: address, field_prefix: nil})
 
         other ->
           other
