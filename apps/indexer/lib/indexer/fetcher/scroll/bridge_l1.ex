@@ -3,6 +3,9 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
   The module for scanning Scroll RPC node on L1 for the message logs (events), parsing them,
   and importing to the database (scroll_bridge table).
 
+  The events discovery logic is located in the `Indexer.Fetcher.Scroll.Bridge` module whereas this module
+  only prepares required parameters for the discovery loop.
+
   The main function splits the whole block range by chunks and scans L1 Scroll Messenger contract
   for the message logs (events) for each chunk. The found events are handled and then imported to the
   `scroll_bridge` database table.
