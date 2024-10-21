@@ -7,7 +7,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
 
   require Logger
 
-  alias EthereumJSONRPC.Utility.EndpointAvailabilityChecker
+  alias EthereumJSONRPC.Utility.{CommonHelper, EndpointAvailabilityChecker}
 
   @max_error_count 3
   @window_duration 3
@@ -31,6 +31,10 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
     GenServer.call(__MODULE__, {:check_endpoint, url, url_type})
   end
 
+  def filter_unavailable_urls(urls, url_type) do
+    GenServer.call(__MODULE__, {:filter_unavailable_urls, urls, url_type})
+  end
+
   def maybe_replace_url(url, replace_url, url_type) do
     case check_endpoint(url, url_type) do
       :ok -> url
@@ -38,14 +42,29 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
     end
   end
 
-  def enable_endpoint(url, url_type) do
-    GenServer.cast(__MODULE__, {:enable_endpoint, url, url_type})
+  def maybe_replace_urls(urls, replace_urls, url_type) do
+    case filter_unavailable_urls(urls, url_type) do
+      [] -> replace_urls || urls || []
+      available_urls -> available_urls
+    end
+  end
+
+  def enable_endpoint(url, url_type, json_rpc_named_arguments) do
+    GenServer.cast(__MODULE__, {:enable_endpoint, url, url_type, json_rpc_named_arguments})
   end
 
   def handle_call({:check_endpoint, url, url_type}, _from, %{unavailable_endpoints: unavailable_endpoints} = state) do
     result = if url in unavailable_endpoints[url_type], do: :unavailable, else: :ok
 
     {:reply, result, state}
+  end
+
+  def handle_call(
+        {:filter_unavailable_urls, urls, url_type},
+        _from,
+        %{unavailable_endpoints: unavailable_endpoints} = state
+      ) do
+    {:reply, do_filter_unavailable_urls(urls, unavailable_endpoints[url_type]), state}
   end
 
   def handle_cast({:inc_error_count, url, json_rpc_named_arguments, url_type}, state) do
@@ -57,7 +76,12 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
     {:noreply, new_state}
   end
 
-  def handle_cast({:enable_endpoint, url, url_type}, %{unavailable_endpoints: unavailable_endpoints} = state) do
+  def handle_cast(
+        {:enable_endpoint, url, url_type, json_rpc_named_arguments},
+        %{unavailable_endpoints: unavailable_endpoints} = state
+      ) do
+    log_url_available(url, url_type, unavailable_endpoints, json_rpc_named_arguments)
+
     {:noreply,
      %{state | unavailable_endpoints: %{unavailable_endpoints | url_type => unavailable_endpoints[url_type] -- [url]}}}
   end
@@ -81,6 +105,10 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
     end
   end
 
+  defp do_filter_unavailable_urls(urls, unavailable_urls) do
+    Enum.reject(urls || [], fn url -> url in unavailable_urls end)
+  end
+
   defp do_increase_error_counts(url, json_rpc_named_arguments, url_type, %{error_counts: error_counts} = state) do
     current_count = error_counts[url][url_type][:count]
     unavailable_endpoints = state.unavailable_endpoints[url_type]
@@ -98,7 +126,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
           url_type
         )
 
-        log_url_unavailable(url, url_type, json_rpc_named_arguments)
+        log_url_unavailable(url, url_type, unavailable_endpoints, json_rpc_named_arguments)
 
         %{
           state
@@ -114,20 +142,49 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
     end
   end
 
-  defp log_url_unavailable(url, url_type, json_rpc_named_arguments) do
+  defp log_url_unavailable(url, :ws, _unavailable_endpoints, _json_rpc_named_arguments) do
+    Logger.warning("URL #{inspect(url)} is unavailable")
+  end
+
+  defp log_url_unavailable(url, url_type, unavailable_endpoints, json_rpc_named_arguments) do
+    available_urls =
+      url_type
+      |> available_urls(unavailable_endpoints, json_rpc_named_arguments)
+      |> Kernel.--([url])
+
     fallback_url_message =
-      if fallback_url_set?(url_type, json_rpc_named_arguments),
-        do: "switching to fallback #{url_type} url",
-        else: "and no fallback is set"
+      case {available_urls, fallback_url_set?(url_type, json_rpc_named_arguments)} do
+        {[], true} -> "and there is no other #{url_type} url available, switching to fallback #{url_type} url"
+        {[], false} -> "there is no other #{url_type} url available, and no fallback is set"
+        _ -> "switching to another #{url_type} url"
+      end
 
     Logger.warning("URL #{inspect(url)} is unavailable, #{fallback_url_message}")
   end
 
-  def fallback_url_set?(url_type, json_rpc_named_arguments) do
+  defp log_url_available(url, url_type, unavailable_endpoints, json_rpc_named_arguments) do
+    available_urls = available_urls(url_type, unavailable_endpoints, json_rpc_named_arguments)
+
+    message_extra =
+      case {available_urls, fallback_url_set?(url_type, json_rpc_named_arguments)} do
+        {[], true} -> ", switching back from fallback urls"
+        _ -> ""
+      end
+
+    Logger.info("URL #{inspect(url)} of #{url_type} type is available now#{message_extra}")
+  end
+
+  defp available_urls(url_type, unavailable_endpoints, json_rpc_named_arguments) do
+    url_type
+    |> CommonHelper.url_type_to_urls(json_rpc_named_arguments[:transport_options])
+    |> do_filter_unavailable_urls(unavailable_endpoints)
+  end
+
+  defp fallback_url_set?(url_type, json_rpc_named_arguments) do
     case url_type do
-      :http -> not is_nil(json_rpc_named_arguments[:transport_options][:fallback_url])
-      :trace -> not is_nil(json_rpc_named_arguments[:transport_options][:fallback_trace_url])
-      :eth_call -> not is_nil(json_rpc_named_arguments[:transport_options][:fallback_eth_call_url])
+      :http -> not is_nil(json_rpc_named_arguments[:transport_options][:fallback_urls])
+      :trace -> not is_nil(json_rpc_named_arguments[:transport_options][:fallback_trace_urls])
+      :eth_call -> not is_nil(json_rpc_named_arguments[:transport_options][:fallback_eth_call_urls])
       _ -> false
     end
   end
