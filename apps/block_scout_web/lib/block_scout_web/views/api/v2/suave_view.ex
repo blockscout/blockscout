@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
       wrapped_max_fee_per_gas = Map.get(transaction, :wrapped_max_fee_per_gas)
       wrapped_value = Map.get(transaction, :wrapped_value)
 
-      {[wrapped_decoded_input], _, _} =
+      [wrapped_decoded_input] =
         Transaction.decode_transactions(
           [
             %Transaction{
