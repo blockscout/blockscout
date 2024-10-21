@@ -348,6 +348,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
 
         chunk_l2_block_numbers =
           Enum.map(Range.new(0, chunk_length - 1, 1), fn i ->
+            # chunk format is described here: https://github.com/scroll-tech/scroll-contracts/blob/main/src/libraries/codec/ChunkCodecV1.sol
             chunk_data
             |> :binary.part(i * 60, 8)
             |> :binary.decode_unsigned()
