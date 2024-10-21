@@ -194,12 +194,12 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         if chunk_start <= chunk_end do
           Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
 
-          {batches, bundles} =
+          {batches, bundles, start_by_final_batch_number} =
             {chunk_start, chunk_end}
             |> get_logs_all(scroll_chain_contract, json_rpc_named_arguments)
             |> prepare_items(json_rpc_named_arguments)
 
-          import_items(batches, bundles)
+          import_items(batches, bundles, start_by_final_batch_number)
 
           Helper.log_blocks_chunk_handling(
             chunk_start,
@@ -360,16 +360,10 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     l2_block_range
   end
 
-  defp import_items(batches, bundles) do
-    start_by_final_batch_number =
-      bundles
-      |> Enum.reduce(%{}, fn bundle, acc ->
-        Map.put(acc, bundle.final_batch_number, bundle.start_batch_number)
-      end)
-
+  defp import_items(batches, bundles, start_by_final_batch_number) do
     {:ok, inserts} =
       Chain.import(%{
-        scroll_batch_bundles: %{params: Enum.map(bundles, &Map.delete(&1, :start_batch_number))},
+        scroll_batch_bundles: %{params: bundles},
         scroll_batches: %{params: batches},
         timeout: :infinity
       })
@@ -411,10 +405,11 @@ defmodule Indexer.Fetcher.Scroll.Batch do
 
     prev_final_batch_number = Reader.last_final_batch_number()
 
-    {_, batches, bundles} =
+    {_, batches, bundles, start_by_final_batch_number} =
       events
-      |> Enum.reduce({prev_final_batch_number, [], []}, fn event,
-                                                           {prev_final_batch_number_acc, batches_acc, bundles_acc} ->
+      |> Enum.reduce({prev_final_batch_number, [], [], %{}}, fn event,
+                                                                {prev_final_batch_number_acc, batches_acc, bundles_acc,
+                                                                 start_by_final_batch_number_acc} ->
         batch_number = quantity_to_integer(event.second_topic)
 
         if event.first_topic == @commit_batch_event do
@@ -442,13 +437,12 @@ defmodule Indexer.Fetcher.Scroll.Batch do
             | batches_acc
           ]
 
-          {prev_final_batch_number_acc, new_batches_acc, bundles_acc}
+          {prev_final_batch_number_acc, new_batches_acc, bundles_acc, start_by_final_batch_number_acc}
         else
           finalize_block_number = quantity_to_integer(event.block_number)
 
           new_bundles_acc = [
             %{
-              start_batch_number: prev_final_batch_number_acc + 1,
               final_batch_number: batch_number,
               finalize_transaction_hash: event.transaction_hash,
               finalize_block_number: finalize_block_number,
@@ -457,11 +451,16 @@ defmodule Indexer.Fetcher.Scroll.Batch do
             | bundles_acc
           ]
 
-          {batch_number, batches_acc, new_bundles_acc}
+          start_batch_number = prev_final_batch_number_acc + 1
+
+          new_start_by_final_batch_number_acc =
+            Map.put(start_by_final_batch_number_acc, batch_number, start_batch_number)
+
+          {batch_number, batches_acc, new_bundles_acc, new_start_by_final_batch_number_acc}
         end
       end)
 
-    {Enum.reverse(batches), Enum.reverse(bundles)}
+    {Enum.reverse(batches), Enum.reverse(bundles), start_by_final_batch_number}
   end
 
   # Handles L1 block reorg: removes all batch rows from the `scroll_batches` table
