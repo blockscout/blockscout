@@ -21,6 +21,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias ABI.{FunctionSelector, TypeDecoder}
+  alias Ecto.Multi
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain.Block.Range, as: BlockRange
   alias Explorer.Chain.RollupReorgMonitorQueue
@@ -483,10 +484,17 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         )
       )
 
-    {deleted_batches_count, _} = Repo.delete_all(from(b in Batch, where: b.bundle_id in ^bundle_ids))
+    {:ok, result} =
+      Multi.new()
+      |> Multi.delete_all(:delete_batches, from(b in Batch, where: b.bundle_id in ^bundle_ids))
+      |> Multi.delete_all(
+        :delete_bundles,
+        from(bb in BatchBundle, where: bb.id in ^bundle_ids or bb.finalize_block_number >= ^reorg_block)
+      )
+      |> Repo.transaction()
 
-    {deleted_bundles_count, _} =
-      Repo.delete_all(from(bb in BatchBundle, where: bb.id in ^bundle_ids or bb.finalize_block_number >= ^reorg_block))
+    deleted_batches_count = elem(result.delete_batches, 0)
+    deleted_bundles_count = elem(result.delete_bundles, 0)
 
     if deleted_batches_count > 0 do
       Logger.warning(
