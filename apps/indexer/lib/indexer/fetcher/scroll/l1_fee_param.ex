@@ -112,7 +112,8 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
          safe_block: safe_block,
          safe_block_is_latest: safe_block_is_latest,
          gas_oracle: env[:gas_oracle],
-         eth_get_logs_range_size: Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:eth_get_logs_range_size],
+         eth_get_logs_range_size:
+           Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:l2_eth_get_logs_range_size],
          json_rpc_named_arguments: json_rpc_named_arguments
        }}
     else

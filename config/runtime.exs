@@ -1087,7 +1087,8 @@ config :indexer, Indexer.Fetcher.Filecoin.AddressInfo,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_FILECOIN_ADDRESS_INFO_CONCURRENCY", 1)
 
 config :indexer, Indexer.Fetcher.Scroll,
-  eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_ETH_GET_LOGS_RANGE_SIZE", 250),
+  l1_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L1_ETH_GET_LOGS_RANGE_SIZE", 250),
+  l2_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L2_ETH_GET_LOGS_RANGE_SIZE", 1000),
   rpc: System.get_env("INDEXER_SCROLL_L1_RPC")
 
 config :indexer, Indexer.Fetcher.Scroll.L1FeeParam, gas_oracle: System.get_env("INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT")
