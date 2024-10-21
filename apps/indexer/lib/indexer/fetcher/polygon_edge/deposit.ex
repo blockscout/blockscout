@@ -111,6 +111,27 @@ defmodule Indexer.Fetcher.PolygonEdge.Deposit do
     end)
   end
 
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary() | nil
+  def l1_rpc_url do
+    PolygonEdge.l1_rpc_url()
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    for this module.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    module_config = Application.get_all_env(:indexer)[__MODULE__]
+    not is_nil(module_config[:start_block_l1])
+  end
+
   defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
     request =
       events

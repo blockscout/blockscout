@@ -52,7 +52,6 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
 
-  alias Explorer.Chain.PolygonZkevm.TransactionBatch
   alias Explorer.PagingOptions
 
   defimpl Poison.Encoder, for: Decimal do
@@ -736,8 +735,8 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number}
   end
 
-  # clause for zkEVM batches pagination
-  defp paging_params(%TransactionBatch{number: number}) do
+  # clause for zkEVM & Scroll batches pagination
+  defp paging_params(%{number: number}) do
     %{"number" => number}
   end
 
