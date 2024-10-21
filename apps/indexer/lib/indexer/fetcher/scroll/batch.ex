@@ -94,7 +94,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
             last_l1_block_number, safe_block},
          {:ok, last_l1_transaction} <-
            Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         # here we check for the last known L1 transaction existance to make sure there wasn't reorg
+         # here we check for the last known L1 transaction existence to make sure there wasn't reorg
          # on L1 while the instance was down, and so we can use `last_l1_block_number` as the starting point
          {:l1_transaction_not_found, false} <-
            {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)} do
