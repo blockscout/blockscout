@@ -460,7 +460,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         end
       end)
 
-    {Enum.reverse(batches), Enum.reverse(bundles), start_by_final_batch_number}
+    {batches, bundles, start_by_final_batch_number}
   end
 
   # Handles L1 block reorg: removes all batch rows from the `scroll_batches` table
