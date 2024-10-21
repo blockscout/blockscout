@@ -36,12 +36,7 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
           gas_oracle = String.downcase(gas_oracle)
 
           logs
-          |> Enum.filter(fn log ->
-            # credo:disable-for-lines:3 Credo.Check.Design.AliasUsage
-            !is_nil(log.first_topic) &&
-              String.downcase(log.first_topic) in Indexer.Fetcher.Scroll.L1FeeParam.event_signatures() &&
-              String.downcase(Indexer.Helper.address_hash_to_string(log.address_hash)) == gas_oracle
-          end)
+          |> Enum.filter(&fee_param_update_event?(&1, gas_oracle))
           |> Enum.map(fn log ->
             Logger.info("Event for parameter update found.")
             # credo:disable-for-next-line Credo.Check.Design.AliasUsage
@@ -60,6 +55,13 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
       Logger.reset_metadata(prev_metadata)
 
       items
+    end
+
+    defp fee_param_update_event?(log, gas_oracle) do
+      # credo:disable-for-lines:3 Credo.Check.Design.AliasUsage
+      !is_nil(log.first_topic) &&
+        String.downcase(log.first_topic) in Indexer.Fetcher.Scroll.L1FeeParam.event_signatures() &&
+        String.downcase(Indexer.Helper.address_hash_to_string(log.address_hash)) == gas_oracle
     end
   else
     def parse(_logs), do: []
