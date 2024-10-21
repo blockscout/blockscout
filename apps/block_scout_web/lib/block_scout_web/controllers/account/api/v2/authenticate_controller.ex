@@ -82,13 +82,16 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
             conn |> put_status(200) |> json(%{message: "Success"})
           end
 
-        %{email: ^email} ->
-          conn |> put_status(500) |> put_view(ApiView) |> render(:message, %{message: "Already linked to this account"})
-
-        %{} ->
+        %{email: nil} ->
           with :ok <- Auth0.send_otp_for_linking(email, AccessHelper.conn_to_ip_string(conn)) do
             conn |> put_status(200) |> json(%{message: "Success"})
           end
+
+        %{} ->
+          conn
+          |> put_status(500)
+          |> put_view(ApiView)
+          |> render(:message, %{message: "This account already has an email"})
       end
     end
   end
