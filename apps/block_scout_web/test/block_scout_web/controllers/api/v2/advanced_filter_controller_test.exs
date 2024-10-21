@@ -131,8 +131,15 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       transaction = insert(:transaction) |> with_block()
 
       for token_type <- ~w(ERC-20 ERC-404 ERC-721 ERC-1155),
+          token = insert(:token, type: token_type),
           _ <- 0..4 do
-        insert(:token_transfer, transaction: transaction, token_type: token_type)
+        insert(:token_transfer,
+          transaction: transaction,
+          token_type: token_type,
+          token: token,
+          token_contract_address_hash: token.contract_address_hash,
+          token_contract_address: token.contract_address
+        )
       end
 
       transaction = :transaction |> insert() |> with_block()

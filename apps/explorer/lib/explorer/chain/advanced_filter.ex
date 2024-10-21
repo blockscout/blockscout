@@ -8,7 +8,7 @@ defmodule Explorer.Chain.AdvancedFilter do
   import Ecto.Query
 
   alias Explorer.{Chain, Helper, PagingOptions}
-  alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Data, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
 
   @primary_key false
   typed_embedded_schema null: false do
@@ -154,6 +154,8 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp to_advanced_filter(%Transaction{} = transaction) do
+    %{value: decimal_transaction_value} = transaction.value
+
     %__MODULE__{
       hash: transaction.hash,
       type: "coin_transfer",
@@ -162,7 +164,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       from_address_hash: transaction.from_address_hash,
       to_address_hash: transaction.to_address_hash,
       created_contract_address_hash: transaction.created_contract_address_hash,
-      value: transaction.value.value,
+      value: decimal_transaction_value,
       fee: transaction |> Transaction.fee(:wei) |> elem(1),
       block_number: transaction.block_number,
       transaction_index: transaction.index
@@ -170,6 +172,8 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp to_advanced_filter(%InternalTransaction{} = internal_transaction) do
+    %{value: decimal_internal_transaction_value} = internal_transaction.value
+
     %__MODULE__{
       hash: internal_transaction.transaction.hash,
       type: "coin_transfer",
@@ -178,7 +182,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       from_address_hash: internal_transaction.from_address_hash,
       to_address_hash: internal_transaction.to_address_hash,
       created_contract_address_hash: internal_transaction.created_contract_address_hash,
-      value: internal_transaction.value.value,
+      value: decimal_internal_transaction_value,
       fee:
         internal_transaction.transaction.gas_price && internal_transaction.gas_used &&
           Decimal.mult(internal_transaction.transaction.gas_price.value, internal_transaction.gas_used),
@@ -253,14 +257,27 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp transactions_query(paging_options, options) do
     query =
-      from(transaction in Transaction,
-        as: :transaction,
-        where: transaction.block_consensus == true,
-        order_by: [
-          desc: transaction.block_number,
-          desc: transaction.index
-        ]
-      )
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        from(transaction in Transaction,
+          as: :transaction,
+          where: transaction.block_consensus == true,
+          order_by: [
+            desc: transaction.block_number,
+            desc: transaction.index
+          ]
+        )
+      else
+        from(transaction in Transaction,
+          as: :transaction,
+          join: block in assoc(transaction, :block),
+          as: :block,
+          where: block.consensus == true,
+          order_by: [
+            desc: transaction.block_number,
+            desc: transaction.index
+          ]
+        )
+      end
 
     query
     |> page_transactions(paging_options)
@@ -287,19 +304,39 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp internal_transactions_query(paging_options, options) do
     query =
-      from(internal_transaction in InternalTransaction,
-        as: :internal_transaction,
-        join: transaction in assoc(internal_transaction, :transaction),
-        as: :transaction,
-        where: transaction.block_consensus == true,
-        where:
-          (internal_transaction.type == :call and internal_transaction.index > 0) or internal_transaction.type != :call,
-        order_by: [
-          desc: internal_transaction.block_number,
-          desc: internal_transaction.transaction_index,
-          desc: internal_transaction.index
-        ]
-      )
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        from(internal_transaction in InternalTransaction,
+          as: :internal_transaction,
+          join: transaction in assoc(internal_transaction, :transaction),
+          as: :transaction,
+          where: transaction.block_consensus == true,
+          where:
+            (internal_transaction.type == :call and internal_transaction.index > 0) or
+              internal_transaction.type != :call,
+          order_by: [
+            desc: internal_transaction.block_number,
+            desc: internal_transaction.transaction_index,
+            desc: internal_transaction.index
+          ]
+        )
+      else
+        from(internal_transaction in InternalTransaction,
+          as: :internal_transaction,
+          join: transaction in assoc(internal_transaction, :transaction),
+          as: :transaction,
+          join: block in assoc(internal_transaction, :block),
+          as: :block,
+          where: block.consensus == true,
+          where:
+            (internal_transaction.type == :call and internal_transaction.index > 0) or
+              internal_transaction.type != :call,
+          order_by: [
+            desc: internal_transaction.block_number,
+            desc: internal_transaction.transaction_index,
+            desc: internal_transaction.index
+          ]
+        )
+      end
 
     query
     |> page_internal_transactions(paging_options)
@@ -312,28 +349,58 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp page_internal_transactions(query, %PagingOptions{
          key: %{
            block_number: block_number,
+           transaction_index: _transaction_index,
+           internal_transaction_index: nil
+         }
+       })
+       when block_number < 0 do
+    query |> where(false)
+  end
+
+  defp page_internal_transactions(query, %PagingOptions{
+         key: %{
+           block_number: block_number,
+           transaction_index: transaction_index,
+           internal_transaction_index: nil
+         }
+       })
+       when block_number > 0 and transaction_index <= 0 do
+    query |> where(as(:transaction).block_number < ^block_number)
+  end
+
+  defp page_internal_transactions(query, %PagingOptions{
+         key: %{
+           block_number: 0,
+           transaction_index: 0,
+           internal_transaction_index: nil
+         }
+       }) do
+    query |> where(as(:transaction).block_number == 0 and as(:transaction).index == 0)
+  end
+
+  defp page_internal_transactions(query, %PagingOptions{
+         key: %{
+           block_number: 0,
            transaction_index: transaction_index,
            internal_transaction_index: nil
          }
        }) do
-    case {block_number, transaction_index} do
-      {0, 0} ->
-        query |> where(as(:transaction).block_number == ^block_number and as(:transaction).index == ^transaction_index)
+    query
+    |> where(as(:transaction).block_number == 0 and as(:transaction).index <= ^transaction_index)
+  end
 
-      {0, transaction_index} ->
-        query
-        |> where(as(:transaction).block_number == ^block_number and as(:transaction).index <= ^transaction_index)
-
-      {block_number, 0} ->
-        query |> where(as(:transaction).block_number < ^block_number)
-
-      _ ->
-        query
-        |> where(
-          as(:transaction).block_number < ^block_number or
-            (as(:transaction).block_number == ^block_number and as(:transaction).index <= ^transaction_index)
-        )
-    end
+  defp page_internal_transactions(query, %PagingOptions{
+         key: %{
+           block_number: block_number,
+           transaction_index: transaction_index,
+           internal_transaction_index: nil
+         }
+       }) do
+    query
+    |> where(
+      as(:transaction).block_number < ^block_number or
+        (as(:transaction).block_number == ^block_number and as(:transaction).index <= ^transaction_index)
+    )
   end
 
   defp page_internal_transactions(query, %PagingOptions{
@@ -358,27 +425,53 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp token_transfers_query(paging_options, options) do
     token_transfer_query =
-      from(token_transfer in TokenTransfer,
-        as: :token_transfer,
-        join: transaction in assoc(token_transfer, :transaction),
-        as: :transaction,
-        join: token in assoc(token_transfer, :token),
-        as: :token,
-        select: %TokenTransfer{
-          token_transfer
-          | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
-            amount:
-              fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
-            reverse_index_in_batch:
-              fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
-            token_decimals: token.decimals
-        },
-        where: transaction.block_consensus == true,
-        order_by: [
-          desc: token_transfer.block_number,
-          desc: token_transfer.log_index
-        ]
-      )
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        from(token_transfer in TokenTransfer,
+          as: :token_transfer,
+          join: transaction in assoc(token_transfer, :transaction),
+          as: :transaction,
+          join: token in assoc(token_transfer, :token),
+          as: :token,
+          select: %TokenTransfer{
+            token_transfer
+            | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
+              amount:
+                fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
+              reverse_index_in_batch:
+                fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
+              token_decimals: token.decimals
+          },
+          where: transaction.block_consensus == true,
+          order_by: [
+            desc: token_transfer.block_number,
+            desc: token_transfer.log_index
+          ]
+        )
+      else
+        from(token_transfer in TokenTransfer,
+          as: :token_transfer,
+          join: transaction in assoc(token_transfer, :transaction),
+          as: :transaction,
+          join: token in assoc(token_transfer, :token),
+          as: :token,
+          join: block in assoc(token_transfer, :block),
+          as: :block,
+          select: %TokenTransfer{
+            token_transfer
+            | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
+              amount:
+                fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
+              reverse_index_in_batch:
+                fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
+              token_decimals: token.decimals
+          },
+          where: block.consensus == true,
+          order_by: [
+            desc: token_transfer.block_number,
+            desc: token_transfer.log_index
+          ]
+        )
+      end
 
     query_function =
       (&make_token_transfer_query_unnested/2)
@@ -396,44 +489,80 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp page_token_transfers(query_function, %PagingOptions{
          key: %{
            block_number: block_number,
+           transaction_index: _transaction_index,
+           token_transfer_index: nil,
+           internal_transaction_index: nil
+         }
+       })
+       when block_number < 0 do
+    fn query, unnested? ->
+      query |> where(false) |> query_function.(unnested?)
+    end
+  end
+
+  defp page_token_transfers(query_function, %PagingOptions{
+         key: %{
+           block_number: block_number,
+           transaction_index: transaction_index,
+           token_transfer_index: nil,
+           internal_transaction_index: nil
+         }
+       })
+       when block_number > 0 and transaction_index <= 0 do
+    fn query, unnested? ->
+      query |> where([token_transfer], token_transfer.block_number < ^block_number) |> query_function.(unnested?)
+    end
+  end
+
+  defp page_token_transfers(query_function, %PagingOptions{
+         key: %{
+           block_number: 0,
+           transaction_index: 0,
+           token_transfer_index: nil,
+           internal_transaction_index: nil
+         }
+       }) do
+    fn query, unnested? ->
+      query
+      |> where(as(:transaction).block_number == 0 and as(:transaction).index == 0)
+      |> query_function.(unnested?)
+    end
+  end
+
+  defp page_token_transfers(query_function, %PagingOptions{
+         key: %{
+           block_number: 0,
            transaction_index: transaction_index,
            token_transfer_index: nil,
            internal_transaction_index: nil
          }
        }) do
-    case {block_number, transaction_index} do
-      {0, 0} ->
-        fn query, unnested? ->
-          query
-          |> where(as(:transaction).block_number == ^block_number and as(:transaction).index == ^transaction_index)
-          |> query_function.(unnested?)
-        end
+    fn query, unnested? ->
+      query
+      |> where(
+        [token_transfer],
+        token_transfer.block_number == 0 and as(:transaction).index < ^transaction_index
+      )
+      |> query_function.(unnested?)
+    end
+  end
 
-      {0, transaction_index} ->
-        fn query, unnested? ->
-          query
-          |> where(
-            [token_transfer],
-            token_transfer.block_number == ^block_number and as(:transaction).index < ^transaction_index
-          )
-          |> query_function.(unnested?)
-        end
-
-      {block_number, 0} ->
-        fn query, unnested? ->
-          query |> where([token_transfer], token_transfer.block_number < ^block_number) |> query_function.(unnested?)
-        end
-
-      {block_number, transaction_index} ->
-        fn query, unnested? ->
-          query
-          |> where(
-            [token_transfer],
-            token_transfer.block_number < ^block_number or
-              (token_transfer.block_number == ^block_number and as(:transaction).index <= ^transaction_index)
-          )
-          |> query_function.(unnested?)
-        end
+  defp page_token_transfers(query_function, %PagingOptions{
+         key: %{
+           block_number: block_number,
+           transaction_index: transaction_index,
+           token_transfer_index: nil,
+           internal_transaction_index: nil
+         }
+       }) do
+    fn query, unnested? ->
+      query
+      |> where(
+        [token_transfer],
+        token_transfer.block_number < ^block_number or
+          (token_transfer.block_number == ^block_number and as(:transaction).index <= ^transaction_index)
+      )
+      |> query_function.(unnested?)
     end
   end
 
@@ -492,18 +621,17 @@ defmodule Explorer.Chain.AdvancedFilter do
     dynamic(false)
   end
 
-  defp page_transaction_index_dynamic(block_number, transaction_index) when transaction_index > 0 do
-    dynamic(
-      [transaction: transaction],
-      transaction.block_number == ^block_number and transaction.index < ^transaction_index
-    )
+  defp page_transaction_index_dynamic(block_number, transaction_index) when block_number >= 0 and transaction_index > 0 do
+    dynamic([transaction: transaction], transaction.block_number == ^block_number and transaction.index < ^transaction_index)
   end
 
   defp page_transaction_index_dynamic(_, _) do
     dynamic(false)
   end
 
-  defp page_it_index_dynamic(block_number, transaction_index, it_index) when it_index > 0 do
+
+  defp page_it_index_dynamic(block_number, transaction_index, it_index)
+       when block_number >= 0 and transaction_index >= 0 and it_index > 0 do
     dynamic(
       [transaction: transaction, internal_transaction: it],
       transaction.block_number == ^block_number and transaction.index == ^transaction_index and
@@ -516,11 +644,12 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp page_tt_index_dynamic(binding, block_number, tt_index, tt_batch_index)
-       when tt_index > 0 and tt_batch_index > 1 do
+       when block_number >= 0 and tt_index > 0 and tt_batch_index > 1 do
     dynamic(as(^binding).block_number == ^block_number and as(^binding).log_index <= ^tt_index)
   end
 
-  defp page_tt_index_dynamic(binding, block_number, tt_index, _tt_batch_index) when tt_index > 0 do
+  defp page_tt_index_dynamic(binding, block_number, tt_index, _tt_batch_index)
+       when block_number >= 0 and tt_index > 0 do
     dynamic(as(^binding).block_number == ^block_number and as(^binding).log_index < ^tt_index)
   end
 
@@ -528,7 +657,8 @@ defmodule Explorer.Chain.AdvancedFilter do
     dynamic(false)
   end
 
-  defp page_tt_batch_index_dynamic(block_number, tt_index, tt_batch_index) when tt_batch_index > 1 do
+  defp page_tt_batch_index_dynamic(block_number, tt_index, tt_batch_index)
+       when block_number >= 0 and tt_index >= 0 and tt_batch_index > 1 do
     dynamic(
       [unnested_token_transfer: tt],
       ^page_block_number_dynamic(:unnested_token_transfer, block_number) or
@@ -591,9 +721,16 @@ defmodule Explorer.Chain.AdvancedFilter do
     query |> where(not is_nil(as(:transaction).block_number) and not is_nil(as(:transaction).index))
   end
 
+
   defp filter_by_transaction_type(query_function, [_ | _] = transaction_types) do
-    fn query, unnested? ->
-      query |> where([token_transfer], token_transfer.token_type in ^transaction_types) |> query_function.(unnested?)
+    if DenormalizationHelper.tt_denormalization_finished?() do
+      fn query, unnested? ->
+        query |> where([token_transfer], token_transfer.token_type in ^transaction_types) |> query_function.(unnested?)
+      end
+    else
+      fn query, unnested? ->
+        query |> where([token: token], token.type in ^transaction_types) |> query_function.(unnested?)
+      end
     end
   end
 
@@ -659,11 +796,19 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp filter_by_block_number(query, _, _, _), do: query
 
   defp filter_by_timestamp(query, %DateTime{} = from, :from) do
-    query |> where(as(:transaction).block_timestamp >= ^from)
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      query |> where(as(:transaction).block_timestamp >= ^from)
+    else
+      query |> where(as(:block).timestamp >= ^from)
+    end
   end
 
   defp filter_by_timestamp(query, %DateTime{} = to, :to) do
-    query |> where(as(:transaction).block_timestamp <= ^to)
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      query |> where(as(:transaction).block_timestamp <= ^to)
+    else
+      query |> where(as(:block).timestamp <= ^to)
+    end
   end
 
   defp filter_by_timestamp(query, _, _), do: query
@@ -1082,18 +1227,30 @@ defmodule Explorer.Chain.AdvancedFilter do
     end
   end
 
-  @eth_decimals 1000_000_000_000_000_000
+  @eth_decimals 1_000_000_000_000_000_000
 
-  defp filter_transactions_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) and from < to do
-    query |> where([t], t.value / @eth_decimals >= ^from and t.value / @eth_decimals <= ^to)
+  defp filter_transactions_by_amount(query, from, to) when not is_nil(from) and not is_nil(to) do
+    if Decimal.positive?(to) and Decimal.lt?(from, to) do
+      query |> where([t], t.value / @eth_decimals >= ^from and t.value / @eth_decimals <= ^to)
+    else
+      query |> where(false)
+    end
   end
 
   defp filter_transactions_by_amount(query, _from, to) when not is_nil(to) do
-    query |> where([t], t.value / @eth_decimals <= ^to)
+    if Decimal.positive?(to) do
+      query |> where([t], t.value / @eth_decimals <= ^to)
+    else
+      query |> where(false)
+    end
   end
 
   defp filter_transactions_by_amount(query, from, _to) when not is_nil(from) do
-    query |> where([t], t.value / @eth_decimals >= ^from)
+    if Decimal.positive?(from) do
+      query |> where([t], t.value / @eth_decimals >= ^from)
+    else
+      query
+    end
   end
 
   defp filter_transactions_by_amount(query, _, _), do: query
@@ -1109,60 +1266,84 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp filter_token_transfers_by_amount_before_subquery(query, from, to)
        when not is_nil(from) and not is_nil(to) and from < to do
-    query
-    |> where(
-      [tt, token: token],
-      ^to * fragment("10 ^ COALESCE(?, 0)", token.decimals) >=
-        fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount) and
-        ^from * fragment("10 ^ COALESCE(?, 0)", token.decimals) <=
-          fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount)
-    )
+    if Decimal.positive?(to) and Decimal.lt?(from, to) do
+      query
+      |> where(
+        [tt, token: token],
+        ^to * fragment("10 ^ COALESCE(?, 0)", token.decimals) >=
+          fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount) and
+          ^from * fragment("10 ^ COALESCE(?, 0)", token.decimals) <=
+            fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount)
+      )
+    else
+      query |> where(false)
+    end
   end
 
   defp filter_token_transfers_by_amount_before_subquery(query, _from, to) when not is_nil(to) do
-    query
-    |> where(
-      [tt, token: token],
-      ^to * fragment("10 ^ COALESCE(?, 0)", token.decimals) >=
-        fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount)
-    )
+    if Decimal.positive?(to) do
+      query
+      |> where(
+        [tt, token: token],
+        ^to * fragment("10 ^ COALESCE(?, 0)", token.decimals) >=
+          fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount)
+      )
+    else
+      query |> where(false)
+    end
   end
 
   defp filter_token_transfers_by_amount_before_subquery(query, from, _to) when not is_nil(from) do
-    query
-    |> where(
-      [tt, token: token],
-      ^from * fragment("10 ^ COALESCE(?, 0)", token.decimals) <=
-        fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount)
-    )
+    if Decimal.positive?(from) do
+      query
+      |> where(
+        [tt, token: token],
+        ^from * fragment("10 ^ COALESCE(?, 0)", token.decimals) <=
+          fragment("ANY(COALESCE(?, ARRAY[COALESCE(?, 1)]))", tt.amounts, tt.amount)
+      )
+    else
+      query
+    end
   end
 
   defp filter_token_transfers_by_amount_before_subquery(query, _, _), do: query
 
   defp filter_token_transfers_by_amount_after_subquery(unnested_query, from, to)
        when not is_nil(from) and not is_nil(to) and from < to do
-    unnested_query
-    |> where(
-      [unnested_token_transfer: tt],
-      tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) >= ^from and
-        tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) <= ^to
-    )
+    if Decimal.positive?(to) and Decimal.lt?(from, to) do
+      unnested_query
+      |> where(
+        [unnested_token_transfer: tt],
+        tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) >= ^from and
+          tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) <= ^to
+      )
+    else
+      unnested_query |> where(false)
+    end
   end
 
   defp filter_token_transfers_by_amount_after_subquery(unnested_query, _from, to) when not is_nil(to) do
-    unnested_query
-    |> where(
-      [unnested_token_transfer: tt],
-      tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) <= ^to
-    )
+    if Decimal.positive?(to) do
+      unnested_query
+      |> where(
+        [unnested_token_transfer: tt],
+        tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) <= ^to
+      )
+    else
+      unnested_query |> where(false)
+    end
   end
 
   defp filter_token_transfers_by_amount_after_subquery(unnested_query, from, _to) when not is_nil(from) do
-    unnested_query
-    |> where(
-      [unnested_token_transfer: tt],
-      tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) >= ^from
-    )
+    if Decimal.positive?(from) do
+      unnested_query
+      |> where(
+        [unnested_token_transfer: tt],
+        tt.amount / fragment("10 ^ COALESCE(?, 0)", tt.token_decimals) >= ^from
+      )
+    else
+      unnested_query
+    end
   end
 
   defp filter_token_transfers_by_amount_after_subquery(query, _, _), do: query
