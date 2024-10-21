@@ -1,9 +1,9 @@
-defmodule BlockScoutWeb.Account.Api.V2.EmailController do
+defmodule BlockScoutWeb.Account.API.V2.EmailController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
-  alias BlockScoutWeb.Account.Api.V2.AuthenticateController
+  alias BlockScoutWeb.Account.API.V2.AuthenticateController
   alias Explorer.Account.Identity
   alias Explorer.{Helper, Repo}
   alias Explorer.ThirdPartyIntegrations.Auth0
@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Account.Api.V2.EmailController do
 
   @invalid_session_key Application.compile_env(:block_scout_web, :invalid_session_key)
 
-  action_fallback(BlockScoutWeb.Account.Api.V2.FallbackController)
+  action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
 
   plug(:fetch_cookies, signed: [@invalid_session_key])
 
@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.Account.Api.V2.EmailController do
     if the email is successfully linked.
 
   ## Notes
-  - Errors are handled later in `BlockScoutWeb.Account.Api.V2.FallbackController`.
+  - Errors are handled later in `BlockScoutWeb.Account.API.V2.FallbackController`.
   - This function requires the user to be already authenticated (current user in session).
   - The function will fail if the email is already associated with another account.
   - The OTP must be valid and match the one sent to the provided email.

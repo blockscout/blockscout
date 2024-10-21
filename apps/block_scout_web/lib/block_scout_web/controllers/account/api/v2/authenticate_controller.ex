@@ -1,10 +1,10 @@
-defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
+defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
-  alias BlockScoutWeb.Account.Api.V2.UserView
+  alias BlockScoutWeb.Account.API.V2.UserView
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Account.Identity
   alias Explorer.Chain
@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
   alias Explorer.ThirdPartyIntegrations.Auth0
   alias Plug.Conn
 
-  action_fallback(BlockScoutWeb.Account.Api.V2.FallbackController)
+  action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
 
   def authenticate_get(conn, params) do
     authenticate(conn, params)
@@ -64,7 +64,7 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
     if the OTP is successfully sent.
 
   ## Notes
-  - Errors are handled later in `BlockScoutWeb.Account.Api.V2.FallbackController`.
+  - Errors are handled later in `BlockScoutWeb.Account.API.V2.FallbackController`.
   - The function uses the client's IP address for rate limiting and abuse prevention.
   - It handles both logged-in and non-logged-in user scenarios.
   """
@@ -121,7 +121,7 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
     if the OTP is successfully confirmed.
 
   ## Notes
-  - Errors are handled later in `BlockScoutWeb.Account.Api.V2.FallbackController`.
+  - Errors are handled later in `BlockScoutWeb.Account.API.V2.FallbackController`.
   - This function relies on the Auth0 service to confirm the OTP and retrieve
     the authentication information.
   - The function handles both existing and newly created users.
@@ -163,7 +163,7 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
     containing the generated SIWE message if successful.
 
   ## Notes
-  - Errors are handled later in `BlockScoutWeb.Account.Api.V2.FallbackController`.
+  - Errors are handled later in `BlockScoutWeb.Account.API.V2.FallbackController`.
   - The address is converted to its checksum format before generating the SIWE message.
   - The generated SIWE message includes:
     - The domain and URI of the application.
@@ -207,7 +207,7 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
     if the authentication is successful.
 
   ## Notes
-  - Errors are handled later in `BlockScoutWeb.Account.Api.V2.FallbackController`.
+  - Errors are handled later in `BlockScoutWeb.Account.API.V2.FallbackController`.
   - The function verifies the nonce in the message to prevent replay attacks.
   - If the user doesn't exist, a new Web3 user is created based on the Ethereum address.
   - The nonce is deleted after successful verification to prevent reuse.
@@ -245,7 +245,7 @@ defmodule BlockScoutWeb.Account.Api.V2.AuthenticateController do
     and rendered user info if successful.
 
   ## Notes
-  - Errors are handled later in `BlockScoutWeb.Account.Api.V2.FallbackController`.
+  - Errors are handled later in `BlockScoutWeb.Account.API.V2.FallbackController`.
   - This function relies on the `Identity` module to handle user identity operations.
   - It updates the session with the current user information.
   - The function sets the HTTP status to 200 on successful authentication.

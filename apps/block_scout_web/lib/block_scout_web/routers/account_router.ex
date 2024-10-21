@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
   """
   use BlockScoutWeb, :router
 
-  alias BlockScoutWeb.Account.Api.V2.{
+  alias BlockScoutWeb.Account.API.V2.{
     AddressController,
     AuthenticateController,
     EmailController,
