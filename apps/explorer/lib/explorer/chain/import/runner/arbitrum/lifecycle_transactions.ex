@@ -83,24 +83,24 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.LifecycleTransactions do
 
   defp default_on_conflict do
     from(
-      tx in LifecycleTransaction,
+      transaction in LifecycleTransaction,
       update: [
         set: [
           # don't update `id` as it is a primary key
           # don't update `hash` as it is a unique index and used for the conflict target
           timestamp: fragment("EXCLUDED.timestamp"),
           block_number: fragment("EXCLUDED.block_number"),
-          status: fragment("GREATEST(?, EXCLUDED.status)", tx.status),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tx.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tx.updated_at)
+          status: fragment("GREATEST(?, EXCLUDED.status)", transaction.status),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", transaction.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", transaction.updated_at)
         ]
       ],
       where:
         fragment(
           "(EXCLUDED.timestamp, EXCLUDED.block_number, EXCLUDED.status) IS DISTINCT FROM (?, ?, ?)",
-          tx.timestamp,
-          tx.block_number,
-          tx.status
+          transaction.timestamp,
+          transaction.block_number,
+          transaction.status
         )
     )
   end

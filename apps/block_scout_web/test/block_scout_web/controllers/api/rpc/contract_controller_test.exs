@@ -611,7 +611,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract.address_hash.bytes, case: :lower)
 
-      proxy_tx_input =
+      proxy_transaction_input =
         "0x11b804ab000000000000000000000000" <>
           implementation_contract_address_hash_string <>
           "000000000000000000000000000000000000000000000000000000000000006035323031313537360000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000284e159163400000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd30000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d61100000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d6110000000000000000000000000000000000000000000000000000000000000003e8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd300000000000000000000000000000000000000000000000000000000000000184f7074696d69736d2053756273637269626572204e465473000000000000000000000000000000000000000000000000000000000000000000000000000000054f504e46540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000037697066733a2f2f516d66544e504839765651334b5952346d6b52325a6b757756424266456f5a5554545064395538666931503332752f300000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c82bbe41f2cf04e3a8efa18f7032bdd7f6d98a81000000000000000000000000efba8a2a82ec1fb1273806174f5e28fbb917cf9500000000000000000000000000000000000000000000000000000000"
@@ -732,16 +732,16 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           abi: proxy_abi
         )
 
-      tx =
+      transaction =
         insert(:transaction,
           created_contract_address_hash: proxy_address.hash,
-          input: proxy_tx_input
+          input: proxy_transaction_input
         )
         |> with_block(status: :ok)
 
       name = implementation_contract.name
-      from = Address.checksum(tx.from_address_hash)
-      tx_hash = to_string(tx.hash)
+      from = Address.checksum(transaction.from_address_hash)
+      transaction_hash = to_string(transaction.hash)
       address_hash = Address.checksum(proxy_address.hash)
 
       {:ok, implementation_contract_address_hash} =
@@ -1170,7 +1170,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           %{
             "contractAddress" => contract_address,
             "contractCreator" => contract_creator,
-            "txHash" => tx_hash
+            "txHash" => transaction_hash
           }
         ]
       } =
@@ -1180,7 +1180,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
       assert contract_address == to_string(address.hash)
       assert contract_creator == to_string(transaction.from_address_hash)
-      assert tx_hash == to_string(transaction.hash)
+      assert transaction_hash == to_string(transaction.hash)
     end
   end
 

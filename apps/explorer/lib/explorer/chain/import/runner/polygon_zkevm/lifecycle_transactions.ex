@@ -83,20 +83,20 @@ defmodule Explorer.Chain.Import.Runner.PolygonZkevm.LifecycleTransactions do
 
   defp default_on_conflict do
     from(
-      tx in LifecycleTransaction,
+      transaction in LifecycleTransaction,
       update: [
         set: [
           # don't update `id` as it is a primary key 
           # don't update `hash` as it is a unique index and used for the conflict target
           is_verify: fragment("EXCLUDED.is_verify"),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", tx.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", tx.updated_at)
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", transaction.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", transaction.updated_at)
         ]
       ],
       where:
         fragment(
           "(EXCLUDED.is_verify) IS DISTINCT FROM (?)",
-          tx.is_verify
+          transaction.is_verify
         )
     )
   end

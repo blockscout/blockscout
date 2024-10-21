@@ -30,7 +30,7 @@ defmodule EthereumJSONRPC.Transaction do
     :optimism ->
       @chain_type_fields quote(
                            do: [
-                             l1_tx_origin: EthereumJSONRPC.hash(),
+                             l1_transaction_origin: EthereumJSONRPC.hash(),
                              l1_block_number: non_neg_integer()
                            ]
                          )
@@ -343,7 +343,7 @@ defmodule EthereumJSONRPC.Transaction do
     ])
   end
 
-  # txpool_content method on Erigon node returns tx data
+  # txpool_content method on Erigon node returns transaction data
   # without gas price
   def do_elixir_to_params(
         %{
@@ -390,7 +390,7 @@ defmodule EthereumJSONRPC.Transaction do
     ])
   end
 
-  # for legacy txs without maxPriorityFeePerGas and maxFeePerGas
+  # for legacy transactions without maxPriorityFeePerGas and maxFeePerGas
   def do_elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -432,7 +432,7 @@ defmodule EthereumJSONRPC.Transaction do
     ])
   end
 
-  # for legacy txs without type, maxPriorityFeePerGas and maxFeePerGas
+  # for legacy transactions without type, maxPriorityFeePerGas and maxFeePerGas
   def do_elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -472,7 +472,7 @@ defmodule EthereumJSONRPC.Transaction do
     ])
   end
 
-  # for txs without gasPrice, maxPriorityFeePerGas and maxFeePerGas
+  # for transactions without gasPrice, maxPriorityFeePerGas and maxFeePerGas
   def do_elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -522,9 +522,9 @@ defmodule EthereumJSONRPC.Transaction do
         ])
 
       :optimism ->
-        # we need to put blobVersionedHashes for Indexer.Fetcher.Optimism.TxnBatch module
+        # we need to put blobVersionedHashes for Indexer.Fetcher.Optimism.TransactionBatch module
         put_if_present(params, elixir, [
-          {"l1TxOrigin", :l1_tx_origin},
+          {"l1TxOrigin", :l1_transaction_origin},
           {"l1BlockNumber", :l1_block_number},
           {"blobVersionedHashes", :blob_versioned_hashes}
         ])

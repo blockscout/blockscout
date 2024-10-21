@@ -237,9 +237,9 @@ defmodule BlockScoutWeb.WebsocketV2Test do
 
       Subscriber.to(:transactions, :realtime)
       Import.all(@import_data)
-      assert_receive {:chain_event, :transactions, :realtime, txs}, :timer.seconds(5)
+      assert_receive {:chain_event, :transactions, :realtime, transactions}, :timer.seconds(5)
 
-      Notifier.handle_event({:chain_event, :transactions, :realtime, txs})
+      Notifier.handle_event({:chain_event, :transactions, :realtime, transactions})
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{transaction: 2},
@@ -280,7 +280,7 @@ defmodule BlockScoutWeb.WebsocketV2Test do
                      :timer.seconds(5)
     end
 
-    test "broadcast array of txs to address" do
+    test "broadcast array of transactions to address" do
       topic = "addresses:0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
 
       {:ok, _reply, _socket} =
@@ -291,34 +291,34 @@ defmodule BlockScoutWeb.WebsocketV2Test do
       Subscriber.to(:transactions, :realtime)
       Import.all(@import_data)
 
-      assert_receive {:chain_event, :transactions, :realtime, txs}, :timer.seconds(5)
-      Notifier.handle_event({:chain_event, :transactions, :realtime, txs})
+      assert_receive {:chain_event, :transactions, :realtime, transactions}, :timer.seconds(5)
+      Notifier.handle_event({:chain_event, :transactions, :realtime, transactions})
 
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{transactions: [tx_1, tx_2]},
+                       payload: %{transactions: [transaction_1, transaction_2]},
                        event: "transaction",
                        topic: ^topic
                      },
                      :timer.seconds(5)
 
-      tx_1 = tx_1 |> Jason.encode!() |> Jason.decode!()
-      compare_item(Repo.get_by(Transaction, %{hash: tx_1["hash"]}), tx_1)
+      transaction_1 = transaction_1 |> Jason.encode!() |> Jason.decode!()
+      compare_item(Repo.get_by(Transaction, %{hash: transaction_1["hash"]}), transaction_1)
 
-      tx_2 = tx_2 |> Jason.encode!() |> Jason.decode!()
-      compare_item(Repo.get_by(Transaction, %{hash: tx_2["hash"]}), tx_2)
+      transaction_2 = transaction_2 |> Jason.encode!() |> Jason.decode!()
+      compare_item(Repo.get_by(Transaction, %{hash: transaction_2["hash"]}), transaction_2)
 
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{transactions: [tx_1, tx_2]},
+                       payload: %{transactions: [transaction_1, transaction_2]},
                        event: "pending_transaction",
                        topic: ^topic
                      },
                      :timer.seconds(5)
 
-      tx_1 = tx_1 |> Jason.encode!() |> Jason.decode!()
-      compare_item(Repo.get_by(Transaction, %{hash: tx_1["hash"]}), tx_1)
+      transaction_1 = transaction_1 |> Jason.encode!() |> Jason.decode!()
+      compare_item(Repo.get_by(Transaction, %{hash: transaction_1["hash"]}), transaction_1)
 
-      tx_2 = tx_2 |> Jason.encode!() |> Jason.decode!()
-      compare_item(Repo.get_by(Transaction, %{hash: tx_2["hash"]}), tx_2)
+      transaction_2 = transaction_2 |> Jason.encode!() |> Jason.decode!()
+      compare_item(Repo.get_by(Transaction, %{hash: transaction_2["hash"]}), transaction_2)
     end
 
     test "broadcast array of transfers to address" do
@@ -369,17 +369,17 @@ defmodule BlockScoutWeb.WebsocketV2Test do
   defp compare_item(%TokenTransfer{} = token_transfer, json) do
     assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
-    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+    assert to_string(token_transfer.transaction_hash) == json["transaction_hash"]
     assert json["timestamp"] != nil
     assert json["method"] != nil
     assert to_string(token_transfer.block_hash) == json["block_hash"]
-    assert to_string(token_transfer.log_index) == json["log_index"]
+    assert token_transfer.log_index == json["log_index"]
     assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
   end
 
   defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
-    assert transaction.block_number == json["block"]
+    assert transaction.block_number == json["block_number"]
     assert to_string(transaction.value.value) == json["value"]
     assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]

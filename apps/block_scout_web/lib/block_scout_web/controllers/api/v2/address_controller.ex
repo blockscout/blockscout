@@ -506,12 +506,12 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:ok, address_hash, _address} <- validate_address(address_hash_string, params) do
       counter_name_to_json_field_name = %{
         validations: :validations_count,
-        txs: :transactions_count,
+        transactions: :transactions_count,
         token_transfers: :token_transfers_count,
         token_balances: :token_balances_count,
         logs: :logs_count,
         withdrawals: :withdrawals_count,
-        internal_txs: :internal_txs_count,
+        internal_transactions: :internal_transactions_count,
         celo_election_rewards: :celo_election_rewards_count
       }
 
