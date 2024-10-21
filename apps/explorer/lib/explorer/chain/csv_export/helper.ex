@@ -115,10 +115,4 @@ defmodule Explorer.Chain.CSVExport.Helper do
         true
     end
   end
-
-  @spec captcha_helper() :: module()
-  def captcha_helper do
-    :block_scout_web
-    |> Application.get_env(:captcha_helper)
-  end
 end
