@@ -6,4 +6,4 @@ services:
     container_name: redis-db
     command: redis-server
     volumes:
-      - /mnt/volume-hel1-1/explorer-redis-data:/data
+      - /mnt/HC_Volume_101337835/explorer-redis-data:/data

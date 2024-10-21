@@ -4,7 +4,7 @@ services:
   stats-db-init:
     image: postgres:15
     volumes:
-      - /mnt/volume-hel1-1/explorer-stats-db-data:/var/lib/postgresql/data
+      - /mnt/HC_Volume_101337835/explorer-stats-db-data:/var/lib/postgresql/data
     entrypoint:
       - sh
       - -c
@@ -26,7 +26,7 @@ services:
       - target: 5432
         published: 7433
     volumes:
-      - /mnt/volume-hel1-1/explorer-stats-db-data:/var/lib/postgresql/data
+      - /mnt/HC_Volume_101337835/explorer-stats-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U stats -d stats"]
       interval: 10s
