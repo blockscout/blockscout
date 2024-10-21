@@ -32,8 +32,8 @@ defmodule Explorer.Account.Identity do
     field(:uid_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:uid, Explorer.Encrypted.Binary, null: false)
     field(:email, Explorer.Encrypted.Binary, null: false)
-    field(:name, Explorer.Encrypted.Binary, virtual: true)
-    field(:nickname, Explorer.Encrypted.Binary, virtual: true)
+    field(:name, :string, virtual: true)
+    field(:nickname, :string, virtual: true)
     field(:address_hash, Hash.Address, virtual: true)
     field(:avatar, Explorer.Encrypted.Binary)
     field(:verification_email_sent_at, :utc_datetime_usec)
