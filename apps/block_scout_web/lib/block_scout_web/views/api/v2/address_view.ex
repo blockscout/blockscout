@@ -97,14 +97,15 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
     creation_transaction = Address.creation_transaction(address)
     creator_hash = creation_transaction && creation_transaction.from_address_hash
+    creation_transaction_hash = creator_hash && AddressView.transaction_hash(address)
     token = address.token && TokenView.render("token.json", %{token: address.token})
 
     extended_info =
       Map.merge(base_info, %{
         "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
-        "creation_transaction_hash" => creation_transaction,
+        "creation_transaction_hash" => creation_transaction_hash,
         # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `creation_transaction_hash` property
-        "creation_tx_hash" => creation_transaction,
+        "creation_tx_hash" => creation_transaction_hash,
         "token" => token,
         "coin_balance" => balance,
         "exchange_rate" => exchange_rate,
