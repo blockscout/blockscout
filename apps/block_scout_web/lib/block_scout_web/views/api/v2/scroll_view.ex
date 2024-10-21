@@ -94,13 +94,18 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
 
     %{
       "number" => batch.number,
-      "commit_block_number" => batch.commit_block_number,
-      "commit_transaction_hash" => batch.commit_transaction_hash,
-      "commit_timestamp" => batch.commit_timestamp,
-      "finalize_block_number" => finalize_block_number,
-      "finalize_transaction_hash" => finalize_transaction_hash,
-      "finalize_timestamp" => finalize_timestamp,
-      "block_count" => batch.l2_block_range.to - batch.l2_block_range.from + 1,
+      "commitment_transaction" => %{
+        "block_number" => batch.commit_block_number,
+        "hash" => batch.commit_transaction_hash,
+        "timestamp" => batch.commit_timestamp
+      },
+      "confirmation_transaction" => %{
+        "block_number" => finalize_block_number,
+        "hash" => finalize_transaction_hash,
+        "timestamp" => finalize_timestamp
+      },
+      "start_block" => batch.l2_block_range.from,
+      "end_block" => batch.l2_block_range.to,
       "transaction_count" => transaction_count
     }
   end
