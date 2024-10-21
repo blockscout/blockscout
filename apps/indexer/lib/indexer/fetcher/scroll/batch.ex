@@ -105,7 +105,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
          json_rpc_named_arguments: json_rpc_named_arguments,
          end_block: safe_block,
          start_block: max(start_block, last_l1_block_number),
-         eth_get_logs_range_size: Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:eth_get_logs_range_size]
+         eth_get_logs_range_size: Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:l1_eth_get_logs_range_size]
        }}
     else
       {:start_block_undefined, true} ->

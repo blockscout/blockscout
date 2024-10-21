@@ -56,15 +56,16 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
           start_block: start_block
         } = state
       ) do
-    layer =
+    {layer, eth_get_logs_range_size_config} =
       if module == BridgeL1 do
-        :L1
+        {:L1, :l1_eth_get_logs_range_size}
       else
-        :L2
+        {:L2, :l2_eth_get_logs_range_size}
       end
 
+    eth_get_logs_range_size = Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][eth_get_logs_range_size_config]
+
     time_before = Timex.now()
-    eth_get_logs_range_size = Application.get_all_env(:indexer)[Indexer.Fetcher.Scroll][:eth_get_logs_range_size]
 
     last_written_block =
       start_block..end_block
