@@ -205,6 +205,54 @@ defmodule Explorer.Chain.Address do
 
   @balance_changeset_required_attrs @required_attrs ++ ~w(fetched_coin_balance fetched_coin_balance_block_number)a
 
+  @doc """
+  Creates an address.
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.Address.create(
+      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"}
+      ...> )
+      ...> to_string(hash)
+      "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"
+
+  A `String.t/0` value for `Explorer.Chain.Address.t/0` `hash` must have 40 hexadecimal characters after the `0x` prefix
+  to prevent short- and long-hash transcription errors.
+
+      iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.Address.create(
+      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0"}
+      ...> )
+      ...> errors
+      [hash: {"is invalid", [type: Explorer.Chain.Hash.Address, validation: :cast]}]
+      iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.Address.create(
+      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0ba"}
+      ...> )
+      ...> errors
+      [hash: {"is invalid", [type: Explorer.Chain.Hash.Address, validation: :cast]}]
+
+  """
+  @spec create(map()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
+  def create(attrs \\ %{}) do
+    %__MODULE__{}
+    |> changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Creates multiple instances of a `Explorer.Chain.Address`.
+
+  ## Parameters
+
+    - address_insert_params: List of address changesets to create.
+
+  ## Returns
+
+    - A list of created resource instances.
+
+  """
+  @spec create_multiple(list()) :: {non_neg_integer(), nil | [term()]}
+  def create_multiple(address_insert_params) do
+    Repo.insert_all(Address, address_insert_params, on_conflict: :nothing, returning: [:hash])
+  end
+
   def balance_changeset(%__MODULE__{} = address, attrs) do
     address
     |> cast(attrs, @allowed_attrs)
@@ -518,7 +566,7 @@ defmodule Explorer.Chain.Address do
 
   Returns `:ok` if found
 
-      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.Address.create(
       ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
       ...> )
       iex> Explorer.Address.check_address_exists(hash)
@@ -543,7 +591,7 @@ defmodule Explorer.Chain.Address do
 
   Returns `true` if found
 
-      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.Address.create(
       ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
       ...> )
       iex> Explorer.Chain.Address.address_exists?(hash)

@@ -742,37 +742,6 @@ defmodule Explorer.Chain do
   def confirmations(nil, _), do: {:error, :pending}
 
   @doc """
-  Creates an address.
-
-      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
-      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"}
-      ...> )
-      ...> to_string(hash)
-      "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"
-
-  A `String.t/0` value for `Explorer.Chain.Address.t/0` `hash` must have 40 hexadecimal characters after the `0x` prefix
-  to prevent short- and long-hash transcription errors.
-
-      iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.create_address(
-      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0"}
-      ...> )
-      ...> errors
-      [hash: {"is invalid", [type: Explorer.Chain.Hash.Address, validation: :cast]}]
-      iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.create_address(
-      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0ba"}
-      ...> )
-      ...> errors
-      [hash: {"is invalid", [type: Explorer.Chain.Hash.Address, validation: :cast]}]
-
-  """
-  @spec create_address(map()) :: {:ok, Address.t()} | {:error, Ecto.Changeset.t()}
-  def create_address(attrs \\ %{}) do
-    %Address{}
-    |> Address.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
   Creates a decompiled smart contract.
   """
 
@@ -938,7 +907,7 @@ defmodule Explorer.Chain do
 
   Returns `{:ok, %Explorer.Chain.Address{}}` if found
 
-      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.Address.create(
       ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
       ...> )
       iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
@@ -1037,7 +1006,7 @@ defmodule Explorer.Chain do
 
   Returns `{:ok, %Explorer.Chain.Address{}}` if found
 
-      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.Address.create(
       ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
       ...> )
       iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
@@ -1046,7 +1015,7 @@ defmodule Explorer.Chain do
 
   Returns `{:error, address}` if not found but created an address
 
-      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.Address.create(
       ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
       ...> )
       iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
@@ -1083,7 +1052,7 @@ defmodule Explorer.Chain do
         {:ok, address}
 
       {:error, :not_found} ->
-        create_address(%{hash: to_string(hash)})
+        Address.create(%{hash: to_string(hash)})
         hash_to_address(hash, options, query_decompiled_code_flag)
     end
   end
