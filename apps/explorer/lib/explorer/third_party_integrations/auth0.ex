@@ -165,8 +165,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   - `{:error, String.t()}` error with the description
   - `:error` if there was an unexpected error
   """
-  @spec link_email(String.t(), String.t(), String.t()) :: :error | {:ok, Auth.t()} | {:error, String.t()}
-  def link_email(primary_user_id, email, otp) do
+  @spec link_email(Identity.session(), String.t(), String.t()) :: :error | {:ok, Auth.t()} | {:error, String.t()}
+  def link_email(%{uid: primary_user_id, email: nil}, email, otp) do
     case find_users_by_email(email) do
       {:ok, []} ->
         with {:ok, token} <- confirm_otp(email, otp),
@@ -183,6 +183,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
         error
     end
   end
+
+  def link_email(_account_with_email, _, _), do: {:error, "This account already has an email"}
 
   @doc """
   Confirms a one-time password (OTP) and retrieves authentication information.
@@ -504,6 +506,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     case get_m2m_jwt() do
       token when is_binary(token) ->
         client = OAuth.client(token: token)
+        email = URI.encode(email)
 
         case Client.get(client, @users_path, [],
                params: %{"q" => ~s(email:"#{email}" OR user_metadata.email:"#{email}")}
@@ -531,7 +534,9 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       token when is_binary(token) ->
         client = OAuth.client(token: token)
 
-        case Client.get(client, @users_path, [], params: %{"q" => ~s(email:"#{email}" AND NOT user_id:"#{user_id}")}) do
+        case Client.get(client, @users_path, [],
+               params: %{"q" => ~s(email:"#{URI.encode(email)}" AND NOT user_id:"#{URI.encode(user_id)}")}
+             ) do
           {:ok, %OAuth2.Response{status_code: 200, body: []}} ->
             {:ok, create_auth(user)}
 
