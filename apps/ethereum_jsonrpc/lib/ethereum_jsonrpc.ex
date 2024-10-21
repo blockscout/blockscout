@@ -238,7 +238,26 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Fetches code for each given `address` at the `block_number`.
+    Fetches contract code for multiple addresses at specified block numbers.
+
+    This function takes a list of parameters, each containing an address and a
+    block number, and retrieves the contract code for each address at the
+    specified block.
+
+    ## Parameters
+    - `params_list`: A list of maps, each containing:
+      - `:block_quantity`: The block number (as a quantity string) at which to fetch the code.
+      - `:address`: The address of the contract to fetch the code for.
+    - `json_rpc_named_arguments`: A keyword list of JSON-RPC configuration options.
+
+    ## Returns
+    - `{:ok, fetched_codes}`, where `fetched_codes` is a `FetchedCodes.t()` struct containing:
+      - `params_list`: A list of successfully fetched code parameters, each containing:
+        - `address`: The contract address.
+        - `block_number`: The block number at which the code was fetched.
+        - `code`: The fetched contract code in hexadecimal format.
+      - `errors`: A list of errors encountered during the fetch operation.
+    - `{:error, reason}`: An error occurred during the fetch operation.
   """
   @spec fetch_codes(
           [%{required(:block_quantity) => quantity, required(:address) => address()}],
@@ -423,7 +442,21 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Assigns an id to each set of params in `params_list` for batch request-response correlation
+    Assigns a unique integer ID to each set of parameters in the given list.
+
+    This function is used to prepare parameters for batch request-response
+    correlation in JSON-RPC calls.
+
+    ## Parameters
+    - `params_list`: A list of parameter sets, where each set can be of any type.
+
+    ## Returns
+    A map where the keys are integer IDs (starting from 0) and the values are
+    the corresponding parameter sets from the input list.
+
+    ## Example
+      iex> id_to_params([%{block: 1}, %{block: 2}])
+      %{0 => %{block: 1}, 1 => %{block: 2}}
   """
   @spec id_to_params([params]) :: %{id => params} when id: non_neg_integer(), params: any()
   def id_to_params(params_list) do
@@ -433,8 +466,27 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Assigns not matched ids between requests and responses to responses with incorrect ids
+   Sanitizes responses by assigning unmatched IDs to responses with missing IDs.
+
+   This function processes a list of responses and a map of expected IDs to
+   parameters. It handles cases where responses have missing (nil) IDs by
+   assigning them unmatched IDs from the id_to_params map.
+
+   ## Parameters
+   - `responses`: A list of response maps from a batch JSON-RPC call.
+   - `id_to_params`: A map of request IDs to their corresponding parameters.
+
+   ## Returns
+   A list of sanitized response maps where each response has a valid ID.
+
+   ## Example
+      iex> responses = [%{id: 1, result: "ok"}, %{id: nil, result: "error"}]
+      iex> id_to_params = %{1 => %{}, 2 => %{}, 3 => %{}}
+      iex> EthereumJSONRPC.sanitize_responses(responses, id_to_params)
+      [%{id: 1, result: "ok"}, %{id: 2, result: "error"}]
   """
+  @spec sanitize_responses(Transport.batch_response(), %{id => params}) :: Transport.batch_response()
+        when id: EthereumJSONRPC.request_id(), params: any()
   def sanitize_responses(responses, id_to_params) do
     responses
     |> Enum.reduce(

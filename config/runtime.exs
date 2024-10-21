@@ -676,6 +676,7 @@ config :indexer,
   trace_last_block: trace_last_block,
   fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block"),
   memory_limit: ConfigHelper.indexer_memory_limit(),
+  system_memory_percentage: ConfigHelper.parse_integer_env_var("INDEXER_SYSTEM_MEMORY_PERCENTAGE", 60),
   receipts_batch_size: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_BATCH_SIZE", 250),
   receipts_concurrency: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_CONCURRENCY", 10),
   hide_indexing_progress_alert: ConfigHelper.parse_bool_env_var("INDEXER_HIDE_INDEXING_PROGRESS_ALERT"),
@@ -684,7 +685,9 @@ config :indexer,
     ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 100_000),
   coin_balances_fetcher_init_limit:
     ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 2000),
-  graceful_shutdown_period: ConfigHelper.parse_time_env_var("INDEXER_GRACEFUL_SHUTDOWN_PERIOD", "5m")
+  graceful_shutdown_period: ConfigHelper.parse_time_env_var("INDEXER_GRACEFUL_SHUTDOWN_PERIOD", "5m"),
+  internal_transactions_fetch_order:
+    ConfigHelper.parse_catalog_value("INDEXER_INTERNAL_TRANSACTIONS_FETCH_ORDER", ["asc", "desc"], true, "asc")
 
 config :indexer, :ipfs,
   gateway_url: System.get_env("IPFS_GATEWAY_URL", "https://ipfs.io/ipfs"),

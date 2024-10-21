@@ -181,6 +181,20 @@ defmodule Explorer.Chain.Address.Counters do
     Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
   end
 
+  @doc """
+    Calculates the total gas used by incoming transactions to a given address.
+
+    This function queries the database for all transactions where the
+    `to_address_hash` matches the provided `address_hash`, and sums up the
+    `gas_used` for these transactions.
+
+    ## Parameters
+    - `address_hash`: The address hash to query for incoming transactions.
+
+    ## Returns
+    - The total gas used by incoming transactions, or `nil` if no transactions
+      are found or if the sum is null.
+  """
   @spec address_to_incoming_transaction_gas_usage(Hash.Address.t()) :: Decimal.t() | nil
   def address_to_incoming_transaction_gas_usage(address_hash) do
     to_address_query =
@@ -192,6 +206,19 @@ defmodule Explorer.Chain.Address.Counters do
     Repo.aggregate(to_address_query, :sum, :gas_used, timeout: :infinity)
   end
 
+  @doc """
+    Calculates the total gas used by outgoing transactions from a given address.
+
+    This function queries the database for all transactions where the
+    `from_address_hash` matches the provided `address_hash`, and sums up the
+    `gas_used` for these transactions.
+
+    ## Parameters
+    - `address_hash`: the address to query.
+
+    ## Returns
+    - The total gas used, or `nil` if no transactions are found or if the sum is null.
+  """
   @spec address_to_outcoming_transaction_gas_usage(Hash.Address.t()) :: Decimal.t() | nil
   def address_to_outcoming_transaction_gas_usage(address_hash) do
     to_address_query =
@@ -226,9 +253,29 @@ defmodule Explorer.Chain.Address.Counters do
     )
   end
 
+  @doc """
+    Calculates the total gas usage for a given address.
+
+    This function determines the appropriate gas usage calculation based on the
+    address type:
+
+    - For smart contracts (excluding EOAs with code), it first checks the gas
+      usage of incoming transactions. If there are no incoming transactions or
+      their gas usage is zero, it falls back to the gas usage of outgoing
+      transactions.
+    - For regular addresses and EOAs with code, it calculates the gas usage of
+      outgoing transactions.
+
+    ## Parameters
+    - `address`: The address to calculate gas usage for.
+
+    ## Returns
+    - The total gas usage for the address.
+    - `nil` if no relevant transactions are found or if the sum is null.
+  """
   @spec address_to_gas_usage_count(Address.t()) :: Decimal.t() | nil
   def address_to_gas_usage_count(address) do
-    if Address.smart_contract?(address) do
+    if Address.smart_contract?(address) and not Address.eoa_with_code?(address) do
       incoming_transaction_gas_usage = address_to_incoming_transaction_gas_usage(address.hash)
 
       cond do

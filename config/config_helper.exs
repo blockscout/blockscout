@@ -160,16 +160,14 @@ defmodule ConfigHelper do
 
   @spec indexer_memory_limit() :: integer()
   def indexer_memory_limit do
-    indexer_memory_limit_default = 1
-
     "INDEXER_MEMORY_LIMIT"
-    |> safe_get_env(to_string(indexer_memory_limit_default))
+    |> safe_get_env(nil)
     |> String.downcase()
     |> Integer.parse()
     |> case do
       {integer, g} when g in ["g", "gb", ""] -> integer <<< 30
       {integer, m} when m in ["m", "mb"] -> integer <<< 20
-      _ -> indexer_memory_limit_default <<< 30
+      _ -> nil
     end
   end
 

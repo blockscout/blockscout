@@ -1597,24 +1597,9 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
-    test "fetch token instance metadata for existing token instance with no metadata", %{
-      conn: conn,
-      v2_secret_key: v2_secret_key
-    } do
-      expected_body = "secret=#{v2_secret_key}&response=123"
-
-      Explorer.Mox.HTTPoison
-      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               "success" => true,
-               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
-             })
-         }}
-      end)
+    test "fetch token instance metadata for existing token instance with no metadata", %{conn: conn} do
+      BlockScoutWeb.TestCaptchaHelper
+      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
 
       token = insert(:token, type: "ERC-721")
       token_id = 1

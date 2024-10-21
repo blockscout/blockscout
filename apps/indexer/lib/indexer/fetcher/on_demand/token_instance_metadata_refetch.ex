@@ -20,9 +20,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
 
   @spec trigger_refetch(TokenInstance.t()) :: :ok
   def trigger_refetch(token_instance) do
-    unless is_nil(token_instance.metadata) do
-      GenServer.cast(__MODULE__, {:refetch, token_instance})
-    end
+    GenServer.cast(__MODULE__, {:refetch, token_instance})
   end
 
   defp fetch_metadata(token_instance, state) do
