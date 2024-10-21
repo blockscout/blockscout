@@ -343,7 +343,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       end
 
     :scroll ->
-      # Removes all rows from `scroll_l1_fee_params` table
+      # Removes all rows from `scroll_bridge` and `scroll_l1_fee_params` tables
       # previously written starting from the reorg block number
       defp remove_assets_by_number(reorg_block) do
         # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage

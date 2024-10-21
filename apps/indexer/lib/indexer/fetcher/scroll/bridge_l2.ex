@@ -129,6 +129,9 @@ defmodule Indexer.Fetcher.Scroll.BridgeL2 do
     This is the reason why we can only remove rows for Withdrawal operations from the `scroll_bridge` table
     when a reorg happens on L2 layer.
 
+    Also, the reorg block number is put into the reorg monitor queue to let the main loop function
+    (see `Indexer.Fetcher.Scroll.Bridge` module) use that block number and behave accordingly.
+
     ## Parameters
     - `reorg_block`: The block number where reorg has occurred.
 
