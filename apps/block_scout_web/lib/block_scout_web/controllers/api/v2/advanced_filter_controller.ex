@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 4]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
+  alias BlockScoutWeb.CaptchaHelper
   alias BlockScoutWeb.API.V2.{AdvancedFilterView, CSVExportController}
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{AdvancedFilter, ContractMethod, Data, Token, Transaction}
@@ -81,10 +82,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   """
   @spec list_csv(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list_csv(conn, params) do
-    with {:recaptcha, true} <-
-           {:recaptcha,
-            Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] ||
-              CSVHelper.captcha_helper().recaptcha_passed?(params["recaptcha_response"])} do
+    with {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)} do
       full_options =
         params
         |> extract_filters()

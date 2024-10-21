@@ -5,9 +5,10 @@ defmodule Explorer.Account.CustomABI do
   use Explorer.Schema
 
   alias ABI.FunctionSelector
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Identity
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Hash
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Ecto.Changeset
@@ -21,6 +22,7 @@ defmodule Explorer.Account.CustomABI do
     field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
     field(:name, Explorer.Encrypted.Binary, null: false)
+    field(:user_created, :boolean, null: false, default: true)
 
     belongs_to(:identity, Identity, null: false)
 
@@ -177,12 +179,37 @@ defmodule Explorer.Account.CustomABI do
 
   def custom_abi_by_identity_id_and_address_hash_query(_, _), do: nil
 
+  @doc """
+  Retrieves a custom ABI for a given address hash and identity ID.
+
+  This function searches for a custom ABI associated with the provided address
+  hash and identity ID. It returns the first matching ABI if found, or nil if no
+  matching ABI exists.
+
+  ## Parameters
+  - `address_hash`: The address hash to search for. Can be a `Hash.Address.t()`,
+    `String.t()`, or `nil`.
+  - `identity_id`: The identity ID associated with the custom ABI. Can be an
+    `integer()` or `nil`.
+
+  ## Returns
+  - A `Explorer.Account.CustomABI` struct if a matching ABI is found.
+  - `nil` if no matching ABI is found or if either input is nil.
+  """
+  @spec get_custom_abi_by_identity_id_and_address_hash(Hash.Address.t() | String.t() | nil, integer() | nil) ::
+          __MODULE__.t() | nil
   def get_custom_abi_by_identity_id_and_address_hash(address_hash, identity_id)
       when not is_nil(identity_id) and not is_nil(address_hash) do
-    address_hash
-    |> hash_to_lower_case_string()
-    |> custom_abi_by_identity_id_and_address_hash_query(identity_id)
-    |> Repo.account_repo().one()
+    abis =
+      address_hash
+      |> hash_to_lower_case_string()
+      |> custom_abi_by_identity_id_and_address_hash_query(identity_id)
+      |> Repo.account_repo().all()
+
+    case abis do
+      [abi | _] -> abi
+      _ -> nil
+    end
   end
 
   def get_custom_abi_by_identity_id_and_address_hash(_, _), do: nil
@@ -224,4 +251,32 @@ defmodule Explorer.Account.CustomABI do
   end
 
   def get_max_custom_abis_count, do: @max_abis_per_account
+
+  @doc """
+  Merges custom ABIs from multiple identities into a primary identity.
+
+  This function updates all custom ABIs associated with the identities specified
+  in `ids_to_merge` to be associated with the `primary_id`. It also marks these
+  ABIs as not user-created in order to satisfy database constraint.
+
+  ## Parameters
+  - `multi`: An `Ecto.Multi` struct to which the merge operation will be added.
+  - `primary_id`: An integer representing the ID of the primary identity to
+    which the custom ABIs will be merged.
+  - `ids_to_merge`: A list of integer IDs representing the identities whose
+    custom ABIs will be merged into the primary identity.
+
+  ## Returns
+  - An updated `Ecto.Multi` struct with the merge operation added.
+  """
+  @spec merge(Multi.t(), integer(), [integer()]) :: Multi.t()
+  def merge(multi, primary_id, ids_to_merge) do
+    Multi.run(multi, :merge_custom_abis, fn repo, _ ->
+      {:ok,
+       repo.update_all(
+         from(key in __MODULE__, where: key.identity_id in ^ids_to_merge),
+         set: [identity_id: primary_id, user_created: false]
+       )}
+    end)
+  end
 end
