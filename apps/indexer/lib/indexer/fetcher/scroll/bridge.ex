@@ -162,7 +162,7 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
   # Imports the given Scroll messages into database.
   # Used by Indexer.Fetcher.Scroll.BridgeL1 and Indexer.Fetcher.Scroll.BridgeL2 fetchers.
   # Doesn't return anything.
-  @spec import_operations(list()) :: no_return()
+  @spec import_operations([Chain.Scroll.Bridge.to_import()]) :: no_return()
   defp import_operations(operations) do
     {:ok, _} =
       Chain.import(%{
