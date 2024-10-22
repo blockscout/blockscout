@@ -653,6 +653,8 @@ config :explorer, Explorer.Chain.Blackfort.Validator, api_url: System.get_env("B
 ### Indexer ###
 ###############
 
+first_block = ConfigHelper.parse_integer_env_var("FIRST_BLOCK", 0)
+
 trace_first_block = ConfigHelper.parse_integer_env_var("TRACE_FIRST_BLOCK", 0)
 trace_last_block = ConfigHelper.parse_integer_or_nil_env_var("TRACE_LAST_BLOCK")
 
@@ -666,7 +668,7 @@ config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
   metadata_updater_milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_METADATA_UPDATE_INTERVAL", "48h"),
   block_ranges: System.get_env("BLOCK_RANGES"),
-  first_block: ConfigHelper.parse_integer_env_var("FIRST_BLOCK", 0),
+  first_block: first_block,
   last_block: ConfigHelper.parse_integer_or_nil_env_var("LAST_BLOCK"),
   trace_block_ranges: trace_block_ranges,
   trace_first_block: trace_first_block,
@@ -1110,7 +1112,7 @@ config :indexer, Indexer.Fetcher.Scroll.BridgeL1,
 
 config :indexer, Indexer.Fetcher.Scroll.BridgeL2,
   messenger_contract: System.get_env("INDEXER_SCROLL_L2_MESSENGER_CONTRACT"),
-  start_block: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L2_MESSENGER_START_BLOCK", 1)
+  start_block: ConfigHelper.parse_integer_env_var("INDEXER_SCROLL_L2_MESSENGER_START_BLOCK", first_block)
 
 config :indexer, Indexer.Fetcher.Scroll.Batch,
   scroll_chain_contract: System.get_env("INDEXER_SCROLL_L1_CHAIN_CONTRACT"),
