@@ -312,6 +312,22 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     end)
   end
 
+  # Extracts the L2 block range from the call data of a batch commitment
+  # transaction.
+  #
+  # This function decodes the input data from either a `commitBatch` or
+  # `commitBatchWithBlobProof` function call, extracts the chunks containing L2
+  # block numbers, and by identifying the minimum and maximum block numbers in the
+  # chunks, determines the range of L2 block numbers included in the batch.
+  #
+  # ## Parameters
+  # - `input`: A binary string representing the input data of a batch commitment
+  #   transaction.
+  #
+  # ## Returns
+  # - A `BlockRange.t()` struct containing the minimum and maximum L2 block
+  #   numbers included in the batch.
+  @spec input_to_l2_block_range(binary()) :: BlockRange.t()
   defp input_to_l2_block_range(input) do
     chunks =
       case input do
