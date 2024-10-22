@@ -564,7 +564,9 @@ defmodule Indexer.Helper do
     ## Returns
     - The list of blocks. The list is empty if the HTTP response returns error.
   """
-  @spec get_blocks_by_events(list(), list(), non_neg_integer(), boolean()) :: list()
+  @spec get_blocks_by_events(list(), EthereumJSONRPC.json_rpc_named_arguments(), non_neg_integer(), boolean()) :: [
+          %{String.t() => any()}
+        ]
   def get_blocks_by_events(events, json_rpc_named_arguments, retries, transaction_details \\ false) do
     events
     |> Enum.reduce(%{}, fn event, acc ->
