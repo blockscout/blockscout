@@ -255,7 +255,9 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
   #
   # ## Returns
   # - A dictionary associating block timestamps with the their numbers.
-  @spec blocks_to_timestamps(list(), list()) :: map()
+  @spec blocks_to_timestamps([%{atom() => any()}], EthereumJSONRPC.json_rpc_named_arguments()) :: %{
+          non_neg_integer() => DateTime.t()
+        }
   defp blocks_to_timestamps(events, json_rpc_named_arguments) do
     events
     |> IndexerHelper.get_blocks_by_events(json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
