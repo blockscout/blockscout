@@ -54,6 +54,8 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.PolygonEdge.{DepositExecutes, Withdrawals}
 
+  alias Indexer.Transform.Scroll.L1FeeParams, as: ScrollL1FeeParams
+
   alias Indexer.Transform.Arbitrum.Messaging, as: ArbitrumMessaging
   alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
 
@@ -178,6 +180,11 @@ defmodule Indexer.Block.Fetcher do
              do: DepositExecutes.parse(logs),
              else: []
            ),
+         scroll_l1_fee_params =
+           if(callback_module == Indexer.Block.Realtime.Fetcher,
+             do: ScrollL1FeeParams.parse(logs),
+             else: []
+           ),
          shibarium_bridge_operations =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
              do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
@@ -246,6 +253,7 @@ defmodule Indexer.Block.Fetcher do
            polygon_edge_withdrawals: polygon_edge_withdrawals,
            polygon_edge_deposit_executes: polygon_edge_deposit_executes,
            polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+           scroll_l1_fee_params: scroll_l1_fee_params,
            shibarium_bridge_operations: shibarium_bridge_operations,
            celo_gas_tokens: celo_gas_tokens,
            arbitrum_messages: arbitrum_xlevel_messages
@@ -279,41 +287,51 @@ defmodule Indexer.Block.Fetcher do
     end
   end
 
-  defp import_options(basic_import_options, %{
-         transactions_with_receipts: transactions_with_receipts,
-         optimism_withdrawals: optimism_withdrawals,
-         polygon_edge_withdrawals: polygon_edge_withdrawals,
-         polygon_edge_deposit_executes: polygon_edge_deposit_executes,
-         polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
-         shibarium_bridge_operations: shibarium_bridge_operations,
-         celo_gas_tokens: celo_gas_tokens,
-         arbitrum_messages: arbitrum_xlevel_messages
-       }) do
-    case Application.get_env(:explorer, :chain_type) do
-      :ethereum ->
+  case Application.compile_env(:explorer, :chain_type) do
+    :ethereum ->
+      defp import_options(basic_import_options, %{transactions_with_receipts: transactions_with_receipts}) do
         basic_import_options
         |> Map.put_new(:beacon_blob_transactions, %{
           params: transactions_with_receipts |> Enum.filter(&Map.has_key?(&1, :max_fee_per_blob_gas))
         })
+      end
 
-      :optimism ->
+    :optimism ->
+      defp import_options(basic_import_options, %{optimism_withdrawals: optimism_withdrawals}) do
         basic_import_options
         |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
+      end
 
-      :polygon_edge ->
+    :polygon_edge ->
+      defp import_options(basic_import_options, %{
+             polygon_edge_withdrawals: polygon_edge_withdrawals,
+             polygon_edge_deposit_executes: polygon_edge_deposit_executes
+           }) do
         basic_import_options
         |> Map.put_new(:polygon_edge_withdrawals, %{params: polygon_edge_withdrawals})
         |> Map.put_new(:polygon_edge_deposit_executes, %{params: polygon_edge_deposit_executes})
+      end
 
-      :polygon_zkevm ->
+    :polygon_zkevm ->
+      defp import_options(basic_import_options, %{polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations}) do
         basic_import_options
         |> Map.put_new(:polygon_zkevm_bridge_operations, %{params: polygon_zkevm_bridge_operations})
+      end
 
-      :shibarium ->
+    :scroll ->
+      defp import_options(basic_import_options, %{scroll_l1_fee_params: scroll_l1_fee_params}) do
+        basic_import_options
+        |> Map.put_new(:scroll_l1_fee_params, %{params: scroll_l1_fee_params})
+      end
+
+    :shibarium ->
+      defp import_options(basic_import_options, %{shibarium_bridge_operations: shibarium_bridge_operations}) do
         basic_import_options
         |> Map.put_new(:shibarium_bridge_operations, %{params: shibarium_bridge_operations})
+      end
 
-      :celo ->
+    :celo ->
+      defp import_options(basic_import_options, %{celo_gas_tokens: celo_gas_tokens}) do
         tokens =
           basic_import_options
           |> Map.get(:tokens, %{})
@@ -324,14 +342,18 @@ defmodule Indexer.Block.Fetcher do
           :tokens,
           %{params: (tokens ++ celo_gas_tokens) |> Enum.uniq()}
         )
+      end
 
-      :arbitrum ->
+    :arbitrum ->
+      defp import_options(basic_import_options, %{arbitrum_messages: arbitrum_xlevel_messages}) do
         basic_import_options
         |> Map.put_new(:arbitrum_messages, %{params: arbitrum_xlevel_messages})
+      end
 
-      _ ->
+    _ ->
+      defp import_options(basic_import_options, _) do
         basic_import_options
-    end
+      end
   end
 
   defp update_block_cache([]), do: :ok

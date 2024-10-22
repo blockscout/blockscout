@@ -610,4 +610,12 @@ defmodule Indexer.Fetcher.PolygonEdge do
   def repeated_request(req, error_message, json_rpc_named_arguments, retries) do
     Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
+
+  @doc """
+    Returns L1 RPC URL for a Polygon Edge module.
+  """
+  @spec l1_rpc_url() :: binary()
+  def l1_rpc_url do
+    Application.get_all_env(:indexer)[__MODULE__][:polygon_edge_l1_rpc]
+  end
 end

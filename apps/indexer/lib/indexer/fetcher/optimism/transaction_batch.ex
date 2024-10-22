@@ -32,7 +32,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias EthereumJSONRPC.{Blocks, Contract}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Beacon.Blob, as: BeaconBlob
-  alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.{Block, Hash, RollupReorgMonitorQueue}
   alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias HTTPoison.Response
@@ -86,7 +86,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     optimism_env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
     system_config = optimism_env[:optimism_l1_system_config]
-    optimism_l1_rpc = optimism_env[:optimism_l1_rpc]
+    optimism_l1_rpc = l1_rpc_url()
 
     with {:system_config_valid, true} <-
            {:system_config_valid, Helper.address_correct?(system_config)},
@@ -299,7 +299,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
             incomplete_channels_acc
           end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           new_incomplete_channels = handle_l1_reorg(reorg_block, new_incomplete_channels)
@@ -918,6 +918,26 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         "As L2 reorg was detected, all rows with l2_block_number >= #{reorg_block} were removed from the op_transaction_batches table. Number of removed rows: #{deleted_count}."
       )
     end
+  end
+
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary() | nil
+  def l1_rpc_url do
+    Optimism.l1_rpc_url()
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    before this fetcher starts.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    Optimism.requires_l1_reorg_monitor?()
   end
 
   defp http_get_request(url, attempts_done \\ 0) do

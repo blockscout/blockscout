@@ -16,7 +16,8 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.WithdrawalEvent
-  alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
+  alias Explorer.Chain.RollupReorgMonitorQueue
+  alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
   @fetcher_name :optimism_withdrawal_events
@@ -119,7 +120,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} = Repo.delete_all(from(we in WithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
@@ -255,6 +256,26 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     query
     |> Repo.one()
     |> Kernel.||({0, nil})
+  end
+
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary() | nil
+  def l1_rpc_url do
+    Optimism.l1_rpc_url()
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    before this fetcher starts.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    Optimism.requires_l1_reorg_monitor?()
   end
 
   defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do

@@ -23,6 +23,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   import Indexer.Fetcher.Shibarium.Helper,
     only: [calc_operation_hash: 5, prepare_insert_items: 2, recalculate_cached_count: 0]
 
+  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Chain.Shibarium.Bridge
   alias Explorer.{Chain, Repo}
   alias Indexer.Fetcher.RollupL1ReorgMonitor
@@ -284,7 +285,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)
@@ -316,6 +317,27 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary()
+  def l1_rpc_url do
+    Application.get_all_env(:indexer)[__MODULE__][:rpc]
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    for this module.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    module_config = Application.get_all_env(:indexer)[__MODULE__]
+    not is_nil(module_config[:start_block])
   end
 
   defp filter_deposit_events(events) do
