@@ -160,7 +160,7 @@ defmodule Indexer.Block.Fetcher do
          %{logs: receipt_logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          celo_epoch_logs = CeloEpochLogs.fetch(blocks, json_rpc_named_arguments),
-         logs = receipt_logs ++ celo_epoch_logs,
+         logs = maybe_set_new_log_index(receipt_logs) ++ celo_epoch_logs,
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{token_transfers: celo_native_token_transfers, tokens: celo_tokens} =
            CeloTransactionTokenTransfers.parse_transactions(transactions_with_receipts),
@@ -753,5 +753,23 @@ defmodule Indexer.Block.Fetcher do
 
   defp async_match_arbitrum_messages_to_l2(transactions_with_messages_from_l1) do
     ArbitrumMessagesToL2Matcher.async_discover_match(transactions_with_messages_from_l1)
+  end
+
+  # workaround for cases when RPC send logs with same index within one block
+  defp maybe_set_new_log_index(logs) do
+    logs
+    |> Enum.group_by(& &1.block_hash)
+    |> Enum.map(fn {block_hash, logs_per_block} ->
+      if logs_per_block |> Enum.frequencies_by(& &1.index) |> Map.values() |> Enum.max() == 1 do
+        logs_per_block
+      else
+        Logger.error("Found logs with same index within one block: #{block_hash}")
+
+        logs_per_block
+        |> Enum.sort_by(&{&1.transaction_index, &1.index, &1.transaction_hash})
+        |> Enum.with_index(&%{&1 | index: &2})
+      end
+    end)
+    |> List.flatten()
   end
 end
