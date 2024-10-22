@@ -199,11 +199,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
 
       logs
       |> Enum.sort_by(&{&1.transaction.index, &1.index, &1.transaction_hash})
-      # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-      |> Enum.map_reduce(0, fn log, index ->
-        {{log, index}, index + 1}
-      end)
-      |> elem(0)
+      |> Enum.with_index(&{&1, &2})
     end
   end
 
@@ -214,58 +210,5 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
 
   defp token_transfer_to_index(token_transfer) do
     {token_transfer.transaction_hash, token_transfer.block_hash, token_transfer.log_index}
-  end
-
-  @doc """
-  Callback function that is executed before the migration process starts.
-  """
-  @impl FillingMigration
-  def before_start do
-    """
-    DO $$
-    BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'log_id') THEN
-      CREATE TYPE log_id AS (
-      transaction_hash bytea,
-      block_hash bytea,
-      log_index integer
-    );
-    END IF;
-    END$$;
-    """
-    |> Repo.query!()
-
-    """
-    DO $$
-    BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'nft_id') THEN
-      CREATE TYPE nft_id AS (
-      block_number bigint,
-      log_index integer
-    );
-    END IF;
-    END$$;
-    """
-    |> Repo.query!()
-
-    :ok
-  end
-
-  @doc """
-  Callback function that is executed when the migration process finishes.
-  """
-  @impl FillingMigration
-  def on_finish do
-    """
-    DROP TYPE log_id;
-    """
-    |> Repo.query!([], timeout: :infinity)
-
-    """
-    DROP TYPE nft_id;
-    """
-    |> Repo.query!([], timeout: :infinity)
-
-    :ok
   end
 end
