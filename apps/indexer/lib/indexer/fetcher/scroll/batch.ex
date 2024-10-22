@@ -84,7 +84,6 @@ defmodule Indexer.Fetcher.Scroll.Batch do
          {:scroll_chain_contract_address_is_valid, true} <-
            {:scroll_chain_contract_address_is_valid, Helper.address_correct?(env[:scroll_chain_contract])},
          start_block = env[:start_block],
-         false <- is_nil(start_block),
          true <- start_block > 0,
          {last_l1_block_number, last_l1_transaction_hash} = Reader.last_l1_batch_item(),
          json_rpc_named_arguments = Helper.json_rpc_named_arguments(rpc),
