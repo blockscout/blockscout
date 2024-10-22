@@ -1,7 +1,7 @@
 defmodule Indexer.Fetcher.Scroll.Batch do
   @moduledoc """
-  The module for scanning Scroll RPC node on L1 for the batch logs (events), parsing them,
-  and importing to the database (into the `scroll_batches` and `scroll_batch_bundles` tables).
+  The module for scanning L1 RPC node for the `CommitBatch` and `FinalizeBatch` events
+  which commit and finalize Scroll batches.
 
   The main function splits the whole block range by chunks and scans L1 Scroll Chain contract
   for the batch logs (events) for each chunk. The found events are handled and then imported to the
