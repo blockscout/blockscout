@@ -17,16 +17,14 @@ defmodule Explorer.Chain.Scroll.BatchBundle do
 
   @typedoc """
     Descriptor of the batch bundle:
-    * `id` - An internal ID of the bundle.
     * `final_batch_number` - The last batch number finalized in this bundle.
     * `finalize_transaction_hash` - A hash of the finalize transaction on L1.
     * `finalize_block_number` - A block number of the finalize transaction on L1.
     * `finalize_timestamp` - A timestamp of the finalize block.
   """
   @type to_import :: %{
-          id: non_neg_integer(),
           final_batch_number: non_neg_integer(),
-          finalize_transaction_hash: Hash.t(),
+          finalize_transaction_hash: binary(),
           finalize_block_number: non_neg_integer(),
           finalize_timestamp: DateTime.t()
         }
