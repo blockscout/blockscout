@@ -411,16 +411,21 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         timeout: :infinity
       })
 
-    inserts
-    |> Map.get(:insert_scroll_batch_bundles, [])
-    |> Enum.each(fn bundle ->
-      start_batch_number = start_by_final_batch_number[bundle.final_batch_number]
+    multi =
+      inserts
+      |> Map.get(:insert_scroll_batch_bundles, [])
+      |> Enum.reduce(Multi.new(), fn bundle, multi_acc ->
+        start_batch_number = start_by_final_batch_number[bundle.final_batch_number]
 
-      Repo.update_all(
-        from(b in Batch, where: b.number >= ^start_batch_number and b.number <= ^bundle.final_batch_number),
-        set: [bundle_id: bundle.id]
-      )
-    end)
+        Multi.update_all(
+          multi_acc,
+          bundle.id,
+          from(b in Batch, where: b.number >= ^start_batch_number and b.number <= ^bundle.final_batch_number),
+          set: [bundle_id: bundle.id]
+        )
+      end)
+
+    Repo.transaction(multi)
   end
 
   # Prepares batch and bundle items from Scroll events for database import.
