@@ -3411,28 +3411,28 @@ defmodule Explorer.Chain do
 
   # todo: keep next clause for compatibility with frontend and remove when new frontend is bound to `index_internal_transaction_desc_order` property
   def page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}, %{
-        index_int_tx_desc_order: desc
+        index_int_tx_desc_order: desc_order
       }) do
-    hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, desc)
+    hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, desc_order)
   end
 
   def page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}, %{
-        index_internal_transaction_desc_order: desc
+        index_internal_transaction_desc_order: desc_order
       }) do
-    hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, desc)
+    hardcoded_where_for_page_internal_transaction(query, block_number, transaction_index, index, desc_order)
   end
 
   # todo: keep next clause for compatibility with frontend and remove when new frontend is bound to `index_internal_transaction_desc_order` property
-  def page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_int_tx_desc_order: desc}) do
-    if desc do
+  def page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_int_tx_desc_order: desc_order}) do
+    if desc_order do
       query
     else
       where(query, [internal_transaction], internal_transaction.index > 0)
     end
   end
 
-  def page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_internal_transaction_desc_order: desc}) do
-    if desc do
+  def page_internal_transaction(query, %PagingOptions{key: {0}}, %{index_internal_transaction_desc_order: desc_order}) do
+    if desc_order do
       query
     else
       where(query, [internal_transaction], internal_transaction.index > 0)
@@ -3440,16 +3440,18 @@ defmodule Explorer.Chain do
   end
 
   # todo: keep next clause for compatibility with frontend and remove when new frontend is bound to `index_internal_transaction_desc_order` property
-  def page_internal_transaction(query, %PagingOptions{key: {index}}, %{index_int_tx_desc_order: desc}) do
-    if desc do
+  def page_internal_transaction(query, %PagingOptions{key: {index}}, %{index_int_tx_desc_order: desc_order}) do
+    if desc_order do
       where(query, [internal_transaction], internal_transaction.index < ^index)
     else
       where(query, [internal_transaction], internal_transaction.index > ^index)
     end
   end
 
-  def page_internal_transaction(query, %PagingOptions{key: {index}}, %{index_internal_transaction_desc_order: desc}) do
-    if desc do
+  def page_internal_transaction(query, %PagingOptions{key: {index}}, %{
+        index_internal_transaction_desc_order: desc_order
+      }) do
+    if desc_order do
       where(query, [internal_transaction], internal_transaction.index < ^index)
     else
       where(query, [internal_transaction], internal_transaction.index > ^index)

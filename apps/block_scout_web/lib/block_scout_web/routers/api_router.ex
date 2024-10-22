@@ -168,6 +168,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/", V2.TokenTransferController, :token_transfers)
     end
 
+    scope "/internal-transactions" do
+      get("/", V2.InternalTransactionController, :internal_transactions)
+    end
+
     scope "/blocks" do
       get("/", V2.BlockController, :blocks)
       get("/:block_hash_or_number", V2.BlockController, :block)
