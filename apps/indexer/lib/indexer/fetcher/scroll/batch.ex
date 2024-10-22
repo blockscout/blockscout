@@ -288,6 +288,15 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     Logs.elixir_to_params(result)
   end
 
+  # Extracts transaction inputs for specified transaction hashes from a list of blocks.
+  #
+  # ## Parameters
+  # - `blocks`: A list of block maps, each containing a "transactions" key with transaction data.
+  # - `transaction_hashes`: A list of transaction hashes to filter for.
+  #
+  # ## Returns
+  # A map where keys are transaction hashes and values are the corresponding transaction inputs.
+  @spec get_transaction_input_by_hash([%{String.t() => any()}], [binary()]) :: %{binary() => binary()}
   defp get_transaction_input_by_hash(blocks, transaction_hashes) do
     Enum.reduce(blocks, %{}, fn block, acc ->
       block
