@@ -32,12 +32,12 @@ defmodule Explorer.Chain.Scroll.Bridge do
   @type to_import :: %{
           type: :deposit | :withdrawal,
           index: non_neg_integer() | nil,
-          l1_transaction_hash: Hash.t() | nil,
-          l2_transaction_hash: Hash.t() | nil,
-          amount: Decimal.t() | nil,
+          l1_transaction_hash: binary() | nil,
+          l2_transaction_hash: binary() | nil,
+          amount: non_neg_integer() | nil,
           block_number: non_neg_integer() | nil,
           block_timestamp: DateTime.t() | nil,
-          message_hash: Hash.t()
+          message_hash: binary()
         }
 
   @typedoc """
