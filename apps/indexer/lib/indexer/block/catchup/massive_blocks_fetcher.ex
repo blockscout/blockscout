@@ -58,7 +58,7 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
   defp process_block(block_fetcher, number) do
     case Fetcher.fetch_and_import_range(block_fetcher, number..number, %{timeout: :infinity}) do
       {:ok, _result} ->
-        Logger.info("MassiveBlockFetcher successfully proceed block #{inspect(number)}")
+        Logger.info("MassiveBlockFetcher successfully processed block #{inspect(number)}")
         MassiveBlock.delete_block_number(number)
         []
 
@@ -66,6 +66,10 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
         Logger.error("MassiveBlockFetcher failed: #{inspect(error)}")
         [number]
     end
+  rescue
+    error ->
+      Logger.error("MassiveBlockFetcher failed: #{inspect(error)}")
+      [number]
   end
 
   defp generate_block_fetcher do
