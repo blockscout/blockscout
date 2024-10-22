@@ -867,8 +867,8 @@ defmodule Explorer.Chain.AdvancedFilter do
     dynamic([t], ^from_addresses_dynamic and ^to_addresses_dynamic)
   end
 
-  defp filter_token_transfers_by_addresses(query_function, from_addresses, to_addresses, relation) do
-    case {process_address_inclusion(from_addresses), process_address_inclusion(to_addresses)} do
+  defp filter_token_transfers_by_addresses(query_function, from_addresses_params, to_addresses_params, relation) do
+    case {process_address_inclusion(from_addresses_params), process_address_inclusion(to_addresses_params)} do
       {nil, nil} -> query_function
       {from, nil} -> do_filter_token_transfers_by_address(query_function, from, :from_address_hash)
       {nil, to} -> do_filter_token_transfers_by_address(query_function, to, :to_address_hash)
