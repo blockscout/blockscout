@@ -262,7 +262,13 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   #
   # ## Returns
   # - Nothing is returned.
-  @spec scan_block_range(non_neg_integer(), non_neg_integer(), binary(), non_neg_integer(), list()) :: any()
+  @spec scan_block_range(
+          non_neg_integer(),
+          non_neg_integer(),
+          binary(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: any()
   defp scan_block_range(l2_block_start, l2_block_end, gas_oracle, eth_get_logs_range_size, json_rpc_named_arguments) do
     chunks_number = ceil((l2_block_end - l2_block_start + 1) / eth_get_logs_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
