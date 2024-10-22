@@ -235,7 +235,7 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
     Returns a list of signatures of the events that can be emitted
     by L1 Gas Oracle contract.
   """
-  @spec event_signatures() :: list()
+  @spec event_signatures() :: [binary()]
   def event_signatures do
     [
       @overhead_updated_event,
