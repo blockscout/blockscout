@@ -315,7 +315,8 @@ defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   #
   # ## Returns
   # - The number of found and saved items.
-  @spec find_and_save_params(binary(), non_neg_integer(), non_neg_integer(), list()) :: non_neg_integer()
+  @spec find_and_save_params(binary(), non_neg_integer(), non_neg_integer(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          non_neg_integer()
   defp find_and_save_params(
          gas_oracle,
          block_start,
