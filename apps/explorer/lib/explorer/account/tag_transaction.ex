@@ -143,7 +143,8 @@ defmodule Explorer.Account.TagTransaction do
           [__MODULE__.t()] | nil
   def get_tag_transaction_by_transaction_hash_and_identity_id(transaction_hash, identity_id)
       when not is_nil(transaction_hash) and not is_nil(identity_id) do
-    query = from(tag in __MODULE__, where: tag.transaction_hash_hash == ^transaction_hash and tag.identity_id == ^identity_id)
+    query =
+      from(tag in __MODULE__, where: tag.transaction_hash_hash == ^transaction_hash and tag.identity_id == ^identity_id)
 
     Repo.account_repo().all(query)
   end
