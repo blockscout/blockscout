@@ -36,8 +36,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
         |> chain_type_transformations()
         |> Enum.zip(decoded_transactions)
-        |> Enum.map(fn {tx, decoded_input} ->
-          prepare_transaction(tx, conn, false, block_height, watchlist_names, decoded_input)
+        |> Enum.map(fn {transaction, decoded_input} ->
+          prepare_transaction(transaction, conn, false, block_height, watchlist_names, decoded_input)
         end),
       "next_page_params" => next_page_params
     }
@@ -54,8 +54,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     transactions
     |> chain_type_transformations()
     |> Enum.zip(decoded_transactions)
-    |> Enum.map(fn {tx, decoded_input} ->
-      prepare_transaction(tx, conn, false, block_height, watchlist_names, decoded_input)
+    |> Enum.map(fn {transaction, decoded_input} ->
+      prepare_transaction(transaction, conn, false, block_height, watchlist_names, decoded_input)
     end)
   end
 
@@ -68,7 +68,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
         |> chain_type_transformations()
         |> Enum.zip(decoded_transactions)
-        |> Enum.map(fn {tx, decoded_input} -> prepare_transaction(tx, conn, false, block_height, decoded_input) end),
+        |> Enum.map(fn {transaction, decoded_input} ->
+          prepare_transaction(transaction, conn, false, block_height, decoded_input)
+        end),
       "next_page_params" => next_page_params
     }
   end
@@ -86,7 +88,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     transactions
     |> chain_type_transformations()
     |> Enum.zip(decoded_transactions)
-    |> Enum.map(fn {tx, decoded_input} -> prepare_transaction(tx, conn, false, block_height, decoded_input) end)
+    |> Enum.map(fn {transaction, decoded_input} ->
+      prepare_transaction(transaction, conn, false, block_height, decoded_input)
+    end)
   end
 
   def render("transaction.json", %{transaction: transaction, conn: conn}) do
@@ -166,12 +170,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  def render("logs.json", %{logs: logs, next_page_params: next_page_params, tx_hash: tx_hash}) do
+  def render("logs.json", %{logs: logs, next_page_params: next_page_params, transaction_hash: transaction_hash}) do
     decoded_logs = decode_logs(logs, false)
 
     %{
       "items" =>
-        logs |> Enum.zip(decoded_logs) |> Enum.map(fn {log, decoded_log} -> prepare_log(log, tx_hash, decoded_log) end),
+        logs
+        |> Enum.zip(decoded_logs)
+        |> Enum.map(fn {log, decoded_log} -> prepare_log(log, transaction_hash, decoded_log) end),
       "next_page_params" => next_page_params
     }
   end
@@ -264,6 +270,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           false
         ),
       "value" => internal_transaction.value,
+      "block_number" => internal_transaction.block_number,
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `block_number` property
       "block" => internal_transaction.block_number,
       "timestamp" => (block && block.timestamp) || internal_transaction.block.timestamp,
       "index" => internal_transaction.index,
@@ -276,7 +284,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     decoded = process_decoded_log(decoded_log)
 
     %{
-      "tx_hash" => get_tx_hash(transaction_or_hash),
+      "transaction_hash" => get_transaction_hash(transaction_or_hash),
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_hash` property
+      "tx_hash" => get_transaction_hash(transaction_or_hash),
       "address" => Helper.address_with_info(nil, log.address, log.address_hash, tags_for_address_needed?),
       "topics" => [
         log.first_topic,
@@ -315,11 +325,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  defp get_tx_hash(%Transaction{} = tx), do: to_string(tx.hash)
-  defp get_tx_hash(hash), do: to_string(hash)
+  defp get_transaction_hash(%Transaction{} = transaction), do: to_string(transaction.hash)
+  defp get_transaction_hash(hash), do: to_string(hash)
 
-  defp smart_contract_info(%Transaction{} = tx),
-    do: Helper.address_with_info(nil, tx.to_address, tx.to_address_hash, false)
+  defp smart_contract_info(%Transaction{} = transaction),
+    do: Helper.address_with_info(nil, transaction.to_address, transaction.to_address_hash, false)
 
   defp smart_contract_info(_), do: nil
 
@@ -333,12 +343,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  defp prepare_transaction(tx, conn, single_tx?, block_height, watchlist_names \\ nil, decoded_input)
+  defp prepare_transaction(transaction, conn, single_transaction?, block_height, watchlist_names \\ nil, decoded_input)
 
   defp prepare_transaction(
          {%Reward{} = emission_reward, %Reward{} = validator_reward},
          conn,
-         single_tx?,
+         single_transaction?,
          _block_height,
          _watchlist_names,
          _decoded_input
@@ -347,19 +357,31 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "emission_reward" => emission_reward.reward,
       "block_hash" => validator_reward.block_hash,
       "from" =>
-        Helper.address_with_info(single_tx? && conn, emission_reward.address, emission_reward.address_hash, single_tx?),
+        Helper.address_with_info(
+          single_transaction? && conn,
+          emission_reward.address,
+          emission_reward.address_hash,
+          single_transaction?
+        ),
       "to" =>
         Helper.address_with_info(
-          single_tx? && conn,
+          single_transaction? && conn,
           validator_reward.address,
           validator_reward.address_hash,
-          single_tx?
+          single_transaction?
         ),
       "types" => [:reward]
     }
   end
 
-  defp prepare_transaction(%Transaction{} = transaction, conn, single_tx?, block_height, watchlist_names, decoded_input) do
+  defp prepare_transaction(
+         %Transaction{} = transaction,
+         conn,
+         single_transaction?,
+         block_height,
+         watchlist_names,
+         decoded_input
+       ) do
     base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
@@ -378,30 +400,32 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "hash" => transaction.hash,
       "result" => status,
       "status" => transaction.status,
+      "block_number" => transaction.block_number,
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `block_number` property
       "block" => transaction.block_number,
       "timestamp" => block_timestamp(transaction),
       "from" =>
         Helper.address_with_info(
-          single_tx? && conn,
+          single_transaction? && conn,
           transaction.from_address,
           transaction.from_address_hash,
-          single_tx?,
+          single_transaction?,
           watchlist_names
         ),
       "to" =>
         Helper.address_with_info(
-          single_tx? && conn,
+          single_transaction? && conn,
           transaction.to_address,
           transaction.to_address_hash,
-          single_tx?,
+          single_transaction?,
           watchlist_names
         ),
       "created_contract" =>
         Helper.address_with_info(
-          single_tx? && conn,
+          single_transaction? && conn,
           transaction.created_contract_address,
           transaction.created_contract_address_hash,
-          single_tx?,
+          single_transaction?,
           watchlist_names
         ),
       "confirmations" => transaction.block |> Chain.confirmations(block_height: block_height) |> format_confirmations(),
@@ -422,19 +446,26 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "revert_reason" => revert_reason,
       "raw_input" => transaction.input,
       "decoded_input" => decoded_input_data,
-      "token_transfers" => token_transfers(transaction.token_transfers, conn, single_tx?),
-      "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers, single_tx?),
+      "token_transfers" => token_transfers(transaction.token_transfers, conn, single_transaction?),
+      "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers, single_transaction?),
       "actions" => transaction_actions(transaction.transaction_actions),
       "exchange_rate" => Market.get_coin_exchange_rate().usd_value,
       "method" => Transaction.method_name(transaction, decoded_input),
-      "tx_types" => tx_types(transaction),
-      "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_tx? && conn)),
-      "has_error_in_internal_txs" => transaction.has_error_in_internal_txs,
+      "transaction_types" => transaction_types(transaction),
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_types` property
+      "tx_types" => transaction_types(transaction),
+      "transaction_tag" =>
+        GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_transaction? && conn)),
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_tag` property
+      "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_transaction? && conn)),
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `has_error_in_internal_transactions` property
+      "has_error_in_internal_txs" => transaction.has_error_in_internal_transactions,
+      "has_error_in_internal_transactions" => transaction.has_error_in_internal_transactions,
       "authorization_list" => authorization_list(transaction.signed_authorizations)
     }
 
     result
-    |> chain_type_fields(transaction, single_tx?, conn, watchlist_names)
+    |> chain_type_fields(transaction, single_transaction?, conn, watchlist_names)
   end
 
   def token_transfers(_, _conn, false), do: nil
@@ -512,7 +543,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   @doc """
-    Prepares decoded tx info
+    Prepares decoded transaction info
   """
   @spec decoded_input(any()) :: map() | nil
   def decoded_input(decoded_input) do
@@ -589,14 +620,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   @doc """
-    Returns array of token types for tx.
+    Returns array of token types for transaction.
   """
-  @spec tx_types(
+  @spec transaction_types(
           Explorer.Chain.Transaction.t(),
-          [tx_type],
-          tx_type
-        ) :: [tx_type]
-        when tx_type:
+          [transaction_type],
+          transaction_type
+        ) :: [transaction_type]
+        when transaction_type:
                :coin_transfer
                | :contract_call
                | :contract_creation
@@ -606,9 +637,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
                | :token_transfer
                | :blob_transaction
                | :set_code_transaction
-  def tx_types(tx, types \\ [], stage \\ :set_code_transaction)
+  def transaction_types(transaction, types \\ [], stage \\ :set_code_transaction)
 
-  def tx_types(%Transaction{type: type} = tx, types, :set_code_transaction) do
+  def transaction_types(%Transaction{type: type} = transaction, types, :set_code_transaction) do
     # EIP-7702 set code transaction type
     types =
       if type == 4 do
@@ -617,10 +648,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    tx_types(tx, types, :blob_transaction)
+    transaction_types(transaction, types, :blob_transaction)
   end
 
-  def tx_types(%Transaction{type: type} = tx, types, :blob_transaction) do
+  def transaction_types(%Transaction{type: type} = transaction, types, :blob_transaction) do
     # EIP-2718 blob transaction type
     types =
       if type == 3 do
@@ -629,22 +660,26 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    tx_types(tx, types, :token_transfer)
+    transaction_types(transaction, types, :token_transfer)
   end
 
-  def tx_types(%Transaction{token_transfers: token_transfers} = tx, types, :token_transfer) do
+  def transaction_types(%Transaction{token_transfers: token_transfers} = transaction, types, :token_transfer) do
     types =
       if (!is_nil(token_transfers) && token_transfers != [] && !match?(%NotLoaded{}, token_transfers)) ||
-           tx.has_token_transfers do
+           transaction.has_token_transfers do
         [:token_transfer | types]
       else
         types
       end
 
-    tx_types(tx, types, :token_creation)
+    transaction_types(transaction, types, :token_creation)
   end
 
-  def tx_types(%Transaction{created_contract_address: created_contract_address} = tx, types, :token_creation) do
+  def transaction_types(
+        %Transaction{created_contract_address: created_contract_address} = transaction,
+        types,
+        :token_creation
+      ) do
     types =
       if match?(%Address{}, created_contract_address) && match?(%Token{}, created_contract_address.token) do
         [:token_creation | types]
@@ -652,11 +687,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    tx_types(tx, types, :contract_creation)
+    transaction_types(transaction, types, :contract_creation)
   end
 
-  def tx_types(
-        %Transaction{to_address_hash: to_address_hash} = tx,
+  def transaction_types(
+        %Transaction{to_address_hash: to_address_hash} = transaction,
         types,
         :contract_creation
       ) do
@@ -667,10 +702,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    tx_types(tx, types, :contract_call)
+    transaction_types(transaction, types, :contract_call)
   end
 
-  def tx_types(%Transaction{to_address: to_address} = tx, types, :contract_call) do
+  def transaction_types(%Transaction{to_address: to_address} = transaction, types, :contract_call) do
     types =
       if Address.smart_contract?(to_address) do
         [:contract_call | types]
@@ -678,10 +713,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    tx_types(tx, types, :coin_transfer)
+    transaction_types(transaction, types, :coin_transfer)
   end
 
-  def tx_types(%Transaction{value: value} = tx, types, :coin_transfer) do
+  def transaction_types(%Transaction{value: value} = transaction, types, :coin_transfer) do
     types =
       if Decimal.compare(value.value, 0) == :gt do
         [:coin_transfer | types]
@@ -689,22 +724,22 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    tx_types(tx, types, :rootstock_remasc)
+    transaction_types(transaction, types, :rootstock_remasc)
   end
 
-  def tx_types(tx, types, :rootstock_remasc) do
+  def transaction_types(transaction, types, :rootstock_remasc) do
     types =
-      if Transaction.rootstock_remasc_transaction?(tx) do
+      if Transaction.rootstock_remasc_transaction?(transaction) do
         [:rootstock_remasc | types]
       else
         types
       end
 
-    tx_types(tx, types, :rootstock_bridge)
+    transaction_types(transaction, types, :rootstock_bridge)
   end
 
-  def tx_types(tx, types, :rootstock_bridge) do
-    if Transaction.rootstock_bridge_transaction?(tx) do
+  def transaction_types(transaction, types, :rootstock_bridge) do
+    if Transaction.rootstock_bridge_transaction?(transaction) do
       [:rootstock_bridge | types]
     else
       types
@@ -776,8 +811,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
       end
 
-      defp chain_type_fields(result, transaction, single_tx?, conn, _watchlist_names) do
-        if single_tx? do
+      defp chain_type_fields(result, transaction, single_transaction?, conn, _watchlist_names) do
+        if single_transaction? do
           # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.PolygonEdgeView.extend_transaction_json_response(result, transaction.hash, conn)
         else
@@ -790,8 +825,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
       end
 
-      defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
-        if single_tx? do
+      defp chain_type_fields(result, transaction, single_transaction?, _conn, _watchlist_names) do
+        if single_transaction? do
           # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.PolygonZkevmView.extend_transaction_json_response(result, transaction)
         else
@@ -804,8 +839,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
       end
 
-      defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
-        if single_tx? do
+      defp chain_type_fields(result, transaction, single_transaction?, _conn, _watchlist_names) do
+        if single_transaction? do
           # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.ZkSyncView.extend_transaction_json_response(result, transaction)
         else
@@ -818,8 +853,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
       end
 
-      defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
-        if single_tx? do
+      defp chain_type_fields(result, transaction, single_transaction?, _conn, _watchlist_names) do
+        if single_transaction? do
           # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.ArbitrumView.extend_transaction_json_response(result, transaction)
         else
@@ -832,8 +867,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
       end
 
-      defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
-        if single_tx? do
+      defp chain_type_fields(result, transaction, single_transaction?, _conn, _watchlist_names) do
+        if single_transaction? do
           # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.OptimismView.extend_transaction_json_response(result, transaction)
         else
@@ -846,13 +881,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
       end
 
-      defp chain_type_fields(result, transaction, single_tx?, conn, watchlist_names) do
-        if single_tx? do
+      defp chain_type_fields(result, transaction, single_transaction?, conn, watchlist_names) do
+        if single_transaction? do
           # credo:disable-for-next-line Credo.Check.Design.AliasUsage
           BlockScoutWeb.API.V2.SuaveView.extend_transaction_json_response(
             transaction,
             result,
-            single_tx?,
+            single_transaction?,
             conn,
             watchlist_names
           )
@@ -867,7 +902,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         BlockScoutWeb.API.V2.StabilityView.transform_transactions(transactions)
       end
 
-      defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
+      defp chain_type_fields(result, transaction, _single_transaction?, _conn, _watchlist_names) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.StabilityView.extend_transaction_json_response(result, transaction)
       end
@@ -877,7 +912,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
       end
 
-      defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
+      defp chain_type_fields(result, transaction, _single_transaction?, _conn, _watchlist_names) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.EthereumView.extend_transaction_json_response(result, transaction)
       end
@@ -887,7 +922,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
       end
 
-      defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
+      defp chain_type_fields(result, transaction, _single_transaction?, _conn, _watchlist_names) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.CeloView.extend_transaction_json_response(result, transaction)
       end
@@ -897,7 +932,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         transactions
       end
 
-      defp chain_type_fields(result, _transaction, _single_tx?, _conn, _watchlist_names) do
+      defp chain_type_fields(result, _transaction, _single_transaction?, _conn, _watchlist_names) do
         result
       end
   end

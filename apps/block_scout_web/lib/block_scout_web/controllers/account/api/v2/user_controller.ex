@@ -298,13 +298,13 @@ defmodule BlockScoutWeb.Account.Api.V2.UserController do
     end
   end
 
-  def create_tag_transaction(conn, %{"transaction_hash" => tx_hash, "name" => name}) do
+  def create_tag_transaction(conn, %{"transaction_hash" => transaction_hash, "name" => name}) do
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
          {:identity, %Identity{} = identity} <- {:identity, UserFromAuth.find_identity(uid)},
          {:ok, transaction_tag} <-
            TagTransaction.create(%{
              name: name,
-             tx_hash: tx_hash,
+             transaction_hash: transaction_hash,
              identity_id: identity.id
            }) do
       conn
@@ -321,7 +321,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserController do
              reject_nil_map_values(%{
                id: tag_id,
                name: attrs["name"],
-               tx_hash: attrs["transaction_hash"],
+               transaction_hash: attrs["transaction_hash"],
                identity_id: identity.id
              })
            ) do

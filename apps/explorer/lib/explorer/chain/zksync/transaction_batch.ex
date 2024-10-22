@@ -13,13 +13,13 @@ defmodule Explorer.Chain.ZkSync.TransactionBatch do
 
   @optional_attrs ~w(commit_id prove_id execute_id)a
 
-  @required_attrs ~w(number timestamp l1_tx_count l2_tx_count root_hash l1_gas_price l2_fair_gas_price start_block end_block)a
+  @required_attrs ~w(number timestamp l1_transaction_count l2_transaction_count root_hash l1_gas_price l2_fair_gas_price start_block end_block)a
 
   @type t :: %__MODULE__{
           number: non_neg_integer(),
           timestamp: DateTime.t(),
-          l1_tx_count: non_neg_integer(),
-          l2_tx_count: non_neg_integer(),
+          l1_transaction_count: non_neg_integer(),
+          l2_transaction_count: non_neg_integer(),
           root_hash: Hash.t(),
           l1_gas_price: Wei.t(),
           l2_fair_gas_price: Wei.t(),
@@ -36,8 +36,8 @@ defmodule Explorer.Chain.ZkSync.TransactionBatch do
   @primary_key {:number, :integer, autogenerate: false}
   schema "zksync_transaction_batches" do
     field(:timestamp, :utc_datetime_usec)
-    field(:l1_tx_count, :integer)
-    field(:l2_tx_count, :integer)
+    field(:l1_transaction_count, :integer)
+    field(:l2_transaction_count, :integer)
     field(:root_hash, Hash.Full)
     field(:l1_gas_price, Wei)
     field(:l2_fair_gas_price, Wei)

@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     FrameSequence,
     FrameSequenceBlob,
     OutputRoot,
-    TxnBatch,
+    TransactionBatch,
     Withdrawal
   }
 
@@ -32,22 +32,22 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     Function to handle GET requests to `/api/v2/optimism/txn-batches` and
     `/api/v2/optimism/txn-batches/:l2_block_range_start/:l2_block_range_end` endpoints.
   """
-  @spec txn_batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def txn_batches(conn, params) do
+  @spec transaction_batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def transaction_batches(conn, params) do
     {batches, next_page} =
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
       |> Keyword.put(:l2_block_range_start, Map.get(params, "l2_block_range_start"))
       |> Keyword.put(:l2_block_range_end, Map.get(params, "l2_block_range_end"))
-      |> TxnBatch.list()
+      |> TransactionBatch.list()
       |> split_list_by_page()
 
     next_page_params = next_page_params(next_page, batches, delete_parameters_from_next_page_params(params))
 
     conn
     |> put_status(200)
-    |> render(:optimism_txn_batches, %{
+    |> render(:optimism_transaction_batches, %{
       batches: batches,
       next_page_params: next_page_params
     })
@@ -56,9 +56,9 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   @doc """
     Function to handle GET requests to `/api/v2/optimism/txn-batches/count` endpoint.
   """
-  @spec txn_batches_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def txn_batches_count(conn, _params) do
-    items_count(conn, TxnBatch)
+  @spec transaction_batches_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def transaction_batches_count(conn, _params) do
+    items_count(conn, TransactionBatch)
   end
 
   @doc """
@@ -80,14 +80,14 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       batches
       |> Enum.map(fn fs ->
         Task.async(fn ->
-          l2_block_number_from = TxnBatch.edge_l2_block_number(fs.id, :min)
-          l2_block_number_to = TxnBatch.edge_l2_block_number(fs.id, :max)
-          tx_count = Transaction.tx_count_for_block_range(l2_block_number_from..l2_block_number_to)
+          l2_block_number_from = TransactionBatch.edge_l2_block_number(fs.id, :min)
+          l2_block_number_to = TransactionBatch.edge_l2_block_number(fs.id, :max)
+          transaction_count = Transaction.transaction_count_for_block_range(l2_block_number_from..l2_block_number_to)
           {batch_data_container, _} = FrameSequenceBlob.list(fs.id, api?: true)
 
           fs
           |> Map.put(:l2_block_range, l2_block_number_from..l2_block_number_to)
-          |> Map.put(:tx_count, tx_count)
+          |> Map.put(:transaction_count, transaction_count)
           |> Map.put(:batch_data_container, batch_data_container)
         end)
       end)

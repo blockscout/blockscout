@@ -79,11 +79,11 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       when is_list(transactions) and is_boolean(report) do
     {transactions_with_proper_message_id, transactions_with_hashed_message_id} =
       transactions
-      |> Enum.filter(fn tx ->
-        tx[:request_id] != nil
+      |> Enum.filter(fn transaction ->
+        transaction[:request_id] != nil
       end)
-      |> Enum.split_with(fn tx ->
-        plain_message_id?(tx[:request_id])
+      |> Enum.split_with(fn transaction ->
+        plain_message_id?(transaction[:request_id])
       end)
 
     # Transform transactions with the plain message ID into messages
@@ -137,7 +137,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     Processes a list of filtered rollup transactions representing L1-to-L2 messages, constructing a detailed message structure for each.
 
     ## Parameters
-    - `filtered_txs`: A list of rollup transaction entries, each representing an L1-to-L2
+    - `filtered_transactions`: A list of rollup transaction entries, each representing an L1-to-L2
       message transaction.
 
     ## Returns
@@ -150,15 +150,15 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     []
   end
 
-  def handle_filtered_l1_to_l2_messages(filtered_txs) when is_list(filtered_txs) do
-    filtered_txs
-    |> Enum.map(fn tx ->
-      log_debug("L1 to L2 message #{tx.hash} found with the type #{tx.type}")
+  def handle_filtered_l1_to_l2_messages(filtered_transactions) when is_list(filtered_transactions) do
+    filtered_transactions
+    |> Enum.map(fn transaction ->
+      log_debug("L1 to L2 message #{transaction.hash} found with the type #{transaction.type}")
 
       %{
         direction: :to_l2,
-        message_id: quantity_to_integer(tx.request_id),
-        completion_transaction_hash: tx.hash,
+        message_id: quantity_to_integer(transaction.request_id),
+        completion_transaction_hash: transaction.hash,
         status: :relayed
       }
       |> complete_to_params()

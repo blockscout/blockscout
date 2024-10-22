@@ -144,7 +144,7 @@ defmodule Explorer.SmartContract.Helper do
   def cast_libraries(_value, map), do: map
 
   def contract_creation_input(address_hash) do
-    case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+    case Chain.smart_contract_creation_transaction_bytecode(address_hash) do
       %{init: init, created_contract_code: _created_contract_code} ->
         init
 
@@ -181,12 +181,13 @@ defmodule Explorer.SmartContract.Helper do
     if Application.get_env(:explorer, :chain_type) == :zksync do
       {nil, deployed_bytecode, metadata}
     else
-      case SmartContract.creation_tx_with_bytecode(address_hash) do
-        %{init: init, tx: tx} ->
-          {init, deployed_bytecode, tx |> tx_to_metadata(init) |> Map.merge(metadata)}
+      case SmartContract.creation_transaction_with_bytecode(address_hash) do
+        %{init: init, transaction: transaction} ->
+          {init, deployed_bytecode, transaction |> transaction_to_metadata(init) |> Map.merge(metadata)}
 
-        %{init: init, internal_tx: internal_tx} ->
-          {init, deployed_bytecode, internal_tx |> internal_tx_to_metadata(init) |> Map.merge(metadata)}
+        %{init: init, internal_transaction: internal_transaction} ->
+          {init, deployed_bytecode,
+           internal_transaction |> internal_transaction_to_metadata(init) |> Map.merge(metadata)}
 
         _ ->
           {nil, deployed_bytecode, metadata}
@@ -194,22 +195,22 @@ defmodule Explorer.SmartContract.Helper do
     end
   end
 
-  defp tx_to_metadata(tx, init) do
+  defp transaction_to_metadata(transaction, init) do
     %{
-      "blockNumber" => to_string(tx.block_number),
-      "transactionHash" => to_string(tx.hash),
-      "transactionIndex" => to_string(tx.index),
-      "deployer" => to_string(tx.from_address_hash),
+      "blockNumber" => to_string(transaction.block_number),
+      "transactionHash" => to_string(transaction.hash),
+      "transactionIndex" => to_string(transaction.index),
+      "deployer" => to_string(transaction.from_address_hash),
       "creationCode" => to_string(init)
     }
   end
 
-  defp internal_tx_to_metadata(internal_tx, init) do
+  defp internal_transaction_to_metadata(internal_transaction, init) do
     %{
-      "blockNumber" => to_string(internal_tx.block_number),
-      "transactionHash" => to_string(internal_tx.transaction_hash),
-      "transactionIndex" => to_string(internal_tx.transaction_index),
-      "deployer" => to_string(internal_tx.from_address_hash),
+      "blockNumber" => to_string(internal_transaction.block_number),
+      "transactionHash" => to_string(internal_transaction.transaction_hash),
+      "transactionIndex" => to_string(internal_transaction.transaction_index),
+      "deployer" => to_string(internal_transaction.from_address_hash),
       "creationCode" => to_string(init)
     }
   end

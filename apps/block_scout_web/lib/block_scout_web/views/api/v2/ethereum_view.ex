@@ -1,9 +1,9 @@
 defmodule BlockScoutWeb.API.V2.EthereumView do
   alias Explorer.Chain.{Block, Transaction}
 
-  defp count_blob_transactions(%Block{transactions: txs}) when is_list(txs),
+  defp count_blob_transactions(%Block{transactions: transactions}) when is_list(transactions),
     # EIP-2718 blob transaction type
-    do: Enum.count(txs, &(&1.type == 3))
+    do: Enum.count(transactions, &(&1.type == 3))
 
   defp count_blob_transactions(_), do: nil
 
