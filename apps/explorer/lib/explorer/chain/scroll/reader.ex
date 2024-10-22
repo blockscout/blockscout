@@ -6,7 +6,10 @@ defmodule Explorer.Chain.Scroll.Reader do
       from: 2,
       limit: 2,
       order_by: 2,
-      where: 2
+      order_by: 3,
+      select: 3,
+      where: 2,
+      where: 3
     ]
 
   import Explorer.Chain, only: [select_repo: 1]
@@ -262,39 +265,29 @@ defmodule Explorer.Chain.Scroll.Reader do
   # credo:disable-for-next-line /Complexity/
   def get_l1_fee_param_for_transaction(name, transaction, options)
       when name in [:overhead, :scalar, :commit_scalar, :blob_scalar, :l1_base_fee, :l1_blob_base_fee] do
+    base_query =
+      L1FeeParam
+      |> select([p], p.value)
+      |> order_by([p], desc: p.block_number, desc: p.transaction_index)
+      |> limit(1)
+
     query =
       cond do
         transaction.block_number == 0 ->
           # transaction.index is greater than 0 here
-          from(p in L1FeeParam,
-            select: p.value,
-            where:
-              p.name == ^name and
-                (p.block_number == 0 and p.transaction_index < ^transaction.index),
-            order_by: [desc: p.block_number, desc: p.transaction_index],
-            limit: 1
-          )
+          where(base_query, [p], p.name == ^name and p.block_number == 0 and p.transaction_index < ^transaction.index)
 
         transaction.index == 0 ->
           # transaction.block_number is greater than 0 here
-          from(p in L1FeeParam,
-            select: p.value,
-            where:
-              p.name == ^name and
-                p.block_number < ^transaction.block_number,
-            order_by: [desc: p.block_number, desc: p.transaction_index],
-            limit: 1
-          )
+          where(base_query, [p], p.name == ^name and p.block_number < ^transaction.block_number)
 
         true ->
-          from(p in L1FeeParam,
-            select: p.value,
-            where:
-              p.name == ^name and
-                (p.block_number < ^transaction.block_number or
-                   (p.block_number == ^transaction.block_number and p.transaction_index < ^transaction.index)),
-            order_by: [desc: p.block_number, desc: p.transaction_index],
-            limit: 1
+          where(
+            base_query,
+            [p],
+            p.name == ^name and
+              (p.block_number < ^transaction.block_number or
+                 (p.block_number == ^transaction.block_number and p.transaction_index < ^transaction.index))
           )
       end
 
