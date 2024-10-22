@@ -142,7 +142,8 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
 
   # Fetches `SentMessage` and `RelayedMessage` events of the messenger contract from an RPC node
   # for the given range of blocks.
-  @spec get_logs_all({non_neg_integer(), non_neg_integer()}, binary(), list()) :: list()
+  @spec get_logs_all({non_neg_integer(), non_neg_integer()}, binary(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          [%{atom() => any()}]
   defp get_logs_all({chunk_start, chunk_end}, messenger_contract, json_rpc_named_arguments) do
     {:ok, result} =
       IndexerHelper.get_logs(
