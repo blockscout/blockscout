@@ -19,7 +19,7 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
     ## Returns
     - A list of items ready for database import. The list can be empty.
   """
-  @spec parse(list()) :: list()
+  @spec parse([map()]) :: [Explorer.Chain.Scroll.L1FeeParam.to_import()]
   def parse(logs)
 
   if Application.compile_env(:explorer, :chain_type) == :scroll do
