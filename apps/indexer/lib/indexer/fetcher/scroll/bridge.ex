@@ -173,7 +173,9 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
 
   # Converts the list of Scroll messenger events to the list of operations
   # preparing them for importing to the database.
-  @spec prepare_operations(list(), boolean(), list()) :: list()
+  @spec prepare_operations([%{atom() => any()}], boolean(), EthereumJSONRPC.json_rpc_named_arguments()) :: [
+          Chain.Scroll.Bridge.to_import()
+        ]
   defp prepare_operations(events, is_l1, json_rpc_named_arguments) do
     block_to_timestamp =
       events
