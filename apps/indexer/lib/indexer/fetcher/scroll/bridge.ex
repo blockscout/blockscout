@@ -45,7 +45,21 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
   ## Returns
   - {:noreply, state} tuple with the updated block range in the `state` to scan logs in.
   """
-  @spec loop(module(), map()) :: {:noreply, map()}
+    @spec loop(module(), %{
+          block_check_interval: non_neg_integer(),
+          messenger_contract: binary(),
+          json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments(),
+          end_block: non_neg_integer(),
+          start_block: non_neg_integer()
+        }) ::
+          {:noreply,
+           %{
+             block_check_interval: non_neg_integer(),
+             messenger_contract: binary(),
+             json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments(),
+             end_block: non_neg_integer(),
+             start_block: non_neg_integer()
+           }}
   def loop(
         module,
         %{
