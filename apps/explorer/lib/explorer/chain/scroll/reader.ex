@@ -312,12 +312,13 @@ defmodule Explorer.Chain.Scroll.Reader do
     sorted in descending order of the index.
 
     ## Parameters
-    - `options`: A keyword list of options that may include whether to use a replica database.
+    - `options`: A keyword list of options that may include whether to use a replica database and paging options.
 
     ## Returns
     - A list of deposits.
   """
-  @spec deposits(list()) :: list()
+  @spec deposits(paging_options: PagingOptions.t(), api?: boolean()) :: [Bridge.t()]
+  @spec deposits() :: [Bridge.t()]
   def deposits(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
