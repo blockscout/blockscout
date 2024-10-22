@@ -33,18 +33,33 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
     end
 
     test "internal transactions with next_page_params", %{conn: conn} do
-      internal_transactions =
-        for i <- 0..50 do
-          tx = insert(:transaction) |> with_block()
+      transaction = insert(:transaction) |> with_block()
 
+      internal_transaction =
+        insert(:internal_transaction,
+          transaction: transaction,
+          transaction_index: 0,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          index: 0,
+          block_index: 0
+        )
+
+      transaction_2 = insert(:transaction) |> with_block()
+
+      internal_transactions =
+        for i <- 0..49 do
           insert(:internal_transaction,
-            transaction: tx,
-            block_number: tx.block_number,
-            block_hash: tx.block_hash,
+            transaction: transaction_2,
+            transaction_index: 0,
+            block_number: transaction_2.block_number,
+            block_hash: transaction_2.block_hash,
             index: i,
             block_index: i
           )
         end
+
+      internal_transactions = [internal_transaction | internal_transactions]
 
       request = get(conn, "/api/v2/internal-transactions")
       assert response = json_response(request, 200)

@@ -838,8 +838,12 @@ defmodule Explorer.Chain.InternalTransaction do
 
         __MODULE__
         |> where_nonpending_block()
-        |> Chain.page_internal_transaction(paging_options)
-        |> order_by([internal_transaction], desc: internal_transaction.block_number, asc: internal_transaction.index)
+        |> Chain.page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
+        |> order_by([internal_transaction],
+          desc: internal_transaction.block_number,
+          desc: internal_transaction.transaction_index,
+          desc: internal_transaction.index
+        )
         |> limit(^paging_options.page_size)
         |> preload(^preloads)
         |> Chain.select_repo(options).all()
