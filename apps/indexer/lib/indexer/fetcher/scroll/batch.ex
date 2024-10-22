@@ -390,6 +390,17 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     l2_block_range
   end
 
+  # Imports batches and bundles into the database.
+  #
+  # ## Parameters
+  # - `batches`: List of batch data to be imported.
+  # - `bundles`: List of bundle data to be imported.
+  # - `start_by_final_batch_number`: A map defining start batch number by final one for bundles.
+  #
+  # ## Returns
+  # - The result of the database operations.
+  @spec import_items([Batch.to_import()], [%{atom() => any()}], %{non_neg_integer() => non_neg_integer()}) :: any()
+  defp import_items([], [], _), do: :ok
   defp import_items(batches, bundles, start_by_final_batch_number) do
     {:ok, inserts} =
       Chain.import(%{
