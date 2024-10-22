@@ -50,7 +50,29 @@ defmodule Explorer.Chain.Address.ScamBadgeToAddress do
       end)
       |> Enum.filter(&(!is_nil(&1)))
 
+    safe_add(insert_params)
+  end
+
+  defp safe_add(insert_params) do
     Repo.insert_all(__MODULE__, insert_params, on_conflict: :nothing, returning: [:address_hash])
+  rescue
+    # if at least one of the address hashes didn't yet exist in the `addresses` table by the moment of scam badge assignment, we'll receive foreign key violation error.
+    # In this case, we'll try to insert the missing addresses and then try to insert the scam badge mappings again.
+    error ->
+      address_insert_params =
+        insert_params
+        |> Enum.map(fn scam_address ->
+          scam_address
+          |> Map.put(:hash, scam_address.address_hash)
+          |> Map.drop([:address_hash])
+        end)
+
+      with %Postgrex.Error{postgres: %{code: :foreign_key_violation}} <- error,
+           {_number_of_inserted_addresses, [_term]} <- Address.create_multiple(address_insert_params) do
+        safe_add(insert_params)
+      else
+        _ -> {0, []}
+      end
   end
 
   @doc """
