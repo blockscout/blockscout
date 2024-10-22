@@ -1881,8 +1881,8 @@ defmodule Explorer.Chain.Transaction do
     {:maximum, l2_fee_calc(gas_price, gas, unit)}
   end
 
-  def l2_fee(%Transaction{gas_price: nil, gas_used: gas_used} = tx, unit) do
-    gas_price = effective_gas_price(tx)
+  def l2_fee(%Transaction{gas_price: nil, gas_used: gas_used} = transaction, unit) do
+    gas_price = effective_gas_price(transaction)
     {:actual, gas_price && l2_fee_calc(gas_price, gas_used, unit)}
   end
 

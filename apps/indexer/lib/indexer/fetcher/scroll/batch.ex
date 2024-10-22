@@ -302,11 +302,11 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     Enum.reduce(blocks, %{}, fn block, acc ->
       block
       |> Map.get("transactions", [])
-      |> Enum.filter(fn tx ->
-        Enum.member?(transaction_hashes, tx["hash"])
+      |> Enum.filter(fn transaction ->
+        Enum.member?(transaction_hashes, transaction["hash"])
       end)
-      |> Enum.map(fn tx ->
-        {tx["hash"], {tx["input"], tx["blobVersionedHashes"]}}
+      |> Enum.map(fn transaction ->
+        {transaction["hash"], {transaction["input"], transaction["blobVersionedHashes"]}}
       end)
       |> Enum.into(%{})
       |> Map.merge(acc)
