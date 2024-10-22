@@ -378,7 +378,8 @@ defmodule Explorer.Chain.Scroll.Reader do
   @doc """
     Returns a total number of Scroll withdrawals (both completed and unclaimed).
   """
-  @spec withdrawals_count(list()) :: term() | nil
+  @spec withdrawals_count(api?: boolean()) :: non_neg_integer() | nil
+  @spec withdrawals_count() :: non_neg_integer() | nil
   def withdrawals_count(options \\ []) do
     query =
       from(
