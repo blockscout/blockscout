@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.Helper
+  alias Explorer.Chain.{Block, InternalTransaction}
 
   def render("internal_transaction.json", %{internal_transaction: nil}) do
     nil
@@ -24,6 +25,10 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
     }
   end
 
+  @doc """
+    Prepares internal transaction object to be returned in the API v2 endpoints.
+  """
+  @spec prepare_internal_transaction(InternalTransaction.t(), Block.t() | nil) :: map()
   def prepare_internal_transaction(internal_transaction, block \\ nil) do
     %{
       "error" => internal_transaction.error,

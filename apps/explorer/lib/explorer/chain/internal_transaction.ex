@@ -817,6 +817,9 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
+  @doc """
+  Returns the ordered paginated list of internal transactions (consensus blocks only) from the DB with address, block preloads
+  """
   @spec fetch([paging_options | api?]) :: []
   def fetch(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)

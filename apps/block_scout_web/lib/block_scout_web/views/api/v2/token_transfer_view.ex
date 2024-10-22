@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
   alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{TokenTransfer, Transaction}
 
   def render("token_transfer.json", %{token_transfer: nil}) do
     nil
@@ -39,6 +39,10 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
     }
   end
 
+  @doc """
+    Prepares token transfer object to be returned in the API v2 endpoints.
+  """
+  @spec prepare_token_transfer(TokenTransfer.t(), Plug.Conn.t() | nil, any()) :: map()
   def prepare_token_transfer(token_transfer, _conn, decoded_input) do
     %{
       "transaction_hash" => token_transfer.transaction_hash,
@@ -61,6 +65,10 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
     }
   end
 
+  @doc """
+    Prepares token transfer total value/id transferred to be returned in the API v2 endpoints.
+  """
+  @spec prepare_token_transfer_total(TokenTransfer.t()) :: map()
   # credo:disable-for-next-line /Complexity/
   def prepare_token_transfer_total(token_transfer) do
     case TokensHelper.token_transfer_amount_for_api(token_transfer) do

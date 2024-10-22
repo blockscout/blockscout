@@ -282,6 +282,9 @@ defmodule Explorer.Chain.TokenTransfer do
     end
   end
 
+  @doc """
+  Returns the ordered paginated list of consensus token transfers (consensus blocks only) from the DB with address, token, transaction preloads
+  """
   @spec fetch([paging_options | api?]) :: []
   def fetch(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
