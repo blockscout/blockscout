@@ -351,7 +351,8 @@ defmodule Explorer.Chain.Scroll.Reader do
     ## Returns
     - A list of withdrawals.
   """
-  @spec withdrawals(list()) :: list()
+  @spec withdrawals(paging_options: PagingOptions.t(), api?: boolean()) :: [Bridge.t()]
+  @spec withdrawals() :: [Bridge.t()]
   def withdrawals(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
