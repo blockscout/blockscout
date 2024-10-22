@@ -213,8 +213,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
       responses
       |> Enum.reduce({[], [], [], Reader.next_id(), hash_to_id}, fn res,
                                                                     {batches, l2_transactions, l1_transactions, next_id,
-                                                                     hash_to_id} =
-                                                                      _acc ->
+                                                                     hash_to_id} = _acc ->
         number = quantity_to_integer(Map.get(res.result, "number"))
 
         # the timestamp is undefined for unfinalized batches

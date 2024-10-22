@@ -401,6 +401,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   # - The result of the database operations.
   @spec import_items([Batch.to_import()], [%{atom() => any()}], %{non_neg_integer() => non_neg_integer()}) :: any()
   defp import_items([], [], _), do: :ok
+
   defp import_items(batches, bundles, start_by_final_batch_number) do
     {:ok, inserts} =
       Chain.import(%{
@@ -436,8 +437,10 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   # - List of structures describing L1 transactions finalizing batches in form of
   #   bundles, ready for import to the DB.
   # - A map defining start batch number by final one for bundles.
-  @spec prepare_items([%{atom() => any()}], EthereumJSONRPC.json_rpc_named_arguments()) :: {[Batch.to_import()], [%{atom() => any()}], %{non_neg_integer() => non_neg_integer()}}
+  @spec prepare_items([%{atom() => any()}], EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {[Batch.to_import()], [%{atom() => any()}], %{non_neg_integer() => non_neg_integer()}}
   defp prepare_items([], _), do: {[], [], %{}}
+
   defp prepare_items(events, json_rpc_named_arguments) do
     blocks = Helper.get_blocks_by_events(events, json_rpc_named_arguments, Helper.infinite_retries_number(), true)
 
