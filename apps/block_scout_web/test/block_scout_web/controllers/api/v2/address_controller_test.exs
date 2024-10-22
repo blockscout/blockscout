@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ChannelCase
 
   alias ABI.{TypeDecoder, TypeEncoder}
-  alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Events.Subscriber
@@ -23,7 +22,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     Withdrawal
   }
 
-  alias Explorer.Account.WatchlistAddress
+  alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Plug.Conn
@@ -275,7 +274,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get watchlist id", %{conn: conn} do
       auth = build(:auth)
       address = insert(:address)
-      {:ok, user} = UserFromAuth.find_or_create(auth)
+      {:ok, user} = Identity.find_or_create(auth)
 
       conn = Plug.Test.init_test_session(conn, current_user: user)
 

@@ -1455,6 +1455,20 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     setup :verify_on_exit!
 
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
+      old_http_adapter = Application.get_env(:block_scout_web, :http_adapter)
+
+      v2_secret_key = "v2_secret_key"
+      v3_secret_key = "v3_secret_key"
+
+      Application.put_env(:block_scout_web, :recaptcha,
+        v2_secret_key: v2_secret_key,
+        v3_secret_key: v3_secret_key,
+        is_disabled: false
+      )
+
+      Application.put_env(:block_scout_web, :http_adapter, Explorer.Mox.HTTPoison)
+
       mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
 
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
@@ -1468,12 +1482,29 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       Subscriber.to(:fetched_token_instance_metadata, :on_demand)
 
-      :ok
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
+        Application.put_env(:block_scout_web, :http_adapter, old_http_adapter)
+      end)
+
+      {:ok, %{v2_secret_key: v2_secret_key, v3_secret_key: v3_secret_key}}
     end
 
-    test "token instance metadata on-demand re-fetcher is called", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+    test "token instance metadata on-demand re-fetcher is called", %{conn: conn, v2_secret_key: v2_secret_key} do
+      expected_body = "secret=#{v2_secret_key}&response=123"
+
+      Explorer.Mox.HTTPoison
+      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             Jason.encode!(%{
+               "success" => true,
+               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+             })
+         }}
+      end)
 
       token = insert(:token, type: "ERC-721")
       token_id = 1
@@ -1534,9 +1565,24 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       Application.put_env(:explorer, :http_adapter, HTTPoison)
     end
 
-    test "don't fetch token instance metadata for non-existent token instance", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+    test "don't fetch token instance metadata for non-existent token instance", %{
+      conn: conn,
+      v2_secret_key: v2_secret_key
+    } do
+      expected_body = "secret=#{v2_secret_key}&response=123"
+
+      Explorer.Mox.HTTPoison
+      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             Jason.encode!(%{
+               "success" => true,
+               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+             })
+         }}
+      end)
 
       token = insert(:token, type: "ERC-721")
       token_id = 0
@@ -1551,9 +1597,24 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
-    test "fetch token instance metadata for existing token instance with no metadata", %{conn: conn} do
-      BlockScoutWeb.TestCaptchaHelper
-      |> expect(:recaptcha_passed?, fn _captcha_response -> true end)
+    test "fetch token instance metadata for existing token instance with no metadata", %{
+      conn: conn,
+      v2_secret_key: v2_secret_key
+    } do
+      expected_body = "secret=#{v2_secret_key}&response=123"
+
+      Explorer.Mox.HTTPoison
+      |> expect(:post, fn _url, ^expected_body, _headers, _options ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             Jason.encode!(%{
+               "success" => true,
+               "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+             })
+         }}
+      end)
 
       token = insert(:token, type: "ERC-721")
       token_id = 1
