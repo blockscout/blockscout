@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Scroll.Batch do
   """
   @type to_import :: %{
           number: non_neg_integer(),
-          commit_transaction_hash: Hash.t(),
+          commit_transaction_hash: binary(),
           commit_block_number: non_neg_integer(),
           commit_timestamp: DateTime.t(),
           bundle_id: non_neg_integer() | nil,
