@@ -98,7 +98,7 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
         {batch.bundle.finalize_block_number, batch.bundle.finalize_transaction_hash, batch.bundle.finalize_timestamp}
       end
 
-    transaction_count = Transaction.tx_count_for_block_range(batch.l2_block_range.from..batch.l2_block_range.to)
+    transaction_count = Transaction.transaction_count_for_block_range(batch.l2_block_range.from..batch.l2_block_range.to)
 
     %{
       "number" => batch.number,
