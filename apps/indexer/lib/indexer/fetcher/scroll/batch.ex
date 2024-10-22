@@ -421,6 +421,23 @@ defmodule Indexer.Fetcher.Scroll.Batch do
     end)
   end
 
+  # Prepares batch and bundle items from Scroll events for database import.
+  #
+  # This function processes a list of CommitBatch and FinalizeBatch events,
+  # extracting relevant information to create batch and bundle records.
+  #
+  # ## Parameters
+  # - `events`: A list of Scroll events to process.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # A tuple containing two lists and a map:
+  # - List of batches, ready for import to the DB.
+  # - List of structures describing L1 transactions finalizing batches in form of
+  #   bundles, ready for import to the DB.
+  # - A map defining start batch number by final one for bundles.
+  @spec prepare_items([%{atom() => any()}], EthereumJSONRPC.json_rpc_named_arguments()) :: {[Batch.to_import()], [%{atom() => any()}], %{non_neg_integer() => non_neg_integer()}}
+  defp prepare_items([], _), do: {[], [], %{}}
   defp prepare_items(events, json_rpc_named_arguments) do
     blocks = Helper.get_blocks_by_events(events, json_rpc_named_arguments, Helper.infinite_retries_number(), true)
 
