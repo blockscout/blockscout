@@ -282,7 +282,8 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
   #   the `amount` is the amount of the native token sent within this message,
   #   the `index` is the message numeric index,
   #   the `message` is the message body.
-  @spec sent_message_event_parse(map()) :: {binary(), binary(), non_neg_integer(), non_neg_integer(), binary()}
+  @spec sent_message_event_parse(%{atom() => any()}) ::
+          {binary(), binary(), non_neg_integer(), non_neg_integer(), binary()}
   defp sent_message_event_parse(event) do
     sender =
       event.second_topic
