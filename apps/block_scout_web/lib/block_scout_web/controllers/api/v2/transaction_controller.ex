@@ -571,13 +571,16 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   def summary(conn, %{"transaction_hash_param" => transaction_hash_string, "just_request_body" => "true"} = params) do
     options =
-      [necessity_by_association: %{
-        [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-        [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
-      }]
+      [
+        necessity_by_association: %{
+          [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+          [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
+        }
+      ]
       |> Keyword.merge(@api_true)
 
-    with {:transaction_interpreter_enabled, true} <- {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
+    with {:transaction_interpreter_enabled, true} <-
+           {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
          {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params, options) do
       conn
       |> json(TransactionInterpretationService.get_request_body(transaction))
@@ -594,11 +597,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           | {:transaction_interpreter_enabled, boolean}
           | Plug.Conn.t()
   def summary(conn, %{"transaction_hash_param" => transaction_hash_string} = params) do
-    options = [necessity_by_association: %{
-      [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-      [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
-    }]
-    |> Keyword.merge(@api_true)
+    options =
+      [
+        necessity_by_association: %{
+          [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+          [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
+        }
+      ]
+      |> Keyword.merge(@api_true)
 
     with {:transaction_interpreter_enabled, true} <-
            {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
