@@ -73,7 +73,8 @@ defmodule Explorer.Chain.Scroll.Reader do
     ## Returns
     - A list of found entities sorted by `number` in descending order.
   """
-  @spec batches(list()) :: [Batch.t()]
+  @spec batches(paging_options: PagingOptions.t(), api?: boolean()) :: [Batch.t()]
+  @spec batches() :: [Batch.t()]
   def batches(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
 
