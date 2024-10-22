@@ -262,7 +262,15 @@ defmodule Explorer.Chain.Scroll.Reader do
     ## Returns
     - The parameter value, or `nil` if not defined.
   """
-  @spec get_l1_fee_param_for_transaction(atom(), Transaction.t(), list()) :: non_neg_integer() | nil
+  @spec get_l1_fee_param_for_transaction(
+          :overhead | :scalar | :commit_scalar | :blob_scalar | :l1_base_fee | :l1_blob_base_fee,
+          Transaction.t(),
+          api?: boolean()
+        ) :: non_neg_integer() | nil
+  @spec get_l1_fee_param_for_transaction(
+          :overhead | :scalar | :commit_scalar | :blob_scalar | :l1_base_fee | :l1_blob_base_fee,
+          Transaction.t()
+        ) :: non_neg_integer() | nil
   def get_l1_fee_param_for_transaction(name, transaction, options \\ [])
 
   def get_l1_fee_param_for_transaction(_name, %{block_number: 0, index: 0}, _options), do: nil
