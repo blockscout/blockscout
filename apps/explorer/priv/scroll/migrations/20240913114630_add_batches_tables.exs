@@ -2,6 +2,11 @@ defmodule Explorer.Repo.Scroll.Migrations.AddBatchesTables do
   use Ecto.Migration
 
   def change do
+    execute(
+      "CREATE TYPE scroll_da_containers_types AS ENUM ('in_blob4844', 'in_calldata')",
+      "DROP TYPE scroll_da_containers_types"
+    )
+
     create table(:scroll_batch_bundles, primary_key: true) do
       add(:final_batch_number, :bigint, null: false)
       add(:finalize_transaction_hash, :bytea, null: false)
@@ -24,6 +29,7 @@ defmodule Explorer.Repo.Scroll.Migrations.AddBatchesTables do
       )
 
       add(:l2_block_range, :int8range)
+      add(:container, :scroll_da_containers_types, null: false)
       timestamps(null: false, type: :utc_datetime_usec)
     end
 

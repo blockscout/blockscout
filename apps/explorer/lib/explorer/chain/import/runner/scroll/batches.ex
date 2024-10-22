@@ -90,18 +90,20 @@ defmodule Explorer.Chain.Import.Runner.Scroll.Batches do
           commit_block_number: fragment("EXCLUDED.commit_block_number"),
           commit_timestamp: fragment("EXCLUDED.commit_timestamp"),
           l2_block_range: fragment("EXCLUDED.l2_block_range"),
+          container: fragment("EXCLUDED.container"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", sb.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", sb.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.number, EXCLUDED.commit_transaction_hash, EXCLUDED.commit_block_number, EXCLUDED.commit_timestamp, EXCLUDED.l2_block_range) IS DISTINCT FROM (?, ?, ?, ?, ?)",
+          "(EXCLUDED.number, EXCLUDED.commit_transaction_hash, EXCLUDED.commit_block_number, EXCLUDED.commit_timestamp, EXCLUDED.l2_block_range, EXCLUDED.container) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
           sb.number,
           sb.commit_transaction_hash,
           sb.commit_block_number,
           sb.commit_timestamp,
-          sb.l2_block_range
+          sb.l2_block_range,
+          sb.container
         )
     )
   end

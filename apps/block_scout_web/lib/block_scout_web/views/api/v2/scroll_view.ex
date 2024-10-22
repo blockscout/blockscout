@@ -113,6 +113,9 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
         "hash" => finalize_transaction_hash,
         "timestamp" => finalize_timestamp
       },
+      "data_availability" => %{
+        "batch_data_container" => batch.container
+      },
       "start_block" => batch.l2_block_range.from,
       "end_block" => batch.l2_block_range.to,
       "transaction_count" => transaction_count

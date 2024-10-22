@@ -17,7 +17,7 @@ defmodule Explorer.Chain.Scroll.Batch do
 
   @optional_attrs ~w(bundle_id)a
 
-  @required_attrs ~w(number commit_transaction_hash commit_block_number commit_timestamp l2_block_range)a
+  @required_attrs ~w(number commit_transaction_hash commit_block_number commit_timestamp l2_block_range container)a
 
   @typedoc """
     Descriptor of the batch:
@@ -27,6 +27,7 @@ defmodule Explorer.Chain.Scroll.Batch do
     * `commit_timestamp` - A timestamp of the commit block.
     * `bundle_id` - An identifier of the batch bundle from the `scroll_batch_bundles` database table.
     * `l2_block_range` - A range of L2 blocks included into the batch.
+    * `container` - A container where the batch info is mostly located (can be :in_calldata, :in_blob4844).
   """
   @type to_import :: %{
           number: non_neg_integer(),
@@ -34,7 +35,8 @@ defmodule Explorer.Chain.Scroll.Batch do
           commit_block_number: non_neg_integer(),
           commit_timestamp: DateTime.t(),
           bundle_id: non_neg_integer() | nil,
-          l2_block_range: BlockRange.t()
+          l2_block_range: BlockRange.t(),
+          container: :in_calldata | :in_blob4844
         }
 
   @typedoc """
@@ -44,6 +46,7 @@ defmodule Explorer.Chain.Scroll.Batch do
     * `commit_timestamp` - A timestamp of the commit block.
     * `bundle_id` - An identifier of the batch bundle from the `scroll_batch_bundles` database table.
     * `l2_block_range` - A range of L2 blocks included into the batch.
+    * `container` - A container where the batch info is mostly located (can be :in_calldata, :in_blob4844).
   """
   @primary_key false
   typed_schema "scroll_batches" do
@@ -60,6 +63,7 @@ defmodule Explorer.Chain.Scroll.Batch do
     )
 
     field(:l2_block_range, BlockRange, null: false)
+    field(:container, Ecto.Enum, values: [:in_blob4844, :in_calldata])
 
     timestamps()
   end

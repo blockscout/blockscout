@@ -295,8 +295,10 @@ defmodule Indexer.Fetcher.Scroll.Batch do
   # - `transaction_hashes`: A list of transaction hashes to filter for.
   #
   # ## Returns
-  # A map where keys are transaction hashes and values are the corresponding transaction inputs.
-  @spec get_transaction_input_by_hash([%{String.t() => any()}], [binary()]) :: %{binary() => binary()}
+  # A map where keys are transaction hashes and values are the corresponding transaction inputs and blob versioned hashes.
+  @spec get_transaction_input_by_hash([%{String.t() => any()}], [binary()]) :: %{
+          binary() => {binary(), [binary()] | [] | nil}
+        }
   defp get_transaction_input_by_hash(blocks, transaction_hashes) do
     Enum.reduce(blocks, %{}, fn block, acc ->
       block
@@ -305,7 +307,7 @@ defmodule Indexer.Fetcher.Scroll.Batch do
         Enum.member?(transaction_hashes, tx["hash"])
       end)
       |> Enum.map(fn tx ->
-        {tx["hash"], tx["input"]}
+        {tx["hash"], {tx["input"], tx["blobVersionedHashes"]}}
       end)
       |> Enum.into(%{})
       |> Map.merge(acc)
@@ -477,14 +479,24 @@ defmodule Indexer.Fetcher.Scroll.Batch do
           commit_block_number = quantity_to_integer(event.block_number)
 
           # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
-          l2_block_range =
+          {l2_block_range, container} =
             if batch_number == 0 do
               {:ok, range} = BlockRange.cast("[0,0]")
-              range
+              {range, :in_calldata}
             else
-              commit_transaction_input_by_hash
-              |> Map.get(event.transaction_hash)
-              |> input_to_l2_block_range()
+              {input, blob_versioned_hashes} =
+                commit_transaction_input_by_hash
+                |> Map.get(event.transaction_hash)
+
+              # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+              container =
+                if is_nil(blob_versioned_hashes) or blob_versioned_hashes == [] do
+                  :in_calldata
+                else
+                  :in_blob4844
+                end
+
+              {input_to_l2_block_range(input), container}
             end
 
           new_batches_acc = [
@@ -493,7 +505,8 @@ defmodule Indexer.Fetcher.Scroll.Batch do
               commit_transaction_hash: event.transaction_hash,
               commit_block_number: commit_block_number,
               commit_timestamp: Map.get(timestamps, commit_block_number),
-              l2_block_range: l2_block_range
+              l2_block_range: l2_block_range,
+              container: container
             }
             | batches_acc
           ]
