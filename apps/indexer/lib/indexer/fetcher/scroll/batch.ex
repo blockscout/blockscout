@@ -270,6 +270,9 @@ defmodule Indexer.Fetcher.Scroll.Batch do
 
   # Fetches `CommitBatch` and `FinalizeBatch` events of the Scroll Chain contract from an RPC node
   # for the given range of L1 blocks.
+  @spec get_logs_all({non_neg_integer(), non_neg_integer()}, binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: [
+          %{atom() => any()}
+        ]
   defp get_logs_all({chunk_start, chunk_end}, scroll_chain_contract, json_rpc_named_arguments) do
     {:ok, result} =
       Helper.get_logs(
