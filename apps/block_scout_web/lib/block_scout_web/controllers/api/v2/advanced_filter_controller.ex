@@ -90,6 +90,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
         |> Keyword.update(:paging_options, %PagingOptions{page_size: CSVHelper.limit()}, fn paging_options ->
           %PagingOptions{paging_options | page_size: CSVHelper.limit()}
         end)
+        |> Keyword.put(:timeout, :timer.minutes(5))
 
       full_options
       |> AdvancedFilter.list()
@@ -130,8 +131,12 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
               ContractMethod.find_contract_method_by_name(query, @api_true)
           end
 
-        with {:method, %ContractMethod{abi: %{"name" => name}, identifier: identifier}} <- {:method, mb_contract_method} do
-          render(conn, :methods, methods: [%{method_id: "0x" <> Base.encode16(identifier, case: :lower), name: name}])
+        case mb_contract_method do
+          %ContractMethod{abi: %{"name" => name}, identifier: identifier} ->
+            render(conn, :methods, methods: [%{method_id: "0x" <> Base.encode16(identifier, case: :lower), name: name}])
+
+          _ ->
+            render(conn, :methods, methods: [])
         end
     end
   end
@@ -189,7 +194,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp extract_filters(params) do
     [
-      transaction_types: prepare_transaction_types(params["transaction_types"]),
+      # TODO: remove when frontend is adopted to new naming
+      transaction_types: prepare_transaction_types(params["transaction_types"] || params["tx_types"]),
       methods: params["methods"] |> prepare_methods(),
       age: prepare_age(params["age_from"], params["age_to"]),
       from_address_hashes:
