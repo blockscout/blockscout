@@ -30,7 +30,11 @@ defmodule Explorer.Chain.Scroll.Reader do
     - {:ok, batch} when the batch is found in the table.
     - {:error, :not_found} when the batch is not found.
   """
-  @spec batch(non_neg_integer() | :latest, list()) :: {:ok, map()} | {:error, :not_found}
+  @spec batch(non_neg_integer() | :latest,
+          necessity_by_association: %{atom() => :optional | :required},
+          api?: boolean()
+        ) :: {:ok, Batch.t()} | {:error, :not_found}
+  @spec batch(non_neg_integer() | :latest) :: {:ok, Batch.t()} | {:error, :not_found}
   def batch(number, options \\ [])
 
   def batch(:latest, options) when is_list(options) do
