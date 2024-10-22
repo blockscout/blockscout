@@ -24,7 +24,7 @@ defmodule Explorer.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.8.1",
+      version: "6.9.0",
       xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper]]
     ]
   end
