@@ -344,7 +344,8 @@ defmodule Explorer.Chain.Scroll.Reader do
   @doc """
     Returns a total number of Scroll deposits (both completed and unclaimed).
   """
-  @spec deposits_count(list()) :: term() | nil
+  @spec deposits_count(api?: boolean()) :: non_neg_integer() | nil
+  @spec deposits_count() :: non_neg_integer() | nil
   def deposits_count(options \\ []) do
     query =
       from(
