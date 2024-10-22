@@ -13,17 +13,25 @@ defmodule BlockScoutWeb.API.V2.ScrollView do
   @spec render(binary(), map()) :: map() | non_neg_integer()
   def render("scroll_bridge_items.json", %{
         items: items,
-        next_page_params: next_page_params
+        next_page_params: next_page_params,
+        type: type
       }) do
     %{
       items:
         Enum.map(items, fn item ->
+          {origination_transaction_hash, completion_transaction_hash} =
+            if type == :deposits do
+              {item.l1_transaction_hash, item.l2_transaction_hash}
+            else
+              {item.l2_transaction_hash, item.l1_transaction_hash}
+            end
+
           %{
-            "block_number" => item.block_number,
-            "index" => item.index,
-            "l1_transaction_hash" => item.l1_transaction_hash,
-            "timestamp" => item.block_timestamp,
-            "l2_transaction_hash" => item.l2_transaction_hash,
+            "id" => item.index,
+            "origination_transaction_hash" => origination_transaction_hash,
+            "origination_timestamp" => item.block_timestamp,
+            "origination_transaction_block_number" => item.block_number,
+            "completion_transaction_hash" => completion_transaction_hash,
             "value" => item.amount
           }
         end),

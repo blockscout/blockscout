@@ -93,7 +93,8 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     |> put_status(200)
     |> render(:scroll_bridge_items, %{
       items: deposits,
-      next_page_params: next_page_params
+      next_page_params: next_page_params,
+      type: :deposits
     })
   end
 
@@ -127,7 +128,8 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     |> put_status(200)
     |> render(:scroll_bridge_items, %{
       items: withdrawals,
-      next_page_params: next_page_params
+      next_page_params: next_page_params,
+      type: :withdrawals
     })
   end
 

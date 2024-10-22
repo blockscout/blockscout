@@ -51,6 +51,7 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
+  alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
 
   alias Explorer.PagingOptions
 
@@ -440,6 +441,7 @@ defmodule BlockScoutWeb.Chain do
   # - Polygon Edge Deposits
   # - Polygon Edge Withdrawals
   # - Arbitrum cross chain messages
+  # - Scroll cross chain messages
   def paging_options(%{"id" => id_string}) when is_binary(id_string) do
     case Integer.parse(id_string) do
       {id, ""} ->
@@ -456,6 +458,7 @@ defmodule BlockScoutWeb.Chain do
   # - Polygon Edge Deposits
   # - Polygon Edge Withdrawals
   # - Arbitrum cross chain messages
+  # - Scroll cross chain messages
   def paging_options(%{"id" => id}) when is_integer(id) do
     [paging_options: %{@default_paging_options | key: {id}}]
   end
@@ -721,6 +724,10 @@ defmodule BlockScoutWeb.Chain do
       "coin_balance" =>
         smart_contract.address.fetched_coin_balance && Wei.to(smart_contract.address.fetched_coin_balance, :wei)
     }
+  end
+
+  defp paging_params(%ScrollBridge{index: id}) do
+    %{"id" => id}
   end
 
   defp paging_params(%{index: index}) do
