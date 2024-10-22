@@ -549,7 +549,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             to_address_hash: address_to_include.hash,
             to_address: address_to_include,
             block_hash: transaction.block_hash,
-            index: i  + 1,
+            index: i + 1,
             block_index: i + 1
           )
 

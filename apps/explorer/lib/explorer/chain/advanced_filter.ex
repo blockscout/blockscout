@@ -621,14 +621,17 @@ defmodule Explorer.Chain.AdvancedFilter do
     dynamic(false)
   end
 
-  defp page_transaction_index_dynamic(block_number, transaction_index) when block_number >= 0 and transaction_index > 0 do
-    dynamic([transaction: transaction], transaction.block_number == ^block_number and transaction.index < ^transaction_index)
+  defp page_transaction_index_dynamic(block_number, transaction_index)
+       when block_number >= 0 and transaction_index > 0 do
+    dynamic(
+      [transaction: transaction],
+      transaction.block_number == ^block_number and transaction.index < ^transaction_index
+    )
   end
 
   defp page_transaction_index_dynamic(_, _) do
     dynamic(false)
   end
-
 
   defp page_it_index_dynamic(block_number, transaction_index, it_index)
        when block_number >= 0 and transaction_index >= 0 and it_index > 0 do
@@ -680,7 +683,6 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp limit_query(query, _), do: query
 
-
   defp apply_token_transfers_filters(query_function, options) do
     query_function
     |> filter_by_transaction_type(options[:transaction_types])
@@ -720,7 +722,6 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp only_collated_transactions(query) do
     query |> where(not is_nil(as(:transaction).block_number) and not is_nil(as(:transaction).index))
   end
-
 
   defp filter_by_transaction_type(query_function, [_ | _] = transaction_types) do
     if DenormalizationHelper.tt_denormalization_finished?() do

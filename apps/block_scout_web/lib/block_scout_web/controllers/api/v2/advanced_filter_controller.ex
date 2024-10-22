@@ -196,7 +196,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp extract_filters(params) do
     [
-      transaction_types: prepare_transaction_types(params["transaction_types"]),
+      # TODO: remove when frontend is adopted to new naming
+      transaction_types: prepare_transaction_types(params["transaction_types"] || params["tx_types"]),
       methods: params["methods"] |> prepare_methods(),
       age: prepare_age(params["age_from"], params["age_to"]),
       from_address_hashes:
