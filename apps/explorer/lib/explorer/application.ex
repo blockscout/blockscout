@@ -146,7 +146,9 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.ShrinkInternalTransactions, :indexer),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.BlackfortValidatorsCounters, :blackfort),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability),
-        configure_chain_type_dependent_process(Explorer.Migrator.SanitizeDuplicatedLogIndexLogs, [
+        Explorer.Migrator.SanitizeDuplicatedLogIndexLogs
+        |> configure()
+        |> configure_chain_type_dependent_process([
           :polygon_zkevm,
           :rsk,
           :filecoin
