@@ -26,7 +26,7 @@
                   </thead>
                   <tbody style="font-size: 15px; color: #6c757d" >
                     <%= Enum.map(@transaction_tags, fn at ->
-                      render("row.html", tx_tag: at, conn: @conn)
+                      render("row.html", transaction_tag: at, conn: @conn)
                       end) %>
                   </tbody>
                 </table>

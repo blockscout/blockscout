@@ -131,13 +131,13 @@ defmodule Explorer.Account.TagTransaction do
   the provided transaction hash and identity ID.
 
   ## Parameters
-  - `tx_hash`: The transaction hash to search for. Can be a `String.t()`,
+  - `transaction_hash`: The transaction hash to search for. Can be a `String.t()`,
     `Explorer.Chain.Hash.Full.t()`, or `nil`.
   - `identity_id`: The identity ID to search for. Can be an `integer()` or `nil`.
 
   ## Returns
   - A list of `Explorer.Account.TagTransaction` structs if matching records are found.
-  - `nil` if either `tx_hash` or `identity_id` is `nil`.
+  - `nil` if either `transaction_hash` or `identity_id` is `nil`.
   """
   @spec get_tag_transaction_by_transaction_hash_and_identity_id(String.t() | Hash.Full.t() | nil, integer() | nil) ::
           [__MODULE__.t()] | nil
