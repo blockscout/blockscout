@@ -37,9 +37,10 @@ defmodule Explorer.Chain.Cache.GasUsage do
   end
 
   defp handle_fallback(:sum) do
-    # This will get the task PID if one exists and launch a new task if not
+    # This will get the task PID if one exists, check if it's running and launch
+    # a new task if task doesn't exist or it's not running.
     # See next `handle_fallback` definition
-    get_async_task()
+    safe_get_async_task()
 
     {:return, nil}
   end
@@ -73,7 +74,7 @@ defmodule Explorer.Chain.Cache.GasUsage do
 
   # By setting this as a `callback` an async task will be started each time the
   # `sum` expires (unless there is one already running)
-  defp async_task_on_deletion({:delete, _, :sum}), do: get_async_task()
+  defp async_task_on_deletion({:delete, _, :sum}), do: safe_get_async_task()
 
   defp async_task_on_deletion(_data), do: nil
 
