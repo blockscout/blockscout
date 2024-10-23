@@ -265,7 +265,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
     end
 
     test "filter by age", %{conn: conn} do
-      [_, tx_a, _, tx_b, _] =
+      [_, transaction_a, _, transaction_b, _] =
         for i <- 0..4 do
           tx = :transaction |> insert() |> with_block(status: :ok)
 
@@ -290,8 +290,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       request =
         get(conn, "/api/v2/advanced-filters", %{
-          "age_from" => DateTime.to_iso8601(tx_a.block.timestamp),
-          "age_to" => DateTime.to_iso8601(tx_b.block.timestamp)
+          "age_from" => DateTime.to_iso8601(transaction_a.block.timestamp),
+          "age_to" => DateTime.to_iso8601(transaction_b.block.timestamp)
         })
 
       assert response = json_response(request, 200)
