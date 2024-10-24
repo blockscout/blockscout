@@ -1002,7 +1002,7 @@ defmodule Explorer.Chain.Transaction do
          proxy_implementation_abi_map,
          options
        ) do
-    Map.get_lazy(proxy_implementation_abi_map, smart_contract, fn ->
+    Map.get_lazy(proxy_implementation_abi_map, smart_contract.address_hash, fn ->
       Proxy.combine_proxy_implementation_abi(smart_contract, options)
     end)
   end
@@ -1988,7 +1988,7 @@ defmodule Explorer.Chain.Transaction do
     empty_methods_map =
       transactions
       |> Enum.flat_map(fn
-        %{input: <<method_id::binary-size(4), _::binary>>} -> [method_id]
+        %{input: %{bytes: <<method_id::binary-size(4), _::binary>>}} -> [method_id]
         _ -> []
       end)
       |> Enum.into(%{}, &{&1, []})
@@ -2007,12 +2007,12 @@ defmodule Explorer.Chain.Transaction do
     methods_map =
       decoded_transactions
       |> Enum.flat_map(fn
-        {nil, %{input: <<method_id::binary-size(4), _::binary>>}} -> [method_id]
+        {nil, %{input: %{bytes: <<method_id::binary-size(4), _::binary>>}}} -> [method_id]
         _ -> []
       end)
       |> Enum.uniq()
       |> ContractMethod.find_contract_methods(opts)
-      |> Enum.into(%{}, &{&1.identifier, [&1]})
+      |> Enum.into(empty_methods_map, &{&1.identifier, [&1]})
 
     # decode remaining transaction using methods map
     decoded_transactions
