@@ -3745,6 +3745,7 @@ defmodule Explorer.Chain do
     negative_priority = ["VM execution error", "no uri", "invalid json"]
 
     Instance
+    |> where([instance], not instance.is_banned)
     |> where([instance], not is_nil(instance.error))
     |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after < ^DateTime.utc_now())
     |> select([instance], %{

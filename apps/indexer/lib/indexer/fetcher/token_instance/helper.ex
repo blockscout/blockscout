@@ -252,10 +252,9 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     end
   end
 
-  def normalize_token_id("ERC-721", _token_id), do: nil
+  def normalize_token_id("ERC-1155", token_id), do: token_id |> Integer.to_string(16) |> String.downcase() |> String.pad_leading(64, "0")
 
-  def normalize_token_id(_token_type, token_id),
-    do: token_id |> Integer.to_string(16) |> String.downcase() |> String.pad_leading(64, "0")
+  def normalize_token_id(_token_type, _token_id), do: nil
 
   defp result_to_insert_params({:ok, %{metadata: metadata}}, token_contract_address_hash, token_id) do
     %{
@@ -325,4 +324,30 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   def token_uri do
     @token_uri
   end
+
+  @error_to_ban_interval %{
+    # 9 => ["VM execution error", "request error: 404", "no uri", quote do "ignored host" <> _ end, "(-32000)" <> _, "invalid " <> _],
+    :infinity => ["request error: 429"]
+  }
+
+  def error_to_max_retries_count_before_ban(error) do
+    Enum.find_value(@error_to_ban_interval, fn {interval, errors} ->
+      Enum.any?(errors, fn error_pattern ->
+        match?(quote do unquote(error_pattern) end, error)
+      end) && interval
+    end) || 13
+  end
 end
+
+
+# error_to_ban_interval =%{
+#   9 => ["VM execution error", "request error: 404", "no uri", quote do "ignored host" <> _ end],
+#   :infinity => ["request error: 429"]
+# }
+
+
+# Enum.find_value(error_to_ban_interval, fn {interval, errors} ->
+#   Enum.any?(errors, fn error_pattern ->
+#     match?(quote do unquote(^error_pattern) end, error)
+#   end)&& interval
+# end)
