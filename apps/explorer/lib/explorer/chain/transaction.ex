@@ -2012,7 +2012,7 @@ defmodule Explorer.Chain.Transaction do
       end)
       |> Enum.uniq()
       |> ContractMethod.find_contract_methods(opts)
-      |> Enum.into(%{}, &{&1.identifier, [&1]})
+      |> Enum.into(empty_methods_map, &{&1.identifier, [&1]})
 
     # decode remaining transaction using methods map
     decoded_transactions
