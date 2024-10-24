@@ -333,4 +333,13 @@ defmodule ConfigHelper do
   def eth_call_url(default \\ nil) do
     System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URL") || System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || default
   end
+
+  def parse_urls_list(urls_var, url_var, default_url \\ nil) do
+    default = default_url || System.get_env("ETHEREUM_JSONRPC_HTTP_URL")
+
+    case parse_list_env_var(urls_var) do
+      [] -> [safe_get_env(url_var, default)]
+      urls -> urls
+    end
+  end
 end
