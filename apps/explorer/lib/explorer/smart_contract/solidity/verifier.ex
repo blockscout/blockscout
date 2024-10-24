@@ -356,8 +356,14 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       "trimmed_bytecode" => local_bytecode_without_meta,
       "compiler_version" => solc_local
     } = extract_bytecode_and_metadata_hash(bytecode, deployed_bytecode)
+    # Try logging bytecode
+    Logger.info("Provided Bytecode: #{inspect(bytecode)}")
+    # Try logging default bytecode
+    Logger.info("Provided Deployed Bytecode: #{inspect(deployed_bytecode)}")
 
     bc_deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
+    # LOG deployed bytecode
+    Logger.info("Deployed Bytecode: #{inspect(bc_deployed_bytecode)}")
 
     bc_creation_tx_input =
       case Chain.smart_contract_creation_tx_bytecode(address_hash) do
@@ -374,6 +380,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       "trimmed_bytecode" => bc_creation_tx_input_without_meta,
       "compiler_version" => solc_bc
     } = extract_bytecode_and_metadata_hash(bc_creation_tx_input, bc_deployed_bytecode)
+
+    # LOG creation bytecode
+    Logger.info("Creation Transaction Bytecode: #{inspect(bc_creation_tx_input)}")
+
 
     bc_replaced_local =
       String.replace(bc_creation_tx_input_without_meta, local_bytecode_without_meta, "", global: false)
