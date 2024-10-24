@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Import.Stage.BlockRelated do
+defmodule Explorer.Chain.Import.Stage.Main do
   @moduledoc """
-  Import blocks along with block related entities.
+  Imports main data (addresses, address_coin_balances, address_coin_balances_daily, tokens, blocks, transactions).
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
@@ -11,10 +11,10 @@ defmodule Explorer.Chain.Import.Stage.BlockRelated do
 
   @rest_runners [
     Runner.Address.CoinBalances,
-    Runner.Blocks,
     Runner.Address.CoinBalancesDaily,
-    Runner.Transactions,
-    Runner.TokenTransfers
+    Runner.Tokens,
+    Runner.Blocks,
+    Runner.Transactions
   ]
 
   @impl Stage
