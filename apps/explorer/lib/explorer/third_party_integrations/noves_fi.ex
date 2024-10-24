@@ -53,7 +53,7 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   end
 
   @doc """
-  Noves.fi /evm/{chain}/tx/{txHash} endpoint
+  Noves.fi /evm/:chain/tx/:transaction_hash endpoint
   """
   @spec transaction_url(String.t()) :: String.t()
   def transaction_url(transaction_hash_string) do
@@ -61,7 +61,7 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   end
 
   @doc """
-  Noves.fi /evm/{chain}/describeTxs endpoint
+  Noves.fi /evm/:chain/describeTxs endpoint
   """
   @spec describe_transactions_url() :: String.t()
   def describe_transactions_url do
@@ -69,7 +69,7 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   end
 
   @doc """
-  Noves.fi /evm/{chain}/transactions/{accountAddress} endpoint
+  Noves.fi /evm/:chain/transactions/:address_hash endpoint
   """
   @spec address_transactions_url(String.t()) :: String.t()
   def address_transactions_url(address_hash_string) do
