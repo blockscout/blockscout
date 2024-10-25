@@ -72,12 +72,9 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   def publish_with_standard_json_input(%{"address_hash" => address_hash} = params, json_input) do
     Logger.info(@sc_verification_via_standard_json_input_started)
+    params = maybe_add_zksync_specific_data(params)
 
-    case Verifier.evaluate_authenticity_via_standard_json_input(
-           address_hash,
-           maybe_add_zksync_specific_data(params),
-           json_input
-         ) do
+    case Verifier.evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
       {:ok,
        %{
          "abi" => _,
