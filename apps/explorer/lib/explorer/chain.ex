@@ -3201,6 +3201,25 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Fetches contract creation input data from the transaction (not internal transaction).
+  """
+  @spec contract_creation_input_data_from_transaction(String.t()) :: nil | binary()
+  def contract_creation_input_data_from_transaction(address_hash, options \\ []) do
+    transaction =
+      Transaction
+      |> where([transaction], transaction.created_contract_address_hash == ^address_hash)
+      |> select_repo(options).one()
+
+    cond do
+      transaction && transaction.input ->
+        Data.to_bytes(transaction.input)
+
+      true ->
+        nil
+    end
+  end
+
+  @doc """
   Fetches contract creation input data.
   """
   @spec contract_creation_input_data(String.t()) :: nil | String.t()

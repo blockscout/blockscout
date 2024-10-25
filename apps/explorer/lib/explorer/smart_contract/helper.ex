@@ -114,7 +114,7 @@ defmodule Explorer.SmartContract.Helper do
 
   def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode)
 
-  def prepare_bytecode_for_microservice(body, empty, deployed_bytecode) when is_nil(empty) do
+  def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode) when is_nil(creation_input) do
     if Application.get_env(:explorer, :chain_type) == :zksync do
       body
       |> Map.put("code", deployed_bytecode)
