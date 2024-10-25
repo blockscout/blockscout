@@ -109,14 +109,19 @@ defmodule Explorer.Chain.ContractMethod do
   @doc """
   Finds contract methods by selector id
   """
-  @spec find_contract_methods(binary(), [Chain.api?()]) :: [__MODULE__.t()]
+  @spec find_contract_methods([binary()], [Chain.api?()]) :: [__MODULE__.t()]
+  def find_contract_methods(method_ids, options)
+
+  def find_contract_methods([], _), do: []
+
   def find_contract_methods(method_ids, options) do
     query =
       from(
         contract_method in __MODULE__,
         distinct: contract_method.identifier,
         where: contract_method.abi["type"] == "function",
-        where: contract_method.identifier in ^method_ids
+        where: contract_method.identifier in ^method_ids,
+        order_by: [asc: contract_method.identifier, asc: contract_method.inserted_at]
       )
 
     Chain.select_repo(options).all(query)

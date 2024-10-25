@@ -145,7 +145,7 @@ defmodule Indexer.Supervisor do
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
         {Indexer.Fetcher.RollupL1ReorgMonitor.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(
-          Indexer.Fetcher.Optimism.TxnBatch.Supervisor,
+          Indexer.Fetcher.Optimism.TransactionBatch.Supervisor,
           [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
         ),
         configure(Indexer.Fetcher.Optimism.OutputRoot.Supervisor, [[memory_monitor: memory_monitor]]),
@@ -168,6 +168,22 @@ defmodule Indexer.Supervisor do
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         configure(Indexer.Fetcher.Shibarium.L1.Supervisor, [[memory_monitor: memory_monitor]]),
+        {Indexer.Fetcher.Scroll.BridgeL1.Supervisor,
+         [
+           [memory_monitor: memory_monitor]
+         ]},
+        {Indexer.Fetcher.Scroll.BridgeL2.Supervisor,
+         [
+           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+         ]},
+        {Indexer.Fetcher.Scroll.L1FeeParam.Supervisor,
+         [
+           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+         ]},
+        {Indexer.Fetcher.Scroll.Batch.Supervisor,
+         [
+           [memory_monitor: memory_monitor]
+         ]},
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, [

@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
   """
   @spec render(binary(), map()) :: map() | list() | non_neg_integer()
-  def render("optimism_txn_batches.json", %{
+  def render("optimism_transaction_batches.json", %{
         batches: batches,
         next_page_params: next_page_params
       }) do
@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       batches
       |> Enum.map(fn batch ->
         Task.async(fn ->
-          tx_count =
+          transaction_count =
             Repo.replica().aggregate(
               from(
                 t in Transaction,
@@ -35,7 +35,11 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
 
           %{
             "l2_block_number" => batch.l2_block_number,
-            "tx_count" => tx_count,
+            "transaction_count" => transaction_count,
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
+            "tx_count" => transaction_count,
+            "l1_transaction_hashes" => batch.frame_sequence.l1_transaction_hashes,
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hashes` property
             "l1_tx_hashes" => batch.frame_sequence.l1_transaction_hashes,
             "l1_timestamp" => batch.frame_sequence.l1_timestamp
           }
@@ -67,7 +71,11 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           "l1_timestamp" => batch.l1_timestamp,
           "l2_block_start" => from,
           "l2_block_end" => to,
-          "tx_count" => batch.tx_count,
+          "transaction_count" => batch.transaction_count,
+          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
+          "tx_count" => batch.transaction_count,
+          "l1_transaction_hashes" => batch.l1_transaction_hashes,
+          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hashes` property
           "l1_tx_hashes" => batch.l1_transaction_hashes,
           "batch_data_container" => batch.batch_data_container
         }
@@ -100,6 +108,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           %{
             "l2_output_index" => r.l2_output_index,
             "l2_block_number" => r.l2_block_number,
+            "l1_transaction_hash" => r.l1_transaction_hash,
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hash` property
             "l1_tx_hash" => r.l1_transaction_hash,
             "l1_timestamp" => r.l1_timestamp,
             "l1_block_number" => r.l1_block_number,
@@ -155,11 +165,19 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         Enum.map(deposits, fn deposit ->
           %{
             "l1_block_number" => deposit.l1_block_number,
+            "l2_transaction_hash" => deposit.l2_transaction_hash,
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_hash` property
             "l2_tx_hash" => deposit.l2_transaction_hash,
             "l1_block_timestamp" => deposit.l1_block_timestamp,
+            "l1_transaction_hash" => deposit.l1_transaction_hash,
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hash` property
             "l1_tx_hash" => deposit.l1_transaction_hash,
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_origin` property
             "l1_tx_origin" => deposit.l1_transaction_origin,
-            "l2_tx_gas_limit" => deposit.l2_transaction.gas
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_gas_limit` property
+            "l2_tx_gas_limit" => deposit.l2_transaction.gas,
+            "l1_transaction_origin" => deposit.l1_transaction_origin,
+            "l2_transaction_gas_limit" => deposit.l2_transaction.gas
           }
         end),
       next_page_params: next_page_params
@@ -174,8 +192,12 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       %{
         "l1_block_number" => deposit.l1_block_number,
         "l1_block_timestamp" => deposit.l1_block_timestamp,
+        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hash` property
         "l1_tx_hash" => deposit.l1_transaction_hash,
-        "l2_tx_hash" => deposit.l2_transaction_hash
+        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_hash` property
+        "l2_tx_hash" => deposit.l2_transaction_hash,
+        "l1_transaction_hash" => deposit.l1_transaction_hash,
+        "l2_transaction_hash" => deposit.l2_transaction_hash
       }
     end)
   end
@@ -228,9 +250,13 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "msg_nonce" => msg_nonce,
             "msg_nonce_version" => msg_nonce_version,
             "from" => Helper.address_with_info(conn, from_address, from_address_hash, w.from),
+            "l2_transaction_hash" => w.l2_transaction_hash,
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_hash` property
             "l2_tx_hash" => w.l2_transaction_hash,
             "l2_timestamp" => w.l2_timestamp,
             "status" => status,
+            "l1_transaction_hash" => w.l1_transaction_hash,
+            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hash` property
             "l1_tx_hash" => w.l1_transaction_hash,
             "challenge_period_end" => challenge_period_end
           }
@@ -275,6 +301,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         %{
           "internal_id" => frame_sequence.id,
           "l1_timestamp" => frame_sequence.l1_timestamp,
+          "l1_transaction_hashes" => frame_sequence.l1_transaction_hashes,
+          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hashes` property
           "l1_tx_hashes" => frame_sequence.l1_transaction_hashes,
           "batch_data_container" => batch_data_container
         }

@@ -12,9 +12,9 @@ defmodule Explorer.Counters.Transactions24hStats do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Transaction
 
-  @tx_count_name "transaction_count_24h"
-  @tx_fee_sum_name "transaction_fee_sum_24h"
-  @tx_fee_average_name "transaction_fee_average_24h"
+  @transaction_count_name "transaction_count_24h"
+  @transaction_fee_sum_name "transaction_fee_sum_24h"
+  @transaction_fee_average_name "transaction_fee_average_24h"
 
   @doc """
   Starts a process to periodically update the counters.
@@ -55,24 +55,24 @@ defmodule Explorer.Counters.Transactions24hStats do
   end
 
   @doc """
-  Fetches the value for a `#{@tx_count_name}` counter type from the `last_fetched_counters` table.
+  Fetches the value for a `#{@transaction_count_name}` counter type from the `last_fetched_counters` table.
   """
   def fetch_count(options) do
-    Chain.get_last_fetched_counter(@tx_count_name, options)
+    Chain.get_last_fetched_counter(@transaction_count_name, options)
   end
 
   @doc """
-  Fetches the value for a `#{@tx_fee_sum_name}` counter type from the `last_fetched_counters` table.
+  Fetches the value for a `#{@transaction_fee_sum_name}` counter type from the `last_fetched_counters` table.
   """
   def fetch_fee_sum(options) do
-    Chain.get_last_fetched_counter(@tx_fee_sum_name, options)
+    Chain.get_last_fetched_counter(@transaction_fee_sum_name, options)
   end
 
   @doc """
-  Fetches the value for a `#{@tx_fee_average_name}` counter type from the `last_fetched_counters` table.
+  Fetches the value for a `#{@transaction_fee_average_name}` counter type from the `last_fetched_counters` table.
   """
   def fetch_fee_average(options) do
-    Chain.get_last_fetched_counter(@tx_fee_average_name, options)
+    Chain.get_last_fetched_counter(@transaction_fee_average_name, options)
   end
 
   @doc """
@@ -110,17 +110,17 @@ defmodule Explorer.Counters.Transactions24hStats do
     } = Repo.one!(query, timeout: :infinity)
 
     Chain.upsert_last_fetched_counter(%{
-      counter_type: @tx_count_name,
+      counter_type: @transaction_count_name,
       value: count
     })
 
     Chain.upsert_last_fetched_counter(%{
-      counter_type: @tx_fee_sum_name,
+      counter_type: @transaction_fee_sum_name,
       value: fee_sum
     })
 
     Chain.upsert_last_fetched_counter(%{
-      counter_type: @tx_fee_average_name,
+      counter_type: @transaction_fee_average_name,
       value: fee_average
     })
   end

@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Address.Schema do
     DecompiledSmartContract,
     Hash,
     InternalTransaction,
+    SignedAuthorization,
     SmartContract,
     Token,
     Transaction,
@@ -81,9 +82,6 @@ defmodule Explorer.Chain.Address.Schema do
         field(:ens_domain_name, :string, virtual: true)
         field(:metadata, :any, virtual: true)
 
-        # todo: remove virtual field for a single implementation when frontend is bound to "implementations" object value in API
-        field(:implementation, :any, virtual: true)
-
         has_one(:smart_contract, SmartContract, references: :hash)
         has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)
         has_one(:proxy_implementations, Implementation, foreign_key: :proxy_address_hash, references: :hash)
@@ -106,6 +104,10 @@ defmodule Explorer.Chain.Address.Schema do
         has_one(:scam_badge, Address.ScamBadgeToAddress, foreign_key: :address_hash, references: :hash)
         has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash, references: :hash)
         has_many(:withdrawals, Withdrawal, foreign_key: :address_hash, references: :hash)
+
+        # In practice, this is a one-to-many relationship, but we only need to check if any signed authorization
+        # exists for a given address. This done this way to avoid loading all signed authorizations for an address.
+        has_one(:signed_authorization, SignedAuthorization, foreign_key: :authority, references: :hash)
 
         timestamps()
 
@@ -130,8 +132,9 @@ defmodule Explorer.Chain.Address do
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, Transaction}
   alias Explorer.{Chain, PagingOptions, Repo}
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
@@ -202,6 +205,54 @@ defmodule Explorer.Chain.Address do
 
   @balance_changeset_required_attrs @required_attrs ++ ~w(fetched_coin_balance fetched_coin_balance_block_number)a
 
+  @doc """
+  Creates an address.
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.Address.create(
+      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"}
+      ...> )
+      ...> to_string(hash)
+      "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"
+
+  A `String.t/0` value for `Explorer.Chain.Address.t/0` `hash` must have 40 hexadecimal characters after the `0x` prefix
+  to prevent short- and long-hash transcription errors.
+
+      iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.Address.create(
+      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0"}
+      ...> )
+      ...> errors
+      [hash: {"is invalid", [type: Explorer.Chain.Hash.Address, validation: :cast]}]
+      iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.Address.create(
+      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0ba"}
+      ...> )
+      ...> errors
+      [hash: {"is invalid", [type: Explorer.Chain.Hash.Address, validation: :cast]}]
+
+  """
+  @spec create(map()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
+  def create(attrs \\ %{}) do
+    %__MODULE__{}
+    |> changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Creates multiple instances of a `Explorer.Chain.Address`.
+
+  ## Parameters
+
+    - address_insert_params: List of address changesets to create.
+
+  ## Returns
+
+    - A list of created resource instances.
+
+  """
+  @spec create_multiple(list()) :: {non_neg_integer(), nil | [term()]}
+  def create_multiple(address_insert_params) do
+    Repo.insert_all(Address, address_insert_params, on_conflict: :nothing, returning: [:hash])
+  end
+
   def balance_changeset(%__MODULE__{} = address, attrs) do
     address
     |> cast(attrs, @allowed_attrs)
@@ -222,8 +273,8 @@ defmodule Explorer.Chain.Address do
     |> unique_constraint(:hash)
   end
 
-  @spec get(Hash.Address.t(), [Chain.necessity_by_association_option() | Chain.api?()]) :: t() | nil
-  def get(hash, options) do
+  @spec get(Hash.Address.t() | binary(), [Chain.necessity_by_association_option() | Chain.api?()]) :: t() | nil
+  def get(hash, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     query = from(address in Address, where: address.hash == ^hash)
@@ -422,13 +473,49 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
-  Checks if given address is smart-contract
+    Determines if the given address is a smart contract.
+
+    This function checks the contract code of an address to determine if it's a
+    smart contract.
+
+    ## Parameters
+    - `address`: The address to check. Can be an `Address` struct or any other value.
+
+    ## Returns
+    - `true` if the address is a smart contract
+    - `false` if the address is not a smart contract
+    - `nil` if the contract code hasn't been loaded
   """
   @spec smart_contract?(any()) :: boolean() | nil
   def smart_contract?(%__MODULE__{contract_code: nil}), do: false
   def smart_contract?(%__MODULE__{contract_code: _}), do: true
   def smart_contract?(%NotLoaded{}), do: nil
   def smart_contract?(_), do: false
+
+  @doc """
+    Checks if the given address is an Externally Owned Account (EOA) with code,
+    as defined in EIP-7702.
+
+    This function determines whether an address represents an EOA that has
+    associated code, which is a special case introduced by EIP-7702. It checks
+    the contract code of the address for the presence of a delegate address
+    according to the EIP-7702 specification.
+
+    ## Parameters
+    - `address`: The address to check. Can be an `Address` struct or any other value.
+
+    ## Returns
+    - `true` if the address is an EOA with code (EIP-7702 compliant)
+    - `false` if the address is not an EOA with code
+    - `nil` if the contract code hasn't been loaded
+  """
+  @spec eoa_with_code?(any()) :: boolean() | nil
+  def eoa_with_code?(%__MODULE__{contract_code: %Data{bytes: code}}) do
+    EIP7702.get_delegate_address(code) != nil
+  end
+
+  def eoa_with_code?(%NotLoaded{}), do: nil
+  def eoa_with_code?(_), do: false
 
   defp get_addresses(options) do
     accounts_with_n = fetch_top_addresses(options)
@@ -479,7 +566,7 @@ defmodule Explorer.Chain.Address do
 
   Returns `:ok` if found
 
-      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.Address.create(
       ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
       ...> )
       iex> Explorer.Address.check_address_exists(hash)
@@ -504,7 +591,7 @@ defmodule Explorer.Chain.Address do
 
   Returns `true` if found
 
-      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.Address.create(
       ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
       ...> )
       iex> Explorer.Chain.Address.address_exists?(hash)
@@ -529,7 +616,18 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
-  Sets contract_code for the given Explorer.Chain.Address
+   Sets the contract code for the given address.
+
+   This function updates the contract code and the `updated_at` timestamp for an
+   address in the database.
+
+   ## Parameters
+   - `address_hash`: The hash of the address to update.
+   - `contract_code`: The new contract code to set.
+
+   ## Returns
+   A tuple `{count, nil}`, where `count` is the number of rows updated
+   (typically 1 if the address exists, 0 otherwise).
   """
   @spec set_contract_code(Hash.Address.t(), binary()) :: {non_neg_integer(), nil}
   def set_contract_code(address_hash, contract_code) when not is_nil(address_hash) and is_binary(contract_code) do
@@ -561,4 +659,26 @@ defmodule Explorer.Chain.Address do
         {[], nil}
     end
   end
+
+  @doc """
+  Retrieves the creation transaction for a given address.
+
+  ## Parameters
+  - `address`: The address for which to find the creation transaction.
+
+  ## Returns
+  - `nil` if no creation transaction is found.
+  - `%InternalTransaction{}` if the creation transaction is an internal transaction.
+  - `%Transaction{}` if the creation transaction is a regular transaction.
+  """
+  @spec creation_transaction(any()) :: nil | InternalTransaction.t() | Transaction.t()
+  def creation_transaction(%__MODULE__{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contracts_creation_internal_transaction
+  end
+
+  def creation_transaction(%__MODULE__{contracts_creation_transaction: %Transaction{}} = address) do
+    address.contracts_creation_transaction
+  end
+
+  def creation_transaction(_address), do: nil
 end

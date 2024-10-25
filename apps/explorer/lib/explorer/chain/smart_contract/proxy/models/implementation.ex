@@ -49,6 +49,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         :comptroller,
         :eip2535,
         :clone_with_immutable_arguments,
+        :eip7702,
         :unknown
       ],
       null: true
@@ -93,8 +94,12 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   @doc """
   Returns all implementations for the given smart-contract address hashes
   """
-  @spec get_proxy_implementations_for_multiple_proxies([Hash.Address.t()], Keyword.t()) :: __MODULE__.t() | nil
-  def get_proxy_implementations_for_multiple_proxies(proxy_address_hashes, options \\ []) do
+  @spec get_proxy_implementations_for_multiple_proxies([Hash.Address.t()], Keyword.t()) :: [__MODULE__.t()]
+  def get_proxy_implementations_for_multiple_proxies(proxy_address_hashes, options \\ [])
+
+  def get_proxy_implementations_for_multiple_proxies([], _), do: []
+
+  def get_proxy_implementations_for_multiple_proxies(proxy_address_hashes, options) do
     proxy_address_hashes
     |> get_proxy_implementations_by_multiple_hashes_query()
     |> select_repo(options).all()

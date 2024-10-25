@@ -16,6 +16,7 @@ defmodule EthereumJSONRPC.Transaction do
     ]
 
   alias EthereumJSONRPC
+  alias EthereumJSONRPC.SignedAuthorization
 
   case Application.compile_env(:explorer, :chain_type) do
     :ethereum ->
@@ -29,8 +30,15 @@ defmodule EthereumJSONRPC.Transaction do
     :optimism ->
       @chain_type_fields quote(
                            do: [
-                             l1_tx_origin: EthereumJSONRPC.hash(),
+                             l1_transaction_origin: EthereumJSONRPC.hash(),
                              l1_block_number: non_neg_integer()
+                           ]
+                         )
+
+    :scroll ->
+      @chain_type_fields quote(
+                           do: [
+                             queue_index: non_neg_integer()
                            ]
                          )
 
@@ -74,8 +82,16 @@ defmodule EthereumJSONRPC.Transaction do
       @chain_type_fields quote(do: [])
   end
 
+  # todo: Check if it's possible to simplify by avoiding t -> elixir -> params conversions
+  # and directly convert t -> params.
   @type elixir :: %{
-          String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
+          String.t() =>
+            EthereumJSONRPC.address()
+            | EthereumJSONRPC.hash()
+            | String.t()
+            | non_neg_integer()
+            | [SignedAuthorization.params()]
+            | nil
         }
 
   @typedoc """
@@ -105,6 +121,7 @@ defmodule EthereumJSONRPC.Transaction do
    * `"maxPriorityFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max priority fee per unit of gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"maxFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"type"` - `t:EthereumJSONRPC.quantity/0` denotes transaction type. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
+   * `"authorizationList"` - `t:list/0` of `t:EthereumJSONRPC.SignedAuthorization.t/0` authorization tuples. Introduced in [EIP-7702](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-7702.md)
    #{case Application.compile_env(:explorer, :chain_type) do
     :ethereum -> """
        * `"maxFeePerBlobGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of blob gas used. Introduced in [EIP-4844](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4844.md)
@@ -113,6 +130,9 @@ defmodule EthereumJSONRPC.Transaction do
     :optimism -> """
        * `"l1TxOrigin"` - .
        * `"l1BlockNumber"` - .
+      """
+    :scroll -> """
+       * `"queueIndex"` - An index of L1MessageTx (replaces Nonce) in Scroll rollup.
       """
     :suave -> """
        * `"executionNode"` - `t:EthereumJSONRPC.address/0` of execution node (used by Suave).
@@ -128,7 +148,12 @@ defmodule EthereumJSONRPC.Transaction do
   """
   @type t :: %{
           String.t() =>
-            EthereumJSONRPC.address() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | String.t() | nil
+            EthereumJSONRPC.address()
+            | EthereumJSONRPC.hash()
+            | EthereumJSONRPC.quantity()
+            | String.t()
+            | [SignedAuthorization.t()]
+            | nil
         }
 
   @type params :: %{
@@ -150,7 +175,8 @@ defmodule EthereumJSONRPC.Transaction do
           transaction_index: non_neg_integer(),
           max_priority_fee_per_gas: non_neg_integer(),
           max_fee_per_gas: non_neg_integer(),
-          type: non_neg_integer()
+          type: non_neg_integer(),
+          authorization_list: [SignedAuthorization.params()]
         }
 
   @doc """
@@ -322,11 +348,12 @@ defmodule EthereumJSONRPC.Transaction do
       {"block_timestamp", :block_timestamp},
       {"r", :r},
       {"s", :s},
-      {"v", :v}
+      {"v", :v},
+      {"authorizationList", :authorization_list}
     ])
   end
 
-  # txpool_content method on Erigon node returns tx data
+  # txpool_content method on Erigon node returns transaction data
   # without gas price
   def do_elixir_to_params(
         %{
@@ -368,11 +395,12 @@ defmodule EthereumJSONRPC.Transaction do
       {"block_timestamp", :block_timestamp},
       {"r", :r},
       {"s", :s},
-      {"v", :v}
+      {"v", :v},
+      {"authorizationList", :authorization_list}
     ])
   end
 
-  # for legacy txs without maxPriorityFeePerGas and maxFeePerGas
+  # for legacy transactions without maxPriorityFeePerGas and maxFeePerGas
   def do_elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -414,7 +442,7 @@ defmodule EthereumJSONRPC.Transaction do
     ])
   end
 
-  # for legacy txs without type, maxPriorityFeePerGas and maxFeePerGas
+  # for legacy transactions without type, maxPriorityFeePerGas and maxFeePerGas
   def do_elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -454,7 +482,7 @@ defmodule EthereumJSONRPC.Transaction do
     ])
   end
 
-  # for txs without gasPrice, maxPriorityFeePerGas and maxFeePerGas
+  # for transactions without gasPrice, maxPriorityFeePerGas and maxFeePerGas
   def do_elixir_to_params(
         %{
           "blockHash" => block_hash,
@@ -504,11 +532,16 @@ defmodule EthereumJSONRPC.Transaction do
         ])
 
       :optimism ->
-        # we need to put blobVersionedHashes for Indexer.Fetcher.Optimism.TxnBatch module
+        # we need to put blobVersionedHashes for Indexer.Fetcher.Optimism.TransactionBatch module
         put_if_present(params, elixir, [
-          {"l1TxOrigin", :l1_tx_origin},
+          {"l1TxOrigin", :l1_transaction_origin},
           {"l1BlockNumber", :l1_block_number},
           {"blobVersionedHashes", :blob_versioned_hashes}
+        ])
+
+      :scroll ->
+        put_if_present(params, elixir, [
+          {"queueIndex", :queue_index}
         ])
 
       :suave ->
@@ -670,7 +703,7 @@ defmodule EthereumJSONRPC.Transaction do
     do: {"input", value}
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas maxFeePerBlobGas) and
+       when key in ~w(gas gasPrice nonce r s standardV v value type maxPriorityFeePerGas maxFeePerGas maxFeePerBlobGas queueIndex) and
               quantity != nil do
     {key, quantity_to_integer(quantity)}
   end
@@ -699,6 +732,9 @@ defmodule EthereumJSONRPC.Transaction do
       _ -> {key, quantity_to_integer(chain_id)}
     end
   end
+
+  defp entry_to_elixir({"authorizationList" = key, value}),
+    do: {key, value |> Enum.map(&SignedAuthorization.to_params/1)}
 
   # Celo-specific fields
   if Application.compile_env(:explorer, :chain_type) == :celo do

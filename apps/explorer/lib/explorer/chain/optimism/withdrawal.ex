@@ -64,8 +64,8 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         base_query =
           from(w in __MODULE__,
             order_by: [desc: w.msg_nonce],
-            left_join: l2_tx in Transaction,
-            on: w.l2_transaction_hash == l2_tx.hash,
+            left_join: l2_transaction in Transaction,
+            on: w.l2_transaction_hash == l2_transaction.hash,
             left_join: l2_block in Block,
             on: w.l2_block_number == l2_block.number,
             left_join: we in WithdrawalEvent,
@@ -77,7 +77,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
               l2_timestamp: l2_block.timestamp,
               l2_transaction_hash: w.l2_transaction_hash,
               l1_transaction_hash: we.l1_transaction_hash,
-              from: l2_tx.from_address_hash
+              from: l2_transaction.from_address_hash
             }
           )
 

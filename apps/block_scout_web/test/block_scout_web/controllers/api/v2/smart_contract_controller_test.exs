@@ -5,8 +5,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   import Mox
 
   alias BlockScoutWeb.AddressContractView
-  alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Account.Identity
   alias Explorer.TestHelper
   alias Plug.Conn
 
@@ -455,7 +455,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract.address_hash.bytes, case: :lower)
 
-      proxy_tx_input =
+      proxy_transaction_input =
         "0x11b804ab000000000000000000000000" <>
           implementation_contract_address_hash_string <>
           "000000000000000000000000000000000000000000000000000000000000006035323031313537360000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000284e159163400000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd30000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d61100000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d6110000000000000000000000000000000000000000000000000000000000000003e8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd300000000000000000000000000000000000000000000000000000000000000184f7074696d69736d2053756273637269626572204e465473000000000000000000000000000000000000000000000000000000000000000000000000000000054f504e46540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000037697066733a2f2f516d66544e504839765651334b5952346d6b52325a6b757756424266456f5a5554545064395538666931503332752f300000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c82bbe41f2cf04e3a8efa18f7032bdd7f6d98a81000000000000000000000000efba8a2a82ec1fb1273806174f5e28fbb917cf9500000000000000000000000000000000000000000000000000000000"
@@ -470,7 +470,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
       insert(:transaction,
         created_contract_address_hash: proxy_address.hash,
-        input: proxy_tx_input
+        input: proxy_transaction_input
       )
       |> with_block(status: :ok)
 
@@ -479,7 +479,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "has_custom_methods_write" => false,
         "is_self_destructed" => false,
         "deployed_bytecode" => proxy_deployed_bytecode,
-        "creation_bytecode" => proxy_tx_input,
+        "creation_bytecode" => proxy_transaction_input,
         "proxy_type" => "eip1167",
         "implementations" => [
           %{
@@ -618,7 +618,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     implementation_contract_address_hash_string =
       Base.encode16(implementation_contract.address_hash.bytes, case: :lower)
 
-    proxy_tx_input =
+    proxy_transaction_input =
       "0x684fbe55000000000000000000000000af1caf51d49b0e63d1ff7e5d4ed6ea26d15f3f9d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003"
 
     proxy_deployed_bytecode =
@@ -633,7 +633,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
     insert(:transaction,
       created_contract_address_hash: proxy_address.hash,
-      input: proxy_tx_input
+      input: proxy_transaction_input
     )
     |> with_block(status: :ok)
 
@@ -648,7 +648,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       "has_custom_methods_write" => false,
       "is_self_destructed" => false,
       "deployed_bytecode" => proxy_deployed_bytecode,
-      "creation_bytecode" => proxy_tx_input
+      "creation_bytecode" => proxy_transaction_input
     }
 
     request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(proxy_address.hash)}")
@@ -2763,7 +2763,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     setup %{conn: conn} do
       auth = build(:auth)
 
-      {:ok, user} = UserFromAuth.find_or_create(auth)
+      {:ok, user} = Identity.find_or_create(auth)
 
       {:ok, conn: Plug.Test.init_test_session(conn, current_user: user)}
     end
@@ -3580,7 +3580,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         end
         |> Enum.reverse()
 
-      ordering_params = %{"sort" => "txs_count", "order" => "asc"}
+      ordering_params = %{"sort" => "transactions_count", "order" => "asc"}
 
       request = get(conn, "/api/v2/smart-contracts", ordering_params)
       assert response = json_response(request, 200)
@@ -3600,7 +3600,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           insert(:smart_contract, address_hash: address.hash, address: address)
         end
 
-      ordering_params = %{"sort" => "txs_count", "order" => "desc"}
+      ordering_params = %{"sort" => "transactions_count", "order" => "desc"}
 
       request = get(conn, "/api/v2/smart-contracts", ordering_params)
       assert response = json_response(request, 200)

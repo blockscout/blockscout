@@ -53,7 +53,7 @@ defmodule Indexer.Fetcher.OnDemand.FirstTrace do
 
       {:error, reason} ->
         Logger.error(fn ->
-          ["Error while fetching first trace for tx: #{hash_string} error reason: ", reason]
+          ["Error while fetching first trace for transaction: #{hash_string} error reason: ", reason]
         end)
 
       :ignore ->

@@ -9,18 +9,18 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
   describe "call" do
     test "Coin transaction" do
-      tx =
+      transaction =
         %Transaction{
           from_address: from_address,
           to_address: to_address,
           block_number: block_number,
-          hash: tx_hash
+          hash: transaction_hash
         } = with_block(insert(:transaction))
 
-      {_, fee} = Transaction.fee(tx, :gwei)
-      amount = Wei.to(tx.value, :ether)
+      {_, fee} = Transaction.fee(transaction, :gwei)
+      amount = Wei.to(transaction.value, :ether)
 
-      assert Summary.process(tx) == [
+      assert Summary.process(transaction) == [
                %Summary{
                  amount: amount,
                  block_number: block_number,
@@ -29,22 +29,22 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "ETH",
                  subject: "Coin transaction",
                  to_address_hash: to_address.hash,
-                 transaction_hash: tx_hash,
-                 tx_fee: fee,
+                 transaction_hash: transaction_hash,
+                 transaction_fee: fee,
                  type: "COIN"
                }
              ]
     end
 
     test "Pending Coin transaction (w/o block)" do
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = insert(:transaction)
 
-      assert Summary.process(tx) == []
+      assert Summary.process(transaction) == []
     end
 
     test "Contract creation transaction" do
@@ -53,21 +53,21 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
       block = insert(:block)
 
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           block_number: _block_number,
-          hash: tx_hash
+          hash: transaction_hash
         } =
         :transaction
         |> insert(from_address: address, to_address: nil)
         |> with_contract_creation(contract_address)
         |> with_block(block)
 
-      {_, fee} = Transaction.fee(tx, :gwei)
-      amount = Wei.to(tx.value, :ether)
+      {_, fee} = Transaction.fee(transaction, :gwei)
+      amount = Wei.to(transaction.value, :ether)
 
-      assert Summary.process(tx) == [
+      assert Summary.process(transaction) == [
                %Summary{
                  amount: amount,
                  block_number: block.number,
@@ -76,20 +76,20 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "ETH",
                  subject: "Contract creation",
                  to_address_hash: contract_address.hash,
-                 transaction_hash: tx_hash,
-                 tx_fee: fee,
+                 transaction_hash: transaction_hash,
+                 transaction_fee: fee,
                  type: "COIN"
                }
              ]
     end
 
     test "ERC-20 Token transfer" do
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -101,12 +101,12 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           token: token
         } =
         :token_transfer
-        |> insert(transaction: tx)
+        |> insert(transaction: transaction)
         |> Repo.preload([
           :token
         ])
 
-      {_, fee} = Transaction.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(transaction, :gwei)
 
       token_decimals = Decimal.to_integer(token.decimals)
 
@@ -123,8 +123,8 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "Infinite Token",
                  subject: "ERC-20",
                  to_address_hash: to_address.hash,
-                 transaction_hash: tx.hash,
-                 tx_fee: fee,
+                 transaction_hash: transaction.hash,
+                 transaction_fee: fee,
                  type: "ERC-20"
                }
              ]
@@ -133,12 +133,12 @@ defmodule Explorer.Account.Notifier.SummaryTest do
     test "ERC-721 Token transfer" do
       token = insert(:token, type: "ERC-721")
 
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -150,7 +150,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
         } =
         :token_transfer
         |> insert(
-          transaction: tx,
+          transaction: transaction,
           token_ids: [42],
           token_contract_address: token.contract_address
         )
@@ -158,7 +158,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           :token
         ])
 
-      {_, fee} = Transaction.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(transaction, :gwei)
 
       assert Summary.process(transfer) == [
                %Summary{
@@ -169,8 +169,8 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "Infinite Token",
                  subject: "42",
                  to_address_hash: to_address.hash,
-                 transaction_hash: tx.hash,
-                 tx_fee: fee,
+                 transaction_hash: transaction.hash,
+                 transaction_fee: fee,
                  type: "ERC-721"
                }
              ]
@@ -179,12 +179,12 @@ defmodule Explorer.Account.Notifier.SummaryTest do
     test "ERC-1155 single Token transfer" do
       token = insert(:token, type: "ERC-1155")
 
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -196,7 +196,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
         } =
         :token_transfer
         |> insert(
-          transaction: tx,
+          transaction: transaction,
           token_ids: [42],
           token_contract_address: token.contract_address
         )
@@ -204,7 +204,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           :token
         ])
 
-      {_, fee} = Transaction.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(transaction, :gwei)
 
       assert Summary.process(transfer) == [
                %Summary{
@@ -215,8 +215,8 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "Infinite Token",
                  subject: "42",
                  to_address_hash: to_address.hash,
-                 transaction_hash: tx.hash,
-                 tx_fee: fee,
+                 transaction_hash: transaction.hash,
+                 transaction_fee: fee,
                  type: "ERC-1155"
                }
              ]
@@ -225,12 +225,12 @@ defmodule Explorer.Account.Notifier.SummaryTest do
     test "ERC-1155 multiple Token transfer" do
       token = insert(:token, type: "ERC-1155")
 
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -242,7 +242,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
         } =
         :token_transfer
         |> insert(
-          transaction: tx,
+          transaction: transaction,
           token_ids: [23, 42],
           token_contract_address: token.contract_address
         )
@@ -250,7 +250,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           :token
         ])
 
-      {_, fee} = Transaction.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(transaction, :gwei)
 
       assert Summary.process(transfer) == [
                %Summary{
@@ -261,8 +261,8 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "Infinite Token",
                  subject: "23, 42",
                  to_address_hash: to_address.hash,
-                 transaction_hash: tx.hash,
-                 tx_fee: fee,
+                 transaction_hash: transaction.hash,
+                 transaction_fee: fee,
                  type: "ERC-1155"
                }
              ]
@@ -271,12 +271,12 @@ defmodule Explorer.Account.Notifier.SummaryTest do
     test "ERC-404 Token transfer with token id" do
       token = insert(:token, type: "ERC-404")
 
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -288,7 +288,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
         } =
         :token_transfer
         |> insert(
-          transaction: tx,
+          transaction: transaction,
           token_ids: [42],
           token_contract_address: token.contract_address
         )
@@ -296,7 +296,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           :token
         ])
 
-      {_, fee} = Transaction.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(transaction, :gwei)
 
       token_decimals = Decimal.to_integer(token.decimals)
 
@@ -313,8 +313,8 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "Infinite Token",
                  subject: "42",
                  to_address_hash: to_address.hash,
-                 transaction_hash: tx.hash,
-                 tx_fee: fee,
+                 transaction_hash: transaction.hash,
+                 transaction_fee: fee,
                  type: "ERC-404"
                }
              ]
@@ -323,12 +323,12 @@ defmodule Explorer.Account.Notifier.SummaryTest do
     test "ERC-404 Token transfer without token id" do
       token = insert(:token, type: "ERC-404")
 
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction))
 
       transfer =
@@ -340,7 +340,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
         } =
         :token_transfer
         |> insert(
-          transaction: tx,
+          transaction: transaction,
           token_ids: [],
           token_contract_address: token.contract_address
         )
@@ -348,7 +348,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
           :token
         ])
 
-      {_, fee} = Transaction.fee(tx, :gwei)
+      {_, fee} = Transaction.fee(transaction, :gwei)
 
       token_decimals = Decimal.to_integer(token.decimals)
 
@@ -365,8 +365,8 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "Infinite Token",
                  subject: "ERC-404",
                  to_address_hash: to_address.hash,
-                 transaction_hash: tx.hash,
-                 tx_fee: fee,
+                 transaction_hash: transaction.hash,
+                 transaction_fee: fee,
                  type: "ERC-404"
                }
              ]

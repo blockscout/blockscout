@@ -76,9 +76,11 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
          json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {optimism_portal, start_block_l1} <- Optimism.read_system_config(system_config, json_rpc_named_arguments),
          true <- start_block_l1 > 0,
-         {last_l1_block_number, last_l1_tx_hash} <- get_last_l1_item(),
-         {:ok, last_l1_tx} <- Optimism.get_transaction_by_hash(last_l1_tx_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_tx_hash) && is_nil(last_l1_tx)},
+         {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(),
+         {:ok, last_l1_transaction} <-
+           Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:l1_transaction_not_found, false} <-
+           {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {safe_block, _} = Helper.get_safe_block(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid,
@@ -119,7 +121,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
 
         {:stop, :normal, state}
 
-      {:l1_tx_not_found, true} ->
+      {:l1_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check op_deposits table."
         )
@@ -463,7 +465,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
       |> Integer.to_string(16)
       |> String.downcase()
 
-    l2_tx_hash =
+    l2_transaction_hash =
       "0x" <>
         ((transaction_type <> "#{rlp_encoded}")
          |> Base.decode16!(case: :mixed)
@@ -477,7 +479,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
       l1_block_timestamp: Map.get(timestamps, block_number),
       l1_transaction_hash: transaction_hash,
       l1_transaction_origin: "0x" <> from_stripped,
-      l2_transaction_hash: l2_tx_hash
+      l2_transaction_hash: l2_transaction_hash
     }
   end
 

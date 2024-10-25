@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.GraphQL.Celo.Schema.Types do
   @desc """
   Represents a CELO token transfer between addresses.
   """
-  node object(:transfer_tx, id_fetcher: &transfer_tx_id_fetcher/2) do
+  node object(:transfer_transaction, id_fetcher: &transfer_transaction_id_fetcher/2) do
     field(:gateway_fee_recipient, :address_hash)
     field(:gateway_fee, :address_hash)
     field(:fee_currency, :address_hash)
@@ -62,10 +62,10 @@ defmodule BlockScoutWeb.GraphQL.Celo.Schema.Types do
     end
   end
 
-  connection(node_type: :transfer_tx)
+  connection(node_type: :transfer_transaction)
   connection(node_type: :celo_transfer)
 
-  defp transfer_tx_id_fetcher(
+  defp transfer_transaction_id_fetcher(
          %{transaction_hash: transaction_hash, address_hash: address_hash},
          _
        ) do

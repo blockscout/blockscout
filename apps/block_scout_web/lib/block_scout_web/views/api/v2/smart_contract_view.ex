@@ -162,7 +162,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         conn
       ) do
     bytecode_twin = SmartContract.get_address_verified_bytecode_twin_contract(address.hash, @api_true)
-    minimal_proxy_address_hash = address.implementation
     bytecode_twin_contract = bytecode_twin.verified_contract
     smart_contract_verified = AddressView.smart_contract_verified?(address)
     fully_verified = SmartContract.verified_with_full_match?(address.hash, @api_true)
@@ -185,10 +184,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     target_contract =
       if smart_contract_verified, do: smart_contract, else: bytecode_twin_contract
 
+    verified_twin_address_hash = bytecode_twin_contract && Address.checksum(bytecode_twin_contract.address_hash)
+
     %{
-      "verified_twin_address_hash" =>
-        bytecode_twin_contract &&
-          Address.checksum(bytecode_twin_contract.address_hash),
+      "verified_twin_address_hash" => verified_twin_address_hash,
       "is_verified" => smart_contract_verified,
       "is_changed_bytecode" => smart_contract_verified && smart_contract.is_changed_bytecode,
       "is_partially_verified" => smart_contract.partially_verified && smart_contract_verified,
@@ -203,9 +202,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "has_methods_write" => write_methods?,
       "has_methods_read_proxy" => is_proxy,
       "has_methods_write_proxy" => is_proxy && write_methods?,
-      # todo: remove this property once frontend is bound to "implementations"
-      "minimal_proxy_address_hash" =>
-        minimal_proxy_address_hash && Address.checksum(minimal_proxy_address_hash.address_hash),
       "proxy_type" => proxy_type,
       "implementations" => implementations,
       "sourcify_repo_url" =>
@@ -241,6 +237,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     }
     |> Map.merge(bytecode_info(address))
     |> add_zksync_info(target_contract)
+    |> chain_type_fields(%{address_hash: verified_twin_address_hash, field_prefix: "verified_twin"})
   end
 
   def prepare_smart_contract(address, implementations, proxy_type, conn) do
@@ -361,6 +358,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           ),
         "compiler_version" => smart_contract.compiler_version,
         "optimization_enabled" => smart_contract.optimization,
+        "transaction_count" => smart_contract.address.transactions_count,
+        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
         "tx_count" => smart_contract.address.transactions_count,
         "language" => smart_contract_language(smart_contract),
         "verified_at" => smart_contract.inserted_at,
@@ -450,5 +449,18 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   def render_json(value, _type) do
     to_string(value)
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :filecoin ->
+      defp chain_type_fields(result, params) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address(result, params)
+      end
+
+    _ ->
+      defp chain_type_fields(result, _address) do
+        result
+      end
   end
 end

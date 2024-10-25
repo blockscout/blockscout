@@ -57,7 +57,7 @@ defmodule Explorer.Counters.BlockPriorityFeeCounter do
 
   defp update_cache(block_hash) do
     block_hash_string = get_block_hash_string(block_hash)
-    new_data = Chain.block_to_priority_fee_of_1559_txs(block_hash)
+    new_data = Chain.block_to_priority_fee_of_1559_transactions(block_hash)
     Helper.put_into_ets_cache(@cache_name, "#{block_hash_string}", new_data)
   end
 

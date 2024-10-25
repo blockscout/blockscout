@@ -224,7 +224,7 @@ defmodule Explorer.Chain.Log do
     else
       case Chain.find_contract_address(address_hash, address_options, false) do
         {:ok, %{smart_contract: smart_contract}} ->
-          full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, %{}, true, options)
+          full_abi = Proxy.combine_proxy_implementation_abi(smart_contract, options)
           {full_abi, Map.put(acc, address_hash, full_abi)}
 
         _ ->
@@ -394,9 +394,9 @@ defmodule Explorer.Chain.Log do
     |> Base.decode16!(case: :lower)
   end
 
-  def fetch_log_by_tx_hash_and_first_topic(tx_hash, first_topic, options \\ []) do
+  def fetch_log_by_transaction_hash_and_first_topic(transaction_hash, first_topic, options \\ []) do
     __MODULE__
-    |> where([l], l.transaction_hash == ^tx_hash and l.first_topic == ^first_topic)
+    |> where([l], l.transaction_hash == ^transaction_hash and l.first_topic == ^first_topic)
     |> limit(1)
     |> Chain.select_repo(options).one()
   end

@@ -8,84 +8,22 @@ defmodule Explorer.Chain.Import.Stage.BlockReferencing do
 
   @behaviour Stage
 
-  @default_runners [
-    Runner.Transaction.Forks,
-    Runner.Logs,
-    Runner.Tokens,
-    Runner.TokenInstances,
-    Runner.TransactionActions,
-    Runner.Withdrawals
-  ]
-
-  @extra_runners_by_chain_type %{
-    optimism: [
-      Runner.Optimism.FrameSequences,
-      Runner.Optimism.FrameSequenceBlobs,
-      Runner.Optimism.TxnBatches,
-      Runner.Optimism.OutputRoots,
-      Runner.Optimism.DisputeGames,
-      Runner.Optimism.Deposits,
-      Runner.Optimism.Withdrawals,
-      Runner.Optimism.WithdrawalEvents
-    ],
-    polygon_edge: [
-      Runner.PolygonEdge.Deposits,
-      Runner.PolygonEdge.DepositExecutes,
-      Runner.PolygonEdge.Withdrawals,
-      Runner.PolygonEdge.WithdrawalExits
-    ],
-    polygon_zkevm: [
-      Runner.PolygonZkevm.LifecycleTransactions,
-      Runner.PolygonZkevm.TransactionBatches,
-      Runner.PolygonZkevm.BatchTransactions,
-      Runner.PolygonZkevm.BridgeL1Tokens,
-      Runner.PolygonZkevm.BridgeOperations
-    ],
-    zksync: [
-      Runner.ZkSync.LifecycleTransactions,
-      Runner.ZkSync.TransactionBatches,
-      Runner.ZkSync.BatchTransactions,
-      Runner.ZkSync.BatchBlocks
-    ],
-    shibarium: [
-      Runner.Shibarium.BridgeOperations
-    ],
-    ethereum: [
-      Runner.Beacon.BlobTransactions
-    ],
-    arbitrum: [
-      Runner.Arbitrum.Messages,
-      Runner.Arbitrum.LifecycleTransactions,
-      Runner.Arbitrum.L1Executions,
-      Runner.Arbitrum.L1Batches,
-      Runner.Arbitrum.BatchBlocks,
-      Runner.Arbitrum.BatchTransactions,
-      Runner.Arbitrum.DaMultiPurposeRecords
-    ],
-    celo: [
-      Runner.Celo.ValidatorGroupVotes,
-      Runner.Celo.ElectionRewards,
-      Runner.Celo.EpochRewards
-    ]
-  }
-
   @impl Stage
   def runners do
-    chain_type = Application.get_env(:explorer, :chain_type)
-    chain_type_runners = Map.get(@extra_runners_by_chain_type, chain_type, [])
-
-    @default_runners ++ chain_type_runners
+    [
+      Runner.Transaction.Forks,
+      Runner.Logs,
+      Runner.Tokens,
+      Runner.TokenInstances,
+      Runner.TransactionActions,
+      Runner.Withdrawals,
+      Runner.SignedAuthorizations
+    ]
   end
 
   @impl Stage
-  def all_runners do
-    all_extra_runners =
-      @extra_runners_by_chain_type
-      |> Map.values()
-      |> Enum.concat()
-
-    @default_runners ++ all_extra_runners
-  end
+  def all_runners,
+    do: runners()
 
   @impl Stage
   def multis(runner_to_changes_list, options) do

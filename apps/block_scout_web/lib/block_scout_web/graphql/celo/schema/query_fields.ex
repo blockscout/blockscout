@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.GraphQL.Celo.QueryFields do
   Query fields for the CELO schema.
   """
 
-  alias BlockScoutWeb.GraphQL.Celo.Resolvers.TokenTransferTx
+  alias BlockScoutWeb.GraphQL.Celo.Resolvers.TokenTransferTransaction
 
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema, :modern
@@ -11,11 +11,11 @@ defmodule BlockScoutWeb.GraphQL.Celo.QueryFields do
   defmacro generate do
     quote do
       @desc "Gets token transfer transactions."
-      connection field(:token_transfer_txs, node_type: :transfer_tx) do
+      connection field(:token_transfer_txs, node_type: :transfer_transaction) do
         arg(:address_hash, :address_hash)
         arg(:count, :integer)
 
-        resolve(&TokenTransferTx.get_by/3)
+        resolve(&TokenTransferTransaction.get_by/3)
 
         complexity(fn
           %{first: first}, child_complexity -> first * child_complexity

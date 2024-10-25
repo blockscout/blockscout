@@ -1,5 +1,5 @@
-defmodule BlockScoutWeb.Account.Api.V2.UserView do
-  alias BlockScoutWeb.Account.Api.V2.AccountView
+defmodule BlockScoutWeb.Account.API.V2.UserView do
+  alias BlockScoutWeb.Account.API.V2.AccountView
   alias BlockScoutWeb.API.V2.Helper
   alias Ecto.Changeset
   alias Explorer.Chain
@@ -9,7 +9,13 @@ defmodule BlockScoutWeb.Account.Api.V2.UserView do
   end
 
   def render("user_info.json", %{identity: identity}) do
-    %{"name" => identity.name, "email" => identity.email, "avatar" => identity.avatar, "nickname" => identity.nickname}
+    %{
+      "name" => identity.name,
+      "email" => identity.email,
+      "avatar" => identity.avatar,
+      "nickname" => identity.nickname,
+      "address_hash" => identity.address_hash
+    }
   end
 
   def render("watchlist_addresses.json", %{
@@ -161,7 +167,11 @@ defmodule BlockScoutWeb.Account.Api.V2.UserView do
   def prepare_transaction_tag(nil), do: nil
 
   def prepare_transaction_tag(transaction_tag) do
-    %{"id" => transaction_tag.id, "transaction_hash" => transaction_tag.tx_hash, "name" => transaction_tag.name}
+    %{
+      "id" => transaction_tag.id,
+      "transaction_hash" => transaction_tag.transaction_hash,
+      "name" => transaction_tag.name
+    }
   end
 
   def prepare_public_tags_request(public_tags_request) do

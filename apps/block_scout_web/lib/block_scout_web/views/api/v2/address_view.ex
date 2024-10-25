@@ -73,11 +73,17 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   @spec prepare_address(
           {atom() | %{:fetched_coin_balance => any(), :hash => any(), optional(any()) => any()}, any()}
           | Explorer.Chain.Address.t()
-        ) :: %{optional(:coin_balance) => any(), optional(:tx_count) => binary(), optional(<<_::32, _::_*8>>) => any()}
-  def prepare_address({address, tx_count}) do
+        ) :: %{
+          optional(:coin_balance) => any(),
+          optional(:transaction_count) => binary(),
+          optional(<<_::32, _::_*8>>) => any()
+        }
+  def prepare_address({address, transaction_count}) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
-    |> Map.put(:tx_count, to_string(tx_count))
+    # todo: keep `tx_count` for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
+    |> Map.put(:tx_count, to_string(transaction_count))
+    |> Map.put(:transaction_count, to_string(transaction_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
 
@@ -91,14 +97,17 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
     exchange_rate = Market.get_coin_exchange_rate().usd_value
 
-    creator_hash = AddressView.from_address_hash(address)
-    creation_tx = creator_hash && AddressView.transaction_hash(address)
+    creation_transaction = Address.creation_transaction(address)
+    creator_hash = creation_transaction && creation_transaction.from_address_hash
+    creation_transaction_hash = creator_hash && AddressView.transaction_hash(address)
     token = address.token && TokenView.render("token.json", %{token: address.token})
 
     extended_info =
       Map.merge(base_info, %{
         "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
-        "creation_tx_hash" => creation_tx,
+        "creation_transaction_hash" => creation_transaction_hash,
+        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `creation_transaction_hash` property
+        "creation_tx_hash" => creation_transaction_hash,
         "token" => token,
         "coin_balance" => balance,
         "exchange_rate" => exchange_rate,
@@ -112,14 +121,18 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         "has_beacon_chain_withdrawals" => Counters.check_if_withdrawals_at_address(address.hash, @api_true)
       })
 
-    if Enum.empty?(implementations) do
-      extended_info
-    else
-      Map.merge(extended_info, %{
-        "proxy_type" => proxy_type,
-        "implementations" => implementations
-      })
-    end
+    result =
+      if Enum.empty?(implementations) do
+        extended_info
+      else
+        Map.merge(extended_info, %{
+          "proxy_type" => proxy_type,
+          "implementations" => implementations
+        })
+      end
+
+    result
+    |> chain_type_fields(%{address: creation_transaction && creation_transaction.from_address, field_prefix: "creator"})
   end
 
   @spec prepare_token_balance(Chain.Address.TokenBalance.t(), boolean()) :: map()
@@ -237,5 +250,18 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       token_instance: token_instance,
       token: token
     })
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :filecoin ->
+      defp chain_type_fields(result, params) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.put_filecoin_robust_address(result, params)
+      end
+
+    _ ->
+      defp chain_type_fields(result, _params) do
+        result
+      end
   end
 end

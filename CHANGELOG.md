@@ -1,5 +1,92 @@
 # Changelog
 
+## 6.9.0
+
+### 🚀 Features
+
+- List of internal transactions API v2 endpoint ([#10994](https://github.com/blockscout/blockscout/issues/10994))
+- Scroll rollup: L1 fee parameters in API, `queueIndex` for L2 transactions, and L1 <->L2 messages ([#10484](https://github.com/blockscout/blockscout/issues/10484))
+- Account V2 ([#10706](https://github.com/blockscout/blockscout/issues/10706))
+- Allow to provide DB schema other than public ([#10946](https://github.com/blockscout/blockscout/issues/10946))
+- Add missing filecoin robust addresses ([#10935](https://github.com/blockscout/blockscout/issues/10935))
+- EIP-7702 support ([#10870](https://github.com/blockscout/blockscout/issues/10870))
+- Open access to re-fetch metadata button for token instances without metadata initially fetched ([#10878](https://github.com/blockscout/blockscout/issues/10878))
+- Support snake_case in metadata service ([#10722](https://github.com/blockscout/blockscout/issues/10722))
+- Token transfers list API endpoint ([#10801](https://github.com/blockscout/blockscout/issues/10801))
+- Send archive balances requests to trace url ([#10820](https://github.com/blockscout/blockscout/issues/10820))
+- Add metadata info to tx interpreter request ([#10823](https://github.com/blockscout/blockscout/issues/10823))
+- Api for querying mud systems abi ([#10829](https://github.com/blockscout/blockscout/issues/10829))
+- Arbitrum L1-to-L2 messages with hashed message id ([#10751](https://github.com/blockscout/blockscout/issues/10751))
+- Support CoinMarketCap format in token supply stats ([#10853](https://github.com/blockscout/blockscout/issues/10853))
+- Address scam badge flag ([#10763](https://github.com/blockscout/blockscout/issues/10763))
+- Add verbosity to GraphQL token transfers query ([#10770](https://github.com/blockscout/blockscout/issues/10770))
+- (celo) include token information in API response for address epoch rewards ([#10831](https://github.com/blockscout/blockscout/issues/10831))
+- Add Blackfort validators ([#10744](https://github.com/blockscout/blockscout/issues/10744))
+- Retry ERC-1155 token instance metadata fetch from baseURI + tokenID ([#10766](https://github.com/blockscout/blockscout/issues/10766))
+
+### 🐛 Bug Fixes
+
+- Fix failed tests ([#11000](https://github.com/blockscout/blockscout/issues/11000))
+- Add compatibility with current frontend for some public props ([#10998](https://github.com/blockscout/blockscout/issues/10998))
+- Process foreign key violation in scam addresses assigning functionality ([#10977](https://github.com/blockscout/blockscout/issues/10977))
+- Handle import exceptions in MassiveBlocksFetcher ([#10993](https://github.com/blockscout/blockscout/issues/10993))
+- Workaround for repeating logIndex ([#10880](https://github.com/blockscout/blockscout/issues/10880))
+- Filter out nil implementations from combine_proxy_implementation_addresses_map function result ([#10943](https://github.com/blockscout/blockscout/issues/10943))
+- Delete incorrect coin balances on reorg ([#10879](https://github.com/blockscout/blockscout/issues/10879))
+- Handle delegatecall in state changes ([#10906](https://github.com/blockscout/blockscout/issues/10906))
+- Fix env. variables link in README.md ([#10898](https://github.com/blockscout/blockscout/issues/10898))
+- Add missing block timestamp in election rewards for address response ([#10907](https://github.com/blockscout/blockscout/issues/10907))
+- Add missing build arg to celo workflow ([#10895](https://github.com/blockscout/blockscout/issues/10895))
+- Do not include unrelated token transfers in `tokenTransferTxs` ([#10889](https://github.com/blockscout/blockscout/issues/10889))
+- Fix get current user in app template ([#10844](https://github.com/blockscout/blockscout/issues/10844))
+- Set `API_GRAPHQL_MAX_COMPLEXITY` in build action ([#10843](https://github.com/blockscout/blockscout/issues/10843))
+- Disable archive balances only if latest block is available ([#10851](https://github.com/blockscout/blockscout/issues/10851))
+- Dialyzer warning ([#10845](https://github.com/blockscout/blockscout/issues/10845))
+- Decode revert reason by decoding candidates from the DB ([#10827](https://github.com/blockscout/blockscout/issues/10827))
+- Filecoin stucked pending address operations ([#10832](https://github.com/blockscout/blockscout/issues/10832))
+- Sanitize replaced transactions migration ([#10784](https://github.com/blockscout/blockscout/issues/10784))
+- Repair /metrics endpoint ([#10813](https://github.com/blockscout/blockscout/issues/10813))
+- Revert the deletion of deriving current token balances ([#10811](https://github.com/blockscout/blockscout/issues/10811))
+- Clear null round blocks from missing block ranges ([#10805](https://github.com/blockscout/blockscout/issues/10805))
+- Decode addresses as checksummed ([#10777](https://github.com/blockscout/blockscout/issues/10777))
+- Preload additional sources for bytecode twin smart-contract ([#10692](https://github.com/blockscout/blockscout/issues/10692))
+- Set min query length in the search API endpoints ([#10698](https://github.com/blockscout/blockscout/issues/10698))
+- Proper handling of old batches on Arbitrum Nova ([#10786](https://github.com/blockscout/blockscout/issues/10786))
+- Get rid of heavy DB query to start Arbitrum missed messages discovery process ([#10767](https://github.com/blockscout/blockscout/issues/10767))
+- Revisited approach to choose L1 blocks to discover missing Arbitrum batches ([#10757](https://github.com/blockscout/blockscout/issues/10757))
+- Fix account db repo definition ([#10714](https://github.com/blockscout/blockscout/issues/10714))
+- Allow string IDs in JSON RPC requests ([#10759](https://github.com/blockscout/blockscout/issues/10759))
+- Filter out tokens with skip_metadata: true from token fetcher ([#10736](https://github.com/blockscout/blockscout/issues/10736))
+
+### 🚜 Refactor
+
+- Fixate naming convention for "transaction" and "block number" entities ([#10913](https://github.com/blockscout/blockscout/issues/10913))
+- Use middleware to check if GraphQL API is enabled ([#10772](https://github.com/blockscout/blockscout/issues/10772))
+
+### ⚡ Performance
+
+- Optimize advanced filters ([#10463](https://github.com/blockscout/blockscout/issues/10463))
+- Refactor tx data decoding with fewer DB queries ([#10842](https://github.com/blockscout/blockscout/issues/10842))
+
+### ⚙️ Miscellaneous Tasks
+
+- Update version bump script
+- Remove deprecated single implementation property of the smart-contract from the API response ([#10715](https://github.com/blockscout/blockscout/issues/10715))
+- Set indexer memory limit based on system info as a fallback ([#10697](https://github.com/blockscout/blockscout/issues/10697))
+- Set user agent to metadata requests ([#10834](https://github.com/blockscout/blockscout/issues/10834))
+- Reverse internal transactions fetching order ([#10912](https://github.com/blockscout/blockscout/issues/10912))
+- Remove unused fetch_and_lock_by_hashes/1 public function
+- Add shrink int txs docker image build for Celo chain type ([#10894](https://github.com/blockscout/blockscout/issues/10894))
+- Ability to work with Blockscout code base within a VSCode devcontainer ([#10838](https://github.com/blockscout/blockscout/issues/10838))
+- Add version bump script ([#10871](https://github.com/blockscout/blockscout/issues/10871))
+- Bump elixir to 1.17.3 and Erlang OTP to 27.1 ([#10284](https://github.com/blockscout/blockscout/issues/10284))
+- Reindex incorrect internal transactions migration ([#10654](https://github.com/blockscout/blockscout/issues/10654))
+- Remove old UI from base Docker image ([#10828](https://github.com/blockscout/blockscout/issues/10828))
+- Add primary key to address_tags table ([#10818](https://github.com/blockscout/blockscout/issues/10818))
+- Refactor OrderedCache preloads ([#10803](https://github.com/blockscout/blockscout/issues/10803))
+- Support non-unique log index for rsk chain type ([#10807](https://github.com/blockscout/blockscout/issues/10807))
+- Add missing symbols ([#10749](https://github.com/blockscout/blockscout/issues/10749))
+
 ## 6.8.1
 
 ### 🚀 Features

@@ -16,7 +16,8 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.WithdrawalEvent
-  alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
+  alias Explorer.Chain.RollupReorgMonitorQueue
+  alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
   @fetcher_name :optimism_withdrawal_events
@@ -119,7 +120,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} = Repo.delete_all(from(we in WithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
@@ -164,15 +165,15 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end
   end
 
-  defp get_transaction_input_by_hash(blocks, tx_hashes) do
+  defp get_transaction_input_by_hash(blocks, transaction_hashes) do
     Enum.reduce(blocks, %{}, fn block, acc ->
       block
       |> Map.get("transactions", [])
-      |> Enum.filter(fn tx ->
-        Enum.member?(tx_hashes, tx["hash"])
+      |> Enum.filter(fn transaction ->
+        Enum.member?(transaction_hashes, transaction["hash"])
       end)
-      |> Enum.map(fn tx ->
-        {tx["hash"], tx["input"]}
+      |> Enum.map(fn transaction ->
+        {transaction["hash"], transaction["input"]}
       end)
       |> Enum.into(%{})
       |> Map.merge(acc)
@@ -184,7 +185,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
       events
       |> get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
 
-    tx_hashes =
+    transaction_hashes =
       events
       |> Enum.reduce([], fn event, acc ->
         if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
@@ -194,7 +195,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         end
       end)
 
-    input_by_hash = get_transaction_input_by_hash(blocks, tx_hashes)
+    input_by_hash = get_transaction_input_by_hash(blocks, transaction_hashes)
 
     timestamps =
       blocks
@@ -206,13 +207,13 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
     events
     |> Enum.map(fn event ->
-      tx_hash = event["transactionHash"]
+      transaction_hash = event["transactionHash"]
 
       {l1_event_type, game_index} =
         if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
           game_index =
             input_by_hash
-            |> Map.get(tx_hash)
+            |> Map.get(transaction_hash)
             |> input_to_game_index()
 
           {"WithdrawalProven", game_index}
@@ -226,7 +227,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         withdrawal_hash: Enum.at(event["topics"], 1),
         l1_event_type: l1_event_type,
         l1_timestamp: Map.get(timestamps, l1_block_number),
-        l1_transaction_hash: tx_hash,
+        l1_transaction_hash: transaction_hash,
         l1_block_number: l1_block_number,
         game_index: game_index
       }
@@ -257,6 +258,26 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     |> Kernel.||({0, nil})
   end
 
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary() | nil
+  def l1_rpc_url do
+    Optimism.l1_rpc_url()
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    before this fetcher starts.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    Optimism.requires_l1_reorg_monitor?()
+  end
+
   defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
     request =
       events
@@ -280,10 +301,10 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     method_signature = String.slice(input, 0..9)
 
     if method_signature == "0x4870496f" do
-      # the signature of `proveWithdrawalTransaction(tuple _tx, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+      # the signature of `proveWithdrawalTransaction(tuple _transaction, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
 
-      # to get (slice) `_disputeGameIndex` from the tx input, we need to know its offset in the input string (represented as 0x...):
-      # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_tx` tuple offset, totally is 74
+      # to get (slice) `_disputeGameIndex` from the transaction input, we need to know its offset in the input string (represented as 0x...):
+      # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
       game_index_offset = String.length(method_signature) + 32 * 2
       game_index_length = 32 * 2
 
