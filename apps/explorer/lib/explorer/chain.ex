@@ -3210,12 +3210,8 @@ defmodule Explorer.Chain do
       |> where([transaction], transaction.created_contract_address_hash == ^address_hash)
       |> select_repo(options).one()
 
-    cond do
-      transaction && transaction.input ->
-        Data.to_bytes(transaction.input)
-
-      true ->
-        nil
+    if transaction && transaction.input do
+      Data.to_bytes(transaction.input)
     end
   end
 

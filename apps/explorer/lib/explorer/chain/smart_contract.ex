@@ -1338,7 +1338,7 @@ defmodule Explorer.Chain.SmartContract do
   defp filter_contracts(basic_query, _), do: basic_query
 
   def zksync_get_constructor_arguments(address_hash_string) do
-    creation_input = Chain.contract_creation_input_data_from_transaction(address_hash_string) |> dbg()
+    creation_input = Chain.contract_creation_input_data_from_transaction(address_hash_string)
 
     case @create_zksync_abi |> ABI.parse_specification() |> ABI.find_and_decode(creation_input) do
       {%FunctionSelector{}, [_, _, constructor_args]} ->
