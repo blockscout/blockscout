@@ -646,8 +646,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
       end
 
     %{
-      "message_id" => APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_from_l2, :message_id),
-      "associated_l1_transaction" => l1_tx,
+      "message_id" => APIV2Helper.get_2map_data(arbitrum_transaction, :arbitrum_message_from_l2, :message_id),
+      "associated_l1_transaction" => l1_transaction,
       "message_status" => status
     }
   end
