@@ -1581,12 +1581,14 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defp compare_custom_sorting([{order, :block_number}]) do
+  defp compare_custom_sorting([{block_order, :block_number}, {index_order, :index}]) do
     fn a, b ->
-      case Helper.compare(a.block_number, b.block_number) do
-        :eq -> compare_default_sorting(a, b)
-        :gt -> order == :desc
-        :lt -> order == :asc
+      case {Helper.compare(a.block_number, b.block_number), Helper.compare(a.index, b.index)} do
+        {:eq, :eq} -> compare_default_sorting(a, b)
+        {:eq, :gt} -> index_order == :desc
+        {:eq, :lt} -> index_order == :asc
+        {:gt, _} -> block_order == :desc
+        {:lt, _} -> block_order == :asc
       end
     end
   end
