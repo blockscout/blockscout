@@ -1581,6 +1581,16 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
+  defp compare_custom_sorting([{order, :block_number}]) do
+    fn a, b ->
+      case Helper.compare(a.block_number, b.block_number) do
+        :eq -> compare_default_sorting(a, b)
+        :gt -> order == :desc
+        :lt -> order == :asc
+      end
+    end
+  end
+
   defp compare_custom_sorting([{:dynamic, :fee, order, _dynamic_fee}]) do
     fn a, b ->
       nil_case =
