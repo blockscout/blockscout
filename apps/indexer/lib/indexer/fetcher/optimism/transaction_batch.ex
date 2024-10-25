@@ -44,9 +44,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   @fetcher_name :optimism_transaction_batches
 
-  # Optimism chain block time is a constant (2 seconds)
-  @op_chain_block_time 2
-
   @compressor_brotli 1
 
   def child_spec(start_link_arguments) do
@@ -129,6 +126,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          chunk_size: chunk_size,
          incomplete_channels: %{},
          genesis_block_l2: env[:genesis_block_l2],
+         block_duration: optimism_env[:block_duration],
          json_rpc_named_arguments: json_rpc_named_arguments,
          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
        }}
@@ -213,6 +211,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # - `chunk_size`: max number of L1 blocks in one chunk
   # - `incomplete_channels`: intermediate map of channels (incomplete frame sequences) in memory
   # - `genesis_block_l2`: Optimism BedRock upgrade L2 block number (used when parsing span batches)
+  # - `block_duration`: L2 block duration in seconds (used when parsing span batches)
   # - `json_rpc_named_arguments`: data to connect to L1 RPC server
   # - `json_rpc_named_arguments_l2`: data to connect to L2 RPC server
   @impl GenServer
@@ -229,6 +228,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           chunk_size: chunk_size,
           incomplete_channels: incomplete_channels,
           genesis_block_l2: genesis_block_l2,
+          block_duration: block_duration,
           json_rpc_named_arguments: json_rpc_named_arguments,
           json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
         } = state
@@ -260,7 +260,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                 Range.new(chunk_start, chunk_end),
                 batch_inbox,
                 batch_submitter,
-                genesis_block_l2,
+                {genesis_block_l2, block_duration},
                 incomplete_channels_acc,
                 {json_rpc_named_arguments, json_rpc_named_arguments_l2},
                 {eip4844_blobs_api_url, celestia_blobs_api_url},
@@ -431,7 +431,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          block_range,
          batch_inbox,
          batch_submitter,
-         genesis_block_l2,
+         {genesis_block_l2, block_duration},
          incomplete_channels,
          {json_rpc_named_arguments, json_rpc_named_arguments_l2},
          blobs_api_url,
@@ -443,7 +443,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         |> transactions_filter(batch_submitter, batch_inbox)
         |> get_transaction_batches_inner(
           blocks_params,
-          genesis_block_l2,
+          {genesis_block_l2, block_duration},
           incomplete_channels,
           json_rpc_named_arguments_l2,
           blobs_api_url
@@ -471,7 +471,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
             block_range,
             batch_inbox,
             batch_submitter,
-            genesis_block_l2,
+            {genesis_block_l2, block_duration},
             incomplete_channels,
             {json_rpc_named_arguments, json_rpc_named_arguments_l2},
             blobs_api_url,
@@ -665,7 +665,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   defp get_transaction_batches_inner(
          transactions_filtered,
          blocks_params,
-         genesis_block_l2,
+         {genesis_block_l2, block_duration},
          incomplete_channels,
          json_rpc_named_arguments_l2,
          {eip4844_blobs_api_url, celestia_blobs_api_url}
@@ -706,7 +706,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
             blocks_params,
             new_incomplete_channels_acc,
             {new_batches_acc, new_sequences_acc, new_blobs_acc},
-            genesis_block_l2,
+            {genesis_block_l2, block_duration},
             json_rpc_named_arguments_l2
           )
         end
@@ -720,7 +720,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          blocks_params,
          incomplete_channels_acc,
          {batches_acc, sequences_acc, blobs_acc},
-         genesis_block_l2,
+         {genesis_block_l2, block_duration},
          json_rpc_named_arguments_l2
        ) do
     frame = input_to_frame(input.bytes)
@@ -766,7 +766,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         batches_acc,
         sequences_acc,
         blobs_acc,
-        genesis_block_l2,
+        {genesis_block_l2, block_duration},
         json_rpc_named_arguments_l2
       )
     else
@@ -782,7 +782,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          batches_acc,
          sequences_acc,
          blobs_acc,
-         genesis_block_l2,
+         {genesis_block_l2, block_duration},
          json_rpc_named_arguments_l2
        ) do
     frame_sequence_last = List.first(sequences_acc)
@@ -849,7 +849,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         bytes,
         frame_sequence_id,
         channel.l1_timestamp,
-        genesis_block_l2,
+        {genesis_block_l2, block_duration},
         json_rpc_named_arguments_l2
       )
 
@@ -1119,7 +1119,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          bytes,
          id,
          l1_timestamp,
-         genesis_block_l2,
+         {genesis_block_l2, block_duration},
          json_rpc_named_arguments_l2
        ) do
     uncompressed_bytes =
@@ -1144,7 +1144,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
               version <= 2 ->
                 # parsing the span batch
-                handle_v1_batch(content, id, l1_timestamp, genesis_block_l2, batch_acc)
+                handle_v1_batch(content, id, l1_timestamp, genesis_block_l2, block_duration, batch_acc)
 
               true ->
                 Logger.error("Unsupported batch version ##{version}")
@@ -1188,7 +1188,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     [batch | batch_acc]
   end
 
-  defp handle_v1_batch(content, frame_sequence_id, l1_timestamp, genesis_block_l2, batch_acc) do
+  defp handle_v1_batch(content, frame_sequence_id, l1_timestamp, genesis_block_l2, block_duration, batch_acc) do
     {rel_timestamp, content_remainder} = LEB128.decode(content)
 
     # skip l1_origin_num
@@ -1202,12 +1202,12 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       |> LEB128.decode()
 
     # the first and last L2 blocks in the span
-    span_start = div(rel_timestamp, @op_chain_block_time) + genesis_block_l2
+    span_start = div(rel_timestamp, block_duration) + genesis_block_l2
     span_end = span_start + block_count - 1
 
     cond do
-      rem(rel_timestamp, @op_chain_block_time) != 0 ->
-        Logger.error("rel_timestamp is not divisible by #{@op_chain_block_time}. We ignore the span batch.")
+      rem(rel_timestamp, block_duration) != 0 ->
+        Logger.error("rel_timestamp is not divisible by #{block_duration}. We ignore the span batch.")
 
         batch_acc
 

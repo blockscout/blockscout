@@ -74,7 +74,9 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
          safe_block: safe_block,
          safe_block_is_latest: safe_block_is_latest,
          message_passer: env[:message_passer],
-         json_rpc_named_arguments: json_rpc_named_arguments
+         json_rpc_named_arguments: json_rpc_named_arguments,
+         eth_get_logs_range_size:
+           Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:l2_eth_get_logs_range_size]
        }}
     else
       {:start_block_l2_undefined, true} ->
@@ -113,10 +115,11 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
         %{
           start_block_l2: start_block_l2,
           message_passer: message_passer,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          eth_get_logs_range_size: eth_get_logs_range_size
         } = state
       ) do
-    fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments)
+    fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments, eth_get_logs_range_size)
     Process.send(self(), :find_new_events, [])
     {:noreply, state}
   end
@@ -129,17 +132,18 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
           safe_block: safe_block,
           safe_block_is_latest: safe_block_is_latest,
           message_passer: message_passer,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          eth_get_logs_range_size: eth_get_logs_range_size
         } = state
       ) do
     # find and fill all events between start_block and "safe" block
     # the "safe" block can be "latest" (when safe_block_is_latest == true)
-    fill_block_range(start_block, safe_block, message_passer, json_rpc_named_arguments)
+    fill_block_range(start_block, safe_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size)
 
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
       {:ok, latest_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments)
-      fill_block_range(safe_block + 1, latest_block, message_passer, json_rpc_named_arguments)
+      fill_block_range(safe_block + 1, latest_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size)
     end
 
     {:stop, :normal, state}
@@ -254,24 +258,31 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     Enum.count(withdrawals)
   end
 
-  defp fill_block_range(l2_block_start, l2_block_end, message_passer, json_rpc_named_arguments, scan_db) do
+  defp fill_block_range(
+         l2_block_start,
+         l2_block_end,
+         message_passer,
+         json_rpc_named_arguments,
+         eth_get_logs_range_size,
+         scan_db
+       ) do
     chunks_number =
       if scan_db do
         1
       else
-        ceil((l2_block_end - l2_block_start + 1) / Optimism.get_logs_range_size())
+        ceil((l2_block_end - l2_block_start + 1) / eth_get_logs_range_size)
       end
 
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
     Enum.reduce(chunk_range, 0, fn current_chunk, withdrawals_count_acc ->
-      chunk_start = l2_block_start + Optimism.get_logs_range_size() * current_chunk
+      chunk_start = l2_block_start + eth_get_logs_range_size * current_chunk
 
       chunk_end =
         if scan_db do
           l2_block_end
         else
-          min(chunk_start + Optimism.get_logs_range_size() - 1, l2_block_end)
+          min(chunk_start + eth_get_logs_range_size - 1, l2_block_end)
         end
 
       Helper.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, :L2)
@@ -298,10 +309,10 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     end)
   end
 
-  defp fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments) do
+  defp fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size) do
     if start_block <= end_block do
-      fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, true)
-      fill_msg_nonce_gaps(start_block, message_passer, json_rpc_named_arguments, false)
+      fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, true)
+      fill_msg_nonce_gaps(start_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, false)
       {last_l2_block_number, _} = get_last_l2_item()
 
       fill_block_range(
@@ -309,12 +320,19 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
         end_block,
         message_passer,
         json_rpc_named_arguments,
+        eth_get_logs_range_size,
         false
       )
     end
   end
 
-  defp fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments, scan_db \\ true) do
+  defp fill_msg_nonce_gaps(
+         start_block_l2,
+         message_passer,
+         json_rpc_named_arguments,
+         eth_get_logs_range_size,
+         scan_db \\ true
+       ) do
     nonce_min = Repo.aggregate(OptimismWithdrawal, :min, :msg_nonce)
     nonce_max = Repo.aggregate(OptimismWithdrawal, :max, :msg_nonce)
 
@@ -332,7 +350,14 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
       |> Enum.zip(new_ends)
       |> Enum.each(fn {l2_block_start, l2_block_end} ->
         withdrawals_count =
-          fill_block_range(l2_block_start, l2_block_end, message_passer, json_rpc_named_arguments, scan_db)
+          fill_block_range(
+            l2_block_start,
+            l2_block_end,
+            message_passer,
+            json_rpc_named_arguments,
+            eth_get_logs_range_size,
+            scan_db
+          )
 
         if withdrawals_count > 0 do
           log_fill_msg_nonce_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count)
@@ -340,7 +365,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
       end)
 
       if scan_db do
-        fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments, false)
+        fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, false)
       end
     end
   end

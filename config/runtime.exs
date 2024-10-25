@@ -881,7 +881,10 @@ config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, enabled: C
 
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
-  optimism_l1_system_config: System.get_env("INDEXER_OPTIMISM_L1_SYSTEM_CONFIG_CONTRACT")
+  optimism_l1_system_config: System.get_env("INDEXER_OPTIMISM_L1_SYSTEM_CONFIG_CONTRACT"),
+  l1_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L1_ETH_GET_LOGS_RANGE_SIZE", 250),
+  l2_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_ETH_GET_LOGS_RANGE_SIZE", 250),
+  block_duration: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_BLOCK_DURATION", 2)
 
 config :indexer, Indexer.Fetcher.Optimism.Deposit,
   batch_size: System.get_env("INDEXER_OPTIMISM_L1_DEPOSITS_BATCH_SIZE"),

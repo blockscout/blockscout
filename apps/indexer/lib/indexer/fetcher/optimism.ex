@@ -23,7 +23,6 @@ defmodule Indexer.Fetcher.Optimism do
 
   @fetcher_name :optimism
   @block_check_interval_range_size 100
-  @eth_get_logs_range_size 250
   @finite_retries_number 3
 
   def child_spec(start_link_arguments) do
@@ -183,10 +182,6 @@ defmodule Indexer.Fetcher.Optimism do
     Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
-  def get_logs_range_size do
-    @eth_get_logs_range_size
-  end
-
   @doc """
   Forms JSON RPC named arguments for the given RPC URL.
   """
@@ -266,6 +261,7 @@ defmodule Indexer.Fetcher.Optimism do
          start_block: start_block,
          end_block: last_safe_block,
          json_rpc_named_arguments: json_rpc_named_arguments,
+         eth_get_logs_range_size: optimism_env[:l1_eth_get_logs_range_size],
          stop: false
        }}
     else
