@@ -612,20 +612,20 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     ## Parameters
     - `message_id`: message ID
+    - `options`: A keyword list of options that may include whether to use a replica database.
 
     ## Returns
     - Instance of `Explorer.Chain.Arbitrum.Message` with the provided message id,
       or nil if message with the given id doesn't exist.
   """
-  @spec l2_to_l1_message_with_id(non_neg_integer()) :: Message.t() | nil
-  def l2_to_l1_message_with_id(message_id) do
+  @spec l2_to_l1_message_with_id(non_neg_integer(), api?: boolean()) :: Message.t() | nil
+  def l2_to_l1_message_with_id(message_id, options) do
     query =
       from(message in Message,
         where: message.message_id == ^message_id
       )
 
-    query
-    |> Repo.one()
+    select_repo(options).all(query)
   end
 
   @doc """

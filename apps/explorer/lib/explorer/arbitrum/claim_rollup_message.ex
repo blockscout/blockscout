@@ -238,7 +238,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   """
   @spec claim(non_neg_integer()) :: {:ok, [contract_address: String.t(), calldata: String.t()]} | {:error, term()}
   def claim(message_id) do
-    case Reader.l2_to_l1_message_with_id(message_id) do
+    case Reader.l2_to_l1_message_with_id(message_id, api?: true) do
       nil ->
         Logger.error("Unable to find withdrawal with id #{message_id}")
         {:error, :not_found}
@@ -389,7 +389,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   end
 
   defp get_send_count_from_block_hash(l2_block_hash, json_l2_rpc_named_arguments) do
-    case Chain.hash_to_block(l2_block_hash) do
+    case Chain.hash_to_block(l2_block_hash, api?: true) do
       {:ok, block} ->
         Map.get(block, :send_count)
 
