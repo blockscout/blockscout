@@ -99,8 +99,13 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
 
   @spec to_cmc_total_supply(Decimal.t(), Decimal.t()) :: String.t()
   defp to_cmc_total_supply(total_supply, decimals) do
+    divider =
+      1
+      |> Decimal.new(1, Decimal.to_integer(decimals))
+      |> Decimal.to_integer()
+
     total_supply
-    |> Decimal.div(Decimal.new(1, 1, Decimal.to_integer(decimals)))
+    |> Decimal.div(divider)
     |> Decimal.round(@cmc_token_supply_precision)
     |> Decimal.to_string()
   end
