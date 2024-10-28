@@ -58,6 +58,13 @@ defmodule Explorer.Chain.Address.Schema do
                             ]
                           end
 
+                        :zksync ->
+                          quote do
+                            [
+                              field(:contract_code_recollected, :boolean)
+                            ]
+                          end
+
                         _ ->
                           []
                       end)
@@ -142,6 +149,9 @@ defmodule Explorer.Chain.Address do
                                 :filecoin ->
                                   ~w(filecoin_id filecoin_robust filecoin_actor_type)a
 
+                                :zksync ->
+                                  ~w(contract_code_recollected)a
+
                                 _ ->
                                   []
                               end)
@@ -195,6 +205,9 @@ defmodule Explorer.Chain.Address do
        * `filecoin_native_address` - robust f0/f1/f2/f3/f4 Filecoin address
        * `filecoin_id_address` - short f0 Filecoin address that may change during chain reorgs
        * `filecoin_actor_type` - type of actor associated with the Filecoin address
+      """
+    :zksync -> """
+        * `contract_code_recollected` - true when Explorer.Migrator.RecollectContractCodes handled this address, or it's unnecessary (for addresses inserted after this)
       """
     _ -> ""
   end}
