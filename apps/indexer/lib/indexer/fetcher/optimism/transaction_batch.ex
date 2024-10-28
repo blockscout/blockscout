@@ -98,7 +98,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.address_correct?(batch_inbox)},
          {:batch_submitter_valid, true} <-
            {:batch_submitter_valid, Helper.address_correct?(batch_submitter)},
-         false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
          chunk_size = parse_integer(env[:blocks_chunk_size]),
          {:chunk_size_valid, true} <- {:chunk_size_valid, !is_nil(chunk_size) && chunk_size > 0},
@@ -180,7 +179,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         {:stop, :normal, state}
 
       {:system_config_read, nil} ->
-        Logger.error("Cannot read SystemConfig contract.")
+        Logger.error("Cannot read SystemConfig contract and fallback envs are not correctly defined.")
         {:stop, :normal, state}
 
       _ ->
@@ -1326,6 +1325,22 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end)
   end
 
+  # Reads some public getters of SystemConfig contract and returns retrieved values.
+  # Gets the number of a start block (from which this fetcher should start),
+  # the inbox address, and the batcher (batch submitter) address.
+  #
+  # If SystemConfig has obsolete implementation, the values are fallen back from the corresponding
+  # env variables (INDEXER_OPTIMISM_L1_START_BLOCK, INDEXER_OPTIMISM_L1_BATCH_INBOX, INDEXER_OPTIMISM_L1_BATCH_SUBMITTER).
+  #
+  # ## Parameters
+  # - `contract_address`: An address of SystemConfig contract.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - A tuple: {start_block, inbox, submitter}.
+  # - `nil` in case of error.
+  @spec read_system_config(String.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {non_neg_integer(), String.t(), String.t()} | nil
   defp read_system_config(contract_address, json_rpc_named_arguments) do
     requests = [
       # startBlock() public getter
@@ -1342,7 +1357,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
            &json_rpc/2,
            [requests, json_rpc_named_arguments],
            error_message,
-           Helper.infinite_retries_number()
+           Helper.finite_retries_number()
          ) do
       {:ok, responses} ->
         start_block = quantity_to_integer(Enum.at(responses, 0).result)
@@ -1351,7 +1366,12 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         {start_block, String.downcase("0x" <> batch_inbox), String.downcase("0x" <> batch_submitter)}
 
       _ ->
-        nil
+        start_block = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:start_block_l1]
+        env = Application.get_all_env(:indexer)[__MODULE__]
+
+        if not is_nil(start_block) and Helper.address_correct?(env[:inbox]) and Helper.address_correct?(env[:submitter]) do
+          {start_block, String.downcase(env[:inbox]), String.downcase(env[:submitter])}
+        end
     end
   end
 

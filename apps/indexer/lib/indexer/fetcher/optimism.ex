@@ -303,7 +303,7 @@ defmodule Indexer.Fetcher.Optimism do
         {:stop, :normal, %{}}
 
       nil ->
-        Logger.error("Cannot read SystemConfig contract.")
+        Logger.error("Cannot read SystemConfig contract and fallback envs are not correctly defined.")
         {:stop, :normal, %{}}
 
       _ ->
@@ -320,6 +320,9 @@ defmodule Indexer.Fetcher.Optimism do
     Reads some public getters of SystemConfig contract and returns retrieved values.
     Gets `OptimismPortal` contract address from the `SystemConfig` contract and
     the number of a start block (from which all Optimism fetchers should start).
+
+    If SystemConfig has obsolete implementation, the values are fallen back from the corresponding
+    env variables (INDEXER_OPTIMISM_L1_PORTAL_CONTRACT and INDEXER_OPTIMISM_L1_START_BLOCK).
 
     ## Parameters
     - `contract_address`: An address of SystemConfig contract.
@@ -344,7 +347,7 @@ defmodule Indexer.Fetcher.Optimism do
            &json_rpc/2,
            [requests, json_rpc_named_arguments],
            error_message,
-           Helper.infinite_retries_number()
+           Helper.finite_retries_number()
          ) do
       {:ok, responses} ->
         "0x000000000000000000000000" <> optimism_portal = Enum.at(responses, 0).result
@@ -352,7 +355,11 @@ defmodule Indexer.Fetcher.Optimism do
         {"0x" <> optimism_portal, start_block}
 
       _ ->
-        nil
+        env = Application.get_all_env(:indexer)[__MODULE__]
+
+        if Helper.address_correct?(env[:portal]) and not is_nil(env[:start_block_l1]) do
+          {env[:portal], env[:start_block_l1]}
+        end
     end
   end
 

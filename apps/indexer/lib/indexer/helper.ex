@@ -178,6 +178,10 @@ defmodule Indexer.Helper do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
+  def finite_retries_number do
+    @finite_retries_number
+  end
+
   def infinite_retries_number do
     @infinite_retries_number
   end
