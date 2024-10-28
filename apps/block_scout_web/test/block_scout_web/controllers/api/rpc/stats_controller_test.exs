@@ -101,6 +101,50 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
 
       assert response == "110052089.716627912"
     end
+
+    test "with custom decimals and cmc format", %{conn: conn} do
+      token =
+        insert(:token,
+          total_supply: 1_234_567_890,
+          decimals: 6
+        )
+
+      params = %{
+        "module" => "stats",
+        "action" => "tokensupply",
+        "contractaddress" => to_string(token.contract_address_hash),
+        "cmc" => "true"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> text_response(200)
+
+      assert response == "1234.567890000"
+    end
+  end
+
+  test "with null decimals and cmc format", %{conn: conn} do
+    token =
+      insert(:token,
+        total_supply: 1_234_567_890,
+        decimals: nil
+      )
+
+    params = %{
+      "module" => "stats",
+      "action" => "tokensupply",
+      "contractaddress" => to_string(token.contract_address_hash),
+      "cmc" => "true"
+    }
+
+    assert response =
+             conn
+             |> get("/api", params)
+             |> text_response(200)
+
+    assert response == "1234567890.000000000"
   end
 
   describe "ethsupplyexchange" do
