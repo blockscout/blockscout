@@ -6,7 +6,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   alias ABI.{TypeDecoder, TypeEncoder}
   alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.Events.Subscriber
 
   alias Explorer.Chain.{
     Address,
@@ -808,6 +807,82 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           conn,
           "/api/v2/addresses/#{address.hash}/transactions",
           %{"sort" => "value", "order" => "desc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(transactions, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(transactions, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
+    end
+
+    test "can order and paginate by block number ascending", %{conn: conn} do
+      address = insert(:address)
+
+      transactions_from =
+        for _ <- 0..24, do: insert(:transaction, from_address: address) |> with_block()
+
+      transactions_to = for _ <- 0..25, do: insert(:transaction, to_address: address) |> with_block()
+
+      transactions =
+        (transactions_from ++ transactions_to)
+        |> Enum.sort_by(& &1.block.number)
+
+      request =
+        get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "block_number", "order" => "asc"})
+
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "block_number", "order" => "asc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(transactions, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(transactions, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
+    end
+
+    test "can order and paginate by block number descending", %{conn: conn} do
+      address = insert(:address)
+
+      transactions_from =
+        for _ <- 0..24, do: insert(:transaction, from_address: address) |> with_block()
+
+      transactions_to = for _ <- 0..25, do: insert(:transaction, to_address: address) |> with_block()
+
+      transactions =
+        (transactions_from ++ transactions_to)
+        |> Enum.sort_by(& &1.block.number, :desc)
+
+      request =
+        get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "block_number", "order" => "desc"})
+
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "block_number", "order" => "desc"} |> Map.merge(response["next_page_params"])
         )
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
