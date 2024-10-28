@@ -17,7 +17,6 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
         |> send_resp(
           200,
           token.total_supply &&
-            token.decimals &&
             to_cmc_total_supply(
               token.total_supply,
               token.decimals
@@ -97,11 +96,11 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     {:format, Chain.string_to_address_hash(address_hash_string)}
   end
 
-  @spec to_cmc_total_supply(Decimal.t(), Decimal.t()) :: String.t()
+  @spec to_cmc_total_supply(Decimal.t(), Decimal.t() | nil) :: String.t()
   defp to_cmc_total_supply(total_supply, decimals) do
     divider =
       1
-      |> Decimal.new(1, Decimal.to_integer(decimals))
+      |> Decimal.new(1, Decimal.to_integer(decimals || Decimal.new(0)))
       |> Decimal.to_integer()
 
     total_supply
