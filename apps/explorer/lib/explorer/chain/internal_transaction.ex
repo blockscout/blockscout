@@ -818,7 +818,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @doc """
-  Returns the ordered paginated list of internal transactions (consensus blocks only) from the DB with address, block preloads
+  Returns the ordered paginated list of internal transactions (consensus blocks only and different from parent transaction) from the DB with address, block preloads
   """
   @spec fetch([paging_options | api?]) :: []
   def fetch(options) do
@@ -838,6 +838,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
         __MODULE__
         |> where_nonpending_block()
+        |> where_is_different_from_parent_transaction()
         |> Chain.page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
         |> order_by([internal_transaction],
           desc: internal_transaction.block_number,
