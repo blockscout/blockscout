@@ -626,6 +626,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     select_repo(options).all(query)
+    |> List.first(nil)
   end
 
   @doc """
