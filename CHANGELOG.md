@@ -12,7 +12,7 @@
 - EIP-7702 support ([#10870](https://github.com/blockscout/blockscout/issues/10870))
 - Open access to re-fetch metadata button for token instances without metadata initially fetched ([#10878](https://github.com/blockscout/blockscout/issues/10878))
 - Support snake_case in metadata service ([#10722](https://github.com/blockscout/blockscout/issues/10722))
-- Token transfers list API endpoint ([#10801](https://github.com/blockscout/blockscout/issues/10801))
+- Token transfers list API v2 endpoint ([#10801](https://github.com/blockscout/blockscout/issues/10801))
 - Send archive balances requests to trace url ([#10820](https://github.com/blockscout/blockscout/issues/10820))
 - Add metadata info to tx interpreter request ([#10823](https://github.com/blockscout/blockscout/issues/10823))
 - Api for querying mud systems abi ([#10829](https://github.com/blockscout/blockscout/issues/10829))
@@ -26,6 +26,10 @@
 
 ### 🐛 Bug Fixes
 
+- Bugs introduced in calldata decoding optimizations  ([#11025](https://github.com/blockscout/blockscout/issues/11025))
+- Handle stalled async task in MapCache ([#11015](https://github.com/blockscout/blockscout/issues/11015))
+- Add tx_count, tx_types props in the response of address API v2 endpoints for compatibility with current version of the frontend ([#11012](https://github.com/blockscout/blockscout/issues/11012))
+- Chart API: add compatibility with the current frontend ([#11008](https://github.com/blockscout/blockscout/issues/11008))
 - Fix failed tests ([#11000](https://github.com/blockscout/blockscout/issues/11000))
 - Add compatibility with current frontend for some public props ([#10998](https://github.com/blockscout/blockscout/issues/10998))
 - Process foreign key violation in scam addresses assigning functionality ([#10977](https://github.com/blockscout/blockscout/issues/10977))
