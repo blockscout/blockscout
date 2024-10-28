@@ -284,14 +284,12 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
         Process.send_after(self(), :fetch, check_interval)
         {:noreply, state}
 
-      {:error, :filter_not_found} ->
-        Logger.error("The old filter not found on the node. Creating new filter...")
-        Process.send(self(), :update_filter, [])
-        {:noreply, state}
+      {:error, error} ->
+        Logger.error(
+          "Failed to get filter changes. Error: #{error}. Retrying in #{@retry_interval_minutes} minutes. The new filter will be created."
+        )
 
-      {:error, _error} ->
-        Logger.error("Failed to set logs filter. Retrying in #{@retry_interval_minutes} minutes...")
-        Process.send_after(self(), :fetch, @retry_interval)
+        Process.send_after(self(), :update_filter, @retry_interval)
         {:noreply, state}
     end
   end
@@ -563,7 +561,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
     req =
       request(%{
         id: 0,
-        method: "eth_getFilterChanges",
+        method: "eth_uninstallFilter",
         params: [filter_id]
       })
 
