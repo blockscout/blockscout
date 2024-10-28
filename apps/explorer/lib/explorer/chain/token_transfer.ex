@@ -239,7 +239,7 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:names, :smart_contract, :proxy_implementations]],
+            [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]],
             [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]]
           ])
 
@@ -266,7 +266,7 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:names, :smart_contract, :proxy_implementations]],
+            [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]],
             [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]]
           ])
 
@@ -299,8 +299,8 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:names, :smart_contract, :proxy_implementations]],
-            [to_address: [:names, :smart_contract, :proxy_implementations]]
+            [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]],
+            [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]]
           ])
 
         only_consensus_transfers_query()

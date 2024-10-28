@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.AddressChannel do
   end
 
   @transaction_associations [
-                              from_address: [:names, :smart_contract, :proxy_implementations],
+                              from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
                               to_address: [
                                 :scam_badge,
                                 :names,

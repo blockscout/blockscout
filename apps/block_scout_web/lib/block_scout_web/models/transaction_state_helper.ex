@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
           to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
         ],
         block: [miner: [:names, :smart_contract, :proxy_implementations]],
-        from_address: [:names, :smart_contract, :proxy_implementations],
+        from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
         to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
       )
 

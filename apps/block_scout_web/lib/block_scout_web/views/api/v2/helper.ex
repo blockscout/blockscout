@@ -159,6 +159,10 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   def address_name(_), do: nil
 
+  def address_marked_as_scam?(%Address{scam_badge: %Ecto.Association.NotLoaded{}}) do
+    false
+  end
+
   def address_marked_as_scam?(%Address{scam_badge: scam_badge}) when not is_nil(scam_badge) do
     true
   end

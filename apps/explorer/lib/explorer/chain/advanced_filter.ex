@@ -115,8 +115,8 @@ defmodule Explorer.Chain.AdvancedFilter do
     |> Enum.sort(&sort_function/2)
     |> take_page_size(paging_options)
     |> Chain.select_repo(options).preload(
-      from_address: [:names, :smart_contract, :proxy_implementations],
-      to_address: [:names, :smart_contract, :proxy_implementations],
+      from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
+      to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
       created_contract_address: [:names, :smart_contract, :proxy_implementations]
     )
   end

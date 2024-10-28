@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
       %{
         :block => :required,
         [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-        [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
         [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
       }
       |> Map.merge(@chain_type_transaction_necessity_by_association),

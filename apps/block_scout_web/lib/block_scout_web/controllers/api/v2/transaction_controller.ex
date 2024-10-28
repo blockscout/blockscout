@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
                                               :proxy_implementations
                                             ]
                                           ] => :optional,
-                                          [from_address: [:names, :smart_contract, :proxy_implementations]] =>
+                                          [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] =>
                                             :optional,
                                           [
                                             to_address: [
@@ -573,7 +573,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     options =
       [
         necessity_by_association: %{
-          [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+          [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
           [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
         }
       ]
@@ -600,8 +600,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     options =
       [
         necessity_by_association: %{
-          [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-          [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
+          [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+          [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
         }
       ]
       |> Keyword.merge(@api_true)
