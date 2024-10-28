@@ -129,17 +129,18 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   def evaluate_authenticity_via_standard_json_input_inner(true, address_hash, params, json_input) do
     {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
-    compiler_version_map =
+    verification_params =
       if Application.get_env(:explorer, :chain_type) == :zksync do
         %{
           "solcCompiler" => params["compiler_version"],
-          "zkCompiler" => params["zk_compiler_version"]
+          "zkCompiler" => params["zk_compiler_version"],
+          "constructorArguments" => params["constructor_arguments"]
         }
       else
         %{"compilerVersion" => params["compiler_version"]}
       end
 
-    compiler_version_map
+    verification_params
     |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
     |> Map.put("input", json_input)
     |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,

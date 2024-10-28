@@ -631,6 +631,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "compilerversion", "compiler_version")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
     |> optional_param(params, "licenseType", "license_type")
+    |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+          do: optional_param(&1, params, "zksolcVersion", "zk_compiler_version"),
+          else: &1
+        )).()
   end
 
   defp fetch_verifysourcecode_solidity_single_file_params(params) do
