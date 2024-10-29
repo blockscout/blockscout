@@ -3,7 +3,7 @@ defmodule Explorer.Repo.Zilliqa.Migrations.AddViewToBlock do
 
   def change do
     alter table(:blocks) do
-      add(:zilliqa_view, :integer)
+      add(:zilliqa_view, :integer, null: false)
     end
   end
 end
