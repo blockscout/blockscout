@@ -136,7 +136,11 @@ defmodule Explorer.Chain.SmartContract do
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
   @dead_address_hash_string "0x000000000000000000000000000000000000dEaD"
 
-  @required_attrs ~w(compiler_version optimization address_hash contract_code_md5 language)a
+  @required_attrs ~w(optimization address_hash contract_code_md5 language)a ++
+                    (case Application.compile_env(:explorer, :chain_type) do
+                       :zilliqa -> []
+                       _ -> ~w(compiler_version)a
+                     end)
 
   @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a
 
@@ -445,7 +449,12 @@ defmodule Explorer.Chain.SmartContract do
         @optional_changeset_attrs ++
         @chain_type_optional_attrs
 
-    required_for_validation = [:name, :contract_source_code] ++ @required_attrs
+    required_for_validation =
+      @required_attrs ++
+        case Application.get_env(:explorer, :chain_type) do
+          :zilliqa -> [:contract_source_code]
+          _ -> [:name, :contract_source_code]
+        end
 
     smart_contract
     |> cast(attrs, attrs_to_cast)

@@ -231,11 +231,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_blueprint" => if(smart_contract.is_blueprint, do: smart_contract.is_blueprint, else: false)
     }
     |> Map.merge(bytecode_info(address))
-    |> chain_type_fields(%{
-      address_hash: verified_twin_address_hash,
-      field_prefix: "verified_twin",
-      target_contract: target_contract
-    })
+    |> add_filecoin_info(%{address_hash: verified_twin_address_hash, field_prefix: "verified_twin"})
+    |> add_chain_type_fields(target_contract, address)
   end
 
   def prepare_smart_contract(%Address{proxy_implementations: implementations} = address, conn) do
@@ -288,6 +285,38 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end
   end
 
+  @spec add_chain_type_fields(map(), SmartContract.t(), Address.t()) :: map()
+  case Application.compile_env(:explorer, :chain_type) do
+    :zksync ->
+      defp add_chain_type_fields(smart_contract_info, target_contract, _address) do
+        Map.put(
+          smart_contract_info,
+          "zk_compiler_version",
+          target_contract.zk_compiler_version
+        )
+      end
+
+    :zilliqa ->
+      defp add_chain_type_fields(
+             smart_contract_info,
+             _target_contract,
+             %Address{contracts_creation_transaction: transaction}
+           ) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        is_scilla_contract =
+          (transaction && Explorer.Chain.Zilliqa.Helper.scilla_transaction?(transaction)) || false
+
+        Map.put(smart_contract_info, :zilliqa, %{
+          is_scilla_contract: is_scilla_contract
+        })
+      end
+
+    _ ->
+      defp add_chain_type_fields(smart_contract_info, _target_contract, _address) do
+        smart_contract_info
+      end
+  end
+
   defp prepare_external_libraries(libraries) when is_list(libraries) do
     Enum.map(libraries, fn %Explorer.Chain.SmartContract.ExternalLibrary{name: name, address_hash: address_hash} ->
       {:ok, hash} = Chain.string_to_address_hash(address_hash)
@@ -335,12 +364,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_smart_contract_for_list(%SmartContract{} = smart_contract) do
     token = smart_contract.address.token
 
+    address = %Address{smart_contract.address | smart_contract: smart_contract}
+
     smart_contract_info =
       %{
         "address" =>
           Helper.address_with_info(
             nil,
-            %Address{smart_contract.address | smart_contract: smart_contract},
+            address,
             smart_contract.address.hash,
             false
           ),
@@ -358,9 +389,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       }
 
     smart_contract_info
-    |> chain_type_fields(%{
-      target_contract: smart_contract
-    })
+    |> add_chain_type_fields(smart_contract, address)
   end
 
   defp smart_contract_language(smart_contract) do
@@ -444,7 +473,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   case @chain_type do
     :filecoin ->
-      defp chain_type_fields(result, params) do
+      defp add_filecoin_info(result, params) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address(result, params)
       end
@@ -463,7 +492,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       end
 
     _ ->
-      defp chain_type_fields(result, _address) do
+      defp add_filecoin_info(result, _address) do
         result
       end
   end

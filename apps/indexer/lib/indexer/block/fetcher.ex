@@ -492,9 +492,17 @@ defmodule Indexer.Block.Fetcher do
         block_number: block_number,
         hash: hash,
         created_contract_address_hash: %Hash{} = created_contract_address_hash,
-        created_contract_code_indexed_at: nil
+        created_contract_code_indexed_at: nil,
+        v: v
       } ->
-        [%{block_number: block_number, hash: hash, created_contract_address_hash: created_contract_address_hash}]
+        [
+          %{
+            block_number: block_number,
+            hash: hash,
+            created_contract_address_hash: created_contract_address_hash,
+            v: v
+          }
+        ]
 
       %Transaction{created_contract_address_hash: nil} ->
         []

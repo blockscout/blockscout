@@ -11,11 +11,24 @@ defmodule Indexer.Fetcher.ContractCode do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.{Address, Block, Hash}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
+  alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
+  alias Indexer.Fetcher.Zilliqa.ScillaSmartContracts, as: ZilliqaScillaSmartContractsFetcher
   alias Indexer.Transform.Addresses
+
+  @transaction_fields ~w(block_number created_contract_address_hash hash v)a
+
+  @type entry :: [
+          %{
+            required(:block_number) => Block.block_number(),
+            required(:created_contract_address_hash) => Hash.Full.t(),
+            required(:hash) => Hash.Full.t(),
+            required(:v) => Decimal.t()
+          }
+        ]
 
   @behaviour BufferedTask
 
@@ -29,12 +42,14 @@ defmodule Indexer.Fetcher.ContractCode do
     metadata: [fetcher: :code]
   ]
 
-  @spec async_fetch([%{required(:block_number) => Block.block_number(), required(:hash) => Hash.Full.t()}], boolean()) ::
-          :ok
+  @spec async_fetch([entry()], boolean(), integer()) :: :ok
   def async_fetch(transactions_fields, realtime?, timeout \\ 5000) when is_list(transactions_fields) do
-    entries = Enum.map(transactions_fields, &entry/1)
-
-    BufferedTask.buffer(__MODULE__, entries, realtime?, timeout)
+    BufferedTask.buffer(
+      __MODULE__,
+      transactions_fields |> Enum.uniq(),
+      realtime?,
+      timeout
+    )
   end
 
   @doc false
@@ -59,33 +74,16 @@ defmodule Indexer.Fetcher.ContractCode do
   def init(initial, reducer, _) do
     {:ok, final} =
       Chain.stream_transactions_with_unfetched_created_contract_codes(
-        [:block_number, :created_contract_address_hash, :hash],
+        @transaction_fields,
         initial,
         fn transaction_fields, acc ->
           transaction_fields
-          |> entry()
           |> reducer.(acc)
         end,
         true
       )
 
     final
-  end
-
-  defp entry(%{
-         block_number: block_number,
-         created_contract_address_hash: %Hash{bytes: created_contract_bytes},
-         hash: %Hash{bytes: bytes}
-       })
-       when is_integer(block_number) do
-    {block_number, created_contract_bytes, bytes}
-  end
-
-  defp params({block_number, created_contract_address_hash_bytes, _transaction_hash_bytes})
-       when is_integer(block_number) do
-    {:ok, created_contract_address_hash} = Hash.Address.cast(created_contract_address_hash_bytes)
-
-    %{block_quantity: integer_to_quantity(block_number), address: to_string(created_contract_address_hash)}
   end
 
   @impl BufferedTask
@@ -95,12 +93,22 @@ defmodule Indexer.Fetcher.ContractCode do
               service: :indexer,
               tracer: Tracer
             )
+  @spec run([entry()], [
+          {:throttle_timeout, non_neg_integer()}
+          | {:transport, atom()}
+          | {:transport_options, any()}
+          | {:variant, atom()}
+        ]) :: :ok | {:retry, any()}
   def run(entries, json_rpc_named_arguments) do
     Logger.debug("fetching created_contract_code for transactions")
 
     entries
-    |> Enum.uniq()
-    |> Enum.map(&params/1)
+    |> Enum.map(
+      &%{
+        block_quantity: integer_to_quantity(&1.block_number),
+        address: to_string(&1.created_contract_address_hash)
+      }
+    )
     |> EthereumJSONRPC.fetch_codes(json_rpc_named_arguments)
     |> case do
       {:ok, create_address_codes} ->
@@ -119,7 +127,12 @@ defmodule Indexer.Fetcher.ContractCode do
 
   defp import_with_balances(addresses_params, entries, json_rpc_named_arguments) do
     entries
-    |> coin_balances_request_params()
+    |> Enum.map(
+      &%{
+        block_quantity: integer_to_quantity(&1.block_number),
+        hash_data: to_string(&1.created_contract_address_hash)
+      }
+    )
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, BlockNumber.get_max())
     |> case do
       {:ok, fetched_balances} ->
@@ -131,8 +144,9 @@ defmodule Indexer.Fetcher.ContractCode do
                addresses: %{params: merged_addresses_params},
                timeout: :infinity
              }) do
-          {:ok, imported} ->
-            Accounts.drop(imported[:addresses])
+          {:ok, %{addresses: addresses}} ->
+            Accounts.drop(addresses)
+            zilliqa_verify_scilla_contracts(entries, addresses)
             :ok
 
           {:error, step, reason, _changes_so_far} ->
@@ -158,11 +172,15 @@ defmodule Indexer.Fetcher.ContractCode do
     end
   end
 
-  defp coin_balances_request_params(entries) do
-    Enum.map(entries, fn {block_number, created_contract_address_hash_bytes, _transaction_hash_bytes} ->
-      {:ok, created_contract_address_hash} = Hash.Address.cast(created_contract_address_hash_bytes)
+  @spec zilliqa_verify_scilla_contracts([entry()], [Address.t()]) :: :ok
+  defp zilliqa_verify_scilla_contracts(entries, addresses) do
+    zilliqa_contract_address_hashes =
+      entries
+      |> Enum.filter(&ZilliqaHelper.scilla_transaction?(&1.v))
+      |> MapSet.new(& &1.created_contract_address_hash)
 
-      %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(created_contract_address_hash)}
-    end)
+    addresses
+    |> Enum.filter(&MapSet.member?(zilliqa_contract_address_hashes, &1.hash))
+    |> ZilliqaScillaSmartContractsFetcher.async_fetch(true)
   end
 end
