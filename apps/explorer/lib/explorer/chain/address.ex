@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Address.Schema do
                         :zksync ->
                           quote do
                             [
-                              field(:contract_code_recollected, :boolean)
+                              field(:contract_code_refetched, :boolean)
                             ]
                           end
 
@@ -150,7 +150,7 @@ defmodule Explorer.Chain.Address do
                                   ~w(filecoin_id filecoin_robust filecoin_actor_type)a
 
                                 :zksync ->
-                                  ~w(contract_code_recollected)a
+                                  ~w(contract_code_refetched)a
 
                                 _ ->
                                   []
@@ -207,7 +207,7 @@ defmodule Explorer.Chain.Address do
        * `filecoin_actor_type` - type of actor associated with the Filecoin address
       """
     :zksync -> """
-        * `contract_code_recollected` - true when Explorer.Migrator.RecollectContractCodes handled this address, or it's unnecessary (for addresses inserted after this)
+        * `contract_code_refetched` - true when Explorer.Migrator.RefetchContractCodes handled this address, or it's unnecessary (for addresses inserted after this)
       """
     _ -> ""
   end}

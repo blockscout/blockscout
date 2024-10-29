@@ -1,6 +1,6 @@
-defmodule Explorer.Migrator.RecollectContractCodes do
+defmodule Explorer.Migrator.RefetchContractCodes do
   @moduledoc """
-  Recollect contract_code for. Migration created for running on zksync chain type.
+  Refetch contract_code for. Migration created for running on zksync chain type.
   It has an issue with created contract code derived from internal transactions. Such codes are not correct.
   So, this migration fetches for all current smart contracts actual bytecode from the JSON RPC node.
   """
@@ -17,7 +17,7 @@ defmodule Explorer.Migrator.RecollectContractCodes do
 
   require Logger
 
-  @migration_name "recollect_contract_codes"
+  @migration_name "refetch_contract_codes"
 
   @impl FillingMigration
   def migration_name, do: @migration_name
@@ -38,7 +38,7 @@ defmodule Explorer.Migrator.RecollectContractCodes do
   @impl FillingMigration
   def unprocessed_data_query do
     Address
-    |> where([address], not is_nil(address.contract_code) and not address.contract_code_recollected)
+    |> where([address], not is_nil(address.contract_code) and not address.contract_code_refetched)
   end
 
   @impl FillingMigration
@@ -54,7 +54,7 @@ defmodule Explorer.Migrator.RecollectContractCodes do
 
         Addresses.insert(Repo, addresses_params, %{
           timeout: :infinity,
-          on_conflict: {:replace, [:contract_code, :contract_code_recollected, :updated_at]},
+          on_conflict: {:replace, [:contract_code, :contract_code_refetched, :updated_at]},
           timestamps: Import.timestamps()
         })
 
@@ -75,6 +75,6 @@ defmodule Explorer.Migrator.RecollectContractCodes do
   defp param_to_address(%{code: bytecode, address: address_hash}) do
     {:ok, address_hash} = AddressHash.cast(address_hash)
     {:ok, bytecode} = Data.cast(bytecode)
-    %{hash: address_hash, contract_code: bytecode, contract_code_recollected: true}
+    %{hash: address_hash, contract_code: bytecode, contract_code_refetched: true}
   end
 end
