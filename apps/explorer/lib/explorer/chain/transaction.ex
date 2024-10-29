@@ -2063,11 +2063,16 @@ defmodule Explorer.Chain.Transaction do
       |> Chain.hashes_to_addresses(necessity_by_association: %{smart_contract: :optional})
       |> Enum.into(%{}, &{&1.hash, &1})
 
+    # combine map %{proxy_address_hash => implementation address hashes}
+    proxy_implementations_map =
+      multiple_proxy_implementations
+      |> Enum.into(%{}, &{&1.proxy_address_hash, &1.address_hashes})
+
     # combine map %{proxy_address_hash => combined proxy abi}
-    multiple_proxy_implementations
-    |> Enum.into(%{}, fn proxy_implementations ->
+    unique_to_address_hashes
+    |> Enum.into(%{}, fn to_address_hash ->
       full_abi =
-        [proxy_implementations.proxy_address_hash | proxy_implementations.address_hashes]
+        [to_address_hash | Map.get(proxy_implementations_map, to_address_hash, [])]
         |> Enum.map(&Map.get(addresses_with_smart_contracts, &1))
         |> Enum.flat_map(fn
           %{smart_contract: %{abi: abi}} when is_list(abi) -> abi
@@ -2075,7 +2080,7 @@ defmodule Explorer.Chain.Transaction do
         end)
         |> Enum.filter(&(!is_nil(&1)))
 
-      {proxy_implementations.proxy_address_hash, full_abi}
+      {to_address_hash, full_abi}
     end)
   end
 
