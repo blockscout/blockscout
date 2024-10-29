@@ -13,12 +13,11 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
   alias ABI.TypeDecoder
   alias EthereumJSONRPC
-  alias EthereumJSONRPC.Encoder
+  alias EthereumJSONRPC.{Arbitrum, Encoder}
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Hash.Address
-  alias Indexer.Fetcher.Arbitrum.Messaging, as: ArbitrumMessaging
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
 
@@ -159,7 +158,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
        ) do
     # getting needed fields from the L2ToL1Tx event
     {position, caller, destination, arb_block_number, eth_block_number, l2_timestamp, call_value, data} =
-      ArbitrumMessaging.l2_to_l1_event_parse(log)
+      log
+      |> convert_explorer_log_to_raw()
+      |> Arbitrum.l2_to_l1_event_parse()
 
     status =
       case Rpc.withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
@@ -180,17 +181,31 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       data
       |> Base.encode16(case: :lower)
 
+    {:ok, caller_address} = Hash.Address.cast(caller)
+    {:ok, destination_address} = Hash.Address.cast(destination)
+
     %Explorer.Arbitrum.Withdraw{
       message_id: Hash.to_integer(log.fourth_topic),
       status: status,
-      caller: caller,
-      destination: destination,
+      caller: caller_address,
+      destination: destination_address,
       arb_block_number: arb_block_number,
       eth_block_number: eth_block_number,
       l2_timestamp: l2_timestamp,
       callvalue: call_value,
       data: "0x" <> data_hex,
       token: token
+    }
+  end
+
+  @spec convert_explorer_log_to_raw(Explorer.Chain.Log.t()) :: Arbitrum.event_data()
+  defp convert_explorer_log_to_raw(log) do
+    %{
+      :data => Data.to_string(log.data),
+      :first_topic => Hash.to_string(log.first_topic),
+      :second_topic => Hash.to_string(log.second_topic),
+      :third_topic => Hash.to_string(log.third_topic),
+      :fourth_topic => Hash.to_string(log.fourth_topic)
     }
   end
 

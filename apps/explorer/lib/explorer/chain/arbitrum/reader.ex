@@ -625,7 +625,9 @@ defmodule Explorer.Chain.Arbitrum.Reader do
         where: message.message_id == ^message_id
       )
 
-    select_repo(options).all(query)
+    messages = select_repo(options).all(query)
+
+    messages
     |> List.first(nil)
   end
 
