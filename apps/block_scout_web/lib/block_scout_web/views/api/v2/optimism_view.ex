@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
-  alias Explorer.Chain.Optimism.{FrameSequenceBlob, Withdrawal}
+  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, Withdrawal}
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
@@ -66,19 +66,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       |> Enum.map(fn batch ->
         from..to//_ = batch.l2_block_range
 
-        %{
-          "internal_id" => batch.id,
-          "l1_timestamp" => batch.l1_timestamp,
-          "l2_block_start" => from,
-          "l2_block_end" => to,
-          "transaction_count" => batch.transaction_count,
-          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-          "tx_count" => batch.transaction_count,
-          "l1_transaction_hashes" => batch.l1_transaction_hashes,
-          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hashes` property
-          "l1_tx_hashes" => batch.l1_transaction_hashes,
-          "batch_data_container" => batch.batch_data_container
-        }
+        render_base_info_for_batch(batch.id, from, to, batch.transaction_count, batch)
       end)
 
     %{
@@ -270,6 +258,40 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   """
   def render("optimism_items_count.json", %{count: count}) do
     count
+  end
+
+  # Transforms an L1 batch into a map format for HTTP response.
+  #
+  # This function processes an Optimism L1 batch and converts it into a map that
+  # includes basic batch information.
+  #
+  # ## Parameters
+  # - `internal_id`: The internal ID of the batch.
+  # - `l2_block_number_from`: Start L2 block number of the batch block range.
+  # - `l2_block_number_to`: End L2 block number of the batch block range.
+  # - `transaction_count`: The L2 transaction count included into the blocks of the range.
+  # - `batch`: Either an `Explorer.Chain.Optimism.FrameSequence` entry or a map with
+  #            the corresponding fields.
+  #
+  # ## Returns
+  # - A map with detailed information about the batch formatted for use in JSON HTTP responses.
+  @spec render_base_info_for_batch(
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          FrameSequence.t()
+          | %{:l1_timestamp => DateTime.t(), :l1_transaction_hashes => list(), optional(any()) => any()}
+        ) :: map()
+  defp render_base_info_for_batch(internal_id, l2_block_number_from, l2_block_number_to, transaction_count, batch) do
+    FrameSequence.prepare_base_info_for_batch(
+      internal_id,
+      l2_block_number_from,
+      l2_block_number_to,
+      transaction_count,
+      nil,
+      batch
+    )
   end
 
   @doc """

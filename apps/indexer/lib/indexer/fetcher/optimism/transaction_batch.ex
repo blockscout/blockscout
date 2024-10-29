@@ -33,6 +33,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Beacon.Blob, as: BeaconBlob
   alias Explorer.Chain.{Block, Hash, RollupReorgMonitorQueue}
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias HTTPoison.Response
@@ -283,6 +284,14 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
             remove_prev_frame_sequences(inserted)
             set_frame_sequences_view_ready(sequences)
+
+            Publisher.broadcast(
+              %{
+                new_optimism_batches:
+                  Enum.map(sequences, &FrameSequence.batch_by_internal_id(&1.id, include_blobs?: false))
+              },
+              :realtime
+            )
 
             Helper.log_blocks_chunk_handling(
               chunk_start,
