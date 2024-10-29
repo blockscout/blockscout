@@ -122,21 +122,13 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     Logger.info("API v2 smart-contract #{address_hash_string} verification via standard json input")
 
     with {:json_input, json_input} <- validate_params_standard_json_input(params) do
-      constructor_arguments =
-        if Application.get_env(:explorer, :chain_type) == :zksync do
-          zksync_get_constructor_arguments(address_hash_string)
-        else
-          Map.get(params, "constructor_args", "")
-        end
-
       verification_params =
         %{
           "address_hash" => String.downcase(address_hash_string),
           "compiler_version" => compiler_version
         }
         |> Map.put("autodetect_constructor_args", Map.get(params, "autodetect_constructor_args", true))
-        #
-        |> Map.put("constructor_arguments", constructor_arguments)
+        |> Map.put("constructor_arguments", Map.get(params, "constructor_args", ""))
         |> Map.put("name", Map.get(params, "contract_name", ""))
         |> Map.put("license_type", Map.get(params, "license_type"))
         |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
@@ -318,10 +310,6 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
       true ->
         nil
     end
-  end
-
-  defp zksync_get_constructor_arguments(address_hash_string) do
-    Chain.contract_creation_input_data(address_hash_string)
   end
 
   # sobelow_skip ["Traversal.FileModule"]
