@@ -206,7 +206,7 @@ defmodule BlockScoutWeb.Notifier do
     base_preloads = [
       :block,
       created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-      from_address: [:names, :smart_contract, :proxy_implementations],
+      from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
       to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
     ]
 

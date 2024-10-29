@@ -85,7 +85,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     necessity_by_association:
       %{
         [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-        [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
         [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
         :block => :optional
       }

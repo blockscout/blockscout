@@ -109,7 +109,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       Chain.select_repo(@api_true).preload(transaction, [
         :block,
         to_address: [:scam_badge, :names, :smart_contract],
-        from_address: [:names, :smart_contract],
+        from_address: [:scam_badge, :names, :smart_contract],
         created_contract_address: [:scam_badge, :names, :token, :smart_contract]
       ])
 
@@ -176,8 +176,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     full_options =
       [
         necessity_by_association: %{
-          [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-          [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional
+          [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+          [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
         }
       ]
       |> Keyword.merge(@api_true)
@@ -254,8 +254,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     token_transfer_options =
       [
         necessity_by_association: %{
-          [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-          [to_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
+          [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+          [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
           :token => :optional
         }
       ]

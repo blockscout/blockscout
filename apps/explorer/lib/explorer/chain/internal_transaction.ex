@@ -832,8 +832,8 @@ defmodule Explorer.Chain.InternalTransaction do
         preloads =
           DenormalizationHelper.extend_transaction_preload([
             :block,
-            [from_address: [:names, :smart_contract, :proxy_implementations]],
-            [to_address: [:names, :smart_contract, :proxy_implementations]]
+            [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]],
+            [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]]
           ])
 
         __MODULE__
