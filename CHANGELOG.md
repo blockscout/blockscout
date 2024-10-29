@@ -4,7 +4,7 @@
 
 ### 🚀 Features
 
-- List of internal transactions API v2 endpoint ([#10994](https://github.com/blockscout/blockscout/issues/10994))
+- Address transactions block number sorting ([#11035](https://github.com/blockscout/blockscout/issues/11035))
 - Scroll rollup: L1 fee parameters in API, `queueIndex` for L2 transactions, and L1 <->L2 messages ([#10484](https://github.com/blockscout/blockscout/issues/10484))
 - Account V2 ([#10706](https://github.com/blockscout/blockscout/issues/10706))
 - Allow to provide DB schema other than public ([#10946](https://github.com/blockscout/blockscout/issues/10946))
@@ -26,6 +26,9 @@
 
 ### 🐛 Bug Fixes
 
+- Fix scam badge value in some API endpoints ([#11054](https://github.com/blockscout/blockscout/issues/11054))
+- Divide by `10^decimals` when calculating token supply in CMC format ([#11036](https://github.com/blockscout/blockscout/issues/11036))
+- Rename zksync l1/l2 _tx_count columns ([#11051](https://github.com/blockscout/blockscout/issues/11051))
 - Bugs introduced in calldata decoding optimizations  ([#11025](https://github.com/blockscout/blockscout/issues/11025))
 - Handle stalled async task in MapCache ([#11015](https://github.com/blockscout/blockscout/issues/11015))
 - Add tx_count, tx_types props in the response of address API v2 endpoints for compatibility with current version of the frontend ([#11012](https://github.com/blockscout/blockscout/issues/11012))
