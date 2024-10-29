@@ -3211,7 +3211,13 @@ defmodule Explorer.Chain do
       |> select_repo(options).one()
 
     if transaction && transaction.input do
-      Data.to_bytes(transaction.input)
+      case Data.dump(transaction.input) do
+        {:ok, bytes} ->
+          bytes
+
+        _ ->
+          nil
+      end
     end
   end
 

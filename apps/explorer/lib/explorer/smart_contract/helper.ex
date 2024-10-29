@@ -112,6 +112,20 @@ defmodule Explorer.SmartContract.Helper do
     end
   end
 
+  @doc """
+  Prepares the bytecode for a microservice by processing the given body, creation input, and deployed bytecode.
+
+  ## Parameters
+
+    - body: The body of the request or data to be processed.
+    - creation_input: The input data used during the creation of the smart contract.
+    - deployed_bytecode: The bytecode of the deployed smart contract.
+
+  ## Returns
+
+  The processed bytecode ready for the microservice.
+  """
+  @spec prepare_bytecode_for_microservice(map(), binary() | nil, binary() | nil) :: map()
   def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode)
 
   def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode) when is_nil(creation_input) do

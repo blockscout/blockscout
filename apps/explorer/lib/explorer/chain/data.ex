@@ -71,18 +71,6 @@ defmodule Explorer.Chain.Data do
   def to_string(nil), do: "0x"
 
   @doc """
-  Converts a `Data` struct to its byte representation.
-
-  ## Parameters
-  - data: A `Data` struct containing the bytes to be converted.
-
-  ## Returns
-  - The byte representation of the given `Data` struct.
-  """
-  def to_bytes(%Data{bytes: bytes}), do: bytes
-  def to_bytes(_), do: nil
-
-  @doc """
   Casts `term` to `t:t/0`.
 
   An empty `t:t/0` will pass through unchanged
