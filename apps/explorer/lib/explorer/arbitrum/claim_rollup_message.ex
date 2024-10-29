@@ -139,7 +139,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     l1_rollup_address = config_common[:l1_rollup_address]
 
     outbox_contract =
-      Rpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
+      Arbitrum.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
     logs = Chain.transaction_to_logs_by_topic0(transaction_hash, @l2_to_l1_event)
 
@@ -163,7 +163,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       |> Arbitrum.l2_to_l1_event_parse()
 
     status =
-      case Rpc.withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
+      case Arbitrum.withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
         true ->
           :executed
 
@@ -296,7 +296,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     l1_rollup_address = config_common[:l1_rollup_address]
 
     outbox_contract =
-      Rpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
+      Arbitrum.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
     case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
       nil ->
@@ -305,7 +305,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
       l2_block_send_count ->
         # now we are ready to construct outbox proof
-        case Rpc.construct_outbox_proof(
+        case Arbitrum.construct_outbox_proof(
                @node_interface_address,
                l2_block_send_count,
                withdrawal.message_id,

@@ -14,56 +14,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
   @default_binary_search_threshold 1000
 
-  # outbox()
-  @selector_outbox "ce11e6ab"
-  # sequencerInbox()
-  @selector_sequencer_inbox "ee35f327"
-  # bridge()
-  @selector_bridge "e78cea92"
   # latestConfirmed()
   @selector_latest_confirmed "65f7f80d"
   # getNode(uint64 nodeNum)
   @selector_get_node "92c8134c"
   @rollup_contract_abi [
-    %{
-      "inputs" => [],
-      "name" => "outbox",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "sequencerInbox",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "bridge",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
     %{
       "inputs" => [],
       "name" => "latestConfirmed",
@@ -227,45 +182,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   end
 
   @doc """
-    Retrieves specific contract addresses associated with Arbitrum rollup contract.
-
-    This function fetches the addresses of the bridge, sequencer inbox, and outbox
-    contracts related to the specified Arbitrum rollup address. It invokes one of
-    the contract methods `bridge()`, `sequencerInbox()`, or `outbox()` based on
-    the `contracts_set` parameter to obtain the required information.
-
-    ## Parameters
-    - `rollup_address`: The address of the Arbitrum rollup contract from which
-                        information is being retrieved.
-    - `contracts_set`: A symbol indicating the set of contracts to retrieve (`:bridge`
-                       for the bridge contract, `:inbox_outbox` for the sequencer
-                       inbox and outbox contracts).
-    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-
-    ## Returns
-    - A map with keys corresponding to the contract types (`:bridge`, `:sequencer_inbox`,
-      `:outbox`) and values representing the contract addresses.
-  """
-  @spec get_contracts_for_rollup(
-          EthereumJSONRPC.address(),
-          :bridge | :inbox_outbox,
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: %{(:bridge | :sequencer_inbox | :outbox) => binary()}
-  def get_contracts_for_rollup(rollup_address, contracts_set, json_rpc_named_arguments)
-
-  def get_contracts_for_rollup(rollup_address, :bridge, json_rpc_named_arguments) do
-    call_simple_getters_in_rollup_contract(rollup_address, [@selector_bridge], json_rpc_named_arguments)
-  end
-
-  def get_contracts_for_rollup(rollup_address, :inbox_outbox, json_rpc_named_arguments) do
-    call_simple_getters_in_rollup_contract(
-      rollup_address,
-      [@selector_sequencer_inbox, @selector_outbox],
-      json_rpc_named_arguments
-    )
-  end
-
-  @doc """
     Retrieves the latest confirmed node index for withdrawals Merkle tree.
 
     This function fetches an actual confirmed L2->L1 node from the Arbitrum rollup address.
@@ -351,38 +267,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       @selector_sequencer_inbox_contract_abi,
       json_rpc_named_arguments
     )
-  end
-
-  # Calls getter functions on a rollup contract and collects their return values.
-  #
-  # This function is designed to interact with a rollup contract and invoke specified getter methods.
-  # It creates a list of requests for each method ID, executes these requests with retries as needed,
-  # and then maps the results to the corresponding method IDs.
-  #
-  # ## Parameters
-  # - `rollup_address`: The address of the rollup contract to interact with.
-  # - `method_ids`: A list of method identifiers representing the getter functions to be called.
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #
-  # ## Returns
-  # - A map where each key is a method identifier converted to an atom, and each value is the
-  #   response from calling the respective method on the contract.
-  defp call_simple_getters_in_rollup_contract(rollup_address, method_ids, json_rpc_named_arguments) do
-    method_ids
-    |> Enum.map(fn method_id ->
-      %{
-        contract_address: rollup_address,
-        method_id: method_id,
-        args: []
-      }
-    end)
-    |> IndexerHelper.read_contracts_with_retries(@rollup_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
-    # Extracts the list of responses from the tuple returned by read_contracts_with_retries.
-    |> Kernel.elem(0)
-    |> Enum.zip(method_ids)
-    |> Enum.reduce(%{}, fn {{:ok, [response]}, method_id}, retval ->
-      Map.put(retval, atomized_key(method_id), response)
-    end)
   end
 
   @doc """
@@ -888,84 +772,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     {batch_number, Map.put(cache, block_number, batch_number)}
   end
 
-  # Calculates the proof needed to claim L2->L1 message
-  #
-  # This function calls the `constructOutboxProof` method of the Node Interface
-  # to obtain the data needed for manual message claiming
-  #
-  # Parameters:
-  # - `node_interface_address`: The address of the node interface contract.
-  # - `size`: Index of the latest confirmed node (cumulative number of
-  #    confirmed L2->L1 transactions)
-  # - `leaf`: position of the L2->L1 message (`position` field of the associated
-  #    `L2ToL1Tx` event). It should be less than `size`
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC
-  #   connection.
-  #
-  # Returns:
-  # `{:ok, [send, root, proof]}`, where
-  #    `proof` - an array of 32-bytes values which are needed to execute messages.
-  # `{:error, _}` in case of size less or equal leaf or RPC error
-  @spec construct_outbox_proof(
-          EthereumJSONRPC.address(),
-          non_neg_integer(),
-          non_neg_integer(),
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: {:ok, any()} | {:error, :invalid}
-  def construct_outbox_proof(_, size, leaf, _) when size <= leaf do
-    {:error, :invalid}
-  end
-
-  def construct_outbox_proof(node_interface_address, size, leaf, json_rpc_named_arguments) do
-    case [
-           %{
-             contract_address: node_interface_address,
-             method_id: @selector_construct_outbox_proof,
-             args: [size, leaf]
-           }
-         ]
-         |> IndexerHelper.read_contracts_with_retries(
-           @node_interface_contract_abi,
-           json_rpc_named_arguments,
-           @rpc_resend_attempts
-         )
-         |> Kernel.elem(0) do
-      [ok: value] -> {:ok, value}
-      [error: err] -> {:error, err}
-    end
-  end
-
-  @doc """
-    Check is outgoing L2->L1 message was spent.
-
-    To do that we should invoke `isSpent(uint256 index)` method for
-    `Outbox` contract deployed on 1 chain
-
-    ## Parameters
-    - `outbox_contract`: address of the Outbox contract (L1 chain)
-    - `index`: position (index) of the requested L2->L1 message.
-    - `json_l1_rpc_named_arguments`: Configuration parameters for the JSON RPC
-        connection for L1 chain.
-
-    ## Returns
-    - `true` if message was created, confirmed and claimed on L1 chain.
-            Otherwise returns `false`.
-  """
-  @spec withdrawal_spent?(
-          EthereumJSONRPC.address(),
-          non_neg_integer(),
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: boolean()
-  def withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
-    read_contract_and_handle_result_as_integer(
-      outbox_contract,
-      @selector_is_spent,
-      [position],
-      @outbox_contract_abi,
-      json_l1_rpc_named_arguments
-    )
-  end
-
   # Calls one contract method and processes the result as an integer.
   @spec read_contract_and_handle_result_as_integer(
           EthereumJSONRPC.address(),
@@ -1033,8 +839,4 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   def get_resend_attempts do
     @rpc_resend_attempts
   end
-
-  defp atomized_key(@selector_outbox), do: :outbox
-  defp atomized_key(@selector_sequencer_inbox), do: :sequencer_inbox
-  defp atomized_key(@selector_bridge), do: :bridge
 end
