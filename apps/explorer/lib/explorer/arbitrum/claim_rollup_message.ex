@@ -383,7 +383,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     |> Enum.map(fn p -> "0x" <> Base.encode16(p, case: :lower) end)
   end
 
-  # Retrieving `size` parameter neede to construct outbox proof
+  # Retrieving `size` parameter needed to construct outbox proof
   @spec get_size_for_proof(
           String.t(),
           EthereumJSONRPC.json_rpc_named_arguments(),

@@ -158,10 +158,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     ## Parameters
     - `rollup_address`: The address of the Arbitrum rollup contract from which
                         information is being retrieved.
-    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+    - `node_index`: index of the requested node
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection (L1).
 
     ## Returns
-    - A positive integer representing latest confirmed node index
+    - A list represented decoded `Node` tuple from the Rollup contract ABI
   """
   @spec get_node(
           EthereumJSONRPC.address(),
