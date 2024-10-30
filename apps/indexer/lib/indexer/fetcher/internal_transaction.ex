@@ -76,13 +76,23 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @impl BufferedTask
   def init(initial, reducer, _json_rpc_named_arguments) do
-    {:ok, final} =
-      Chain.stream_blocks_with_unfetched_internal_transactions(
-        initial,
+    stream_reducer =
+      if RangesHelper.trace_ranges_present?() do
+        trace_block_ranges = RangesHelper.get_trace_block_ranges()
+
+        fn block_number, acc ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if RangesHelper.number_in_ranges?(block_number, trace_block_ranges),
+            do: reducer.(block_number, acc),
+            else: acc
+        end
+      else
         fn block_number, acc ->
           reducer.(block_number, acc)
         end
-      )
+      end
+
+    {:ok, final} = Chain.stream_blocks_with_unfetched_internal_transactions(initial, stream_reducer)
 
     final
   end

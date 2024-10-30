@@ -56,7 +56,8 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     |> sanitize_ranges()
   end
 
-  defp number_in_ranges?(number, ranges) do
+  @spec number_in_ranges?(integer(), [Range.t()]) :: boolean()
+  def number_in_ranges?(number, ranges) do
     Enum.reduce_while(ranges, false, fn
       _from.._to//_ = range, _acc -> if number in range, do: {:halt, true}, else: {:cont, false}
       num_to_latest, _acc -> if number >= num_to_latest, do: {:halt, true}, else: {:cont, false}
