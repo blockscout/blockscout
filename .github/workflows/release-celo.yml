@@ -39,6 +39,7 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
+            API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             DISABLE_WEBAPP=false
             API_V1_READ_METHODS_DISABLED=false
             API_V1_WRITE_METHODS_DISABLED=false
@@ -62,6 +63,7 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
+            API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             DISABLE_API=true
             DISABLE_WEBAPP=true
             CACHE_EXCHANGE_RATES_PERIOD=
@@ -84,6 +86,7 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
+            API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             DISABLE_INDEXER=true
             DISABLE_WEBAPP=true
             CACHE_EXCHANGE_RATES_PERIOD=
@@ -94,7 +97,7 @@ jobs:
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
 
-      - name: Build and push Docker image (indexer + API + shrink internal transactions)
+      - name: Build and push Docker image for CELO (indexer + API + shrink internal transactions)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -119,7 +122,7 @@ jobs:
             CHAIN_TYPE=celo
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
-      - name: Build and push Docker image (indexer + shrink internal transactions)
+      - name: Build and push Docker image for CELO (indexer + shrink internal transactions)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -143,7 +146,7 @@ jobs:
             CHAIN_TYPE=celo
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
-      - name: Build and push Docker image (API + shrink internal transactions)
+      - name: Build and push Docker image for CELO (API + shrink internal transactions)
         uses: docker/build-push-action@v5
         with:
           context: .
