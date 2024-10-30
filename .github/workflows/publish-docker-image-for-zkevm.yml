@@ -24,7 +24,7 @@ jobs:
           docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
       
-      - name: Build and push Docker image
+      - name: Build and push Docker image (indexer + API)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -46,3 +46,117 @@ jobs:
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=polygon_zkevm
+
+      - name: Build and push Docker image (indexer)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-indexer
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            DISABLE_WEBAPP=true
+            DISABLE_API=true
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=polygon_zkevm
+
+      - name: Build and push Docker image (API)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-api
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            DISABLE_WEBAPP=true
+            DISABLE_INDEXER=true
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=polygon_zkevm
+
+      - name: Build and push Docker image (indexer + API + shrink internal transactions)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-shrink-internal-txs
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            API_V1_READ_METHODS_DISABLED=false
+            DISABLE_WEBAPP=false
+            API_V1_WRITE_METHODS_DISABLED=false
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=polygon_zkevm
+            SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
+
+      - name: Build and push Docker image (indexer + shrink internal transactions)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-shrink-internal-txs-indexer
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            DISABLE_WEBAPP=true
+            DISABLE_API=true
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=polygon_zkevm
+            SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
+
+      - name: Build and push Docker image (API + shrink internal transactions)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: blockscout/blockscout-${{ env.DOCKER_CHAIN_NAME }}:${{ env.RELEASE_VERSION }}-postrelease-${{ env.SHORT_SHA }}-shrink-internal-txs-api
+          labels: ${{ steps.setup.outputs.docker-labels }}
+          platforms: |
+            linux/amd64
+            linux/arm64/v8
+          build-args: |
+            CACHE_EXCHANGE_RATES_PERIOD=
+            DISABLE_WEBAPP=true
+            DISABLE_INDEXER=true
+            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
+            ADMIN_PANEL_ENABLED=false
+            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            CHAIN_TYPE=polygon_zkevm
+            SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true

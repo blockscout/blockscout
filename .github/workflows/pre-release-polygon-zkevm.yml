@@ -1,4 +1,4 @@
-name: Pre-release for CELO
+name: Pre-release for Polygon ZkEVM
 
 on:
   workflow_dispatch:
@@ -17,7 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: 6.9.0
-      API_GRAPHQL_MAX_COMPLEXITY: 10400
     steps:
       - uses: actions/checkout@v4
       - name: Setup repo
@@ -30,13 +29,13 @@ jobs:
           docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
-      - name: Build and push Docker image for CELO (indexer + API)
+      - name: Build and push Docker image for Polygon ZkEVM (indexer + API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+          tags: blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -51,15 +50,15 @@ jobs:
             ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=celo
+            CHAIN_TYPE=polygon_zkevm
 
-      - name: Build and push Docker image for CELO (indexer)
+      - name: Build and push Docker image for Polygon ZkEVM (indexer)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
+          tags: blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -73,15 +72,15 @@ jobs:
             ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=celo
+            CHAIN_TYPE=polygon_zkevm
 
-      - name: Build and push Docker image for CELO (API)
+      - name: Build and push Docker image for Polygon ZkEVM (API)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-api
+          tags: blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-api
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
@@ -95,21 +94,20 @@ jobs:
             ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=celo
+            CHAIN_TYPE=polygon_zkevm
 
-      - name: Build and push Docker image for CELO (indexer + API + shrink internal transactions)
+      - name: Build and push Docker image for Polygon ZkEVM (indexer + API + shrink internal transactions)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-shrink-internal-txs
+          tags: blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-shrink-internal-txs
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
-            API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             CACHE_EXCHANGE_RATES_PERIOD=
             API_V1_READ_METHODS_DISABLED=false
             DISABLE_WEBAPP=false
@@ -117,55 +115,53 @@ jobs:
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=celo
+            CHAIN_TYPE=polygon_zkevm
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
-      - name: Build and push Docker image for CELO (indexer + shrink internal transactions)
+      - name: Build and push Docker image for Polygon ZkEVM (indexer + shrink internal transactions)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-shrink-internal-txs-indexer
+          tags: blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-shrink-internal-txs-indexer
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
-            API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_WEBAPP=true
             DISABLE_API=true
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=celo
+            CHAIN_TYPE=polygon_zkevm
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
-      - name: Build and push Docker image for CELO (API + shrink internal transactions)
+      - name: Build and push Docker image for Polygon ZkEVM (API + shrink internal transactions)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: blockscout/blockscout-celo:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-shrink-internal-txs-api
+          tags: blockscout/blockscout-zkevm:${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}-shrink-internal-txs-api
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
             linux/arm64/v8
           build-args: |
-            API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             CACHE_EXCHANGE_RATES_PERIOD=
             DISABLE_WEBAPP=true
             DISABLE_INDEXER=true
             CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
             ADMIN_PANEL_ENABLED=false
             CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=celo
+            CHAIN_TYPE=polygon_zkevm
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true

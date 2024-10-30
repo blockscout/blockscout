@@ -96,7 +96,7 @@ jobs:
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=scroll
 
-      - name: Build and push Docker image (indexer + API + shrink internal transactions)
+      - name: Build and push Docker image for Scroll (indexer + API + shrink internal transactions)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -120,7 +120,7 @@ jobs:
             CHAIN_TYPE=scroll
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
-      - name: Build and push Docker image (indexer + shrink internal transactions)
+      - name: Build and push Docker image for Scroll (indexer + shrink internal transactions)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -143,7 +143,7 @@ jobs:
             CHAIN_TYPE=scroll
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
-      - name: Build and push Docker image (API + shrink internal transactions)
+      - name: Build and push Docker image for Scroll (API + shrink internal transactions)
         uses: docker/build-push-action@v5
         with:
           context: .
