@@ -5,7 +5,7 @@ if Application.compile_env(:explorer, :chain_type) == :zilliqa do
     """
 
     alias Explorer.Chain.Block
-    alias Explorer.Chain.Zilliqa.{QuorumCertificate, AggregateQuorumCertificate}
+    alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}
 
     @doc """
     Extends the JSON output with a sub-map containing information related to Zilliqa,
