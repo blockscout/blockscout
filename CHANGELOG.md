@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Support zksync foundry verification ([#11037](https://github.com/blockscout/blockscout/issues/11037))
 - Address transactions block number sorting ([#11035](https://github.com/blockscout/blockscout/issues/11035))
 - Scroll rollup: L1 fee parameters in API, `queueIndex` for L2 transactions, and L1 <->L2 messages ([#10484](https://github.com/blockscout/blockscout/issues/10484))
 - Account V2 ([#10706](https://github.com/blockscout/blockscout/issues/10706))
@@ -26,6 +27,9 @@
 
 ### 🐛 Bug Fixes
 
+- Abi cache for non-proxied addresses ([#11065](https://github.com/blockscout/blockscout/issues/11065))
+- Celo collated gas price issue ([#11067](https://github.com/blockscout/blockscout/issues/11067))
+- Indexer memory limit for api instance ([#11066](https://github.com/blockscout/blockscout/issues/11066))
 - Fix scam badge value in some API endpoints ([#11054](https://github.com/blockscout/blockscout/issues/11054))
 - Divide by `10^decimals` when calculating token supply in CMC format ([#11036](https://github.com/blockscout/blockscout/issues/11036))
 - Rename zksync l1/l2 _tx_count columns ([#11051](https://github.com/blockscout/blockscout/issues/11051))
