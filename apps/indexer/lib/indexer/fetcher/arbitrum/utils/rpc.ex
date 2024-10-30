@@ -135,11 +135,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     ## Returns
     - A positive integer representing latest confirmed node index
   """
-  @spec get_latest_confirmed_l2_to_l1_message_id(
+  @spec get_latest_confirmed_node_index(
           EthereumJSONRPC.address(),
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: non_neg_integer()
-  def get_latest_confirmed_l2_to_l1_message_id(rollup_address, json_rpc_named_arguments) do
+  def get_latest_confirmed_node_index(rollup_address, json_rpc_named_arguments) do
     read_contract_and_handle_result_as_integer(
       rollup_address,
       @selector_latest_confirmed,

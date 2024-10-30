@@ -232,9 +232,7 @@ defmodule EthereumJSONRPC.Arbitrum do
   """
   @spec l2_to_l1_event_parse(event_data) :: {
           non_neg_integer(),
-          # Hash.Address.t(),
           binary(),
-          # Hash.Address.t(),
           binary(),
           non_neg_integer(),
           non_neg_integer(),
@@ -243,8 +241,6 @@ defmodule EthereumJSONRPC.Arbitrum do
           binary()
         }
   def l2_to_l1_event_parse(event) do
-    # Logger.warning("event.data: #{inspect(Data.to_string(event.data))}")
-
     [
       caller,
       arb_block_number,

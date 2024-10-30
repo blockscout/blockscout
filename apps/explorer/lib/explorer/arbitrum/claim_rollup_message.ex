@@ -392,7 +392,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   defp get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
     # getting latest confirmed node index (L1)
     latest_confirmed =
-      Rpc.get_latest_confirmed_l2_to_l1_message_id(
+      Rpc.get_latest_confirmed_node_index(
         l1_rollup_address,
         json_l1_rpc_named_arguments
       )
