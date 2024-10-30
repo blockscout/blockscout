@@ -27,6 +27,8 @@
 
 ### 🐛 Bug Fixes
 
+- Filter non-traceable blocks before inserting them to internal txs fetcher queue ([#11074](https://github.com/blockscout/blockscout/issues/11074))
+- Import blocks before coin balances ([#11049](https://github.com/blockscout/blockscout/issues/11049))
 - Abi cache for non-proxied addresses ([#11065](https://github.com/blockscout/blockscout/issues/11065))
 - Celo collated gas price issue ([#11067](https://github.com/blockscout/blockscout/issues/11067))
 - Indexer memory limit for api instance ([#11066](https://github.com/blockscout/blockscout/issues/11066))
