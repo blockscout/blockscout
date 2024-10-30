@@ -262,16 +262,13 @@ defmodule EthereumJSONRPC.Arbitrum do
         number -> number
       end
 
-    # {:ok, caller_addr} = Hash.Address.cast(caller)
-
-    # {:ok, destination} = hex_value_to_integer(event.second_topic)
-
     caller_string = value_to_address(caller)
     destination_string = value_to_address(event.second_topic)
 
     {position, caller_string, destination_string, arb_block_number, eth_block_number, timestamp, callvalue, data}
   end
 
+  # Decode ABI-encoded data in accordance with the provided types
   @spec decode_data(binary() | map(), list()) :: list() | nil
   defp decode_data("0x", types) do
     for _ <- types, do: nil
@@ -287,6 +284,7 @@ defmodule EthereumJSONRPC.Arbitrum do
     |> TypeDecoder.decode_raw(types)
   end
 
+  # Casting value into the Ethereum address (hex-string, 0x-prefixed)
   @spec value_to_address(non_neg_integer() | binary()) :: String.t()
   defp value_to_address(value) do
     hex =

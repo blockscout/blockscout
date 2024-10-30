@@ -118,7 +118,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   }
 
   @doc """
-    Retrieves all L2ToL1Tx events from she specified transaction
+    Retrieves all L2ToL1Tx events from she specified transaction and convert them to the withdrawals
 
     In the most cases the transaction initiates a single L2->L1 message.
     But in general the transaction can include several messages
@@ -149,6 +149,24 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end)
   end
 
+  # Extract data from the L2ToL1Tx event and create internal structure describing L2->L1 withdrawal
+  #
+  # ## Parameters
+  # - `log`: an input log in form of `Explorer.Chain.Log.t()` structure
+  # - `outbox_contract`: the outbox contract (deployed on L1 chain)
+  # - `l1_rollup_address`: the main rollup contract (deployed on L1 chain)
+  # - `l1_rollup_address`: a keyword list of JSON-RPC configuration options for L1 chain
+  # - `l2_rollup_address`: a keyword list of JSON-RPC configuration options for L2 chain
+  #
+  # ## Returns
+  # - `Explorer.Arbitrum.Withdraw.t()` object which represents a single L2->L1 message associated with the given log
+  @spec log_to_withdraw(
+          Explorer.Chain.Log.t(),
+          EthereumJSONRPC.address(),
+          EthereumJSONRPC.address(),
+          list(),
+          list()
+        ) :: Explorer.Arbitrum.Withdraw.t()
   defp log_to_withdraw(
          log,
          outbox_contract,
@@ -198,6 +216,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     }
   end
 
+  # Internal routine used to convert `Explorer.Chain.Log.t()` structure
+  # into the `EthereumJSONRPC.Arbitrum.event_data()` type. It's needed
+  # to call `EthereumJSONRPC.Arbitrum.l2_to_l1_event_parse(event_data)` method
   @spec convert_explorer_log_to_raw(Explorer.Chain.Log.t()) :: Arbitrum.event_data()
   defp convert_explorer_log_to_raw(log) do
     %{
@@ -209,6 +230,15 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     }
   end
 
+  # Internal routine used to extract needed fields from the `finalizeInboundTransfer(...)` calldata.
+  # This calldata encapsulated into the L2ToL1Tx event and supposed to be executed on the TokenBridge contract
+  # during the withdraw claiming. It used here to obtain tokens withdraw info from the associated event.
+  @spec decode_withdraw_token_data(binary()) ::
+          %{
+            address: Explorer.Chain.Hash.Address.t(),
+            destination: Explorer.Chain.Hash.Address.t(),
+            amount: non_neg_integer()
+          }
   defp decode_withdraw_token_data(<<0x2E567B36::32, rest_data::binary>>) do
     [token, _, to, amount, _] = ABI.decode(@finalize_inbound_transfer_selector, rest_data)
 
@@ -279,6 +309,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
+  # Used to fetch extended withdrawal info based on the database object.
+  # It's used to proceed claim by message id.
+  @spec message_to_withdrawal(Explorer.Chain.Arbitrum.Message.t()) :: Explorer.Arbitrum.Withdraw.t() | nil
   defp message_to_withdrawal(message) do
     transaction_withdrawals = transaction_to_withdrawals(message.originating_transaction_hash)
 
@@ -287,6 +320,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     |> List.first()
   end
 
+  # Builds a claim transaction calldata based on extended withdraw info
+  @spec construct_claim(Explorer.Arbitrum.Withdraw.t()) ::
+          {:ok, [contract_address: binary(), calldata: binary()]} | {:error, :internal_error}
   defp construct_claim(withdrawal) do
     # getting needed L1 properties: RPC URL and Main Rollup contract address
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
@@ -341,11 +377,13 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
+  # Converts list of binaries into the hex-encoded 0x-prefixed strings
   defp raw_proof_to_hex(proof) do
     proof
     |> Enum.map(fn p -> "0x" <> Base.encode16(p, case: :lower) end)
   end
 
+  # Retrieving `size` parameter neede to construct outbox proof
   @spec get_size_for_proof(
           String.t(),
           EthereumJSONRPC.json_rpc_named_arguments(),
@@ -403,6 +441,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
+  # Find a L2 block by a given block's hash and extract `send_count` value
   defp get_send_count_from_block_hash(l2_block_hash, json_l2_rpc_named_arguments) do
     case Chain.hash_to_block(l2_block_hash, api?: true) do
       {:ok, block} ->
