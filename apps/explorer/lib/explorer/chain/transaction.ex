@@ -769,10 +769,10 @@ defmodule Explorer.Chain.Transaction do
           boolean(),
           [Chain.api?()],
           methods_map,
-          proxy_implementation_abi_map
+          smart_contract_full_abi_map
         ) :: error_type | success_type
         when methods_map: map(),
-             proxy_implementation_abi_map: map(),
+             smart_contract_full_abi_map: map(),
              error_type: {:error, any()} | {:error, :contract_not_verified | :contract_verified, list()},
              success_type: {:ok | binary(), any()} | {:ok, binary(), binary(), list()}
   def decoded_input_data(
@@ -780,7 +780,7 @@ defmodule Explorer.Chain.Transaction do
         skip_sig_provider? \\ false,
         options,
         methods_map \\ %{},
-        proxy_implementation_abi_map \\ %{}
+        smart_contract_full_abi_map \\ %{}
       )
 
   # skip decoding if there is no to_address
@@ -831,7 +831,7 @@ defmodule Explorer.Chain.Transaction do
         skip_sig_provider?,
         options,
         methods_map,
-        proxy_implementation_abi_map
+        smart_contract_full_abi_map
       ) do
     decoded_input_data(
       %__MODULE__{
@@ -842,7 +842,7 @@ defmodule Explorer.Chain.Transaction do
       skip_sig_provider?,
       options,
       methods_map,
-      proxy_implementation_abi_map
+      smart_contract_full_abi_map
     )
   end
 
@@ -856,7 +856,7 @@ defmodule Explorer.Chain.Transaction do
         skip_sig_provider?,
         options,
         methods_map,
-        proxy_implementation_abi_map
+        smart_contract_full_abi_map
       ) do
     decoded_input_data(
       %__MODULE__{
@@ -867,7 +867,7 @@ defmodule Explorer.Chain.Transaction do
       skip_sig_provider?,
       options,
       methods_map,
-      proxy_implementation_abi_map
+      smart_contract_full_abi_map
     )
   end
 
@@ -881,7 +881,7 @@ defmodule Explorer.Chain.Transaction do
         skip_sig_provider?,
         options,
         methods_map,
-        _proxy_implementation_abi_map
+        _smart_contract_full_abi_map
       ) do
     methods = check_methods_cache(method_id, methods_map, options)
 
@@ -922,9 +922,9 @@ defmodule Explorer.Chain.Transaction do
         skip_sig_provider?,
         options,
         methods_map,
-        proxy_implementation_abi_map
+        smart_contract_full_abi_map
       ) do
-    full_abi = check_full_abi_cache(smart_contract, proxy_implementation_abi_map, options)
+    full_abi = check_full_abi_cache(smart_contract, smart_contract_full_abi_map, options)
 
     case do_decoded_input_data(data, full_abi, hash) do
       # In some cases transactions use methods of some unpredictable contracts, so we can try to look up for method in a whole DB
@@ -938,7 +938,7 @@ defmodule Explorer.Chain.Transaction do
                skip_sig_provider?,
                options,
                methods_map,
-               proxy_implementation_abi_map
+               smart_contract_full_abi_map
              ) do
           {:error, :contract_not_verified, []} ->
             decode_function_call_via_sig_provider_wrapper(input, hash, skip_sig_provider?)
@@ -999,10 +999,10 @@ defmodule Explorer.Chain.Transaction do
 
   defp check_full_abi_cache(
          smart_contract,
-         proxy_implementation_abi_map,
+         smart_contract_full_abi_map,
          options
        ) do
-    Map.get_lazy(proxy_implementation_abi_map, smart_contract.address_hash, fn ->
+    Map.get_lazy(smart_contract_full_abi_map, smart_contract.address_hash, fn ->
       Proxy.combine_proxy_implementation_abi(smart_contract, options)
     end)
   end
@@ -1994,7 +1994,7 @@ defmodule Explorer.Chain.Transaction do
   """
   @spec decode_transactions([Transaction.t()], boolean(), Keyword.t()) :: [nil | {:ok, String.t(), String.t(), map()}]
   def decode_transactions(transactions, skip_sig_provider?, opts) do
-    proxy_implementation_abi_map = combine_proxy_implementation_abi_map(transactions)
+    smart_contract_full_abi_map = combine_smart_contract_full_abi_map(transactions)
 
     # first we assemble an empty methods map, so that decoded_input_data will skip ContractMethod.t() lookup and decoding
     empty_methods_map =
@@ -2005,12 +2005,12 @@ defmodule Explorer.Chain.Transaction do
       end)
       |> Enum.into(%{}, &{&1, []})
 
-    # try to decode transaction using full abi data from proxy_implementation_abi_map
+    # try to decode transaction using full abi data from smart_contract_full_abi_map
     decoded_transactions =
       transactions
       |> Enum.map(fn transaction ->
         transaction
-        |> decoded_input_data(skip_sig_provider?, opts, empty_methods_map, proxy_implementation_abi_map)
+        |> decoded_input_data(skip_sig_provider?, opts, empty_methods_map, smart_contract_full_abi_map)
         |> format_decoded_input()
       end)
       |> Enum.zip(transactions)
@@ -2032,7 +2032,7 @@ defmodule Explorer.Chain.Transaction do
       {nil, transaction} ->
         transaction
         |> Map.put(:to_address, %NotLoaded{})
-        |> decoded_input_data(skip_sig_provider?, opts, methods_map, proxy_implementation_abi_map)
+        |> decoded_input_data(skip_sig_provider?, opts, methods_map, smart_contract_full_abi_map)
         |> format_decoded_input()
 
       {decoded, _} ->
@@ -2040,7 +2040,7 @@ defmodule Explorer.Chain.Transaction do
     end)
   end
 
-  defp combine_proxy_implementation_abi_map(transactions) do
+  defp combine_smart_contract_full_abi_map(transactions) do
     # parse unique address hashes of smart-contracts from to_address and created_contract_address properties of the transactions list
     unique_to_address_hashes =
       transactions
