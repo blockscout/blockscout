@@ -265,6 +265,19 @@ defmodule Explorer.Factory do
     %Address{
       hash: address_hash()
     }
+    |> Map.merge(address_factory_chain_type_fields())
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :zksync ->
+      defp address_factory_chain_type_fields() do
+        %{
+          contract_code_refetched: true
+        }
+      end
+
+    _ ->
+      defp address_factory_chain_type_fields(), do: %{}
   end
 
   def address_name_factory do

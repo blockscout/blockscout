@@ -619,6 +619,14 @@ config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_BATCH_SIZE", 50),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_TIMEOUT", "250ms")
 
+config :explorer, Explorer.Migrator.SanitizeDuplicatedLogIndexLogs,
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_DUPLICATED_LOG_INDEX_LOGS_CONCURRENCY", 10),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_DUPLICATED_LOG_INDEX_LOGS_BATCH_SIZE", 500)
+
+config :explorer, Explorer.Migrator.RefetchContractCodes,
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_REFETCH_CONTRACT_CODES_CONCURRENCY", 5),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_REFETCH_CONTRACT_CODES_BATCH_SIZE", 100)
+
 config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
   batch_size: ConfigHelper.parse_integer_env_var("SHRINK_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),

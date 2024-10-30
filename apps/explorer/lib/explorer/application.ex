@@ -155,7 +155,8 @@ defmodule Explorer.Application do
         ]),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeMissingTokenBalances, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeReplacedTransactions, :indexer),
-        configure_mode_dependent_process(Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, :indexer)
+        configure_mode_dependent_process(Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, :indexer),
+        Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync)
       ]
       |> List.flatten()
 
