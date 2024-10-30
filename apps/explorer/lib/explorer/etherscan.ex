@@ -4,7 +4,18 @@ defmodule Explorer.Etherscan do
   """
 
   import Ecto.Query,
-    only: [from: 2, where: 3, union: 2, subquery: 1, order_by: 3, limit: 2, offset: 2, preload: 3, select_merge: 3]
+    only: [
+      from: 2,
+      where: 3,
+      union: 2,
+      subquery: 1,
+      order_by: 3,
+      limit: 2,
+      offset: 2,
+      preload: 2,
+      preload: 3,
+      select_merge: 3
+    ]
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
@@ -337,6 +348,7 @@ defmodule Explorer.Etherscan do
   defp maybe_preload_block(query) do
     if DenormalizationHelper.tt_denormalization_finished?() do
       query
+      |> preload(:transaction)
     else
       query
       |> preload([block: block], [{:block, block}, :transaction])
