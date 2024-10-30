@@ -10,8 +10,8 @@ defmodule Explorer.Chain.Import.Stage.BlockRelated do
   @addresses_runner Runner.Addresses
 
   @rest_runners [
-    Runner.Address.CoinBalances,
     Runner.Blocks,
+    Runner.Address.CoinBalances,
     Runner.Address.CoinBalancesDaily,
     Runner.Transactions,
     Runner.TokenTransfers
