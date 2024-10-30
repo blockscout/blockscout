@@ -111,7 +111,7 @@ defmodule Explorer.Chain.Block.Schema do
                         :zilliqa ->
                           elem(
                             quote do
-                              field(:zilliqa_view, :integer, null: false)
+                              field(:zilliqa_view, :integer)
 
                               has_one(:zilliqa_quorum_certificate, ZilliqaQuorumCertificate,
                                 foreign_key: :block_hash,
