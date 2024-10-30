@@ -220,7 +220,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
         base_query
         |> page_frame_sequences(paging_options)
         |> limit(^paging_options.page_size)
-        |> select_repo(options).all()
+        |> select_repo(options).all(timeout: :infinity)
     end
   end
 

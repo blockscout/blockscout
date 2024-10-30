@@ -133,7 +133,7 @@ defmodule Explorer.Chain.Optimism.TransactionBatch do
         |> join_association(:frame_sequence, :required)
         |> page_transaction_batches(paging_options)
         |> limit(^paging_options.page_size)
-        |> select_repo(options).all()
+        |> select_repo(options).all(timeout: :infinity)
     end
   end
 
@@ -174,7 +174,7 @@ defmodule Explorer.Chain.Optimism.TransactionBatch do
     |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
     |> join_associations(necessity_by_association)
-    |> select_repo(options).all()
+    |> select_repo(options).all(timeout: :infinity)
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query

@@ -74,7 +74,7 @@ defmodule Explorer.Chain.Optimism.Deposit do
         |> join_association(:l2_transaction, :required)
         |> page_deposits(paging_options)
         |> limit(^paging_options.page_size)
-        |> select_repo(options).all()
+        |> select_repo(options).all(timeout: :infinity)
     end
   end
 

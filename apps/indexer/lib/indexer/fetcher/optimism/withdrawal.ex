@@ -187,7 +187,8 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
             w.msg_nonce,
             ^nonce_max
           )
-      )
+      ),
+      timeout: :infinity
     )
   end
 
@@ -202,7 +203,8 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
             w.msg_nonce,
             ^nonce_min
           )
-      )
+      ),
+      timeout: :infinity
     )
   end
 

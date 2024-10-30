@@ -84,7 +84,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         base_query
         |> page_optimism_withdrawals(paging_options)
         |> limit(^paging_options.page_size)
-        |> select_repo(options).all()
+        |> select_repo(options).all(timeout: :infinity)
     end
   end
 
@@ -117,7 +117,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       )
 
     query
-    |> Repo.replica().all()
+    |> Repo.replica().all(timeout: :infinity)
     |> Enum.map(fn w ->
       msg_nonce =
         Bitwise.band(

@@ -58,7 +58,7 @@ defmodule Explorer.Chain.Optimism.OutputRoot do
         base_query
         |> page_output_roots(paging_options)
         |> limit(^paging_options.page_size)
-        |> select_repo(options).all()
+        |> select_repo(options).all(timeout: :infinity)
     end
   end
 
