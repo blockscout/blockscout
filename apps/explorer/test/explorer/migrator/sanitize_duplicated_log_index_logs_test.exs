@@ -7,7 +7,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
   alias Explorer.Chain.Token.Instance
   alias Explorer.Migrator.{SanitizeDuplicatedLogIndexLogs, MigrationStatus}
 
-  if Application.compile_env(:explorer, :chain_type) != :celo do
+  if Application.compile_env(:explorer, :chain_type) in [:polygon_zkevm, :rsk, :filecoin] do
     describe "Sanitize duplicated log index logs" do
       test "correctly identifies and updates duplicated log index logs" do
         block = insert(:block)
