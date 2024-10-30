@@ -21,11 +21,15 @@ defmodule EthereumJSONRPC.Blocks do
     :zilliqa ->
       @chain_type_fields quote(
                            do: [
-                             zilliqa_quorum_certificates_params: EthereumJSONRPC.Zilliqa.QuorumCertificates.params(),
-                             zilliqa_aggregate_quorum_certificates_params:
-                               EthereumJSONRPC.Zilliqa.AggregateQuorumCertificates.params(),
-                             zilliqa_nested_quorum_certificates_params:
+                             zilliqa_quorum_certificates_params: [
+                               EthereumJSONRPC.Zilliqa.QuorumCertificate.params()
+                             ],
+                             zilliqa_aggregate_quorum_certificates_params: [
+                               EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate.params()
+                             ],
+                             zilliqa_nested_quorum_certificates_params: [
                                EthereumJSONRPC.Zilliqa.NestedQuorumCertificates.params()
+                             ]
                            ]
                          )
 
@@ -94,9 +98,9 @@ defmodule EthereumJSONRPC.Blocks do
     |> extend_with_chain_type_fields(elixir_blocks)
   end
 
+  @spec extend_with_chain_type_fields(t(), elixir()) :: t()
   case Application.compile_env(:explorer, :chain_type) do
     :zilliqa ->
-      @spec extend_with_chain_type_fields(t(), [Block.elixir()]) :: t()
       defp extend_with_chain_type_fields(%__MODULE__{} = blocks, elixir_blocks) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         EthereumJSONRPC.Zilliqa.Helper.extend_blocks_struct(blocks, elixir_blocks)

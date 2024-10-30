@@ -9,7 +9,6 @@ defmodule EthereumJSONRPC.Block do
   alias EthereumJSONRPC.{Transactions, Uncles, Withdrawals}
 
   alias EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate, as: ZilliqaAggregateQuorumCertificate
-  alias EthereumJSONRPC.Zilliqa.NestedQuorumCertificates, as: ZilliqaNestedQuorumCertificates
   alias EthereumJSONRPC.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
 
   # Because proof of stake does not naturally produce uncles like proof of work,
@@ -50,15 +49,7 @@ defmodule EthereumJSONRPC.Block do
     :zilliqa ->
       @chain_type_fields quote(
                            do: [
-                             zilliqa_quorum_certificates: [
-                               ZilliqaQuorumCertificate.t()
-                             ],
-                             zilliqa_aggregate_quorum_certificates: [
-                               ZilliqaAggregateQuorumCertificate.t()
-                             ],
-                             zilliqa_nested_quorum_certificates: [
-                               ZilliqaNestedQuorumCertificates.t()
-                             ]
+                             zilliqa_view: non_neg_integer()
                            ]
                          )
 
@@ -530,9 +521,6 @@ defmodule EthereumJSONRPC.Block do
       uncles: Map.get(elixir, "uncles", [])
     }
   end
-
-  @spec chain_type_fields(params, elixir) :: params
-  defp chain_type_fields(params, elixir)
 
   case Application.compile_env(:explorer, :chain_type) do
     :rsk ->

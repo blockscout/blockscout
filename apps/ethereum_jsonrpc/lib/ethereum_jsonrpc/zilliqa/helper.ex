@@ -23,7 +23,7 @@ defmodule EthereumJSONRPC.Zilliqa.Helper do
           zilliqa_nested_quorum_certificates_params: [NestedQuorumCertificates.params()]
         }
 
-  @spec extend_blocks_struct(Blocks.t(), [Block.elixir()]) :: Blocks.t()
+  @spec extend_blocks_struct(Blocks.t(), Blocks.elixir()) :: Blocks.t()
   def extend_blocks_struct(%Blocks{} = module, elixir_blocks) do
     consensus_data_fields =
       Enum.reduce(
