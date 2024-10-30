@@ -331,7 +331,16 @@ defmodule Explorer.Etherscan do
     |> where_end_block_match_tt(options)
     |> limit(^options.page_size)
     |> offset(^offset(options))
-    |> preload([block: block], [{:block, block}, :transaction])
+    |> maybe_preload_block()
+  end
+
+  defp maybe_preload_block(query) do
+    if DenormalizationHelper.tt_denormalization_finished?() do
+      query
+    else
+      query
+      |> preload([block: block], [{:block, block}, :transaction])
+    end
   end
 
   @doc """
