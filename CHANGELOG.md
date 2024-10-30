@@ -27,6 +27,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix contract codes fetching for zksync chain type ([#11055](https://github.com/blockscout/blockscout/issues/11055))
 - Filter non-traceable blocks before inserting them to internal txs fetcher queue ([#11074](https://github.com/blockscout/blockscout/issues/11074))
 - Import blocks before coin balances ([#11049](https://github.com/blockscout/blockscout/issues/11049))
 - Abi cache for non-proxied addresses ([#11065](https://github.com/blockscout/blockscout/issues/11065))
