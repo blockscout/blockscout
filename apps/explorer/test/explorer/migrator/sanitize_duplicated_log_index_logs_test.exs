@@ -24,7 +24,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == nil
 
         SanitizeDuplicatedLogIndexLogs.start_link([])
-        Process.sleep(300)
+        :timer.sleep(500)
 
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == "completed"
         assert BackgroundMigrations.get_sanitize_duplicated_log_index_logs_finished() == true
@@ -103,7 +103,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == nil
 
         SanitizeDuplicatedLogIndexLogs.start_link([])
-        Process.sleep(300)
+        :timer.sleep(500)
 
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == "completed"
         assert BackgroundMigrations.get_sanitize_duplicated_log_index_logs_finished() == true
@@ -138,7 +138,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == nil
 
         SanitizeDuplicatedLogIndexLogs.start_link([])
-        Process.sleep(100)
+        :timer.sleep(100)
 
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == "completed"
         assert BackgroundMigrations.get_sanitize_duplicated_log_index_logs_finished() == true
