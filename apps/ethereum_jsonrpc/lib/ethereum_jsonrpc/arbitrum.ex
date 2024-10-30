@@ -81,25 +81,6 @@ defmodule EthereumJSONRPC.Arbitrum do
       "inputs" => [
         %{
           "internalType" => "uint64",
-          "name" => "blockNum",
-          "type" => "uint64"
-        }
-      ],
-      "name" => "findBatchContainingBlock",
-      "outputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "batch",
-          "type" => "uint64"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "uint64",
           "name" => "size",
           "type" => "uint64"
         },
@@ -366,7 +347,7 @@ defmodule EthereumJSONRPC.Arbitrum do
         {:ok, proof}
 
       {:error, err} ->
-        Logger.error("node_interface_contract.constructOutboxProof error occured: #{inspect(err)}")
+        Logger.error("node_interface_contract.constructOutboxProof error occurred: #{inspect(err)}")
         {:error, :invalid}
     end
   end
@@ -406,7 +387,7 @@ defmodule EthereumJSONRPC.Arbitrum do
         value
 
       {:error, err} ->
-        Logger.error("outbox_contract.isSpent(position) error occured: #{inspect(err)}")
+        Logger.error("outbox_contract.isSpent(position) error occurred: #{inspect(err)}")
         false
     end
   end

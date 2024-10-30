@@ -608,6 +608,38 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
+  Finds all `t:Explorer.Chain.Log.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
+
+  ## Parameters
+    - `transaction_hash`: a transaction hash defined as `Explorer.Chain.Hash.Full.t()`
+    - `topic0`: a log's topic which should to be fetched from the events emitted by transaction
+                in form of hex string (started with `0x` prefix)
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+  ## Options
+    * `:api?` - used to utilize a replica database instead of main
+
+  """
+  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary(), api?: boolean()) :: [Log.t()]
+  def transaction_to_logs_by_topic0(transaction_hash, topic0, options \\ []) when is_list(options) do
+    log_with_transactions =
+      from(log in Log,
+        inner_join: transaction in Transaction,
+        on:
+          transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
+            transaction.hash == log.transaction_hash
+      )
+
+    query =
+      log_with_transactions
+      |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
+      |> order_by(asc: :index)
+
+    query
+    |> select_repo(options).all()
+  end
+
+  @doc """
     Retrieves L2-to-L1 message by message id.
 
     ## Parameters

@@ -15,7 +15,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias EthereumJSONRPC
   alias EthereumJSONRPC.{Arbitrum, Encoder}
   alias Explorer.Chain
-  alias Explorer.Chain.Arbitrum.Reader
+  alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
   alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Hash.Address
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
@@ -141,7 +141,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     outbox_contract =
       Arbitrum.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
-    logs = Chain.transaction_to_logs_by_topic0(transaction_hash, @l2_to_l1_event)
+    logs = ArbitrumReader.transaction_to_logs_by_topic0(transaction_hash, @l2_to_l1_event)
 
     logs
     |> Enum.map(fn log ->
@@ -253,7 +253,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   """
   @spec claim(non_neg_integer()) :: {:ok, [contract_address: String.t(), calldata: String.t()]} | {:error, term()}
   def claim(message_id) do
-    case Reader.l2_to_l1_message_with_id(message_id, api?: true) do
+    case ArbitrumReader.l2_to_l1_message_with_id(message_id, api?: true) do
       nil ->
         Logger.error("Unable to find withdrawal with id #{message_id}")
         {:error, :not_found}

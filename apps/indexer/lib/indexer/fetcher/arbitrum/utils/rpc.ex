@@ -81,8 +81,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
   # findBatchContainingBlock(uint64 blockNum)
   @selector_find_batch_containing_block "81f1adaf"
-  # constructOutboxProof(uint64 size, uint64 leaf)
-  @selector_construct_outbox_proof "42696350"
   @node_interface_contract_abi [
     %{
       "inputs" => [
@@ -98,64 +96,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           "internalType" => "uint64",
           "name" => "batch",
           "type" => "uint64"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "size",
-          "type" => "uint64"
-        },
-        %{
-          "internalType" => "uint64",
-          "name" => "leaf",
-          "type" => "uint64"
-        }
-      ],
-      "name" => "constructOutboxProof",
-      "outputs" => [
-        %{
-          "internalType" => "bytes32",
-          "name" => "send",
-          "type" => "bytes32"
-        },
-        %{
-          "internalType" => "bytes32",
-          "name" => "root",
-          "type" => "bytes32"
-        },
-        %{
-          "internalType" => "bytes32[]",
-          "name" => "proof",
-          "type" => "bytes32[]"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
-  # isSpent(uint256 index)
-  @selector_is_spent "5a129efe"
-  @outbox_contract_abi [
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "uint256",
-          "name" => "index",
-          "type" => "uint256"
-        }
-      ],
-      "name" => "isSpent",
-      "outputs" => [
-        %{
-          "internalType" => "bool",
-          "name" => "",
-          "type" => "bool"
         }
       ],
       "stateMutability" => "view",
