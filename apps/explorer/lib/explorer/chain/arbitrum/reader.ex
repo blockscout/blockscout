@@ -608,6 +608,32 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
+    Retrieves L2-to-L1 messages initiated by specified transaction.
+
+    The messages are filtered by the originating transaction hash (with any status).
+    In the common case a transaction can initiate several messages.
+
+    ## Parameters
+    - `transaction_hash`: The transaction hash which initiated the messages.
+
+    ## Returns
+    - Instances of `Explorer.Chain.Arbitrum.Message` initiated by the transaction
+      with the given hash, or `[]` if no messages with the given status are found.
+  """
+  @spec l2_to_l1_messages_by_transaction_hash(Explorer.Chain.Hash.Full.t()) :: [
+          Message.t()
+        ]
+  def l2_to_l1_messages_by_transaction_hash(transaction_hash) do
+    query =
+      from(msg in Message,
+        where: msg.direction == :from_l2 and msg.originating_transaction_hash == ^transaction_hash,
+        order_by: [desc: msg.message_id]
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
   Finds all `t:Explorer.Chain.Log.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
 
   ## Parameters
