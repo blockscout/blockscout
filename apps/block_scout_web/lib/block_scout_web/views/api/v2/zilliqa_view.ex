@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
   if @chain_type == :zilliqa do
     import Explorer.Chain.Zilliqa.Helper, only: [scilla_transaction?: 1]
     # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
-    alias Explorer.Chain.{Address, Block, Transaction}, warn: false
+    alias Explorer.Chain.{Block, Transaction}, warn: false
     alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}, warn: false
 
     @scilla_transactions_v Decimal.new(0)
@@ -52,17 +52,9 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
     @spec extend_transaction_json_response(map(), Transaction.t()) :: map()
     def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
       Map.put(out_json, :zilliqa, %{
-        is_scilla: is_scilla_transaction(transaction)
+        is_scilla: scilla_transaction?(transaction)
       })
     end
-
-    @doc """
-    Checks if a transaction is a Scilla transaction.
-
-    Scilla transactions have `v` set to #{@scilla_transactions_v}.
-    """
-    @spec is_scilla_contract_address(Transaction.t()) :: boolean()
-    def is_scilla_transaction(%Transaction{v: v}), do: v == @scilla_transactions_v
 
     @spec add_quorum_certificate(map(), Block.t()) :: map()
     defp add_quorum_certificate(
