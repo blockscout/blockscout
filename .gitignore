@@ -58,6 +58,8 @@ dump.rdb
 *.iml
 
 .vscode
+.cursorignore
+.cursorrules
 
 **.dec**
 
