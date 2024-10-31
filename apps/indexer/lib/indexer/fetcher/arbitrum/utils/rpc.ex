@@ -14,59 +14,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
   @default_binary_search_threshold 1000
 
-  # latestConfirmed()
-  @selector_latest_confirmed "65f7f80d"
-  # getNode(uint64 nodeNum)
-  @selector_get_node "92c8134c"
-  @rollup_contract_abi [
-    %{
-      "inputs" => [],
-      "name" => "latestConfirmed",
-      "outputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "",
-          "type" => "uint64"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "",
-          "type" => "uint64"
-        }
-      ],
-      "name" => "getNode",
-      "outputs" => [
-        %{
-          "type" => "tuple",
-          "name" => "",
-          "internalType" => "struct Node",
-          "components" => [
-            %{"type" => "bytes32", "name" => "stateHash", "internalType" => "bytes32"},
-            %{"type" => "bytes32", "name" => "challengeHash", "internalType" => "bytes32"},
-            %{"type" => "bytes32", "name" => "confirmData", "internalType" => "bytes32"},
-            %{"type" => "uint64", "name" => "prevNum", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "deadlineBlock", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "noChildConfirmedBeforeBlock", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "stakerCount", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "childStakerCount", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "firstChildBlock", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "latestChildNumber", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "createdAtBlock", "internalType" => "uint64"},
-            %{"type" => "bytes32", "name" => "nodeHash", "internalType" => "bytes32"}
-          ]
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
   # getKeysetCreationBlock(bytes32 ksHash)
   @selector_get_keyset_creation_block "258f0495"
   @selector_sequencer_inbox_contract_abi [
@@ -119,66 +66,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   def transaction_by_hash_request(%{id: id, hash: transaction_hash})
       when is_binary(transaction_hash) and is_integer(id) do
     EthereumJSONRPC.request(%{id: id, method: "eth_getTransactionByHash", params: [transaction_hash]})
-  end
-
-  @doc """
-    Retrieves the latest confirmed node index for withdrawals Merkle tree.
-
-    This function fetches an actual confirmed L2->L1 node from the Arbitrum rollup address.
-    It invokes contract method `latestConfirmed()` to obtain the required information.
-
-    ## Parameters
-    - `rollup_address`: The address of the Arbitrum rollup contract from which
-                        information is being retrieved.
-    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-
-    ## Returns
-    - A positive integer representing latest confirmed node index
-  """
-  @spec get_latest_confirmed_node_index(
-          EthereumJSONRPC.address(),
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: non_neg_integer()
-  def get_latest_confirmed_node_index(rollup_address, json_rpc_named_arguments) do
-    read_contract_and_handle_result_as_integer(
-      rollup_address,
-      @selector_latest_confirmed,
-      [],
-      @rollup_contract_abi,
-      json_rpc_named_arguments
-    )
-  end
-
-  @doc """
-    Retrieves rollup node by index
-
-    This function fetches node information by specified index
-    It invokes Rollup contract method `getNode()` to obtain the required data.
-
-    ## Parameters
-    - `rollup_address`: The address of the Arbitrum rollup contract from which
-                        information is being retrieved.
-    - `node_index`: index of the requested node
-    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection (L1).
-
-    ## Returns
-    - A list represented decoded `Node` tuple from the Rollup contract ABI
-  """
-  @spec get_node(
-          EthereumJSONRPC.address(),
-          non_neg_integer(),
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: any()
-  def get_node(rollup_address, node_index, json_rpc_named_arguments) do
-    [
-      %{
-        contract_address: rollup_address,
-        method_id: @selector_get_node,
-        args: [node_index]
-      }
-    ]
-    |> IndexerHelper.read_contracts_with_retries(@rollup_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
-    |> Kernel.elem(0)
   end
 
   @doc """

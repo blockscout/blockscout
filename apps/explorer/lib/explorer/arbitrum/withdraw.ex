@@ -9,7 +9,7 @@ defmodule Explorer.Arbitrum.Withdraw do
   @typedoc """
   Descriptor of the L2ToL1Tx event message on Arbitrum rollups:
     * `message_id` - The ID of the message used for referencing.
-    * `status` - The status of the withdrawal: `:unknown`, `:unconfirmed`, `:confirmed`, `:executed`
+    * `status` - The status of the withdrawal: `:unknown`, `:sent`, `:confirmed`, `:relayed`
     * `caller` - The sender of the withdraw transaction.
     * `destination` - The receiver of the funds on L1 chain.
     * `arb_block_number` - The number of the block where originating transaction is included.
@@ -46,7 +46,7 @@ defmodule Explorer.Arbitrum.Withdraw do
         }
 
   @typep message_id :: non_neg_integer()
-  @typep status :: :unconfirmed | :confirmed | :executed
+  @typep status :: :sent | :confirmed | :relayed
   @typep caller :: Hash.Address.t()
   @typep destination :: Hash.Address.t()
   @typep arb_block_number :: non_neg_integer()

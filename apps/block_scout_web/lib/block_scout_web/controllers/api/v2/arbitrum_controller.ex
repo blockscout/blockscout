@@ -81,12 +81,12 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         |> put_status(:not_found)
         |> render(:message, %{message: "cannot find requested withdrawal"})
 
-      {:error, :unconfirmed} ->
+      {:error, :sent} ->
         conn
         |> put_status(:bad_request)
         |> render(:message, %{message: "withdrawal is unconfirmed yet"})
 
-      {:error, :executed} ->
+      {:error, :relayed} ->
         conn
         |> put_status(:bad_request)
         |> render(:message, %{message: "withdrawal was executed already"})

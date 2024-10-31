@@ -13,12 +13,12 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
   alias ABI.TypeDecoder
   alias EthereumJSONRPC
-  alias EthereumJSONRPC.{Arbitrum, Encoder}
+  alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
+  alias EthereumJSONRPC.Encoder
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
   alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Hash.Address
-  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
 
   require Logger
@@ -139,7 +139,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     l1_rollup_address = config_common[:l1_rollup_address]
 
     outbox_contract =
-      Arbitrum.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
+      ArbitrumRpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
     logs = ArbitrumReader.transaction_to_logs_by_topic0(transaction_hash, @l2_to_l1_event)
 
@@ -178,18 +178,20 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     {position, caller, destination, arb_block_number, eth_block_number, l2_timestamp, call_value, data} =
       log
       |> convert_explorer_log_to_raw()
-      |> Arbitrum.l2_to_l1_event_parse()
+      |> ArbitrumRpc.l2_to_l1_event_parse()
+
+    {:ok, is_withdrawal_spent} = ArbitrumRpc.withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments)
 
     status =
-      case Arbitrum.withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
+      case is_withdrawal_spent do
         true ->
-          :executed
+          :relayed
 
         false ->
           case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
             nil -> :unknown
             size when size > position -> :confirmed
-            _ -> :unconfirmed
+            _ -> :sent
           end
       end
 
@@ -219,7 +221,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # Internal routine used to convert `Explorer.Chain.Log.t()` structure
   # into the `EthereumJSONRPC.Arbitrum.event_data()` type. It's needed
   # to call `EthereumJSONRPC.Arbitrum.l2_to_l1_event_parse(event_data)` method
-  @spec convert_explorer_log_to_raw(Explorer.Chain.Log.t()) :: Arbitrum.event_data()
+  @spec convert_explorer_log_to_raw(Explorer.Chain.Log.t()) :: ArbitrumRpc.event_data()
   defp convert_explorer_log_to_raw(log) do
     %{
       :data => Data.to_string(log.data),
@@ -300,11 +302,11 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           withdrawal when withdrawal.status == :confirmed ->
             construct_claim(withdrawal)
 
-          w when w.status == :unconfirmed ->
-            {:error, :unconfirmed}
+          w when w.status == :sent ->
+            {:error, :sent}
 
-          w when w.status == :executed ->
-            {:error, :executed}
+          w when w.status == :relayed ->
+            {:error, :relayed}
         end
     end
   end
@@ -332,7 +334,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     l1_rollup_address = config_common[:l1_rollup_address]
 
     outbox_contract =
-      Arbitrum.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
+      ArbitrumRpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
     case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
       nil ->
@@ -341,7 +343,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
       size ->
         # now we are ready to construct outbox proof
-        case Arbitrum.construct_outbox_proof(
+        case ArbitrumRpc.construct_outbox_proof(
                @node_interface_address,
                size,
                withdrawal.message_id,
@@ -389,17 +391,15 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         ) :: non_neg_integer() | nil
   defp get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
     # getting latest confirmed node index (L1)
-    latest_confirmed =
-      Rpc.get_latest_confirmed_node_index(
+    {:ok, latest_confirmed} =
+      ArbitrumRpc.get_latest_confirmed_node_index(
         l1_rollup_address,
         json_l1_rpc_named_arguments
       )
 
     # getting block number (L1) where latest confirmed node was created
-    case Rpc.get_node(l1_rollup_address, latest_confirmed, json_l1_rpc_named_arguments) do
-      [{:ok, [fields]}] ->
-        node_creation_block_number = Kernel.elem(fields, 10)
-
+    case ArbitrumRpc.get_node_creation_block_number(l1_rollup_address, latest_confirmed, json_l1_rpc_named_arguments) do
+      {:ok, node_creation_block_number} ->
         # request NodeCreated event from that block
         case IndexerHelper.get_logs(
                node_creation_block_number,
@@ -422,7 +422,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             nil
         end
 
-      [{:error, error}] ->
+      {:error, error} ->
         Logger.error("Cannot fetch node creation block number: #{inspect(error)}")
         nil
     end

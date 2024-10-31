@@ -32,6 +32,10 @@ defmodule EthereumJSONRPC.Arbitrum do
   @selector_sequencer_inbox "ee35f327"
   # bridge()
   @selector_bridge "e78cea92"
+  # latestConfirmed()
+  @selector_latest_confirmed "65f7f80d"
+  # getNode(uint64 nodeNum)
+  @selector_get_node "92c8134c"
   @rollup_contract_abi [
     %{
       "inputs" => [],
@@ -67,6 +71,52 @@ defmodule EthereumJSONRPC.Arbitrum do
           "internalType" => "address",
           "name" => "",
           "type" => "address"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [],
+      "name" => "latestConfirmed",
+      "outputs" => [
+        %{
+          "internalType" => "uint64",
+          "name" => "",
+          "type" => "uint64"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [
+        %{
+          "internalType" => "uint64",
+          "name" => "",
+          "type" => "uint64"
+        }
+      ],
+      "name" => "getNode",
+      "outputs" => [
+        %{
+          "type" => "tuple",
+          "name" => "",
+          "internalType" => "struct Node",
+          "components" => [
+            %{"type" => "bytes32", "name" => "stateHash", "internalType" => "bytes32"},
+            %{"type" => "bytes32", "name" => "challengeHash", "internalType" => "bytes32"},
+            %{"type" => "bytes32", "name" => "confirmData", "internalType" => "bytes32"},
+            %{"type" => "uint64", "name" => "prevNum", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "deadlineBlock", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "noChildConfirmedBeforeBlock", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "stakerCount", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "childStakerCount", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "firstChildBlock", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "latestChildNumber", "internalType" => "uint64"},
+            %{"type" => "uint64", "name" => "createdAtBlock", "internalType" => "uint64"},
+            %{"type" => "bytes32", "name" => "nodeHash", "internalType" => "bytes32"}
+          ]
         }
       ],
       "stateMutability" => "view",
@@ -209,6 +259,80 @@ defmodule EthereumJSONRPC.Arbitrum do
   defp atomized_key(@selector_outbox), do: :outbox
   defp atomized_key(@selector_sequencer_inbox), do: :sequencer_inbox
   defp atomized_key(@selector_bridge), do: :bridge
+
+  @doc """
+    Retrieves the latest confirmed node index for withdrawals Merkle tree.
+
+    This function fetches an actual confirmed L2->L1 node from the Arbitrum rollup address.
+    It invokes contract method `latestConfirmed()` to obtain the required information.
+
+    ## Parameters
+    - `rollup_address`: The address of the Arbitrum rollup contract from which
+                        information is being retrieved.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection (L1 chain).
+
+    ## Returns
+    - {:ok, number} - where `number` is a positive integer representing the latest confirmed node index
+      {:error, _} - in case of any failure
+  """
+  @spec get_latest_confirmed_node_index(
+          EthereumJSONRPC.address(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:ok, non_neg_integer()} | {:error, any()}
+  def get_latest_confirmed_node_index(rollup_address, json_rpc_l1_named_arguments) do
+    case [
+           %{
+             contract_address: rollup_address,
+             method_id: @selector_latest_confirmed,
+             args: []
+           }
+         ]
+         |> EthereumJSONRPC.execute_contract_functions(@rollup_contract_abi, json_rpc_l1_named_arguments)
+         |> List.first() do
+      {:ok, [value]} ->
+        {:ok, value}
+
+      {:error, err} ->
+        Logger.error("rollup_contract.latestConfirmed() error occurred: #{inspect(err)}")
+        {:error, err}
+    end
+  end
+
+  @doc """
+  Retrieves the block number in which the rollup node with the provided index was created.
+
+  This function fetches node information by specified node index
+  It invokes Rollup contract method `getNode(nodeNum)` to obtain the required data.
+
+  ## Parameters
+  - `rollup_address`: The address of the Arbitrum rollup contract from which
+                    information is being retrieved.
+  - `node_index`: index of the requested rollup node
+  - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection (L1).
+
+  ## Returns
+  - {:ok, number} - where `number` is block number (L1) in which the rollup node was created
+    {:error, _} - in case of any failure
+  """
+  @spec get_node_creation_block_number(
+          EthereumJSONRPC.address(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:ok, non_neg_integer()} | {:error, any()}
+  def get_node_creation_block_number(rollup_address, node_index, json_rpc_l1_named_arguments) do
+    case [
+           %{
+             contract_address: rollup_address,
+             method_id: @selector_get_node,
+             args: [node_index]
+           }
+         ]
+         |> EthereumJSONRPC.execute_contract_functions(@rollup_contract_abi, json_rpc_l1_named_arguments)
+         |> List.first() do
+      {:ok, [fields]} -> {:ok, fields |> Kernel.elem(10)}
+      {:error, err} -> {:error, err}
+    end
+  end
 
   @doc """
     Parses an L2-to-L1 event, extracting relevant information from the event's data.
@@ -359,14 +483,14 @@ defmodule EthereumJSONRPC.Arbitrum do
         connection for L1 chain.
 
     ## Returns
-    - `true` if message was created, confirmed and claimed on L1 chain.
-            Otherwise returns `false`.
+    - `{:ok, is_spent}`, where `is_spent` equals `true` if message was created, confirmed and claimed on L1
+      `{:error, _}` in case of any failure
   """
   @spec withdrawal_spent?(
           EthereumJSONRPC.address(),
           non_neg_integer(),
           EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: boolean()
+        ) :: {:ok, boolean()} | {:error, any()}
   def withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
     case [
            %{
@@ -378,11 +502,11 @@ defmodule EthereumJSONRPC.Arbitrum do
          |> EthereumJSONRPC.execute_contract_functions(@outbox_contract_abi, json_l1_rpc_named_arguments)
          |> List.first() do
       {:ok, [value]} ->
-        value
+        {:ok, value}
 
       {:error, err} ->
         Logger.error("outbox_contract.isSpent(position) error occurred: #{inspect(err)}")
-        false
+        {:error, err}
     end
   end
 end
