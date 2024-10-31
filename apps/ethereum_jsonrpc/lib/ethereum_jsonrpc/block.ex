@@ -20,36 +20,36 @@ defmodule EthereumJSONRPC.Block do
     :rsk ->
       @chain_type_fields quote(
                            do: [
-                             bitcoin_merged_mining_header: EthereumJSONRPC.data(),
-                             bitcoin_merged_mining_coinbase_transaction: EthereumJSONRPC.data(),
-                             bitcoin_merged_mining_merkle_proof: EthereumJSONRPC.data(),
-                             hash_for_merged_mining: EthereumJSONRPC.data(),
-                             minimum_gas_price: non_neg_integer()
+                             {optional(:bitcoin_merged_mining_header), EthereumJSONRPC.data()},
+                             {optional(:bitcoin_merged_mining_coinbase_transaction), EthereumJSONRPC.data()},
+                             {optional(:bitcoin_merged_mining_merkle_proof), EthereumJSONRPC.data()},
+                             {optional(:hash_for_merged_mining), EthereumJSONRPC.data()},
+                             {optional(:minimum_gas_price), non_neg_integer()}
                            ]
                          )
 
     :ethereum ->
       @chain_type_fields quote(
                            do: [
-                             withdrawals_root: EthereumJSONRPC.hash(),
-                             blob_gas_used: non_neg_integer(),
-                             excess_blob_gas: non_neg_integer()
+                             {optional(:withdrawals_root), EthereumJSONRPC.hash()},
+                             {optional(:blob_gas_used), non_neg_integer()},
+                             {optional(:excess_blob_gas), non_neg_integer()}
                            ]
                          )
 
     :arbitrum ->
       @chain_type_fields quote(
                            do: [
-                             send_count: non_neg_integer(),
-                             send_root: EthereumJSONRPC.hash(),
-                             l1_block_number: non_neg_integer()
+                             {optional(:send_count), non_neg_integer()},
+                             {optional(:send_root), EthereumJSONRPC.hash()},
+                             {optional(:l1_block_number), non_neg_integer()}
                            ]
                          )
 
     :zilliqa ->
       @chain_type_fields quote(
                            do: [
-                             zilliqa_view: non_neg_integer()
+                             {optional(:zilliqa_view), non_neg_integer()}
                            ]
                          )
 
@@ -522,6 +522,7 @@ defmodule EthereumJSONRPC.Block do
     }
   end
 
+  @spec chain_type_fields(params, elixir) :: params
   case Application.compile_env(:explorer, :chain_type) do
     :rsk ->
       defp chain_type_fields(params, elixir) do
