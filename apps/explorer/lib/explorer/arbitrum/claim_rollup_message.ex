@@ -339,11 +339,11 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         Logger.error("Cannot get size for proof")
         {:error, :internal_error}
 
-      l2_block_send_count ->
+      size ->
         # now we are ready to construct outbox proof
         case Arbitrum.construct_outbox_proof(
                @node_interface_address,
-               l2_block_send_count,
+               size,
                withdrawal.message_id,
                json_l2_rpc_named_arguments
              ) do
@@ -368,9 +368,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             {:ok, [contract_address: outbox_contract, calldata: calldata]}
 
           {:error, _} ->
-            Logger.error(
-              "Unable to construct proof with size = #{l2_block_send_count}, leaf = #{withdrawal.message_id}"
-            )
+            Logger.error("Unable to construct proof with size = #{size}, leaf = #{withdrawal.message_id}")
 
             {:error, :internal_error}
         end
@@ -411,24 +409,13 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
                json_l1_rpc_named_arguments
              ) do
           {:ok, [node_created_event]} ->
-            [
-              _execution_hash,
-              {_, {{[l2_block_hash, _], _}, _}, _},
-              _after_inbox_batch_acc,
-              _wasm_module_root,
-              _inbox_max_count
-            ] =
-              node_created_event
-              |> Map.get("data")
-              |> String.trim_leading("0x")
-              |> Base.decode16!(case: :mixed)
-              |> TypeDecoder.decode_raw(@node_created_data_abi)
+            l2_block_hash = l2_block_hash_from_node_created_event(node_created_event)
 
             {:ok, l2_block_hash} =
               l2_block_hash
               |> Hash.Full.cast()
 
-            get_send_count_from_block_hash(l2_block_hash, json_l2_rpc_named_arguments)
+            messages_count_up_to_block_with_hash(l2_block_hash, json_l2_rpc_named_arguments)
 
           _ ->
             Logger.error("Cannot fetch NodeCreated event in L1 block #{node_creation_block_number}")
@@ -442,7 +429,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   end
 
   # Find a L2 block by a given block's hash and extract `send_count` value
-  defp get_send_count_from_block_hash(l2_block_hash, json_l2_rpc_named_arguments) do
+  # `send_count` field represents amount of L2->L1 messages sent up to this block
+  @spec messages_count_up_to_block_with_hash(Hash.Full.t(), list()) :: non_neg_integer()
+  defp messages_count_up_to_block_with_hash(l2_block_hash, json_l2_rpc_named_arguments) do
     case Chain.hash_to_block(l2_block_hash, api?: true) do
       {:ok, block} ->
         Map.get(block, :send_count)
@@ -463,5 +452,26 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             nil
         end
     end
+  end
+
+  # When NodeCreated event emitted on L1 main rollup contract
+  # it contains associated L2 block hash.
+  # The following method extracts this hash from the NodeCreated event
+  @spec l2_block_hash_from_node_created_event(%{data: binary()}) :: binary()
+  defp l2_block_hash_from_node_created_event(event) do
+    [
+      _execution_hash,
+      {_, {{[l2_block_hash, _], _}, _}, _},
+      _after_inbox_batch_acc,
+      _wasm_module_root,
+      _inbox_max_count
+    ] =
+      event
+      |> Map.get("data")
+      |> String.trim_leading("0x")
+      |> Base.decode16!(case: :mixed)
+      |> TypeDecoder.decode_raw(@node_created_data_abi)
+
+    l2_block_hash
   end
 end
