@@ -5,7 +5,8 @@
 	"workspaceFolder": "/workspace",
 	"postCreateCommand": {
 		"safe-directory": "git config --global --add safe.directory ${containerWorkspaceFolder}",
-		"deps": "mix deps.get"
+		"deps": "mix deps.get",
+		"known_hosts": "sudo chown vscode:vscode /home/vscode/.ssh && ssh-keyscan github.com > /home/vscode/.ssh/known_hosts"
 	},
 	"remoteEnv": {
 		"PATH": "${containerEnv:PATH}:${containerWorkspaceFolder}/.devcontainer/bin"
@@ -37,7 +38,6 @@
 	// Uncomment and adjust the private key path to the one you use to authenticate on GitHub
 	// if you want to have ability to push to GitHub from the container.
 	// "mounts": [
-	// 	"source=${localEnv:HOME}/.ssh/known_hosts,target=/home/vscode/.ssh/known_hosts,type=bind,consistency=cached",
 	// 	"source=${localEnv:HOME}/.ssh/config,target=/home/vscode/.ssh/config,type=bind,consistency=cached",
 	// 	// Make sure that the private key can be used to authenticate on GitHub
 	// 	"source=${localEnv:HOME}/.ssh/id_rsa,target=/home/vscode/.ssh/id_rsa,type=bind,consistency=cached"
