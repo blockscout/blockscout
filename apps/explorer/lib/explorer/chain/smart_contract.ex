@@ -142,7 +142,11 @@ defmodule Explorer.Chain.SmartContract do
                        _ -> ~w(compiler_version)a
                      end)
 
-  @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a
+  @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a ++
+                           (case Application.compile_env(:explorer, :chain_type) do
+                              :zilliqa -> ~w(compiler_version)a
+                              _ -> []
+                            end)
 
   @optional_changeset_attrs ~w(abi compiler_settings)a
   @optional_invalid_contract_changeset_attrs ~w(autodetect_constructor_args)a
