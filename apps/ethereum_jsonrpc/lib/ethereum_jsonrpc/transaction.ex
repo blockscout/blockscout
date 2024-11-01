@@ -307,7 +307,15 @@ defmodule EthereumJSONRPC.Transaction do
     |> chain_type_fields(elixir)
   end
 
-  def do_elixir_to_params(
+  # Converts a map of the transaction parameters to the map with the corresponding atom parameters.
+  #
+  # ## Parameters
+  # - `transaction`: The input map.
+  #
+  # ## Returns
+  # - The resulting map.
+  @spec do_elixir_to_params(%{String.t() => any()}) :: %{atom() => any()}
+  defp do_elixir_to_params(
         %{
           "blockHash" => block_hash,
           "blockNumber" => block_number,
@@ -354,7 +362,7 @@ defmodule EthereumJSONRPC.Transaction do
 
   # txpool_content method on Erigon node returns transaction data
   # without gas price
-  def do_elixir_to_params(
+  defp do_elixir_to_params(
         %{
           "blockHash" => block_hash,
           "blockNumber" => block_number,
@@ -399,7 +407,7 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   # for legacy transactions without maxPriorityFeePerGas and maxFeePerGas
-  def do_elixir_to_params(
+  defp do_elixir_to_params(
         %{
           "blockHash" => block_hash,
           "blockNumber" => block_number,
@@ -440,7 +448,7 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   # for legacy transactions without type, maxPriorityFeePerGas and maxFeePerGas
-  def do_elixir_to_params(
+  defp do_elixir_to_params(
         %{
           "blockHash" => block_hash,
           "blockNumber" => block_number,
@@ -479,7 +487,7 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   # for transactions without gasPrice, maxPriorityFeePerGas and maxFeePerGas
-  def do_elixir_to_params(
+  defp do_elixir_to_params(
         %{
           "blockHash" => block_hash,
           "blockNumber" => block_number,
