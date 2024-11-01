@@ -644,28 +644,8 @@ defmodule Explorer.Chain.SmartContract do
   @spec compose_address_for_unverified_smart_contract(map(), any()) :: map()
   def compose_address_for_unverified_smart_contract(%{smart_contract: smart_contract} = address_result, options)
       when is_nil(smart_contract) do
-    smart_contract = %{
-      updated: %__MODULE__{
-        address_hash: address_result.hash
-      },
-      implementation_updated_at: nil,
-      implementation_address_fetched?: false,
-      refetch_necessity_checked?: false
-    }
-
-    {implementation_address_hash, _names, _proxy_type} =
-      Implementation.get_implementation(
-        smart_contract,
-        Keyword.put(options, :proxy_without_abi?, true)
-      )
-
-    implementation_smart_contract =
-      implementation_address_hash
-      |> Proxy.implementation_to_smart_contract(options)
-
     address_verified_bytecode_twin_contract =
-      implementation_smart_contract ||
-        get_address_verified_bytecode_twin_contract(address_result.hash, options).verified_contract
+      get_address_verified_bytecode_twin_contract(address_result.hash, options).verified_contract
 
     if address_verified_bytecode_twin_contract do
       add_bytecode_twin_info_to_contract(address_result, address_verified_bytecode_twin_contract, address_result.hash)
@@ -677,10 +657,10 @@ defmodule Explorer.Chain.SmartContract do
   def compose_address_for_unverified_smart_contract(address_result, _hash, _options), do: address_result
 
   def single_implementation_smart_contract_from_proxy(proxy_hash, options) do
-    {implementation_address_hashes, _names, _proxy_type} = Implementation.get_implementation(proxy_hash, options)
+    implementation = Implementation.get_implementation(proxy_hash, options)
 
-    if implementation_address_hashes && Enum.count(implementation_address_hashes) == 1 do
-      implementation_address_hashes
+    if implementation && Enum.count(implementation.address_hashes) == 1 do
+      implementation.address_hashes
       |> Enum.at(0)
       |> Proxy.implementation_to_smart_contract(options)
     else

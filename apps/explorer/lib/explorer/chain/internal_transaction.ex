@@ -8,6 +8,8 @@ defmodule Explorer.Chain.InternalTransaction do
   alias Explorer.Chain.DenormalizationHelper
   alias Explorer.Chain.InternalTransaction.{Action, CallType, Result, Type}
 
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+
   @typep paging_options :: {:paging_options, PagingOptions.t()}
   @typep api? :: {:api?, true | false}
 
@@ -832,8 +834,8 @@ defmodule Explorer.Chain.InternalTransaction do
         preloads =
           DenormalizationHelper.extend_transaction_preload([
             :block,
-            [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]],
-            [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]]
+            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
           ])
 
         __MODULE__

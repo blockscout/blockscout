@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.BlockChannel do
   """
   use BlockScoutWeb, :channel
 
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+
   alias BlockScoutWeb.API.V2.BlockView, as: BlockViewAPI
   alias BlockScoutWeb.{BlockView, ChainView}
   alias Explorer.Repo
@@ -27,7 +29,7 @@ defmodule BlockScoutWeb.BlockChannel do
       ) do
     rendered_block =
       BlockViewAPI.render("block.json", %{
-        block: block |> Repo.preload(miner: [:names, :smart_contract, :proxy_implementations]),
+        block: block |> Repo.preload(miner: [:names, :smart_contract, proxy_implementations_association()]),
         socket: nil
       })
 

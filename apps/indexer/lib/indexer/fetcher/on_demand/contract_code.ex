@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
   @spec trigger_fetch(Address.t()) :: :ok
   def trigger_fetch(address) do
     if is_nil(address.contract_code) do
-      GenServer.cast(__MODULE__, {:fetch, address})
+      GenServer.cast(__MODULE__, {:fetch, address}) |> dbg()
     end
   end
 
@@ -40,14 +40,15 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
           json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments()
         }) :: :ok
   defp fetch_contract_code(address, state) do
-    with {:need_to_fetch, true} <- {:need_to_fetch, fetch?(address)},
+    with {:need_to_fetch, true} <- {:need_to_fetch, fetch?(address)} |> dbg(),
          {:retries_number, {retries_number, updated_at}} <-
-           {:retries_number, AddressContractCodeFetchAttempt.get_retries_number(address.hash)},
+           {:retries_number, AddressContractCodeFetchAttempt.get_retries_number(address.hash)} |> dbg(),
          updated_at_ms = DateTime.to_unix(updated_at, :millisecond),
          {:retry, true} <-
            {:retry,
             Helper.current_time() - updated_at_ms >
-              threshold(retries_number)} do
+              threshold(retries_number)}
+           |> dbg() do
       fetch_and_broadcast_bytecode(address.hash, state)
     else
       {:need_to_fetch, false} ->
@@ -96,7 +97,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
             fetch_codes(
               [%{block_quantity: "latest", address: to_string(address_hash)}],
               state.json_rpc_named_arguments
-            )},
+            )}
+           |> dbg(),
          contract_code_object = List.first(fetched_codes),
          false <- is_nil(contract_code_object),
          true <- contract_code_object.code !== "0x" do

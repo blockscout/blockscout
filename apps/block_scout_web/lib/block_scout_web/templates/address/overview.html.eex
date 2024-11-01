@@ -124,9 +124,9 @@
           <% end %>
           <!-- Implementation -->
           <%= if @is_proxy do %>
-            <% {implementation_addresses, implementation_names, _proxy_type} = Implementation.get_implementation(@address.smart_contract) %>
-            <% implementation_address_ = Enum.at(implementation_addresses, 0) %>
-            <% name = Enum.at(implementation_names, 0) %>
+            <% implementation = Implementation.get_implementation(@address.smart_contract) %>
+            <% implementation_address_ = implementation && Enum.at(implementation.address_hashes, 0) %>
+            <% name = implementation && Enum.at(implementation.names, 0) %>
             <% implementation_address = implementation_address_ || "0x0000000000000000000000000000000000000000" %>
             <dl class="row">
               <dt class="col-sm-4 col-md-4 col-lg-3 text-muted">

@@ -27,6 +27,8 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
 
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+
   @check_broadcast_sequence_period 500
 
   case Application.compile_env(:explorer, :chain_type) do
@@ -181,8 +183,18 @@ defmodule BlockScoutWeb.Notifier do
         DenormalizationHelper.extend_transaction_preload([
           :token,
           :transaction,
-          from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-          to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
+          from_address: [
+            :scam_badge,
+            :names,
+            :smart_contract,
+            proxy_implementations_association()
+          ],
+          to_address: [
+            :scam_badge,
+            :names,
+            :smart_contract,
+            proxy_implementations_association()
+          ]
         ])
       )
 
@@ -205,9 +217,9 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :transactions, :realtime, transactions}) do
     base_preloads = [
       :block,
-      created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-      from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-      to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
+      created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
     ]
 
     preloads = if API_V2.enabled?(), do: [:token_transfers | base_preloads], else: base_preloads

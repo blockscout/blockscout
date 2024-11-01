@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   alias Ecto.Changeset
   alias Explorer.Chain
 
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+
   def render("message.json", assigns) do
     AccountView.render("message.json", assigns)
   end
@@ -198,7 +200,9 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   defp get_address(address_hash) do
     case Chain.hash_to_address(
            address_hash,
-           [necessity_by_association: %{smart_contract: :optional, proxy_implementations: :optional}],
+           [
+             necessity_by_association: %{:smart_contract => :optional, proxy_implementations_association() => :optional}
+           ],
            false
          ) do
       {:ok, address} -> address

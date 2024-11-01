@@ -58,6 +58,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     field(:address_hashes, {:array, Hash.Address}, null: false)
     field(:names, {:array, :string}, null: false)
 
+    has_many(:addresses, Address, foreign_key: :hash, references: :address_hashes)
+
     belongs_to(
       :address,
       Address,
@@ -133,7 +135,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   @doc """
   Returns implementation address, name and proxy type for the given SmartContract
   """
-  @spec get_implementation(any(), any()) :: {any(), any(), atom() | nil}
+  @spec get_implementation(any(), any()) :: t() | nil
   def get_implementation(smart_contract, options \\ [])
 
   def get_implementation(
@@ -226,33 +228,27 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       case Task.yield(get_implementation_address_hash_task, timeout) ||
              Task.ignore(get_implementation_address_hash_task) do
         {:ok, :empty} ->
-          {[], [], nil}
+          nil
 
         {:ok, :error} ->
-          format_proxy_implementations_response(proxy_implementations)
+          proxy_implementations
 
         {:ok, %__MODULE__{} = result} ->
-          format_proxy_implementations_response(result)
+          result
 
         _ ->
-          format_proxy_implementations_response(proxy_implementations)
+          proxy_implementations
       end
     else
-      format_proxy_implementations_response(proxy_implementations)
+      proxy_implementations
     end
   end
 
-  def get_implementation(_, _), do: {[], [], nil}
+  def get_implementation(_, _), do: nil
 
   defp fetch_implementation?(implementation_address_fetched?, refetch_necessity_checked?, implementation_updated_at) do
     (!implementation_address_fetched? || !refetch_necessity_checked?) &&
       check_implementation_refetch_necessity(implementation_updated_at)
-  end
-
-  defp format_proxy_implementations_response(proxy_implementations) do
-    {(proxy_implementations && db_implementation_data_converter(proxy_implementations.address_hashes)) || [],
-     (proxy_implementations && db_implementation_data_converter(proxy_implementations.names)) || [],
-     proxy_implementations && proxy_implementations.proxy_type}
   end
 
   @doc """
@@ -415,14 +411,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     |> Repo.update()
   end
 
-  defp db_implementation_data_converter(nil), do: nil
-
-  defp db_implementation_data_converter(list) when is_list(list),
-    do: list |> Enum.map(&db_implementation_data_converter(&1))
-
-  defp db_implementation_data_converter(string) when is_binary(string), do: string
-  defp db_implementation_data_converter(other), do: to_string(other)
-
   @doc """
   Returns proxy's implementation names
   """
@@ -440,4 +428,38 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   end
 
   def names(_, _), do: []
+
+  if Application.compile_env(:explorer, :chain_type) == :filecoin do
+    def addresses_association_for_filecoin(nested_ids) do
+      dbg(nested_ids)
+      query = from(address in Address, where: address.hash in ^List.flatten(nested_ids))
+
+      addresses_map =
+        query
+        |> Repo.replica().all()
+        |> Map.new(&{&1.hash, &1})
+
+      for ids <- nested_ids,
+          address <- ids |> Enum.map(&addresses_map[&1]) do
+        {ids, address}
+      end
+      |> dbg()
+    end
+
+    def proxy_implementations_association do
+      [proxy_implementations: proxy_implementations_addresses_association()]
+    end
+
+    def proxy_implementations_addresses_association do
+      [addresses: &__MODULE__.addresses_association_for_filecoin/1]
+    end
+  else
+    def proxy_implementations_association do
+      :proxy_implementations
+    end
+
+    def proxy_implementations_addresses_association do
+      []
+    end
+  end
 end

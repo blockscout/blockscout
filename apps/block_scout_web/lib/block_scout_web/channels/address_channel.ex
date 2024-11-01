@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.AddressChannel do
   use BlockScoutWeb, :channel
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias BlockScoutWeb.API.V2.AddressView, as: AddressViewAPI
   alias BlockScoutWeb.API.V2.SmartContractView, as: SmartContractViewAPI
@@ -49,18 +50,18 @@ defmodule BlockScoutWeb.AddressChannel do
   end
 
   @transaction_associations [
-                              from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
+                              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
                               to_address: [
                                 :scam_badge,
                                 :names,
                                 :smart_contract,
-                                :proxy_implementations
+                                proxy_implementations_association()
                               ],
                               created_contract_address: [
                                 :scam_badge,
                                 :names,
                                 :smart_contract,
-                                :proxy_implementations
+                                proxy_implementations_association()
                               ]
                             ] ++
                               @chain_type_transaction_associations
@@ -414,8 +415,8 @@ defmodule BlockScoutWeb.AddressChannel do
           token_transfers
           |> Repo.preload([
             [
-              from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-              to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
+              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+              to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
             ]
           ]),
         conn: nil

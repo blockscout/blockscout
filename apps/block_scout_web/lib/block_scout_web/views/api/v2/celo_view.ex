@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   require Logger
 
   import Explorer.Chain.SmartContract, only: [dead_address_hash_string: 0]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
@@ -20,7 +21,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     necessity_by_association: %{
       :names => :optional,
       :smart_contract => :optional,
-      :proxy_implementations => :optional
+      proxy_implementations_association() => :optional
     },
     api?: true
   ]
