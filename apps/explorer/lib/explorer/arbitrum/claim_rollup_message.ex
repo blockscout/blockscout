@@ -11,7 +11,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   https://docs.arbitrum.io/how-arbitrum-works/arbos/l2-l1-messaging
   """
 
-  alias BlockScoutWeb.Notifiers.Arbitrum
   alias ABI.TypeDecoder
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
@@ -143,16 +142,24 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     |> Enum.map(fn log ->
       message_id = Hash.to_integer(log.fourth_topic)
 
-      case Enum.find(messages, fn msg -> msg.message_id == message_id end) do
-        nil ->
-          # there are no associated message found for the log: try to fetch it from the RPC
-          log_to_withdraw(log)
-
-        msg ->
-          # we have associated message in the database: just convert it to the withdrawal
-          message_to_withdrawal(msg, log)
-      end
+      msg = Enum.find(messages, fn msg -> msg.message_id == message_id end)
+      convert_log_to_withdraw(log, msg)
     end)
+  end
+
+  # Helper routine which select appropriate way of getting withdrawal info
+  @spec convert_log_to_withdraw(Explorer.Chain.Log.t(), Explorer.Chain.Arbitrum.Message.t()) ::
+          Explorer.Arbitrum.Withdraw.t()
+  defp convert_log_to_withdraw(log, msg) do
+    case msg do
+      nil ->
+        # there are no associated message found for the log: try to fetch it from the RPC
+        log_to_withdraw_with_rpc(log)
+
+      msg ->
+        # we have associated message in the database: just convert it to the withdrawal
+        message_to_withdrawal(msg, log)
+    end
   end
 
   # Convert L2ToL1Tx event to the internal structure describing L2->L1 withdrawal with additional RPC requests
@@ -162,8 +169,8 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   #
   # ## Returns
   # - `Explorer.Arbitrum.Withdraw.t()` object which represents a single L2->L1 message associated with the given log
-  @spec log_to_withdraw(Explorer.Chain.Log.t()) :: Explorer.Arbitrum.Withdraw.t()
-  defp log_to_withdraw(log) do
+  @spec log_to_withdraw_with_rpc(Explorer.Chain.Log.t()) :: Explorer.Arbitrum.Withdraw.t()
+  defp log_to_withdraw_with_rpc(log) do
     # getting needed L1\L2 properties: RPC URL and Main Rollup contract address
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
     json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
@@ -289,36 +296,47 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         Logger.error("Unable to find withdrawal with id #{message_id}")
         {:error, :not_found}
 
-      msg ->
-        # request associated logs from the database
-        logs = ArbitrumReader.transaction_to_logs_by_topic0(msg.originating_transaction_hash, @l2_to_l1_event)
+      message ->
+        claim_message(message)
+    end
+  end
 
-        log =
-          logs
-          |> Enum.find(fn log -> Hash.to_integer(log.fourth_topic) == message_id end)
+  # Construct a claim transaction calldata based on the provided message
+  @spec claim_message(Explorer.Chain.Arbitrum.Message.t()) ::
+          {:ok, list({:contract_address, binary()} | {:calldata, binary()})}
+          | {:error, :any}
+  defp claim_message(message) do
+    # request associated logs from the database
+    logs = ArbitrumReader.transaction_to_logs_by_topic0(message.originating_transaction_hash, @l2_to_l1_event)
 
-        if log == nil do
-          Logger.error("Unable to find log with message_id #{message_id}")
+    log =
+      logs
+      |> Enum.find(fn log -> Hash.to_integer(log.fourth_topic) == message.message_id end)
+
+    if log == nil do
+      Logger.error("Unable to find log with message_id #{message.message_id}")
+      {:error, :not_found}
+    else
+      case message_to_withdrawal(message, log) do
+        nil ->
+          Logger.error(
+            "Unable to find withdrawal with id #{message.message_id} in transaction #{Hash.to_string(message.originating_transaction_hash)}"
+          )
+
           {:error, :not_found}
-        else
-          case message_to_withdrawal(msg, log) do
-            nil ->
-              Logger.error(
-                "Unable to find withdrawal with id #{message_id} in transaction #{Hash.to_string(msg.originating_transaction_hash)}"
-              )
 
-              {:error, :not_found}
+        withdrawal when withdrawal.status == :confirmed ->
+          construct_claim(withdrawal)
 
-            withdrawal when withdrawal.status == :confirmed ->
-              construct_claim(withdrawal)
+        w when w.status == :initiated ->
+          {:error, :initiated}
 
-            w when w.status == :sent ->
-              {:error, :sent}
+        w when w.status == :sent ->
+          {:error, :sent}
 
-            w when w.status == :relayed ->
-              {:error, :relayed}
-          end
-        end
+        w when w.status == :relayed ->
+          {:error, :relayed}
+      end
     end
   end
 

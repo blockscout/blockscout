@@ -86,6 +86,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         |> put_status(:bad_request)
         |> render(:message, %{message: "withdrawal is unconfirmed yet"})
 
+      {:error, :initiated} ->
+        conn
+        |> put_status(:bad_request)
+        |> render(:message, %{message: "withdrawal is just initiated, pls wait a bit"})
+
       {:error, :relayed} ->
         conn
         |> put_status(:bad_request)

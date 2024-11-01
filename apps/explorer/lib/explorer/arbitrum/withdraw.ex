@@ -46,7 +46,7 @@ defmodule Explorer.Arbitrum.Withdraw do
         }
 
   @typep message_id :: non_neg_integer()
-  @typep status :: :sent | :confirmed | :relayed
+  @typep status :: :initiated | :sent | :confirmed | :relayed
   @typep caller :: Hash.Address.t()
   @typep destination :: Hash.Address.t()
   @typep arb_block_number :: non_neg_integer()
