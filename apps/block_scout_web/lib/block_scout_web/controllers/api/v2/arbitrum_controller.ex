@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       {:error, :initiated} ->
         conn
         |> put_status(:bad_request)
-        |> render(:message, %{message: "withdrawal is just initiated, pls wait a bit"})
+        |> render(:message, %{message: "withdrawal is just initiated, please wait a bit"})
 
       {:error, :relayed} ->
         conn

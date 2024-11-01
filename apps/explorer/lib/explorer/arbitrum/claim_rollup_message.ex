@@ -140,37 +140,130 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
     logs
     |> Enum.map(fn log ->
-      message_id = Hash.to_integer(log.fourth_topic)
-
-      msg = Enum.find(messages, fn msg -> msg.message_id == message_id end)
-      convert_log_to_withdraw(log, msg)
+      msg = Enum.find(messages, fn msg -> msg.message_id == Hash.to_integer(log.fourth_topic) end)
+      # The way to convert log to `Withdrawal` depends on the presence of the associated message
+      log_to_withdrawal(log, msg)
     end)
   end
 
-  # Helper routine which select appropriate way of getting withdrawal info
-  @spec convert_log_to_withdraw(Explorer.Chain.Log.t(), Explorer.Chain.Arbitrum.Message.t()) ::
-          Explorer.Arbitrum.Withdraw.t()
-  defp convert_log_to_withdraw(log, msg) do
-    case msg do
-      nil ->
-        # there are no associated message found for the log: try to fetch it from the RPC
-        log_to_withdraw_with_rpc(log)
+  @doc """
+    Construct calldata for claiming L2->L1 message on L1 chain
 
-      msg ->
-        # we have associated message in the database: just convert it to the withdrawal
-        message_to_withdrawal(msg, log)
+    To claim a message on L1 user should use method of th Outbox smart contract:
+    `executeTransaction(proof, index, l2Sender, to, l2Block, l1Block, l2Timestamp, value, data)`
+    The first parameter, outbox proof should be calculated separately with NodeInterface's
+    method `constructOutboxProof(size, leaf)`.
+
+    ## Parameters
+    - `message_id`: `position` field of the associated `L2ToL1Tx` event.
+
+    ## Returns
+    - `{:ok, [contract_address: String, calldata: String]}` | `{:error, _}`
+      where `contract_address` - the address where claim transaction should be sent (Outbox on L1),
+            `calldata` - transaction raw calldata starting with selector
+  """
+  @spec claim(non_neg_integer()) :: {:ok, [contract_address: String.t(), calldata: String.t()]} | {:error, term()}
+  def claim(message_id) do
+    case ArbitrumReader.l2_to_l1_message_with_id(message_id, api?: true) do
+      nil ->
+        Logger.error("Unable to find withdrawal with id #{message_id}")
+        {:error, :not_found}
+
+      message ->
+        claim_message(message)
     end
   end
 
-  # Convert L2ToL1Tx event to the internal structure describing L2->L1 withdrawal with additional RPC requests
-  #
-  # ## Parameters
-  # - `log`: an input log in form of `Explorer.Chain.Log.t()` structure
-  #
-  # ## Returns
-  # - `Explorer.Arbitrum.Withdraw.t()` object which represents a single L2->L1 message associated with the given log
-  @spec log_to_withdraw_with_rpc(Explorer.Chain.Log.t()) :: Explorer.Arbitrum.Withdraw.t()
-  defp log_to_withdraw_with_rpc(log) do
+  # Construct a claim transaction calldata based on the provided message
+  @spec claim_message(Explorer.Chain.Arbitrum.Message.t()) ::
+          {:ok, list({:contract_address, binary()} | {:calldata, binary()})}
+          | {:error, term()}
+  defp claim_message(message) do
+    # request associated log from the database
+    case message.originating_transaction_hash
+         |> ArbitrumReader.transaction_to_logs_by_topic0(@l2_to_l1_event)
+         |> Enum.find(fn log -> Hash.to_integer(log.fourth_topic) == message.message_id end) do
+      nil ->
+        Logger.error("Unable to find log with message_id #{message.message_id}")
+        {:error, :not_found}
+
+      log ->
+        case log_to_withdrawal(log, message) do
+          nil ->
+            Logger.error(
+              "Unable to find withdrawal with id #{message.message_id} in transaction #{Hash.to_string(message.originating_transaction_hash)}"
+            )
+
+            {:error, :not_found}
+
+          withdrawal when withdrawal.status == :confirmed ->
+            construct_claim(withdrawal)
+
+          w when w.status == :initiated ->
+            {:error, :initiated}
+
+          w when w.status == :sent ->
+            {:error, :sent}
+
+          w when w.status == :relayed ->
+            {:error, :relayed}
+        end
+    end
+  end
+
+  # Convert `Explorer.Chain.Arbitrum.Message.t()` with an associated L2ToL1Tx event data
+  # (`Explorer.Chain.Log.t()`) to the `Explorer.Arbitrum.Withdraw.t()` structure
+  # We need associated event to extract additional fields which are not reflected in the database message
+  # The method doesn't request additional data from the RPC or DB, it just parses the provided structures
+  @spec log_to_withdrawal(
+          Explorer.Chain.Log.t(),
+          Explorer.Chain.Arbitrum.Message.t() | nil
+        ) :: Explorer.Arbitrum.Withdraw.t() | nil
+
+  defp log_to_withdrawal(log, nil) do
+    log_to_withdraw(log)
+  end
+
+  defp log_to_withdrawal(log, message) do
+    # getting needed fields from the L2ToL1Tx event
+    {position, caller, destination, arb_block_number, eth_block_number, l2_timestamp, call_value, data} =
+      log
+      |> convert_explorer_log_to_raw()
+      |> ArbitrumRpc.l2_to_l1_event_parse()
+
+    if position == message.message_id do
+      # extract token withdrawal info from the associated event's data
+      token = decode_withdraw_token_data(data)
+
+      data_hex =
+        data
+        |> Base.encode16(case: :lower)
+
+      {:ok, caller_address} = Hash.Address.cast(caller)
+      {:ok, destination_address} = Hash.Address.cast(destination)
+
+      %Explorer.Arbitrum.Withdraw{
+        message_id: Hash.to_integer(log.fourth_topic),
+        status: message.status,
+        caller: caller_address,
+        destination: destination_address,
+        arb_block_number: arb_block_number,
+        eth_block_number: eth_block_number,
+        l2_timestamp: l2_timestamp,
+        callvalue: call_value,
+        data: "0x" <> data_hex,
+        token: token
+      }
+    else
+      Logger.error("message_to_withdrawal: log doesn't correspond message (#{position} != #{message.message_id})")
+      nil
+    end
+  end
+
+  # Convert L2ToL1Tx event to the internal structure describing L2->L1 withdrawal.
+  # To get all required fields the method uses RPC calls to the L1 and L2 nodes.
+  @spec log_to_withdraw(Explorer.Chain.Log.t()) :: Explorer.Arbitrum.Withdraw.t()
+  defp log_to_withdraw(log) do
     # getting needed L1\L2 properties: RPC URL and Main Rollup contract address
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
     json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
@@ -247,6 +340,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
             destination: Explorer.Chain.Hash.Address.t(),
             amount: non_neg_integer()
           }
+          | nil
   defp decode_withdraw_token_data(<<0x2E567B36::32, rest_data::binary>>) do
     [token, _, to, amount, _] = ABI.decode(@finalize_inbound_transfer_selector, rest_data)
 
@@ -271,117 +365,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
   defp decode_withdraw_token_data(_binary) do
     nil
-  end
-
-  @doc """
-    Construct calldata for claiming L2->L1 message on L1 chain
-
-    To claim a message on L1 user should use method of th Outbox smart contract:
-    `executeTransaction(proof, index, l2Sender, to, l2Block, l1Block, l2Timestamp, value, data)`
-    The first parameter, outbox proof should be calculated separately with NodeInterface's
-    method `constructOutboxProof(size, leaf)`.
-
-    ## Parameters
-    - `message_id`: `position` field of the associated `L2ToL1Tx` event.
-
-    ## Returns
-    - `{:ok, [contract_address: String, calldata: String]}` | `{:error, _}`
-      where `contract_address` - the address where claim transaction should be sent (Outbox on L1),
-            `calldata` - transaction raw calldata starting with selector
-  """
-  @spec claim(non_neg_integer()) :: {:ok, [contract_address: String.t(), calldata: String.t()]} | {:error, term()}
-  def claim(message_id) do
-    case ArbitrumReader.l2_to_l1_message_with_id(message_id, api?: true) do
-      nil ->
-        Logger.error("Unable to find withdrawal with id #{message_id}")
-        {:error, :not_found}
-
-      message ->
-        claim_message(message)
-    end
-  end
-
-  # Construct a claim transaction calldata based on the provided message
-  @spec claim_message(Explorer.Chain.Arbitrum.Message.t()) ::
-          {:ok, list({:contract_address, binary()} | {:calldata, binary()})}
-          | {:error, :any}
-  defp claim_message(message) do
-    # request associated logs from the database
-    logs = ArbitrumReader.transaction_to_logs_by_topic0(message.originating_transaction_hash, @l2_to_l1_event)
-
-    log =
-      logs
-      |> Enum.find(fn log -> Hash.to_integer(log.fourth_topic) == message.message_id end)
-
-    if log == nil do
-      Logger.error("Unable to find log with message_id #{message.message_id}")
-      {:error, :not_found}
-    else
-      case message_to_withdrawal(message, log) do
-        nil ->
-          Logger.error(
-            "Unable to find withdrawal with id #{message.message_id} in transaction #{Hash.to_string(message.originating_transaction_hash)}"
-          )
-
-          {:error, :not_found}
-
-        withdrawal when withdrawal.status == :confirmed ->
-          construct_claim(withdrawal)
-
-        w when w.status == :initiated ->
-          {:error, :initiated}
-
-        w when w.status == :sent ->
-          {:error, :sent}
-
-        w when w.status == :relayed ->
-          {:error, :relayed}
-      end
-    end
-  end
-
-  # Convert `Explorer.Chain.Arbitrum.Message.t()` with an associated L2ToL1Tx event data
-  # (`Explorer.Chain.Log.t()`) to the `Explorer.Arbitrum.Withdraw.t()` structure
-  # We need associated event to extract additional fields which are not reflected in the database message
-  # The method doesn't request additional data from the RPC or DB, it just parses the provided structures
-  @spec message_to_withdrawal(
-          Explorer.Chain.Arbitrum.Message.t(),
-          Explorer.Chain.Log.t()
-        ) :: Explorer.Arbitrum.Withdraw.t() | nil
-  defp message_to_withdrawal(message, log) do
-    # getting needed fields from the L2ToL1Tx event
-    {position, caller, destination, arb_block_number, eth_block_number, l2_timestamp, call_value, data} =
-      log
-      |> convert_explorer_log_to_raw()
-      |> ArbitrumRpc.l2_to_l1_event_parse()
-
-    if position == message.message_id do
-      # extract token withdrawal info from the associated event's data
-      token = decode_withdraw_token_data(data)
-
-      data_hex =
-        data
-        |> Base.encode16(case: :lower)
-
-      {:ok, caller_address} = Hash.Address.cast(caller)
-      {:ok, destination_address} = Hash.Address.cast(destination)
-
-      %Explorer.Arbitrum.Withdraw{
-        message_id: Hash.to_integer(log.fourth_topic),
-        status: message.status,
-        caller: caller_address,
-        destination: destination_address,
-        arb_block_number: arb_block_number,
-        eth_block_number: eth_block_number,
-        l2_timestamp: l2_timestamp,
-        callvalue: call_value,
-        data: "0x" <> data_hex,
-        token: token
-      }
-    else
-      Logger.error("message_to_withdrawal: log doesn't correspond message (#{position} != #{message.message_id})")
-      nil
-    end
   end
 
   # Builds a claim transaction calldata based on extended withdraw info
@@ -453,16 +436,22 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         ) :: non_neg_integer() | nil
   defp get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
     # getting latest confirmed node index (L1) from the database
-    {:ok, latest_confirmed} =
+    {:ok, latest_confirmed_node_index} =
       ArbitrumRpc.get_latest_confirmed_node_index(
         l1_rollup_address,
         json_l1_rpc_named_arguments
       )
 
-    case ArbitrumRpc.get_node_creation_block_number(l1_rollup_address, latest_confirmed, json_l1_rpc_named_arguments) do
-      {:ok, node_creation_block_number} ->
+    # getting L1 block number where that node was created
+    case ArbitrumRpc.get_node_creation_block_number(
+           l1_rollup_address,
+           latest_confirmed_node_index,
+           json_l1_rpc_named_arguments
+         ) do
+      {:ok, node_creation_l1_block_number} ->
+        # getting associated L2 block and extracting `send_count` value from it
         l1_block_number_to_withdrawals_count(
-          node_creation_block_number,
+          node_creation_l1_block_number,
           l1_rollup_address,
           json_l1_rpc_named_arguments,
           json_l2_rpc_named_arguments
@@ -487,7 +476,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
          json_l1_rpc_named_arguments,
          json_l2_rpc_named_arguments
        ) do
-    # request NodeCreated event from that block
+    # request NodeCreated event from L1 block emitted by the Rollup contract
     case IndexerHelper.get_logs(
            node_creation_l1_block_number,
            node_creation_l1_block_number,
@@ -496,12 +485,14 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
            json_l1_rpc_named_arguments
          ) do
       {:ok, [node_created_event]} ->
+        # extract L2 block hash from the NodeCreated event
         l2_block_hash = l2_block_hash_from_node_created_event(node_created_event)
 
         {:ok, l2_block_hash} =
           l2_block_hash
           |> Hash.Full.cast()
 
+        # get `send_count` value from the L2 block which represents amount of L2->L1 messages sent up to this block
         messages_count_up_to_block_with_hash(l2_block_hash, json_l2_rpc_named_arguments)
 
       _ ->
