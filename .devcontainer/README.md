@@ -42,13 +42,14 @@ Key benefits include:
    c. Uncomment the `mounts` section:
       ```json
       "mounts": [
-        "source=${localEnv:HOME}/.ssh/known_hosts,target=/home/vscode/.ssh/known_hosts,type=bind,consistency=cached",
         "source=${localEnv:HOME}/.ssh/config,target=/home/vscode/.ssh/config,type=bind,consistency=cached",
         "source=${localEnv:HOME}/.ssh/id_rsa,target=/home/vscode/.ssh/id_rsa,type=bind,consistency=cached"
       ],
       ```
    
    d. Adjust the paths if your SSH keys are stored in a different location.
+
+   e. Use `git update-index --assume-unchanged .devcontainer/devcontainer.json` to prevent the changes to `devcontainer.json` from appearing in `git status` and VS Code's Source Control. To undo the changes, use `git update-index --no-assume-unchanged .devcontainer/devcontainer.json`.
 
 4. When prompted, click "Reopen in Container". If not prompted, press `F1`, type "Remote-Containers: Reopen in Container", and press Enter.
 
