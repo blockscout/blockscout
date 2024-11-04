@@ -11,8 +11,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
-  alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.Visualize.Sol2uml
 
   require Logger

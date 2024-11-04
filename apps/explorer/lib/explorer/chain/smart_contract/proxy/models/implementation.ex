@@ -13,12 +13,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       select: 3
     ]
 
-  import Explorer.Chain, only: [select_repo: 1, string_to_address_hash: 1]
-
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Counters.AverageBlockTime
-  alias Explorer.Repo
   alias Timex.Duration
 
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
@@ -90,7 +88,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   def get_proxy_implementations(proxy_address_hash, options \\ []) do
     proxy_address_hash
     |> get_proxy_implementations_query()
-    |> select_repo(options).one()
+    |> Chain.select_repo(options).one()
   end
 
   @doc """
@@ -104,7 +102,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   def get_proxy_implementations_for_multiple_proxies(proxy_address_hashes, options) do
     proxy_address_hashes
     |> get_proxy_implementations_by_multiple_hashes_query()
-    |> select_repo(options).all()
+    |> Chain.select_repo(options).all()
   end
 
   @doc """
@@ -115,7 +113,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     proxy_address_hash
     |> get_proxy_implementations_query()
     |> select([p], p.updated_at)
-    |> select_repo(options).one()
+    |> Chain.select_repo(options).one()
   end
 
   defp get_proxy_implementations_query(proxy_address_hash) do
@@ -340,7 +338,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     {implementation_addresses, implementation_names} =
       implementation_address_hash_strings
       |> Enum.map(fn implementation_address_hash_string ->
-        with {:ok, implementation_address_hash} <- string_to_address_hash(implementation_address_hash_string),
+        with {:ok, implementation_address_hash} <- Chain.string_to_address_hash(implementation_address_hash_string),
              {:implementation, {%SmartContract{name: name}, _}} <- {
                :implementation,
                SmartContract.address_hash_to_smart_contract_with_bytecode_twin(implementation_address_hash, options)
@@ -431,7 +429,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   if Application.compile_env(:explorer, :chain_type) == :filecoin do
     def addresses_association_for_filecoin(nested_ids) do
-      dbg(nested_ids)
       query = from(address in Address, where: address.hash in ^List.flatten(nested_ids))
 
       addresses_map =
@@ -443,7 +440,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
           address <- ids |> Enum.map(&addresses_map[&1]) do
         {ids, address}
       end
-      |> dbg()
     end
 
     def proxy_implementations_association do

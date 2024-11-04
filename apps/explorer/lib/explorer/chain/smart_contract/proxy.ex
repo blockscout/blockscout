@@ -97,21 +97,20 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
           with false <- is_nil(implementation),
                false <- Enum.empty?(implementation.address_hashes) do
-            implementation.address_hashes
-            |> Enum.reduce_while(false, fn implementation_address_hash, acc ->
-              with false <- implementation_address_hash.bytes == burn_address_hash.bytes do
-                {:halt, true}
-              else
-                _ ->
-                  {:cont, acc}
-              end
-            end)
+            has_not_burn_address_hash?(implementation.address_hashes, burn_address_hash)
           else
             _ ->
               false
           end
         end
     end
+  end
+
+  defp has_not_burn_address_hash?(address_hashes, burn_address_hash) do
+    address_hashes
+    |> Enum.reduce_while(false, fn implementation_address_hash, acc ->
+      if implementation_address_hash.bytes == burn_address_hash.bytes, do: {:cont, acc}, else: {:halt, true}
+    end)
   end
 
   @doc """
