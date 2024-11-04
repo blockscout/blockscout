@@ -201,6 +201,7 @@ defmodule Explorer.Chain.Token do
           Chain.paging_options()
           | {:sorting, SortingHelper.sorting_params()}
           | {:token_type, [String.t()]}
+          | {:necessity_by_association, map()}
         ]) :: [Token.t()]
   def list_top(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
