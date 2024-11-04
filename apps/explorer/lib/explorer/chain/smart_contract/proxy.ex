@@ -106,6 +106,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end
   end
 
+  @spec has_not_burn_address_hash?([Hash.Address.t()], Hash.Address.t()) :: boolean()
   defp has_not_burn_address_hash?(address_hashes, burn_address_hash) do
     address_hashes
     |> Enum.reduce_while(false, fn implementation_address_hash, acc ->

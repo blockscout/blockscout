@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.AddressChannel do
   use BlockScoutWeb, :channel
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias BlockScoutWeb.API.V2.AddressView, as: AddressViewAPI
   alias BlockScoutWeb.API.V2.SmartContractView, as: SmartContractViewAPI

@@ -4,8 +4,6 @@ defmodule BlockScoutWeb.API.V2.ShibariumView do
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.Chain
 
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
-
   @spec render(String.t(), map()) :: map()
   def render("shibarium_deposits.json", %{
         deposits: deposits,

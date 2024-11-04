@@ -2,11 +2,11 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   @moduledoc """
   View functions for rendering Celo-related data in JSON format.
   """
+  use BlockScoutWeb, :view
 
   require Logger
 
   import Explorer.Chain.SmartContract, only: [dead_address_hash_string: 0]
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded

@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.Account.API.V2.UserView do
+  use BlockScoutWeb, :view
+
   alias BlockScoutWeb.Account.API.V2.AccountView
   alias BlockScoutWeb.API.V2.Helper
   alias Ecto.Changeset
   alias Explorer.Chain
-
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   def render("message.json", assigns) do
     AccountView.render("message.json", assigns)

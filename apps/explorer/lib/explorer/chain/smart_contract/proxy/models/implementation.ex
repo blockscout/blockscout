@@ -428,6 +428,19 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   def names(_, _), do: []
 
   if Application.compile_env(:explorer, :chain_type) == :filecoin do
+    @doc """
+    Fetches associated addresses for Filecoin based on the provided nested IDs.
+
+    This function is used in Ecto preload to retrieve addresses for proxy implementations.
+
+    ## Parameters
+
+      - nested_ids: A list of nested IDs for which the associated addresses need to be fetched.
+
+    ## Returns
+
+      - A list of associated addresses for the given nested IDs.
+    """
     def addresses_association_for_filecoin(nested_ids) do
       query = from(address in Address, where: address.hash in ^List.flatten(nested_ids))
 
@@ -442,18 +455,68 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       end
     end
 
+    @doc """
+    Returns the association for proxy implementations.
+
+    This function is used to retrieve the proxy_implementations associations for address
+
+    ## Examples
+
+      iex> Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
+      [proxy_implementations: [addresses: &Explorer.Chain.SmartContract.Proxy.Models.Implementation.addresses_association_for_filecoin/1]]
+    """
+    @spec proxy_implementations_association() :: [
+            proxy_implementations: [addresses: fun()]
+          ]
     def proxy_implementations_association do
       [proxy_implementations: proxy_implementations_addresses_association()]
     end
 
+    @doc """
+    Returns the association of proxy implementation addresses.
+
+    This function is used to retrieve the addresses associations for proxy
+
+    ## Examples
+
+      iex> Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_addresses_association()
+      [addresses: &Explorer.Chain.SmartContract.Proxy.Models.Implementation.addresses_association_for_filecoin/1]
+
+    """
+    @spec proxy_implementations_association() :: [addresses: fun()]
     def proxy_implementations_addresses_association do
       [addresses: &__MODULE__.addresses_association_for_filecoin/1]
     end
   else
+    @doc """
+    Returns the association for proxy implementations.
+
+    This function is used to retrieve the proxy_implementations associations for address
+
+    ## Examples
+
+      iex> Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
+      :proxy_implementations
+
+    """
+    @spec proxy_implementations_association() :: :proxy_implementations
     def proxy_implementations_association do
       :proxy_implementations
     end
 
+    @doc """
+    Returns the association of proxy implementation addresses.
+
+    This function is used to retrieve the addresses associations for proxy.
+    (Returns [] since in chain types other than Filecoin, the addresses are not needed to preload)
+
+    ## Examples
+
+      iex> Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_addresses_association()
+      []
+
+    """
+    @spec proxy_implementations_addresses_association() :: []
     def proxy_implementations_addresses_association do
       []
     end

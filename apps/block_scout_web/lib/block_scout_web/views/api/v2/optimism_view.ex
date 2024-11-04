@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   use BlockScoutWeb, :view
 
   import Ecto.Query, only: [from: 2]
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}

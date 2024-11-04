@@ -5,8 +5,6 @@ defmodule BlockScoutWeb.API.V2.PolygonEdgeView do
   alias Explorer.Chain
   alias Explorer.Chain.PolygonEdge.Reader
 
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
-
   @spec render(String.t(), map()) :: map()
   def render("polygon_edge_deposits.json", %{
         deposits: deposits,

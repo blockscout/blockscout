@@ -4,8 +4,6 @@ defmodule BlockScoutWeb.BlockChannel do
   """
   use BlockScoutWeb, :channel
 
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
-
   alias BlockScoutWeb.API.V2.BlockView, as: BlockViewAPI
   alias BlockScoutWeb.{BlockView, ChainView}
   alias Explorer.Repo
