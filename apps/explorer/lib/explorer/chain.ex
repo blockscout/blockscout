@@ -795,7 +795,7 @@ defmodule Explorer.Chain do
       from(contract in SmartContract,
         inner_join: address in Address,
         on: contract.address_hash == address.hash,
-        order_by: [desc: address.transactions_count],
+        order_by: [desc: address.fetched_coin_balance],
         limit: ^limit,
         select: contract.address_hash
       )
