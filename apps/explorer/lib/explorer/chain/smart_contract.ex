@@ -1097,18 +1097,23 @@ defmodule Explorer.Chain.SmartContract do
   @doc """
   Gets smart-contract ABI from the DB for the given address hash of smart-contract
   """
-  @spec get_smart_contract_abi(String.t(), any()) :: any()
-  def get_smart_contract_abi(address_hash_string, options \\ [])
+  @spec get_smart_contract_abi(String.t() | Hash.Address.t(), any()) :: any()
+  def get_smart_contract_abi(address_hash, options \\ [])
 
-  def get_smart_contract_abi(address_hash_string, options)
-      when not is_nil(address_hash_string) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {smart_contract, _} =
-           address_hash
-           |> address_hash_to_smart_contract_with_bytecode_twin(options, false),
+  def get_smart_contract_abi(address_hash_string, options) when is_binary(address_hash_string) do
+    case Chain.string_to_address_hash(address_hash_string) do
+      {:ok, address_hash} ->
+        get_smart_contract_abi(address_hash, options)
+
+      _ ->
+        []
+    end
+  end
+
+  def get_smart_contract_abi(%Hash{} = address_hash, options) do
+    with {smart_contract, _} = address_hash_to_smart_contract_with_bytecode_twin(address_hash, options, false),
          false <- is_nil(smart_contract) do
-      smart_contract
-      |> Map.get(:abi)
+      Map.get(smart_contract, :abi)
     else
       _ ->
         []
