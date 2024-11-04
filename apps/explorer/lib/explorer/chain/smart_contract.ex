@@ -1111,13 +1111,8 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   def get_smart_contract_abi(%Hash{} = address_hash, options) do
-    with {smart_contract, _} = address_hash_to_smart_contract_with_bytecode_twin(address_hash, options, false),
-         false <- is_nil(smart_contract) do
-      Map.get(smart_contract, :abi)
-    else
-      _ ->
-        []
-    end
+    {smart_contract, _} = address_hash_to_smart_contract_with_bytecode_twin(address_hash, options, false)
+    (smart_contract && smart_contract.abi) || []
   end
 
   def get_smart_contract_abi(address_hash_string, _) when is_nil(address_hash_string) do
