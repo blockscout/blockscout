@@ -19,6 +19,7 @@ defmodule Indexer.Fetcher.Optimism do
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Contract
+  alias Explorer.Repo
   alias Indexer.Helper
 
   @fetcher_name :optimism
@@ -236,10 +237,10 @@ defmodule Indexer.Fetcher.Optimism do
            {:contract_is_valid,
             caller == Indexer.Fetcher.Optimism.WithdrawalEvent or Helper.address_correct?(output_oracle)},
          true <- start_block_l1 > 0,
-         {last_l1_block_number, last_l1_transaction_hash} <- caller.get_last_l1_item(),
+         {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction} <-
+           caller.get_last_l1_item(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
-         {:ok, last_l1_transaction} <- get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:l1_transaction_not_found, false} <-
            {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {:ok, block_check_interval, last_safe_block} <- get_block_check_interval(json_rpc_named_arguments) do
@@ -382,5 +383,41 @@ defmodule Indexer.Fetcher.Optimism do
   def requires_l1_reorg_monitor? do
     optimism_config = Application.get_all_env(:indexer)[__MODULE__]
     not is_nil(optimism_config[:optimism_l1_system_config])
+  end
+
+  def get_last_item(layer, last_block_number_query_fun, remove_query_fun, json_rpc_named_arguments \\ nil)
+      when is_function(last_block_number_query_fun, 0) and is_function(remove_query_fun, 1) do
+    {last_block_number, last_transaction_hash} =
+      last_block_number_query_fun.()
+      |> Repo.one()
+      |> Kernel.||({0, nil})
+
+    with {:empty_hash, false} <- {:empty_hash, is_nil(last_transaction_hash)},
+         {:empty_json_rpc_named_arguments, false} <-
+           {:empty_json_rpc_named_arguments, is_nil(json_rpc_named_arguments)},
+         {:ok, last_transaction} <- get_transaction_by_hash(last_transaction_hash, json_rpc_named_arguments),
+         {:empty_transaction, false} <- {:empty_transaction, is_nil(last_transaction)} do
+      {last_block_number, last_transaction_hash, last_transaction}
+    else
+      {:empty_hash, true} ->
+        {last_block_number, nil, nil}
+
+      {:empty_json_rpc_named_arguments, true} ->
+        {last_block_number, last_transaction_hash, nil}
+
+      {:error, _} = error_message ->
+        error_message
+
+      {:empty_transaction, true} ->
+        Logger.error(
+          "Cannot find last #{layer} transaction from RPC by its hash (#{last_transaction_hash}). Probably, there was a reorg on #{layer} chain. Trying to check preceding transaction..."
+        )
+
+        last_block_number
+        |> remove_query_fun.()
+        |> Repo.delete_all()
+
+        get_last_item(layer, last_block_number_query_fun, remove_query_fun, json_rpc_named_arguments)
+    end
   end
 end

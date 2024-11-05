@@ -185,17 +185,13 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
     end
   end
 
-  def get_last_l1_item do
-    query =
-      from(root in OutputRoot,
-        select: {root.l1_block_number, root.l1_transaction_hash},
-        order_by: [desc: root.l2_output_index],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> Kernel.||({0, nil})
+  def get_last_l1_item(json_rpc_named_arguments) do
+    Optimism.get_last_item(
+      :L1,
+      &OutputRoot.last_root_l1_block_number_query/0,
+      &OutputRoot.remove_roots_query/1,
+      json_rpc_named_arguments
+    )
   end
 
   @doc """

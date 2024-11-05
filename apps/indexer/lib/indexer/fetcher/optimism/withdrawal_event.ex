@@ -246,17 +246,13 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     |> Map.values()
   end
 
-  def get_last_l1_item do
-    query =
-      from(we in WithdrawalEvent,
-        select: {we.l1_block_number, we.l1_transaction_hash},
-        order_by: [desc: we.l1_timestamp],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> Kernel.||({0, nil})
+  def get_last_l1_item(json_rpc_named_arguments) do
+    Optimism.get_last_item(
+      :L1,
+      &WithdrawalEvent.last_event_l1_block_number_query/0,
+      &WithdrawalEvent.remove_events_query/1,
+      json_rpc_named_arguments
+    )
   end
 
   @doc """

@@ -52,6 +52,10 @@ defmodule Explorer.Chain.Optimism.Deposit do
     )
   end
 
+  def remove_deposits_query(l1_block_number) do
+    from(d in __MODULE__, where: d.l1_block_number == ^l1_block_number)
+  end
+
   @doc """
   Lists `t:Explorer.Chain.Optimism.Deposit.t/0`'s' in descending order based on l1_block_number and l2_transaction_hash.
 

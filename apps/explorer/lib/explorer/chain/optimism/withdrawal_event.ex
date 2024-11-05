@@ -34,4 +34,16 @@ defmodule Explorer.Chain.Optimism.WithdrawalEvent do
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
   end
+
+  def last_event_l1_block_number_query do
+    from(event in __MODULE__,
+      select: {event.l1_block_number, event.l1_transaction_hash},
+      order_by: [desc: event.l1_timestamp],
+      limit: 1
+    )
+  end
+
+  def remove_events_query(l1_block_number) do
+    from(event in __MODULE__, where: event.l1_block_number == ^l1_block_number)
+  end
 end

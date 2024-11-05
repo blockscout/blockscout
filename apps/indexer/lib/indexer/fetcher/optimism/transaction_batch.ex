@@ -28,6 +28,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   import Explorer.Helper, only: [parse_integer: 1]
 
+  alias Ecto.Multi
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.{Blocks, Contract}
   alias Explorer.{Chain, Repo}
@@ -411,27 +412,47 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   end
 
   defp get_last_l1_item(json_rpc_named_arguments) do
-    l1_transaction_hashes =
+    result =
       Repo.one(
         from(
           tb in OptimismTransactionBatch,
           inner_join: fs in FrameSequence,
           on: fs.id == tb.frame_sequence_id,
-          select: fs.l1_transaction_hashes,
+          select: {fs.id, fs.l1_transaction_hashes},
           order_by: [desc: tb.l2_block_number],
           limit: 1
         )
       )
 
-    if is_nil(l1_transaction_hashes) do
-      {0, nil, nil}
-    else
-      last_l1_transaction_hash = List.last(l1_transaction_hashes)
-
-      {:ok, last_l1_transaction} = Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments)
-
-      last_l1_block_number = quantity_to_integer(Map.get(last_l1_transaction || %{}, "blockNumber", 0))
+    with {:empty_hashes, false} <- {:empty_hashes, is_nil(result)},
+         l1_transaction_hashes = elem(result, 1),
+         last_l1_transaction_hash = List.last(l1_transaction_hashes),
+         {:ok, last_l1_transaction} =
+           Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:empty_transaction, false, last_l1_transaction_hash} <-
+           {:empty_transaction, is_nil(last_l1_transaction), last_l1_transaction_hash} do
+      last_l1_block_number = quantity_to_integer(Map.get(last_l1_transaction, "blockNumber", 0))
       {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction}
+    else
+      {:empty_hashes, true} ->
+        {0, nil, nil}
+
+      {:empty_transaction, true, last_l1_transaction_hash} ->
+        Logger.error(
+          "Cannot find last L1 transaction from RPC by its hash (#{last_l1_transaction_hash}). Probably, there was a reorg on L1 chain. Trying to check preceding frame sequence..."
+        )
+
+        id = elem(result, 0)
+
+        Multi.new()
+        |> Multi.delete_all(
+          :delete_transaction_batches,
+          from(tb in OptimismTransactionBatch, where: tb.frame_sequence_id == ^id)
+        )
+        |> Multi.delete_all(:delete_frame_sequence, from(fs in FrameSequence, where: fs.id == ^id))
+        |> Repo.transaction()
+
+        get_last_l1_item(json_rpc_named_arguments)
     end
   end
 

@@ -94,6 +94,18 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     from(w in query, where: w.msg_nonce < ^nonce)
   end
 
+  def last_withdrawal_l2_block_number_query do
+    from(w in __MODULE__,
+      select: {w.l2_block_number, w.l2_transaction_hash},
+      order_by: [desc: w.msg_nonce],
+      limit: 1
+    )
+  end
+
+  def remove_withdrawals_query(l2_block_number) do
+    from(w in __MODULE__, where: w.l2_block_number == ^l2_block_number)
+  end
+
   @doc """
     Gets withdrawal statuses for Optimism Withdrawal transaction.
     For each withdrawal associated with this transaction,

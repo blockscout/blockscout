@@ -76,9 +76,13 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
          json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {optimism_portal, start_block_l1} <- Optimism.read_system_config(system_config, json_rpc_named_arguments),
          true <- start_block_l1 > 0,
-         {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(),
-         {:ok, last_l1_transaction} <-
-           Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction} <-
+           Optimism.get_last_item(
+             :L1,
+             &Deposit.last_deposit_l1_block_number_query/0,
+             &Deposit.remove_deposits_query/1,
+             json_rpc_named_arguments
+           ),
          {:l1_transaction_not_found, false} <-
            {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {safe_block, _} = Helper.get_safe_block(json_rpc_named_arguments),
@@ -303,7 +307,8 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
           mode: :realtime
         } = state
       ) do
-    {last_l1_block_number, _} = get_last_l1_item()
+    {last_l1_block_number, _, _} =
+      Optimism.get_last_item(:L1, &Deposit.last_deposit_l1_block_number_query/0, &Deposit.remove_deposits_query/1)
 
     case get_new_filter(
            last_l1_block_number + 1,
@@ -568,11 +573,5 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
     error_message = &"Cannot uninstall filter. Error: #{inspect(&1)}"
 
     Optimism.repeated_request(req, error_message, json_rpc_named_arguments, retries)
-  end
-
-  defp get_last_l1_item do
-    Deposit.last_deposit_l1_block_number_query()
-    |> Repo.one()
-    |> Kernel.||({0, nil})
   end
 end

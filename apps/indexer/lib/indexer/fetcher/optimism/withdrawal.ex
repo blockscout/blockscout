@@ -56,13 +56,12 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
          start_block_l2 = parse_integer(env[:start_block_l2]),
          false <- is_nil(start_block_l2),
          true <- start_block_l2 > 0,
-         {last_l2_block_number, last_l2_transaction_hash} <- get_last_l2_item(),
+         {last_l2_block_number, last_l2_transaction_hash, last_l2_transaction} <-
+           get_last_l2_item(json_rpc_named_arguments),
          {safe_block, safe_block_is_latest} = Helper.get_safe_block(json_rpc_named_arguments),
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
-         {:ok, last_l2_transaction} <-
-           Optimism.get_transaction_by_hash(last_l2_transaction_hash, json_rpc_named_arguments),
          {:l2_transaction_not_found, false} <-
            {:l2_transaction_not_found, !is_nil(last_l2_transaction_hash) && is_nil(last_l2_transaction)} do
       Process.send(self(), :continue, [])
@@ -315,7 +314,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     if start_block <= end_block do
       fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, true)
       fill_msg_nonce_gaps(start_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, false)
-      {last_l2_block_number, _} = get_last_l2_item()
+      {last_l2_block_number, _, _} = get_last_l2_item()
 
       fill_block_range(
         max(start_block, last_l2_block_number),
@@ -372,17 +371,13 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     end
   end
 
-  defp get_last_l2_item do
-    query =
-      from(w in OptimismWithdrawal,
-        select: {w.l2_block_number, w.l2_transaction_hash},
-        order_by: [desc: w.msg_nonce],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
-    |> Kernel.||({0, nil})
+  defp get_last_l2_item(json_rpc_named_arguments \\ nil) do
+    Optimism.get_last_item(
+      :L2,
+      &OptimismWithdrawal.last_withdrawal_l2_block_number_query/0,
+      &OptimismWithdrawal.remove_withdrawals_query/1,
+      json_rpc_named_arguments
+    )
   end
 
   defp log_fill_msg_nonce_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count) do

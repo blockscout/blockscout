@@ -67,4 +67,16 @@ defmodule Explorer.Chain.Optimism.OutputRoot do
   defp page_output_roots(query, %PagingOptions{key: {index}}) do
     from(r in query, where: r.l2_output_index < ^index)
   end
+
+  def last_root_l1_block_number_query do
+    from(root in __MODULE__,
+      select: {root.l1_block_number, root.l1_transaction_hash},
+      order_by: [desc: root.l2_output_index],
+      limit: 1
+    )
+  end
+
+  def remove_roots_query(l1_block_number) do
+    from(root in __MODULE__, where: root.l1_block_number == ^l1_block_number)
+  end
 end
