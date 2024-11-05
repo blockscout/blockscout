@@ -49,18 +49,18 @@ defmodule BlockScoutWeb.AddressChannel do
   end
 
   @transaction_associations [
-                              from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
+                              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
                               to_address: [
                                 :scam_badge,
                                 :names,
                                 :smart_contract,
-                                :proxy_implementations
+                                proxy_implementations_association()
                               ],
                               created_contract_address: [
                                 :scam_badge,
                                 :names,
                                 :smart_contract,
-                                :proxy_implementations
+                                proxy_implementations_association()
                               ]
                             ] ++
                               @chain_type_transaction_associations
@@ -414,8 +414,8 @@ defmodule BlockScoutWeb.AddressChannel do
           token_transfers
           |> Repo.preload([
             [
-              from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-              to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
+              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+              to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
             ]
           ]),
         conn: nil

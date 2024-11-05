@@ -90,14 +90,13 @@ defmodule Explorer.Etherscan.Contracts do
   def append_proxy_info(%Address{smart_contract: smart_contract} = address) when not is_nil(smart_contract) do
     updated_smart_contract =
       if Proxy.proxy_contract?(smart_contract) do
+        implementation = Implementation.get_implementation(smart_contract)
+
         smart_contract
         |> Map.put(:is_proxy, true)
         |> Map.put(
           :implementation_address_hash_strings,
-          smart_contract
-          |> Implementation.get_implementation()
-          |> Tuple.to_list()
-          |> List.first()
+          implementation.address_hashes
         )
       else
         smart_contract

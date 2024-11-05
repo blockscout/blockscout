@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.{Chain, PagingOptions, Repo}
@@ -69,16 +70,16 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
       |> Enum.find(&(&1.hash == transaction.hash))
       |> Repo.preload(
         token_transfers: [
-          from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-          to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
+          from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+          to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
         ],
         internal_transactions: [
-          from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-          to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
+          from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+          to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
         ],
-        block: [miner: [:names, :smart_contract, :proxy_implementations]],
-        from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations],
-        to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]
+        block: [miner: [:names, :smart_contract, proxy_implementations_association()]],
+        from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+        to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
       )
 
     previous_block_number = BlockNumberHelper.previous_block_number(transaction.block_number)

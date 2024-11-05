@@ -85,6 +85,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
@@ -391,7 +392,12 @@ defmodule Explorer.Chain do
             base
           else
             base
-            |> preload(transaction: [from_address: [:proxy_implementations], to_address: [:proxy_implementations]])
+            |> preload(
+              transaction: [
+                from_address: ^Implementation.proxy_implementations_association(),
+                to_address: ^Implementation.proxy_implementations_association()
+              ]
+            )
           end
 
         preloaded_query
@@ -1113,7 +1119,7 @@ defmodule Explorer.Chain do
       |> Keyword.get(:necessity_by_association, %{})
       |> Map.merge(%{
         [smart_contract: :smart_contract_additional_sources] => :optional,
-        :proxy_implementations => :optional
+        Implementation.proxy_implementations_association() => :optional
       })
 
     query =
@@ -4393,7 +4399,7 @@ defmodule Explorer.Chain do
     |> Instance.address_to_unique_token_instances()
     |> Instance.page_token_instance(paging_options)
     |> limit(^paging_options.page_size)
-    |> preload([_], owner: [:names, :smart_contract, :proxy_implementations])
+    |> preload([_], owner: [:names, :smart_contract, ^Implementation.proxy_implementations_association()])
     |> select_repo(options).all()
     |> Enum.map(&put_owner_to_token_instance(&1, token, options))
   end
@@ -4424,7 +4430,11 @@ defmodule Explorer.Chain do
         owner_address_hash,
         options
         |> Keyword.merge(
-          necessity_by_association: %{names: :optional, smart_contract: :optional, proxy_implementations: :optional}
+          necessity_by_association: %{
+            :names => :optional,
+            :smart_contract => :optional,
+            Implementation.proxy_implementations_association() => :optional
+          }
         )
       )
 

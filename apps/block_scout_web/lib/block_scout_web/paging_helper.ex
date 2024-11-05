@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.PagingHelper do
     Helper for fetching filters and other url query parameters
   """
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.Chain.Transaction
   alias Explorer.{Helper, PagingOptions, SortingHelper}
@@ -158,7 +160,7 @@ defmodule BlockScoutWeb.PagingHelper do
         [
           necessity_by_association: %{
             :transactions => :optional,
-            [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
+            [miner: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
             :nephews => :required,
             :rewards => :optional
           },
@@ -169,7 +171,7 @@ defmodule BlockScoutWeb.PagingHelper do
         [
           necessity_by_association: %{
             :transactions => :optional,
-            [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
+            [miner: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
             :rewards => :optional
           },
           block_type: "Reorg"
@@ -184,7 +186,7 @@ defmodule BlockScoutWeb.PagingHelper do
     do: [
       necessity_by_association: %{
         :transactions => :optional,
-        [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [miner: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
         :rewards => :optional
       },
       block_type: "Block"

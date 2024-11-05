@@ -2597,7 +2597,7 @@ defmodule Explorer.ChainTest do
           :contracts_creation_transaction,
           :token,
           [smart_contract: :smart_contract_additional_sources],
-          :proxy_implementations
+          Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
         ])
 
       options = [

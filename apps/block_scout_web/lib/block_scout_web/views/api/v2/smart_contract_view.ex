@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.Visualize.Sol2uml
 
@@ -26,13 +27,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     %{"items" => Enum.map(smart_contracts, &prepare_smart_contract_for_list/1), "next_page_params" => next_page_params}
   end
 
-  def render("smart_contract.json", %{
-        address: address,
-        implementations: implementations,
-        proxy_type: proxy_type,
-        conn: conn
-      }) do
-    prepare_smart_contract(address, implementations, proxy_type, conn)
+  def render("smart_contract.json", %{address: address, conn: conn}) do
+    prepare_smart_contract(address, conn)
   end
 
   def render("read_functions.json", %{functions: functions}) do
@@ -156,9 +152,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   # credo:disable-for-next-line
   def prepare_smart_contract(
-        %Address{smart_contract: %SmartContract{} = smart_contract} = address,
-        implementations,
-        proxy_type,
+        %Address{smart_contract: %SmartContract{} = smart_contract, proxy_implementations: implementations} = address,
         conn
       ) do
     bytecode_twin = SmartContract.get_address_verified_bytecode_twin_contract(address.hash, @api_true)
@@ -202,8 +196,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "has_methods_write" => write_methods?,
       "has_methods_read_proxy" => is_proxy,
       "has_methods_write_proxy" => is_proxy && write_methods?,
-      "proxy_type" => proxy_type,
-      "implementations" => implementations,
+      "proxy_type" => implementations && implementations.proxy_type,
+      "implementations" => Proxy.proxy_object_info(implementations),
       "sourcify_repo_url" =>
         if(smart_contract.verified_via_sourcify && smart_contract_verified,
           do: AddressContractView.sourcify_repo_url(address.hash, smart_contract.partially_verified)
@@ -240,15 +234,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     |> chain_type_fields(%{address_hash: verified_twin_address_hash, field_prefix: "verified_twin"})
   end
 
-  def prepare_smart_contract(address, implementations, proxy_type, conn) do
+  def prepare_smart_contract(%Address{proxy_implementations: implementations} = address, conn) do
     read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
     write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
 
     %{
       "has_custom_methods_read" => read_custom_abi?,
       "has_custom_methods_write" => write_custom_abi?,
-      "proxy_type" => proxy_type,
-      "implementations" => implementations
+      "proxy_type" => implementations && implementations.proxy_type,
+      "implementations" => Proxy.proxy_object_info(implementations)
     }
     |> Map.merge(bytecode_info(address))
   end

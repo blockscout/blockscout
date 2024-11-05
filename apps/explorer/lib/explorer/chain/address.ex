@@ -138,11 +138,11 @@ defmodule Explorer.Chain.Address do
   alias Ecto.Changeset
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
-  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
-  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, Transaction}
   alias Explorer.{Chain, PagingOptions, Repo}
+
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
   @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
@@ -552,7 +552,7 @@ defmodule Explorer.Chain.Address do
           from(a in Address,
             where: a.fetched_coin_balance > ^0,
             order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-            preload: [:names, :smart_contract, :proxy_implementations],
+            preload: [:names, :smart_contract, ^proxy_implementations_association()],
             select: {a, a.transactions_count}
           )
 
@@ -651,26 +651,6 @@ defmodule Explorer.Chain.Address do
       [set: [contract_code: contract_code, updated_at: now]],
       timeout: @timeout
     )
-  end
-
-  @doc """
-  Prepares implementations object and proxy type from address
-  """
-  @spec parse_implementation_and_proxy_type(__MODULE__.t()) :: {list(), String.t() | nil}
-  def parse_implementation_and_proxy_type(address) do
-    with %__MODULE__{
-           proxy_implementations: %Implementation{
-             address_hashes: address_hashes,
-             names: names,
-             proxy_type: proxy_type
-           }
-         } <- address,
-         false <- address_hashes && Enum.empty?(address_hashes) do
-      {Proxy.proxy_object_info(address_hashes, names), proxy_type}
-    else
-      _ ->
-        {[], nil}
-    end
   end
 
   @doc """

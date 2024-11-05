@@ -52,9 +52,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @transaction_necessity_by_association [
     necessity_by_association:
       %{
-        [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-        [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-        [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+        [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
+          :optional,
+        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
         :block => :optional
       }
       |> Map.merge(@chain_type_transaction_necessity_by_association),
@@ -63,8 +64,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @token_transfer_necessity_by_association [
     necessity_by_association: %{
-      [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-      [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+      [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+      [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
       :block => :optional,
       :transaction => :optional,
       :token => :optional
@@ -77,7 +78,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       :names => :optional,
       :scam_badge => :optional,
       :token => :optional,
-      :proxy_implementations => :optional,
       :signed_authorization => :optional
     },
     api?: true
@@ -88,16 +88,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       @contract_address_preloads [
         :smart_contract,
         [contracts_creation_internal_transaction: :from_address],
-        [contracts_creation_transaction: :from_address],
-        :proxy_implementations
+        [contracts_creation_transaction: :from_address]
       ]
 
     _ ->
       @contract_address_preloads [
         :smart_contract,
         :contracts_creation_internal_transaction,
-        :contracts_creation_transaction,
-        :proxy_implementations
+        :contracts_creation_transaction
       ]
   end
 
@@ -115,14 +113,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         account_address: [
           :names,
           :smart_contract,
-          :proxy_implementations
+          proxy_implementations_association()
         ]
       ] => :optional,
       [
         associated_account_address: [
           :names,
           :smart_contract,
-          :proxy_implementations
+          proxy_implementations_association()
         ]
       ] => :optional
     },
@@ -136,8 +134,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       fully_preloaded_address =
         Address.maybe_preload_smart_contract_associations(address, @contract_address_preloads, @api_true)
 
-      {implementations, proxy_type} =
-        SmartContractHelper.pre_fetch_implementations(fully_preloaded_address)
+      implementations = SmartContractHelper.pre_fetch_implementations(fully_preloaded_address)
 
       CoinBalanceOnDemand.trigger_fetch(address)
       ContractCodeOnDemand.trigger_fetch(address)
@@ -145,9 +142,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       conn
       |> put_status(200)
       |> render(:address, %{
-        address: fully_preloaded_address |> maybe_preload_ens_to_address(),
-        implementations: implementations,
-        proxy_type: proxy_type
+        address:
+          %Address{fully_preloaded_address | proxy_implementations: implementations} |> maybe_preload_ens_to_address()
       })
     end
   end
@@ -225,8 +221,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       options =
         [
           necessity_by_association: %{
-            [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-            [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
             :block => :optional,
             :token => :optional,
             :transaction => :optional
@@ -297,9 +293,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       full_options =
         [
           necessity_by_association: %{
-            [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-            [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-            [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
+            [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
+              :optional,
+            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
           }
         ]
         |> Keyword.merge(paging_options(params))
@@ -333,7 +330,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> paging_options()
         |> Keyword.merge(topic: formatted_topic)
         |> Keyword.merge(
-          necessity_by_association: %{[address: [:names, :smart_contract, :proxy_implementations]] => :optional}
+          necessity_by_association: %{
+            [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+          }
         )
         |> Keyword.merge(@api_true)
 
@@ -378,7 +377,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       full_options =
         [
           necessity_by_association: %{
-            [miner: :proxy_implementations] => :optional,
+            [miner: proxy_implementations_association()] => :optional,
             miner: :required,
             nephews: :optional,
             transactions: :optional,
