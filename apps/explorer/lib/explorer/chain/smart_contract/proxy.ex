@@ -586,7 +586,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   if Application.compile_env(:explorer, :chain_type) == :filecoin do
     def chain_type_fields(%{"address" => address_hash} = address, implementations_info) do
-      Map.put(address, "filecoin_robust", implementations_info[address_hash])
+      Map.put(address, "filecoin_robust_address", implementations_info[address_hash])
     end
 
     def prepare_implementations(%Implementation{addresses: [_ | _] = addresses}) do
