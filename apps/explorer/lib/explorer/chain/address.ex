@@ -543,6 +543,13 @@ defmodule Explorer.Chain.Address do
   defp fetch_top_addresses(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    necessity_by_association =
+      Keyword.get(options, :necessity_by_association, %{
+        :names => :optional,
+        :smart_contract => :optional,
+        proxy_implementations_association() => :optional
+      })
+
     case paging_options do
       %PagingOptions{key: {0, _hash}} ->
         []
@@ -552,11 +559,11 @@ defmodule Explorer.Chain.Address do
           from(a in Address,
             where: a.fetched_coin_balance > ^0,
             order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-            preload: [:names, :smart_contract, ^proxy_implementations_association()],
             select: {a, a.transactions_count}
           )
 
         base_query
+        |> Chain.join_associations(necessity_by_association)
         |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
         |> page_addresses(paging_options)
         |> limit(^paging_options.page_size)
