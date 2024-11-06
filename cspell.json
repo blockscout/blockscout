@@ -8,6 +8,9 @@
     "ignorePaths": [
         "apps/block_scout_web/assets/js/lib/ace/src-min/*.js"
     ],
+    "ignoreRegExpList": [
+        "f410f[a-z2-7]{39}"
+    ],
     "words": [
         "aave",
         "absname",
