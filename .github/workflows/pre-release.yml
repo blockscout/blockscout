@@ -30,7 +30,7 @@ jobs:
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build & Push Core Docker image (indexer + API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -59,7 +59,7 @@ jobs:
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
       - name: Build & Push Core Docker image (indexer)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -87,7 +87,7 @@ jobs:
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
       - name: Build & Push Core Docker image (API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -117,7 +117,7 @@ jobs:
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
       - name: Build & Push Core Docker image (indexer + API + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -147,7 +147,7 @@ jobs:
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
     
       - name: Build & Push Core Docker image (indexer + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -176,7 +176,7 @@ jobs:
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       - name: Build & Push Core Docker image (API + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile

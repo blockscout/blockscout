@@ -25,7 +25,7 @@ jobs:
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
       
       - name: Build and push Docker image (indexer + API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -48,7 +48,7 @@ jobs:
             CHAIN_TYPE=polygon_zkevm
 
       - name: Build and push Docker image (indexer)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -70,7 +70,7 @@ jobs:
             CHAIN_TYPE=polygon_zkevm
 
       - name: Build and push Docker image (API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -92,7 +92,7 @@ jobs:
             CHAIN_TYPE=polygon_zkevm
 
       - name: Build and push Docker image (indexer + API + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -116,7 +116,7 @@ jobs:
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       - name: Build and push Docker image (indexer + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -139,7 +139,7 @@ jobs:
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       - name: Build and push Docker image (API + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
