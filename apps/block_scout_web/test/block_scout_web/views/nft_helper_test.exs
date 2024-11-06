@@ -12,9 +12,8 @@ defmodule BlockScoutWeb.NFTHelperTest do
     end
 
     test "transforms ipfs link like ipfs://ipfs" do
-      # cspell: disable
+      # cspell:disable-next-line
       url = "ipfs://ipfs/Qmbgk4Ps5kiVdeYCHufMFgqzWLFuovFRtenY5P8m9vr9XW/animation.mp4"
-      # cspell: enable
 
       assert "https://ipfs.io/ipfs/Qmbgk4Ps5kiVdeYCHufMFgqzWLFuovFRtenY5P8m9vr9XW/animation.mp4" ==
                NFTHelper.compose_ipfs_url(url)
