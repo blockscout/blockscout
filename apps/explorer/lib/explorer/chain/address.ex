@@ -5,6 +5,7 @@ defmodule Explorer.Chain.Address.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Addresses
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{
     Address,
@@ -24,7 +25,7 @@ defmodule Explorer.Chain.Address.Schema do
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
-  @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_fields (case @chain_type do
                         :filecoin ->
                           alias Explorer.Chain.Filecoin.{IDAddress, NativeAddress}
 
@@ -133,6 +134,7 @@ defmodule Explorer.Chain.Address do
   require Explorer.Chain.Address.Schema
 
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
@@ -145,7 +147,7 @@ defmodule Explorer.Chain.Address do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
-  @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_optional_attrs (case @chain_type do
                                 :filecoin ->
                                   ~w(filecoin_id filecoin_robust filecoin_actor_type)a
 
@@ -200,7 +202,7 @@ defmodule Explorer.Chain.Address do
    * `inserted_at` - when this address was inserted
    * `updated_at` - when this address was last updated
    * `ens_domain_name` - virtual field for ENS domain name passing
-   #{case Application.compile_env(:explorer, :chain_type) do
+   #{case @chain_type do
     :filecoin -> """
        * `filecoin_native_address` - robust f0/f1/f2/f3/f4 Filecoin address
        * `filecoin_id_address` - short f0 Filecoin address that may change during chain reorgs

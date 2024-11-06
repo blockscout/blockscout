@@ -6,6 +6,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   require Logger
 
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Ecto.Query,
     only: [
@@ -427,7 +428,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   def names(_, _), do: []
 
-  if Application.compile_env(:explorer, :chain_type) == :filecoin do
+  if @chain_type == :filecoin do
     @doc """
     Fetches associated addresses for Filecoin based on the provided nested IDs.
 

@@ -2,6 +2,8 @@ defmodule Explorer.Chain.SmartContract.Schema do
   @moduledoc """
     Models smart-contract.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias Explorer.Chain.SmartContract.ExternalLibrary
 
   alias Explorer.Chain.{
@@ -11,7 +13,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
     SmartContractAdditionalSource
   }
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :zksync ->
       @chain_type_fields quote(
                            do: [
@@ -104,6 +106,7 @@ defmodule Explorer.Chain.SmartContract do
   require Explorer.Chain.SmartContract.Schema
 
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias ABI.FunctionSelector
   alias Ecto.{Changeset, Multi}
@@ -140,7 +143,7 @@ defmodule Explorer.Chain.SmartContract do
   @optional_changeset_attrs ~w(abi compiler_settings)a
   @optional_invalid_contract_changeset_attrs ~w(autodetect_constructor_args)a
 
-  @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_optional_attrs (case @chain_type do
                                 :zksync ->
                                   ~w(zk_compiler_version)a
 
@@ -397,7 +400,7 @@ defmodule Explorer.Chain.SmartContract do
   * `name` - the human-readable name of the smart contract.
   * `compiler_version` - the version of the Solidity compiler used to compile `contract_source_code` with `optimization`
     into `address` `t:Explorer.Chain.Address.t/0` `contract_code`.
-    #{case Application.compile_env(:explorer, :chain_type) do
+    #{case @chain_type do
     :zksync -> """
        * `zk_compiler_version` - the version of ZkSolc or ZkVyper compilers.
       """

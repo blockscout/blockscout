@@ -3,6 +3,7 @@ defmodule EthereumJSONRPC.Block do
   Block format as returned by [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbyhash)
   and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbynumber).
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1, timestamp_to_datetime: 1]
 
@@ -16,7 +17,7 @@ defmodule EthereumJSONRPC.Block do
   # (sha3Uncles) is the RLP-encoded hash of an empty list.
   @sha3_uncles_empty_list "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :rsk ->
       @chain_type_fields quote(
                            do: [
@@ -124,7 +125,7 @@ defmodule EthereumJSONRPC.Block do
      [uncles](https://bitcoin.stackexchange.com/questions/39329/in-ethereum-what-is-an-uncle-block)
      `t:EthereumJSONRPC.hash/0`.
    * `"baseFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote amount of fee burnt per unit gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
-   #{case Application.compile_env(:explorer, :chain_type) do
+   #{case @chain_type do
     :rsk -> """
        * `"minimumGasPrice"` - `t:EthereumJSONRPC.quantity/0` of the minimum gas price for this block.
        * `"bitcoinMergedMiningHeader"` - `t:EthereumJSONRPC.data/0` of the Bitcoin merged mining header.
@@ -190,7 +191,7 @@ defmodule EthereumJSONRPC.Block do
       ...>     "totalDifficulty" => 340282366920938463463374607431465668165,
       ...>     "transactions" => [],
       ...>     "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
-  #{case Application.compile_env(:explorer, :chain_type) do
+  #{case @chain_type do
     :rsk -> """
           "minimumGasPrice" => 345786,\
           "bitcoinMergedMiningHeader" => "0x00006d20ffd048280094a6ea0851d854036aacaa25ee0f23f0040200000000000000000078d2638fe0b4477c54601e6449051afba8228e0a88ff06b0c91f091fd34d5da57487c76402610517372c2fe9",\
@@ -241,7 +242,7 @@ defmodule EthereumJSONRPC.Block do
         timestamp: Timex.parse!("2017-12-15T21:03:30Z", "{ISO:Extended:Z}"),
         total_difficulty: 340282366920938463463374607431465668165,
         transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
-  #{case Application.compile_env(:explorer, :chain_type) do
+  #{case @chain_type do
     :rsk -> """
             bitcoin_merged_mining_coinbase_transaction: "0x00000000000000805bf0dc9203da49a3b4e3ec913806e43102cc07db991272dc8b7018da57eb5abe59a32d070000ffffffff03449a4d26000000001976a914536ffa992491508dca0354e52f32a3a7a679a53a88ac00000000000000002b6a2952534b424c4f434b3ad2508d21d28c8f89d495923c0758ec3f64bd6755b4ec416f5601312600542a400000000000000000266a24aa21a9ed4ae42ea6dca2687aaed665714bf58b055c4e11f2fb038605930d630b49ad7b9d00000000",\
             bitcoin_merged_mining_header: "0x00006d20ffd048280094a6ea0851d854036aacaa25ee0f23f0040200000000000000000078d2638fe0b4477c54601e6449051afba8228e0a88ff06b0c91f091fd34d5da57487c76402610517372c2fe9",\
@@ -312,7 +313,7 @@ defmodule EthereumJSONRPC.Block do
         timestamp: Timex.parse!("2015-07-30T15:32:07Z", "{ISO:Extended:Z}"),
         total_difficulty: 1039309006117,
         transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",\
-  #{case Application.compile_env(:explorer, :chain_type) do
+  #{case @chain_type do
     :rsk -> """
             bitcoin_merged_mining_coinbase_transaction: nil,\
             bitcoin_merged_mining_header: nil,\
@@ -523,7 +524,7 @@ defmodule EthereumJSONRPC.Block do
   end
 
   @spec chain_type_fields(params, elixir) :: params
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :rsk ->
       defp chain_type_fields(params, elixir) do
         params
@@ -937,7 +938,7 @@ defmodule EthereumJSONRPC.Block do
     {key, Withdrawals.to_elixir(withdrawals, block_hash, quantity_to_integer(block_number))}
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :zilliqa ->
       defp entry_to_elixir({"view" = key, quantity}, _block) when not is_nil(quantity) do
         {key, quantity_to_integer(quantity)}

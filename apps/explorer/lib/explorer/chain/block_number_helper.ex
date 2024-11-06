@@ -3,12 +3,13 @@ defmodule Explorer.Chain.BlockNumberHelper do
   @moduledoc """
   Functions to operate with block numbers based on null round heights (applicable for CHAIN_TYPE=filecoin)
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   def previous_block_number(number), do: neighbor_block_number(number, :previous)
 
   def next_block_number(number), do: neighbor_block_number(number, :next)
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :filecoin ->
       def null_rounds_count, do: Explorer.Chain.NullRoundHeight.total()
 

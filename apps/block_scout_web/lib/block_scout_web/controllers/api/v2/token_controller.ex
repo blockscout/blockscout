@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.API.V2.TokenController do
-  alias Explorer.PagingOptions
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
-  alias Explorer.{Chain, Helper}
+  alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+  if @bridged_token_enabled do
     defp token_response(conn, token, address_hash) do
       if token.bridged do
         bridged_token =

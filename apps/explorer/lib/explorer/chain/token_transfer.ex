@@ -5,6 +5,7 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.TokenTransfers
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{
     Address,
@@ -17,7 +18,7 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
 
   # Remove `transaction_hash` from primary key for `:celo` chain type. See
   # `Explorer.Chain.Log.Schema` for more details.
-  @transaction_field (case Application.compile_env(:explorer, :chain_type) do
+  @transaction_field (case @chain_type do
                         :celo ->
                           quote do
                             [
@@ -132,6 +133,7 @@ defmodule Explorer.Chain.TokenTransfer do
   """
 
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Explorer.Chain.TokenTransfer.Schema
 
@@ -180,7 +182,7 @@ defmodule Explorer.Chain.TokenTransfer do
   Explorer.Chain.TokenTransfer.Schema.generate()
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash block_hash token_type)a
-                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                  |> (&(case @chain_type do
                           :celo ->
                             &1
 
@@ -188,7 +190,7 @@ defmodule Explorer.Chain.TokenTransfer do
                             [:transaction_hash | &1]
                         end)).()
   @optional_attrs ~w(amount amounts token_ids block_consensus)a
-                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                  |> (&(case @chain_type do
                           :celo ->
                             [:transaction_hash | &1]
 

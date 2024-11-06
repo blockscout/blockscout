@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.BlockController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Chain,
     only: [
@@ -38,7 +39,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :ethereum ->
       @chain_type_transaction_necessity_by_association %{
         :beacon_blob_transaction => :optional

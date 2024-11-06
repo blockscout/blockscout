@@ -23,7 +23,8 @@ defmodule BlockScout.Mixfile do
             block_scout_web: :permanent,
             ethereum_jsonrpc: :permanent,
             explorer: :permanent,
-            indexer: :permanent
+            indexer: :permanent,
+            utils: :permanent
           ],
           steps: [:assemble, &copy_prod_runtime_config/1],
           validate_compile_env: false

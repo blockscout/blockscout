@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
   use GenServer
   use Indexer.Fetcher
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
@@ -18,7 +19,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   @fetcher_name :rollup_l1_reorg_monitor
   @start_recheck_period_seconds 3
 
-  @modules_can_use_reorg_monitor (case Application.compile_env(:explorer, :chain_type) do
+  @modules_can_use_reorg_monitor (case @chain_type do
                                     :optimism ->
                                       [
                                         Indexer.Fetcher.Optimism.Deposit,

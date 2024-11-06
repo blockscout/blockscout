@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.SmartContractView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.Helper, only: [decode_data: 2]
   import Explorer.SmartContract.Reader, only: [zip_tuple_values_with_types: 2]
@@ -443,7 +444,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     to_string(value)
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :filecoin ->
       defp chain_type_fields(result, params) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage

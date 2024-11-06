@@ -2,6 +2,8 @@ defmodule BlockScoutWeb.PagingHelper do
   @moduledoc """
     Helper for fetching filters and other url query parameters
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -13,7 +15,7 @@ defmodule BlockScoutWeb.PagingHelper do
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :ethereum ->
       @allowed_type_labels [
         "coin_transfer",

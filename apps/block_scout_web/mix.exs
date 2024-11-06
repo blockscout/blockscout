@@ -156,6 +156,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_json_schema, "~> 0.10.1"},
       {:ueberauth, "~> 0.7"},
       {:ueberauth_auth0, "~> 2.0"},
+      {:utils, in_umbrella: true},
       {:bureaucrat, "~> 0.2.9", only: :test},
       {:logger_json, "~> 5.1"}
     ]
