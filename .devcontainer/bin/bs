@@ -146,7 +146,7 @@ recompile() {
 
 # Define the spellcheck subroutine
 spellcheck() {
-    cspell --config cspell.json "**/*.ex*" "**/*.eex" "**/*.js" --gitignore | less
+    cspell | less
 }
 
 # Define the dialyzer subroutine
