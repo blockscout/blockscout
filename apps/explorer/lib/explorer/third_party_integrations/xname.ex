@@ -11,7 +11,7 @@ defmodule Explorer.ThirdPartyIntegrations.Xname do
   @doc """
   Proxy request to XName API endpoints
   """
-  @spec api_request(String.t(), Plug.Conn.t(), :get | :post_transactions) :: {any(), integer()}
+  @spec api_request(String.t(), Plug.Conn.t(), atom()) :: {any(), integer()}
   def api_request(url, conn, method \\ :get)
 
   def api_request(url, _conn, :get) do
