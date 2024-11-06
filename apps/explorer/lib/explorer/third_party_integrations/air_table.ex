@@ -7,8 +7,11 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
   alias Ecto.Changeset
   alias Explorer.Account.PublicTagsRequest
   alias Explorer.Chain.SmartContract.AuditReport
-  alias Explorer.Repo
+  alias Explorer.{Helper, Repo}
+  alias Explorer.Utility.Microservice
   alias HTTPoison.Response
+
+  @recv_timeout 60_000
 
   @doc """
     Submits a public tags request or audit report to AirTable
@@ -89,5 +92,50 @@ defmodule Explorer.ThirdPartyIntegrations.AirTable do
 
         failure_callback.()
     end
+  end
+
+  @doc """
+  Forms HTTP request to AirTable API endpoints
+  """
+  @spec api_request(String.t(), Plug.Conn.t(), :get | :post | :put | :patch) :: {any(), integer()}
+  def api_request(url, conn, method) do
+    api_key = Application.get_env(:explorer, __MODULE__)[:api_key]
+    headers = [{"Authorization", "Bearer #{api_key}"}, {"Content-Type", "application/json"}]
+
+    body = conn.body_params |> Jason.encode!()
+
+    args =
+      case method do
+        :get -> [url, headers, [recv_timeout: @recv_timeout]]
+        _ -> [url, body, headers, [recv_timeout: @recv_timeout]]
+      end
+
+    case apply(HTTPoison, method, args) do
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        {Helper.decode_json(body), status}
+
+      _ ->
+        {nil, 500}
+    end
+  end
+
+  @doc """
+  https://api.airtable.com/v0/:base_id}/:table_id_or_name} endpoint
+  """
+  @spec table_url(String.t(), String.t()) :: String.t()
+  def table_url(base_id, table_id_or_name) do
+    "#{base_url()}/#{base_id}/#{table_id_or_name}"
+  end
+
+  @doc """
+  https://api.airtable.com/v0/:base_id}/:table_id_or_name/:record_id} endpoint
+  """
+  @spec record_url(String.t(), String.t(), String.t()) :: String.t()
+  def record_url(base_id, table_id_or_name, record_id) do
+    "#{table_url(base_id, table_id_or_name)}/#{record_id}"
+  end
+
+  defp base_url do
+    Microservice.base_url(__MODULE__)
   end
 end

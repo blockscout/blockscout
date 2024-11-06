@@ -1,7 +1,7 @@
 # This file in ignore list of `sobelow`, be careful while adding new endpoints here
-defmodule BlockScoutWeb.Routers.AddressBadgesApiV2Router do
+defmodule BlockScoutWeb.Routers.APIv2ProxyAirTableRouter do
   @moduledoc """
-    Router for /api/v2/scam-badge-addresses. This route has separate router in order to ignore sobelow's warning about missing CSRF protection
+    Router for /api/v2/proxy/airtable/ endpoints. This route has separate router in order to ignore sobelow's warning about missing CSRF protection
   """
   use BlockScoutWeb, :router
   alias BlockScoutWeb.API.V2
@@ -46,13 +46,15 @@ defmodule BlockScoutWeb.Routers.AddressBadgesApiV2Router do
   scope "/", as: :api_v2 do
     pipe_through(:api_v2_no_forgery_protect)
 
-    post("/", V2.AddressBadgeController, :assign_badge_to_address)
-    delete("/", V2.AddressBadgeController, :unassign_badge_from_address)
+    patch("/:base_id/:table_id_or_name/:record_id", V2.Proxy.AirTableController, :patch)
+    put("/:base_id/:table_id_or_name/:record_id", V2.Proxy.AirTableController, :put)
+    post("/:base_id/:table_id_or_name", V2.Proxy.AirTableController, :post)
   end
 
   scope "/", as: :api_v2 do
     pipe_through(:api_v2)
 
-    get("/", V2.AddressBadgeController, :show_badge_addresses)
+    get("/:base_id/:table_id_or_name", V2.Proxy.AirTableController, :get_multiple)
+    get("/:base_id/:table_id_or_name/:record_id", V2.Proxy.AirTableController, :get)
   end
 end

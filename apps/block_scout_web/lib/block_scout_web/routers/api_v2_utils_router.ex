@@ -1,5 +1,5 @@
 # This file in ignore list of `sobelow`, be careful while adding new endpoints here
-defmodule BlockScoutWeb.Routers.UtilsApiV2Router do
+defmodule BlockScoutWeb.Routers.ApiV2UtilsRouter do
   @moduledoc """
     Router for /api/v2/utils. This route has separate router in order to ignore sobelow's warning about missing CSRF protection
   """

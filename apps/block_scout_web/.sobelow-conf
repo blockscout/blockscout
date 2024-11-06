@@ -7,9 +7,10 @@
   format: "compact",
   ignore: ["Config.Headers", "Config.CSWH", "XSS.SendResp", "XSS.Raw"],
   ignore_files: [
-    "apps/block_scout_web/lib/block_scout_web/routers/smart_contracts_api_v2_router.ex",
-    "apps/block_scout_web/lib/block_scout_web/routers/tokens_api_v2_router.ex",
-    "apps/block_scout_web/lib/block_scout_web/routers/utils_api_v2_router.ex",
-    "apps/block_scout_web/lib/block_scout_web/routers/address_badges_v2_router.ex"
+    "apps/block_scout_web/lib/block_scout_web/routers/api_v2_smart_contracts_router.ex",
+    "apps/block_scout_web/lib/block_scout_web/routers/api_v2_tokens_router.ex",
+    "apps/block_scout_web/lib/block_scout_web/routers/api_v2_utils_router.ex",
+    "apps/block_scout_web/lib/block_scout_web/routers/api_v2_address_badges_router.ex",
+  "apps/block_scout_web/lib/block_scout_web/routers/api_v2_proxy_air_table_router.ex"
   ]
 ]

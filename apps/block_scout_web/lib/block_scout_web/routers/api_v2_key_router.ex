@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Routers.APIKeyV2Router do
+defmodule BlockScoutWeb.Routers.APIV2KeyRouter do
   @moduledoc """
     Router for /api/v2/key. This route has separate router in order to avoid rate limiting
   """

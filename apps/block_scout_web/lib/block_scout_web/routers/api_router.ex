@@ -16,11 +16,12 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   alias BlockScoutWeb.AddressTransactionController
 
   alias BlockScoutWeb.Routers.{
-    AddressBadgesApiV2Router,
-    APIKeyV2Router,
-    SmartContractsApiV2Router,
-    TokensApiV2Router,
-    UtilsApiV2Router
+    ApiV2AddressBadgesRouter,
+    APIV2KeyRouter,
+    APIv2ProxyAirTableRouter,
+    ApiV2SmartContractsRouter,
+    ApiV2TokensRouter,
+    ApiV2UtilsRouter
   }
 
   alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
@@ -28,12 +29,14 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
   @max_query_string_length 5_000
 
-  forward("/v2/smart-contracts", SmartContractsApiV2Router)
-  forward("/v2/tokens", TokensApiV2Router)
+  forward("/v2/smart-contracts", ApiV2SmartContractsRouter)
+  forward("/v2/tokens", ApiV2TokensRouter)
 
-  forward("/v2/key", APIKeyV2Router)
-  forward("/v2/utils", UtilsApiV2Router)
-  forward("/v2/scam-badge-addresses", AddressBadgesApiV2Router)
+  forward("/v2/key", APIV2KeyRouter)
+  forward("/v2/utils", ApiV2UtilsRouter)
+  forward("/v2/scam-badge-addresses", ApiV2AddressBadgesRouter)
+
+  forward("/v2/proxy/airtable", APIv2ProxyAirTableRouter)
 
   pipeline :api do
     plug(

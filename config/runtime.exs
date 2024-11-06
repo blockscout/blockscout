@@ -503,6 +503,10 @@ config :explorer, Explorer.ThirdPartyIntegrations.Xname,
   service_url: System.get_env("XNAME_BASE_API_URL", "https://gateway.xname.app"),
   api_key: System.get_env("XNAME_API_TOKEN")
 
+config :explorer, Explorer.ThirdPartyIntegrations.AirTable,
+  service_url: System.get_env("AIRTABLE_BASE_API_URL", "https://api.airtable.com/v0"),
+  api_key: System.get_env("AIRTABLE_API_TOKEN")
+
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED", "true")
 # or "eth_bytecode_db"
 type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
