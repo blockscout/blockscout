@@ -32,6 +32,8 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
         updated_logs =
           Repo.all(Log |> where([log], log.block_number == ^block.number) |> order_by([log], asc: log.index))
 
+        Process.sleep(300)
+
         assert match?(
                  [
                    %{index: 0, data: %Explorer.Chain.Data{bytes: <<2>>}},
@@ -107,6 +109,8 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
 
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == "completed"
         assert BackgroundMigrations.get_sanitize_duplicated_log_index_logs_finished() == true
+
+        Process.sleep(300)
 
         updated_logs =
           Repo.all(Log |> where([log], log.block_number == ^block.number) |> order_by([log], asc: log.index))

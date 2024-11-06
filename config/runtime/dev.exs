@@ -74,120 +74,6 @@ config :explorer, Explorer.Repo.Account,
   pool_size: ConfigHelper.parse_integer_env_var("ACCOUNT_POOL_SIZE", 10),
   queue_target: queue_target
 
-# Configure Beacon Chain database
-config :explorer, Explorer.Repo.Beacon,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1
-
-# Configures BridgedTokens database
-config :explorer, Explorer.Repo.BridgedTokens,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1
-
-# Configure Optimism database
-config :explorer, Explorer.Repo.Optimism,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1
-
-# Configure PolygonEdge database
-config :explorer, Explorer.Repo.PolygonEdge,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1
-
-# Configure PolygonZkevm database
-config :explorer, Explorer.Repo.PolygonZkevm,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1
-
-# Configure Scroll database
-config :explorer, Explorer.Repo.Scroll,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1
-
-# Configure ZkSync database
-config :explorer, Explorer.Repo.ZkSync,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1
-
-# Configure Celo database
-config :explorer, Explorer.Repo.Celo,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1
-
-# Configure Rootstock database
-config :explorer, Explorer.Repo.RSK,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1
-
-# Configure Shibarium database
-config :explorer, Explorer.Repo.Shibarium,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1
-
-# Configure Suave database
-config :explorer, Explorer.Repo.Suave,
-  database: database,
-  hostname: hostname,
-  url: ExplorerConfigHelper.get_suave_db_url(),
-  pool_size: 1
-
-# Configure Filecoin database
-config :explorer, Explorer.Repo.Filecoin,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1
-
-# Configure Arbitrum database
-config :explorer, Explorer.Repo.Arbitrum,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  # actually this repo is not started, and its pool size remains unused.
-  # separating repos for different CHAIN_TYPE is implemented only for the sake of keeping DB schema update relevant to the current chain type
-  pool_size: 1
-
-# Configures Stability database
-config :explorer, Explorer.Repo.Stability,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1
-
 database_mud = if System.get_env("MUD_DATABASE_URL"), do: nil, else: database
 hostname_mud = if System.get_env("MUD_DATABASE_URL"), do: nil, else: hostname
 
@@ -199,19 +85,42 @@ config :explorer, Explorer.Repo.Mud,
   pool_size: ConfigHelper.parse_integer_env_var("MUD_POOL_SIZE", 10),
   queue_target: queue_target
 
-# Configures ShrunkInternalTransactions database
-config :explorer, Explorer.Repo.ShrunkInternalTransactions,
+# Configure Suave database
+config :explorer, Explorer.Repo.Suave,
   database: database,
   hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
+  url: ExplorerConfigHelper.get_suave_db_url(),
   pool_size: 1
 
-# Configures Blackfort database
-config :explorer, Explorer.Repo.Blackfort,
-  database: database,
-  hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: 1
+# Actually the following repos are not started, and its pool size remains
+# unused. Separating repos for different CHAIN_TYPE is implemented only for the
+# sake of keeping DB schema update relevant to the current chain type
+for repo <- [
+      # Chain-type dependent repos
+      Explorer.Repo.Arbitrum,
+      Explorer.Repo.Beacon,
+      Explorer.Repo.Blackfort,
+      Explorer.Repo.Celo,
+      Explorer.Repo.Filecoin,
+      Explorer.Repo.Optimism,
+      Explorer.Repo.PolygonEdge,
+      Explorer.Repo.PolygonZkevm,
+      Explorer.Repo.RSK,
+      Explorer.Repo.Scroll,
+      Explorer.Repo.Shibarium,
+      Explorer.Repo.Stability,
+      Explorer.Repo.Zilliqa,
+      Explorer.Repo.ZkSync,
+      # Feature dependent repos
+      Explorer.Repo.BridgedTokens,
+      Explorer.Repo.ShrunkInternalTransactions
+    ] do
+  config :explorer, repo,
+    database: database,
+    hostname: hostname,
+    url: System.get_env("DATABASE_URL"),
+    pool_size: 1
+end
 
 variant = Variant.get()
 
