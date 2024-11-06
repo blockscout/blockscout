@@ -1,9 +1,18 @@
 // cSpell Settings
 {
+    "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
     // Version of the setting file.  Always 0.2
     "version": "0.2",
     // language - current active spelling language
     "language": "en",
+    // files - glob patterns of files to be checked
+    "files": [
+        "**/*.ex*",
+        "**/*.eex",
+        "**/*.js"
+    ],
+    // useGitignore - use .gitignore to exclude files from checking
+    "useGitignore": true,
     // words - list of words to be always considered correct
     "ignorePaths": [
         "apps/block_scout_web/assets/js/lib/ace/src-min/*.js"
