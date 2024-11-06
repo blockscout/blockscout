@@ -2201,7 +2201,7 @@ defmodule Explorer.Chain do
     last_block_period = DateTime.diff(now, timestamp, :millisecond)
 
     if last_block_period > Application.get_env(:explorer, :healthy_blocks_period) do
-      {:error, number, timestamp}
+      {:stale, number, timestamp}
     else
       {:ok, number, timestamp}
     end

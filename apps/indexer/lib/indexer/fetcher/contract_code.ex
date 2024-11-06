@@ -177,21 +177,16 @@ defmodule Indexer.Fetcher.ContractCode do
                addresses: %{params: merged_addresses_params},
                timeout: :infinity
              }) do
-<<<<<<< HEAD
           {:ok, %{addresses: addresses}} ->
             Accounts.drop(addresses)
             zilliqa_verify_scilla_contracts(entries, addresses)
-=======
-          {:ok, imported} ->
-            Accounts.drop(imported[:addresses])
 
             MultichainSearch.batch_import(%{
-              addresses: imported[:addresses] || [],
+              addresses: addresses || [],
               blocks: [],
               transactions: []
             })
 
->>>>>>> cf725a9bde (feature: Export data to Multichain Search DB)
             :ok
 
           {:error, step, reason, _changes_so_far} ->

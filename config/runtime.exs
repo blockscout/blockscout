@@ -672,7 +672,7 @@ config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   concurrency: ConfigHelper.parse_integer_env_var("SHRINK_INTERNAL_TRANSACTIONS_CONCURRENCY", 10)
 
 config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
-  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_DB_CONCURRENCY", 1),
+  concurrency: 1,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_BATCH_SIZE", 10)
 
 config :explorer, Explorer.Chain.BridgedToken,
