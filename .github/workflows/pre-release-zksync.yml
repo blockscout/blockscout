@@ -30,7 +30,7 @@ jobs:
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build and push Docker image for ZkSync (indexer + API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -53,7 +53,7 @@ jobs:
             CHAIN_TYPE=zksync
 
       - name: Build and push Docker image for ZkSync (indexer)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -75,7 +75,7 @@ jobs:
             CHAIN_TYPE=zksync
 
       - name: Build and push Docker image for ZkSync (API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -97,7 +97,7 @@ jobs:
             CHAIN_TYPE=zksync
 
       - name: Build and push Docker image for ZkSync (indexer + API + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -121,7 +121,7 @@ jobs:
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       - name: Build and push Docker image for ZkSync (indexer + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -144,7 +144,7 @@ jobs:
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       - name: Build and push Docker image for ZkSync (API + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile

@@ -27,7 +27,7 @@ jobs:
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build and push Docker image for Stability (indexer + API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -50,7 +50,7 @@ jobs:
             CHAIN_TYPE=stability
 
       - name: Build and push Docker image for Stability (indexer)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -72,7 +72,7 @@ jobs:
             CHAIN_TYPE=stability
 
       - name: Build and push Docker image for Stability (API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
