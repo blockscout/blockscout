@@ -5,6 +5,8 @@
     "version": "0.2",
     // language - current active spelling language
     "language": "en",
+    // enabled - enable code editor suggestions
+    "enabled": true,
     // files - glob patterns of files to be checked
     "files": [
         "**/*.ex*",
@@ -660,5 +662,5 @@
         "dotenv",
         "html-eex",
         "makefile"
-    ]
+    ],
 }
