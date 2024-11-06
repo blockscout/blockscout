@@ -20,6 +20,7 @@
         "apps/block_scout_web/assets/js/lib/ace/src-min/*.js"
     ],
     "ignoreRegExpList": [
+        // Ignore filecoin f410f-like native addresses
         "f410f[a-z2-7]{39}"
     ],
     "words": [
