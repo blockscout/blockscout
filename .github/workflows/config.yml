@@ -350,6 +350,7 @@ jobs:
         uses: streetsidesoftware/cspell-action@v6
         with:
           use_cspell_files: true
+          incremental_files_only: false
 
   eslint:
     name: ESLint
