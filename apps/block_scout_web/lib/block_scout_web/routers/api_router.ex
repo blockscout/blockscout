@@ -353,6 +353,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/wallets/:address_hash_param/portfolio", V2.Proxy.ZerionController, :wallet_portfolio)
       end
 
+      scope "/xname" do
+        get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
+      end
+
       scope "/metadata" do
         get("/addresses", V2.Proxy.MetadataController, :addresses)
       end

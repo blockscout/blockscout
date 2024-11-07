@@ -1,6 +1,6 @@
-defmodule Explorer.ThirdPartyIntegrations.Zerion do
+defmodule Explorer.ThirdPartyIntegrations.Xname do
   @moduledoc """
-  Module for Zerion API integration https://developers.zerion.io/reference
+  Module for proxying xname https://xname.app/ API endpoints
   """
 
   require Logger
@@ -11,14 +11,13 @@ defmodule Explorer.ThirdPartyIntegrations.Zerion do
   @recv_timeout 60_000
 
   @doc """
-  Proxy request to Zerion API endpoints
+  Proxy request to XName API endpoints
   """
   @spec api_request(String.t(), Plug.Conn.t(), atom()) :: {any(), integer()}
   def api_request(url, conn, method \\ :get)
 
   def api_request(url, _conn, :get) do
-    auth_token = Base.encode64("#{api_key()}:")
-    headers = [{"Authorization", "Basic #{auth_token}"}]
+    headers = [{"x-api-key", api_key()}]
 
     case HTTPoison.get(url, headers, recv_timeout: @recv_timeout) do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
@@ -26,7 +25,7 @@ defmodule Explorer.ThirdPartyIntegrations.Zerion do
 
       {:error, reason} ->
         Logger.error(fn ->
-          ["Error while requesting Zerion API endpoint #{url}. The reason is: ", inspect(reason)]
+          ["Error while requesting XName app API endpoint #{url}. The reason is: ", inspect(reason)]
         end)
 
         {nil, 500}
@@ -34,11 +33,11 @@ defmodule Explorer.ThirdPartyIntegrations.Zerion do
   end
 
   @doc """
-  Zerion /wallets/:address_hash/portfolio endpoint
+  https://gateway.xname.app/xhs/level/:address_hash endpoint
   """
-  @spec wallet_portfolio_url(String.t()) :: String.t()
-  def wallet_portfolio_url(address_hash_string) do
-    "#{base_url()}/wallets/#{address_hash_string}/portfolio"
+  @spec address_url(String.t()) :: String.t()
+  def address_url(address_hash_string) do
+    "#{base_url()}/xhs/level/#{address_hash_string}"
   end
 
   defp base_url do
