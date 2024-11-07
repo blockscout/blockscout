@@ -383,7 +383,7 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
 
   defp get_average_block_time do
     case AverageBlockTime.average_block_time() do
-      {:error, _} -> nil
+      {:error, :disabled} -> nil
       average_block_time -> average_block_time |> Duration.to_milliseconds()
     end
   end
