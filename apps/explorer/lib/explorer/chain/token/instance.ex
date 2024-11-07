@@ -718,4 +718,23 @@ defmodule Explorer.Chain.Token.Instance do
     |> where([ti], not is_nil(ti.metadata) and is_nil(ti.media_urls) and is_nil(ti.cdn_upload_error))
     |> Repo.stream_each(each_fun)
   end
+
+  def copy_cdn_result({from_token_contract_address_hash, from_token_id}, {to_token_contract_address_hash, to_token_id}) do
+    now = DateTime.utc_now()
+
+    to_token_id
+    |> token_instance_query(to_token_contract_address_hash)
+    |> join(:inner, [ti1], ti2 in __MODULE__,
+      on: ti2.token_contract_address_hash == ^from_token_contract_address_hash and ti2.token_id == ^from_token_id
+    )
+    |> update([ti1, ti2],
+      set: [
+        cdn_upload_error: ti2.cdn_upload_error,
+        media_urls: ti2.media_urls,
+        media_type: ti2.media_type,
+        updated_at: ^now
+      ]
+    )
+    |> Repo.update_all([], timeout: @timeout)
+  end
 end

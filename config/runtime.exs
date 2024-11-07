@@ -1181,7 +1181,9 @@ config :nft_media_handler,
   standalone_media_worker?: nmh_enabled? && nmh_remote? && nmh_worker?,
   worker_concurrency: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_WORKER_CONCURRENCY", 10),
   worker_batch_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_WORKER_BATCH_SIZE", 10),
-  worker_spawn_tasks_timeout: ConfigHelper.parse_time_env_var("NFT_MEDIA_HANDLER_WORKER_SPAWN_TASKS_TIMEOUT", "100ms")
+  worker_spawn_tasks_timeout: ConfigHelper.parse_time_env_var("NFT_MEDIA_HANDLER_WORKER_SPAWN_TASKS_TIMEOUT", "100ms"),
+  uniqueness_cache_name: :uniqueness_cache,
+  uniqueness_cache_max_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_UNIQUENESS_CACHE_MAX_SIZE", 100_000)
 
 config :nft_media_handler, NFTMediaHandlerDispatcher.Backfiller,
   enabled?: ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_BACKFILL_ENABLED"),

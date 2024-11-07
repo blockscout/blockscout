@@ -63,48 +63,75 @@ defmodule NFTMediaHandlerDispatcher.Queue do
         {:add_to_queue, {token_address_hash, token_id, media_url}},
         {queue, in_progress, continuation}
       ) do
-    :dets.insert(queue, {media_url, {token_address_hash, token_id}})
+    case :dets.lookup(in_progress, media_url) do
+      [{_, instances, start_time}] ->
+        Logger.info(
+          "Media url already in progress: #{media_url}, will append to instances: {#{to_string(token_address_hash)}, #{token_id}} "
+        )
+
+        :dets.insert(in_progress, {media_url, [{token_address_hash, token_id} | instances], start_time})
+
+      _ ->
+        case Cachex.get(uniqueness_cache_name(), media_url) do
+          {:ok, {token_address_hash_fetched, token_id_fetched} = already_fetched_nft_id} ->
+            Logger.info(
+              "Media url already fetched: #{media_url}, will copy from: {#{to_string(token_address_hash_fetched)}, #{token_id_fetched}}, to: {#{to_string(token_address_hash)}, #{token_id}} "
+            )
+
+            Instance.copy_cdn_result(already_fetched_nft_id, {token_address_hash, token_id})
+
+          _ ->
+            :dets.insert(queue, {media_url, {token_address_hash, token_id}})
+        end
+    end
 
     {:noreply, {queue, in_progress, continuation}}
   end
 
   def handle_cast({:finished, result, url, media_type}, {_queue, in_progress, _continuation} = state)
       when is_map(result) do
-    now = System.monotonic_time()
+    case :dets.lookup(in_progress, url) do
+      [{_, instances, start_time}] ->
+        now = System.monotonic_time()
+        :dets.delete(in_progress, url)
 
-    [{_, instances, start_time}] = :dets.lookup(in_progress, url)
+        Instrumenter.increment_successfully_uploaded_media_number()
+        Instrumenter.media_processing_time(System.convert_time_unit(now - start_time, :native, :millisecond) / 1000)
 
-    :dets.delete(in_progress, url)
+        Enum.each(instances, fn instance_identifier ->
+          Instance.set_media_urls(instance_identifier, result, media_type)
+        end)
 
-    Instrumenter.increment_successfully_uploaded_media_number()
-    Instrumenter.media_processing_time(System.convert_time_unit(now - start_time, :native, :millisecond) / 1000)
+        put_url_to_cache(url, Enum.at(instances, 0))
 
-    Enum.each(instances, fn instance_identifier ->
-      Instance.set_media_urls(instance_identifier, result, media_type)
-    end)
+      _ ->
+        Logger.warning("Failed to find instances in in_progress dets for url: #{url}, result: #{inspect(result)}")
+    end
 
     {:noreply, state}
   end
 
   def handle_cast({:handle_error, url, reason}, {_queue, in_progress, _continuation} = state) do
-    [{_, instances, _start_time}] = :dets.lookup(in_progress, url)
+    case :dets.lookup(in_progress, url) do
+      [{_, instances, _start_time}] ->
+        :dets.delete(in_progress, url)
 
-    :dets.delete(in_progress, url)
+        Instrumenter.increment_failed_uploading_media_number()
 
-    Instrumenter.increment_failed_uploading_media_number()
+        Enum.each(instances, fn instance_identifier ->
+          Instance.set_cdn_upload_error(instance_identifier, reason |> inspect() |> MetadataRetriever.truncate_error())
+        end)
 
-    Enum.each(instances, fn instance_identifier ->
-      Instance.set_cdn_upload_error(instance_identifier, reason |> inspect() |> MetadataRetriever.truncate_error())
-    end)
+        put_url_to_cache(url, Enum.at(instances, 0))
+
+      _ ->
+        Logger.warning("Failed to find instances in in_progress dets for url: #{url}, error: #{inspect(reason)}")
+    end
 
     {:noreply, state}
   end
 
-  def handle_call({:get_by_url, url}, _from, {queue, _in_progress, _continuation} = state) do
-    {:reply, :dets.lookup(queue, url), state}
-  end
-
-  def handle_call({:get_urls_to_fetch, amount}, _from, {queue, in_progress, continuation}) do
+  def handle_call({:get_urls_to_fetch, amount}, _from, {queue, in_progress, continuation} = state) do
     {high_priority_urls, continuation} = fetch_urls_from_dets(queue, amount, continuation)
     now = System.monotonic_time()
 
@@ -114,7 +141,10 @@ defmodule NFTMediaHandlerDispatcher.Queue do
 
     {urls, instances} =
       if taken_amount < amount do
-        backfill_items = Backfiller.get_instances(amount - taken_amount)
+        backfill_items =
+          (amount - taken_amount)
+          |> Backfiller.get_instances()
+          |> Enum.filter(fn backfill_item -> filter_fetched_backfill_url(backfill_item, state) end)
 
         {low_priority_instances, low_priority_urls} =
           Enum.map_reduce(backfill_items, [], fn {url, instances}, acc ->
@@ -176,5 +206,40 @@ defmodule NFTMediaHandlerDispatcher.Queue do
 
       {url, instances, start_time}
     end)
+  end
+
+  defp uniqueness_cache_name do
+    Application.get_env(:nft_media_handler, :uniqueness_cache_name)
+  end
+
+  defp put_url_to_cache(url, {token_address_hash, token_id}) do
+    Cachex.put(uniqueness_cache_name(), url, {token_address_hash, token_id})
+  end
+
+  defp filter_fetched_backfill_url({url, backfill_instances}, {_queue, in_progress, _continuation}) do
+    case :dets.lookup(in_progress, url) do
+      [{_, instances, start_time}] ->
+        Logger.info("Media url already in progress: #{url}, will append to instances: #{inspect(backfill_instances)}")
+
+        :dets.insert(in_progress, {url, instances ++ backfill_instances, start_time})
+        false
+
+      _ ->
+        case Cachex.get(uniqueness_cache_name(), url) do
+          {:ok, {token_address_hash_fetched, token_id_fetched} = already_fetched_nft_id} ->
+            Logger.info(
+              "Media url already fetched: #{url}, will copy from: {#{to_string(token_address_hash_fetched)}, #{token_id_fetched}}, to: #{inspect(backfill_instances)}"
+            )
+
+            Enum.each(backfill_instances, fn {token_address_hash, token_id} ->
+              Instance.copy_cdn_result(already_fetched_nft_id, {token_address_hash, token_id})
+            end)
+
+            false
+
+          _ ->
+            true
+        end
+    end
   end
 end

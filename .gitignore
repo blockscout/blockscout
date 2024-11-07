@@ -60,6 +60,7 @@ dump.rdb
 .vscode
 .cursorignore
 .cursorrules
+.elixir_ls
 
 **.dec**
 

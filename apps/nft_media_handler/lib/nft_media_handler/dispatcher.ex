@@ -28,11 +28,15 @@ defmodule NFTMediaHandler.Dispatcher do
   @impl true
   def handle_info(
         :spawn_tasks,
-        %{max_concurrency: max_concurrency, current_concurrency: current_concurrency, ref_to_batch: tasks_map} = state
+        %{
+          max_concurrency: max_concurrency,
+          current_concurrency: current_concurrency,
+          ref_to_batch: tasks_map,
+          batch_size: batch_size
+        } = state
       )
       when max_concurrency > current_concurrency do
     to_spawn = max_concurrency - current_concurrency
-    batch_size = batch_size()
 
     {urls, node, folder} =
       (batch_size * to_spawn)
@@ -94,13 +98,14 @@ defmodule NFTMediaHandler.Dispatcher do
              |> NFTMediaHandlerDispatcherInterface.store_result(url, node)
            rescue
              error ->
-               Logger.error("Failed to fetch and upload url (#{url}): #{inspect(error)}")
+               Logger.error(
+                 "Failed to fetch and upload url (#{url}): #{Exception.format(:error, error, __STACKTRACE__)}"
+               )
+
                NFTMediaHandlerDispatcherInterface.store_result({:error, error}, url, node)
            end
          end)
        end).ref, {batch, node}}
-
-  defp batch_size, do: 1
 
   defp timeout, do: Application.get_env(:nft_media_handler, :worker_spawn_tasks_timeout)
 end

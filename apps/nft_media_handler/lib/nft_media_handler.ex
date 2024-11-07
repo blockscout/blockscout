@@ -138,11 +138,17 @@ defmodule NFTMediaHandler do
 
   # workaround, because VipsImage.write_to_buffer/2 does not support .gif
   def image_to_binary(resized_image, file_name, ".gif") do
-    path = "#{Application.get_env(:nft_media_handler, :tmp_dir)}#{file_name}.gif"
-    VipsImage.write_to_file(resized_image, path)
-    result = File.read(path)
-    remove_file(path)
-    result
+    path = "#{Application.get_env(:nft_media_handler, :tmp_dir)}#{file_name}"
+
+    with :ok <- VipsImage.write_to_file(resized_image, path),
+         {:ok, result} <- File.read(path) do
+      remove_file(path)
+      result
+    else
+      {:error, reason} ->
+        Logger.error("Error while writing image to file: #{inspect(reason)}, path: #{path}")
+        :file_error
+    end
   end
 
   defp remove_file(path) do

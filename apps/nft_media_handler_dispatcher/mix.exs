@@ -24,7 +24,8 @@ defmodule NFTMediaHandlerDispatcher.MixProject do
 
   defp deps do
     [
-      {:explorer, in_umbrella: true}
+      {:explorer, in_umbrella: true},
+      {:cachex, "~> 4.0"}
     ]
   end
 end

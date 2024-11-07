@@ -19,7 +19,7 @@ defmodule NFTMediaHandler.Image.Resizer do
         {size, binary, new_file_name}
       else
         {:size, _} ->
-          Logger.warning("Skipped #{size} resizing due to small image size")
+          Logger.debug("Skipped #{size} resizing due to small image size")
           nil
 
         error ->

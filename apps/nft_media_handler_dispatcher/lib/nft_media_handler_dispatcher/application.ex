@@ -4,10 +4,31 @@ defmodule NFTMediaHandlerDispatcher.Application do
   """
   use Application
 
+  import Cachex.Spec
+
   @impl Application
   def start(_type, _args) do
     base_children = [
-      NFTMediaHandlerDispatcher.Queue
+      NFTMediaHandlerDispatcher.Queue,
+      {Cachex,
+       [
+         Application.get_env(:nft_media_handler, :uniqueness_cache_name),
+         [
+           hooks: [
+             hook(
+               module: Cachex.Limit.Scheduled,
+               args: {
+                 # setting cache max size
+                 Application.get_env(:nft_media_handler, :uniqueness_cache_max_size),
+                 # options for `Cachex.prune/3`
+                 [],
+                 # options for `Cachex.Limit.Scheduled`
+                 []
+               }
+             )
+           ]
+         ]
+       ]}
     ]
 
     children =
