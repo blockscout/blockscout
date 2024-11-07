@@ -94,6 +94,14 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     from(w in query, where: w.msg_nonce < ^nonce)
   end
 
+  @doc """
+    Forms a query to find the last Withdrawal's L2 block number and transaction hash.
+    Used by the `Indexer.Fetcher.Optimism.Withdrawal` module.
+
+    ## Returns
+    - A query which can be used by the `Repo.one` function.
+  """
+  @spec last_withdrawal_l2_block_number_query() :: Ecto.Queryable.t()
   def last_withdrawal_l2_block_number_query do
     from(w in __MODULE__,
       select: {w.l2_block_number, w.l2_transaction_hash},
@@ -102,6 +110,18 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     )
   end
 
+  @doc """
+    Forms a query to remove all Withdrawals related to the specified L2 block number.
+    Used by the `Indexer.Fetcher.Optimism.Withdrawal` module.
+
+    ## Parameters
+    - `l2_block_number`: The L2 block number for which the Withdrawals should be removed
+                         from the `op_withdrawals` database table.
+
+    ## Returns
+    - A query which can be used by the `delete_all` function.
+  """
+  @spec remove_withdrawals_query(non_neg_integer()) :: Ecto.Queryable.t()
   def remove_withdrawals_query(l2_block_number) do
     from(w in __MODULE__, where: w.l2_block_number == ^l2_block_number)
   end

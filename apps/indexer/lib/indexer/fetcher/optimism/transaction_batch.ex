@@ -411,6 +411,20 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     block.timestamp
   end
 
+  # Determines the last saved L1 block number, the last saved transaction hash, and the transaction info for batches.
+  #
+  # Utilized to start fetching from a correct block number after reorg has occured.
+  #
+  # ## Parameters
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #                               Used to get transaction info by its hash from the RPC node.
+  #
+  # ## Returns
+  # - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
+  #   `last_block_number` is the last block number found in the corresponding table (0 if not found),
+  #   `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
+  #   `last_transaction` is the transaction info got from the RPC (nil if not found).
+  @spec get_last_l1_item(EthereumJSONRPC.json_rpc_named_arguments()) :: {non_neg_integer(), binary() | nil, map() | nil}
   defp get_last_l1_item(json_rpc_named_arguments) do
     result =
       Repo.one(

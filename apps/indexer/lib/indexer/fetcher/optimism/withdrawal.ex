@@ -371,6 +371,23 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     end
   end
 
+  # Determines the last saved L2 block number, the last saved transaction hash, and the transaction info for withdrawals.
+  #
+  # Utilized to start fetching from a correct block number after reorg has occured.
+  #
+  # ## Parameters
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #                               Used to get transaction info by its hash from the RPC node.
+  #                               Can be `nil` if the transaction info is not needed.
+  #
+  # ## Returns
+  # - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
+  #   `last_block_number` is the last block number found in the corresponding table (0 if not found),
+  #   `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
+  #   `last_transaction` is the transaction info got from the RPC (nil if not found or not needed).
+  # - A tuple `{:error, message}` in case the `eth_getTransactionByHash` RPC request failed.
+  @spec get_last_l2_item(EthereumJSONRPC.json_rpc_named_arguments() | nil) ::
+          {non_neg_integer(), binary() | nil, map() | nil} | {:error, any()}
   defp get_last_l2_item(json_rpc_named_arguments \\ nil) do
     Optimism.get_last_item(
       :L2,

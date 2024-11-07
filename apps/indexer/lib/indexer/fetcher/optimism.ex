@@ -385,6 +385,32 @@ defmodule Indexer.Fetcher.Optimism do
     not is_nil(optimism_config[:optimism_l1_system_config])
   end
 
+  @doc """
+    Determines the last saved block number, the last saved transaction hash, and the transaction info for
+    a certain entity defined by the passed functions.
+
+    Used by the OP fetcher modules to start fetching from a correct block number
+    after reorg has occured.
+
+    ## Parameters
+    - `layer`: Just for logging purposes. Can be `:L1` or `:L2` depending on the layer of the entity.
+    - `last_block_number_query_fun`: A function which will be called to form database query
+                                     to get the latest item in the corresponding database table.
+    - `remove_query_fun`: A function which will be called to form database query to remove the entity rows
+                          created due to reorg from the corresponding table.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+                                  Used to get transaction info by its hash from the RPC node.
+                                  Can be `nil` if the transaction info is not needed.
+
+    ## Returns
+    - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
+      `last_block_number` is the last block number found in the corresponding table (0 if not found),
+      `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
+      `last_transaction` is the transaction info got from the RPC (nil if not found or not needed).
+    - A tuple `{:error, message}` in case the `eth_getTransactionByHash` RPC request failed.
+  """
+  @spec get_last_item(:L1 | :L2, function(), function(), EthereumJSONRPC.json_rpc_named_arguments() | nil) ::
+          {non_neg_integer(), binary() | nil, map() | nil} | {:error, any()}
   def get_last_item(layer, last_block_number_query_fun, remove_query_fun, json_rpc_named_arguments \\ nil)
       when is_function(last_block_number_query_fun, 0) and is_function(remove_query_fun, 1) do
     {last_block_number, last_transaction_hash} =

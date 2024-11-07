@@ -52,6 +52,18 @@ defmodule Explorer.Chain.Optimism.Deposit do
     )
   end
 
+  @doc """
+    Forms a query to remove all Deposits with the specified L1 block number.
+    Used by the `Indexer.Fetcher.Optimism.Deposit` module.
+
+    ## Parameters
+    - `l1_block_number`: The L1 block number for which the Deposits should be removed
+                         from the `op_deposits` database table.
+
+    ## Returns
+    - A query which can be used by the `delete_all` function.
+  """
+  @spec remove_deposits_query(non_neg_integer()) :: Ecto.Queryable.t()
   def remove_deposits_query(l1_block_number) do
     from(d in __MODULE__, where: d.l1_block_number == ^l1_block_number)
   end
