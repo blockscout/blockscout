@@ -7,6 +7,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction, Reader}
 
+  @doc """
+    Function to render error\\text responses for GET requests
+    to `/api/v2/arbitrum/messages/claim/:position` endpoint.
+  """
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
   end
