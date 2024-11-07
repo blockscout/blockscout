@@ -1,0 +1,72 @@
+version: '3.9'
+
+services:
+  #redis-db:
+  #  extends:
+  #    file: ./services/redis.yml
+  #    service: redis-db
+
+  #db-init:
+  #  extends:
+  #    file: ./services/db.yml
+  #    service: db-init
+
+  #db:
+  #  depends_on:
+  #    db-init:
+  #      condition: service_completed_successfully
+  #  extends:
+  #    file: ./services/db.yml
+  #    service: db
+
+  blockscout:
+    network_mode: "host"
+    # depends_on:
+    #   - db
+    #   - redis-db
+    extends:
+      file: ./services/blockscout.yml
+      service: blockscout
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+      args:
+        BLOCKSCOUT_USER: blockscout-testnet
+        CACHE_EXCHANGE_RATES_PERIOD: ""
+        API_V1_READ_METHODS_DISABLED: "false"
+        DISABLE_WEBAPP: "false"
+        API_V1_WRITE_METHODS_DISABLED: "false"
+        CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED: ""
+        CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL: ""
+        ADMIN_PANEL_ENABLED: "true"
+        RELEASE_VERSION: 6.9.0
+
+    # links:
+    #   - db:database
+    environment:
+      RELEASE_NODE: "blockscout-testnet@luxtest"
+      BLOCKSCOUT_USER: blockscout-testnet
+      ETHEREUM_JSONRPC_HTTP_URL: http://luxtest:8080/
+      ETHEREUM_JSONRPC_TRACE_URL: http://luxtest:8080/
+      ETHEREUM_JSONRPC_WS_URL: http://luxtest:8080/
+      CHAIN_ID: '96368'
+      PORT: 4001
+
+    # frontend:
+    #   depends_on:
+    #     - backend
+    #   extends:
+    #     file: ./services/frontend.yml
+    #     service: frontend
+    #   environment:
+    #     NEXT_PUBLIC_STATS_API_HOST:
+
+    # proxy:
+    #   depends_on:
+    #     - backend
+    #     - frontend
+    #   extends:
+    #     file: ./services/nginx-explorer.yml
+    #     service: proxy
+    #   volumes:
+    #     - "./proxy/explorer.conf.template:/etc/nginx/templates/default.conf.template"
