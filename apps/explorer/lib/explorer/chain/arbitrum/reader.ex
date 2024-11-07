@@ -634,19 +634,21 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
-  Finds all `t:Explorer.Chain.Log.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
+    Retrieves logs from a transaction that match a specific topic.
 
-  ## Parameters
-    - `transaction_hash`: a transaction hash defined as `Explorer.Chain.Hash.Full.t()`
-    - `topic0`: a log's topic which should to be fetched from the events emitted by transaction
-                in form of hex string (started with `0x` prefix)
-    - `options`: A keyword list of options that may include whether to use a replica database.
+    Fetches all logs emitted by the specified transaction that have the given topic
+    as their first topic, ordered by log index.
 
-  ## Options
-    * `:api?` - used to utilize a replica database instead of main
+    ## Parameters
+    - `transaction_hash`: The hash of the transaction to fetch logs from
+    - `topic0`: The first topic to filter logs by
+    - `options`: Optional keyword list with `:api?` flag to use replica database
 
+    ## Returns
+    - A list of matching logs ordered by index, or empty list if none found
   """
   @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary(), api?: boolean()) :: [Log.t()]
+  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary()) :: [Log.t()]
   def transaction_to_logs_by_topic0(transaction_hash, topic0, options \\ []) when is_list(options) do
     log_with_transactions =
       from(log in Log,
