@@ -9,24 +9,27 @@ defmodule ConfigHelper do
   def repos do
     base_repos = [Explorer.Repo, Explorer.Repo.Account]
 
-    repos =
-      case chain_type() do
-        :ethereum -> base_repos ++ [Explorer.Repo.Beacon]
-        :optimism -> base_repos ++ [Explorer.Repo.Optimism]
-        :polygon_edge -> base_repos ++ [Explorer.Repo.PolygonEdge]
-        :polygon_zkevm -> base_repos ++ [Explorer.Repo.PolygonZkevm]
-        :rsk -> base_repos ++ [Explorer.Repo.RSK]
-        :scroll -> base_repos ++ [Explorer.Repo.Scroll]
-        :shibarium -> base_repos ++ [Explorer.Repo.Shibarium]
-        :suave -> base_repos ++ [Explorer.Repo.Suave]
-        :filecoin -> base_repos ++ [Explorer.Repo.Filecoin]
-        :stability -> base_repos ++ [Explorer.Repo.Stability]
-        :zksync -> base_repos ++ [Explorer.Repo.ZkSync]
-        :celo -> base_repos ++ [Explorer.Repo.Celo]
-        :arbitrum -> base_repos ++ [Explorer.Repo.Arbitrum]
-        :blackfort -> base_repos ++ [Explorer.Repo.Blackfort]
-        _ -> base_repos
-      end
+    chain_type_repo =
+      %{
+        arbitrum: Explorer.Repo.Arbitrum,
+        blackfort: Explorer.Repo.Blackfort,
+        celo: Explorer.Repo.Celo,
+        ethereum: Explorer.Repo.Beacon,
+        filecoin: Explorer.Repo.Filecoin,
+        optimism: Explorer.Repo.Optimism,
+        polygon_edge: Explorer.Repo.PolygonEdge,
+        polygon_zkevm: Explorer.Repo.PolygonZkevm,
+        rsk: Explorer.Repo.RSK,
+        scroll: Explorer.Repo.Scroll,
+        shibarium: Explorer.Repo.Shibarium,
+        stability: Explorer.Repo.Stability,
+        suave: Explorer.Repo.Suave,
+        zilliqa: Explorer.Repo.Zilliqa,
+        zksync: Explorer.Repo.ZkSync
+      }
+      |> Map.get(chain_type())
+
+    chain_type_repos = (chain_type_repo && [chain_type_repo]) || []
 
     ext_repos =
       [
@@ -37,7 +40,7 @@ defmodule ConfigHelper do
       |> Enum.filter(&elem(&1, 0))
       |> Enum.map(&elem(&1, 1))
 
-    repos ++ ext_repos
+    base_repos ++ chain_type_repos ++ ext_repos
   end
 
   @spec hackney_options() :: any()
@@ -305,6 +308,8 @@ defmodule ConfigHelper do
   @supported_chain_types [
     "default",
     "arbitrum",
+    "blackfort",
+    "celo",
     "ethereum",
     "filecoin",
     "optimism",
@@ -316,9 +321,8 @@ defmodule ConfigHelper do
     "stability",
     "suave",
     "zetachain",
-    "zksync",
-    "celo",
-    "blackfort"
+    "zilliqa",
+    "zksync"
   ]
 
   @spec chain_type() :: atom() | nil

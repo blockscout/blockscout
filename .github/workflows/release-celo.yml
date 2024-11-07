@@ -28,7 +28,7 @@ jobs:
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build and push Docker image for CELO (indexer + API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -52,7 +52,7 @@ jobs:
             CHAIN_TYPE=celo
 
       - name: Build and push Docker image for CELO (indexer)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -75,7 +75,7 @@ jobs:
             CHAIN_TYPE=celo
 
       - name: Build and push Docker image for CELO (API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -98,7 +98,7 @@ jobs:
             CHAIN_TYPE=celo
 
       - name: Build and push Docker image for CELO (indexer + API + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -123,7 +123,7 @@ jobs:
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       - name: Build and push Docker image for CELO (indexer + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -147,7 +147,7 @@ jobs:
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       - name: Build and push Docker image for CELO (API + shrink internal transactions)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile

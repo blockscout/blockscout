@@ -1,12 +1,27 @@
 // cSpell Settings
 {
+    "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
     // Version of the setting file.  Always 0.2
     "version": "0.2",
     // language - current active spelling language
     "language": "en",
+    // enabled - enable code editor suggestions
+    "enabled": true,
+    // files - glob patterns of files to be checked
+    "files": [
+        "**/*.ex*",
+        "**/*.eex",
+        "**/*.js"
+    ],
+    // useGitignore - use .gitignore to exclude files from checking
+    "useGitignore": true,
     // words - list of words to be always considered correct
     "ignorePaths": [
         "apps/block_scout_web/assets/js/lib/ace/src-min/*.js"
+    ],
+    "ignoreRegExpList": [
+        // Ignore filecoin f410f-like native addresses
+        "f410f[a-z2-7]{39}"
     ],
     "words": [
         "aave",
@@ -64,6 +79,7 @@
         "blockscout",
         "blockscoutuser",
         "bools",
+        "Boneh",
         "bridgedtokenlist",
         "brotli",
         "browserconfig",
@@ -388,6 +404,7 @@
         "pawesome",
         "paych",
         "pbcopy",
+        "PBFT",
         "peeker",
         "peekers",
         "pendingtxlist",
@@ -418,6 +435,7 @@
         "prederived",
         "progressbar",
         "proxiable",
+        "proxying",
         "psql",
         "pubkey",
         "pubkeys",
@@ -477,6 +495,7 @@
         "SENDGRID",
         "Sepolia",
         "Sérgio",
+        "Shacham",
         "sharelock",
         "sharelocks",
         "shibarium",
@@ -521,6 +540,7 @@
         "subtraces",
         "successa",
         "successb",
+        "supermajority",
         "supernet",
         "sushiswap",
         "swal",
@@ -622,6 +642,7 @@
         "xakgj",
         "xbaddress",
         "xdai",
+        "Xname",
         "xffff",
         "xlevel",
         "xlink",
@@ -636,6 +657,7 @@
         "zetachain",
         "zftv",
         "ziczr",
+        "zilliqa",
         "zindex",
         "zipcode",
         "zkatana",
@@ -648,5 +670,5 @@
         "dotenv",
         "html-eex",
         "makefile"
-    ]
+    ],
 }
