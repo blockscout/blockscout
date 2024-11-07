@@ -3,6 +3,8 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   Module for Noves.Fi API integration https://blockscout.noves.fi/swagger/index.html
   """
 
+  require Logger
+
   alias Explorer.Helper
   alias Explorer.Utility.Microservice
 
@@ -33,7 +35,11 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {Helper.decode_json(body), status}
 
-      _ ->
+      {:error, reason} ->
+        Logger.error(fn ->
+          ["Error while requesting Noves.Fi API endpoint #{url}. The reason is: ", inspect(reason)]
+        end)
+
         {nil, 500}
     end
   end
@@ -47,7 +53,11 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {Helper.decode_json(body), status}
 
-      _ ->
+      {:error, reason} ->
+        Logger.error(fn ->
+          ["Error while requesting Noves.Fi API endpoint #{url}. The reason is: ", inspect(reason)]
+        end)
+
         {nil, 500}
     end
   end

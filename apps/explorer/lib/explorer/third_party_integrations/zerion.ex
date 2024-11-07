@@ -3,6 +3,8 @@ defmodule Explorer.ThirdPartyIntegrations.Zerion do
   Module for Zerion API integration https://developers.zerion.io/reference
   """
 
+  require Logger
+
   alias Explorer.Helper
   alias Explorer.Utility.Microservice
 
@@ -22,7 +24,11 @@ defmodule Explorer.ThirdPartyIntegrations.Zerion do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {Helper.decode_json(body), status}
 
-      _ ->
+      {:error, reason} ->
+        Logger.error(fn ->
+          ["Error while requesting Zerion API endpoint #{url}. The reason is: ", inspect(reason)]
+        end)
+
         {nil, 500}
     end
   end

@@ -353,7 +353,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
 
       scope "/xname" do
-        get("/address/:address_hash_param", V2.Proxy.XnameController, :address)
+        get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
       end
 
       scope "/metadata" do

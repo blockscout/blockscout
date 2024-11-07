@@ -3,6 +3,8 @@ defmodule Explorer.ThirdPartyIntegrations.Xname do
   Module for proxying xname https://xname.app/ API endpoints
   """
 
+  require Logger
+
   alias Explorer.Helper
   alias Explorer.Utility.Microservice
 
@@ -21,7 +23,11 @@ defmodule Explorer.ThirdPartyIntegrations.Xname do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {Helper.decode_json(body), status}
 
-      _ ->
+      {:error, reason} ->
+        Logger.error(fn ->
+          ["Error while requesting XName app API endpoint #{url}. The reason is: ", inspect(reason)]
+        end)
+
         {nil, 500}
     end
   end
