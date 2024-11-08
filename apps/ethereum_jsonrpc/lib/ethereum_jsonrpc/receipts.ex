@@ -133,12 +133,12 @@ defmodule EthereumJSONRPC.Receipts do
     Fetches transaction receipts and logs, converting them to a format ready for
     database import.
 
-    Makes batch JSON-RPC requests to retrieve receipts for either multiple transactions
-    or multiple block numbers sequentially. Processes the raw receipt data into standardized
-    format suitable for database import.
+    Makes batch JSON-RPC requests to retrieve receipts for multiple transactions
+    sequentially. Processes the raw receipt data into standardized format suitable
+    for database import.
 
     ## Parameters
-    - `request_origins`: Either a list of transaction parameter maps or a list of block numbers
+    - `request_origins`: A list of transaction parameter maps
     - `json_rpc_named_arguments`: Configuration for JSON-RPC connection
 
     ## Returns
@@ -156,9 +156,7 @@ defmodule EthereumJSONRPC.Receipts do
           ],
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term()}
-  @spec fetch([EthereumJSONRPC.block_number() | EthereumJSONRPC.quantity()], EthereumJSONRPC.json_rpc_named_arguments()) ::
-          {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term()}
-  def fetch(request_origins, json_rpc_named_arguments)
+  def fetch(transactions_params, json_rpc_named_arguments)
 
   def fetch([], _json_rpc_named_arguments), do: {:ok, %{logs: [], receipts: []}}
 
@@ -176,7 +174,33 @@ defmodule EthereumJSONRPC.Receipts do
     request_and_parse(requests, id_to_transaction_params, json_rpc_named_arguments)
   end
 
-  def fetch(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
+  @doc """
+    Fetches transaction receipts and logs, converting them to a format ready for
+    database import.
+
+    Makes batch JSON-RPC requests to retrieve receipts for multiple block numbers
+    sequentially. Processes the raw receipt data into standardized format suitable
+    for database import.
+
+    ## Parameters
+    - `request_origins`: A list of block numbers
+    - `json_rpc_named_arguments`: Configuration for JSON-RPC connection
+
+    ## Returns
+    - `{:ok, %{logs: list(), receipts: list()}}` - Successfully processed receipts
+      and logs ready for database import
+    - `{:error, reason}` - Error occurred during fetch or processing
+  """
+  @spec fetch_by_block_numbers(
+          [EthereumJSONRPC.block_number() | EthereumJSONRPC.quantity()],
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) ::
+          {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term()}
+  def fetch_by_block_numbers(block_numbers, json_rpc_named_arguments)
+
+  def fetch_by_block_numbers([], _json_rpc_named_arguments), do: {:ok, %{logs: [], receipts: []}}
+
+  def fetch_by_block_numbers(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
     requests =
       block_numbers
       |> Enum.map(&ByBlockNumber.request(%{id: &1, number: &1}))
