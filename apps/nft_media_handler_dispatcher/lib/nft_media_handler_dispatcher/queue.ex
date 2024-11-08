@@ -65,7 +65,7 @@ defmodule NFTMediaHandlerDispatcher.Queue do
       ) do
     case :dets.lookup(in_progress, media_url) do
       [{_, instances, start_time}] ->
-        Logger.info(
+        Logger.debug(
           "Media url already in progress: #{media_url}, will append to instances: {#{to_string(token_address_hash)}, #{token_id}} "
         )
 
@@ -74,7 +74,7 @@ defmodule NFTMediaHandlerDispatcher.Queue do
       _ ->
         case Cachex.get(uniqueness_cache_name(), media_url) do
           {:ok, {token_address_hash_fetched, token_id_fetched} = already_fetched_nft_id} ->
-            Logger.info(
+            Logger.debug(
               "Media url already fetched: #{media_url}, will copy from: {#{to_string(token_address_hash_fetched)}, #{token_id_fetched}}, to: {#{to_string(token_address_hash)}, #{token_id}} "
             )
 
@@ -219,7 +219,7 @@ defmodule NFTMediaHandlerDispatcher.Queue do
   defp filter_fetched_backfill_url({url, backfill_instances}, {_queue, in_progress, _continuation}) do
     case :dets.lookup(in_progress, url) do
       [{_, instances, start_time}] ->
-        Logger.info("Media url already in progress: #{url}, will append to instances: #{inspect(backfill_instances)}")
+        Logger.debug("Media url already in progress: #{url}, will append to instances: #{inspect(backfill_instances)}")
 
         :dets.insert(in_progress, {url, instances ++ backfill_instances, start_time})
         false
@@ -227,7 +227,7 @@ defmodule NFTMediaHandlerDispatcher.Queue do
       _ ->
         case Cachex.get(uniqueness_cache_name(), url) do
           {:ok, {token_address_hash_fetched, token_id_fetched} = already_fetched_nft_id} ->
-            Logger.info(
+            Logger.debug(
               "Media url already fetched: #{url}, will copy from: {#{to_string(token_address_hash_fetched)}, #{token_id_fetched}}, to: #{inspect(backfill_instances)}"
             )
 

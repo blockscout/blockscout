@@ -89,7 +89,6 @@ defmodule Explorer.Prometheus.Instrumenter do
   end
 
   def media_processing_time(seconds) do
-    Logger.info(to_string(seconds))
     Histogram.observe([name: :media_processing_time], seconds)
   end
 
