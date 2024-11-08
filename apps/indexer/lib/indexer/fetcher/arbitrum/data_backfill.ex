@@ -1,4 +1,7 @@
 defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
+  @moduledoc """
+    Backfill worker for Arbitrum-specific fields in blocks and transactions.
+  """
   use Indexer.Fetcher, restart: :transient
   use Spandex.Decorators
 
@@ -16,7 +19,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
   @default_max_batch_size 1
   @default_max_concurrency 1
 
-  # the flush interval is small enought to pickup the next block range or retry
+  # the flush interval is small enough to pickup the next block range or retry
   # the same block range without with low latency. In case if retry must happen
   # due to unindexed blocks discovery, run callback will have its own timer
   # management to make sure that the same unindexed block range is not tried to
@@ -63,10 +66,6 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
     {:stop, :normal, state}
   end
 
-  # init callback will wait for appearance of the first new indexed block in the
-  # database, adds to the buffer the block number predcesing the indexed one
-  # and finishes.
-
   @impl BufferedTask
   def init(initial, reducer, _) do
     time_of_start = DateTime.utc_now()
@@ -96,14 +95,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
     else
       case Backfill.discover_blocks(end_block, state) do
         {:ok, start_block} ->
-          if start_block >= state.config.rollup_rpc.first_block do
-            BufferedTask.buffer(__MODULE__, [{:backfill, {0, start_block - 1}}], false)
-            :ok
-          else
-            # will it work?
-            GenServer.stop(__MODULE__, :normal)
-            :ok
-          end
+          schedule_next_or_stop(start_block - 1, state.config.rollup_rpc.first_block)
 
         {:error, :discover_blocks_error} ->
           :retry
@@ -119,13 +111,15 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
     :retry
   end
 
-  # Following outcomes of run callback are possible depending on the result of Indexer.Fetcher.Arbitrum.Workers.Backfill.discover_blocks:
-  # - {:ok, end_block} ->
-  #   - add to the buffer the tuple with 0 as timeout and the end block of the next block range to process
-  # - {:error, :discover_blocks_error} ->
-  #   - return retry to re-process the same block range
-  # - {:error, :not_indexed_blocks} ->
-  #   - return retry but the task is redefined to have the timeout adjusted by recheck interval
+  defp schedule_next_or_stop(next_end_block, rollup_first_block) do
+    if next_end_block >= rollup_first_block do
+      BufferedTask.buffer(__MODULE__, [{:backfill, {0, next_end_block}}], false)
+      :ok
+    else
+      GenServer.stop(__MODULE__, :normal)
+      :ok
+    end
+  end
 
   defp defaults do
     [

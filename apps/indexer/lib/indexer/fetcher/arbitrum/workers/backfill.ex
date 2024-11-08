@@ -1,12 +1,13 @@
 defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
   @moduledoc """
-  Worker for backfilling missing Arbitrum-specific fields in blocks and transactions.
+    Worker for backfilling missing Arbitrum-specific fields in blocks and transactions.
   """
   import Ecto.Query
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1]
 
-  alias EthereumJSONRPC
-  alias Explorer.Chain
+  alias EthereumJSONRPC.{Blocks, Receipts}
+  alias Explorer.Chain.Block, as: RollupBlock
+  alias Explorer.Chain.Transaction, as: RollupTransaction
   alias Explorer.Repo
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db, as: ArbitrumDbUtils
@@ -32,22 +33,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
     end
   end
 
-  defp do_discover_blocks(start_block, end_block, %{config: %{rollup_rpc: %{chunk_size: chunk_size, json_rpc_named_arguments: json_rpc_named_arguments}}}) do
+  defp do_discover_blocks(start_block, end_block, %{
+         config: %{rollup_rpc: %{chunk_size: chunk_size, json_rpc_named_arguments: json_rpc_named_arguments}}
+       }) do
     log_info("Block range for blocks information backfill: #{start_block}..#{end_block}")
 
-    with {:block_numbers, block_numbers} <- {:block_numbers, ArbitrumDbUtils.blocks_with_missing_fields(start_block, end_block)},
-         {:ok, blocks} <- fetch_blocks(block_numbers, json_rpc_named_arguments, chunk_size),
+    block_numbers = ArbitrumDbUtils.blocks_with_missing_fields(start_block, end_block)
+
+    backfill_for_blocks(block_numbers, json_rpc_named_arguments, chunk_size)
+  end
+
+  defp backfill_for_blocks([], _json_rpc_named_arguments, _chunk_size), do: :ok
+
+  defp backfill_for_blocks(block_numbers, json_rpc_named_arguments, chunk_size) do
+    with {:ok, blocks} <- fetch_blocks(block_numbers, json_rpc_named_arguments, chunk_size),
          {:ok, receipts} <- fetch_receipts(block_numbers, json_rpc_named_arguments, chunk_size) do
-
-      multi =
-        Multi.new()
-        |> update_blocks(blocks)
-        |> update_transactions(receipts)
-
-      case Repo.transaction(multi) do
-        {:ok, _} -> :ok
-        {:error, _, _, _} -> :error
-      end
+      update_db(blocks, receipts)
     else
       {:error, _} -> :error
     end
@@ -58,7 +59,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
     |> Enum.chunk_every(chunk_size)
     |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, acc} ->
       case EthereumJSONRPC.fetch_blocks_by_numbers(chunk, json_rpc_named_arguments, false) do
-        {:ok, %EthereumJSONRPC.Blocks{blocks_params: blocks}} -> {:cont, {:ok, acc ++ blocks}}
+        {:ok, %Blocks{blocks_params: blocks}} -> {:cont, {:ok, acc ++ blocks}}
         {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
@@ -68,12 +69,29 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
     block_numbers
     |> Enum.chunk_every(chunk_size)
     |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, acc} ->
-      case EthereumJSONRPC.Receipts.fetch_by_block_numbers(chunk, json_rpc_named_arguments) do
+      case Receipts.fetch_by_block_numbers(chunk, json_rpc_named_arguments) do
         {:ok, %{receipts: receipts}} -> {:cont, {:ok, acc ++ receipts}}
         {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
   end
+
+  defp update_db([], []), do: :ok
+
+  defp update_db(blocks, receipts) do
+    multi =
+      Multi.new()
+      |> update_blocks(blocks)
+      |> update_transactions(receipts)
+
+    case Repo.transaction(multi) do
+      {:ok, _} -> :ok
+      {:error, _} -> :error
+      {:error, _, _, _} -> :error
+    end
+  end
+
+  defp update_blocks(multi, []), do: multi
 
   defp update_blocks(multi, blocks) do
     blocks
@@ -81,15 +99,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
       Multi.update_all(
         multi_acc,
         {:block, block.hash},
-        from(b in Chain.Block, where: b.hash == ^block.hash),
-        [set: [
+        from(b in RollupBlock, where: b.hash == ^block.hash),
+        set: [
           send_count: block.send_count,
           send_root: block.send_root,
           l1_block_number: block.l1_block_number
-        ]]
+        ]
       )
     end)
   end
+
+  defp update_transactions(multi, []), do: multi
 
   defp update_transactions(multi, receipts) do
     receipts
@@ -97,8 +117,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
       Multi.update_all(
         multi_acc,
         {:transaction, receipt.transaction_hash},
-        from(t in Chain.Transaction, where: t.hash == ^receipt.transaction_hash),
-        [set: [gas_used_for_l1: receipt.gas_used_for_l1]]
+        from(t in RollupTransaction, where: t.hash == ^receipt.transaction_hash),
+        set: [gas_used_for_l1: receipt.gas_used_for_l1]
       )
     end)
   end
