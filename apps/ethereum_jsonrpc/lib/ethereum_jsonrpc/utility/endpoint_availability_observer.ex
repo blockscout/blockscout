@@ -13,6 +13,8 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
   @window_duration 3
   @cleaning_interval :timer.seconds(1)
 
+  @type url_type :: :ws | :trace | :http | :eth_call
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -23,18 +25,34 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
     {:ok, %{error_counts: %{}, unavailable_endpoints: %{ws: [], trace: [], http: [], eth_call: []}}}
   end
 
+  @doc """
+  Increases `url` of `url_type` type error count asynchronously.
+  """
+  @spec inc_error_count(binary(), Keyword.t(), url_type()) :: :ok
   def inc_error_count(url, json_rpc_named_arguments, url_type) do
     GenServer.cast(__MODULE__, {:inc_error_count, url, json_rpc_named_arguments, url_type})
   end
 
+  @doc """
+  Checks if `url` of `url_type` type is available.
+  """
+  @spec check_endpoint(binary(), url_type()) :: :ok | :unavailable
   def check_endpoint(url, url_type) do
     GenServer.call(__MODULE__, {:check_endpoint, url, url_type})
   end
 
+  @doc """
+  Filters out unavailable urls from `urls` of `url_type` type.
+  """
+  @spec filter_unavailable_urls([binary()], url_type()) :: [binary()]
   def filter_unavailable_urls(urls, url_type) do
     GenServer.call(__MODULE__, {:filter_unavailable_urls, urls, url_type})
   end
 
+  @doc """
+  Checks if `url` of `url_type` type is unavailable and replaces it with `replace_url` if it's not `nil`.
+  """
+  @spec maybe_replace_url(binary(), binary() | nil, url_type()) :: binary()
   def maybe_replace_url(url, replace_url, url_type) do
     case check_endpoint(url, url_type) do
       :ok -> url
@@ -42,6 +60,10 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
     end
   end
 
+  @doc """
+  Analogue of `maybe_replace_url/3` for multiple urls.
+  """
+  @spec maybe_replace_urls([binary()] | nil, [binary()] | nil, url_type()) :: [binary()]
   def maybe_replace_urls(urls, replace_urls, url_type) do
     case filter_unavailable_urls(urls, url_type) do
       [] -> replace_urls || urls || []
@@ -49,6 +71,10 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
     end
   end
 
+  @doc """
+  Marks `url` of `url_type` type as available.
+  """
+  @spec enable_endpoint(binary(), url_type(), Keyword.t()) :: :ok
   def enable_endpoint(url, url_type, json_rpc_named_arguments) do
     GenServer.cast(__MODULE__, {:enable_endpoint, url, url_type, json_rpc_named_arguments})
   end
