@@ -8,8 +8,8 @@ defmodule Indexer.Fetcher.Token do
 
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
-  alias Explorer.Chain.Token
-  alias Explorer.Token.MetadataRetriever
+  # alias Explorer.Chain.Token
+  # alias Explorer.Token.MetadataRetriever
   alias Indexer.{BufferedTask, Tracer}
 
   @behaviour BufferedTask
@@ -50,11 +50,14 @@ defmodule Indexer.Fetcher.Token do
 
   @impl BufferedTask
   @decorate trace(name: "fetch", resource: "Indexer.Fetcher.Token.run/2", service: :indexer, tracer: Tracer)
-  def run([token_contract_address], _json_rpc_named_arguments) do
-    case Chain.token_from_address_hash(token_contract_address) do
-      {:ok, %Token{} = token} ->
-        catalog_token(token)
-    end
+  # def run([token_contract_address], _json_rpc_named_arguments) do
+  #   case Chain.token_from_address_hash(token_contract_address) do
+  #     {:ok, %Token{} = token} ->
+  #       catalog_token(token)
+  #   end
+  # end
+  def run(_, _json_rpc_named_arguments) do
+    :ok
   end
 
   @doc """
@@ -65,15 +68,15 @@ defmodule Indexer.Fetcher.Token do
     BufferedTask.buffer(__MODULE__, token_contract_addresses, realtime?)
   end
 
-  defp catalog_token(token) do
-    token_params =
-      token
-      |> MetadataRetriever.get_functions_of()
-      |> (&if(&1 == %{}, do: &1, else: Map.put(&1, :cataloged, true))).()
+  # defp catalog_token(token) do
+  #   token_params =
+  #     token
+  #     |> MetadataRetriever.get_functions_of()
+  #     |> (&if(&1 == %{}, do: &1, else: Map.put(&1, :cataloged, true))).()
 
-    {:ok, _} = Chain.update_token(token, token_params)
-    :ok
-  end
+  #   {:ok, _} = Chain.update_token(token, token_params)
+  #   :ok
+  # end
 
   defp defaults do
     [
