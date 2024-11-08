@@ -67,6 +67,16 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: BlockScoutWeb.PubSub
 
+config :block_scout_web, BlockScoutWeb.HealthEndpoint,
+  server: true,
+  url: [
+    path: network_path,
+    scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "http",
+    host: System.get_env("BLOCKSCOUT_HOST") || "localhost"
+  ],
+  render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
+  pubsub_server: BlockScoutWeb.PubSub
+
 config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
   subnetwork: System.get_env("SUBNETWORK"),

@@ -231,10 +231,7 @@ defmodule NFTMediaHandlerDispatcher.Queue do
               "Media url already fetched: #{url}, will copy from: {#{to_string(token_address_hash_fetched)}, #{token_id_fetched}}, to: #{inspect(backfill_instances)}"
             )
 
-            Enum.each(backfill_instances, fn {token_address_hash, token_id} ->
-              Instance.copy_cdn_result(already_fetched_nft_id, {token_address_hash, token_id})
-            end)
-
+            Enum.each(backfill_instances, &Instance.copy_cdn_result(already_fetched_nft_id, &1))
             false
 
           _ ->

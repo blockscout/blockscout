@@ -442,7 +442,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   @spec ipfs_link(uid :: any()) :: String.t()
-  defp ipfs_link(uid) do
+  def ipfs_link(uid) do
     base_url =
       :indexer
       |> Application.get_env(:ipfs)
@@ -468,7 +468,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   @spec ipfs_headers() :: [{binary(), binary()}]
-  defp ipfs_headers do
+  def ipfs_headers do
     ipfs_params = Application.get_env(:indexer, :ipfs)
 
     if ipfs_params[:gateway_url_param_location] == :header do

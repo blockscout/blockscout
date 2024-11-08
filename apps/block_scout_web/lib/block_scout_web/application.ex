@@ -6,20 +6,18 @@ defmodule BlockScoutWeb.Application do
   use Application
   use Utils.CompileTimeEnvHelper, disable_api?: [:block_scout_web, :disable_api?]
 
-  alias BlockScoutWeb.Endpoint
+  alias BlockScoutWeb.{Endpoint, HealthEndpoint}
 
   def start(_type, _args) do
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
 
     if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
-      Supervisor.start_link([], opts)
+      Supervisor.start_link([Supervisor.child_spec(HealthEndpoint, [])], opts)
     else
       base_children = [Supervisor.child_spec(Endpoint, [])]
       api_children = setup_and_define_children()
       all_children = base_children ++ api_children
 
-      PrometheusExporter.setup()
-      PrometheusPublicExporter.setup()
       Supervisor.start_link(all_children, opts)
     end
   end

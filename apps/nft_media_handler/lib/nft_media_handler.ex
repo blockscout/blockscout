@@ -5,6 +5,7 @@ defmodule NFTMediaHandler do
 
   require Logger
 
+  alias Explorer.Token.MetadataRetriever, as: TokenMetadataRetriever
   alias Image.Video
   alias NFTMediaHandler.Image.Resizer
   alias NFTMediaHandler.Media.Fetcher
@@ -163,20 +164,20 @@ defmodule NFTMediaHandler do
   end
 
   defp maybe_process_ipfs("#{@ipfs_protocol}ipfs/" <> right) do
-    {ipfs_link(right), ipfs_headers()}
+    {TokenMetadataRetriever.ipfs_link(right), TokenMetadataRetriever.ipfs_headers()}
   end
 
   defp maybe_process_ipfs("ipfs/" <> right) do
-    {ipfs_link(right), ipfs_headers()}
+    {TokenMetadataRetriever.ipfs_link(right), TokenMetadataRetriever.ipfs_headers()}
   end
 
   defp maybe_process_ipfs(@ipfs_protocol <> right) do
-    {ipfs_link(right), ipfs_headers()}
+    {TokenMetadataRetriever.ipfs_link(right), TokenMetadataRetriever.ipfs_headers()}
   end
 
   defp maybe_process_ipfs("Qm" <> _ = result) do
     if String.length(result) == 46 do
-      {ipfs_link(result), ipfs_headers()}
+      {TokenMetadataRetriever.ipfs_link(result), TokenMetadataRetriever.ipfs_headers()}
     else
       {result, []}
     end
@@ -184,47 +185,5 @@ defmodule NFTMediaHandler do
 
   defp maybe_process_ipfs(url) do
     {url, []}
-  end
-
-  defp ipfs_link(uid) do
-    base_url =
-      :indexer
-      |> Application.get_env(:ipfs)
-      |> Keyword.get(:gateway_url)
-      |> String.trim_trailing("/")
-
-    url = base_url <> "/" <> uid
-
-    ipfs_params = Application.get_env(:indexer, :ipfs)
-
-    if ipfs_params[:gateway_url_param_location] == :query do
-      gateway_url_param_key = ipfs_params[:gateway_url_param_key]
-      gateway_url_param_value = ipfs_params[:gateway_url_param_value]
-
-      if gateway_url_param_key && gateway_url_param_value do
-        url <> "?#{gateway_url_param_key}=#{gateway_url_param_value}"
-      else
-        url
-      end
-    else
-      url
-    end
-  end
-
-  defp ipfs_headers do
-    ipfs_params = Application.get_env(:indexer, :ipfs)
-
-    if ipfs_params[:gateway_url_param_location] == :header do
-      gateway_url_param_key = ipfs_params[:gateway_url_param_key]
-      gateway_url_param_value = ipfs_params[:gateway_url_param_value]
-
-      if gateway_url_param_key && gateway_url_param_value do
-        [{gateway_url_param_key, gateway_url_param_value}]
-      else
-        []
-      end
-    else
-      []
-    end
   end
 end
