@@ -390,7 +390,7 @@ defmodule Indexer.Fetcher.Optimism do
     a certain entity defined by the passed functions.
 
     Used by the OP fetcher modules to start fetching from a correct block number
-    after reorg has occured.
+    after reorg has occurred.
 
     ## Parameters
     - `layer`: Just for logging purposes. Can be `:L1` or `:L2` depending on the layer of the entity.

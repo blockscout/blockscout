@@ -413,7 +413,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   # Determines the last saved L1 block number, the last saved transaction hash, and the transaction info for batches.
   #
-  # Utilized to start fetching from a correct block number after reorg has occured.
+  # Utilized to start fetching from a correct block number after reorg has occurred.
   #
   # ## Parameters
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
