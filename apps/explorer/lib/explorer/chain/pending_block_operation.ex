@@ -6,6 +6,7 @@ defmodule Explorer.Chain.PendingBlockOperation do
   use Explorer.Schema
 
   alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Repo
 
   @required_attrs ~w(block_hash block_number)a
 
@@ -40,5 +41,18 @@ defmodule Explorer.Chain.PendingBlockOperation do
       pending_ops in __MODULE__,
       select: pending_ops.block_hash
     )
+  end
+
+  @doc """
+    Returns the count of pending block operations in provided blocks range
+    (between `from_block_number` and `to_block_number`).
+  """
+  @spec count_in_range(integer(), integer()) :: integer()
+  def count_in_range(from_block_number, to_block_number) when from_block_number <= to_block_number do
+    __MODULE__
+    |> where([pbo], pbo.block_number >= ^from_block_number)
+    |> where([pbo], pbo.block_number <= ^to_block_number)
+    |> select([pbo], count(pbo.block_number))
+    |> Repo.one()
   end
 end
