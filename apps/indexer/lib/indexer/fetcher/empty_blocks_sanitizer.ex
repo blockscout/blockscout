@@ -9,14 +9,15 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
   require Logger
 
-  import Ecto.Query, only: [from: 2, subquery: 1, where: 3]
+  import Ecto.Query
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Explorer.Repo
-  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Utility.SwitchPendingOperations
 
   @update_timeout 60_000
 
@@ -194,9 +195,18 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       timeout: @update_timeout
     )
 
-    PendingBlockOperation
-    |> where([po], po.block_hash in ^block_hashes)
-    |> Repo.delete_all()
+    case SwitchPendingOperations.pending_operations_type() do
+      "blocks" ->
+        PendingBlockOperation
+        |> where([po], po.block_hash in ^block_hashes)
+        |> Repo.delete_all()
+
+      "transactions" ->
+        PendingTransactionOperation
+        |> join(:inner, [pto], t in assoc(pto, :transaction))
+        |> where([_pto, t], t.block_hash in ^block_hashes)
+        |> Repo.delete_all()
+    end
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error}}
