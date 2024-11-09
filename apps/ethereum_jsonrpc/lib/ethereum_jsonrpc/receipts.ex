@@ -309,11 +309,13 @@ defmodule EthereumJSONRPC.Receipts do
   # Modifies a JSON-RPC response.
   #
   # ## Parameters
-  # - `response`: The JSON-RPC response containing either a receipt, nil result, or error
+  # - `response`: The JSON-RPC response containing either a receipt, list of receipts,
+  #   nil result, or error
   # - `elements_with_ids`: A map or a list enumerating elements with request IDs
   #
   # ## Returns
-  # - `{:ok, receipt}` with gas information added for successful receipt responses
+  # - `{:ok, map_or_list}` a map or list of maps representing receipts with gas
+  #   information added for successful receipt responses
   # - `{:error, %{code: -32602, data: data, message: "Not Found"}}` for nil results
   # - `{:error, reason}` with transaction data added for error responses
   @spec modify_response(
@@ -325,7 +327,7 @@ defmodule EthereumJSONRPC.Receipts do
             }
           }
           | [EthereumJSONRPC.request_id()]
-        ) :: {:ok, map()} | {:error, %{:data => any(), optional(any()) => any()}}
+        ) :: {:ok, map() | [map()]} | {:error, %{:data => any(), optional(any()) => any()}}
   defp modify_response(response, elements_with_ids)
 
   defp modify_response(%{id: id, result: nil}, id_to_transaction_params) when is_map(id_to_transaction_params) do
@@ -344,11 +346,15 @@ defmodule EthereumJSONRPC.Receipts do
     {:ok, Map.put(receipt, "gas", gas)}
   end
 
-  defp modify_response(%{id: id, result: receipt}, request_ids) when is_list(request_ids) do
-    check_equivalence(Map.fetch!(receipt, "blockNumber"), id)
+  # The list of receipts is returned by `eth_getBlockReceipts`
+  defp modify_response(%{id: id, result: receipts}, request_ids) when is_list(receipts) and is_list(request_ids) do
+    receipts_with_gas =
+      Enum.map(receipts, fn receipt ->
+        check_equivalence(Map.fetch!(receipt, "blockNumber"), id)
+        Map.put(receipt, "gas", 0)
+      end)
 
-    # gas from the transaction is needed for pre-Byzantium derived status
-    {:ok, Map.put(receipt, "gas", 0)}
+    {:ok, receipts_with_gas}
   end
 
   defp modify_response(%{id: id, error: reason}, id_to_transaction_params) when is_map(id_to_transaction_params) do
@@ -412,7 +418,7 @@ defmodule EthereumJSONRPC.Receipts do
   #
   # ## Parameters
   # - `response`: Current response tuple containing either:
-  #   - `{:ok, raw_receipt}`: Successfully processed receipt
+  #   - `{:ok, map_or_list}`: Successfully processed receipt or list of receipts
   #   - `{:error, reason}`: Error with reason
   # - `acc`: Accumulator tuple containing either:
   #   - `{:ok, raw_receipts}`: List of successful receipts
@@ -422,13 +428,19 @@ defmodule EthereumJSONRPC.Receipts do
   # - `{:ok, receipts}`: List with new receipt prepended if no errors
   # - `{:error, reasons}`: List of error reasons if any error occurred
   @spec harmonize_responses(
-          {:ok, map()} | {:error, map()},
+          {:ok, map() | [map()]} | {:error, map()},
           {:ok, [map()]} | {:error, [map()]}
         ) :: {:ok, [map()]} | {:error, [map()]}
   defp harmonize_responses(response, acc)
 
-  defp harmonize_responses({:ok, raw_receipt}, {:ok, raw_receipts}) when is_list(raw_receipts),
-    do: {:ok, [raw_receipt | raw_receipts]}
+  defp harmonize_responses({:ok, raw_modified_receipt}, {:ok, raw_receipts})
+       when is_map(raw_modified_receipt) and is_list(raw_receipts),
+       do: {:ok, [raw_modified_receipt | raw_receipts]}
+
+  # The list of receipts is returned by `eth_getBlockReceipts`
+  defp harmonize_responses({:ok, raw_modified_receipts}, {:ok, raw_receipts})
+       when is_list(raw_modified_receipts) and is_list(raw_receipts),
+       do: {:ok, raw_modified_receipts ++ raw_receipts}
 
   defp harmonize_responses({:ok, _}, {:error, _} = error), do: error
   defp harmonize_responses({:error, reason}, {:ok, _}), do: {:error, [reason]}
