@@ -5,7 +5,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
   use Indexer.Fetcher, restart: :transient
   use Spandex.Decorators
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_debug: 1]
 
   require Logger
 
@@ -58,17 +58,18 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
       )
 
     Supervisor.child_spec({BufferedTask, [{__MODULE__, buffered_task_init_options}, gen_server_options]},
-      id: __MODULE__
+      id: __MODULE__,
+      # This allows the buffered task-based process to stop, otherwise
+      # the supervisor would restart it
+      restart: :transient
     )
-  end
-
-  def handle_info(:request_shutdown, state) do
-    {:stop, :normal, state}
   end
 
   @impl BufferedTask
   def init(initial, reducer, _) do
     time_of_start = DateTime.utc_now()
+
+    log_debug("Waiting for the first block to be indexed")
 
     reducer.({:wait_for_new_block, time_of_start}, initial)
   end
@@ -79,10 +80,12 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
   def run([{:wait_for_new_block, time_of_start}], _) do
     case ArbitrumDbUtils.closest_block_after_timestamp(time_of_start) do
       {:ok, block} ->
+        log_debug("Scheduling next backfill up to #{block - 1}")
         BufferedTask.buffer(__MODULE__, [{:backfill, {0, block - 1}}], false)
         :ok
 
       {:error, _} ->
+        log_warning("No progress of the block fetcher found")
         :retry
     end
   end
@@ -101,7 +104,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
           :retry
 
         {:error, :not_indexed_blocks} ->
-          {:retry, [{:backfill, {now + state.recheck_interval, end_block}}]}
+          {:retry, [{:backfill, {now + state.config.recheck_interval, end_block}}]}
       end
     end
   end
@@ -113,10 +116,12 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
 
   defp schedule_next_or_stop(next_end_block, rollup_first_block) do
     if next_end_block >= rollup_first_block do
+      log_debug("Scheduling next backfill up to #{next_end_block}")
       BufferedTask.buffer(__MODULE__, [{:backfill, {0, next_end_block}}], false)
       :ok
     else
-      GenServer.stop(__MODULE__, :normal)
+      log_debug("The first block achieved, stopping backfill")
+      GenServer.stop(__MODULE__, :shutdown)
       :ok
     end
   end
