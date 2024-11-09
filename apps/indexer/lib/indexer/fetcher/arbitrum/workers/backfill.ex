@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
     Worker for backfilling missing Arbitrum-specific fields in blocks and transactions.
   """
   import Ecto.Query
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_debug: 1, log_info: 1]
 
   alias EthereumJSONRPC.{Blocks, Receipts}
   alias Explorer.Chain.Block, as: RollupBlock
@@ -17,6 +17,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
   require Logger
 
   def discover_blocks(end_block, state) do
+    # Although it could be logical to limit the range of blocks to check
+    # and then to backfill only by chunk size, larger buckets are more
+    # efficient in cases where most blocks in the chain do not require
+    # backfilling.
     start_block = max(state.config.rollup_rpc.first_block, end_block - state.config.backfill_blocks_depth + 1)
 
     if ArbitrumDbUtils.indexed_blocks?(start_block, end_block) do
@@ -39,6 +43,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
     log_info("Block range for blocks information backfill: #{start_block}..#{end_block}")
 
     block_numbers = ArbitrumDbUtils.blocks_with_missing_fields(start_block, end_block)
+
+    log_debug("Backfilling #{length(block_numbers)} blocks")
 
     backfill_for_blocks(block_numbers, json_rpc_named_arguments, chunk_size)
   end
@@ -79,6 +85,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
   defp update_db([], []), do: :ok
 
   defp update_db(blocks, receipts) do
+    log_info("Updating DB records for #{length(blocks)} blocks and #{length(receipts)} transactions")
+
     multi =
       Multi.new()
       |> update_blocks(blocks)
@@ -103,7 +111,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
         set: [
           send_count: block.send_count,
           send_root: block.send_root,
-          l1_block_number: block.l1_block_number
+          l1_block_number: block.l1_block_number,
+          updated_at: DateTime.utc_now()
         ]
       )
     end)
@@ -118,7 +127,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
         multi_acc,
         {:transaction, receipt.transaction_hash},
         from(t in RollupTransaction, where: t.hash == ^receipt.transaction_hash),
-        set: [gas_used_for_l1: receipt.gas_used_for_l1]
+        set: [
+          gas_used_for_l1: receipt.gas_used_for_l1,
+          updated_at: DateTime.utc_now()
+        ]
       )
     end)
   end
