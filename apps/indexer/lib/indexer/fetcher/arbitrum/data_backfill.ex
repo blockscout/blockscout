@@ -5,7 +5,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
   use Indexer.Fetcher, restart: :transient
   use Spandex.Decorators
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_debug: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_debug: 1, log_info: 1]
 
   require Logger
 
@@ -120,7 +120,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
       BufferedTask.buffer(__MODULE__, [{:backfill, {0, next_end_block}}], false)
       :ok
     else
-      log_debug("The first block achieved, stopping backfill")
+      log_info("The first block achieved, stopping backfill")
       GenServer.stop(__MODULE__, :shutdown)
       :ok
     end
@@ -133,7 +133,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
       max_batch_size: @default_max_batch_size,
       poll: false,
       task_supervisor: __MODULE__.TaskSupervisor,
-      metadata: [fetcher: :data_backfill]
+      metadata: [fetcher: :arbitrum_backfill]
     ]
   end
 end
