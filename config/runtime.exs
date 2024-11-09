@@ -999,7 +999,7 @@ config :indexer, Indexer.Fetcher.Arbitrum.MessagesToL2Matcher.Supervisor,
 config :indexer, Indexer.Fetcher.Arbitrum.DataBackfill,
   recheck_interval:
     ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_DATA_BACKFILL_UNINDEXED_BLOCKS_RECHECK_INTERVAL", "120s"),
-  backfill_blocks_depth: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_DATA_BACKFILL_BLOCKS_DEPTH", 100)
+  backfill_blocks_depth: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_DATA_BACKFILL_BLOCKS_DEPTH", 500)
 
 config :indexer, Indexer.Fetcher.Arbitrum.DataBackfill.Supervisor,
   disabled?:
