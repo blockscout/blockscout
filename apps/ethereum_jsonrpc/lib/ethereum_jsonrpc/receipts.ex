@@ -183,7 +183,7 @@ defmodule EthereumJSONRPC.Receipts do
     for database import.
 
     ## Parameters
-    - `request_origins`: A list of block numbers
+    - `block_numbers`: A list of block numbers
     - `json_rpc_named_arguments`: Configuration for JSON-RPC connection
 
     ## Returns

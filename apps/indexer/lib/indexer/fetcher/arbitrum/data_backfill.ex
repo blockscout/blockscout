@@ -1,7 +1,35 @@
 defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
   @moduledoc """
-    Backfill worker for Arbitrum-specific fields in blocks and transactions.
+    Manages the backfilling process for Arbitrum-specific block data in a controlled manner
+    using BufferedTask functionality.
+
+    This fetcher processes historical blocks in reverse chronological order, starting from
+    the most recently indexed block and working backwards towards the first rollup block.
+    It coordinates with the `Indexer.Fetcher.Arbitrum.Workers.Backfill` module to discover
+    and backfill missing Arbitrum L2-specific information.
+
+    The fetcher leverages BufferedTask to break down the entire block range into smaller,
+    manageable tasks. Each task processes a specific block range, and BufferedTask handles:
+    - Scheduling the next block range for processing
+    - Managing task retries when issues with JSON RPC or DB are encountered or when
+      the blocks are not yet indexed
+
+    The fetcher implements two main operational modes:
+    - Initial waiting for the first indexed block
+    - Continuous backfilling of historical blocks in configurable depth ranges
+
+    After identifying the first indexed block, backfill tasks are represented as tuples
+    containing a timeout and an end block number `{timeout, end_block}`. The timeout
+    mechanism serves two purposes:
+    - Under normal conditions, the timeout immediately expires, allowing immediate
+      processing of the block range
+    - When blocks are missing from the database, the timeout is set to a future time
+      (configured by `:recheck_interval`) to allow the catch-up block fetcher time to
+      index the missing blocks before retrying
+
+    After reaching the first rollup block, the fetcher is stopped.
   """
+
   use Indexer.Fetcher, restart: :transient
   use Spandex.Decorators
 
@@ -66,6 +94,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
   end
 
   @impl BufferedTask
+  @spec init({0, []}, function(), map()) :: {non_neg_integer(), list()}
   def init(initial, reducer, _) do
     time_of_start = DateTime.utc_now()
 
@@ -75,8 +104,13 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
   end
 
   @impl BufferedTask
+  @spec run([{:wait_for_new_block, DateTime.t()} | {:backfill, {non_neg_integer(), non_neg_integer()}}], map()) ::
+          :ok | :retry | {:retry, [{:backfill, {non_neg_integer(), non_neg_integer()}}]}
   def run(entries, state)
 
+  # Waits for the next block to be indexed and schedules the next backfill task
+  # with the block preceding the last indexed block as the end of the block range
+  # for backfill.
   def run([{:wait_for_new_block, time_of_start}], _) do
     case ArbitrumDbUtils.closest_block_after_timestamp(time_of_start) do
       {:ok, block} ->
@@ -90,6 +124,17 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
     end
   end
 
+  # Accepts a backfill task as as a tuple with the timeout and the end block of next
+  # batch of blocks to be backfilled.
+  # Then:
+  # - Checks if the backfill task has timed out and discovers the blocks to be backfilled.
+  # - If the blocks are discovered successfully, schedules the next backfill task with
+  #   the block preceding the last discovered block as the end of the block range for
+  #   backfill.
+  # - If the batch of blocks was not handled properly due to JSON RPC or DB related
+  #   issues, retries the same backfill task.
+  # - If the blocks cannot be discovered due to the lack of indexed blocks, schedules
+  #   the next backfill task with the increased timeout.
   def run([{:backfill, {timeout, end_block}}], state) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
@@ -114,6 +159,16 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
     :retry
   end
 
+  # Schedules the next backfill task or stops the process when reaching the first rollup block.
+  #
+  # ## Parameters
+  # - `next_end_block`: The block number where the next block range for backfill
+  #   should end
+  # - `rollup_first_block`: The first block number in the rollup
+  #
+  # ## Returns
+  # - `:ok` in all cases
+  @spec schedule_next_or_stop(non_neg_integer(), non_neg_integer()) :: :ok
   defp schedule_next_or_stop(next_end_block, rollup_first_block) do
     if next_end_block >= rollup_first_block do
       log_debug("Scheduling next backfill up to #{next_end_block}")
