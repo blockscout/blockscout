@@ -1004,7 +1004,7 @@ config :indexer, Indexer.Fetcher.Arbitrum.DataBackfill,
 config :indexer, Indexer.Fetcher.Arbitrum.DataBackfill.Supervisor,
   disabled?:
     ConfigHelper.chain_type() != :arbitrum ||
-      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ARBITRUM_DATA_BACKFILL")
+      not ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_DATA_BACKFILL_ENABLED")
 
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
   disabled?:
