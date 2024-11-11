@@ -15,7 +15,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Message
-  alias Explorer.Chain.Hash
   alias Indexer.Fetcher.Arbitrum.Utils.Db
 
   require Logger
@@ -29,31 +28,19 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
            optional(any()) => any()
          }
 
-  @typep hex_value :: binary() | Hash.t()
   @typep min_log :: %{
            :data => binary(),
            :index => non_neg_integer(),
-           :first_topic => hex_value,
-           :second_topic => hex_value,
-           :third_topic => hex_value,
-           :fourth_topic => hex_value,
-           :address_hash => hex_value,
-           :transaction_hash => hex_value,
-           :block_hash => hex_value,
+           :first_topic => binary(),
+           :second_topic => binary(),
+           :third_topic => binary(),
+           :fourth_topic => binary(),
+           :address_hash => binary(),
+           :transaction_hash => binary(),
+           :block_hash => binary(),
            :block_number => non_neg_integer(),
            optional(any()) => any()
          }
-
-  @spec min_log_to_event_data(min_log) :: Arbitrum.event_data()
-  defp min_log_to_event_data(log) do
-    %{
-      :data => log.data,
-      :first_topic => log.first_topic,
-      :second_topic => log.second_topic,
-      :third_topic => log.third_topic,
-      :fourth_topic => log.fourth_topic
-    }
-  end
 
   @doc """
     Filters rollup transactions to identify L1-to-L2 messages and categorizes them.
@@ -204,31 +191,30 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       |> Enum.reduce(%{}, fn event, messages_acc ->
         log_debug("L2 to L1 message #{event.transaction_hash} found")
 
-        {message_id, caller, _, blocknum, _, timestamp, _, _} =
+        fields =
           event
-          |> min_log_to_event_data()
           |> Arbitrum.l2_to_l1_event_parse()
 
         caller_bytes =
-          caller
+          fields.caller
           |> String.trim_leading("0x")
           |> Base.decode16!(case: :lower)
 
         message =
           %{
             direction: :from_l2,
-            message_id: message_id,
+            message_id: fields.message_id,
             originator_address: caller_bytes,
             originating_transaction_hash: event.transaction_hash,
-            origination_timestamp: Timex.from_unix(timestamp),
-            originating_transaction_block_number: blocknum,
-            status: status_l2_to_l1_message(blocknum, highest_committed_block, highest_confirmed_block)
+            origination_timestamp: Timex.from_unix(fields.timestamp),
+            originating_transaction_block_number: fields.arb_block_number,
+            status: status_l2_to_l1_message(fields.arb_block_number, highest_committed_block, highest_confirmed_block)
           }
           |> complete_to_params()
 
         Map.put(
           messages_acc,
-          message_id,
+          fields.message_id,
           message
         )
       end)

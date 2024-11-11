@@ -9,12 +9,15 @@ defmodule EthereumJSONRPC.Arbitrum do
   require Logger
   alias ABI.TypeDecoder
 
-  @type event_data :: %{
-          :data => binary(),
-          :first_topic => binary(),
-          :second_topic => binary(),
-          :third_topic => binary(),
-          :fourth_topic => binary()
+  @type l2_to_l1_event :: %{
+          :message_id => non_neg_integer(),
+          :caller => EthereumJSONRPC.address(),
+          :destination => EthereumJSONRPC.address(),
+          :arb_block_number => non_neg_integer(),
+          :eth_block_number => non_neg_integer(),
+          :timestamp => non_neg_integer(),
+          :callvalue => non_neg_integer(),
+          :data => binary()
         }
 
   @l2_to_l1_event_unindexed_params [
@@ -344,26 +347,14 @@ defmodule EthereumJSONRPC.Arbitrum do
     - `event`: A log entry representing an L2-to-L1 message event.
 
     ## Returns
-    - A tuple of fields of L2-to-L1 message with the following order:
-        [position,
-        caller,
-        destination,
-        arb_block_number,
-        eth_block_number,
-        timestamp,
-        callvalue,
-        data]
+    - A set of of fields describing the L2-to-L1 message
   """
-  @spec l2_to_l1_event_parse(event_data) :: {
-          non_neg_integer(),
-          binary(),
-          binary(),
-          non_neg_integer(),
-          non_neg_integer(),
-          non_neg_integer(),
-          non_neg_integer(),
-          binary()
-        }
+  @spec l2_to_l1_event_parse(%{
+          :data => binary(),
+          :second_topic => binary(),
+          :fourth_topic => binary(),
+          optional(atom()) => any()
+        }) :: l2_to_l1_event()
   def l2_to_l1_event_parse(event) do
     [
       caller,
@@ -385,7 +376,16 @@ defmodule EthereumJSONRPC.Arbitrum do
     caller_string = value_to_address(caller)
     destination_string = value_to_address(event.second_topic)
 
-    {position, caller_string, destination_string, arb_block_number, eth_block_number, timestamp, callvalue, data}
+    %{
+      :message_id => position,
+      :caller => caller_string,
+      :destination => destination_string,
+      :arb_block_number => arb_block_number,
+      :eth_block_number => eth_block_number,
+      :timestamp => timestamp,
+      :callvalue => callvalue,
+      :data => data
+    }
   end
 
   # Decode ABI-encoded data in accordance with the provided types
@@ -405,11 +405,10 @@ defmodule EthereumJSONRPC.Arbitrum do
   end
 
   # Casting value into the Ethereum address (hex-string, 0x-prefixed)
-  @spec value_to_address(non_neg_integer() | binary()) :: String.t()
+  @spec value_to_address(binary()) :: String.t()
   defp value_to_address(value) do
     hex =
       cond do
-        is_integer(value) -> Integer.to_string(value, 16)
         is_binary(value) and String.starts_with?(value, "0x") -> String.trim_leading(value, "0x")
         is_binary(value) -> Base.encode16(value, case: :lower)
         true -> raise ArgumentError, "Unsupported address format"

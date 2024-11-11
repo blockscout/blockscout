@@ -226,36 +226,39 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
   defp log_to_withdrawal(log, message) do
     # getting needed fields from the L2ToL1Tx event
-    {position, caller, destination, arb_block_number, eth_block_number, l2_timestamp, call_value, data} =
+    fields =
       log
-      |> convert_explorer_log_to_raw()
+      |> convert_explorer_log_to_map()
       |> ArbitrumRpc.l2_to_l1_event_parse()
 
-    if position == message.message_id do
+    if fields.message_id == message.message_id do
       # extract token withdrawal info from the associated event's data
-      token = decode_withdraw_token_data(data)
+      token = decode_withdraw_token_data(fields.data)
 
       data_hex =
-        data
+        fields.data
         |> Base.encode16(case: :lower)
 
-      {:ok, caller_address} = Hash.Address.cast(caller)
-      {:ok, destination_address} = Hash.Address.cast(destination)
+      {:ok, caller_address} = Hash.Address.cast(fields.caller)
+      {:ok, destination_address} = Hash.Address.cast(fields.destination)
 
       %Explorer.Arbitrum.Withdraw{
         message_id: Hash.to_integer(log.fourth_topic),
         status: message.status,
         caller: caller_address,
         destination: destination_address,
-        arb_block_number: arb_block_number,
-        eth_block_number: eth_block_number,
-        l2_timestamp: l2_timestamp,
-        callvalue: call_value,
+        arb_block_number: fields.arb_block_number,
+        eth_block_number: fields.eth_block_number,
+        l2_timestamp: fields.timestamp,
+        callvalue: fields.callvalue,
         data: "0x" <> data_hex,
         token: token
       }
     else
-      Logger.error("message_to_withdrawal: log doesn't correspond message (#{position} != #{message.message_id})")
+      Logger.error(
+        "message_to_withdrawal: log doesn't correspond message (#{fields.position} != #{message.message_id})"
+      )
+
       nil
     end
   end
@@ -274,12 +277,14 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       ArbitrumRpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
     # getting needed fields from the L2ToL1Tx event
-    {position, caller, destination, arb_block_number, eth_block_number, l2_timestamp, call_value, data} =
+    # {position, caller, destination, arb_block_number, eth_block_number, l2_timestamp, call_value, data} =
+    fields =
       log
-      |> convert_explorer_log_to_raw()
+      |> convert_explorer_log_to_map()
       |> ArbitrumRpc.l2_to_l1_event_parse()
 
-    {:ok, is_withdrawal_spent} = ArbitrumRpc.withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments)
+    {:ok, is_withdrawal_spent} =
+      ArbitrumRpc.withdrawal_spent?(outbox_contract, fields.message_id, json_l1_rpc_named_arguments)
 
     status =
       case is_withdrawal_spent do
@@ -289,29 +294,29 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         false ->
           case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
             nil -> :unknown
-            size when size > position -> :confirmed
+            size when size > fields.message_id -> :confirmed
             _ -> :sent
           end
       end
 
-    token = decode_withdraw_token_data(data)
+    token = decode_withdraw_token_data(fields.data)
 
     data_hex =
-      data
+      fields.data
       |> Base.encode16(case: :lower)
 
-    {:ok, caller_address} = Hash.Address.cast(caller)
-    {:ok, destination_address} = Hash.Address.cast(destination)
+    {:ok, caller_address} = Hash.Address.cast(fields.caller)
+    {:ok, destination_address} = Hash.Address.cast(fields.destination)
 
     %Explorer.Arbitrum.Withdraw{
       message_id: Hash.to_integer(log.fourth_topic),
       status: status,
       caller: caller_address,
       destination: destination_address,
-      arb_block_number: arb_block_number,
-      eth_block_number: eth_block_number,
-      l2_timestamp: l2_timestamp,
-      callvalue: call_value,
+      arb_block_number: fields.arb_block_number,
+      eth_block_number: fields.eth_block_number,
+      l2_timestamp: fields.timestamp,
+      callvalue: fields.callvalue,
       data: "0x" <> data_hex,
       token: token
     }
@@ -320,13 +325,15 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # Internal routine used to convert `Explorer.Chain.Log.t()` structure
   # into the `EthereumJSONRPC.Arbitrum.event_data()` type. It's needed
   # to call `EthereumJSONRPC.Arbitrum.l2_to_l1_event_parse(event_data)` method
-  @spec convert_explorer_log_to_raw(Explorer.Chain.Log.t()) :: ArbitrumRpc.event_data()
-  defp convert_explorer_log_to_raw(log) do
+  @spec convert_explorer_log_to_map(Explorer.Chain.Log.t()) :: %{
+          :data => binary(),
+          :second_topic => binary(),
+          :fourth_topic => binary()
+        }
+  defp convert_explorer_log_to_map(log) do
     %{
       :data => Data.to_string(log.data),
-      :first_topic => Hash.to_string(log.first_topic),
       :second_topic => Hash.to_string(log.second_topic),
-      :third_topic => Hash.to_string(log.third_topic),
       :fourth_topic => Hash.to_string(log.fourth_topic)
     }
   end
