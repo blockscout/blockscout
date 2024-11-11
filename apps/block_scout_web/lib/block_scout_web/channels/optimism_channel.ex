@@ -11,4 +11,8 @@ defmodule BlockScoutWeb.OptimismChannel do
   def join("optimism:new_deposits", _params, socket) do
     {:ok, %{}, socket}
   end
+
+  def join("optimism_deposits:new_deposits", _params, socket) do
+    {:ok, %{}, socket}
+  end
 end

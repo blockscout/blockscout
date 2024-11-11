@@ -44,6 +44,17 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias Indexer.Helper
   alias Varint.LEB128
 
+  @beacon_blob_fetcher_reference_slot_eth 8500000
+  @beacon_blob_fetcher_reference_timestamp_eth 1708824023
+  @beacon_blob_fetcher_reference_slot_sepolia 4400000
+  @beacon_blob_fetcher_reference_timestamp_sepolia 1708533600
+  @beacon_blob_fetcher_reference_slot_holesky 1000000
+  @beacon_blob_fetcher_reference_timestamp_holesky 1707902400
+  @beacon_blob_fetcher_slot_duration 12
+  @chain_id_eth 1
+  @chain_id_sepolia 11155111
+  @chain_id_holesky 17000
+
   @fetcher_name :optimism_transaction_batches
 
   @compressor_brotli 1
@@ -113,6 +124,12 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
            Optimism.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
+      chain_id_l1 = fetch_chain_id(json_rpc_named_arguments)
+
+      if is_nil(chain_id_l1) do
+        Logger.warning("Cannot get Chain ID from the L1 RPC. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables.")
+      end
+
       Process.send(self(), :continue, [])
 
       {:noreply,
@@ -129,7 +146,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          genesis_block_l2: env[:genesis_block_l2],
          block_duration: optimism_env[:block_duration],
          json_rpc_named_arguments: json_rpc_named_arguments,
-         json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
+         json_rpc_named_arguments_l2: json_rpc_named_arguments_l2,
+         chain_id_l1: chain_id_l1
        }}
     else
       {:system_config_valid, false} ->
@@ -215,6 +233,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # - `block_duration`: L2 block duration in seconds (used when parsing span batches)
   # - `json_rpc_named_arguments`: data to connect to L1 RPC server
   # - `json_rpc_named_arguments_l2`: data to connect to L2 RPC server
+  # - `chain_id_l1`: chain ID of L1 layer.
   @impl GenServer
   def handle_info(
         :continue,
@@ -231,7 +250,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           genesis_block_l2: genesis_block_l2,
           block_duration: block_duration,
           json_rpc_named_arguments: json_rpc_named_arguments,
-          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
+          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2,
+          chain_id_l1: chain_id_l1
         } = state
       ) do
     time_before = Timex.now()
@@ -264,7 +284,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                 {genesis_block_l2, block_duration},
                 incomplete_channels_acc,
                 {json_rpc_named_arguments, json_rpc_named_arguments_l2},
-                {eip4844_blobs_api_url, celestia_blobs_api_url},
+                {eip4844_blobs_api_url, celestia_blobs_api_url, chain_id_l1},
                 Helper.infinite_retries_number()
               )
 
@@ -524,7 +544,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end
   end
 
-  defp eip4844_blobs_to_inputs(_transaction_hash, _blob_versioned_hashes, _block_timestamp, "") do
+  defp eip4844_blobs_to_inputs(_transaction_hash, _blob_versioned_hashes, _block_timestamp, "", _chain_id_l1) do
     Logger.error(
       "Cannot read EIP-4844 blobs from the Blockscout Blobs API as the API URL is not defined. Please, check INDEXER_OPTIMISM_L1_BATCH_BLOCKSCOUT_BLOBS_API_URL env variable."
     )
@@ -536,7 +556,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          transaction_hash,
          blob_versioned_hashes,
          block_timestamp,
-         blobs_api_url
+         blobs_api_url,
+         chain_id_l1
        ) do
     blob_versioned_hashes
     |> Enum.reduce([], fn blob_hash, inputs_acc ->
@@ -573,7 +594,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
             transaction_hash,
             blob_hash,
             block_timestamp,
-            inputs_acc
+            inputs_acc,
+            chain_id_l1
           )
       end
     end)
@@ -584,13 +606,38 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          transaction_hash,
          blob_hash,
          block_timestamp,
-         inputs_acc
+         inputs_acc,
+         chain_id_l1
        ) do
     beacon_config =
-      :indexer
-      |> Application.get_env(Blob)
-      |> Keyword.take([:reference_slot, :reference_timestamp, :slot_duration])
-      |> Enum.into(%{})
+      case chain_id_l1 do
+        @chain_id_eth ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_eth,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_eth,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        @chain_id_sepolia ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_sepolia,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_sepolia,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        @chain_id_holesky ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_holesky,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_holesky,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        _ ->
+          :indexer
+          |> Application.get_env(Blob)
+          |> Keyword.take([:reference_slot, :reference_timestamp, :slot_duration])
+          |> Enum.into(%{})
+      end
 
     {:ok, fetched_blobs} =
       block_timestamp
@@ -711,7 +758,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          {genesis_block_l2, block_duration},
          incomplete_channels,
          json_rpc_named_arguments_l2,
-         {eip4844_blobs_api_url, celestia_blobs_api_url}
+         {eip4844_blobs_api_url, celestia_blobs_api_url, chain_id_l1}
        ) do
     transactions_filtered
     |> Enum.reduce({:ok, incomplete_channels, [], [], []}, fn transaction,
@@ -727,7 +774,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
               transaction.hash,
               transaction.blob_versioned_hashes,
               block_timestamp,
-              eip4844_blobs_api_url
+              eip4844_blobs_api_url,
+              chain_id_l1
             )
 
           first_byte(transaction.input) == 0xCE ->
@@ -1416,6 +1464,34 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         if not is_nil(start_block) and Helper.address_correct?(env[:inbox]) and Helper.address_correct?(env[:submitter]) do
           {start_block, String.downcase(env[:inbox]), String.downcase(env[:submitter])}
         end
+    end
+  end
+
+  # Fetches the chain id from the RPC.
+  #
+  # ## Parameters
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - The chain id as unsigned integer.
+  # - `nil` if the request failed.
+  @spec fetch_chain_id(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer() | nil
+  defp fetch_chain_id(json_rpc_named_arguments) do
+    error_message = &"Cannot read `eth_chainId`. Error: #{inspect(&1)}"
+
+    request = EthereumJSONRPC.request(%{id: 0, method: "eth_chainId", params: []})
+
+    case Helper.repeated_call(
+           &json_rpc/2,
+           [request, json_rpc_named_arguments],
+           error_message,
+           Helper.infinite_retries_number()
+         ) do
+      {:ok, response} ->
+        quantity_to_integer(response)
+
+      _ ->
+        nil
     end
   end
 

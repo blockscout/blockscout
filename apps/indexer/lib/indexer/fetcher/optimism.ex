@@ -431,8 +431,8 @@ defmodule Indexer.Fetcher.Optimism do
       {:empty_json_rpc_named_arguments, true} ->
         {last_block_number, last_transaction_hash, nil}
 
-      {:error, _} = error_message ->
-        error_message
+      {:error, _} = error ->
+        error
 
       {:empty_transaction, true} ->
         Logger.error(
