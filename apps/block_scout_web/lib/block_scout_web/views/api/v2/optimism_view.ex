@@ -301,7 +301,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       l2_block_number_from,
       l2_block_number_to,
       transaction_count,
-      nil,
+      batch.batch_data_container,
       batch
     )
   end

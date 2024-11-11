@@ -44,15 +44,15 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias Indexer.Helper
   alias Varint.LEB128
 
-  @beacon_blob_fetcher_reference_slot_eth 8500000
-  @beacon_blob_fetcher_reference_timestamp_eth 1708824023
-  @beacon_blob_fetcher_reference_slot_sepolia 4400000
-  @beacon_blob_fetcher_reference_timestamp_sepolia 1708533600
-  @beacon_blob_fetcher_reference_slot_holesky 1000000
-  @beacon_blob_fetcher_reference_timestamp_holesky 1707902400
+  @beacon_blob_fetcher_reference_slot_eth 8_500_000
+  @beacon_blob_fetcher_reference_timestamp_eth 1_708_824_023
+  @beacon_blob_fetcher_reference_slot_sepolia 4_400_000
+  @beacon_blob_fetcher_reference_timestamp_sepolia 1_708_533_600
+  @beacon_blob_fetcher_reference_slot_holesky 1_000_000
+  @beacon_blob_fetcher_reference_timestamp_holesky 1_707_902_400
   @beacon_blob_fetcher_slot_duration 12
   @chain_id_eth 1
-  @chain_id_sepolia 11155111
+  @chain_id_sepolia 11_155_111
   @chain_id_holesky 17000
 
   @fetcher_name :optimism_transaction_batches
@@ -127,7 +127,9 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       chain_id_l1 = fetch_chain_id(json_rpc_named_arguments)
 
       if is_nil(chain_id_l1) do
-        Logger.warning("Cannot get Chain ID from the L1 RPC. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables.")
+        Logger.warning(
+          "Cannot get Chain ID from the L1 RPC. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
+        )
       end
 
       Process.send(self(), :continue, [])
