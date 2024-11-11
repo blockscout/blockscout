@@ -195,16 +195,11 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
           event
           |> Arbitrum.l2_to_l1_event_parse()
 
-        caller_bytes =
-          fields.caller
-          |> String.trim_leading("0x")
-          |> Base.decode16!(case: :lower)
-
         message =
           %{
             direction: :from_l2,
             message_id: fields.message_id,
-            originator_address: caller_bytes,
+            originator_address: fields.caller,
             originating_transaction_hash: event.transaction_hash,
             origination_timestamp: Timex.from_unix(fields.timestamp),
             originating_transaction_block_number: fields.arb_block_number,
