@@ -564,7 +564,8 @@ config :explorer, Explorer.Account,
   private_tags_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_PRIVATE_TAGS_LIMIT", 2000),
   watchlist_addresses_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_ADDRESSES_LIMIT", 15),
   notifications_limit_for_30_days:
-    ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_NOTIFICATIONS_LIMIT_FOR_30_DAYS", 1000)
+    ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_NOTIFICATIONS_LIMIT_FOR_30_DAYS", 1000),
+  siwe_message: System.get_env("ACCOUNT_SIWE_MESSAGE", "Sign in to Blockscout Account V2")
 
 config :explorer, :token_id_migration,
   first_block: ConfigHelper.parse_integer_env_var("TOKEN_ID_MIGRATION_FIRST_BLOCK", 0),

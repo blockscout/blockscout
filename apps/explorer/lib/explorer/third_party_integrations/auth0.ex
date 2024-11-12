@@ -159,17 +159,19 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   - `primary_user_id`: The ID of the existing user account
   - `email`: The email address to be linked
   - `otp`: The one-time password for verification
+  - `ip`: The IP address of the requester
 
   ## Returns
   - `{:ok, Auth.t()}` if the email was successfully linked
   - `{:error, String.t()}` error with the description
   - `:error` if there was an unexpected error
   """
-  @spec link_email(Identity.session(), String.t(), String.t()) :: :error | {:ok, Auth.t()} | {:error, String.t()}
-  def link_email(%{uid: primary_user_id, email: nil}, email, otp) do
+  @spec link_email(Identity.session(), String.t(), String.t(), String.t()) ::
+          :error | {:ok, Auth.t()} | {:error, String.t()}
+  def link_email(%{uid: primary_user_id, email: nil}, email, otp, ip) do
     case find_users_by_email(email) do
       {:ok, []} ->
-        with {:ok, token} <- confirm_otp(email, otp),
+        with {:ok, token} <- confirm_otp(email, otp, ip),
              {:ok, %{"sub" => "email|" <> identity_id}} <- get_user_from_token(token),
              :ok <- link_users(primary_user_id, identity_id, "email"),
              {:ok, user} <- update_user_email(primary_user_id, email) do
@@ -184,7 +186,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     end
   end
 
-  def link_email(_account_with_email, _, _), do: {:error, "This account already has an email"}
+  def link_email(_account_with_email, _, _, _), do: {:error, "This account already has an email"}
 
   @doc """
   Confirms a one-time password (OTP) and retrieves authentication information.
@@ -195,15 +197,16 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   ## Parameters
   - `email`: The email address associated with the OTP
   - `otp`: The one-time password to be confirmed
+  - `ip`: The IP address of the requester
 
   ## Returns
   - `{:ok, Auth.t()}` if the OTP is confirmed and authentication is successful
   - `{:error, String.t()}` error with the description
   - `:error` if there was an unexpected error
   """
-  @spec confirm_otp_and_get_auth(String.t(), String.t()) :: :error | {:error, String.t()} | {:ok, Auth.t()}
-  def confirm_otp_and_get_auth(email, otp) do
-    with {:ok, token} <- confirm_otp(email, otp),
+  @spec confirm_otp_and_get_auth(String.t(), String.t(), String.t()) :: :error | {:error, String.t()} | {:ok, Auth.t()}
+  def confirm_otp_and_get_auth(email, otp, ip) do
+    with {:ok, token} <- confirm_otp(email, otp, ip),
          {:ok, %{"sub" => user_id} = user} <- get_user_from_token(token),
          {:search, _user_from_token, {:ok, user}} <- {:search, user, get_user_by_id(user_id)} do
       maybe_link_email_and_get_auth(user)
@@ -265,7 +268,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     message = %Siwe.Message{
       domain: Helper.get_app_host(),
       address: address,
-      statement: "Sign in to Blockscout Account V2 via Ethereum account",
+      statement: Application.get_env(:explorer, Account)[:siwe_message],
       uri:
         Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:scheme] <>
           "://" <> Helper.get_app_host(),
@@ -440,7 +443,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     {:error, @misconfiguration_detected}
   end
 
-  defp confirm_otp(email, otp) do
+  defp confirm_otp(email, otp, ip) do
     client = OAuth.client()
 
     body =
@@ -452,7 +455,9 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       }
       |> put_client_id_and_secret()
 
-    case Client.post(client, "/oauth/token", body, @json_content_type) do
+    headers = [{"auth0-forwarded-for", ip} | @json_content_type]
+
+    case Client.post(client, "/oauth/token", body, headers) do
       {:ok, %OAuth2.Response{status_code: 200, body: body}} ->
         {:ok, AccessToken.new(body)}
 
