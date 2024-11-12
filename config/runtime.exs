@@ -44,7 +44,8 @@ config :block_scout_web, :recaptcha,
   v3_client_key: System.get_env("RE_CAPTCHA_V3_CLIENT_KEY"),
   v3_secret_key: System.get_env("RE_CAPTCHA_V3_SECRET_KEY"),
   is_disabled: ConfigHelper.parse_bool_env_var("RE_CAPTCHA_DISABLED"),
-  check_hostname?: ConfigHelper.parse_bool_env_var("RE_CAPTCHA_CHECK_HOSTNAME", "true")
+  check_hostname?: ConfigHelper.parse_bool_env_var("RE_CAPTCHA_CHECK_HOSTNAME", "true"),
+  score_threshold: ConfigHelper.parse_float_env_var("RE_CAPTCHA_SCORE_THRESHOLD", "0.5")
 
 network_path =
   "NETWORK_PATH"
