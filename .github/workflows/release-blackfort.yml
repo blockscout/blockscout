@@ -1,6 +1,7 @@
 name: Release for Blackfort
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 

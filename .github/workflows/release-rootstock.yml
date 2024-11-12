@@ -1,6 +1,7 @@
 name: Release for Rootstock
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
