@@ -1963,9 +1963,8 @@ defmodule Explorer.Chain do
 
   @doc """
   Returns a stream of `t:Explorer.Chain.Address.t/0` for Scilla smart contracts
-  that should be displayed as verified. The stream yields addresses created by
-  transactions with a version of `0`, containing a non-nil contract code, and
-  marked as unverified.
+  that should be displayed as verified. The stream yields unverified addresses
+  with fetched contract code created by transactions with `v` = `0`.
 
   ## Parameters
 
@@ -1993,7 +1992,7 @@ defmodule Explorer.Chain do
         a in Address,
         join: t in Transaction,
         on: a.hash == t.created_contract_address_hash,
-        where: t.v == 0 and not is_nil(a.contract_code) and a.verified == false and 1 == 0,
+        where: t.v == 0 and not is_nil(a.contract_code) and a.verified == false,
         order_by: [desc: t.block_number],
         select: a
       )
