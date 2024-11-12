@@ -60,7 +60,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
-        field(:language, Ecto.Enum, values: [solidity: 1, vyper: 2, yul: 3, stylus_rust: 4])
+        field(:language, Ecto.Enum, values: [solidity: 1, vyper: 2, yul: 3, stylus_rust: 4], default: :solidity)
 
         has_many(
           :decompiled_smart_contracts,
