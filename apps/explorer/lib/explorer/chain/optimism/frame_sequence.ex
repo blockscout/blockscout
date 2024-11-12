@@ -119,6 +119,8 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
         # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
         "tx_count" => transaction_count,
         "l1_transaction_hashes" => batch.l1_transaction_hashes,
+        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hashes` property
+        "l1_tx_hashes" => batch.l1_transaction_hashes,
         "batch_data_container" => batch_data_container
       }
 
