@@ -1,6 +1,7 @@
 name: Release for Gnosis Chain
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 

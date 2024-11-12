@@ -1,6 +1,7 @@
 name: Release for Zetachain
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 

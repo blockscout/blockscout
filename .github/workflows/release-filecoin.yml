@@ -1,6 +1,7 @@
 name: Release for Filecoin
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 

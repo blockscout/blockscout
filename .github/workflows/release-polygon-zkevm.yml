@@ -1,6 +1,7 @@
 name: Release for Polygon zkEVM
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 

@@ -1,6 +1,7 @@
 name: Release for Arbitrum
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
