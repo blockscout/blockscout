@@ -2,8 +2,6 @@ name: Release for Stability
 
 on:
   workflow_dispatch:
-  release:
-    types: [published]
 
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
