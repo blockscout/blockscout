@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.9.1
+
+### 🐛 Bug Fixes
+
+- add auth0-forwarded-for header in auth0 ([#11182](https://github.com/blockscout/blockscout/issues/11182))
+
+### ⚙️ Miscellaneous Tasks
+
+- extend recaptcha logging ([#11178](https://github.com/blockscout/blockscout/issues/11178))
+
 ## 6.9.0
 
 ### 🚀 Features
