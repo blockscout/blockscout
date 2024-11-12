@@ -133,7 +133,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   """
   @spec confirm_otp(Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
   def confirm_otp(conn, %{"email" => email, "otp" => otp}) do
-    with {:ok, auth} <- Auth0.confirm_otp_and_get_auth(email, otp) do
+    with {:ok, auth} <- Auth0.confirm_otp_and_get_auth(email, otp, AccessHelper.conn_to_ip_string(conn)) do
       put_auth_to_session(conn, auth)
     end
   end
