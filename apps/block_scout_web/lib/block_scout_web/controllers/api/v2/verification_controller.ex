@@ -11,8 +11,9 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Solidity.PublishHelper
+  alias Explorer.SmartContract.Stylus.PublisherWorker, as: StylusPublisherWorker
   alias Explorer.SmartContract.Vyper.PublisherWorker, as: VyperPublisherWorker
-  alias Explorer.SmartContract.{CompilerVersion, RustVerifierInterface, Solidity.CodeCompiler}
+  alias Explorer.SmartContract.{CompilerVersion, RustVerifierInterface, Solidity.CodeCompiler, StylusVerifierInterface}
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -46,6 +47,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     config =
       base_config
       |> maybe_add_zk_options()
+      |> maybe_add_stylus_options()
 
     conn
     |> json(config)
@@ -64,6 +66,10 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
             do: ["multi-part", "vyper-multi-part", "vyper-standard-input"] ++ &1,
             else: &1
           )).()
+      |> (&if(StylusVerifierInterface.enabled?(),
+            do: ["stylus" | &1],
+            else: &1
+          )).()
     end
   end
 
@@ -74,6 +80,15 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
       config
       |> Map.put(:zk_compiler_versions, zk_compiler_versions)
       |> Map.put(:zk_optimization_modes, @zk_optimization_modes)
+    else
+      config
+    end
+  end
+
+  defp maybe_add_stylus_options(config) do
+    if StylusVerifierInterface.enabled?() do
+      config
+      |> Map.put(:stylus_compiler_versions, CompilerVersion.fetch_version_list(:stylus))
     else
       config
     end
@@ -284,6 +299,29 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
       log_sc_verification_started(address_hash_string)
       Que.add(VyperPublisherWorker, {"vyper_standard_json", verification_params})
+
+      conn
+      |> put_view(ApiView)
+      |> render(:message, %{message: @sc_verification_started})
+    end
+  end
+
+  def verification_via_stylus_github_repository(
+        conn,
+        %{
+          "address_hash" => address_hash_string,
+          "cargo_stylus_version" => _,
+          "repository_url" => _,
+          "commit" => _,
+          "path_prefix" => _
+        } = params
+      ) do
+    Logger.info("API v2 stylus smart-contract #{address_hash_string} verification via github repository")
+
+    with {:not_found, true} <- {:not_found, StylusVerifierInterface.enabled?()},
+         :validated <- validate_address(params) do
+      log_sc_verification_started(address_hash_string)
+      Que.add(StylusPublisherWorker, {"github_repository", params})
 
       conn
       |> put_view(ApiView)

@@ -209,6 +209,23 @@ defmodule Explorer.SmartContract.Helper do
     end
   end
 
+  @doc """
+    Fetches the transaction hash for the given address hash.
+  """
+  @spec fetch_data_for_stylus_verification(binary() | Hash.Address.t()) :: Hash.t() | nil
+  def fetch_data_for_stylus_verification(address_hash) do
+    case SmartContract.creation_transaction_with_bytecode(address_hash) do
+      %{transaction: transaction} ->
+        transaction.hash
+
+      %{internal_transaction: internal_transaction} ->
+        internal_transaction.transaction_hash
+
+      _ ->
+        nil
+    end
+  end
+
   defp transaction_to_metadata(transaction, init) do
     %{
       "blockNumber" => to_string(transaction.block_number),

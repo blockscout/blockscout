@@ -4,7 +4,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
   """
 
   alias Explorer.Helper
-  alias Explorer.SmartContract.RustVerifierInterface
+  alias Explorer.SmartContract.{RustVerifierInterface, StylusVerifierInterface}
 
   @unsupported_solc_versions ~w(0.1.1 0.1.2)
   @unsupported_vyper_versions ~w(v0.2.9 v0.2.10)
@@ -12,12 +12,13 @@ defmodule Explorer.SmartContract.CompilerVersion do
   @doc """
   Fetches a list of compilers from the Ethereum Solidity API.
   """
-  @spec fetch_versions(:solc | :vyper | :zk) :: {atom, [map]}
+  @spec fetch_versions(:solc | :vyper | :zk | :stylus) :: {atom, [map]}
   def fetch_versions(compiler) do
     case compiler do
       :solc -> fetch_solc_versions()
       :vyper -> fetch_vyper_versions()
       :zk -> fetch_zk_versions()
+      :stylus -> fetch_stylus_versions()
     end
   end
 
@@ -41,6 +42,18 @@ defmodule Explorer.SmartContract.CompilerVersion do
 
   defp fetch_vyper_versions do
     fetch_compiler_versions(&RustVerifierInterface.vyper_get_versions_list/0, :vyper)
+  end
+
+  defp fetch_stylus_versions do
+    fetch_compiler_versions(&StylusVerifierInterface.get_versions_list/0, :stylus)
+  end
+
+  defp fetch_compiler_versions(compiler_list_fn, :stylus = compiler_type) do
+    if StylusVerifierInterface.enabled?() do
+      fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type)
+    else
+      {:ok, []}
+    end
   end
 
   defp fetch_compiler_versions(compiler_list_fn, compiler_type) do
