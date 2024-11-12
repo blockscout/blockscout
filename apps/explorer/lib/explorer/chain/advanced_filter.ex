@@ -315,8 +315,8 @@ defmodule Explorer.Chain.AdvancedFilter do
             (internal_transaction.type == :call and internal_transaction.index > 0) or
               internal_transaction.type != :call,
           order_by: [
-            desc: internal_transaction.block_number,
-            desc: internal_transaction.transaction_index,
+            desc: transaction.block_number,
+            desc: transaction.index,
             desc: internal_transaction.index
           ]
         )
@@ -332,8 +332,8 @@ defmodule Explorer.Chain.AdvancedFilter do
             (internal_transaction.type == :call and internal_transaction.index > 0) or
               internal_transaction.type != :call,
           order_by: [
-            desc: internal_transaction.block_number,
-            desc: internal_transaction.transaction_index,
+            desc: transaction.block_number,
+            desc: transaction.index,
             desc: internal_transaction.index
           ]
         )
@@ -1063,35 +1063,37 @@ defmodule Explorer.Chain.AdvancedFilter do
     queries =
       addresses
       |> Enum.map(fn address ->
-        query |> where([token_transfer], field(token_transfer, ^field) == ^address)
+        query
+        |> where([internal_transaction], field(internal_transaction, ^field) == ^address)
+        |> order_internal_transactions_with_address_filter()
       end)
       |> map_first(&subquery/1)
       |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
-    from(internal_transaction in subquery(queries),
-      order_by: [
-        desc: internal_transaction.block_number,
-        desc: internal_transaction.transaction_index,
-        desc: internal_transaction.index
-      ]
-    )
+    from(internal_transaction in subquery(queries)) |> order_internal_transactions_with_address_filter()
   end
 
   defp do_filter_internal_transactions_by_address(query, {:exclude, addresses}, field) do
-    query |> where([t], field(t, ^field) not in ^addresses)
+    query
+    |> where([internal_transaction], field(internal_transaction, ^field) not in ^addresses)
+    |> order_internal_transactions_with_address_filter()
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:include, from}, {:include, to}, relation) do
     from_queries =
       from
       |> Enum.map(fn from_address ->
-        query |> where([internal_transaction], internal_transaction.from_address_hash == ^from_address)
+        query
+        |> where([internal_transaction], internal_transaction.from_address_hash == ^from_address)
+        |> order_internal_transactions_with_address_filter()
       end)
 
     to_queries =
       to
       |> Enum.map(fn to_address ->
-        query |> where([internal_transaction], internal_transaction.to_address_hash == ^to_address)
+        query
+        |> where([internal_transaction], internal_transaction.to_address_hash == ^to_address)
+        |> order_internal_transactions_with_address_filter()
       end)
 
     do_filter_internal_transactions_by_both_addresses_to_include(from_queries, to_queries, relation)
@@ -1106,17 +1108,12 @@ defmodule Explorer.Chain.AdvancedFilter do
           [internal_transaction],
           internal_transaction.from_address_hash == ^from_address and internal_transaction.to_address_hash not in ^to
         )
+        |> order_internal_transactions_with_address_filter()
       end)
       |> map_first(&subquery/1)
       |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
-    from(internal_transaction in subquery(from_queries),
-      order_by: [
-        desc: internal_transaction.block_number,
-        desc: internal_transaction.transaction_index,
-        desc: internal_transaction.index
-      ]
-    )
+    from(internal_transaction in subquery(from_queries)) |> order_internal_transactions_with_address_filter()
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:include, from}, {:exclude, to}, _relation) do
@@ -1128,17 +1125,12 @@ defmodule Explorer.Chain.AdvancedFilter do
           [internal_transaction],
           internal_transaction.from_address_hash == ^from_address or internal_transaction.to_address_hash not in ^to
         )
+        |> order_internal_transactions_with_address_filter()
       end)
       |> map_first(&subquery/1)
       |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
-    from(internal_transaction in subquery(from_queries),
-      order_by: [
-        desc: internal_transaction.block_number,
-        desc: internal_transaction.transaction_index,
-        desc: internal_transaction.index
-      ]
-    )
+    from(internal_transaction in subquery(from_queries)) |> order_internal_transactions_with_address_filter()
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:exclude, from}, {:include, to}, :and) do
@@ -1150,17 +1142,12 @@ defmodule Explorer.Chain.AdvancedFilter do
           [internal_transaction],
           internal_transaction.to_address_hash == ^to_address and internal_transaction.from_address_hash not in ^from
         )
+        |> order_internal_transactions_with_address_filter()
       end)
       |> map_first(&subquery/1)
       |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
-    from(internal_transaction in subquery(to_queries),
-      order_by: [
-        desc: internal_transaction.block_number,
-        desc: internal_transaction.transaction_index,
-        desc: internal_transaction.index
-      ]
-    )
+    from(internal_transaction in subquery(to_queries)) |> order_internal_transactions_with_address_filter()
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:exclude, from}, {:include, to}, _relation) do
@@ -1172,27 +1159,30 @@ defmodule Explorer.Chain.AdvancedFilter do
           [internal_transaction],
           internal_transaction.to_address_hash == ^to_address or internal_transaction.from_address_hash not in ^from
         )
+        |> order_internal_transactions_with_address_filter()
       end)
       |> map_first(&subquery/1)
       |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
-    from(internal_transaction in subquery(to_queries),
-      order_by: [
-        desc: internal_transaction.block_number,
-        desc: internal_transaction.transaction_index,
-        desc: internal_transaction.index
-      ]
-    )
+    from(internal_transaction in subquery(to_queries)) |> order_internal_transactions_with_address_filter()
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:exclude, from}, {:exclude, to}, :and) do
     query
-    |> where([t], t.from_address_hash not in ^from and t.to_address_hash not in ^to)
+    |> where(
+      [internal_transaction],
+      internal_transaction.from_address_hash not in ^from and internal_transaction.to_address_hash not in ^to
+    )
+    |> order_internal_transactions_with_address_filter()
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:exclude, from}, {:exclude, to}, _relation) do
     query
-    |> where([t], t.from_address_hash not in ^from or t.to_address_hash not in ^to)
+    |> where(
+      [internal_transaction],
+      internal_transaction.from_address_hash not in ^from or internal_transaction.to_address_hash not in ^to
+    )
+    |> order_internal_transactions_with_address_filter()
   end
 
   defp do_filter_internal_transactions_by_both_addresses_to_include(from_queries, to_queries, relation) do
@@ -1204,13 +1194,8 @@ defmodule Explorer.Chain.AdvancedFilter do
         united_to_queries =
           to_queries |> map_first(&subquery/1) |> Enum.reduce(fn query, acc -> union_all(acc, ^query) end)
 
-        from(internal_transaction in subquery(intersect_all(united_from_queries, ^united_to_queries)),
-          order_by: [
-            desc: internal_transaction.block_number,
-            desc: internal_transaction.transaction_index,
-            desc: internal_transaction.index
-          ]
-        )
+        from(internal_transaction in subquery(intersect_all(united_from_queries, ^united_to_queries)))
+        |> order_internal_transactions_with_address_filter()
 
       _ ->
         union_query =
@@ -1219,14 +1204,18 @@ defmodule Explorer.Chain.AdvancedFilter do
           |> map_first(&subquery/1)
           |> Enum.reduce(fn query, acc -> union(acc, ^query) end)
 
-        from(internal_transaction in subquery(union_query),
-          order_by: [
-            desc: internal_transaction.block_number,
-            desc: internal_transaction.transaction_index,
-            desc: internal_transaction.index
-          ]
-        )
+        from(internal_transaction in subquery(union_query)) |> order_internal_transactions_with_address_filter()
     end
+  end
+
+  defp order_internal_transactions_with_address_filter(query) do
+    query
+    |> exclude(:order_by)
+    |> order_by([internal_transaction],
+      desc: internal_transaction.block_number,
+      desc: internal_transaction.transaction_index,
+      desc: internal_transaction.index
+    )
   end
 
   @eth_decimals 1_000_000_000_000_000_000
