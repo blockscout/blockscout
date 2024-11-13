@@ -635,7 +635,7 @@ defmodule Explorer.Chain.Token.Instance do
   @doc """
   Sets set_metadata for the given Explorer.Chain.Token.Instance
   """
-  @spec set_metadata(__MODULE__, map()) :: {non_neg_integer(), nil}
+  @spec set_metadata(t(), map()) :: {non_neg_integer(), nil}
   def set_metadata(token_instance, metadata) when is_map(metadata) do
     now = DateTime.utc_now()
 
@@ -644,7 +644,7 @@ defmodule Explorer.Chain.Token.Instance do
         where: instance.token_contract_address_hash == ^token_instance.token_contract_address_hash,
         where: instance.token_id == ^token_instance.token_id
       ),
-      [set: [metadata: metadata, error: nil, updated_at: now]],
+      [set: [metadata: metadata, error: nil, updated_at: now, media_urls: nil, media_type: nil, cdn_upload_error: nil]],
       timeout: @timeout
     )
   end
@@ -691,13 +691,13 @@ defmodule Explorer.Chain.Token.Instance do
     end) || 13
   end
 
-  def set_media_urls({token_contract_address_hash, token_id}, urls, {type, subtype}) do
+  def set_media_urls({token_contract_address_hash, token_id}, urls, media_type) do
     now = DateTime.utc_now()
 
     token_id
     |> token_instance_query(token_contract_address_hash)
     |> Repo.update_all(
-      [set: [media_urls: urls, media_type: "#{type}/#{subtype}", updated_at: now]],
+      [set: [media_urls: urls, media_type: media_type_to_string(media_type), updated_at: now]],
       timeout: @timeout
     )
   end
@@ -719,22 +719,29 @@ defmodule Explorer.Chain.Token.Instance do
     |> Repo.stream_each(each_fun)
   end
 
-  def copy_cdn_result({from_token_contract_address_hash, from_token_id}, {to_token_contract_address_hash, to_token_id}) do
+  def copy_cdn_result({token_contract_address_hash, token_id}, %{
+        media_urls: media_urls,
+        media_type: media_type,
+        cdn_upload_error: cdn_upload_error
+      }) do
     now = DateTime.utc_now()
 
-    to_token_id
-    |> token_instance_query(to_token_contract_address_hash)
-    |> join(:inner, [ti1], ti2 in __MODULE__,
-      on: ti2.token_contract_address_hash == ^from_token_contract_address_hash and ti2.token_id == ^from_token_id
+    token_id
+    |> token_instance_query(token_contract_address_hash)
+    |> Repo.update_all(
+      [
+        set: [
+          cdn_upload_error: cdn_upload_error,
+          media_urls: media_urls,
+          media_type: media_type,
+          updated_at: now
+        ]
+      ],
+      timeout: @timeout
     )
-    |> update([ti1, ti2],
-      set: [
-        cdn_upload_error: ti2.cdn_upload_error,
-        media_urls: ti2.media_urls,
-        media_type: ti2.media_type,
-        updated_at: ^now
-      ]
-    )
-    |> Repo.update_all([], timeout: @timeout)
+  end
+
+  def media_type_to_string({type, subtype}) do
+    "#{type}/#{subtype}"
   end
 end

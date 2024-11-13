@@ -73,12 +73,12 @@ defmodule NFTMediaHandlerDispatcher.Queue do
 
       _ ->
         case Cachex.get(uniqueness_cache_name(), media_url) do
-          {:ok, {token_address_hash_fetched, token_id_fetched} = already_fetched_nft_id} ->
+          {:ok, result} when is_map(result) ->
             Logger.debug(
-              "Media url already fetched: #{media_url}, will copy from: {#{to_string(token_address_hash_fetched)}, #{token_id_fetched}}, to: {#{to_string(token_address_hash)}, #{token_id}} "
+              "Media url already fetched: #{media_url}, will take result from cache to: {#{to_string(token_address_hash)}, #{token_id}} "
             )
 
-            Instance.copy_cdn_result(already_fetched_nft_id, {token_address_hash, token_id})
+            Instance.copy_cdn_result({token_address_hash, token_id}, result)
 
           _ ->
             :dets.insert(queue, {media_url, {token_address_hash, token_id}})
@@ -102,7 +102,11 @@ defmodule NFTMediaHandlerDispatcher.Queue do
           Instance.set_media_urls(instance_identifier, result, media_type)
         end)
 
-        put_url_to_cache(url, Enum.at(instances, 0))
+        put_result_to_cache(url, %{
+          media_urls: result,
+          media_type: Instance.media_type_to_string(media_type),
+          cdn_upload_error: nil
+        })
 
       _ ->
         Logger.warning("Failed to find instances in in_progress dets for url: #{url}, result: #{inspect(result)}")
@@ -118,11 +122,13 @@ defmodule NFTMediaHandlerDispatcher.Queue do
 
         Instrumenter.increment_failed_uploading_media_number()
 
+        cdn_upload_error = reason |> inspect() |> MetadataRetriever.truncate_error()
+
         Enum.each(instances, fn instance_identifier ->
-          Instance.set_cdn_upload_error(instance_identifier, reason |> inspect() |> MetadataRetriever.truncate_error())
+          Instance.set_cdn_upload_error(instance_identifier, cdn_upload_error)
         end)
 
-        put_url_to_cache(url, Enum.at(instances, 0))
+        put_result_to_cache(url, %{media_urls: nil, media_type: nil, cdn_upload_error: cdn_upload_error})
 
       _ ->
         Logger.warning("Failed to find instances in in_progress dets for url: #{url}, error: #{inspect(reason)}")
@@ -212,8 +218,8 @@ defmodule NFTMediaHandlerDispatcher.Queue do
     Application.get_env(:nft_media_handler, :uniqueness_cache_name)
   end
 
-  defp put_url_to_cache(url, {token_address_hash, token_id}) do
-    Cachex.put(uniqueness_cache_name(), url, {token_address_hash, token_id})
+  defp put_result_to_cache(url, result) do
+    Cachex.put(uniqueness_cache_name(), url, result)
   end
 
   defp filter_fetched_backfill_url({url, backfill_instances}, {_queue, in_progress, _continuation}) do
@@ -226,12 +232,10 @@ defmodule NFTMediaHandlerDispatcher.Queue do
 
       _ ->
         case Cachex.get(uniqueness_cache_name(), url) do
-          {:ok, {token_address_hash_fetched, token_id_fetched} = already_fetched_nft_id} ->
-            Logger.debug(
-              "Media url already fetched: #{url}, will copy from: {#{to_string(token_address_hash_fetched)}, #{token_id_fetched}}, to: #{inspect(backfill_instances)}"
-            )
+          {:ok, result} when is_map(result) ->
+            Logger.debug("Media url already fetched: #{url}, will copy from cache to: #{inspect(backfill_instances)}")
 
-            Enum.each(backfill_instances, &Instance.copy_cdn_result(already_fetched_nft_id, &1))
+            Enum.each(backfill_instances, &Instance.copy_cdn_result(&1, result))
             false
 
           _ ->
