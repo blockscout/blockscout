@@ -357,7 +357,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
       logs
       |> Enum.reduce({MapSet.new(), [], nil, 0, 0}, fn
         %{"removed" => true, "blockNumber" => block_number}, {reorgs, logs_to_parse, min_block, max_block, cnt} ->
-          {MapSet.put(reorgs, block_number), logs_to_parse, min_block, max_block, cnt}
+          {MapSet.put(reorgs, quantity_to_integer(block_number)), logs_to_parse, min_block, max_block, cnt}
 
         %{"blockNumber" => block_number} = log, {reorgs, logs_to_parse, min_block, max_block, cnt} ->
           {
@@ -443,10 +443,12 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
         msg_value::binary-size(32),
         value::binary-size(32),
         gas_limit::binary-size(8),
-        is_creation::binary-size(1),
+        _is_creation::binary-size(1),
         data::binary
       >>
     ] = decode_data(opaque_data, [:bytes])
+
+    is_system = <<0>>
 
     rlp_encoded =
       ExRLP.encode(
@@ -457,7 +459,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
           msg_value |> String.replace_leading(<<0>>, <<>>),
           value |> String.replace_leading(<<0>>, <<>>),
           gas_limit |> String.replace_leading(<<0>>, <<>>),
-          is_creation |> String.replace_leading(<<0>>, <<>>),
+          is_system |> String.replace_leading(<<0>>, <<>>),
           data
         ],
         encoding: :hex
