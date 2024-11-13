@@ -98,6 +98,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
 
     field(:token, :any, virtual: true) :: Token.t() | nil
+    field(:block_number, :integer, virtual: true)
 
     timestamps()
   end
@@ -113,12 +114,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     |> foreign_key_constraint(:block_hash)
     |> foreign_key_constraint(:account_address_hash)
     |> foreign_key_constraint(:associated_account_address_hash)
-
-    # todo: do I need to set this unique constraint here? or it is redundant?
-    # |> unique_constraint(
-    #   [:block_hash, :type, :account_address_hash, :associated_account_address_hash],
-    #   name: :celo_election_rewards_pkey
-    # )
   end
 
   @doc """
@@ -237,6 +232,9 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       preload: [block: b],
       where: r.account_address_hash == ^address_hash,
       select: r,
+      select_merge: %{
+        block_number: b.number
+      },
       order_by: [
         desc: b.number,
         desc: r.amount,
