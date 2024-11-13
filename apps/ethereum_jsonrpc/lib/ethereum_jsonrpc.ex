@@ -552,7 +552,7 @@ defmodule EthereumJSONRPC do
     CommonHelper.put_in_keyword_nested(
       json_rpc_named_arguments,
       [:transport_options, :method_to_url, :eth_getBalance],
-      System.get_env("ETHEREUM_JSONRPC_TRACE_URL")
+      :trace
     )
   end
 
