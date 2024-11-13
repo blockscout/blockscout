@@ -354,4 +354,33 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
 
     Stream.concat([row_names], holders_list)
   end
+
+  @doc """
+  Encode `address_hash`, `token_contract_address_hash` and `token_id` into a string that can be used in
+  `(address_hash, token_contract_address_hash, token_id) IN (...)` WHERE clause
+  """
+  @spec encode_ids([{Hash.t(), Hash.t(), non_neg_integer()}] | [{Hash.t(), Hash.t()}]) :: binary()
+  def encode_ids(ids) do
+    encoded_values =
+      ids
+      |> Enum.reduce("", fn
+        {address_hash, token_hash, token_id}, acc ->
+          acc <> "('#{hash_to_query_string(address_hash)}', '#{hash_to_query_string(token_hash)}', #{token_id}),"
+
+        {address_hash, token_hash}, acc ->
+          acc <> "('#{hash_to_query_string(address_hash)}', '#{hash_to_query_string(token_hash)}'),"
+      end)
+      |> String.trim_trailing(",")
+
+    "(#{encoded_values})"
+  end
+
+  defp hash_to_query_string(hash) do
+    s_hash =
+      hash
+      |> to_string()
+      |> String.trim_leading("0")
+
+    "\\#{s_hash}"
+  end
 end
