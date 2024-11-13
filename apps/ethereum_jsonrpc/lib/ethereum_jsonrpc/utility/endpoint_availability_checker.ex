@@ -25,10 +25,22 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
     end
   end
 
+  @doc """
+    Adds an endpoint to be monitored for availability.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: JSON-RPC configuration for the endpoint
+    - `url_type`: Type of the endpoint (`:ws`, `:trace`, `:http`, or `:eth_call`)
+
+    ## Returns
+    - `:ok`
+  """
+  @spec add_endpoint(EthereumJSONRPC.json_rpc_named_arguments(), :ws | :trace | :http | :eth_call) :: :ok
   def add_endpoint(json_rpc_named_arguments, url_type) do
     GenServer.cast(__MODULE__, {:add_endpoint, json_rpc_named_arguments, url_type})
   end
 
+  # Adds an endpoint to the list of unavailable endpoints for monitoring.
   def handle_cast({:add_endpoint, named_arguments, url_type}, %{unavailable_endpoints_arguments: unavailable} = state) do
     {:noreply, %{state | unavailable_endpoints_arguments: [{named_arguments, url_type} | unavailable]}}
   end

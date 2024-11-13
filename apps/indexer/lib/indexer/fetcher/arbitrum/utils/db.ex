@@ -903,6 +903,24 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     Reader.get_uncompleted_l1_to_l2_messages_ids()
   end
 
+  @doc """
+    Retrieves block numbers within a range that are missing Arbitrum-specific fields.
+
+    Identifies rollup blocks that lack one or more of the following fields:
+    `send_count`, `send_root`, or `l1_block_number`.
+
+    ## Parameters
+    - `start_block_number`: The lower bound of the block range to check.
+    - `end_block_number`: The upper bound of the block range to check.
+
+    ## Returns
+    - A list of block numbers that are missing one or more required fields.
+  """
+  @spec blocks_with_missing_fields(FullBlock.block_number(), FullBlock.block_number()) :: [FullBlock.block_number()]
+  def blocks_with_missing_fields(start_block_number, end_block_number) do
+    Reader.blocks_with_missing_fields(start_block_number, end_block_number)
+  end
+
   @spec lifecycle_transaction_to_map(Arbitrum.LifecycleTransaction.t()) :: Arbitrum.LifecycleTransaction.to_import()
   defp lifecycle_transaction_to_map(transaction) do
     [:id, :hash, :block_number, :timestamp, :status]
