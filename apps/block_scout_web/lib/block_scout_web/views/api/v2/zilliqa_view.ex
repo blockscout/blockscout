@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
   if @chain_type == :zilliqa do
     import Explorer.Chain.Zilliqa.Helper, only: [scilla_transaction?: 1]
     # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
-    alias Explorer.Chain.{Address, Block, Transaction}, warn: false
+    alias Explorer.Chain.{Block, Transaction}, warn: false
     alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}, warn: false
 
     @scilla_transactions_v Decimal.new(0)
@@ -52,31 +52,6 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
     def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
       Map.put(out_json, :zilliqa, %{
         is_scilla: scilla_transaction?(transaction)
-      })
-    end
-
-    @doc """
-    Extends the JSON output with a sub-map containing information related to
-    Zilliqa,
-    such as if the smart contract is a Scilla smart contract.
-
-    ## Parameters
-    - `out_json`: A map defining the output JSON which will be extended.
-    - `address`: The address structure containing the contract creation transaction.
-
-    ## Returns
-    - A map extended with data related to Zilliqa.
-    """
-    @spec extend_smart_contract_json_response(map(), Address.t()) :: map()
-    def extend_smart_contract_json_response(
-          out_json,
-          %Address{contracts_creation_transaction: transaction}
-        ) do
-      # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-      is_scilla_contract = (transaction && scilla_transaction?(transaction)) || false
-
-      Map.put(out_json, :zilliqa, %{
-        is_scilla: is_scilla_contract
       })
     end
 
