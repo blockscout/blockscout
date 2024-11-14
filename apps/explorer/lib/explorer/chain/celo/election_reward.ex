@@ -39,7 +39,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @type type :: :voter | :validator | :group | :delegated_payment
   @types_enum ~w(voter validator group delegated_payment)a
 
-  @reward_type_string_to_atom %{
+  @reward_type_url_string_to_atom %{
     "voter" => :voter,
     "validator" => :validator,
     "group" => :group,
@@ -123,7 +123,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   def types, do: @types_enum
 
   @doc """
-  Converts a reward type string to its corresponding atom.
+  Converts a reward type url string to its corresponding atom.
 
   ## Parameters
   - `type_string` (`String.t()`): The string representation of the reward type.
@@ -133,15 +133,15 @@ defmodule Explorer.Chain.Celo.ElectionReward do
 
   ## Examples
 
-      iex> ElectionReward.type_from_string("voter")
+      iex> ElectionReward.type_from_url_string("voter")
       {:ok, :voter}
 
-      iex> ElectionReward.type_from_string("invalid")
+      iex> ElectionReward.type_from_url_string("invalid")
       :error
   """
-  @spec type_from_string(String.t()) :: {:ok, type} | :error
-  def type_from_string(type_string) do
-    Map.fetch(@reward_type_string_to_atom, type_string)
+  @spec type_from_url_string(String.t()) :: {:ok, type} | :error
+  def type_from_url_string(type_string) do
+    Map.fetch(@reward_type_url_string_to_atom, type_string)
   end
 
   @doc """
@@ -339,6 +339,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     end
   end
 
+  # sobelow_skip ["DOS.StringToAtom"]
   @doc """
   Makes Explorer.PagingOptions map for election rewards.
   """
@@ -358,7 +359,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
          {amount, ""} <- Decimal.parse(amount_string),
          {:ok, associated_account_address_hash} <-
            Hash.Address.cast(associated_account_address_hash_string),
-         {:ok, type} <- type_from_string(type_string) do
+         type when type in @types_enum <- String.to_atom(type_string) do
       [
         paging_options: %{
           default_paging_options()
