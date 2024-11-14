@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   alias Explorer.Token.MetadataRetriever
   alias Explorer.Utility.TokenInstanceMetadataRefetchAttempt
   alias Indexer.Fetcher.TokenInstance.Helper, as: TokenInstanceHelper
-  alias NFTMediaHandlerDispatcher.Queue
+  alias Indexer.NFTMediaHandler.Queue
 
   @max_delay :timer.hours(168)
 

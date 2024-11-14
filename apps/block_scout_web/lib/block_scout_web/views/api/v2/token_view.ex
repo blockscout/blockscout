@@ -117,31 +117,8 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "is_unique" => instance.is_unique,
       "thumbnails" => instance.media_urls,
       "media_type" => instance.media_type,
-      "media_url" => media_url(instance.metadata)
+      "media_url" => Instance.get_media_url_from_metadata_for_nft_media_handler(instance.metadata)
     }
-  end
-
-  # Function to fetch media url from metadata (separate function to guarantee the same algorithm with one used during upload to CDN)
-  defp media_url(metadata) do
-    result =
-      cond do
-        metadata["image_url"] ->
-          metadata["image_url"]
-
-        metadata["image"] ->
-          metadata["image"]
-
-        is_map(metadata["properties"]) && is_binary(metadata["properties"]["image"]) ->
-          metadata["properties"]["image"]
-
-        metadata["animation_url"] ->
-          metadata["animation_url"]
-
-        true ->
-          nil
-      end
-
-    if result && String.trim(result) == "", do: nil, else: result
   end
 
   defp token_instance_owner(false, _instance), do: nil

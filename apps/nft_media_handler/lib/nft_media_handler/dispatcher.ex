@@ -6,6 +6,7 @@ defmodule NFTMediaHandler.Dispatcher do
   use GenServer
 
   alias Task.Supervisor, as: TaskSupervisor
+  alias NFTMediaHandler.DispatcherInterface
   require Logger
 
   def start_link(_) do
@@ -40,7 +41,7 @@ defmodule NFTMediaHandler.Dispatcher do
 
     {urls, node, folder} =
       (batch_size * to_spawn)
-      |> NFTMediaHandlerDispatcherInterface.get_urls()
+      |> DispatcherInterface.get_urls()
 
     spawned =
       urls
@@ -81,7 +82,7 @@ defmodule NFTMediaHandler.Dispatcher do
 
     Logger.error("Failed to fetch and upload urls (#{inspect(urls)}): #{reason}")
 
-    Enum.each(urls, fn url -> NFTMediaHandlerDispatcherInterface.store_result({:down, reason}, url, node) end)
+    Enum.each(urls, fn url -> DispatcherInterface.store_result({:down, reason}, url, node) end)
 
     Process.send(self(), :spawn_tasks, [])
 
@@ -95,14 +96,14 @@ defmodule NFTMediaHandler.Dispatcher do
            try do
              url
              |> NFTMediaHandler.prepare_and_upload_by_url(folder)
-             |> NFTMediaHandlerDispatcherInterface.store_result(url, node)
+             |> DispatcherInterface.store_result(url, node)
            rescue
              error ->
                Logger.error(
                  "Failed to fetch and upload url (#{url}): #{Exception.format(:error, error, __STACKTRACE__)}"
                )
 
-               NFTMediaHandlerDispatcherInterface.store_result({:error, error}, url, node)
+               DispatcherInterface.store_result({:error, error}, url, node)
            end
          end)
        end).ref, {batch, node}}

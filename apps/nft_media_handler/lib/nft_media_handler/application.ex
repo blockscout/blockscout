@@ -6,10 +6,20 @@ defmodule NFTMediaHandler.Application do
 
   @impl Application
   def start(_type, _args) do
-    children = [
+    base_children = [
       Supervisor.child_spec({Task.Supervisor, name: NFTMediaHandler.TaskSupervisor}, id: NFTMediaHandler.TaskSupervisor),
       NFTMediaHandler.Dispatcher
     ]
+
+    children =
+      if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
+        [
+          NFTMediaHandler.DispatcherInterface
+          | base_children
+        ]
+      else
+        base_children
+      end
 
     opts = [strategy: :one_for_one, name: NFTMediaHandler.Supervisor, max_restarts: 1_000]
 

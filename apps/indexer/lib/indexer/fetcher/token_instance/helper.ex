@@ -5,7 +5,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   alias Explorer.Chain
   alias Explorer.SmartContract.Reader
   alias Explorer.Token.MetadataRetriever
-  alias NFTMediaHandlerDispatcher.Queue
+  alias Indexer.NFTMediaHandler.Queue
 
   require Logger
 

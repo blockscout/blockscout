@@ -1,4 +1,4 @@
-defmodule NFTMediaHandlerDispatcher.Queue do
+defmodule Indexer.NFTMediaHandler.Queue do
   @moduledoc """
   Queue for fetching media
   """
@@ -9,8 +9,7 @@ defmodule NFTMediaHandlerDispatcher.Queue do
   alias Explorer.Chain.Token.Instance
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Token.MetadataRetriever
-  alias NFTMediaHandlerDispatcher.Backfiller
-  import NFTMediaHandlerDispatcher, only: [get_media_url_from_metadata: 1]
+  alias Indexer.NFTMediaHandler.Backfiller
 
   @queue_storage :queue_storage
   @tasks_in_progress :tasks_in_progress
@@ -18,7 +17,7 @@ defmodule NFTMediaHandlerDispatcher.Queue do
   @spec process_new_instance(any()) :: any()
   def process_new_instance({:ok, %Instance{} = nft} = initial_value) do
     if Application.get_env(:nft_media_handler, :enabled?) do
-      url = get_media_url_from_metadata(nft.metadata)
+      url = Instance.get_media_url_from_metadata_for_nft_media_handler(nft.metadata)
 
       if url do
         GenServer.cast(__MODULE__, {:add_to_queue, {nft.token_contract_address_hash, nft.token_id, url}})
@@ -47,10 +46,11 @@ defmodule NFTMediaHandlerDispatcher.Queue do
   end
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)|> dbg()
   end
 
   def init(_) do
+    dbg()
     {:ok, queue} = :dets.open_file(@queue_storage, file: ~c"./dets/#{@queue_storage}", type: :bag)
     {:ok, in_progress} = :dets.open_file(@tasks_in_progress, type: :set, file: ~c"./dets/#{@tasks_in_progress}")
 

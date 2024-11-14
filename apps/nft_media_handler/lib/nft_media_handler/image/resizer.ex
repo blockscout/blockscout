@@ -6,6 +6,15 @@ defmodule NFTMediaHandler.Image.Resizer do
   @sizes [{60, "60x60"}, {250, "250x250"}, {500, "500x500"}]
   require Logger
 
+  # {"60x60":
+  # "https://pub-1f1ac54bb1ee4b1ab5f87ca95854800c.r2.dev/folder_1/64b4fc0d50f0a0c18953fafd8c92988b140c2ba8_{size}.jpg",
+
+  # ["64b4fc0d50f0a0c18953fafd8c92988b140c2ba8_{size}.jpg", ["60x60", "250x250"]]
+
+  # "250x250": "https://pub-1f1ac54bb1ee4b1ab5f87ca95854800c.r2.dev/folder_1/64b4fc0d50f0a0c18953fafd8c92988b140c2ba8_250x250.jpg",
+  # "original": "https://pub-1f1ac54bb1ee4b1ab5f87ca95854800c.r2.dev/folder_1/64b4fc0d50f0a0c18953fafd8c92988b140c2ba8_original.jpg"}
+
+  # optimize urls storage
   def resize(image, url, extension) do
     max_size = max(Image.width(image), Image.height(image) / Image.pages(image))
 

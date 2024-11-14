@@ -25,20 +25,11 @@ defmodule BlockScout.Mixfile do
             explorer: :permanent,
             indexer: :permanent,
             utils: :permanent,
-            nft_media_handler_dispatcher: :permanent,
-            nft_media_handler_dispatcher_interface: :permanent,
             nft_media_handler: :permanent
           ],
           steps: [:assemble, &copy_prod_runtime_config/1],
           validate_compile_env: false
         ]
-        # ,
-        # nft_media_handler: [
-        #   applications: [
-        #     nft_media_handler_dispatcher_interface: :permanent,
-        #     nft_media_handler: :permanent
-        #   ]
-        # ]
       ]
     ]
   end

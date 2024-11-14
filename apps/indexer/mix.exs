@@ -72,7 +72,7 @@ defmodule Indexer.MixProject do
       {:logger_json, "~> 5.1"},
       {:varint, "~> 1.4"},
       {:utils, in_umbrella: true},
-      {:nft_media_handler_dispatcher, in_umbrella: true}
+      {:cachex, "~> 4.0"}
     ]
   end
 

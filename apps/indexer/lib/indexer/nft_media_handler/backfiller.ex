@@ -1,11 +1,9 @@
-defmodule NFTMediaHandlerDispatcher.Backfiller do
+defmodule Indexer.NFTMediaHandler.Backfiller do
   @moduledoc """
   Module fetches from DB token instances which wasn't processed via NFTMediaHandler yet. Then put it to the queue.
   Via get_instances/1 it's possible to get urls to fetch.
   """
   alias Explorer.Chain.Token.Instance
-
-  import NFTMediaHandlerDispatcher, only: [get_media_url_from_metadata: 1]
 
   use GenServer
 
@@ -32,7 +30,7 @@ defmodule NFTMediaHandlerDispatcher.Backfiller do
   end
 
   defp enqueue_if_queue_is_not_full(instance) do
-    url = get_media_url_from_metadata(instance.metadata)
+    url = Instance.get_media_url_from_metadata_for_nft_media_handler(instance.metadata)
 
     if !is_nil(url) do
       if GenServer.call(__MODULE__, :not_full?) do

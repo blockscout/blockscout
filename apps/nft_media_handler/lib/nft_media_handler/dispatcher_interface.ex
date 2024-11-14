@@ -1,6 +1,6 @@
-defmodule NFTMediaHandlerDispatcherInterface do
+defmodule NFTMediaHandler.DispatcherInterface do
   @moduledoc """
-  Documentation for `NFTMediaHandlerDispatcherInterface`.
+  Documentation for `NFTMediaHandler.DispatcherInterface`.
   """
   require Logger
   use GenServer
@@ -42,11 +42,11 @@ defmodule NFTMediaHandlerDispatcherInterface do
     if Application.get_env(:nft_media_handler, :remote?) do
       {node, folder} = GenServer.call(__MODULE__, :take_node_to_call)
 
-      {node |> :rpc.call(NFTMediaHandlerDispatcher.Queue, :get_urls_to_fetch, args) |> process_rpc_response(node), node,
-       folder}
+      {node |> :rpc.call(Indexer.NFTMediaHandler.Queue, :get_urls_to_fetch, args) |> process_rpc_response(node), node,
+       folder}|>dbg()
     else
       folder = Application.get_env(:nft_media_handler, :nodes_map)[:self]
-      {apply(NFTMediaHandlerDispatcher.Queue, function, args), :self, folder}
+      {apply(Indexer.NFTMediaHandler.Queue, function, args), :self, folder}|>dbg()
     end
   end
 
@@ -59,11 +59,11 @@ defmodule NFTMediaHandlerDispatcherInterface do
   end
 
   defp remote_call(args, function, node, true) do
-    :rpc.call(node, NFTMediaHandlerDispatcher.Queue, function, args)
+    :rpc.call(node, Indexer.NFTMediaHandler.Queue, function, args)
   end
 
   defp remote_call(args, function, _node, false) do
-    apply(NFTMediaHandlerDispatcher.Queue, function, args)
+    apply(Indexer.NFTMediaHandler.Queue, function, args)
   end
 
   defp process_rpc_response({:badrpc, _reason} = error, node) do

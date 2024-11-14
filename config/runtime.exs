@@ -1195,7 +1195,7 @@ config :nft_media_handler,
   uniqueness_cache_name: :uniqueness_cache,
   uniqueness_cache_max_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_UNIQUENESS_CACHE_MAX_SIZE", 100_000)
 
-config :nft_media_handler, NFTMediaHandlerDispatcher.Backfiller,
+config :nft_media_handler, Indexer.NFTMediaHandler.Backfiller,
   enabled?: ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_BACKFILL_ENABLED"),
   queue_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_BACKFILL_QUEUE_SIZE", 1000),
   enqueue_busy_waiting_timeout:

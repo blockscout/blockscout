@@ -33,8 +33,7 @@ defmodule NFTMediaHandler.MixProject do
       {:sweet_xml, "~> 0.7"},
       {:image, "~> 0.54"},
       {:httpoison, "~> 2.0"},
-      {:evision, "~> 0.2"},
-      {:nft_media_handler_dispatcher_interface, in_umbrella: true}
+      {:evision, "~> 0.2"}
     ]
     |> optionally_nft_media_handler()
   end
@@ -43,7 +42,7 @@ defmodule NFTMediaHandler.MixProject do
     if Application.get_env(:nft_media_handler, :remote?) do
       deps
     else
-      deps ++ [{:nft_media_handler_dispatcher, in_umbrella: true}]
+      deps ++ [{:indexer, in_umbrella: true}]
     end
   end
 end
