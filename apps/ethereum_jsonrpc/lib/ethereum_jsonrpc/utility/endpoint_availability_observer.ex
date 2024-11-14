@@ -148,7 +148,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
 
       current_count + 1 >= @max_error_count ->
         EndpointAvailabilityChecker.add_endpoint(
-          put_in(json_rpc_named_arguments[:transport_options][:url], url),
+          put_in(json_rpc_named_arguments[:transport_options][:urls], [url]),
           url_type
         )
 
