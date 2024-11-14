@@ -136,10 +136,10 @@ defmodule Explorer.Chain.TokenTransfer do
   require Explorer.Chain.TokenTransfer.Schema
 
   import Ecto.Changeset
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.Chain
   alias Explorer.Chain.{DenormalizationHelper, Hash, Log, TokenTransfer}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -240,8 +240,8 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
-            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
+            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
 
         only_consensus_transfers_query()
@@ -267,8 +267,8 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
-            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
+            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
 
         only_consensus_transfers_query()
@@ -300,8 +300,8 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
-            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
+            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
 
         only_consensus_transfers_query()
