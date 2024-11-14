@@ -5,8 +5,9 @@ defmodule NFTMediaHandler.Dispatcher do
   """
   use GenServer
 
-  alias Task.Supervisor, as: TaskSupervisor
   alias NFTMediaHandler.DispatcherInterface
+  alias Task.Supervisor, as: TaskSupervisor
+
   require Logger
 
   def start_link(_) do

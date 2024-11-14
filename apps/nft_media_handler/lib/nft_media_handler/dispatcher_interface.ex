@@ -43,10 +43,10 @@ defmodule NFTMediaHandler.DispatcherInterface do
       {node, folder} = GenServer.call(__MODULE__, :take_node_to_call)
 
       {node |> :rpc.call(Indexer.NFTMediaHandler.Queue, :get_urls_to_fetch, args) |> process_rpc_response(node), node,
-       folder}|>dbg()
+       folder}
     else
       folder = Application.get_env(:nft_media_handler, :nodes_map)[:self]
-      {apply(Indexer.NFTMediaHandler.Queue, function, args), :self, folder}|>dbg()
+      {apply(Indexer.NFTMediaHandler.Queue, function, args), :self, folder}
     end
   end
 

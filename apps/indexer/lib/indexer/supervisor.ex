@@ -257,8 +257,7 @@ defmodule Indexer.Supervisor do
       |> maybe_add_block_reward_fetcher(
         {BlockReward.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
       )
-      |> maybe_add_nft_media_handler_processes()|>dbg(limit: :infinity)
-
+      |> maybe_add_nft_media_handler_processes()
 
     Supervisor.init(
       all_fetchers,

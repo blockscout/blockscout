@@ -46,11 +46,10 @@ defmodule Indexer.NFTMediaHandler.Queue do
   end
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)|> dbg()
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   def init(_) do
-    dbg()
     {:ok, queue} = :dets.open_file(@queue_storage, file: ~c"./dets/#{@queue_storage}", type: :bag)
     {:ok, in_progress} = :dets.open_file(@tasks_in_progress, type: :set, file: ~c"./dets/#{@tasks_in_progress}")
 
