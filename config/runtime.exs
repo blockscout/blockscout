@@ -889,7 +889,6 @@ config :indexer, Indexer.Fetcher.Optimism,
   portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT")
 
 config :indexer, Indexer.Fetcher.Optimism.Deposit,
-  batch_size: System.get_env("INDEXER_OPTIMISM_L1_DEPOSITS_BATCH_SIZE"),
   transaction_type: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L1_DEPOSITS_TRANSACTION_TYPE", 126)
 
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot,

@@ -203,24 +203,34 @@ defmodule Indexer.Fetcher.Optimism do
   end
 
   @doc """
-    Does initializations for `Indexer.Fetcher.Optimism.WithdrawalEvent` or `Indexer.Fetcher.Optimism.OutputRoot` module.
-    Contains common code used by both modules.
+    Does initializations for `Indexer.Fetcher.Optimism.WithdrawalEvent`, `Indexer.Fetcher.Optimism.OutputRoot`, or
+    `Indexer.Fetcher.Optimism.Deposit` module. Contains common code used by these modules.
 
     ## Parameters
-    - `output_oracle`: An address of L2OutputOracle contract on L1. Must be `nil` if the `caller` is not `OutputRoot` module.
+    - `output_oracle`: An address of L2OutputOracle contract on L1.
+                       Must be `nil` if the `caller` is not `Indexer.Fetcher.Optimism.OutputRoot` module.
     - `caller`: The module that called this function.
 
     ## Returns
-    - A map for the `handle_continue` handler of the calling module.
+    - A resulting map for the `handle_continue` handler of the calling module.
   """
   @spec init_continue(binary() | nil, module()) :: {:noreply, map()} | {:stop, :normal, %{}}
   def init_continue(output_oracle, caller)
-      when caller in [Indexer.Fetcher.Optimism.WithdrawalEvent, Indexer.Fetcher.Optimism.OutputRoot] do
+      when caller in [
+             Indexer.Fetcher.Optimism.Deposit,
+             Indexer.Fetcher.Optimism.WithdrawalEvent,
+             Indexer.Fetcher.Optimism.OutputRoot
+           ] do
     {contract_name, table_name, start_block_note} =
-      if caller == Indexer.Fetcher.Optimism.WithdrawalEvent do
-        {"Optimism Portal", "op_withdrawal_events", "Withdrawals L1"}
-      else
-        {"Output Oracle", "op_output_roots", "Output Roots"}
+      case caller do
+        Indexer.Fetcher.Optimism.Deposit ->
+          {"Optimism Portal", "op_deposits", "Deposits"}
+
+        Indexer.Fetcher.Optimism.WithdrawalEvent ->
+          {"Optimism Portal", "op_withdrawal_events", "Withdrawals L1"}
+
+        _ ->
+          {"Output Oracle", "op_output_roots", "Output Roots"}
       end
 
     optimism_env = Application.get_all_env(:indexer)[__MODULE__]
@@ -234,8 +244,7 @@ defmodule Indexer.Fetcher.Optimism do
          json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc),
          {optimism_portal, start_block_l1} <- read_system_config(system_config, json_rpc_named_arguments),
          {:contract_is_valid, true} <-
-           {:contract_is_valid,
-            caller == Indexer.Fetcher.Optimism.WithdrawalEvent or Helper.address_correct?(output_oracle)},
+           {:contract_is_valid, caller != Indexer.Fetcher.Optimism.OutputRoot or Helper.address_correct?(output_oracle)},
          true <- start_block_l1 > 0,
          {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction} <-
            caller.get_last_l1_item(json_rpc_named_arguments),
@@ -245,10 +254,10 @@ defmodule Indexer.Fetcher.Optimism do
            {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {:ok, block_check_interval, last_safe_block} <- get_block_check_interval(json_rpc_named_arguments) do
       contract_address =
-        if caller == Indexer.Fetcher.Optimism.WithdrawalEvent do
-          optimism_portal
-        else
+        if caller == Indexer.Fetcher.Optimism.OutputRoot do
           output_oracle
+        else
+          optimism_portal
         end
 
       start_block = max(start_block_l1, last_l1_block_number)
