@@ -1,7 +1,7 @@
 // general
-$primary: #5c34a2;
-$secondary: #87e1a9;
-$tertiary: #bf9cff;
+$primary: #FFB426;
+$secondary: #66ff6b;
+$tertiary: #FFD250;
 $additional-font: #fff;
 
 // Logo Size
@@ -17,18 +17,21 @@ $footer-item-disc-color: $secondary;
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
-$dashboard-banner-chart-legend-label-color: #dcc8ff;
+$dashboard-banner-chart-legend-label-color: #7e7866;
 $dashboard-stats-item-label-color: $dashboard-banner-chart-legend-label-color;
-$dashboard-banner-chart-legend-value-color: #fff; // chart labels
-$dashboard-stats-item-value-color: #fff; // stat values
+$dashboard-banner-chart-legend-value-color: #505050; // chart labels
+$dashboard-stats-item-value-color: #505050; // stat values
 
 $dashboard-stats-item-border-color: $secondary; // stat border
 
 $dashboard-banner-gradient-start: $primary; // gradient begin
 
-$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
+$dashboard-banner-gradient-end: #FFCB54; // gradient end
 
-$dashboard-banner-network-plain-container-background-color: #8258cd; // stats bg
+$dashboard-banner-network-plain-container-background-color: #FFD250; // stats bg
+
+$dashboard-banner-network-plain-container-background-color-start: #ffe394; // stats bg
+$dashboard-banner-network-plain-container-background-color-end: #FFD250; // stats bg
 
 
 // navigation
@@ -58,7 +61,7 @@ $card-tab-active: $primary;
 .layout-container {
 	.dashboard-banner-container {
 	  background-image: linear-gradient(
-	    to bottom,
+	    to right,
 	    $dashboard-banner-gradient-start,
 	    $dashboard-banner-gradient-end
 	  );
@@ -79,5 +82,5 @@ $api-text-monospace-color: $primary;
 
 // Dark theme
 $dark-primary: #9b62ff;
-$dark-secondary: #87e1a9;
+$dark-secondary: #66ff6b;
 $dark-primary-alternate: #7e50d0; 
