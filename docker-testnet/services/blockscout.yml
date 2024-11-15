@@ -1,7 +1,7 @@
 version: '3.9'
 
 services:
-  blockscout-testnet:
+  blockscout:
     image: blockscout/${DOCKER_REPO:-blockscout}:${DOCKER_TAG:-latest}
     pull_policy: always
     restart: always
