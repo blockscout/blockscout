@@ -179,7 +179,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       result_props = correct_response |> Map.keys()
 
       for prop <- result_props do
-        assert correct_response[prop] == response[prop]
+        assert prepare_implementation(correct_response[prop]) == response[prop]
       end
     end
 
@@ -495,7 +495,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       result_props = correct_response |> Map.keys()
 
       for prop <- result_props do
-        assert correct_response[prop] == response[prop]
+        assert prepare_implementation(correct_response[prop]) == response[prop]
       end
     end
 
@@ -657,7 +657,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     result_props = correct_response |> Map.keys()
 
     for prop <- result_props do
-      assert correct_response[prop] == response[prop]
+      assert prepare_implementation(correct_response[prop]) == response[prop]
     end
   end
 
@@ -1160,7 +1160,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert response ==
                  %{
                    "proxy_type" => "eip1967",
-                   "implementations" => [%{"address" => formatted_implementation_address_hash_string, "name" => nil}],
+                   "implementations" => [
+                     prepare_implementation(%{"address" => formatted_implementation_address_hash_string, "name" => nil})
+                   ],
                    "has_custom_methods_read" => false,
                    "has_custom_methods_write" => false,
                    "is_self_destructed" => false,
@@ -1285,7 +1287,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert response ==
                  %{
                    "proxy_type" => "eip1967",
-                   "implementations" => [%{"address" => formatted_implementation_address_hash_string, "name" => nil}],
+                   "implementations" => [
+                     prepare_implementation(%{"address" => formatted_implementation_address_hash_string, "name" => nil})
+                   ],
                    "has_custom_methods_read" => false,
                    "has_custom_methods_write" => false,
                    "is_self_destructed" => false,
@@ -1410,7 +1414,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert response ==
                  %{
                    "proxy_type" => "eip1967",
-                   "implementations" => [%{"address" => formatted_implementation_address_hash_string, "name" => nil}],
+                   "implementations" => [
+                     prepare_implementation(%{"address" => formatted_implementation_address_hash_string, "name" => nil})
+                   ],
                    "has_custom_methods_read" => false,
                    "has_custom_methods_write" => false,
                    "is_self_destructed" => false,
@@ -3685,4 +3691,20 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     EthereumJSONRPC.Mox
     |> TestHelper.mock_logic_storage_pointer_request(error?, response)
   end
+
+  defp prepare_implementation(items) when is_list(items) do
+    Enum.map(items, &prepare_implementation/1)
+  end
+
+  defp prepare_implementation(%{"address" => _, "name" => _} = implementation) do
+    case Application.get_env(:explorer, :chain_type) do
+      :filecoin ->
+        Map.put(implementation, "filecoin_robust_address", nil)
+
+      _ ->
+        implementation
+    end
+  end
+
+  defp prepare_implementation(other), do: other
 end

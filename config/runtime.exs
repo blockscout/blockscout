@@ -44,7 +44,8 @@ config :block_scout_web, :recaptcha,
   v3_client_key: System.get_env("RE_CAPTCHA_V3_CLIENT_KEY"),
   v3_secret_key: System.get_env("RE_CAPTCHA_V3_SECRET_KEY"),
   is_disabled: ConfigHelper.parse_bool_env_var("RE_CAPTCHA_DISABLED"),
-  check_hostname?: ConfigHelper.parse_bool_env_var("RE_CAPTCHA_CHECK_HOSTNAME", "true")
+  check_hostname?: ConfigHelper.parse_bool_env_var("RE_CAPTCHA_CHECK_HOSTNAME", "true"),
+  score_threshold: ConfigHelper.parse_float_env_var("RE_CAPTCHA_SCORE_THRESHOLD", "0.5")
 
 network_path =
   "NETWORK_PATH"
@@ -499,6 +500,10 @@ config :explorer, Explorer.ThirdPartyIntegrations.Zerion,
   service_url: System.get_env("ZERION_BASE_API_URL", "https://api.zerion.io/v1"),
   api_key: System.get_env("ZERION_API_TOKEN")
 
+config :explorer, Explorer.ThirdPartyIntegrations.Xname,
+  service_url: System.get_env("XNAME_BASE_API_URL", "https://gateway.xname.app"),
+  api_key: System.get_env("XNAME_API_TOKEN")
+
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED", "true")
 # or "eth_bytecode_db"
 type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
@@ -560,7 +565,8 @@ config :explorer, Explorer.Account,
   private_tags_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_PRIVATE_TAGS_LIMIT", 2000),
   watchlist_addresses_limit: ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_ADDRESSES_LIMIT", 15),
   notifications_limit_for_30_days:
-    ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_NOTIFICATIONS_LIMIT_FOR_30_DAYS", 1000)
+    ConfigHelper.parse_integer_env_var("ACCOUNT_WATCHLIST_NOTIFICATIONS_LIMIT_FOR_30_DAYS", 1000),
+  siwe_message: System.get_env("ACCOUNT_SIWE_MESSAGE", "Sign in to Blockscout Account V2")
 
 config :explorer, :token_id_migration,
   first_block: ConfigHelper.parse_integer_env_var("TOKEN_ID_MIGRATION_FIRST_BLOCK", 0),

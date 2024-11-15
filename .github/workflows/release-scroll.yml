@@ -1,6 +1,7 @@
 name: Release for Scroll
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 

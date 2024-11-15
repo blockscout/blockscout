@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Account.API.V2.EmailController do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Account.API.V2.AuthenticateController
   alias Explorer.Account.Identity
   alias Explorer.{Helper, Repo}
@@ -97,7 +98,7 @@ defmodule BlockScoutWeb.Account.API.V2.EmailController do
           | Plug.Conn.t()
   def link_email(conn, %{"email" => email, "otp" => otp}) do
     with {:auth, %{} = user} <- {:auth, current_user(conn)},
-         {:ok, auth} <- Auth0.link_email(user, email, otp) do
+         {:ok, auth} <- Auth0.link_email(user, email, otp, AccessHelper.conn_to_ip_string(conn)) do
       AuthenticateController.put_auth_to_session(conn, auth)
     end
   end

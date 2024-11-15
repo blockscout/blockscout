@@ -77,7 +77,8 @@ if Application.compile_env(:explorer, :chain_type) == :zilliqa do
             &%{
               view: &1.view,
               signature: &1.signature,
-              proposed_by_validator_index: &1.proposed_by_validator_index
+              proposed_by_validator_index: &1.proposed_by_validator_index,
+              signers: &1.signers
             }
           )
       })
