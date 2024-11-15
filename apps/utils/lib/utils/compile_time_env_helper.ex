@@ -90,6 +90,55 @@ defmodule Utils.CompileTimeEnvHelper do
     CompileTimeEnvHelper.__generate_attributes_and_recompile_functions__(env_vars)
   end
 
+  @doc """
+  Generates the code needed for compile-time environment variable handling.
+
+  ## Technical Details
+
+  This function uses `quote` to create an Abstract Syntax Tree (AST) that will be
+  injected into the module using this helper. The generated code:
+
+  1. Creates a module attribute to accumulate environment variables:
+     ```
+     Module.register_attribute(__MODULE__, :__compile_time_env_vars, accumulate: true)
+     ```
+
+  2. For each environment variable in the configuration:
+     - Creates a module attribute with the compile-time value
+     - Stores the value and path for recompilation checking
+
+  3. Generates the `__mix_recompile__?/0` function that Mix uses to determine
+     if the module needs recompilation
+
+  ## Example
+
+  Given configuration:
+      api_url: [:my_app, :api_url]
+      db_host: [:my_app, [:database, :host]]
+
+  This function generates:
+      # Module attributes for direct access
+      @api_url Application.compile_env(:my_app, :api_url)
+      @db_host Application.compile_env(:my_app, [:database, :host])
+
+      # Storage for recompilation checking
+      @__compile_time_env_vars [
+        {<api_url_value>, {:my_app, :api_url}},
+        {<db_host_value>, {:my_app, [:database, :host]}}
+      ]
+
+      # Recompilation check function
+      def __mix_recompile__? do
+        # Check if any values changed
+      end
+
+  ## Understanding the Quote Block
+
+  The `quote do ... end` block is Elixir's metaprogramming feature that:
+  1. Creates a template of code instead of executing it immediately
+  2. This template will be injected into the module that uses this helper
+  3. The code inside `quote` is executed when the module is compiled
+  """
   def __generate_attributes_and_recompile_functions__(env_vars) do
     quote do
       Module.register_attribute(__MODULE__, :__compile_time_env_vars, accumulate: true)

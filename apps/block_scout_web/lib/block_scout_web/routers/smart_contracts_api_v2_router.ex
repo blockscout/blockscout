@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
       post("/vyper-standard-input", V2.VerificationController, :verification_via_vyper_standard_input)
     end
 
-    if Application.compile_env(:explorer, :chain_type) === :arbitrum do
+    if @chain_type === :arbitrum do
       post("/stylus-github-repository", V2.VerificationController, :verification_via_stylus_github_repository)
     end
   end
