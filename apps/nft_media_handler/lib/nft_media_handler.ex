@@ -26,61 +26,42 @@ defmodule NFTMediaHandler do
     end
   end
 
-  def prepare_and_upload_inner({"image", _} = media_type, initial_image_binary, url, r2_folder) do
+  defp prepare_and_upload_inner({"image", _} = media_type, initial_image_binary, url, r2_folder) do
     case {:image, Image.from_binary(initial_image_binary, pages: -1)} do
       {:image, {:ok, image}} ->
         extension = media_type_to_extension(media_type)
 
         thumbnails = Resizer.resize(image, url, ".#{extension}")
 
-        uploaded_thumbnails =
+        uploaded_thumbnails_sizes =
           thumbnails
           |> Enum.map(fn {size, image, file_name} ->
             # credo:disable-for-next-line
             case Uploader.upload_image(image, file_name, r2_folder) do
-              {:ok, _result, uploaded_file_url} ->
-                {size, uploaded_file_url}
+              {:ok, _result} ->
+                size
 
               _ ->
                 nil
             end
           end)
           |> Enum.reject(&is_nil/1)
-          |> Enum.into(%{})
 
-        uploaded_original_url =
+        original_uploaded? =
           case Uploader.upload_image(
                  initial_image_binary,
                  Resizer.generate_file_name(url, ".#{extension}", "original"),
                  r2_folder
                ) do
-            {:ok, _result, uploaded_file_url} ->
-              uploaded_file_url
+            {:ok, _result} ->
+              true
 
             _ ->
-              nil
+              false
           end
 
-        max_size_or_original =
-          uploaded_original_url ||
-            (
-              {_, url} =
-                Enum.max_by(uploaded_thumbnails, fn {size, _} ->
-                  {int_size, _} = Integer.parse(size)
-                  int_size
-                end)
-
-              url
-            )
-
-        result =
-          Resizer.sizes()
-          |> Enum.reduce(uploaded_thumbnails, fn {_, size}, acc ->
-            Map.put_new(acc, size, max_size_or_original)
-          end)
-          |> Map.put("original", uploaded_original_url)
-
-        {result, media_type}
+        file_path = Path.join(r2_folder, Resizer.generate_file_name(url, ".#{extension}", "{}"))
+        {[file_path, uploaded_thumbnails_sizes, original_uploaded?], media_type}
 
       {:image, {:error, reason}} ->
         Logger.warning("Error on open image from url (#{url}): #{inspect(reason)}")
@@ -88,7 +69,7 @@ defmodule NFTMediaHandler do
     end
   end
 
-  def prepare_and_upload_inner({"video", _} = media_type, body, url, r2_folder) do
+  defp prepare_and_upload_inner({"video", _} = media_type, body, url, r2_folder) do
     extension = media_type_to_extension(media_type)
     file_name = Resizer.generate_file_name(url, ".#{extension}", "original")
     path = "#{Application.get_env(:nft_media_handler, :tmp_dir)}#{file_name}"
@@ -99,23 +80,23 @@ defmodule NFTMediaHandler do
              Video.image_from_video(video, frame: 0)
            end) do
       remove_file(path)
-      thumbnails = Resizer.resize(image, url, ".jpg")
 
-      result =
-        thumbnails
+      uploaded_thumbnails_sizes =
+        image
+        |> Resizer.resize(url, ".jpg")
         |> Enum.map(fn {size, image, file_name} ->
           case Uploader.upload_image(image, file_name, r2_folder) do
-            {:ok, _result, uploaded_file_url} ->
-              {size, uploaded_file_url}
+            {:ok, _result} ->
+              size
 
             _ ->
               nil
           end
         end)
         |> Enum.reject(&is_nil/1)
-        |> Enum.into(%{})
 
-      {result, media_type}
+      file_path = Path.join(r2_folder, Resizer.generate_file_name(url, ".jpg", "{}"))
+      {[file_path, uploaded_thumbnails_sizes, false], media_type}
     else
       {:file, reason} ->
         Logger.error("Error while writing video to file: #{inspect(reason)}, url: #{url}")
@@ -144,7 +125,7 @@ defmodule NFTMediaHandler do
     with :ok <- VipsImage.write_to_file(resized_image, path),
          {:ok, result} <- File.read(path) do
       remove_file(path)
-      result
+      {:ok, result}
     else
       {:error, reason} ->
         Logger.error("Error while writing image to file: #{inspect(reason)}, path: #{path}")

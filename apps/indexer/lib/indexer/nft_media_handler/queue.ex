@@ -68,7 +68,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
           "Media url already in progress: #{media_url}, will append to instances: {#{to_string(token_address_hash)}, #{token_id}} "
         )
 
-        :dets.insert(in_progress, {media_url, [{token_address_hash, token_id} | instances], start_time})
+        dets_insert_wrapper(in_progress, {media_url, [{token_address_hash, token_id} | instances], start_time})
 
       _ ->
         case Cachex.get(uniqueness_cache_name(), media_url) do
@@ -77,10 +77,10 @@ defmodule Indexer.NFTMediaHandler.Queue do
               "Media url already fetched: #{media_url}, will take result from cache to: {#{to_string(token_address_hash)}, #{token_id}} "
             )
 
-            Instance.copy_cdn_result({token_address_hash, token_id}, result)
+            Instance.set_cdn_result({token_address_hash, token_id}, result)
 
           _ ->
-            :dets.insert(queue, {media_url, {token_address_hash, token_id}})
+            dets_insert_wrapper(queue, {media_url, {token_address_hash, token_id}})
         end
     end
 
@@ -88,7 +88,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
   end
 
   def handle_cast({:finished, result, url, media_type}, {_queue, in_progress, _continuation} = state)
-      when is_map(result) do
+      when is_list(result) do
     case :dets.lookup(in_progress, url) do
       [{_, instances, start_time}] ->
         now = System.monotonic_time()
@@ -102,7 +102,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
         end)
 
         put_result_to_cache(url, %{
-          media_urls: result,
+          thumbnails: result,
           media_type: Instance.media_type_to_string(media_type),
           cdn_upload_error: nil
         })
@@ -127,7 +127,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
           Instance.set_cdn_upload_error(instance_identifier, cdn_upload_error)
         end)
 
-        put_result_to_cache(url, %{media_urls: nil, media_type: nil, cdn_upload_error: cdn_upload_error})
+        put_result_to_cache(url, %{thumbnails: nil, media_type: nil, cdn_upload_error: cdn_upload_error})
 
       _ ->
         Logger.warning("Failed to find instances in in_progress dets for url: #{url}, error: #{inspect(reason)}")
@@ -161,7 +161,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
         {high_priority_urls, high_priority_instances}
       end
 
-    :dets.insert(in_progress, instances)
+    dets_insert_wrapper(in_progress, instances)
     {:reply, urls, {queue, in_progress, continuation}}
   end
 
@@ -226,7 +226,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
       [{_, instances, start_time}] ->
         Logger.debug("Media url already in progress: #{url}, will append to instances: #{inspect(backfill_instances)}")
 
-        :dets.insert(in_progress, {url, instances ++ backfill_instances, start_time})
+        dets_insert_wrapper(in_progress, {url, instances ++ backfill_instances, start_time})
         false
 
       _ ->
@@ -234,12 +234,19 @@ defmodule Indexer.NFTMediaHandler.Queue do
           {:ok, result} when is_map(result) ->
             Logger.debug("Media url already fetched: #{url}, will copy from cache to: #{inspect(backfill_instances)}")
 
-            Enum.each(backfill_instances, &Instance.copy_cdn_result(&1, result))
+            Enum.each(backfill_instances, &Instance.set_cdn_result(&1, result))
             false
 
           _ ->
             true
         end
+    end
+  end
+
+  defp dets_insert_wrapper(table, value) do
+    case :dets.insert(table, value) do
+      :ok -> :ok
+      {:error, reason} -> Logger.error("Failed to insert into dets #{table}: #{inspect(reason)}")
     end
   end
 end

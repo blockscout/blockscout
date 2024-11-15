@@ -115,7 +115,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "animation_url" => instance.metadata && NFTHelper.retrieve_image(instance.metadata["animation_url"]),
       "image_url" => instance.metadata && NFTHelper.get_media_src(instance.metadata, false),
       "is_unique" => instance.is_unique,
-      "thumbnails" => instance.media_urls,
+      "thumbnails" => instance.thumbnails,
       "media_type" => instance.media_type,
       "media_url" => Instance.get_media_url_from_metadata_for_nft_media_handler(instance.metadata)
     }

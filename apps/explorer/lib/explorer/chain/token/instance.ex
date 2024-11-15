@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Token.Instance do
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token.Instance
+  alias Explorer.Chain.Token.Instance.Thumbnails
   alias Explorer.PagingOptions
 
   @timeout 60_000
@@ -21,7 +22,7 @@ defmodule Explorer.Chain.Token.Instance do
   * `refetch_after` - when to refetch the token instance
   * `retries_count` - number of times the token instance has been retried
   * `is_banned` - if the token instance is banned
-  * `media_urls` - map of media urls, key is resolution value is url
+  * `thumbnails` - info for deriving thumbnails urls. Stored as array: [file_path, sizes, original_uploaded?]
   * `media_type` - mime type of media
   * `cdn_upload_error` - error while processing(resizing)/uploading media to cdn
   """
@@ -37,7 +38,7 @@ defmodule Explorer.Chain.Token.Instance do
     field(:refetch_after, :utc_datetime_usec)
     field(:retries_count, :integer)
     field(:is_banned, :boolean, default: false)
-    field(:media_urls, :map)
+    field(:thumbnails, Thumbnails)
     field(:media_type, :string)
     field(:cdn_upload_error, :string)
 
@@ -69,7 +70,7 @@ defmodule Explorer.Chain.Token.Instance do
       :refetch_after,
       :retries_count,
       :is_banned,
-      :media_urls,
+      :thumbnails,
       :media_type,
       :cdn_upload_error
     ])
@@ -644,7 +645,7 @@ defmodule Explorer.Chain.Token.Instance do
         where: instance.token_contract_address_hash == ^token_instance.token_contract_address_hash,
         where: instance.token_id == ^token_instance.token_id
       ),
-      [set: [metadata: metadata, error: nil, updated_at: now, media_urls: nil, media_type: nil, cdn_upload_error: nil]],
+      [set: [metadata: metadata, error: nil, updated_at: now, thumbnails: nil, media_type: nil, cdn_upload_error: nil]],
       timeout: @timeout
     )
   end
@@ -722,7 +723,7 @@ defmodule Explorer.Chain.Token.Instance do
     token_id
     |> token_instance_query(token_contract_address_hash)
     |> Repo.update_all(
-      [set: [media_urls: urls, media_type: media_type_to_string(media_type), updated_at: now]],
+      [set: [thumbnails: urls, media_type: media_type_to_string(media_type), updated_at: now]],
       timeout: @timeout
     )
   end
@@ -740,12 +741,12 @@ defmodule Explorer.Chain.Token.Instance do
 
   def stream_instances_to_resize_and_upload(each_fun) do
     __MODULE__
-    |> where([ti], not is_nil(ti.metadata) and is_nil(ti.media_urls) and is_nil(ti.cdn_upload_error))
+    |> where([ti], not is_nil(ti.metadata) and is_nil(ti.thumbnails) and is_nil(ti.cdn_upload_error))
     |> Repo.stream_each(each_fun)
   end
 
-  def copy_cdn_result({token_contract_address_hash, token_id}, %{
-        media_urls: media_urls,
+  def set_cdn_result({token_contract_address_hash, token_id}, %{
+        thumbnails: thumbnails,
         media_type: media_type,
         cdn_upload_error: cdn_upload_error
       }) do
@@ -757,7 +758,7 @@ defmodule Explorer.Chain.Token.Instance do
       [
         set: [
           cdn_upload_error: cdn_upload_error,
-          media_urls: media_urls,
+          thumbnails: thumbnails,
           media_type: media_type,
           updated_at: now
         ]
