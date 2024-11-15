@@ -210,7 +210,17 @@ defmodule Explorer.SmartContract.Helper do
   end
 
   @doc """
-    Fetches the transaction hash for the given address hash.
+    Retrieves the transaction hash that created a Stylus smart contract.
+
+    Looks up the creation transaction for the given contract address and returns its hash.
+    Checks both regular transactions and internal transactions.
+
+    ## Parameters
+    - `address_hash`: The address hash of the smart contract as a binary or `t:Hash.Address.t/0`
+
+    ## Returns
+    - `t:Hash.t/0` - The transaction hash if found
+    - `nil` - If no creation transaction exists
   """
   @spec fetch_data_for_stylus_verification(binary() | Hash.Address.t()) :: Hash.t() | nil
   def fetch_data_for_stylus_verification(address_hash) do

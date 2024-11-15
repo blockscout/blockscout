@@ -1,6 +1,10 @@
 defmodule Explorer.SmartContract.StylusVerifierInterface do
   @moduledoc """
-    Adapter for Stylus smart contracts verification
+    Provides an interface for verifying Stylus smart contracts by interacting with a verification
+    microservice.
+
+    Handles verification requests for Stylus contracts deployed from GitHub repositories by
+    communicating with an external verification service.
   """
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
@@ -9,6 +13,32 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
   @post_timeout :timer.minutes(5)
   @request_error_msg "Error while sending request to stylus verification microservice"
 
+  @doc """
+    Verifies a Stylus smart contract using source code from a GitHub repository.
+
+    Sends verification request to the verification microservice with repository details
+    and deployment information.
+
+    ## Parameters
+    - `body`: A map containing:
+      - `deployment_transaction`: Transaction hash where contract was deployed
+      - `rpc_endpoint`: RPC endpoint URL for the chain
+      - `cargo_stylus_version`: Version of cargo-stylus used for deployment
+      - `repository_url`: GitHub repository URL containing contract code
+      - `commit`: Git commit hash used for deployment
+      - `path_prefix`: Optional path prefix if contract is not in repository root
+
+    ## Returns
+    - `{:ok, map}` with verification details:
+      - `abi`: Contract ABI (optional)
+      - `contract_name`: Contract name (optional)
+      - `package_name`: Package name
+      - `files`: Map of file paths to contents used in verification
+      - `cargo_stylus_version`: Version of cargo-stylus used
+      - `github_repository_metadata`: Repository metadata (optional)
+    - `{:error, any}` if verification fails
+  """
+  @spec verify_github_repository(map()) :: {:ok, map()} | {:error, any()}
   def verify_github_repository(
         %{
           "deployment_transaction" => _,
@@ -22,7 +52,8 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
     http_post_request(github_repository_verification_url(), body)
   end
 
-  def http_post_request(url, body) do
+  @spec http_post_request(String.t(), map()) :: {:ok, map()} | {:error, any()}
+  defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
     case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
@@ -41,7 +72,8 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
     end
   end
 
-  def http_get_request(url) do
+  @spec http_get_request(String.t()) :: {:ok, [String.t()]} | {:error, any()}
+  defp http_get_request(url) do
     case HTTPoison.get(url) do
       {:ok, %Response{body: body, status_code: 200}} ->
         process_verifier_response(body)
@@ -61,11 +93,20 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
     end
   end
 
+  @doc """
+    Retrieves a list of supported versions of Cargo Stylus package from the verification microservice.
+
+    ## Returns
+    - `{:ok, [String.t()]}` - List of versions on success
+    - `{:error, any()}` - Error message if the request fails
+  """
+  @spec get_versions_list() :: {:ok, [String.t()]} | {:error, any()}
   def get_versions_list do
     http_get_request(versions_list_url())
   end
 
-  def process_verifier_response(body) when is_binary(body) do
+  @spec process_verifier_response(binary()) :: {:ok, map() | [String.t()]} | {:error, any()}
+  defp process_verifier_response(body) when is_binary(body) do
     case Jason.decode(body) do
       {:ok, decoded} ->
         process_verifier_response(decoded)
@@ -75,31 +116,38 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
     end
   end
 
-  def process_verifier_response(%{"verificationSuccess" => source}) do
+  # Handles response from `stylus-sdk-rs/verify-github-repository` of stylus verifier microservice
+  @spec process_verifier_response(map()) :: {:ok, map()}
+  defp process_verifier_response(%{"verificationSuccess" => source}) do
     {:ok, source}
   end
 
-  def process_verifier_response(%{"verificationFailure" => %{"message" => error_message}}) do
+  # Handles response from `stylus-sdk-rs/verify-github-repository` of stylus verifier microservice
+  @spec process_verifier_response(map()) :: {:error, String.t()}
+  defp process_verifier_response(%{"verificationFailure" => %{"message" => error_message}}) do
     {:error, error_message}
   end
 
-  def process_verifier_response(%{"versions" => versions}), do: {:ok, Enum.map(versions, &Map.fetch!(&1, "version"))}
+  # Handles responce from `stylus-sdk-rs/cargo-stylus-versions` of stylus verifier microservice
+  @spec process_verifier_response(map()) :: {:ok, [String.t()]}
+  defp process_verifier_response(%{"versions" => versions}), do: {:ok, Enum.map(versions, &Map.fetch!(&1, "version"))}
 
-  def process_verifier_response(other) do
+  @spec process_verifier_response(any()) :: {:error, any()}
+  defp process_verifier_response(other) do
     {:error, other}
   end
 
   # Uses url encoded ("%3A") version of ':', as ':' symbol breaks `Bypass` library during tests.
   # https://github.com/PSPDFKit-labs/bypass/issues/122
 
-  def github_repository_verification_url,
+  defp github_repository_verification_url,
     do: base_api_url() <> "%3Averify-github-repository"
 
-  def versions_list_url, do: base_api_url() <> "/cargo-stylus-versions"
+  defp versions_list_url, do: base_api_url() <> "/cargo-stylus-versions"
 
-  def base_api_url, do: "#{base_url()}" <> "/api/v1/stylus-sdk-rs"
+  defp base_api_url, do: "#{base_url()}" <> "/api/v1/stylus-sdk-rs"
 
-  def base_url, do: Microservice.base_url(__MODULE__)
+  defp base_url, do: Microservice.base_url(__MODULE__)
 
   def enabled?,
     do: Application.get_env(:explorer, __MODULE__)[:enabled] && Application.get_env(:explorer, :chain_type) == :arbitrum
