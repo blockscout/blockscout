@@ -55,6 +55,36 @@ defmodule Utils.CompileTimeEnvHelper do
    it triggers recompilation of the module.
   """
 
+  # A macro that sets up compile-time environment variable handling.
+  #
+  # ## How it works under the hood
+  #
+  # 1. When you `use Utils.CompileTimeEnvHelper`, it triggers this macro
+  # 2. The macro processes your environment configuration and generates necessary code
+  #    using metaprogramming (the `quote` block)
+  #
+  # ## Example of generated code
+  #
+  # When you write:
+  #     use Utils.CompileTimeEnvHelper,
+  #       api_url: [:my_app, :api_url]
+  #
+  # It generates code similar to:
+  #     Module.register_attribute(__MODULE__, :__compile_time_env_vars, accumulate: true)
+  #   
+  #     # Creates @api_url attribute with the compile-time value
+  #     Module.put_attribute(
+  #       __MODULE__,
+  #       :api_url,
+  #       Application.compile_env(:my_app, :api_url)
+  #     )
+  #    
+  #     # Stores the value for recompilation checking
+  #     Module.put_attribute(
+  #       __MODULE__,
+  #       :__compile_time_env_vars,
+  #       {Application.compile_env(:my_app, :api_url), {:my_app, :api_url}}
+  #     )
   defmacro __using__(env_vars) do
     alias Utils.CompileTimeEnvHelper
     CompileTimeEnvHelper.__generate_attributes_and_recompile_functions__(env_vars)
