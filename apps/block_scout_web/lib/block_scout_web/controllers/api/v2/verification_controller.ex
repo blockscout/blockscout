@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
             else: &1
           )).()
       |> (&if(StylusVerifierInterface.enabled?(),
-            do: ["stylus" | &1],
+            do: ["stylus-github-repository" | &1],
             else: &1
           )).()
     end

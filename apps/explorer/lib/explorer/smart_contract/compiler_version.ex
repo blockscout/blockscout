@@ -12,16 +12,38 @@ defmodule Explorer.SmartContract.CompilerVersion do
   @doc """
   Fetches a list of compilers from the Ethereum Solidity API.
   """
-  @spec fetch_versions(:solc | :vyper | :zk | :stylus) :: {atom, [map]}
-  def fetch_versions(compiler) do
-    case compiler do
-      :solc -> fetch_solc_versions()
-      :vyper -> fetch_vyper_versions()
-      :zk -> fetch_zk_versions()
-      :stylus -> fetch_stylus_versions()
-    end
+  @spec fetch_versions(:solc | :vyper | :zk | :stylus) :: {atom, [binary()]}
+  def fetch_versions(compiler)
+
+  def fetch_versions(:solc) do
+    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :solc)
   end
 
+  def fetch_versions(:vyper) do
+    fetch_compiler_versions(&RustVerifierInterface.vyper_get_versions_list/0, :vyper)
+  end
+
+  def fetch_versions(:zk) do
+    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :zk)
+  end
+
+  def fetch_versions(:stylus) do
+    fetch_compiler_versions(&StylusVerifierInterface.get_versions_list/0, :stylus)
+  end
+
+  @doc """
+  Fetches the list of compiler versions for the given compiler.
+
+  ## Parameters
+
+    - compiler: The name of the compiler for which to fetch the version list.
+
+  ## Returns
+
+    - A list of available compiler versions.
+
+  """
+  @spec fetch_version_list(:solc | :vyper | :zk | :stylus) :: [binary()]
   def fetch_version_list(compiler) do
     case fetch_versions(compiler) do
       {:ok, compiler_versions} ->
@@ -30,22 +52,6 @@ defmodule Explorer.SmartContract.CompilerVersion do
       {:error, _} ->
         []
     end
-  end
-
-  defp fetch_solc_versions do
-    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :solc)
-  end
-
-  defp fetch_zk_versions do
-    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :zk)
-  end
-
-  defp fetch_vyper_versions do
-    fetch_compiler_versions(&RustVerifierInterface.vyper_get_versions_list/0, :vyper)
-  end
-
-  defp fetch_stylus_versions do
-    fetch_compiler_versions(&StylusVerifierInterface.get_versions_list/0, :stylus)
   end
 
   defp fetch_compiler_versions(compiler_list_fn, :stylus = compiler_type) do

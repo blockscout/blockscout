@@ -118,8 +118,20 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
 
   # Handles response from `stylus-sdk-rs/verify-github-repository` of stylus verifier microservice
   @spec process_verifier_response(map()) :: {:ok, map()}
+  defp process_verifier_response(%{"verification_success" => source}) do
+    {:ok, source}
+  end
+
+  # Handles response from `stylus-sdk-rs/verify-github-repository` of stylus verifier microservice
+  @spec process_verifier_response(map()) :: {:ok, map()}
   defp process_verifier_response(%{"verificationSuccess" => source}) do
     {:ok, source}
+  end
+
+  # Handles response from `stylus-sdk-rs/verify-github-repository` of stylus verifier microservice
+  @spec process_verifier_response(map()) :: {:error, String.t()}
+  defp process_verifier_response(%{"verification_failure" => %{"message" => error_message}}) do
+    {:error, error_message}
   end
 
   # Handles response from `stylus-sdk-rs/verify-github-repository` of stylus verifier microservice
@@ -128,7 +140,7 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
     {:error, error_message}
   end
 
-  # Handles responce from `stylus-sdk-rs/cargo-stylus-versions` of stylus verifier microservice
+  # Handles response from `stylus-sdk-rs/cargo-stylus-versions` of stylus verifier microservice
   @spec process_verifier_response(map()) :: {:ok, [String.t()]}
   defp process_verifier_response(%{"versions" => versions}), do: {:ok, Enum.map(versions, &Map.fetch!(&1, "version"))}
 
