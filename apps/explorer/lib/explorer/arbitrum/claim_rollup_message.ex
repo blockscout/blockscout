@@ -292,7 +292,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           :relayed
 
         false ->
-          case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
+          case get_size_for_proof_from_rpc(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
             nil -> :unknown
             size when size > fields.message_id -> :confirmed
             _ -> :sent
@@ -388,7 +388,20 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     outbox_contract =
       ArbitrumRpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
-    case get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
+    size_for_proof =
+      case get_size_for_proof_from_database() do
+        nil ->
+          Logger.warning(
+            "The database doesn't contain required data to construct proof. Fallback to direct RPC request"
+          )
+
+          get_size_for_proof_from_rpc(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments)
+
+        size ->
+          size
+      end
+
+    case size_for_proof do
       nil ->
         Logger.error("Cannot get size for proof")
         {:error, :internal_error}
@@ -435,13 +448,30 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     |> Enum.map(fn p -> "0x" <> Base.encode16(p, case: :lower) end)
   end
 
+  # Retrieving `size` parameter needed to construct outbox proof
+  # using the data from the local database
+  @spec get_size_for_proof_from_database() :: non_neg_integer() | nil
+  defp get_size_for_proof_from_database do
+    case ArbitrumReader.highest_confirmed_block() do
+      nil ->
+        nil
+
+      highest_confirmed_block ->
+        case Chain.number_to_block(highest_confirmed_block) do
+          {:ok, block} -> Map.get(block, :send_count)
+          _ -> nil
+        end
+    end
+  end
+
   # Retrieving `size` parameter needed to construct outbox proof using the RPC node
-  @spec get_size_for_proof(
+  # this method is based on direct RPC requests to retrieve an actual withdrawals count
+  @spec get_size_for_proof_from_rpc(
           String.t(),
           EthereumJSONRPC.json_rpc_named_arguments(),
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: non_neg_integer() | nil
-  defp get_size_for_proof(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
+  defp get_size_for_proof_from_rpc(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
     # getting latest confirmed node index (L1) from the database
     {:ok, latest_confirmed_node_index} =
       ArbitrumRpc.get_latest_confirmed_node_index(
@@ -471,6 +501,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   end
 
   # Retrieve amount of L2->L1 messages sent up to the given L1 block
+  # The requested L1 block must contain the NodeCreated event emitted by the Rollup contract
   @spec l1_block_number_to_withdrawals_count(
           non_neg_integer(),
           String.t(),
