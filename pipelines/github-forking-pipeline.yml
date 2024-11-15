@@ -16,9 +16,6 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
-- script: |
-    echo $(Build.Repository.Uri)
-
 - task: mirror-git-repository-vsts-task@1
   inputs:
     sourceGitRepositoryUri: '$(Build.Repository.Uri)'
