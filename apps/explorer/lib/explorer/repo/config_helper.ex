@@ -21,9 +21,28 @@ defmodule Explorer.Repo.ConfigHelper do
     url = url_encoded && URI.decode(url_encoded)
     env_function = opts[:env_func] || (&System.get_env/1)
 
-    @postgrex_env_vars
-    |> get_env_vars(env_function)
-    |> Keyword.merge(extract_parameters(url))
+    base_config =
+      @postgrex_env_vars
+      |> get_env_vars(env_function)
+      |> Keyword.merge(extract_parameters(url))
+
+    case System.get_env("USE_IAM_AUTH") do
+      "true" -> apply_iam_auth(base_config)
+      _ -> base_config
+    end
+  end
+
+  defp apply_iam_auth(config) do
+    auth_token = ExAws.RDS.generate_db_auth_token(
+      to_string(config[:host]),
+      to_string(config[:username]),
+      String.to_integer(config[:port] || "5432"),
+      %{}
+    )
+
+    config
+    |> Keyword.put(:password, auth_token)
+    |> Keyword.put(:ssl, false)
   end
 
   def get_account_db_url, do: System.get_env("ACCOUNT_DATABASE_URL") || System.get_env("DATABASE_URL")

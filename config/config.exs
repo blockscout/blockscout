@@ -13,6 +13,11 @@ end
 
 config :phoenix, :json_library, Jason
 
+config :ex_aws,
+  region: {:system, "AWS_REGION"},
+  access_key_id: {:system, "AWS_ACCESS_KEY_ID"},
+  secret_access_key: {:system, "AWS_SECRET_ACCESS_KEY"}
+
 config :logger,
   backends: [
     # all applications and all levels
