@@ -18,8 +18,9 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   @page_size 50
   @request_error_msg "Error while sending request to Metadata microservice"
 
-  @spec get_addresses_tags([String.t()]) :: {:error, :disabled | <<_::416>> | Jason.DecodeError.t()} | {:ok, any()}
-  def get_addresses_tags([]), do: {:ok, %{addresses: %{}}}
+  @spec get_addresses_tags([String.t()]) ::
+          {:error, :disabled | <<_::416>> | Jason.DecodeError.t()} | {:ok, any()} | :ignore
+  def get_addresses_tags([]), do: :ignore
 
   def get_addresses_tags(addresses) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
