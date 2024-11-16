@@ -176,10 +176,13 @@ config :ueberauth, Ueberauth, logout_url: "https://#{System.get_env("ACCOUNT_AUT
 ### Ethereum JSONRPC ###
 ########################
 
+trace_url_missing? = System.get_env("ETHEREUM_JSONRPC_TRACE_URL") in ["", nil]
+
 config :ethereum_jsonrpc,
   rpc_transport: if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http", do: :http, else: :ipc),
   ipc_path: System.get_env("IPC_PATH"),
-  disable_archive_balances?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES"),
+  disable_archive_balances?:
+    trace_url_missing? or ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES"),
   archive_balances_window: ConfigHelper.parse_integer_env_var("ETHEREUM_JSONRPC_ARCHIVE_BALANCES_WINDOW", 200)
 
 config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
@@ -763,7 +766,7 @@ config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BLOCK_REWARD_FETCHER")
 
 config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
-  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER")
+  disabled?: trace_url_missing? or ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER")
 
 disable_coin_balances_fetcher? = ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ADDRESS_COIN_BALANCE_FETCHER")
 
