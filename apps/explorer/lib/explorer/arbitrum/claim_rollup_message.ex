@@ -141,7 +141,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     logs
     |> Enum.map(fn log ->
       msg = Enum.find(messages, fn msg -> msg.message_id == Hash.to_integer(log.fourth_topic) end)
-      # The way to convert log to `Withdrawal` depends on the presence of the associated message
+      # `msg` is needed to retrieve the message status
+      # Regularly the message should be found, but in rare cases (database inconsistent, fetcher issues) it may omit.
+      # In this case log_to_withdrawal/1 will be used to retrieve L2->L1 message status from the RPC node
       log_to_withdrawal(log, msg)
     end)
   end
