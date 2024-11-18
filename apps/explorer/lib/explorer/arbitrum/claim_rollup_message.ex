@@ -448,7 +448,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
   # Retrieving `size` parameter needed to construct outbox proof
   # The method primary try to get the value from the local database
-  # In case of any erorrs it fallbacks to the RPC request
+  # In case of any errors it fallbacks to the RPC request
   @spec get_size_for_proof() :: non_neg_integer() | nil
   defp get_size_for_proof do
     case get_size_for_proof_from_database() do
