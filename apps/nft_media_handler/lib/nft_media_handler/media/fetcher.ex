@@ -6,6 +6,25 @@ defmodule NFTMediaHandler.Media.Fetcher do
   @supported_image_types ["png", "jpeg", "gif", "webp"]
   @supported_video_types ["mp4"]
 
+  @doc """
+  Fetches media from the given URL with the specified headers.
+
+  ## Parameters
+
+    - url: A binary string representing the URL to fetch the media from.
+    - headers: A list of headers to include in the request.
+
+  ## Returns
+
+  The fetched media content.
+
+  ## Examples
+
+      iex> fetch_media("http://example.com/media", [{"Authorization", "Bearer token"}])
+      {:ok, media_content}
+
+  """
+  @spec fetch_media(binary(), list()) :: {:error, any()} | {:ok, nil | tuple(), any()}
   def fetch_media(url, headers) when is_binary(url) do
     with media_type <- media_type(url, headers),
          {:support, true} <- {:support, media_type_supported?(media_type)},
@@ -24,11 +43,11 @@ defmodule NFTMediaHandler.Media.Fetcher do
     end
   end
 
-  def media_type("data:" <> _data, _headers) do
+  defp media_type("data:" <> _data, _headers) do
     nil
   end
 
-  def media_type(media_src, headers) when not is_nil(media_src) do
+  defp media_type(media_src, headers) when not is_nil(media_src) do
     ext = media_src |> Path.extname() |> String.trim()
 
     mime_type =
@@ -52,22 +71,20 @@ defmodule NFTMediaHandler.Media.Fetcher do
     end
   end
 
-  def media_type(nil, _headers), do: nil
-
   @spec media_type_supported?(any()) :: boolean()
-  def media_type_supported?({"image", image_type}) when image_type in @supported_image_types do
+  defp media_type_supported?({"image", image_type}) when image_type in @supported_image_types do
     true
   end
 
-  def media_type_supported?({"video", video_type}) when video_type in @supported_video_types do
+  defp media_type_supported?({"video", video_type}) when video_type in @supported_video_types do
     true
   end
 
-  def media_type_supported?(_) do
+  defp media_type_supported?(_) do
     false
   end
 
-  def process_missing_extension(media_src, headers) do
+  defp process_missing_extension(media_src, headers) do
     case HTTPoison.head(media_src, headers, follow_redirect: true) do
       {:ok, %HTTPoison.Response{status_code: 200, headers: headers}} ->
         headers_map = Map.new(headers, fn {key, value} -> {String.downcase(key), value} end)

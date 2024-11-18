@@ -6,6 +6,8 @@ defmodule NFTMediaHandler.Application do
 
   @impl Application
   def start(_type, _args) do
+    File.mkdir(Application.get_env(:nft_media_handler, :tmp_dir))
+
     base_children = [
       Supervisor.child_spec({Task.Supervisor, name: NFTMediaHandler.TaskSupervisor}, id: NFTMediaHandler.TaskSupervisor),
       NFTMediaHandler.Dispatcher

@@ -14,7 +14,20 @@ defmodule NFTMediaHandler do
 
   @ipfs_protocol "ipfs://"
 
-  @spec prepare_and_upload_by_url(binary(), binary()) :: :error | {map(), {binary(), binary()}}
+  @doc """
+  Prepares and uploads media by its URL.
+
+  ## Parameters
+
+    - url: The URL of the media to be prepared and uploaded.
+    - r2_folder: The destination folder where the media will be uploaded in R2 bucket.
+
+  ## Returns
+
+    - :error if the preparation or upload fails.
+    - A tuple containing a list of Explorer.Chain.Token.Instance.Thumbnails format and a tuple with content type if successful.
+  """
+  @spec prepare_and_upload_by_url(binary(), binary()) :: :error | {list(), {binary(), binary()}}
   def prepare_and_upload_by_url(url, r2_folder) do
     with {prepared_url, headers} <- maybe_process_ipfs(url),
          {:ok, media_type, body} <- Fetcher.fetch_media(prepared_url, headers) do
@@ -114,6 +127,22 @@ defmodule NFTMediaHandler do
     extension
   end
 
+  @doc """
+  Converts an image to a binary format.
+
+  ## Parameters
+
+    - `image`: The `Vix.Vips.Image` struct representing the image to be converted.
+    - `file_name`: used only for .gif.
+    - `extension`: The extension of the image format.
+
+  ## Returns
+
+    - `:file_error` if there is an error related to file operations.
+    - `{:error, reason}` if the conversion fails for any other reason.
+    - `{:ok, binary}` if the conversion is successful, with the binary representing the image.
+  """
+  @spec image_to_binary(Vix.Vips.Image.t(), binary(), binary()) :: :file_error | {:error, any()} | {:ok, binary()}
   def image_to_binary(resized_image, _file_name, extension) when extension in [".jpg", ".png", ".webp"] do
     VipsImage.write_to_buffer(resized_image, "#{extension}[Q=70,strip]")
   end

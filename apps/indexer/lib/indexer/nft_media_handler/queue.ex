@@ -14,6 +14,18 @@ defmodule Indexer.NFTMediaHandler.Queue do
   @queue_storage :queue_storage
   @tasks_in_progress :tasks_in_progress
 
+  @doc """
+  Processes new inserted NFT instance.
+  Adds the instance to the queue if the media handler is enabled and input was in format {:ok, Instance.t()}.
+
+  ## Parameters
+
+    - initial_value: result of inserting an NFT instance. Either {:ok, %Instance{}} or some error.
+
+  ## Returns
+
+    initial_value as is.
+  """
   @spec process_new_instance(any()) :: any()
   def process_new_instance({:ok, %Instance{} = nft} = initial_value) do
     if Application.get_env(:nft_media_handler, :enabled?) do
@@ -71,7 +83,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
         dets_insert_wrapper(in_progress, {media_url, [{token_address_hash, token_id} | instances], start_time})
 
       _ ->
-        case Cachex.get(uniqueness_cache_name(), media_url) do
+        case Cachex.get(cache_uniqueness_name(), media_url) do
           {:ok, result} when is_map(result) ->
             Logger.debug(
               "Media url already fetched: #{media_url}, will take result from cache to: {#{to_string(token_address_hash)}, #{token_id}} "
@@ -213,12 +225,12 @@ defmodule Indexer.NFTMediaHandler.Queue do
     end)
   end
 
-  defp uniqueness_cache_name do
-    Application.get_env(:nft_media_handler, :uniqueness_cache_name)
+  defp cache_uniqueness_name do
+    Application.get_env(:nft_media_handler, :cache_uniqueness_name)
   end
 
   defp put_result_to_cache(url, result) do
-    Cachex.put(uniqueness_cache_name(), url, result)
+    Cachex.put(cache_uniqueness_name(), url, result)
   end
 
   defp filter_fetched_backfill_url({url, backfill_instances}, {_queue, in_progress, _continuation}) do
@@ -230,7 +242,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
         false
 
       _ ->
-        case Cachex.get(uniqueness_cache_name(), url) do
+        case Cachex.get(cache_uniqueness_name(), url) do
           {:ok, result} when is_map(result) ->
             Logger.debug("Media url already fetched: #{url}, will copy from cache to: #{inspect(backfill_instances)}")
 

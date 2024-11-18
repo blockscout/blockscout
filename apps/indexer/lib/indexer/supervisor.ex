@@ -320,14 +320,14 @@ defmodule Indexer.Supervisor do
       Indexer.NFTMediaHandler.Queue,
       {Cachex,
        [
-         Application.get_env(:nft_media_handler, :uniqueness_cache_name),
+         Application.get_env(:nft_media_handler, :cache_uniqueness_name),
          [
            hooks: [
              hook(
                module: Cachex.Limit.Scheduled,
                args: {
                  # setting cache max size
-                 Application.get_env(:nft_media_handler, :uniqueness_cache_max_size),
+                 Application.get_env(:nft_media_handler, :cache_uniqueness_max_size),
                  # options for `Cachex.prune/3`
                  [],
                  # options for `Cachex.Limit.Scheduled`

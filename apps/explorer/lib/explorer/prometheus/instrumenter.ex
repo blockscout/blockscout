@@ -72,7 +72,7 @@ defmodule Explorer.Prometheus.Instrumenter do
 
   @counter [
     name: :failed_uploading_media_number,
-    help: "Number of failed uploading to CDN media",
+    help: "Number of failed uploading media to CDN",
     registry: :public
   ]
 

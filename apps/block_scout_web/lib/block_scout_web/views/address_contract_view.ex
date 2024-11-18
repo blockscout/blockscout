@@ -101,9 +101,6 @@ defmodule BlockScoutWeb.AddressContractView do
       ~H"""
       <a href="{#{address_path(@conn, :show, @address)}}"><%= @address_hash %></a>
       """
-
-      # |> Safe.to_iodata()
-      # |> List.to_string()
     else
       address_hash
     end

@@ -64,7 +64,6 @@ dump.rdb
 
 **.dec**
 
-*.env
 *.env.example
 *.env.local
 *.env.staging
@@ -74,3 +73,5 @@ dump.rdb
 queue_storage
 tasks_in_progress
 /dets
+
+/temp

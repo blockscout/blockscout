@@ -166,7 +166,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
 
     assigns = %{html: html, spacing: spacing}
 
-    ~H|<%= @spacing %><%=@html%>|
+    ~H|<%= @spacing %><%= @html %>|
     |> Safe.to_iodata()
     |> List.to_string()
   end
