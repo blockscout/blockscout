@@ -347,7 +347,7 @@ defmodule EthereumJSONRPC.Arbitrum do
     - `event`: A log entry representing an L2-to-L1 message event.
 
     ## Returns
-    - A set of of fields describing the L2-to-L1 message
+    - A map describing the L2-to-L1 message
   """
   @spec l2_to_l1_event_parse(%{
           :data => binary(),
