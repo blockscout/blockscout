@@ -223,7 +223,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         ) :: Explorer.Arbitrum.Withdraw.t() | nil
 
   defp log_to_withdrawal(log, nil) do
-    log_to_withdraw(log)
+    log_to_withdrawal(log)
   end
 
   defp log_to_withdrawal(log, message) do
@@ -269,8 +269,8 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # To restore the withdrawal status, the amount of messages sent from L2 up to
   # the most recent confirmed L2 block is requested. The status is determined based
   # on the comparison between the received amount and the message ID.
-  @spec log_to_withdraw(Explorer.Chain.Log.t()) :: Explorer.Arbitrum.Withdraw.t()
-  defp log_to_withdraw(log) do
+  @spec log_to_withdrawal(Explorer.Chain.Log.t()) :: Explorer.Arbitrum.Withdraw.t()
+  defp log_to_withdrawal(log) do
     # getting needed L1\L2 properties: RPC URL and Main Rollup contract address
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
     json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
