@@ -209,6 +209,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
           w when w.status == :relayed ->
             {:error, :relayed}
+
+          w when w.status == :unknown ->
+            {:error, :internal_error}
         end
     end
   end
@@ -274,14 +277,15 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     # getting needed L1\L2 properties: RPC URL and Main Rollup contract address
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
     json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
-    json_l2_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-    l1_rollup_address = config_common[:l1_rollup_address]
 
     outbox_contract =
-      ArbitrumRpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
+      ArbitrumRpc.get_contracts_for_rollup(
+        config_common[:l1_rollup_address],
+        :inbox_outbox,
+        json_l1_rpc_named_arguments
+      )[:outbox]
 
     # getting needed fields from the L2ToL1Tx event
-    # {position, caller, destination, arb_block_number, eth_block_number, l2_timestamp, call_value, data} =
     fields =
       log
       |> convert_explorer_log_to_map()
@@ -296,7 +300,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           :relayed
 
         false ->
-          case get_size_for_proof_from_rpc(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments) do
+          case get_size_for_proof() do
             nil -> :unknown
             size when size > fields.message_id -> :confirmed
             _ -> :sent
@@ -395,20 +399,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     outbox_contract =
       ArbitrumRpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
 
-    size_for_proof =
-      case get_size_for_proof_from_database() do
-        nil ->
-          Logger.warning(
-            "The database doesn't contain required data to construct proof. Fallback to direct RPC request"
-          )
-
-          get_size_for_proof_from_rpc(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments)
-
-        size ->
-          size
-      end
-
-    case size_for_proof do
+    case get_size_for_proof() do
       nil ->
         Logger.error("Cannot get size for proof")
         {:error, :internal_error}
@@ -453,6 +444,27 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   defp raw_proof_to_hex(proof) do
     proof
     |> Enum.map(fn p -> "0x" <> Base.encode16(p, case: :lower) end)
+  end
+
+  # Retrieving `size` parameter needed to construct outbox proof
+  # The method primary try to get the value from the local database
+  # In case of any erorrs it fallbacks to the RPC request
+  @spec get_size_for_proof() :: non_neg_integer() | nil
+  defp get_size_for_proof do
+    case get_size_for_proof_from_database() do
+      nil ->
+        Logger.warning("The database doesn't contain required data to construct proof. Fallback to direct RPC request")
+
+        config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
+        l1_rollup_address = config_common[:l1_rollup_address]
+        json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
+        json_l2_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+        get_size_for_proof_from_rpc(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments)
+
+      size ->
+        size
+    end
   end
 
   # Retrieving `size` parameter needed to construct outbox proof
