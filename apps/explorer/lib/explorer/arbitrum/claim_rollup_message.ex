@@ -133,7 +133,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   @spec transaction_to_withdrawals(Hash.Full.t()) :: [Explorer.Arbitrum.Withdraw.t()]
   def transaction_to_withdrawals(transaction_hash) do
     # request messages initiated by the provided transaction from the database
-    messages = ArbitrumReader.l2_to_l1_messages_by_transaction_hash(transaction_hash)
+    messages = ArbitrumReader.l2_to_l1_messages_by_transaction_hash(transaction_hash, api?: true)
 
     # request associated logs from the database
     logs = ArbitrumReader.transaction_to_logs_by_topic0(transaction_hash, @l2_to_l1_event)

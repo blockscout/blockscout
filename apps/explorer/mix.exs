@@ -28,9 +28,7 @@ defmodule Explorer.Mixfile do
       xref: [
         exclude: [
           BlockScoutWeb.Routers.WebRouter.Helpers,
-          Indexer.Helper,
-          Indexer.Fetcher.Arbitrum.Messaging,
-          Indexer.Fetcher.Arbitrum.Utils.Rpc
+          Indexer.Helper
         ]
       ]
     ]

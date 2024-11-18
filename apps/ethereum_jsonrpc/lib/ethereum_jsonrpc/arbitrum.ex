@@ -9,6 +9,19 @@ defmodule EthereumJSONRPC.Arbitrum do
   require Logger
   alias ABI.TypeDecoder
 
+  @typedoc """
+  This type describes significant fields which can be extracted from
+  the L2ToL1Tx event emitted by ArbSys contract
+
+  * `"message_id"` - The message identificator
+  * `"caller"` - `t:EthereumJSONRPC.address/0` of the message initiator
+  * `"destination"` - `t:EthereumJSONRPC.address/0` to which the message should be sent after the claiming
+  * `"arb_block_number"` - Rollup block number in which the message was initiated
+  * `"eth_block_number"` - An associated parent chain block number
+  * `"timestamp"` - When the message was initiated
+  * `"callvalue"` - Amount of ETH which should be transfered to the `destination` address on message execution
+  * `"data"` - Raw calldata which should be set for the execution transaction (usually contains bridge interaction calldata)
+  """
   @type l2_to_l1_event :: %{
           :message_id => non_neg_integer(),
           :caller => EthereumJSONRPC.address(),
@@ -283,15 +296,13 @@ defmodule EthereumJSONRPC.Arbitrum do
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: {:ok, non_neg_integer()} | {:error, any()}
   def get_latest_confirmed_node_index(rollup_address, json_rpc_l1_named_arguments) do
-    case [
-           %{
-             contract_address: rollup_address,
-             method_id: @selector_latest_confirmed,
-             args: []
-           }
-         ]
-         |> EthereumJSONRPC.execute_contract_functions(@rollup_contract_abi, json_rpc_l1_named_arguments)
-         |> List.first() do
+    case read_contract(
+           rollup_address,
+           @selector_latest_confirmed,
+           [],
+           @rollup_contract_abi,
+           json_rpc_l1_named_arguments
+         ) do
       {:ok, [value]} ->
         {:ok, value}
 
@@ -323,15 +334,13 @@ defmodule EthereumJSONRPC.Arbitrum do
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: {:ok, non_neg_integer()} | {:error, any()}
   def get_node_creation_block_number(rollup_address, node_index, json_rpc_l1_named_arguments) do
-    case [
-           %{
-             contract_address: rollup_address,
-             method_id: @selector_get_node,
-             args: [node_index]
-           }
-         ]
-         |> EthereumJSONRPC.execute_contract_functions(@rollup_contract_abi, json_rpc_l1_named_arguments)
-         |> List.first() do
+    case read_contract(
+           rollup_address,
+           @selector_get_node,
+           [node_index],
+           @rollup_contract_abi,
+           json_rpc_l1_named_arguments
+         ) do
       {:ok, [fields]} -> {:ok, fields |> Kernel.elem(10)}
       {:error, err} -> {:error, err}
     end
@@ -451,15 +460,13 @@ defmodule EthereumJSONRPC.Arbitrum do
   end
 
   def construct_outbox_proof(node_interface_address, size, leaf, json_rpc_named_arguments) do
-    case [
-           %{
-             contract_address: node_interface_address,
-             method_id: @selector_construct_outbox_proof,
-             args: [size, leaf]
-           }
-         ]
-         |> EthereumJSONRPC.execute_contract_functions(@node_interface_contract_abi, json_rpc_named_arguments)
-         |> List.first() do
+    case read_contract(
+           node_interface_address,
+           @selector_construct_outbox_proof,
+           [size, leaf],
+           @node_interface_contract_abi,
+           json_rpc_named_arguments
+         ) do
       {:ok, proof} ->
         {:ok, proof}
 
@@ -491,15 +498,13 @@ defmodule EthereumJSONRPC.Arbitrum do
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: {:ok, boolean()} | {:error, any()}
   def withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
-    case [
-           %{
-             contract_address: outbox_contract,
-             method_id: @selector_is_spent,
-             args: [position]
-           }
-         ]
-         |> EthereumJSONRPC.execute_contract_functions(@outbox_contract_abi, json_l1_rpc_named_arguments)
-         |> List.first() do
+    case read_contract(
+           outbox_contract,
+           @selector_is_spent,
+           [position],
+           @outbox_contract_abi,
+           json_l1_rpc_named_arguments
+         ) do
       {:ok, [value]} ->
         {:ok, value}
 
@@ -507,5 +512,35 @@ defmodule EthereumJSONRPC.Arbitrum do
         Logger.error("outbox_contract.isSpent(position) error occurred: #{inspect(err)}")
         {:error, err}
     end
+  end
+
+  # Read a specified contract by provided selector and parameters from the RPC node
+  #
+  # ## Parameters
+  # - `contract_address`: The address of the contract to interact with.
+  # - `contract_selector`: Selctor in form of 4-byte hex-string without 0x prefix
+  # - `call_arguments`: List of the contract function parameters ([] if there are no parameters for the functions)
+  # - `contract_abi`: The contract ABI which contains invoked function description
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - `{:ok, term()}` in case of success call or `{:error, String.t()}` on error
+  @spec read_contract(
+          EthereumJSONRPC.address(),
+          String.t(),
+          [any()],
+          [map()],
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: EthereumJSONRPC.Contract.call_result()
+  defp read_contract(contract_address, contract_selector, call_arguments, contract_abi, json_rpc_named_arguments) do
+    [
+      %{
+        contract_address: contract_address,
+        method_id: contract_selector,
+        args: call_arguments
+      }
+    ]
+    |> EthereumJSONRPC.execute_contract_functions(contract_abi, json_rpc_named_arguments)
+    |> List.first()
   end
 end

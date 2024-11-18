@@ -620,17 +620,18 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - Instances of `Explorer.Chain.Arbitrum.Message` initiated by the transaction
       with the given hash, or `[]` if no messages with the given status are found.
   """
-  @spec l2_to_l1_messages_by_transaction_hash(Hash.Full.t()) :: [
+  @spec l2_to_l1_messages_by_transaction_hash(Hash.Full.t(), api?: boolean()) :: [
           Message.t()
         ]
-  def l2_to_l1_messages_by_transaction_hash(transaction_hash) do
+  def l2_to_l1_messages_by_transaction_hash(transaction_hash, options \\ []) when is_list(options) do
     query =
       from(msg in Message,
         where: msg.direction == :from_l2 and msg.originating_transaction_hash == ^transaction_hash,
         order_by: [desc: msg.message_id]
       )
 
-    Repo.all(query)
+    query
+    |> select_repo(options).all()
   end
 
   @doc """
