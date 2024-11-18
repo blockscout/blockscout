@@ -13,13 +13,13 @@ defmodule EthereumJSONRPC.Arbitrum do
   This type describes significant fields which can be extracted from
   the L2ToL1Tx event emitted by ArbSys contract
 
-  * `"message_id"` - The message identificator
+  * `"message_id"` - The message identifier
   * `"caller"` - `t:EthereumJSONRPC.address/0` of the message initiator
   * `"destination"` - `t:EthereumJSONRPC.address/0` to which the message should be sent after the claiming
   * `"arb_block_number"` - Rollup block number in which the message was initiated
   * `"eth_block_number"` - An associated parent chain block number
   * `"timestamp"` - When the message was initiated
-  * `"callvalue"` - Amount of ETH which should be transfered to the `destination` address on message execution
+  * `"callvalue"` - Amount of ETH which should be transferred to the `destination` address on message execution
   * `"data"` - Raw calldata which should be set for the execution transaction (usually contains bridge interaction calldata)
   """
   @type l2_to_l1_event :: %{
@@ -518,7 +518,7 @@ defmodule EthereumJSONRPC.Arbitrum do
   #
   # ## Parameters
   # - `contract_address`: The address of the contract to interact with.
-  # - `contract_selector`: Selctor in form of 4-byte hex-string without 0x prefix
+  # - `contract_selector`: Selector in form of 4-byte hex-string without 0x prefix
   # - `call_arguments`: List of the contract function parameters ([] if there are no parameters for the functions)
   # - `contract_abi`: The contract ABI which contains invoked function description
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.

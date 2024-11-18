@@ -341,6 +341,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # Internal routine used to extract needed fields from the `finalizeInboundTransfer(...)` calldata.
   # This calldata encapsulated into the L2ToL1Tx event and supposed to be executed on the TokenBridge contract
   # during the withdraw claiming. It used here to obtain tokens withdraw info from the associated event.
+  # The function returns the token address, destination address, and amount of the token to withdraw
+  # In case of the provided data is void or it doesn't correspond to the `finalizeInboundTransfer` method
+  # `nil` will be returned
   @spec decode_withdraw_token_data(binary()) ::
           %{
             address: Explorer.Chain.Hash.Address.t(),
