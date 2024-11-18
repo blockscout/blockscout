@@ -265,8 +265,10 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  # Convert L2ToL1Tx event to the internal structure describing L2->L1 withdrawal.
-  # To get all required fields the method uses RPC calls to the L1 and L2 nodes.
+  # Convert L2ToL1Tx event to the structure describing L2->L1 withdrawal.
+  # To restore the withdrawal status, the amount of messages sent from L2 up to
+  # the most recent confirmed L2 block is requested. The status is determined based
+  # on the comparison between the received amount and the message ID.
   @spec log_to_withdraw(Explorer.Chain.Log.t()) :: Explorer.Arbitrum.Withdraw.t()
   defp log_to_withdraw(log) do
     # getting needed L1\L2 properties: RPC URL and Main Rollup contract address
