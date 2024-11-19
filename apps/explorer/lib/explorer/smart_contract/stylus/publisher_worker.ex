@@ -20,7 +20,7 @@ defmodule Explorer.SmartContract.Stylus.PublisherWorker do
     Processes a Stylus smart contract verification request.
 
     Initiates the verification process by broadcasting the verification request to
-    the module responsible for the actual verification and conseqequent update of
+    the module responsible for the actual verification and consequent update of
     the database. This function is called automatically by the job queue system.
 
     ## Parameters
