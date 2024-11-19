@@ -6,7 +6,6 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
     Handles verification requests for Stylus contracts deployed from GitHub repositories by
     communicating with an external verification service.
   """
-  alias Explorer.Utility.Microservice
   alias HTTPoison.Response
   require Logger
 
@@ -159,8 +158,8 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
 
   defp base_api_url, do: "#{base_url()}" <> "/api/v1/stylus-sdk-rs"
 
-  defp base_url, do: Microservice.base_url(__MODULE__)
+  defp base_url, do: Application.get_env(:explorer, __MODULE__)[:service_url]
 
   def enabled?,
-    do: Application.get_env(:explorer, __MODULE__)[:enabled] && Application.get_env(:explorer, :chain_type) == :arbitrum
+    do: !is_nil(base_url()) && Application.get_env(:explorer, :chain_type) == :arbitrum
 end

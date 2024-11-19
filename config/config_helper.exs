@@ -3,6 +3,7 @@ defmodule ConfigHelper do
 
   import Bitwise
   alias Explorer.ExchangeRates.Source
+  alias Explorer.Helper
   alias Explorer.Market.History.Source.{MarketCap, Price, TVL}
   alias Indexer.Transform.Blocks
 
@@ -344,6 +345,23 @@ defmodule ConfigHelper do
     case parse_list_env_var(urls_var) do
       [] -> [safe_get_env(url_var, default)]
       urls -> urls
+    end
+  end
+
+  @spec parse_microservice_url(String.t()) :: String.t() | nil
+  def parse_microservice_url(env_name) do
+    url = System.get_env(env_name)
+
+    cond do
+      not Helper.valid_url?(url) ->
+        nil
+
+      String.ends_with?(url, "/") ->
+        url
+        |> String.slice(0..(String.length(url) - 2))
+
+      true ->
+        url
     end
   end
 end

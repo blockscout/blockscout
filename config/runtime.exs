@@ -539,8 +539,7 @@ config :explorer, Explorer.MicroserviceInterfaces.Metadata,
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_METADATA_ENABLED")
 
 config :explorer, Explorer.SmartContract.StylusVerifierInterface,
-  service_url: System.get_env("MICROSERVICE_STYLUS_VERIFIER_URL"),
-  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_STYLUS_VERIFIER_ENABLED")
+  service_url: ConfigHelper.parse_microservice_url("MICROSERVICE_STYLUS_VERIFIER_URL")
 
 config :explorer, :air_table_public_tags,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
