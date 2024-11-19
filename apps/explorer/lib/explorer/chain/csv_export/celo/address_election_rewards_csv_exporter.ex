@@ -38,8 +38,6 @@ defmodule Explorer.Chain.CSVExport.Celo.AddressElectionRewardsCsvExporter do
       "ValidatorGroupAddress",
       "ToAddress",
       "Type",
-      "LockedGold",
-      "VotingGold",
       "Value",
       "ValueInWei",
       "TokenSymbol",
@@ -73,10 +71,6 @@ defmodule Explorer.Chain.CSVExport.Celo.AddressElectionRewardsCsvExporter do
           reward.account_address_hash,
           # Type
           "IN",
-          # LockedGold
-          "N/A",
-          # VotingGold
-          "N/A",
           # Value
           reward.amount |> Wei.to(:ether),
           # ValueInWei
