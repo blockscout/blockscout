@@ -4,6 +4,7 @@
 
 [![Blockscout](https://github.com/blockscout/blockscout/workflows/Blockscout/badge.svg?branch=master)](https://github.com/blockscout/blockscout/actions)
 [![](https://dcbadge.vercel.app/api/server/blockscout?style=flat)](https://discord.gg/blockscout)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Blockscout%20Guru-006BFF)](https://gurubase.io/g/blockscout)
 
 </div>
 
