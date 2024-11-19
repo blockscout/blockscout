@@ -1,10 +1,13 @@
 defmodule Explorer.SmartContract.Stylus.Verifier do
   @moduledoc """
-  Module responsible to verify the Smart Contract.
+    Verifies Stylus smart contracts by comparing their source code against deployed bytecode.
 
-  Given a contract source code the bytecode will be generated  and matched
-  against the existing Creation Address Bytecode, if it matches the contract is
-  then Verified.
+    This module handles verification of Stylus smart contracts through their GitHub repository
+    source code. It interfaces with a verification microservice that:
+    - Fetches source code from the specified GitHub repository and commit
+    - Compiles the code using the specified cargo-stylus version
+    - Compares the resulting bytecode against the deployed contract bytecode
+    - Returns verification details including ABI and contract metadata
   """
 
   import Explorer.SmartContract.Helper,
@@ -12,10 +15,34 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
       fetch_data_for_stylus_verification: 1
     ]
 
+  alias Explorer.Chain.Hash
   alias Explorer.SmartContract.StylusVerifierInterface
 
   require Logger
 
+  @doc """
+    Verifies a Stylus smart contract by comparing source code from a GitHub repository against the deployed bytecode using a verification microservice.
+
+    ## Parameters
+    - `address_hash`: Contract address
+    - `params`: Map containing verification parameters:
+      - `cargo_stylus_version`: Version of cargo-stylus used for deployment
+      - `repository_url`: GitHub repository URL containing contract code
+      - `commit`: Git commit hash used for deployment
+      - `path_prefix`: Optional path prefix if contract is not in repository root
+
+    ## Returns
+    - `{:ok, map}` with verification details:
+      - `abi`: Contract ABI (optional)
+      - `contract_name`: Contract name (optional)
+      - `package_name`: Package name
+      - `files`: Map of file paths to contents used in verification
+      - `cargo_stylus_version`: Version of cargo-stylus used
+      - `github_repository_metadata`: Repository metadata (optional)
+    - `{:error, any}` if verification fails or is disabled
+  """
+  @spec evaluate_authenticity(EthereumJSONRPC.address() | Hash.Address.t(), map()) ::
+          {:ok, map()} | {:error, any()}
   def evaluate_authenticity(address_hash, params) do
     evaluate_authenticity_inner(StylusVerifierInterface.enabled?(), address_hash, params)
   rescue
@@ -28,6 +55,23 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
       end)
   end
 
+  # Verifies the authenticity of a Stylus smart contract using GitHub repository source code.
+  #
+  # This function retrieves the contract creation transaction and blockchain RPC endpoint,
+  # which together with passed parameters are required by the verification microservice to
+  # validate the contract deployment and verify the source code against the deployed
+  # bytecode.
+  #
+  # ## Parameters
+  # - `true`: Required boolean flag to proceed with verification
+  # - `address_hash`: Contract address
+  # - `params`: Map containing verification parameters
+  #
+  # ## Returns
+  # - `{:ok, map}` with verification details including ABI, contract name, and source files
+  # - `{:error, any}` if verification fails
+  @spec evaluate_authenticity_inner(boolean(), EthereumJSONRPC.address() | Hash.Address.t(), map()) ::
+          {:ok, map()} | {:error, any()}
   defp evaluate_authenticity_inner(true, address_hash, params) do
     transaction_hash = fetch_data_for_stylus_verification(address_hash)
     rpc_endpoint = Application.get_env(:explorer, :json_rpc_named_arguments)[:transport_options][:url]

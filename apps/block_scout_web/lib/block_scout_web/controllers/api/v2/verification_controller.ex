@@ -85,6 +85,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     end
   end
 
+  # Adds Stylus compiler versions to config if Stylus verification is enabled
   defp maybe_add_stylus_options(config) do
     if StylusVerifierInterface.enabled?() do
       config
@@ -306,6 +307,36 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     end
   end
 
+  @doc """
+    Initiates verification of a Stylus smart contract using its GitHub repository source code.
+
+    Validates the request parameters and queues the verification job to be processed
+    asynchronously by the Stylus publisher worker.
+
+    ## Parameters
+    - `conn`: The connection struct
+    - `params`: A map containing:
+      - `address_hash`: Contract address to verify
+      - `cargo_stylus_version`: Version of cargo-stylus used for deployment
+      - `repository_url`: GitHub repository URL containing contract code
+      - `commit`: Git commit hash used for deployment
+      - `path_prefix`: Optional path prefix if contract is not in repository root
+
+    ## Returns
+    - JSON response with:
+      - Success message if verification request is queued successfully
+      - Error message if:
+        - Stylus verification is not enabled
+        - Address format is invalid
+        - Contract is already verified
+        - Access is restricted
+  """
+  @spec verification_via_stylus_github_repository(Plug.Conn.t(), %{String.t() => any()}) ::
+          {:already_verified, true}
+          | {:format, :error}
+          | {:not_found, false | nil}
+          | {:restricted_access, true}
+          | Plug.Conn.t()
   def verification_via_stylus_github_repository(
         conn,
         %{
