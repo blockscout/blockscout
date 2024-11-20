@@ -251,7 +251,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         case message.status do
           stat when stat == :initiated or stat == :sent ->
             get_actual_message_status(message.message_id)
-          s -> s
+
+          s ->
+            s
         end
 
       %Explorer.Arbitrum.Withdraw{
