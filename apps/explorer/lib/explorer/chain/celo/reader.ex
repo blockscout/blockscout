@@ -54,7 +54,7 @@ defmodule Explorer.Chain.Celo.Reader do
 
     address_hash
     |> ElectionReward.address_hash_to_ordered_rewards_query()
-    |> Chain.where_block_number_in_period(from_block, to_block)
+    |> ElectionReward.where_block_number_in_period(from_block, to_block)
     |> ElectionReward.join_token()
     |> ElectionReward.paginate(paging_options)
     |> limit(^paging_options.page_size)

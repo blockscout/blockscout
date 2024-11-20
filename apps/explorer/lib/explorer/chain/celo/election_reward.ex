@@ -98,7 +98,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     )
 
     field(:token, :any, virtual: true) :: Token.t() | nil
-    field(:block_number, :integer, virtual: true)
 
     timestamps()
   end
@@ -232,9 +231,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       preload: [block: b],
       where: r.account_address_hash == ^address_hash,
       select: r,
-      select_merge: %{
-        block_number: b.number
-      },
       order_by: [
         desc: b.number,
         desc: r.amount,
@@ -520,4 +516,32 @@ defmodule Explorer.Chain.Celo.ElectionReward do
       "type" => type
     }
   end
+
+  @doc """
+  Custom filter for `ElectionReward`, inspired by
+  `Chain.where_block_number_in_period/3`.
+
+  TODO: Consider reusing `Chain.where_block_number_in_period/3`. This would
+  require storing or making `merge_select` of `block_number`.
+  """
+  def where_block_number_in_period(base_query, from_block, to_block)
+      when is_nil(from_block) and not is_nil(to_block),
+      do: where(base_query, [_, block], block.number <= ^to_block)
+
+  def where_block_number_in_period(base_query, from_block, to_block)
+      when not is_nil(from_block) and is_nil(to_block),
+      do: where(base_query, [_, block], block.number > ^from_block)
+
+  def where_block_number_in_period(base_query, from_block, to_block)
+      when is_nil(from_block) and is_nil(to_block),
+      do: base_query
+
+  def where_block_number_in_period(base_query, from_block, to_block),
+    do:
+      where(
+        base_query,
+        [_, block],
+        block.number > ^from_block and
+          block.number <= ^to_block
+      )
 end
