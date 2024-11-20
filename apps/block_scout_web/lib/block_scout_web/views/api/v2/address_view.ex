@@ -119,7 +119,13 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       })
 
     extended_info
-    |> chain_type_fields(%{address: creation_transaction && creation_transaction.from_address, field_prefix: "creator"})
+    |> chain_type_fields(
+      %{
+        address: creation_transaction && creation_transaction.from_address,
+        field_prefix: "creator"
+      },
+      address
+    )
   end
 
   @spec prepare_token_balance(Chain.Address.TokenBalance.t(), boolean()) :: map()
@@ -241,13 +247,19 @@ defmodule BlockScoutWeb.API.V2.AddressView do
 
   case @chain_type do
     :filecoin ->
-      defp chain_type_fields(result, params) do
+      defp chain_type_fields(result, params, _address) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.FilecoinView.put_filecoin_robust_address(result, params)
       end
 
+    :zilliqa ->
+      defp chain_type_fields(result, _params, address) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.ZilliqaView.extend_address_json_response(result, address)
+      end
+
     _ ->
-      defp chain_type_fields(result, _params) do
+      defp chain_type_fields(result, _params, _address) do
         result
       end
   end
