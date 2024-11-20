@@ -3740,7 +3740,7 @@ defmodule Explorer.Chain do
         when accumulator: term()
   def stream_token_instances_with_error(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     # likely to get valid metadata
-    high_priority = ["request error: 429", ":checkout_timeout", ":econnrefused", ":timeout"]
+    high_priority = ["request error: 429", ":checkout_timeout"]
     # almost impossible to get valid metadata
     negative_priority = ["VM execution error", "no uri", "invalid json"]
 
@@ -3980,12 +3980,17 @@ defmodule Explorer.Chain do
           refetch_after:
             fragment(
               """
-              CASE WHEN EXCLUDED.metadata IS NULL THEN
-                NOW() AT TIME ZONE 'UTC' + interval '1 seconds' * (? * ? ^ LEAST(? + 1.0, ?))
+              CASE
+                WHEN ? > ? THEN
+                  NULL
+                WHEN EXCLUDED.metadata IS NULL THEN
+                  NOW() AT TIME ZONE 'UTC' + interval '1 seconds' * (? * ? ^ LEAST(? + 1.0, ?))
               ELSE
                 NULL
               END
               """,
+              token_instance.retries_count + 1,
+              ^max_retries_count_before_ban,
               ^coef,
               ^base,
               token_instance.retries_count,

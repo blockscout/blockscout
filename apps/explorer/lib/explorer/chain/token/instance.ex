@@ -670,15 +670,15 @@ defmodule Explorer.Chain.Token.Instance do
   - An integer representing the maximum number of retries allowed before a ban is enforced.
   """
   @spec error_to_max_retries_count_before_ban(String.t() | nil) :: non_neg_integer()
+  def error_to_max_retries_count_before_ban(nil) do
+    @max_retries_count_value
+  end
+
   def error_to_max_retries_count_before_ban(error) do
     Enum.find_value(@error_to_ban_interval, fn {interval, errors} ->
       Enum.any?(errors, fn error_pattern ->
         String.starts_with?(error, error_pattern)
       end) && interval
     end) || 13
-  end
-
-  def error_to_max_retries_count_before_ban(nil) do
-    @max_retries_count_value
   end
 end
