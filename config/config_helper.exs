@@ -347,6 +347,16 @@ defmodule ConfigHelper do
     end
   end
 
+  @doc """
+    Parses and validates a microservice URL from an environment variable, removing any trailing slash.
+
+    ## Parameters
+    - `env_name`: The name of the environment variable containing the URL
+
+    ## Returns
+    - The validated URL string with any trailing slash removed
+    - `nil` if the URL is invalid or missing required components
+  """
   @spec parse_microservice_url(String.t()) :: String.t() | nil
   def parse_microservice_url(env_name) do
     url = System.get_env(env_name)
@@ -364,6 +374,8 @@ defmodule ConfigHelper do
     end
   end
 
+  # Validates if the given string is a valid URL by checking if it has both scheme (like http,
+  # https, ftp) and host components.
   @spec valid_url?(String.t()) :: boolean()
   defp valid_url?(string) when is_binary(string) do
     uri = URI.parse(string)
