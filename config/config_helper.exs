@@ -370,4 +370,6 @@ defmodule ConfigHelper do
 
     !is_nil(uri.scheme) && !is_nil(uri.host)
   end
+
+  defp valid_url?(_), do: false
 end
