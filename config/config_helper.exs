@@ -3,7 +3,6 @@ defmodule ConfigHelper do
 
   import Bitwise
   alias Explorer.ExchangeRates.Source
-  alias Explorer.Helper
   alias Explorer.Market.History.Source.{MarketCap, Price, TVL}
   alias Indexer.Transform.Blocks
 
@@ -353,7 +352,7 @@ defmodule ConfigHelper do
     url = System.get_env(env_name)
 
     cond do
-      not Helper.valid_url?(url) ->
+      not valid_url?(url) ->
         nil
 
       String.ends_with?(url, "/") ->
@@ -363,5 +362,12 @@ defmodule ConfigHelper do
       true ->
         url
     end
+  end
+
+  @spec valid_url?(String.t()) :: boolean()
+  defp valid_url?(string) when is_binary(string) do
+    uri = URI.parse(string)
+
+    !is_nil(uri.scheme) && !is_nil(uri.host)
   end
 end
