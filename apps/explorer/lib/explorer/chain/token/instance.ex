@@ -639,4 +639,46 @@ defmodule Explorer.Chain.Token.Instance do
       timeout: @timeout
     )
   end
+
+  @max_retries_count_value 32767
+  @error_to_ban_interval %{
+    9 => [
+      "VM execution error",
+      "request error: 404",
+      "no uri",
+      "ignored host",
+      "(-32000)",
+      "invalid ",
+      "{:max_redirect_overflow, ",
+      "{:invalid_redirection, ",
+      "nxdomain",
+      ":nxdomain",
+      "econnrefused",
+      ":econnrefused"
+    ],
+    # 32767 is the maximum value for retries_count (smallint)
+    @max_retries_count_value => ["request error: 429"]
+  }
+
+  @doc """
+  Determines the maximum number of retries allowed before banning based on the given error.
+
+  ## Parameters
+  - error: The error encountered that may trigger retries.
+
+  ## Returns
+  - An integer representing the maximum number of retries allowed before a ban is enforced.
+  """
+  @spec error_to_max_retries_count_before_ban(String.t() | nil) :: non_neg_integer()
+  def error_to_max_retries_count_before_ban(error) do
+    Enum.find_value(@error_to_ban_interval, fn {interval, errors} ->
+      Enum.any?(errors, fn error_pattern ->
+        String.starts_with?(error, error_pattern)
+      end) && interval
+    end) || 13
+  end
+
+  def error_to_max_retries_count_before_ban(nil) do
+    @max_retries_count_value
+  end
 end

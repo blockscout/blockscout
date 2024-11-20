@@ -3948,14 +3948,15 @@ defmodule Explorer.Chain do
   @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def upsert_token_instance(params) do
     changeset = Instance.changeset(%Instance{}, params)
+    max_retries_count_before_ban = Instance.error_to_max_retries_count_before_ban(params[:error])
 
     Repo.insert(changeset,
-      on_conflict: token_instance_metadata_on_conflict(),
+      on_conflict: token_instance_metadata_on_conflict(max_retries_count_before_ban),
       conflict_target: [:token_id, :token_contract_address_hash]
     )
   end
 
-  defp token_instance_metadata_on_conflict do
+  defp token_instance_metadata_on_conflict(max_retries_count_before_ban) do
     config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
 
     coef = config[:exp_timeout_coeff]
@@ -3989,6 +3990,14 @@ defmodule Explorer.Chain do
               ^base,
               token_instance.retries_count,
               ^max_retry_count
+            ),
+          is_banned:
+            fragment(
+              """
+              CASE WHEN ? > ? THEN TRUE ELSE FALSE END
+              """,
+              token_instance.retries_count + 1,
+              ^max_retries_count_before_ban
             )
         ]
       ],
