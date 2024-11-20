@@ -247,9 +247,16 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       {:ok, caller_address} = Hash.Address.cast(fields.caller)
       {:ok, destination_address} = Hash.Address.cast(fields.destination)
 
+      status =
+        case message.status do
+          stat when stat == :initiated or stat == :sent ->
+            get_actual_message_status(message.message_id)
+          s -> s
+        end
+
       %Explorer.Arbitrum.Withdraw{
         message_id: Hash.to_integer(log.fourth_topic),
-        status: message.status,
+        status: status,
         caller: caller_address,
         destination: destination_address,
         arb_block_number: fields.arb_block_number,
@@ -274,38 +281,13 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # on the comparison between the received amount and the message ID.
   @spec log_to_withdrawal(Explorer.Chain.Log.t()) :: Explorer.Arbitrum.Withdraw.t()
   defp log_to_withdrawal(log) do
-    # getting needed L1\L2 properties: RPC URL and Main Rollup contract address
-    config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
-    json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
-
-    outbox_contract =
-      ArbitrumRpc.get_contracts_for_rollup(
-        config_common[:l1_rollup_address],
-        :inbox_outbox,
-        json_l1_rpc_named_arguments
-      )[:outbox]
-
     # getting needed fields from the L2ToL1Tx event
     fields =
       log
       |> convert_explorer_log_to_map()
       |> ArbitrumRpc.l2_to_l1_event_parse()
 
-    {:ok, is_withdrawal_spent} =
-      ArbitrumRpc.withdrawal_spent?(outbox_contract, fields.message_id, json_l1_rpc_named_arguments)
-
-    status =
-      case is_withdrawal_spent do
-        true ->
-          :relayed
-
-        false ->
-          case get_size_for_proof() do
-            nil -> :unknown
-            size when size > fields.message_id -> :confirmed
-            _ -> :sent
-          end
-      end
+    status = get_actual_message_status(fields.message_id)
 
     token = decode_withdraw_token_data(fields.data)
 
@@ -328,6 +310,38 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       data: "0x" <> data_hex,
       token: token
     }
+  end
+
+  # Retrieve the actual status of the message with provided message ID
+  # The method uses the RPC node to determine the status of the message
+  # The method currently doesn't distinguish between `:initiated` and `:sent` statuses
+  @spec get_actual_message_status(non_neg_integer()) :: :unknown | :sent | :confirmed | :relayed
+  defp get_actual_message_status(message_id) do
+    # getting needed L1\L2 properties: RPC URL and Main Rollup contract address
+    config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
+    json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
+
+    outbox_contract =
+      ArbitrumRpc.get_contracts_for_rollup(
+        config_common[:l1_rollup_address],
+        :inbox_outbox,
+        json_l1_rpc_named_arguments
+      )[:outbox]
+
+    {:ok, is_withdrawal_spent} =
+      ArbitrumRpc.withdrawal_spent?(outbox_contract, message_id, json_l1_rpc_named_arguments)
+
+    case is_withdrawal_spent do
+      true ->
+        :relayed
+
+      false ->
+        case get_size_for_proof() do
+          nil -> :unknown
+          size when size > message_id -> :confirmed
+          _ -> :sent
+        end
+    end
   end
 
   # Internal routine used to convert `Explorer.Chain.Log.t()` structure
