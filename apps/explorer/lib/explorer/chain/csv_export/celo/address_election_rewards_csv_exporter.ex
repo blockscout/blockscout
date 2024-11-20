@@ -72,9 +72,9 @@ defmodule Explorer.Chain.CSVExport.Celo.AddressElectionRewardsCsvExporter do
           # Type
           "IN",
           # Value
-          reward.amount |> Wei.to(:ether),
+          reward.amount |> Wei.to(:ether) |> Decimal.to_string(:normal),
           # ValueInWei
-          reward.amount |> Wei.to(:wei),
+          reward.amount |> Wei.to(:wei) |> Decimal.to_string(:normal),
           # TokenSymbol
           reward.token.symbol,
           # TokenContractAddress
