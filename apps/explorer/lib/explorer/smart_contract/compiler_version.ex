@@ -66,9 +66,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
     if RustVerifierInterface.enabled?() do
       fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type)
     else
-      if compiler_type == :zk do
-        {:ok, []}
-      end
+      {:ok, []}
     end
   end
 
