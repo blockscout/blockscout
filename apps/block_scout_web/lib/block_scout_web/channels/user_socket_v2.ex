@@ -15,6 +15,7 @@ defmodule BlockScoutWeb.UserSocketV2 do
 
   case Application.compile_env(:explorer, :chain_type) do
     :arbitrum -> channel("arbitrum:*", BlockScoutWeb.ArbitrumChannel)
+    # todo: change `optimism*"` to `optimism:*` after the deprecated `optimism_deposits:new_deposits` topic is removed
     :optimism -> channel("optimism*", BlockScoutWeb.OptimismChannel)
     _ -> nil
   end
