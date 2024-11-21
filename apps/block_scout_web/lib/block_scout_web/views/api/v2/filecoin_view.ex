@@ -26,14 +26,19 @@ if Application.compile_env(:explorer, :chain_type) == :filecoin do
     end
 
     @spec preload_and_put_filecoin_robust_address(map(), %{
-            address_hash: String.t() | nil,
-            field_prefix: String.t() | nil
+            optional(:address_hash) => String.t() | nil,
+            optional(:field_prefix) => String.t() | nil,
+            optional(any) => any
           }) ::
             map()
     def preload_and_put_filecoin_robust_address(result, %{address_hash: address_hash} = params) do
       address = address_hash && Address.get(address_hash, @api_true)
 
       put_filecoin_robust_address(result, Map.put(params, :address, address))
+    end
+
+    def preload_and_put_filecoin_robust_address(result, _params) do
+      result
     end
 
     @doc """

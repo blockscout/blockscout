@@ -20,6 +20,15 @@ defmodule Explorer.Chain.SmartContract.Schema do
                            ]
                          )
 
+    :arbitrum ->
+      @chain_type_fields quote(
+                           do: [
+                             field(:package_name, :string),
+                             field(:github_repository_metadata, :map),
+                             field(:optimization_runs, :integer)
+                           ]
+                         )
+
     _ ->
       @chain_type_fields quote(do: [field(:optimization_runs, :integer)])
   end
@@ -51,6 +60,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
+        field(:language, Ecto.Enum, values: [solidity: 1, vyper: 2, yul: 3, stylus_rust: 4], default: :solidity)
 
         has_many(
           :decompiled_smart_contracts,
@@ -123,7 +133,7 @@ defmodule Explorer.Chain.SmartContract do
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
   @dead_address_hash_string "0x000000000000000000000000000000000000dEaD"
 
-  @required_attrs ~w(compiler_version optimization address_hash contract_code_md5)a
+  @required_attrs ~w(compiler_version optimization address_hash contract_code_md5 language)a
 
   @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a
 
@@ -133,6 +143,9 @@ defmodule Explorer.Chain.SmartContract do
   @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
                                 :zksync ->
                                   ~w(zk_compiler_version)a
+
+                                :arbitrum ->
+                                  ~w(package_name github_repository_metadata)a
 
                                 _ ->
                                   ~w()a
@@ -388,6 +401,10 @@ defmodule Explorer.Chain.SmartContract do
     :zksync -> """
        * `zk_compiler_version` - the version of ZkSolc or ZkVyper compilers.
       """
+    :arbitrum -> """
+       * `package_name` - package name of stylus contract.
+       * `github_repository_metadata` - map with repository details.
+      """
     _ -> ""
   end}
   * `optimization` - whether optimizations were turned on when compiling `contract_source_code` into `address`
@@ -410,6 +427,7 @@ defmodule Explorer.Chain.SmartContract do
   * `is_yul` - field was added for storing user's choice
   * `certified` - boolean flag, which can be set for set of smart-contracts via runtime env variable to prioritize those smart-contracts in the search.
   * `is_blueprint` - boolean flag, determines if contract is ERC-5202 compatible blueprint contract or not.
+  * `language` - enum for smart contract language tracking, stands for getting rid of is_vyper_contract/is_yul bool flags.
   """
   Explorer.Chain.SmartContract.Schema.generate()
 

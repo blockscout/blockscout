@@ -220,7 +220,8 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       file_path: params["file_path"],
       compiler_settings: clean_compiler_settings,
       license_type: prepare_license_type(params["license_type"]) || :none,
-      is_blueprint: params["is_blueprint"] || false
+      is_blueprint: params["is_blueprint"] || false,
+      language: :vyper
     }
   end
 
