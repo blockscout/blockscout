@@ -307,24 +307,31 @@ defmodule EthereumJSONRPC.Transaction do
     |> chain_type_fields(elixir)
   end
 
-  def do_elixir_to_params(
-        %{
-          "blockHash" => block_hash,
-          "blockNumber" => block_number,
-          "from" => from_address_hash,
-          "gas" => gas,
-          "gasPrice" => gas_price,
-          "hash" => hash,
-          "input" => input,
-          "nonce" => nonce,
-          "to" => to_address_hash,
-          "transactionIndex" => index,
-          "value" => value,
-          "type" => type,
-          "maxPriorityFeePerGas" => max_priority_fee_per_gas,
-          "maxFeePerGas" => max_fee_per_gas
-        } = transaction
-      ) do
+  # Converts a map of the transaction parameters to the map with the corresponding atom parameters.
+  #
+  # ## Parameters
+  # - `transaction`: The input map.
+  #
+  # ## Returns
+  # - The resulting map.
+  @spec do_elixir_to_params(%{String.t() => any()}) :: %{atom() => any()}
+  defp do_elixir_to_params(
+         %{
+           "blockHash" => block_hash,
+           "blockNumber" => block_number,
+           "from" => from_address_hash,
+           "gas" => gas,
+           "gasPrice" => gas_price,
+           "hash" => hash,
+           "input" => input,
+           "nonce" => nonce,
+           "transactionIndex" => index,
+           "value" => value,
+           "type" => type,
+           "maxPriorityFeePerGas" => max_priority_fee_per_gas,
+           "maxFeePerGas" => max_fee_per_gas
+         } = transaction
+       ) do
     result = %{
       block_hash: block_hash,
       block_number: block_number,
@@ -335,7 +342,7 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      to_address_hash: to_address_hash,
+      to_address_hash: Map.get(transaction, "to"),
       value: value,
       transaction_index: index,
       type: type,
@@ -355,23 +362,22 @@ defmodule EthereumJSONRPC.Transaction do
 
   # txpool_content method on Erigon node returns transaction data
   # without gas price
-  def do_elixir_to_params(
-        %{
-          "blockHash" => block_hash,
-          "blockNumber" => block_number,
-          "from" => from_address_hash,
-          "gas" => gas,
-          "hash" => hash,
-          "input" => input,
-          "nonce" => nonce,
-          "to" => to_address_hash,
-          "transactionIndex" => index,
-          "value" => value,
-          "type" => type,
-          "maxPriorityFeePerGas" => max_priority_fee_per_gas,
-          "maxFeePerGas" => max_fee_per_gas
-        } = transaction
-      ) do
+  defp do_elixir_to_params(
+         %{
+           "blockHash" => block_hash,
+           "blockNumber" => block_number,
+           "from" => from_address_hash,
+           "gas" => gas,
+           "hash" => hash,
+           "input" => input,
+           "nonce" => nonce,
+           "transactionIndex" => index,
+           "value" => value,
+           "type" => type,
+           "maxPriorityFeePerGas" => max_priority_fee_per_gas,
+           "maxFeePerGas" => max_fee_per_gas
+         } = transaction
+       ) do
     result = %{
       block_hash: block_hash,
       block_number: block_number,
@@ -382,7 +388,7 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      to_address_hash: to_address_hash,
+      to_address_hash: Map.get(transaction, "to"),
       value: value,
       transaction_index: index,
       type: type,
@@ -401,22 +407,21 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   # for legacy transactions without maxPriorityFeePerGas and maxFeePerGas
-  def do_elixir_to_params(
-        %{
-          "blockHash" => block_hash,
-          "blockNumber" => block_number,
-          "from" => from_address_hash,
-          "gas" => gas,
-          "gasPrice" => gas_price,
-          "hash" => hash,
-          "input" => input,
-          "nonce" => nonce,
-          "to" => to_address_hash,
-          "transactionIndex" => index,
-          "value" => value,
-          "type" => type
-        } = transaction
-      ) do
+  defp do_elixir_to_params(
+         %{
+           "blockHash" => block_hash,
+           "blockNumber" => block_number,
+           "from" => from_address_hash,
+           "gas" => gas,
+           "gasPrice" => gas_price,
+           "hash" => hash,
+           "input" => input,
+           "nonce" => nonce,
+           "transactionIndex" => index,
+           "value" => value,
+           "type" => type
+         } = transaction
+       ) do
     result = %{
       block_hash: block_hash,
       block_number: block_number,
@@ -427,7 +432,7 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      to_address_hash: to_address_hash,
+      to_address_hash: Map.get(transaction, "to"),
       value: value,
       transaction_index: index,
       type: type
@@ -443,21 +448,20 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   # for legacy transactions without type, maxPriorityFeePerGas and maxFeePerGas
-  def do_elixir_to_params(
-        %{
-          "blockHash" => block_hash,
-          "blockNumber" => block_number,
-          "from" => from_address_hash,
-          "gas" => gas,
-          "gasPrice" => gas_price,
-          "hash" => hash,
-          "input" => input,
-          "nonce" => nonce,
-          "to" => to_address_hash,
-          "transactionIndex" => index,
-          "value" => value
-        } = transaction
-      ) do
+  defp do_elixir_to_params(
+         %{
+           "blockHash" => block_hash,
+           "blockNumber" => block_number,
+           "from" => from_address_hash,
+           "gas" => gas,
+           "gasPrice" => gas_price,
+           "hash" => hash,
+           "input" => input,
+           "nonce" => nonce,
+           "transactionIndex" => index,
+           "value" => value
+         } = transaction
+       ) do
     result = %{
       block_hash: block_hash,
       block_number: block_number,
@@ -468,7 +472,7 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      to_address_hash: to_address_hash,
+      to_address_hash: Map.get(transaction, "to"),
       value: value,
       transaction_index: index
     }
@@ -483,21 +487,20 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   # for transactions without gasPrice, maxPriorityFeePerGas and maxFeePerGas
-  def do_elixir_to_params(
-        %{
-          "blockHash" => block_hash,
-          "blockNumber" => block_number,
-          "from" => from_address_hash,
-          "gas" => gas,
-          "hash" => hash,
-          "input" => input,
-          "nonce" => nonce,
-          "to" => to_address_hash,
-          "transactionIndex" => index,
-          "type" => type,
-          "value" => value
-        } = transaction
-      ) do
+  defp do_elixir_to_params(
+         %{
+           "blockHash" => block_hash,
+           "blockNumber" => block_number,
+           "from" => from_address_hash,
+           "gas" => gas,
+           "hash" => hash,
+           "input" => input,
+           "nonce" => nonce,
+           "transactionIndex" => index,
+           "type" => type,
+           "value" => value
+         } = transaction
+       ) do
     result = %{
       block_hash: block_hash,
       block_number: block_number,
@@ -508,7 +511,7 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      to_address_hash: to_address_hash,
+      to_address_hash: Map.get(transaction, "to"),
       value: value,
       transaction_index: index,
       type: type

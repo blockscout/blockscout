@@ -20,6 +20,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   @modules_can_use_reorg_monitor (case Application.compile_env(:explorer, :chain_type) do
                                     :optimism ->
                                       [
+                                        Indexer.Fetcher.Optimism.Deposit,
                                         Indexer.Fetcher.Optimism.OutputRoot,
                                         Indexer.Fetcher.Optimism.TransactionBatch,
                                         Indexer.Fetcher.Optimism.WithdrawalEvent

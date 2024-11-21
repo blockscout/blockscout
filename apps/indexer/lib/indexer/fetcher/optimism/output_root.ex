@@ -67,20 +67,21 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
           start_block: start_block,
           end_block: end_block,
           json_rpc_named_arguments: json_rpc_named_arguments,
+          eth_get_logs_range_size: eth_get_logs_range_size,
           stop: stop
         } = state
       ) do
     # credo:disable-for-next-line
     time_before = Timex.now()
 
-    chunks_number = ceil((end_block - start_block + 1) / Optimism.get_logs_range_size())
+    chunks_number = ceil((end_block - start_block + 1) / eth_get_logs_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
     last_written_block =
       chunk_range
       |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
-        chunk_start = start_block + Optimism.get_logs_range_size() * current_chunk
-        chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
+        chunk_start = start_block + eth_get_logs_range_size * current_chunk
+        chunk_end = min(chunk_start + eth_get_logs_range_size - 1, end_block)
 
         if chunk_end >= chunk_start do
           IndexerHelper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
@@ -184,17 +185,32 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
     end
   end
 
-  def get_last_l1_item do
-    query =
-      from(root in OutputRoot,
-        select: {root.l1_block_number, root.l1_transaction_hash},
-        order_by: [desc: root.l2_output_index],
-        limit: 1
-      )
+  @doc """
+    Determines the last saved L1 block number, the last saved transaction hash, and the transaction info for Output Roots.
 
-    query
-    |> Repo.one()
-    |> Kernel.||({0, nil})
+    Used by the `Indexer.Fetcher.Optimism` module to start fetching from a correct block number
+    after reorg has occurred.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+                                  Used to get transaction info by its hash from the RPC node.
+
+    ## Returns
+    - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
+      `last_block_number` is the last block number found in the corresponding table (0 if not found),
+      `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
+      `last_transaction` is the transaction info got from the RPC (nil if not found).
+    - A tuple `{:error, message}` in case the `eth_getTransactionByHash` RPC request failed.
+  """
+  @spec get_last_l1_item(EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {non_neg_integer(), binary() | nil, map() | nil} | {:error, any()}
+  def get_last_l1_item(json_rpc_named_arguments) do
+    Optimism.get_last_item(
+      :L1,
+      &OutputRoot.last_root_l1_block_number_query/0,
+      &OutputRoot.remove_roots_query/1,
+      json_rpc_named_arguments
+    )
   end
 
   @doc """

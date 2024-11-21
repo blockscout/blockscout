@@ -19,6 +19,12 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
         Subscriber.to(:new_messages_to_arbitrum_amount, :realtime)
       end
 
+    :optimism ->
+      def chain_type_specific_subscriptions do
+        Subscriber.to(:new_optimism_batches, :realtime)
+        Subscriber.to(:new_optimism_deposits, :realtime)
+      end
+
     _ ->
       def chain_type_specific_subscriptions do
         nil
@@ -32,7 +38,6 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     Subscriber.to(:block_rewards, :realtime)
     Subscriber.to(:internal_transactions, :realtime)
     Subscriber.to(:internal_transactions, :on_demand)
-    Subscriber.to(:optimism_deposits, :realtime)
     Subscriber.to(:token_transfers, :realtime)
     Subscriber.to(:addresses, :on_demand)
     Subscriber.to(:address_coin_balances, :on_demand)
