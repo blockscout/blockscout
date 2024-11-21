@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.UserSocketV2 do
 
   case Application.compile_env(:explorer, :chain_type) do
     :arbitrum -> channel("arbitrum:*", BlockScoutWeb.ArbitrumChannel)
-    :optimism -> channel("optimism:*", BlockScoutWeb.OptimismChannel)
+    :optimism -> channel("optimism*", BlockScoutWeb.OptimismChannel)
     _ -> nil
   end
 

@@ -20,15 +20,17 @@ defmodule BlockScoutWeb.Notifiers.Optimism do
   def handle_event({:chain_event, :new_optimism_deposits, :realtime, deposits}) do
     deposits_count = Enum.count(deposits)
 
-    Endpoint.broadcast("optimism:new_deposits", "new_optimism_deposits", %{
-      deposits: deposits_count
-    })
+    if deposits_count > 0 do
+      Endpoint.broadcast("optimism:new_deposits", "new_optimism_deposits", %{
+        deposits: deposits_count
+      })
 
-    # todo: the `optimism_deposits:new_deposits` socket topic is for backward compatibility
-    # for the frontend and should be removed after the frontend starts to use the `optimism:new_deposits`
-    Endpoint.broadcast("optimism_deposits:new_deposits", "deposits", %{
-      deposits: deposits_count
-    })
+      # todo: the `optimism_deposits:new_deposits` socket topic is for backward compatibility
+      # for the frontend and should be removed after the frontend starts to use the `optimism:new_deposits`
+      Endpoint.broadcast("optimism_deposits:new_deposits", "deposits", %{
+        deposits: deposits_count
+      })
+    end
   end
 
   def handle_event(event) do
