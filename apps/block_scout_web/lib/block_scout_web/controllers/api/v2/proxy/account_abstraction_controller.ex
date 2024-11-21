@@ -159,7 +159,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
         necessity_by_association: %{
           :names => :optional,
           :smart_contract => :optional,
-          :proxy_implementations => :optional
+          proxy_implementations_association() => :optional
         },
         api?: true
       )

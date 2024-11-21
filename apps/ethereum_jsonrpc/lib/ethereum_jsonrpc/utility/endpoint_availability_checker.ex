@@ -40,8 +40,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
           {:ok, _number} ->
             url = json_rpc_named_arguments[:transport_options][:url]
 
-            EndpointAvailabilityObserver.enable_endpoint(url, url_type)
-            log_url_available(url, url_type, json_rpc_named_arguments)
+            EndpointAvailabilityObserver.enable_endpoint(url, url_type, json_rpc_named_arguments)
             acc
 
           _ ->
@@ -54,17 +53,8 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
     {:noreply, %{state | unavailable_endpoints_arguments: new_unavailable_endpoints}}
   end
 
-  defp log_url_available(url, url_type, json_rpc_named_arguments) do
-    message_extra =
-      if EndpointAvailabilityObserver.fallback_url_set?(url_type, json_rpc_named_arguments),
-        do: ", switching back to it",
-        else: ""
-
-    Logger.info("URL #{inspect(url)} is available now#{message_extra}")
-  end
-
   defp fetch_latest_block_number(json_rpc_named_arguments) do
-    {_, arguments_without_fallback} = pop_in(json_rpc_named_arguments, [:transport_options, :fallback_url])
+    {_, arguments_without_fallback} = pop_in(json_rpc_named_arguments, [:transport_options, :fallback_urls])
 
     %{id: 0, method: "eth_blockNumber", params: []}
     |> EthereumJSONRPC.request()

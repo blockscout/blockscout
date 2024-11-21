@@ -85,6 +85,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
@@ -391,7 +392,12 @@ defmodule Explorer.Chain do
             base
           else
             base
-            |> preload(transaction: [from_address: [:proxy_implementations], to_address: [:proxy_implementations]])
+            |> preload(
+              transaction: [
+                from_address: ^Implementation.proxy_implementations_association(),
+                to_address: ^Implementation.proxy_implementations_association()
+              ]
+            )
           end
 
         preloaded_query
@@ -789,7 +795,7 @@ defmodule Explorer.Chain do
       from(contract in SmartContract,
         inner_join: address in Address,
         on: contract.address_hash == address.hash,
-        order_by: [desc: address.transactions_count],
+        order_by: [desc: address.fetched_coin_balance],
         limit: ^limit,
         select: contract.address_hash
       )
@@ -1113,7 +1119,7 @@ defmodule Explorer.Chain do
       |> Keyword.get(:necessity_by_association, %{})
       |> Map.merge(%{
         [smart_contract: :smart_contract_additional_sources] => :optional,
-        :proxy_implementations => :optional
+        Implementation.proxy_implementations_association() => :optional
       })
 
     query =
@@ -1467,7 +1473,6 @@ defmodule Explorer.Chain do
   def indexed_ratio_internal_transactions do
     if indexer_running?() and internal_transactions_fetcher_running?() do
       %{max: max_saved_block_number} = BlockNumber.get_all()
-      pbo_count = PendingBlockOperationCache.estimated_count()
 
       min_blockchain_trace_block_number = Application.get_env(:indexer, :trace_first_block)
 
@@ -1478,6 +1483,8 @@ defmodule Explorer.Chain do
         _ ->
           full_blocks_range =
             max_saved_block_number - min_blockchain_trace_block_number - BlockNumberHelper.null_rounds_count() + 1
+
+          pbo_count = PendingBlockOperation.count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
 
           processed_int_transactions_for_blocks_count = max(0, full_blocks_range - pbo_count)
 
@@ -3201,6 +3208,27 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Fetches contract creation input data from the transaction (not internal transaction).
+  """
+  @spec contract_creation_input_data_from_transaction(String.t()) :: nil | binary()
+  def contract_creation_input_data_from_transaction(address_hash, options \\ []) do
+    transaction =
+      Transaction
+      |> where([transaction], transaction.created_contract_address_hash == ^address_hash)
+      |> select_repo(options).one()
+
+    if transaction && transaction.input do
+      case Data.dump(transaction.input) do
+        {:ok, bytes} ->
+          bytes
+
+        _ ->
+          nil
+      end
+    end
+  end
+
+  @doc """
   Fetches contract creation input data.
   """
   @spec contract_creation_input_data(String.t()) :: nil | String.t()
@@ -4372,7 +4400,7 @@ defmodule Explorer.Chain do
     |> Instance.address_to_unique_token_instances()
     |> Instance.page_token_instance(paging_options)
     |> limit(^paging_options.page_size)
-    |> preload([_], owner: [:names, :smart_contract, :proxy_implementations])
+    |> preload([_], owner: [:names, :smart_contract, ^Implementation.proxy_implementations_association()])
     |> select_repo(options).all()
     |> Enum.map(&put_owner_to_token_instance(&1, token, options))
   end
@@ -4403,7 +4431,11 @@ defmodule Explorer.Chain do
         owner_address_hash,
         options
         |> Keyword.merge(
-          necessity_by_association: %{names: :optional, smart_contract: :optional, proxy_implementations: :optional}
+          necessity_by_association: %{
+            :names => :optional,
+            :smart_contract => :optional,
+            Implementation.proxy_implementations_association() => :optional
+          }
         )
       )
 

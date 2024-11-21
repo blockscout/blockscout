@@ -34,4 +34,36 @@ defmodule Explorer.Chain.Optimism.WithdrawalEvent do
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
   end
+
+  @doc """
+    Forms a query to find the last Withdrawal L1 event's block number and transaction hash.
+    Used by the `Indexer.Fetcher.Optimism.WithdrawalEvent` module.
+
+    ## Returns
+    - A query which can be used by the `Repo.one` function.
+  """
+  @spec last_event_l1_block_number_query() :: Ecto.Queryable.t()
+  def last_event_l1_block_number_query do
+    from(event in __MODULE__,
+      select: {event.l1_block_number, event.l1_transaction_hash},
+      order_by: [desc: event.l1_timestamp],
+      limit: 1
+    )
+  end
+
+  @doc """
+    Forms a query to remove all Withdrawal L1 events related to the specified L1 block number.
+    Used by the `Indexer.Fetcher.Optimism.WithdrawalEvent` module.
+
+    ## Parameters
+    - `l1_block_number`: The L1 block number for which the events should be removed
+                         from the `op_withdrawal_events` database table.
+
+    ## Returns
+    - A query which can be used by the `delete_all` function.
+  """
+  @spec remove_events_query(non_neg_integer()) :: Ecto.Queryable.t()
+  def remove_events_query(l1_block_number) do
+    from(event in __MODULE__, where: event.l1_block_number == ^l1_block_number)
+  end
 end

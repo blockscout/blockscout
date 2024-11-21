@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.PagingHelper do
     Helper for fetching filters and other url query parameters
   """
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.Chain.Transaction
   alias Explorer.{Helper, PagingOptions, SortingHelper}
@@ -158,7 +160,7 @@ defmodule BlockScoutWeb.PagingHelper do
         [
           necessity_by_association: %{
             :transactions => :optional,
-            [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
+            [miner: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
             :nephews => :required,
             :rewards => :optional
           },
@@ -169,7 +171,7 @@ defmodule BlockScoutWeb.PagingHelper do
         [
           necessity_by_association: %{
             :transactions => :optional,
-            [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
+            [miner: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
             :rewards => :optional
           },
           block_type: "Reorg"
@@ -184,7 +186,7 @@ defmodule BlockScoutWeb.PagingHelper do
     do: [
       necessity_by_association: %{
         :transactions => :optional,
-        [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [miner: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
         :rewards => :optional
       },
       block_type: "Block"
@@ -287,6 +289,8 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def address_transactions_sorting(_), do: []
 
+  defp do_address_transaction_sorting("block_number", "asc"), do: [asc: :block_number, asc: :index]
+  defp do_address_transaction_sorting("block_number", "desc"), do: [desc: :block_number, desc: :index]
   defp do_address_transaction_sorting("value", "asc"), do: [asc: :value]
   defp do_address_transaction_sorting("value", "desc"), do: [desc: :value]
   defp do_address_transaction_sorting("fee", "asc"), do: [{:dynamic, :fee, :asc_nulls_first, Transaction.dynamic_fee()}]

@@ -7,7 +7,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
   alias Explorer.Chain.Token.Instance
   alias Explorer.Migrator.{SanitizeDuplicatedLogIndexLogs, MigrationStatus}
 
-  if Application.compile_env(:explorer, :chain_type) != :celo do
+  if Application.compile_env(:explorer, :chain_type) in [:polygon_zkevm, :rsk, :filecoin] do
     describe "Sanitize duplicated log index logs" do
       test "correctly identifies and updates duplicated log index logs" do
         block = insert(:block)
@@ -24,13 +24,15 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == nil
 
         SanitizeDuplicatedLogIndexLogs.start_link([])
-        Process.sleep(300)
+        :timer.sleep(500)
 
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == "completed"
         assert BackgroundMigrations.get_sanitize_duplicated_log_index_logs_finished() == true
 
         updated_logs =
           Repo.all(Log |> where([log], log.block_number == ^block.number) |> order_by([log], asc: log.index))
+
+        Process.sleep(300)
 
         assert match?(
                  [
@@ -103,10 +105,12 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == nil
 
         SanitizeDuplicatedLogIndexLogs.start_link([])
-        Process.sleep(300)
+        :timer.sleep(500)
 
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == "completed"
         assert BackgroundMigrations.get_sanitize_duplicated_log_index_logs_finished() == true
+
+        Process.sleep(300)
 
         updated_logs =
           Repo.all(Log |> where([log], log.block_number == ^block.number) |> order_by([log], asc: log.index))
@@ -138,7 +142,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == nil
 
         SanitizeDuplicatedLogIndexLogs.start_link([])
-        Process.sleep(100)
+        :timer.sleep(100)
 
         assert MigrationStatus.get_status("sanitize_duplicated_log_index_logs") == "completed"
         assert BackgroundMigrations.get_sanitize_duplicated_log_index_logs_finished() == true

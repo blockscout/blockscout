@@ -1,6 +1,7 @@
 name: Release for Gnosis Chain
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
@@ -13,7 +14,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 6.9.0
+      RELEASE_VERSION: 6.9.1
     steps:
       - uses: actions/checkout@v4
       - name: Setup repo
@@ -27,7 +28,7 @@ jobs:
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
 
       - name: Build and push Docker image for Gnosis chain (indexer + API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -51,7 +52,7 @@ jobs:
             CHAIN_TYPE=ethereum
 
       - name: Build and push Docker image for Gnosis chain (indexer)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -74,7 +75,7 @@ jobs:
             CHAIN_TYPE=ethereum
 
       - name: Build and push Docker image for Gnosis chain (API)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile

@@ -112,9 +112,23 @@ defmodule Explorer.SmartContract.Helper do
     end
   end
 
+  @doc """
+  Prepares the bytecode for a microservice by processing the given body, creation input, and deployed bytecode.
+
+  ## Parameters
+
+    - body: The body of the request or data to be processed.
+    - creation_input: The input data used during the creation of the smart contract.
+    - deployed_bytecode: The bytecode of the deployed smart contract.
+
+  ## Returns
+
+  The processed bytecode ready for the microservice.
+  """
+  @spec prepare_bytecode_for_microservice(map(), binary() | nil, binary() | nil) :: map()
   def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode)
 
-  def prepare_bytecode_for_microservice(body, empty, deployed_bytecode) when is_nil(empty) do
+  def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode) when is_nil(creation_input) do
     if Application.get_env(:explorer, :chain_type) == :zksync do
       body
       |> Map.put("code", deployed_bytecode)
@@ -228,9 +242,9 @@ defmodule Explorer.SmartContract.Helper do
   @doc """
   Pre-fetches implementation for unverified smart contract or verified proxy smart-contract
   """
-  @spec pre_fetch_implementations(Address.t()) :: {any(), atom() | nil}
+  @spec pre_fetch_implementations(Address.t()) :: Implementation.t() | nil
   def pre_fetch_implementations(address) do
-    {implementation_address_hashes, implementation_names, proxy_type} =
+    implementation =
       with {:verified_smart_contract, %SmartContract{}} <- {:verified_smart_contract, address.smart_contract},
            {:proxy?, true} <- {:proxy?, address_is_proxy?(address, @api_true)} do
         Implementation.get_implementation(address.smart_contract, @api_true)
@@ -242,17 +256,14 @@ defmodule Explorer.SmartContract.Helper do
             }
 
             Implementation.get_implementation(smart_contract, @api_true)
-          else
-            {[], [], nil}
           end
 
         {:proxy?, false} ->
-          {[], [], nil}
+          nil
       end
 
-    implementations = Proxy.proxy_object_info(implementation_address_hashes, implementation_names)
-
-    {implementations, proxy_type}
+    implementation
+    |> Chain.select_repo(@api_true).preload(Implementation.proxy_implementations_addresses_association())
   end
 
   @doc """

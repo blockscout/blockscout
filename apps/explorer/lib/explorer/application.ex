@@ -155,7 +155,8 @@ defmodule Explorer.Application do
         ]),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeMissingTokenBalances, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeReplacedTransactions, :indexer),
-        configure_mode_dependent_process(Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, :indexer)
+        configure_mode_dependent_process(Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, :indexer),
+        Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync)
       ]
       |> List.flatten()
 
@@ -165,22 +166,23 @@ defmodule Explorer.Application do
   defp repos_by_chain_type do
     if Mix.env() == :test do
       [
+        Explorer.Repo.Arbitrum,
         Explorer.Repo.Beacon,
+        Explorer.Repo.Blackfort,
+        Explorer.Repo.BridgedTokens,
+        Explorer.Repo.Celo,
+        Explorer.Repo.Filecoin,
         Explorer.Repo.Optimism,
         Explorer.Repo.PolygonEdge,
         Explorer.Repo.PolygonZkevm,
-        Explorer.Repo.Scroll,
-        Explorer.Repo.ZkSync,
-        Explorer.Repo.Celo,
         Explorer.Repo.RSK,
+        Explorer.Repo.Scroll,
         Explorer.Repo.Shibarium,
-        Explorer.Repo.Suave,
-        Explorer.Repo.Arbitrum,
-        Explorer.Repo.BridgedTokens,
-        Explorer.Repo.Filecoin,
-        Explorer.Repo.Stability,
         Explorer.Repo.ShrunkInternalTransactions,
-        Explorer.Repo.Blackfort
+        Explorer.Repo.Stability,
+        Explorer.Repo.Suave,
+        Explorer.Repo.Zilliqa,
+        Explorer.Repo.ZkSync
       ]
     else
       []

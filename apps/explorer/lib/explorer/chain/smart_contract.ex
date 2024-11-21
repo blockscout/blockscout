@@ -20,6 +20,15 @@ defmodule Explorer.Chain.SmartContract.Schema do
                            ]
                          )
 
+    :arbitrum ->
+      @chain_type_fields quote(
+                           do: [
+                             field(:package_name, :string),
+                             field(:github_repository_metadata, :map),
+                             field(:optimization_runs, :integer)
+                           ]
+                         )
+
     _ ->
       @chain_type_fields quote(do: [field(:optimization_runs, :integer)])
   end
@@ -51,6 +60,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
+        field(:language, Ecto.Enum, values: [solidity: 1, vyper: 2, yul: 3, stylus_rust: 4], default: :solidity)
 
         has_many(
           :decompiled_smart_contracts,
@@ -95,6 +105,7 @@ defmodule Explorer.Chain.SmartContract do
 
   use Explorer.Schema
 
+  alias ABI.FunctionSelector
   alias Ecto.{Changeset, Multi}
   alias Explorer.{Chain, Repo, SortingHelper}
 
@@ -122,7 +133,7 @@ defmodule Explorer.Chain.SmartContract do
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
   @dead_address_hash_string "0x000000000000000000000000000000000000dEaD"
 
-  @required_attrs ~w(compiler_version optimization address_hash contract_code_md5)a
+  @required_attrs ~w(compiler_version optimization address_hash contract_code_md5 language)a
 
   @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a
 
@@ -133,9 +144,37 @@ defmodule Explorer.Chain.SmartContract do
                                 :zksync ->
                                   ~w(zk_compiler_version)a
 
+                                :arbitrum ->
+                                  ~w(package_name github_repository_metadata)a
+
                                 _ ->
                                   ~w()a
                               end)
+
+  @create_zksync_abi [
+    %{
+      "inputs" => [
+        %{"internalType" => "bytes32", "name" => "_salt", "type" => "bytes32"},
+        %{"internalType" => "bytes32", "name" => "_bytecodeHash", "type" => "bytes32"},
+        %{"internalType" => "bytes", "name" => "_input", "type" => "bytes"}
+      ],
+      "name" => "create2",
+      "outputs" => [%{"internalType" => "address", "name" => "", "type" => "address"}],
+      "stateMutability" => "payable",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [
+        %{"internalType" => "bytes32", "name" => "_salt", "type" => "bytes32"},
+        %{"internalType" => "bytes32", "name" => "_bytecodeHash", "type" => "bytes32"},
+        %{"internalType" => "bytes", "name" => "_input", "type" => "bytes"}
+      ],
+      "name" => "create",
+      "outputs" => [%{"internalType" => "address", "name" => "", "type" => "address"}],
+      "stateMutability" => "payable",
+      "type" => "function"
+    }
+  ]
 
   @doc """
     Returns burn address hash
@@ -362,6 +401,10 @@ defmodule Explorer.Chain.SmartContract do
     :zksync -> """
        * `zk_compiler_version` - the version of ZkSolc or ZkVyper compilers.
       """
+    :arbitrum -> """
+       * `package_name` - package name of stylus contract.
+       * `github_repository_metadata` - map with repository details.
+      """
     _ -> ""
   end}
   * `optimization` - whether optimizations were turned on when compiling `contract_source_code` into `address`
@@ -384,6 +427,7 @@ defmodule Explorer.Chain.SmartContract do
   * `is_yul` - field was added for storing user's choice
   * `certified` - boolean flag, which can be set for set of smart-contracts via runtime env variable to prioritize those smart-contracts in the search.
   * `is_blueprint` - boolean flag, determines if contract is ERC-5202 compatible blueprint contract or not.
+  * `language` - enum for smart contract language tracking, stands for getting rid of is_vyper_contract/is_yul bool flags.
   """
   Explorer.Chain.SmartContract.Schema.generate()
 
@@ -618,28 +662,8 @@ defmodule Explorer.Chain.SmartContract do
   @spec compose_address_for_unverified_smart_contract(map(), any()) :: map()
   def compose_address_for_unverified_smart_contract(%{smart_contract: smart_contract} = address_result, options)
       when is_nil(smart_contract) do
-    smart_contract = %{
-      updated: %__MODULE__{
-        address_hash: address_result.hash
-      },
-      implementation_updated_at: nil,
-      implementation_address_fetched?: false,
-      refetch_necessity_checked?: false
-    }
-
-    {implementation_address_hash, _names, _proxy_type} =
-      Implementation.get_implementation(
-        smart_contract,
-        Keyword.put(options, :proxy_without_abi?, true)
-      )
-
-    implementation_smart_contract =
-      implementation_address_hash
-      |> Proxy.implementation_to_smart_contract(options)
-
     address_verified_bytecode_twin_contract =
-      implementation_smart_contract ||
-        get_address_verified_bytecode_twin_contract(address_result.hash, options).verified_contract
+      get_address_verified_bytecode_twin_contract(address_result.hash, options).verified_contract
 
     if address_verified_bytecode_twin_contract do
       add_bytecode_twin_info_to_contract(address_result, address_verified_bytecode_twin_contract, address_result.hash)
@@ -651,10 +675,10 @@ defmodule Explorer.Chain.SmartContract do
   def compose_address_for_unverified_smart_contract(address_result, _hash, _options), do: address_result
 
   def single_implementation_smart_contract_from_proxy(proxy_hash, options) do
-    {implementation_address_hashes, _names, _proxy_type} = Implementation.get_implementation(proxy_hash, options)
+    implementation = Implementation.get_implementation(proxy_hash, options)
 
-    if implementation_address_hashes && Enum.count(implementation_address_hashes) == 1 do
-      implementation_address_hashes
+    if implementation && Enum.count(implementation.address_hashes) == 1 do
+      implementation.address_hashes
       |> Enum.at(0)
       |> Proxy.implementation_to_smart_contract(options)
     else
@@ -1091,22 +1115,22 @@ defmodule Explorer.Chain.SmartContract do
   @doc """
   Gets smart-contract ABI from the DB for the given address hash of smart-contract
   """
-  @spec get_smart_contract_abi(String.t(), any()) :: any()
-  def get_smart_contract_abi(address_hash_string, options \\ [])
+  @spec get_smart_contract_abi(String.t() | Hash.Address.t(), any()) :: any()
+  def get_smart_contract_abi(address_hash, options \\ [])
 
-  def get_smart_contract_abi(address_hash_string, options)
-      when not is_nil(address_hash_string) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {smart_contract, _} =
-           address_hash
-           |> address_hash_to_smart_contract_with_bytecode_twin(options, false),
-         false <- is_nil(smart_contract) do
-      smart_contract
-      |> Map.get(:abi)
-    else
+  def get_smart_contract_abi(address_hash_string, options) when is_binary(address_hash_string) do
+    case Chain.string_to_address_hash(address_hash_string) do
+      {:ok, address_hash} ->
+        get_smart_contract_abi(address_hash, options)
+
       _ ->
         []
     end
+  end
+
+  def get_smart_contract_abi(%Hash{} = address_hash, options) do
+    {smart_contract, _} = address_hash_to_smart_contract_with_bytecode_twin(address_hash, options, false)
+    (smart_contract && smart_contract.abi) || []
   end
 
   def get_smart_contract_abi(address_hash_string, _) when is_nil(address_hash_string) do
@@ -1310,4 +1334,28 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   defp filter_contracts(basic_query, _), do: basic_query
+
+  @doc """
+  Retrieves the constructor arguments for a zkSync smart contract.
+  Using @create_zksync_abi function decodes transaction input of contract creation
+
+  ## Parameters
+  - `binary()`: The binary data representing the smart contract.
+
+  ## Returns
+  - `nil`: If the constructor arguments cannot be retrieved.
+  - `binary()`: The constructor arguments in binary format.
+  """
+  @spec zksync_get_constructor_arguments(binary()) :: nil | binary()
+  def zksync_get_constructor_arguments(address_hash_string) do
+    creation_input = Chain.contract_creation_input_data_from_transaction(address_hash_string)
+
+    case @create_zksync_abi |> ABI.parse_specification() |> ABI.find_and_decode(creation_input) do
+      {%FunctionSelector{}, [_, _, constructor_args]} ->
+        Base.encode16(constructor_args, case: :lower)
+
+      _ ->
+        nil
+    end
+  end
 end

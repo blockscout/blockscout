@@ -168,9 +168,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/", V2.TokenTransferController, :token_transfers)
     end
 
-    scope "/internal-transactions" do
-      get("/", V2.InternalTransactionController, :internal_transactions)
-    end
+    # todo: enable this endpoint when DB index for underlying DB query will be installed.
+    # scope "/internal-transactions" do
+    #   get("/", V2.InternalTransactionController, :internal_transactions)
+    # end
 
     scope "/blocks" do
       get("/", V2.BlockController, :blocks)
@@ -350,6 +351,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
       scope "/zerion" do
         get("/wallets/:address_hash_param/portfolio", V2.Proxy.ZerionController, :wallet_portfolio)
+      end
+
+      scope "/xname" do
+        get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
       end
 
       scope "/metadata" do

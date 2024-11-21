@@ -25,16 +25,7 @@ defmodule BlockScoutWeb.SmartContractController do
          {:custom_abi, false} <- {:custom_abi, is_custom_abi},
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
-      implementation_address_hash_string =
-        if contract_type == "proxy" do
-          address.smart_contract
-          |> Implementation.get_implementation()
-          |> Tuple.to_list()
-          |> List.first()
-          |> List.first() || burn_address_hash_string()
-        else
-          burn_address_hash_string()
-        end
+      implementation_address_hash_string = implementation_address_hash(contract_type, address)
 
       functions =
         if action == "write" do
@@ -106,6 +97,15 @@ defmodule BlockScoutWeb.SmartContractController do
   end
 
   def index(conn, _), do: not_found(conn)
+
+  defp implementation_address_hash(contract_type, address) do
+    if contract_type == "proxy" do
+      implementation = Implementation.get_implementation(address.smart_contract)
+      (implementation && implementation.address_hashes |> List.first()) || burn_address_hash_string()
+    else
+      burn_address_hash_string()
+    end
+  end
 
   defp custom_abi_render(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action} = params) do
     with custom_abi <- AddressView.fetch_custom_abi(conn, address_hash_string),

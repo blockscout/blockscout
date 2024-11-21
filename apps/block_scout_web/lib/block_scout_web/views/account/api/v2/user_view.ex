@@ -1,4 +1,6 @@
 defmodule BlockScoutWeb.Account.API.V2.UserView do
+  use BlockScoutWeb, :view
+
   alias BlockScoutWeb.Account.API.V2.AccountView
   alias BlockScoutWeb.API.V2.Helper
   alias Ecto.Changeset
@@ -198,7 +200,9 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
   defp get_address(address_hash) do
     case Chain.hash_to_address(
            address_hash,
-           [necessity_by_association: %{smart_contract: :optional, proxy_implementations: :optional}],
+           [
+             necessity_by_association: %{:smart_contract => :optional, proxy_implementations_association() => :optional}
+           ],
            false
          ) do
       {:ok, address} -> address

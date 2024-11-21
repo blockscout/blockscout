@@ -76,6 +76,14 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         :arbitrum_confirmation_transaction => :optional
       }
 
+    :zilliqa ->
+      @chain_type_transaction_necessity_by_association %{}
+      @chain_type_block_necessity_by_association %{
+        :zilliqa_quorum_certificate => :optional,
+        :zilliqa_aggregate_quorum_certificate => :optional,
+        [zilliqa_aggregate_quorum_certificate: [:nested_quorum_certificates]] => :optional
+      }
+
     _ ->
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{}
@@ -84,9 +92,10 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @transaction_necessity_by_association [
     necessity_by_association:
       %{
-        [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-        [from_address: [:names, :smart_contract, :proxy_implementations]] => :optional,
-        [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
+        [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
+          :optional,
+        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
         :block => :optional
       }
       |> Map.merge(@chain_type_transaction_necessity_by_association)
@@ -94,9 +103,10 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   @internal_transaction_necessity_by_association [
     necessity_by_association: %{
-      [created_contract_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-      [from_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional,
-      [to_address: [:scam_badge, :names, :smart_contract, :proxy_implementations]] => :optional
+      [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
+        :optional,
+      [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+      [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
     }
   ]
 
@@ -105,7 +115,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   @block_params [
     necessity_by_association:
       %{
-        [miner: [:names, :smart_contract, :proxy_implementations]] => :optional,
+        [miner: [:names, :smart_contract, proxy_implementations_association()]] => :optional,
         :uncles => :optional,
         :nephews => :optional,
         :rewards => :optional,
@@ -334,7 +344,9 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     with {:ok, block} <- block_param_to_block(block_hash_or_number) do
       full_options =
         [
-          necessity_by_association: %{[address: [:names, :smart_contract, :proxy_implementations]] => :optional},
+          necessity_by_association: %{
+            [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+          },
           api?: true
         ]
         |> Keyword.merge(paging_options(params))
@@ -415,7 +427,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     with {:ok, reward_type_atom} <- celo_reward_type_to_atom(reward_type),
          {:ok, block} <-
            block_param_to_block(block_hash_or_number) do
-      address_associations = [:names, :smart_contract, :proxy_implementations]
+      address_associations = [:names, :smart_contract, proxy_implementations_association()]
 
       full_options =
         [

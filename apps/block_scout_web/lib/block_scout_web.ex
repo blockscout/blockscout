@@ -29,6 +29,7 @@ defmodule BlockScoutWeb do
       import BlockScoutWeb.ErrorHelper
       import BlockScoutWeb.Routers.AccountRouter.Helpers, except: [static_path: 2]
       import Plug.Conn
+      import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
       alias BlockScoutWeb.Routers.AdminRouter.Helpers, as: AdminRoutes
     end
@@ -63,6 +64,8 @@ defmodule BlockScoutWeb do
       import Explorer.Chain.CurrencyHelper, only: [divide_decimals: 2]
 
       import BlockScoutWeb.Routers.WebRouter.Helpers, except: [static_path: 2]
+
+      import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
     end
   end
 
@@ -80,6 +83,8 @@ defmodule BlockScoutWeb do
       use Phoenix.Channel
 
       use Gettext, backend: BlockScoutWeb.Gettext
+
+      import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
     end
   end
 

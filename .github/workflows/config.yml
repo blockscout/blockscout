@@ -49,7 +49,24 @@ jobs:
 
             // Add/remove CI matrix chain types here
             const defaultChainTypes = ["default"];
-            const chainTypes = ["ethereum", "polygon_zkevm", "rsk", "stability", "filecoin", "optimism", "arbitrum", "celo", "zetachain", "zksync", "shibarium", "blackfort", "scroll"];
+
+            const chainTypes = [
+              "arbitrum",
+              "blackfort",
+              "celo",
+              "ethereum",
+              "filecoin",
+              "optimism",
+              "polygon_zkevm",
+              "rsk",
+              "scroll",
+              "shibarium",
+              "stability",
+              "zetachain",
+              "zilliqa",
+              "zksync"
+            ];
+
             const extraChainTypes = ["suave", "polygon_edge"];
 
             // Chain type matrix we use in master branch
@@ -347,12 +364,10 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
 
       - name: Run cspell
-        uses: streetsidesoftware/cspell-action@v2
+        uses: streetsidesoftware/cspell-action@v6
         with:
-          files: |
-            **/*.ex*
-            **/*.eex
-            **/*.js"
+          use_cspell_files: true
+          incremental_files_only: false
 
   eslint:
     name: ESLint

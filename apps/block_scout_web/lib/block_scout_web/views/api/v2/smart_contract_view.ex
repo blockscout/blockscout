@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.Visualize.Sol2uml
 
@@ -26,13 +27,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     %{"items" => Enum.map(smart_contracts, &prepare_smart_contract_for_list/1), "next_page_params" => next_page_params}
   end
 
-  def render("smart_contract.json", %{
-        address: address,
-        implementations: implementations,
-        proxy_type: proxy_type,
-        conn: conn
-      }) do
-    prepare_smart_contract(address, implementations, proxy_type, conn)
+  def render("smart_contract.json", %{address: address, conn: conn}) do
+    prepare_smart_contract(address, conn)
   end
 
   def render("read_functions.json", %{functions: functions}) do
@@ -156,9 +152,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   # credo:disable-for-next-line
   def prepare_smart_contract(
-        %Address{smart_contract: %SmartContract{} = smart_contract} = address,
-        implementations,
-        proxy_type,
+        %Address{smart_contract: %SmartContract{} = smart_contract, proxy_implementations: implementations} = address,
         conn
       ) do
     bytecode_twin = SmartContract.get_address_verified_bytecode_twin_contract(address.hash, @api_true)
@@ -202,8 +196,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "has_methods_write" => write_methods?,
       "has_methods_read_proxy" => is_proxy,
       "has_methods_write_proxy" => is_proxy && write_methods?,
-      "proxy_type" => proxy_type,
-      "implementations" => implementations,
+      "proxy_type" => implementations && implementations.proxy_type,
+      "implementations" => Proxy.proxy_object_info(implementations),
       "sourcify_repo_url" =>
         if(smart_contract.verified_via_sourcify && smart_contract_verified,
           do: AddressContractView.sourcify_repo_url(address.hash, smart_contract.partially_verified)
@@ -236,19 +230,22 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_blueprint" => if(smart_contract.is_blueprint, do: smart_contract.is_blueprint, else: false)
     }
     |> Map.merge(bytecode_info(address))
-    |> add_zksync_info(target_contract)
-    |> chain_type_fields(%{address_hash: verified_twin_address_hash, field_prefix: "verified_twin"})
+    |> chain_type_fields(%{
+      address_hash: verified_twin_address_hash,
+      field_prefix: "verified_twin",
+      target_contract: target_contract
+    })
   end
 
-  def prepare_smart_contract(address, implementations, proxy_type, conn) do
+  def prepare_smart_contract(%Address{proxy_implementations: implementations} = address, conn) do
     read_custom_abi? = AddressView.has_address_custom_abi_with_read_functions?(conn, address.hash)
     write_custom_abi? = AddressView.has_address_custom_abi_with_write_functions?(conn, address.hash)
 
     %{
       "has_custom_methods_read" => read_custom_abi?,
       "has_custom_methods_write" => write_custom_abi?,
-      "proxy_type" => proxy_type,
-      "implementations" => implementations
+      "proxy_type" => implementations && implementations.proxy_type,
+      "implementations" => Proxy.proxy_object_info(implementations)
     }
     |> Map.merge(bytecode_info(address))
   end
@@ -287,16 +284,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           "deployed_bytecode" => contract_code,
           "creation_bytecode" => AddressContractView.creation_code(address)
         }
-    end
-  end
-
-  defp add_zksync_info(smart_contract_info, target_contract) do
-    if Application.get_env(:explorer, :chain_type) == :zksync do
-      Map.merge(smart_contract_info, %{
-        "zk_compiler_version" => target_contract.zk_compiler_version
-      })
-    else
-      smart_contract_info
     end
   end
 
@@ -372,13 +359,18 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       }
 
     smart_contract_info
-    |> add_zksync_info(smart_contract)
+    |> chain_type_fields(%{
+      target_contract: smart_contract
+    })
   end
 
   defp smart_contract_language(smart_contract) do
     cond do
       smart_contract.is_vyper_contract ->
         "vyper"
+
+      not is_nil(smart_contract.language) ->
+        smart_contract.language
 
       is_nil(smart_contract.abi) ->
         "yul"
@@ -456,6 +448,19 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       defp chain_type_fields(result, params) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address(result, params)
+      end
+
+    :arbitrum ->
+      defp chain_type_fields(result, %{target_contract: target_contract}) do
+        result
+        |> Map.put("package_name", target_contract.package_name)
+        |> Map.put("github_repository_metadata", target_contract.github_repository_metadata)
+      end
+
+    :zksync ->
+      defp chain_type_fields(result, %{target_contract: target_contract}) do
+        result
+        |> Map.put("zk_compiler_version", target_contract.zk_compiler_version)
       end
 
     _ ->

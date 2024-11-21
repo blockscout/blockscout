@@ -118,12 +118,12 @@ defmodule BlockScoutWeb.AddressContractView do
     {:ok, contract_code}
   end
 
-  def creation_code(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
-    address.contracts_creation_internal_transaction.init
-  end
-
   def creation_code(%Address{contracts_creation_transaction: %Transaction{}} = address) do
     address.contracts_creation_transaction.input
+  end
+
+  def creation_code(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contracts_creation_internal_transaction.init
   end
 
   def creation_code(%Address{contracts_creation_transaction: nil}) do

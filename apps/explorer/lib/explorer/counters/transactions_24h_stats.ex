@@ -10,7 +10,7 @@ defmodule Explorer.Counters.Transactions24hStats do
   import Ecto.Query
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{DenormalizationHelper, Transaction}
 
   @transaction_count_name "transaction_count_24h"
   @transaction_fee_sum_name "transaction_fee_sum_24h"
@@ -94,14 +94,17 @@ defmodule Explorer.Counters.Transactions24hStats do
     sum_query = dynamic([_, _], sum(^fee_query))
     avg_query = dynamic([_, _], avg(^fee_query))
 
-    query =
+    base_query =
       from(transaction in Transaction,
         join: block in assoc(transaction, :block),
-        where: block.timestamp >= ago(24, "hour"),
         select: %{count: count(transaction.hash)},
         select_merge: ^%{fee_sum: sum_query},
         select_merge: ^%{fee_average: avg_query}
       )
+
+    query =
+      base_query
+      |> where_block_timestamp_in_last_24_hours()
 
     %{
       count: count,
@@ -123,6 +126,14 @@ defmodule Explorer.Counters.Transactions24hStats do
       counter_type: @transaction_fee_average_name,
       value: fee_average
     })
+  end
+
+  defp where_block_timestamp_in_last_24_hours(query) do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      where(query, [transaction, _block], transaction.block_timestamp >= ago(24, "hour"))
+    else
+      where(query, [_transaction, block], block.timestamp >= ago(24, "hour"))
+    end
   end
 
   @doc """

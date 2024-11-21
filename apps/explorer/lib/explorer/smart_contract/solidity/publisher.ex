@@ -72,6 +72,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   def publish_with_standard_json_input(%{"address_hash" => address_hash} = params, json_input) do
     Logger.info(@sc_verification_via_standard_json_input_started)
+    params = maybe_add_zksync_specific_data(params)
 
     case Verifier.evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
       {:ok,
@@ -404,7 +405,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         is_yul: params["is_yul"] || false,
         compiler_settings: clean_compiler_settings,
         license_type: prepare_license_type(params["license_type"]) || :none,
-        is_blueprint: params["is_blueprint"] || false
+        is_blueprint: params["is_blueprint"] || false,
+        language: (is_nil(abi) && :yul) || :solidity
       }
 
     base_attributes
@@ -451,5 +453,13 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       end)
 
     Map.put(params, "external_libraries", clean_external_libraries)
+  end
+
+  defp maybe_add_zksync_specific_data(params) do
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      Map.put(params, "constructor_arguments", SmartContract.zksync_get_constructor_arguments(params["address_hash"]))
+    else
+      params
+    end
   end
 end

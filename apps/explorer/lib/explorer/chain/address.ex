@@ -58,6 +58,13 @@ defmodule Explorer.Chain.Address.Schema do
                             ]
                           end
 
+                        :zksync ->
+                          quote do
+                            [
+                              field(:contract_code_refetched, :boolean)
+                            ]
+                          end
+
                         _ ->
                           []
                       end)
@@ -131,16 +138,19 @@ defmodule Explorer.Chain.Address do
   alias Ecto.Changeset
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
-  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
-  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, Transaction}
   alias Explorer.{Chain, PagingOptions, Repo}
+
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
   @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
                                 :filecoin ->
                                   ~w(filecoin_id filecoin_robust filecoin_actor_type)a
+
+                                :zksync ->
+                                  ~w(contract_code_refetched)a
 
                                 _ ->
                                   []
@@ -195,6 +205,9 @@ defmodule Explorer.Chain.Address do
        * `filecoin_native_address` - robust f0/f1/f2/f3/f4 Filecoin address
        * `filecoin_id_address` - short f0 Filecoin address that may change during chain reorgs
        * `filecoin_actor_type` - type of actor associated with the Filecoin address
+      """
+    :zksync -> """
+        * `contract_code_refetched` - true when Explorer.Migrator.RefetchContractCodes handled this address, or it's unnecessary (for addresses inserted after this)
       """
     _ -> ""
   end}
@@ -530,6 +543,13 @@ defmodule Explorer.Chain.Address do
   defp fetch_top_addresses(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    necessity_by_association =
+      Keyword.get(options, :necessity_by_association, %{
+        :names => :optional,
+        :smart_contract => :optional,
+        proxy_implementations_association() => :optional
+      })
+
     case paging_options do
       %PagingOptions{key: {0, _hash}} ->
         []
@@ -539,11 +559,11 @@ defmodule Explorer.Chain.Address do
           from(a in Address,
             where: a.fetched_coin_balance > ^0,
             order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-            preload: [:names, :smart_contract, :proxy_implementations],
             select: {a, a.transactions_count}
           )
 
         base_query
+        |> Chain.join_associations(necessity_by_association)
         |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
         |> page_addresses(paging_options)
         |> limit(^paging_options.page_size)
@@ -638,26 +658,6 @@ defmodule Explorer.Chain.Address do
       [set: [contract_code: contract_code, updated_at: now]],
       timeout: @timeout
     )
-  end
-
-  @doc """
-  Prepares implementations object and proxy type from address
-  """
-  @spec parse_implementation_and_proxy_type(__MODULE__.t()) :: {list(), String.t() | nil}
-  def parse_implementation_and_proxy_type(address) do
-    with %__MODULE__{
-           proxy_implementations: %Implementation{
-             address_hashes: address_hashes,
-             names: names,
-             proxy_type: proxy_type
-           }
-         } <- address,
-         false <- address_hashes && Enum.empty?(address_hashes) do
-      {Proxy.proxy_object_info(address_hashes, names), proxy_type}
-    else
-      _ ->
-        {[], nil}
-    end
   end
 
   @doc """

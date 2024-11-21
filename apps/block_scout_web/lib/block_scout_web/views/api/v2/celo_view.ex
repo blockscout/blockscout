@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   @moduledoc """
   View functions for rendering Celo-related data in JSON format.
   """
+  use BlockScoutWeb, :view
 
   require Logger
 
@@ -20,7 +21,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     necessity_by_association: %{
       :names => :optional,
       :smart_contract => :optional,
-      :proxy_implementations => :optional
+      proxy_implementations_association() => :optional
     },
     api?: true
   ]

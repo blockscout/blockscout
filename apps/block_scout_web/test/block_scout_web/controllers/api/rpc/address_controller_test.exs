@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
   alias BlockScoutWeb.API.RPC.AddressController
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Events.Subscriber, Transaction, Wei}
   alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
@@ -2371,6 +2372,39 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   describe "tokennfttx" do
     setup do
       %{params: %{"module" => "account", "action" => "tokennfttx"}}
+    end
+
+    test "API endpoint works after `transactions` table denormalization finished", %{conn: conn, params: params} do
+      BackgroundMigrations.set_tt_denormalization_finished(true)
+
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      token = insert(:token, name: "NFT", type: "ERC-721")
+
+      insert(:token_transfer,
+        transaction: transaction,
+        from_address: address,
+        block_number: transaction.block_number,
+        token_contract_address: token.contract_address,
+        token_type: token.type,
+        token_ids: [100_500]
+      )
+
+      new_params =
+        params
+        |> Map.put("address", Explorer.Chain.Hash.to_string(address.hash))
+
+      response =
+        conn
+        |> get("/api", new_params)
+
+      assert response.status == 200
+      BackgroundMigrations.set_tt_denormalization_finished(false)
     end
 
     test "with missing address and contract address hash", %{conn: conn, params: params} do

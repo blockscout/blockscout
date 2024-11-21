@@ -53,6 +53,7 @@ The repo contains built-in configs for different JSON RPC clients without need t
 - Running explorer with external backend: `docker-compose -f external-backend.yml up -d`
 - Running explorer with external frontend: `docker-compose -f external-frontend.yml up -d`
 - Running all microservices: `docker-compose -f microservices.yml up -d`
+- Running only explorer without microservices: `docker-compose -f no-services.yml up -d`
 
 All of the configs assume the Ethereum JSON RPC is running at http://localhost:8545.
 

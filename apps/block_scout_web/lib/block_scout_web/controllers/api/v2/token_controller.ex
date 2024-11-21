@@ -365,7 +365,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     case Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
       {:ok, token_instance} ->
         token_instance
-        |> Chain.select_repo(@api_true).preload(owner: [:names, :smart_contract, :proxy_implementations])
+        |> Chain.select_repo(@api_true).preload(owner: [:names, :smart_contract, proxy_implementations_association()])
         |> Chain.put_owner_to_token_instance(token, @api_true)
 
       {:error, :not_found} ->

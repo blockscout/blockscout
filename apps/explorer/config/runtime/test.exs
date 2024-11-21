@@ -53,6 +53,7 @@ config :explorer, Explorer.Migrator.SanitizeMissingTokenBalances, enabled: false
 config :explorer, Explorer.Migrator.SanitizeReplacedTransactions, enabled: false
 config :explorer, Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, enabled: false
 config :explorer, Explorer.Migrator.SanitizeDuplicatedLogIndexLogs, enabled: false
+config :explorer, Explorer.Migrator.RefetchContractCodes, enabled: false
 
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender
