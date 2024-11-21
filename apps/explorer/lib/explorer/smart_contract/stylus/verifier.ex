@@ -9,13 +9,7 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
     - Compares the resulting bytecode against the deployed contract bytecode
     - Returns verification details including ABI and contract metadata
   """
-
-  import Explorer.SmartContract.Helper,
-    only: [
-      fetch_data_for_stylus_verification: 1
-    ]
-
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.SmartContract.StylusVerifierInterface
 
   require Logger
@@ -85,5 +79,30 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
 
   defp evaluate_authenticity_inner(false, _address_hash, _params) do
     {:error, "Stylus verification is disabled"}
+  end
+
+  # Retrieves the transaction hash that created a Stylus smart contract.
+
+  # Looks up the creation transaction for the given contract address and returns its hash.
+  # Checks both regular transactions and internal transactions.
+
+  # ## Parameters
+  # - `address_hash`: The address hash of the smart contract as a binary or `t:Hash.Address.t/0`
+
+  # ## Returns
+  # - `t:Hash.t/0` - The transaction hash if found
+  # - `nil` - If no creation transaction exists
+  @spec fetch_data_for_stylus_verification(binary() | Hash.Address.t()) :: Hash.t() | nil
+  defp fetch_data_for_stylus_verification(address_hash) do
+    case SmartContract.creation_transaction_with_bytecode(address_hash) do
+      %{transaction: transaction} ->
+        transaction.hash
+
+      %{internal_transaction: internal_transaction} ->
+        internal_transaction.transaction_hash
+
+      _ ->
+        nil
+    end
   end
 end

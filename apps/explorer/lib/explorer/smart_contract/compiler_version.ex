@@ -62,26 +62,32 @@ defmodule Explorer.SmartContract.CompilerVersion do
     end
   end
 
-  defp fetch_compiler_versions(compiler_list_fn, compiler_type) do
+  defp fetch_compiler_versions(compiler_list_fn, :zk = compiler_type) do
     if RustVerifierInterface.enabled?() do
       fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type)
     else
       if compiler_type == :zk do
         {:ok, []}
-      else
-        headers = [{"Content-Type", "application/json"}]
+      end
+    end
+  end
 
-        # credo:disable-for-next-line
-        case HTTPoison.get(source_url(compiler_type), headers) do
-          {:ok, %{status_code: 200, body: body}} ->
-            {:ok, format_data(body, compiler_type)}
+  defp fetch_compiler_versions(compiler_list_fn, compiler_type) do
+    if RustVerifierInterface.enabled?() do
+      fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type)
+    else
+      headers = [{"Content-Type", "application/json"}]
 
-          {:ok, %{status_code: _status_code, body: body}} ->
-            {:error, Helper.decode_json(body)["error"]}
+      # credo:disable-for-next-line
+      case HTTPoison.get(source_url(compiler_type), headers) do
+        {:ok, %{status_code: 200, body: body}} ->
+          {:ok, format_data(body, compiler_type)}
 
-          {:error, %{reason: reason}} ->
-            {:error, reason}
-        end
+        {:ok, %{status_code: _status_code, body: body}} ->
+          {:error, Helper.decode_json(body)["error"]}
+
+        {:error, %{reason: reason}} ->
+          {:error, reason}
       end
     end
   end
