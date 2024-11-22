@@ -768,10 +768,10 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
             )
             |> Repo.preload([:token])
 
-          Decimal.div(
-            Decimal.mult(ctb.value, ctb.token.fiat_value),
-            Decimal.new(10 ** Decimal.to_integer(ctb.token.decimals))
-          )
+          ctb.value
+          |> Decimal.mult(ctb.token.fiat_value)
+          |> Decimal.div(Decimal.new(10 ** Decimal.to_integer(ctb.token.decimals)))
+          |> Decimal.round(16)
         end
 
       values_1 =
@@ -782,24 +782,24 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
             )
             |> Repo.preload([:token])
 
-          Decimal.div(
-            Decimal.mult(ctb.value, ctb.token.fiat_value),
-            Decimal.new(10 ** Decimal.to_integer(ctb.token.decimals))
-          )
+          ctb.value
+          |> Decimal.mult(ctb.token.fiat_value)
+          |> Decimal.div(Decimal.new(10 ** Decimal.to_integer(ctb.token.decimals)))
+          |> Decimal.round(16)
         end
         |> Enum.sort(fn x1, x2 -> Decimal.compare(x1, x2) in [:gt, :eq] end)
         |> Enum.take(150)
 
       [wa2, wa1] = conn |> get("/api/account/v2/user/watchlist") |> json_response(200) |> Map.get("items")
 
-      assert wa1["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(13) ==
-               values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(13)
+      assert wa1["tokens_fiat_value"] |> Decimal.new() ==
+               values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end)
 
       assert wa1["tokens_count"] == 150
       assert wa1["tokens_overflow"] == false
 
-      assert wa2["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(13) ==
-               values_1 |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(13)
+      assert wa2["tokens_fiat_value"] |> Decimal.new() ==
+               values_1 |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end)
 
       assert wa2["tokens_count"] == 150
       assert wa2["tokens_overflow"] == true
@@ -824,10 +824,10 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
             )
             |> Repo.preload([:token])
 
-          Decimal.div(
-            Decimal.mult(ctb.value, ctb.token.fiat_value),
-            Decimal.new(10 ** Decimal.to_integer(ctb.token.decimals))
-          )
+          ctb.value
+          |> Decimal.mult(ctb.token.fiat_value)
+          |> Decimal.div(Decimal.new(10 ** Decimal.to_integer(ctb.token.decimals)))
+          |> Decimal.round(16)
         end
 
       token = insert(:token, fiat_value: nil)
@@ -840,8 +840,8 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
 
       [wa1] = conn |> get("/api/account/v2/user/watchlist") |> json_response(200) |> Map.get("items")
 
-      assert wa1["tokens_fiat_value"] |> Decimal.new() |> Decimal.round(13) ==
-               values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end) |> Decimal.round(13)
+      assert wa1["tokens_fiat_value"] |> Decimal.new() ==
+               values |> Enum.reduce(Decimal.new(0), fn x, acc -> Decimal.add(x, acc) end)
 
       assert wa1["tokens_count"] == 150
       assert wa1["tokens_overflow"] == false
