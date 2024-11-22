@@ -64,9 +64,9 @@ defmodule Explorer.Chain.CSVExport.Celo.AddressElectionRewardsCsvExporter do
           # EpochTxType
           Map.get(reward_type_to_human_readable, reward.type, "N/A"),
           # ValidatorAddress
-          (reward.type in ~w(group delegated_payment) && reward.associated_account_address_hash) || "N/A",
+          (reward.type in ~w(group delegated_payment)a && reward.associated_account_address_hash) || "N/A",
           # ValidatorGroupAddress
-          (reward.type in ~w(validator voter) && reward.associated_account_address_hash) || "N/A",
+          (reward.type in ~w(validator voter)a && reward.associated_account_address_hash) || "N/A",
           # ToAddress
           reward.account_address_hash,
           # Type
