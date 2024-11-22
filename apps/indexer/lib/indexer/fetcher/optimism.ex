@@ -192,7 +192,7 @@ defmodule Indexer.Fetcher.Optimism do
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: optimism_l1_rpc,
+        urls: [optimism_l1_rpc],
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
