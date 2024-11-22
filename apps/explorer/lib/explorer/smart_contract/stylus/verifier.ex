@@ -68,7 +68,7 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
           {:ok, map()} | {:error, any()}
   defp evaluate_authenticity_inner(true, address_hash, params) do
     transaction_hash = fetch_data_for_stylus_verification(address_hash)
-    rpc_endpoint = Application.get_env(:explorer, :json_rpc_named_arguments)[:transport_options][:url]
+    rpc_endpoint = Application.get_env(:explorer, :json_rpc_named_arguments)[:transport_options][:urls] |> List.first()
 
     params
     |> Map.take(["cargo_stylus_version", "repository_url", "commit", "path_prefix"])
