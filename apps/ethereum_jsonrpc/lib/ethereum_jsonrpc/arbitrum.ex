@@ -313,20 +313,20 @@ defmodule EthereumJSONRPC.Arbitrum do
   end
 
   @doc """
-  Retrieves the block number in which the rollup node with the provided index was created.
+    Retrieves the L1 block number in which the rollup node with the provided index was created.
 
-  This function fetches node information by specified node index
-  It invokes Rollup contract method `getNode(nodeNum)` to obtain the required data.
+    This function fetches node information by specified node index
+    It invokes Rollup contract method `getNode(nodeNum)` to obtain the required data.
 
-  ## Parameters
-  - `rollup_address`: The address of the Arbitrum rollup contract from which
-                    information is being retrieved.
-  - `node_index`: index of the requested rollup node
-  - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection (L1).
+    ## Parameters
+    - `rollup_address`: The address of the Arbitrum rollup contract from which
+                      information is being retrieved.
+    - `node_index`: index of the requested rollup node
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection (L1).
 
-  ## Returns
-  - {:ok, number} - where `number` is block number (L1) in which the rollup node was created
-    {:error, _} - in case of any failure
+    ## Returns
+    - {:ok, number} - where `number` is block number (L1) in which the rollup node was created
+      {:error, _} - in case of any failure
   """
   @spec get_node_creation_block_number(
           EthereumJSONRPC.address(),
@@ -431,24 +431,27 @@ defmodule EthereumJSONRPC.Arbitrum do
     "0x" <> padded_hex
   end
 
-  # Calculates the proof needed to claim L2->L1 message
-  #
-  # This function calls the `constructOutboxProof` method of the Node Interface
-  # to obtain the data needed for manual message claiming
-  #
-  # Parameters:
-  # - `node_interface_address`: The address of the node interface contract.
-  # - `size`: Index of the latest confirmed node (cumulative number of
-  #    confirmed L2->L1 transactions)
-  # - `leaf`: position of the L2->L1 message (`position` field of the associated
-  #    `L2ToL1Tx` event). It should be less than `size`
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC
-  #   connection.
-  #
-  # Returns:
-  # `{:ok, [send, root, proof]}`, where
-  #    `proof` - an array of 32-bytes values which are needed to execute messages.
-  # `{:error, _}` in case of size less or equal leaf or RPC error
+  @doc """
+    Calculates the proof needed to claim an L2->L1 message.
+
+    Calls the `constructOutboxProof` method of the Node Interface contract on the
+    rollup to obtain the data needed for an L2->L1 message claim.
+
+    ## Parameters
+    - `node_interface_address`: Address of the node interface contract
+    - `size`: Index of the latest confirmed node (cumulative number of confirmed
+      L2->L1 transactions)
+    - `leaf`: Position of the L2->L1 message (`position` field of the associated
+      `L2ToL1Tx` event). Must be less than `size`
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC
+      connection
+
+    ## Returns
+    - `{:ok, [send, root, proof]}` where `proof` is an array of 32-byte values
+      needed to execute messages
+    - `{:error, _}` if size is less than or equal to leaf, or if an RPC error
+      occurs
+  """
   @spec construct_outbox_proof(
           EthereumJSONRPC.address(),
           non_neg_integer(),

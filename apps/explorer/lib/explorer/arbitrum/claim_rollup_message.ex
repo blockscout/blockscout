@@ -1,13 +1,16 @@
 defmodule Explorer.Arbitrum.ClaimRollupMessage do
   @moduledoc """
-  The module is responsible for getting withdrawal list from the Arbitrum transaction.
-  The associated transaction should emit at least one `L2ToL1Tx` event  which means
-  the L2 -> L1 message was initiated.
+    Provides functionality to read L2->L1 messages and prepare withdrawal claims in the Arbitrum protocol.
 
-  Also it helps to generate calldata for `executeTransaction` method of the `Outbox`
-  contact deployed on L1 to finalize initiated withdrawal
+    This module allows:
+    - Retrieving L2->L1 messages from a transaction's logs and determining their current
+      status. This is used when a user has a transaction hash and needs to identify
+      which messages from this transaction can be claimed on L1.
+    - Generating calldata for claiming confirmed withdrawals through the L1 Outbox
+      contract using a specific message ID. This is typically used when the message ID
+      is already known (e.g., from transaction details or L2->L1 messages list in the UI).
 
-  The details of L2-to-L1 messaging can be found in the following link:
+    For detailed information about Arbitrum's L2->L1 messaging system, see:
   https://docs.arbitrum.io/how-arbitrum-works/arbos/l2-l1-messaging
   """
 
@@ -118,17 +121,22 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   }
 
   @doc """
-    Retrieves all L2ToL1Tx events from she specified transaction and convert them to the withdrawals
+    Retrieves all L2->L1 messages initiated by a transaction.
 
-    In the most cases the transaction initiates a single L2->L1 message.
-    But in general the transaction can include several messages
+    This function scans the transaction logs for L2ToL1Tx events and converts them
+    into withdrawal objects. For each event, it attempts to find a corresponding
+    message record in the database to determine the message status. If a message
+    record is not found (e.g., due to database inconsistency or fetcher issues),
+    the function attempts to restore the message status through requests to the RPC
+    node.
 
     ## Parameters
-    - `transaction_hash`: The transaction hash which will scanned for L2ToL1Tx events.
+    - `transaction_hash`: The hash of the transaction to scan for L2ToL1Tx events
 
     ## Returns
-    - Array of `Explorer.Arbitrum.Withdraw.t()` objects each of them represent
-      a single message originated by the given transaction.
+    - A list of `Explorer.Arbitrum.Withdraw.t()` objects, each representing a single
+      L2->L1 message initiated by the transaction. The list may be empty if no
+      L2ToL1Tx events are found.
   """
   @spec transaction_to_withdrawals(Hash.Full.t()) :: [Explorer.Arbitrum.Withdraw.t()]
   def transaction_to_withdrawals(transaction_hash) do
@@ -149,20 +157,28 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   end
 
   @doc """
-    Construct calldata for claiming L2->L1 message on L1 chain
+    Constructs calldata for claiming an L2->L1 message on the L1 chain.
 
-    To claim a message on L1 user should use method of th Outbox smart contract:
-    `executeTransaction(proof, index, l2Sender, to, l2Block, l1Block, l2Timestamp, value, data)`
-    The first parameter, outbox proof should be calculated separately with NodeInterface's
-    method `constructOutboxProof(size, leaf)`.
+    This function retrieves the L2->L1 message record from the database by the given
+    message ID and generates the proof and calldata needed for executing the message
+    through the Outbox contract on L1. Only messages with :confirmed status can be
+    claimed.
 
     ## Parameters
-    - `message_id`: `position` field of the associated `L2ToL1Tx` event.
+    - `message_id`: The unique identifier of the L2->L1 message (`position` field of
+      the associated `L2ToL1Tx` event)
 
     ## Returns
-    - `{:ok, [contract_address: String, calldata: String]}` | `{:error, _}`
-      where `contract_address` - the address where claim transaction should be sent (Outbox on L1),
-            `calldata` - transaction raw calldata starting with selector
+    - `{:ok, [contract_address: String.t(), calldata: String.t()]}` where:
+      * `contract_address` is the L1 Outbox contract address
+      * `calldata` is the ABI-encoded executeTransaction function call
+    - `{:error, :not_found}` if either:
+      * the message with the given ID cannot be found in the database
+      * the associated L2ToL1Tx event log cannot be found
+    - `{:error, :initiated}` if the message is not yet confirmed
+    - `{:error, :sent}` if the message is not yet confirmed
+    - `{:error, :relayed}` if the message has already been claimed
+    - `{:error, :internal_error}` if the message status is unknown
   """
   @spec claim(non_neg_integer()) :: {:ok, [contract_address: String.t(), calldata: String.t()]} | {:error, term()}
   def claim(message_id) do
@@ -176,7 +192,27 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  # Construct a claim transaction calldata based on the provided message
+  # Constructs calldata for claiming an L2->L1 message on L1.
+  #
+  # This function retrieves the L2ToL1Tx event log associated with the message and
+  # verifies the message status. Only messages with :confirmed status can be claimed.
+  # For confirmed messages, it generates calldata with the proof needed for executing
+  # the message through the Outbox contract on L1.
+  #
+  # ## Parameters
+  # - `message`: The L2->L1 message record containing transaction details and status
+  #
+  # ## Returns
+  # - `{:ok, [contract_address: binary(), calldata: binary()]}` where:
+  #   * `contract_address` is the L1 Outbox contract address
+  #   * `calldata` is the ABI-encoded executeTransaction function call
+  # - `{:error, :not_found}` if either:
+  #   * the associated L2ToL1Tx event log cannot be found
+  #   * the withdrawal cannot be found in the transaction logs
+  # - `{:error, :initiated}` if the message is not yet confirmed
+  # - `{:error, :sent}` if the message is not yet confirmed
+  # - `{:error, :relayed}` if the message has already been claimed
+  # - `{:error, :internal_error}` if the message status is unknown
   @spec claim_message(Explorer.Chain.Arbitrum.Message.t()) ::
           {:ok, list({:contract_address, binary()} | {:calldata, binary()})}
           | {:error, term()}
@@ -216,10 +252,22 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  # Convert `Explorer.Chain.Arbitrum.Message.t()` with an associated L2ToL1Tx event data
-  # (`Explorer.Chain.Log.t()`) to the `Explorer.Arbitrum.Withdraw.t()` structure
-  # We need associated event to extract additional fields which are not reflected in the database message
-  # The method doesn't request additional data from the RPC or DB, it just parses the provided structures
+  # Converts an L2ToL1Tx event log into a withdrawal structure using the provided message information.
+  #
+  # This function extracts withdrawal details from the L2ToL1Tx event log and combines
+  # them with the message status from the database. For messages with status
+  # :initiated or :sent, it verifies the actual message status since the database
+  # status might be outdated if Arbitrum-specific fetchers were stopped. Also
+  # extracts token transfer information if the message represents a token withdrawal.
+  #
+  # ## Parameters
+  # - `log`: The L2ToL1Tx event log containing withdrawal information
+  # - `message`: The message record from database containing status information, or
+  #   `nil` to fall back to `log_to_withdrawal/1`
+  #
+  # ## Returns
+  # - An Explorer.Arbitrum.Withdraw struct representing the withdrawal, or
+  # - `nil` if the message ID from the log doesn't match the provided message
   @spec log_to_withdrawal(
           Explorer.Chain.Log.t(),
           Explorer.Chain.Arbitrum.Message.t() | nil
@@ -247,6 +295,8 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       {:ok, caller_address} = Hash.Address.cast(fields.caller)
       {:ok, destination_address} = Hash.Address.cast(fields.destination)
 
+      # For :initiated and :sent statuses, we need to verify the actual message status
+      # since the database status could be outdated if Arbitrum fetchers were stopped.
       status =
         case message.status do
           stat when stat == :initiated or stat == :sent ->
@@ -277,10 +327,21 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  # Convert L2ToL1Tx event to the structure describing L2->L1 withdrawal.
-  # To restore the withdrawal status, the amount of messages sent from L2 up to
-  # the most recent confirmed L2 block is requested. The status is determined based
-  # on the comparison between the received amount and the message ID.
+  # Converts an L2ToL1Tx event log into a withdrawal structure when the message
+  # information is not available in the database.
+  #
+  # This function parses the event log data, extracts both the basic withdrawal
+  # information and any associated token transfer data if the message represents a
+  # token withdrawal (by examining the finalizeInboundTransfer calldata). Since the
+  # message is not found in the database, the function attempts to determine its
+  # current status by comparing the message ID with the total count of messages sent
+  # from L2.
+  #
+  # ## Parameters
+  # - `log`: The L2ToL1Tx event log containing withdrawal information
+  #
+  # ## Returns
+  # - An Explorer.Arbitrum.Withdraw struct representing the withdrawal
   @spec log_to_withdrawal(Explorer.Chain.Log.t()) :: Explorer.Arbitrum.Withdraw.t()
   defp log_to_withdrawal(log) do
     # getting needed fields from the L2ToL1Tx event
@@ -314,9 +375,24 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     }
   end
 
-  # Retrieve the actual status of the message with provided message ID
-  # The method uses the RPC node to determine the status of the message
-  # The method currently doesn't distinguish between `:initiated` and `:sent` statuses
+  # Guesses the actual status of an L2->L1 message by analyzing data from the RPC node and the database
+  #
+  # The function first checks if the message has been spent (claimed) on L1 by
+  # querying the Outbox contract. If the message is spent, its status is `:relayed`.
+  # Otherwise, the function determines the message status by comparing its ID with
+  # the total count of messages sent from rollup up to the most recent confirmed
+  # rollup block. For L2->L1 message claiming purposes it is not needed to distinguish
+  # between `:sent` and `:initiated` statuses since in either of this statuses means
+  # that the message cannot be claimed yet.
+  #
+  # ## Parameters
+  # - `message_id`: The unique identifier of the L2->L1 message
+  #
+  # ## Returns
+  # - `:unknown` if unable to determine the message status
+  # - `:sent` if the message is not yet confirmed
+  # - `:confirmed` if the message is confirmed but not yet claimed
+  # - `:relayed` if the message has been successfully claimed on L1
   @spec get_actual_message_status(non_neg_integer()) :: :unknown | :sent | :confirmed | :relayed
   defp get_actual_message_status(message_id) do
     # getting needed L1\L2 properties: RPC URL and Main Rollup contract address
@@ -346,9 +422,10 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  # Internal routine used to convert `Explorer.Chain.Log.t()` structure
-  # into the `EthereumJSONRPC.Arbitrum.event_data()` type. It's needed
-  # to call `EthereumJSONRPC.Arbitrum.l2_to_l1_event_parse(event_data)` method
+  # Converts an Explorer.Chain.Log struct into a map suitable for L2->L1 event parsing.
+  #
+  # This function transforms the log data into a format required by the
+  # `EthereumJSONRPC.Arbitrum.l2_to_l1_event_parse/1` function.
   @spec convert_explorer_log_to_map(Explorer.Chain.Log.t()) :: %{
           :data => binary(),
           :second_topic => binary(),
@@ -362,12 +439,20 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     }
   end
 
-  # Internal routine used to extract needed fields from the `finalizeInboundTransfer(...)` calldata.
-  # This calldata encapsulated into the L2ToL1Tx event and supposed to be executed on the TokenBridge contract
-  # during the withdraw claiming. It used here to obtain tokens withdraw info from the associated event.
-  # The function returns the token address, destination address, and amount of the token to withdraw
-  # In case of the provided data is void or it doesn't correspond to the `finalizeInboundTransfer` method
-  # `nil` will be returned
+  # Extracts token withdrawal information from the finalizeInboundTransfer calldata.
+  #
+  # The calldata is encapsulated in the L2ToL1Tx event and is meant to be executed on
+  # the TokenBridge contract during withdrawal claiming.
+  #
+  # ## Parameters
+  # - `data`: Binary data containing the finalizeInboundTransfer calldata
+  #
+  # ## Returns
+  # - Map containing token `address`, `destination` address and token `amount` if the
+  #   data corresponds to finalizeInboundTransfer
+  # - `nil` if data is void or doesn't match finalizeInboundTransfer method (which
+  #   happens when the L2->L1 message is for arbitrary data transfer, such as a remote
+  #   call of a smart contract on L1)
   @spec decode_withdraw_token_data(binary()) ::
           %{
             address: Explorer.Chain.Hash.Address.t(),
@@ -401,7 +486,23 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     nil
   end
 
-  # Builds a claim transaction calldata based on extended withdraw info
+  # Builds a claim transaction calldata for executing an L2->L1 message on L1.
+  #
+  # Constructs calldata containing the proof needed to execute a withdrawal message
+  # through the Outbox contract on L1. The function performs the following steps:
+  # 1. Gets the total count of L2->L1 messages (size)
+  # 2. Constructs the outbox proof using NodeInterface contract on the rollup
+  # 3. Encodes the executeTransaction function call with the proof and message data
+  #
+  # ## Parameters
+  # - `withdrawal`: A withdrawal message containing all necessary data for claim
+  #   construction.
+  #
+  # ## Returns
+  # - `{:ok, [contract_address: binary(), calldata: binary()]}` where:
+  #   * `contract_address` is the L1 Outbox contract address
+  #   * `calldata` is the ABI-encoded executeTransaction function call
+  # - `{:error, :internal_error}` if proof construction fails
   @spec construct_claim(Explorer.Arbitrum.Withdraw.t()) ::
           {:ok, [contract_address: binary(), calldata: binary()]} | {:error, :internal_error}
   defp construct_claim(withdrawal) do
@@ -462,9 +563,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     |> Enum.map(fn p -> "0x" <> Base.encode16(p, case: :lower) end)
   end
 
-  # Retrieving `size` parameter needed to construct outbox proof
-  # The method primary try to get the value from the local database
-  # In case of any errors it fallbacks to the RPC request
+  # Retrieves the size parameter (total count of L2->L1 messages) needed for outbox
+  # proof construction. First attempts to fetch from the local database, falling back
+  # to RPC requests if necessary.
   @spec get_size_for_proof() :: non_neg_integer() | nil
   defp get_size_for_proof do
     case get_size_for_proof_from_database() do
@@ -483,8 +584,16 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  # Retrieving `size` parameter needed to construct outbox proof
-  # using the data from the local database
+  # Retrieves the size parameter (total count of L2->L1 messages) needed for outbox
+  # proof construction using data from the database.
+  #
+  # The function gets the highest confirmed block number and retrieves its
+  # associated send_count value, which represents the cumulative count of L2->L1
+  # messages.
+  #
+  # ## Returns
+  # - Total count of L2->L1 messages up to the latest confirmed rollup block
+  # - `nil` if the required data is not found in the database
   @spec get_size_for_proof_from_database() :: non_neg_integer() | nil
   defp get_size_for_proof_from_database do
     case ArbitrumReader.highest_confirmed_block() do
@@ -499,8 +608,25 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  # Retrieving `size` parameter needed to construct outbox proof using the RPC node
-  # this method is based on direct RPC requests to retrieve an actual withdrawals count
+  # Retrieves the size parameter (total count of L2->L1 messages) needed for outbox
+  # proof construction via RPC calls.
+  #
+  # Note: The "size" parameter represents the cumulative count of L2->L1 messages
+  # that have been sent up to the latest confirmed node.
+  #
+  # This function performs the following steps:
+  # 1. Gets the latest confirmed node index from the L1 rollup contract
+  # 2. Retrieves the L1 block number where that node was created
+  # 3. Uses the block number to determine the total count of L2->L1 messages
+  #
+  # ## Parameters
+  # - `l1_rollup_address`: Address of the Arbitrum rollup contract on L1
+  # - `json_l1_rpc_named_arguments`: Configuration for L1 JSON-RPC connection
+  # - `json_l2_rpc_named_arguments`: Configuration for rollup JSON-RPC connection
+  #
+  # ## Returns
+  # - Total count of L2->L1 messages up to the latest confirmed node
+  # - `nil` if any step in the process fails
   @spec get_size_for_proof_from_rpc(
           String.t(),
           EthereumJSONRPC.json_rpc_named_arguments(),
@@ -535,13 +661,28 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  # Retrieve amount of L2->L1 messages sent up to the given L1 block
-  # The requested L1 block must contain the NodeCreated event emitted by the Rollup contract
+  # Retrieves the total count of L2->L1 messages sent up to the rollup block associated
+  # with a NodeCreated event in the specified L1 block.
+  #
+  # The function first fetches the NodeCreated event from the L1 block, extracts the
+  # corresponding rollup block hash, and then retrieves the send_count value from that
+  # rollup block. If the rollup block is not found in the database, falls back to
+  # querying the rollup JSON-RPC endpoint directly.
+  #
+  # ## Parameters
+  # - `node_creation_l1_block_number`: L1 block number containing a NodeCreated event
+  # - `l1_rollup_address`: Address of the Rollup contract on L1
+  # - `json_l1_rpc_named_arguments`: Configuration for L1 JSON-RPC connection
+  # - `json_l2_rpc_named_arguments`: Configuration for rollup JSON-RPC connection
+  #
+  # ## Returns
+  # - Number of L2->L1 messages sent up to the associated rollup block
+  # - `nil` if the event cannot be found or block data cannot be retrieved
   @spec l1_block_number_to_withdrawals_count(
           non_neg_integer(),
           String.t(),
-          list(),
-          list()
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          EthereumJSONRPC.json_rpc_named_arguments()
         ) :: non_neg_integer() | nil
   defp l1_block_number_to_withdrawals_count(
          node_creation_l1_block_number,
@@ -574,9 +715,21 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  # Find a L2 block by a given block's hash and extract `send_count` value
-  # `send_count` field represents amount of L2->L1 messages sent up to this block
-  @spec messages_count_up_to_block_with_hash(Hash.Full.t(), list()) :: non_neg_integer()
+ # Retrieves the total count of L2->L1 messages sent up to a specific rollup block.
+  #
+  # First attempts to fetch the block from the database. If not found, falls back
+  # to querying the rollup JSON-RPC endpoint directly.
+  #
+  # ## Parameters
+  # - `l2_block_hash`: The full hash of the rollup block to query
+  # - `json_l2_rpc_named_arguments`: Configuration options for the rollup JSON-RPC
+  #   connection
+  #
+  # ## Returns
+  # - The `send_count` value from the block representing total L2->L1 messages sent
+  # - `nil` if the block cannot be retrieved or an error occurs
+  @spec messages_count_up_to_block_with_hash(Hash.Full.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          non_neg_integer() | nil
   defp messages_count_up_to_block_with_hash(l2_block_hash, json_l2_rpc_named_arguments) do
     case Chain.hash_to_block(l2_block_hash, api?: true) do
       {:ok, block} ->
@@ -600,9 +753,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
-  # When NodeCreated event emitted on L1 main rollup contract
-  # it contains associated L2 block hash.
-  # The following method extracts this hash from the NodeCreated event
+  # Extracts rollup block hash associated with the NodeCreated event emitted on L1
   @spec l2_block_hash_from_node_created_event(%{data: binary()}) :: binary()
   defp l2_block_hash_from_node_created_event(event) do
     [
