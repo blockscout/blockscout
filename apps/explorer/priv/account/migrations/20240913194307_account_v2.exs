@@ -38,7 +38,9 @@ defmodule Explorer.Repo.Account.Migrations.AccountV2 do
 
     create(unique_index(:account_tag_addresses, [:identity_id, :address_hash_hash], where: "user_created = true"))
 
-    create(unique_index(:account_tag_transactions, [:identity_id, :transaction_hash_hash], where: "user_created = true"))
+    create(
+      unique_index(:account_tag_transactions, [:identity_id, :transaction_hash_hash], where: "user_created = true")
+    )
 
     create(
       unique_index(:account_watchlist_addresses, [:watchlist_id, :address_hash_hash],
