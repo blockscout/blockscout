@@ -698,7 +698,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
            [@node_created_event],
            json_l1_rpc_named_arguments
          ) do
-      {:ok, [node_created_event]} ->
+      {:ok, events} when is_list(events) and length(events) > 0 ->
         # extract L2 block hash from the NodeCreated event
         l2_block_hash = l2_block_hash_from_node_created_event(node_created_event)
 
@@ -715,7 +715,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     end
   end
 
- # Retrieves the total count of L2->L1 messages sent up to a specific rollup block.
+  # Retrieves the total count of L2->L1 messages sent up to a specific rollup block.
   #
   # First attempts to fetch the block from the database. If not found, falls back
   # to querying the rollup JSON-RPC endpoint directly.
