@@ -62,7 +62,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
-        field(:language, Ecto.Enum, values: [solidity: 1, vyper: 2, yul: 3, stylus_rust: 4], default: :solidity)
+        field(:language, Ecto.Enum, values: @languages_enum, default: :solidity)
 
         has_many(
           :decompiled_smart_contracts,
@@ -186,6 +186,17 @@ defmodule Explorer.Chain.SmartContract do
       "type" => "function"
     }
   ]
+
+  @default_languages ~w(solidity vyper yul stylys_rust)a
+  @chain_type_languages (case Application.compile_env(:explorer, :chain_type) do
+                           :zilliqa ->
+                             ~w(scilla)a
+
+                           _ ->
+                             ~w()a
+                         end)
+
+  @languages_enum (@default_languages ++ @chain_type_languages) |> Enum.with_index(1)
 
   @doc """
     Returns burn address hash

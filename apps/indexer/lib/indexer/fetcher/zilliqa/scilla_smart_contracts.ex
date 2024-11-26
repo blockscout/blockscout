@@ -115,7 +115,8 @@ defmodule Indexer.Fetcher.Zilliqa.ScillaSmartContracts do
       %{
         address_hash: address_hash,
         contract_source_code: contract_code.bytes,
-        optimization: false
+        optimization: false,
+        language: :scilla
       }
       |> SmartContract.create_smart_contract()
       |> case do
