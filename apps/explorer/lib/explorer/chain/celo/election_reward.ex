@@ -46,6 +46,13 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     "delegated-payment" => :delegated_payment
   }
 
+  @reward_type_string_to_atom %{
+    "voter" => :voter,
+    "validator" => :validator,
+    "group" => :group,
+    "delegated_payment" => :delegated_payment
+  }
+
   @reward_type_atom_to_token_atom %{
     :voter => :celo_token,
     :validator => :usd_token,
@@ -335,7 +342,6 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     end
   end
 
-  # sobelow_skip ["DOS.StringToAtom"]
   @doc """
   Makes Explorer.PagingOptions map for election rewards.
   """
@@ -355,7 +361,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
          {amount, ""} <- Decimal.parse(amount_string),
          {:ok, associated_account_address_hash} <-
            Hash.Address.cast(associated_account_address_hash_string),
-         type when type in @types_enum <- String.to_atom(type_string) do
+         {:ok, type} <- Map.fetch(@reward_type_string_to_atom, type_string) do
       [
         paging_options: %{
           default_paging_options()
@@ -524,6 +530,11 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   TODO: Consider reusing `Chain.where_block_number_in_period/3`. This would
   require storing or making `merge_select` of `block_number`.
   """
+  @spec where_block_number_in_period(
+          Ecto.Query.t(),
+          String.t() | integer() | nil,
+          String.t() | integer() | nil
+        ) :: Ecto.Query.t()
   def where_block_number_in_period(base_query, from_block, to_block)
       when is_nil(from_block) and not is_nil(to_block),
       do: where(base_query, [_, block], block.number <= ^to_block)

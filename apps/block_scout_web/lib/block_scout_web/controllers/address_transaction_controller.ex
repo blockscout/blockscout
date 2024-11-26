@@ -227,7 +227,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
     items_csv(conn, params, AddressLogCsvExporter)
   end
 
-  @spec celo_election_rewards_csv(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  @spec celo_election_rewards_csv(Conn.t(), map()) :: Conn.t()
   def celo_election_rewards_csv(conn, params) do
     items_csv(conn, params, CeloAddressElectionRewardsCsvExporter)
   end
