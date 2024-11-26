@@ -136,17 +136,14 @@ defmodule Explorer.Chain.SmartContract do
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
   @dead_address_hash_string "0x000000000000000000000000000000000000dEaD"
 
-  @required_attrs ~w(optimization address_hash contract_code_md5 language)a ++
-                    (case Application.compile_env(:explorer, :chain_type) do
-                       :zilliqa -> []
-                       _ -> ~w(compiler_version)a
-                     end)
+  @default_required_attrs ~w(optimization address_hash contract_code_md5 language)a
+  @chain_type_required_attrs (case Application.compile_env(:explorer, :chain_type) do
+                                :zilliqa -> ~w()a
+                                _ -> ~w(compiler_version)a
+                              end)
+  @required_attrs @default_required_attrs ++ @chain_type_required_attrs
 
-  @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a ++
-                           (case Application.compile_env(:explorer, :chain_type) do
-                              :zilliqa -> ~w(compiler_version)a
-                              _ -> []
-                            end)
+  @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a
 
   @optional_changeset_attrs ~w(abi compiler_settings)a
   @optional_invalid_contract_changeset_attrs ~w(autodetect_constructor_args)a
@@ -158,9 +155,18 @@ defmodule Explorer.Chain.SmartContract do
                                 :arbitrum ->
                                   ~w(package_name github_repository_metadata)a
 
+                                :zilliqa ->
+                                  ~w(compiler_version)a
+
                                 _ ->
                                   ~w()a
                               end)
+
+  @chain_type_attrs_for_validation ~w(contract_source_code)a ++
+                                     (case Application.compile_env(:explorer, :chain_type) do
+                                        :zilliqa -> ~w()a
+                                        _ -> ~w(name)a
+                                      end)
 
   @create_zksync_abi [
     %{
@@ -362,9 +368,9 @@ defmodule Explorer.Chain.SmartContract do
   * `"outputs" - `t:list/0` of `t:output/0`.
   * `"stateMutability"` - `t:state_mutability/0`
   * `"payable"` - `t:payable/0`.
-    **WARNING:** Deprecated and will be removed in the future.  Use `"stateMutability"` instead.
+    **WARNING:** Deprecated and will be removed in the future. Use `"stateMutability"` instead.
   * `"constant"` - `t:constant/0`.
-    **WARNING:** Deprecated and will be removed in the future.  Use `"stateMutability"` instead.
+    **WARNING:** Deprecated and will be removed in the future. Use `"stateMutability"` instead.
   """
   @type function_description :: %{
           String.t() =>
@@ -466,10 +472,7 @@ defmodule Explorer.Chain.SmartContract do
 
     required_for_validation =
       @required_attrs ++
-        case Application.get_env(:explorer, :chain_type) do
-          :zilliqa -> [:contract_source_code]
-          _ -> [:name, :contract_source_code]
-        end
+        @chain_type_attrs_for_validation
 
     smart_contract
     |> cast(attrs, attrs_to_cast)
