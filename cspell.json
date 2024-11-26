@@ -15,7 +15,6 @@
     ],
     // useGitignore - use .gitignore to exclude files from checking
     "useGitignore": true,
-    // words - list of words to be always considered correct
     "ignorePaths": [
         "apps/block_scout_web/assets/js/lib/ace/src-min/*.js"
     ],
@@ -23,6 +22,7 @@
         // Ignore filecoin f410f-like native addresses
         "f410f[a-z2-7]{39}"
     ],
+    // words - list of words to be always considered correct
     "words": [
         "aave",
         "absname",
@@ -540,6 +540,7 @@
         "stringly",
         "stylelint",
         "stylesheet",
+        "stylys",
         "subcall",
         "subcalls",
         "subdenomination",
