@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.9.2
+
+### 🚀 Features
+
+- Xname app proxy ([#11010](https://github.com/blockscout/blockscout/issues/11010))
+
 ## 6.9.1
 
 ### 🐛 Bug Fixes
