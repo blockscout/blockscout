@@ -6,12 +6,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   import Explorer.SmartContract.Reader, only: [zip_tuple_values_with_types: 2]
 
   alias ABI.FunctionSelector
-  alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias BlockScoutWeb.API.V2.{Helper, TransactionView}
   alias BlockScoutWeb.SmartContractView
+  alias BlockScoutWeb.{ABIEncodedValueView, AddressContractView, AddressView}
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Hash, SmartContract, SmartContractAdditionalSource}
+  alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
   alias Explorer.Visualize.Sol2uml
@@ -225,16 +225,17 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           do:
             target_contract && format_constructor_arguments(target_contract.abi, target_contract.constructor_arguments)
         ),
-      "language" => smart_contract_language(address),
+      "language" => smart_contract_language(smart_contract),
       "license_type" => smart_contract.license_type,
       "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false),
       "is_blueprint" => if(smart_contract.is_blueprint, do: smart_contract.is_blueprint, else: false)
     }
     |> Map.merge(bytecode_info(address))
-    |> add_chain_type_fields(
+    |> chain_type_fields(
       %{
-        target_contract: target_contract,
-        verified_twin_address_hash: verified_twin_address_hash
+        address_hash: verified_twin_address_hash,
+        field_prefix: "verified_twin",
+        target_contract: target_contract
       },
       true
     )
@@ -290,53 +291,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     end
   end
 
-  @spec add_chain_type_fields(
-          map(),
-          %{
-            target_contract: SmartContract.t(),
-            verified_twin_address_hash: Hash.Address.t() | nil
-          },
-          boolean()
-        ) :: map()
-  case Application.compile_env(:explorer, :chain_type) do
-    :filecoin ->
-      defp add_chain_type_fields(
-             smart_contract_info,
-             %{verified_twin_address_hash: verified_twin_address_hash},
-             true
-           ) do
-        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address(
-          smart_contract_info,
-          %{
-            address_hash: verified_twin_address_hash,
-            field_prefix: "verified_twin"
-          }
-        )
-      end
-
-      defp add_chain_type_fields(smart_contract_info, _params, false),
-        do: smart_contract_info
-
-    :arbitrum ->
-      defp add_chain_type_fields(smart_contract_info, %{target_contract: target_contract}, _single?) do
-        smart_contract_info
-        |> Map.put("package_name", target_contract.package_name)
-        |> Map.put("github_repository_metadata", target_contract.github_repository_metadata)
-      end
-
-    :zksync ->
-      defp add_chain_type_fields(smart_contract_info, %{target_contract: target_contract}, _single?) do
-        smart_contract_info
-        |> Map.put("zk_compiler_version", target_contract.zk_compiler_version)
-      end
-
-    _ ->
-      defp add_chain_type_fields(smart_contract_info, _params, _single?) do
-        smart_contract_info
-      end
-  end
-
   defp prepare_external_libraries(libraries) when is_list(libraries) do
     Enum.map(libraries, fn %Explorer.Chain.SmartContract.ExternalLibrary{name: name, address_hash: address_hash} ->
       {:ok, hash} = Chain.string_to_address_hash(address_hash)
@@ -384,21 +338,19 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   defp prepare_smart_contract_for_list(%SmartContract{} = smart_contract) do
     token = smart_contract.address.token
 
-    address = %Address{smart_contract.address | smart_contract: smart_contract}
-
     smart_contract_info =
       %{
         "address" =>
           Helper.address_with_info(
             nil,
-            address,
+            %Address{smart_contract.address | smart_contract: smart_contract},
             smart_contract.address.hash,
             false
           ),
         "compiler_version" => smart_contract.compiler_version,
         "optimization_enabled" => smart_contract.optimization,
         "transaction_count" => smart_contract.address.transactions_count,
-        "language" => smart_contract_language(address),
+        "language" => smart_contract_language(smart_contract),
         "verified_at" => smart_contract.inserted_at,
         "market_cap" => token && token.circulating_market_cap,
         "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),
@@ -409,25 +361,21 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       }
 
     smart_contract_info
-    |> add_chain_type_fields(
-      %{
-        target_contract: smart_contract,
-        verified_twin_address_hash: nil
-      },
+    |> chain_type_fields(
+      %{target_contract: smart_contract},
       false
     )
   end
 
-  @spec smart_contract_language(Address.t()) :: String.t()
-  defp smart_contract_language(address) do
+  defp smart_contract_language(smart_contract) do
     cond do
-      address.smart_contract.is_vyper_contract ->
+      smart_contract.is_vyper_contract ->
         "vyper"
 
-      not is_nil(address.smart_contract.language) ->
-        address.smart_contract.language
+      not is_nil(smart_contract.language) ->
+        smart_contract.language
 
-      is_nil(address.smart_contract.abi) ->
+      is_nil(smart_contract.abi) ->
         "yul"
 
       true ->
@@ -500,26 +448,29 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   case @chain_type do
     :filecoin ->
-      defp add_filecoin_info(result, params) do
+      defp chain_type_fields(result, params, true) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address(result, params)
       end
 
     :arbitrum ->
-      defp chain_type_fields(result, %{target_contract: target_contract}) do
+      defp chain_type_fields(result, _params, false),
+        do: result
+
+      defp chain_type_fields(result, %{target_contract: target_contract}, true) do
         result
         |> Map.put("package_name", target_contract.package_name)
         |> Map.put("github_repository_metadata", target_contract.github_repository_metadata)
       end
 
     :zksync ->
-      defp chain_type_fields(result, %{target_contract: target_contract}) do
+      defp chain_type_fields(result, %{target_contract: target_contract}, _single?) do
         result
         |> Map.put("zk_compiler_version", target_contract.zk_compiler_version)
       end
 
     _ ->
-      defp add_filecoin_info(result, _address) do
+      defp chain_type_fields(result, _params, _single?) do
         result
       end
   end

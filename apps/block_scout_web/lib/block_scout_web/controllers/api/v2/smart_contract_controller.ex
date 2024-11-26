@@ -232,17 +232,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     full_options =
       [
         necessity_by_association: %{
-          [
-            address:
-              [:token, :names, :proxy_implementations]
-              # todo: This is a temporary workaround to find Scilla contracts.
-              # As soon as https://github.com/blockscout/blockscout/pull/11183
-              # is merged, we should migrate to `language` field.
-              |> (&if(Application.get_env(:explorer, :chain_type) == :zilliqa,
-                    do: [:contracts_creation_transaction | &1],
-                    else: &1
-                  )).()
-          ] => :optional,
+          [address: [:token, :names, :proxy_implementations]] => :optional,
           address: :required
         }
       ]
