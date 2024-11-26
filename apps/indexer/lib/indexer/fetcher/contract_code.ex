@@ -21,14 +21,22 @@ defmodule Indexer.Fetcher.ContractCode do
 
   @transaction_fields ~w(block_number created_contract_address_hash hash v)a
 
-  @type entry :: [
-          %{
-            required(:block_number) => Block.block_number(),
-            required(:created_contract_address_hash) => Hash.Full.t(),
-            required(:hash) => Hash.Full.t(),
-            required(:v) => Decimal.t()
-          }
-        ]
+  @typedoc """
+  Represents a list of entries, where each entry is a map containing transaction
+  fields required for fetching contract codes.
+
+    - `:block_number` - The block number of the transaction.
+    - `:created_contract_address_hash` - The hash of the created contract
+      address.
+    - `:hash` - The hash of the transaction.
+    - `:v` - A decimal value representing a transaction parameter.
+  """
+  @type entry :: %{
+          required(:block_number) => Block.block_number(),
+          required(:created_contract_address_hash) => Hash.Full.t(),
+          required(:hash) => Hash.Full.t(),
+          required(:v) => Decimal.t()
+        }
 
   @behaviour BufferedTask
 
@@ -86,6 +94,21 @@ defmodule Indexer.Fetcher.ContractCode do
     final
   end
 
+  @doc """
+  Processes a batch of entries to fetch and handle contract code for created
+  contracts. This function is executed as part of the `BufferedTask` behavior.
+
+  ## Parameters
+
+    - `entries`: A list of entries to process.
+    - `json_rpc_named_arguments`: A list of options for JSON-RPC communication.
+
+  ## Returns
+
+    - `:ok`: Indicates successful processing of the contract codes.
+    - `{:retry, any()}`: Returns the entries for retry if an error occurs during
+      the fetch operation.
+  """
   @impl BufferedTask
   @decorate trace(
               name: "fetch",
@@ -125,6 +148,15 @@ defmodule Indexer.Fetcher.ContractCode do
     end
   end
 
+  # Imports addresses and their balances for a set of transactions specified
+  # through `entries`, updating balances of existing addresses. Triggers
+  # insertion of Scilla smart contracts for Zilliqa.
+  @spec import_with_balances([Address.t()], [entry()], [
+          {:throttle_timeout, non_neg_integer()}
+          | {:transport, atom()}
+          | {:transport_options, any()}
+          | {:variant, atom()}
+        ]) :: :ok | {:retry, [entry()]}
   defp import_with_balances(addresses_params, entries, json_rpc_named_arguments) do
     entries
     |> Enum.map(
@@ -172,6 +204,9 @@ defmodule Indexer.Fetcher.ContractCode do
     end
   end
 
+  # Filters and verifies Scilla smart contracts for Zilliqa. Contracts are
+  # identified from transaction attributes and matched with provided addresses,
+  # then processed asynchronously in the separate fetcher.
   @spec zilliqa_verify_scilla_contracts([entry()], [Address.t()]) :: :ok
   defp zilliqa_verify_scilla_contracts(entries, addresses) do
     zilliqa_contract_address_hashes =
