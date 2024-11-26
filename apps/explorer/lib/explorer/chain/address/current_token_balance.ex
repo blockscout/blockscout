@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.{Chain, Helper, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
   alias Explorer.Chain.Address.TokenBalance
 
@@ -365,22 +365,14 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       ids
       |> Enum.reduce("", fn
         {address_hash, token_hash, token_id}, acc ->
-          acc <> "('#{hash_to_query_string(address_hash)}', '#{hash_to_query_string(token_hash)}', #{token_id}),"
+          acc <>
+            "('#{Helper.hash_to_query_string(address_hash)}', '#{Helper.hash_to_query_string(token_hash)}', #{token_id}),"
 
         {address_hash, token_hash}, acc ->
-          acc <> "('#{hash_to_query_string(address_hash)}', '#{hash_to_query_string(token_hash)}'),"
+          acc <> "('#{Helper.hash_to_query_string(address_hash)}', '#{Helper.hash_to_query_string(token_hash)}'),"
       end)
       |> String.trim_trailing(",")
 
     "(#{encoded_values})"
-  end
-
-  defp hash_to_query_string(hash) do
-    s_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0")
-
-    "\\#{s_hash}"
   end
 end

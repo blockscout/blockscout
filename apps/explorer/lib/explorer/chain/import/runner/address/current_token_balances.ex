@@ -228,17 +228,10 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       end)
 
     filtered_ctbs =
-      changes_list
-      |> Enum.reduce([], fn ctb, acc ->
+      Enum.filter(changes_list, fn ctb ->
         existing_ctb = existing_ctb_map[{ctb[:address_hash], ctb[:token_contract_address_hash], ctb[:token_id]}]
-
-        if should_update?(ctb, existing_ctb) do
-          [ctb | acc]
-        else
-          acc
-        end
+        should_update?(ctb, existing_ctb)
       end)
-      |> Enum.reverse()
 
     {:ok, filtered_ctbs}
   end
@@ -278,7 +271,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     """
   end
 
-   # ctb does not exist
+  # ctb does not exist
   defp should_update?(_new_ctb, nil), do: true
 
   # new ctb has no value
