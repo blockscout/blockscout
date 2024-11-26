@@ -38,6 +38,19 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
     topic
   end
 
+  test "handles request without params if possible", %{conn: conn} do
+    assert response =
+             conn
+             |> post("/api/eth-rpc", %{
+               "method" => "eth_blockNumber",
+               "jsonrpc" => "2.0",
+               "id" => 0
+             })
+             |> json_response(200)
+
+    assert %{"id" => 0, "jsonrpc" => "2.0", "result" => "0x0"} == response
+  end
+
   describe "eth_get_logs" do
     setup do
       %{
