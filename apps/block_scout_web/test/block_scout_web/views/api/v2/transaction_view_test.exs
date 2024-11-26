@@ -100,7 +100,6 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
       topic1_bytes = ExKeccak.hash_256("OptionSettled(uint256,address,uint256,int256,int256)")
       topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
       topic2 = "0x0000000000000000000000000000000000000000000000000000000000005d19"
-      log2_topic2 = "0x000000000000000000000000000000000000000000000000000000000000634a"
 
       log1_data =
         "0x000000000000000000000000aeb81cbe6b19ceeb0dbe0d230cffe35bb40a13a700000000000000000000000000000000000000000000045d964b80006597b700fffffffffffffffffffffffffffffffffffffffffffffffffe55aca2c2f40000ffffffffffffffffffffffffffffffffffffffffffffffe3a8289da3d7a13ef2"
