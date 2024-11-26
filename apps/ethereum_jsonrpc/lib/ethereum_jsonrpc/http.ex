@@ -240,33 +240,11 @@ defmodule EthereumJSONRPC.HTTP do
     with {:ok, method_to_url} <- Keyword.fetch(options, :method_to_url),
          {:ok, method_atom} <- to_existing_atom(method),
          {:ok, url_type} <- Keyword.fetch(method_to_url, method_atom) do
-      fallback_urls = CommonHelper.url_type_to_urls(url_type, options, :fallback)
-
-      url =
-        url_type
-        |> CommonHelper.url_type_to_urls(options)
-        |> EndpointAvailabilityObserver.maybe_replace_urls(fallback_urls, url_type)
-        |> select_single_url()
-
-      {url_type, url}
+      {url_type, CommonHelper.get_available_url(options, url_type)}
     else
       _ ->
-        url_type = :http
-
-        url =
-          url_type
-          |> CommonHelper.url_type_to_urls(options)
-          |> EndpointAvailabilityObserver.maybe_replace_urls(options[:fallback_urls], url_type)
-          |> select_single_url()
-
-        {url_type, url}
+        {:http, CommonHelper.get_available_url(options, :http)}
     end
-  end
-
-  defp select_single_url([]), do: nil
-
-  defp select_single_url(urls) do
-    Enum.random(urls)
   end
 
   defp to_existing_atom(string) do

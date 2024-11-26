@@ -9,6 +9,7 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
     - Compares the resulting bytecode against the deployed contract bytecode
     - Returns verification details including ABI and contract metadata
   """
+  alias EthereumJSONRPC.Utility.CommonHelper
   alias Explorer.Chain.{Hash, SmartContract}
   alias Explorer.SmartContract.StylusVerifierInterface
 
@@ -68,7 +69,7 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
           {:ok, map()} | {:error, any()}
   defp evaluate_authenticity_inner(true, address_hash, params) do
     transaction_hash = fetch_data_for_stylus_verification(address_hash)
-    rpc_endpoint = Application.get_env(:explorer, :json_rpc_named_arguments)[:transport_options][:urls] |> List.first()
+    rpc_endpoint = CommonHelper.get_available_url()
 
     params
     |> Map.take(["cargo_stylus_version", "repository_url", "commit", "path_prefix"])

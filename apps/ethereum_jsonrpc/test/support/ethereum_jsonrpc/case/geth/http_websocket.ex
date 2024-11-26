@@ -12,7 +12,7 @@ defmodule EthereumJSONRPC.Case.Geth.HTTPWebSocket do
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,
         http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]],
-        url: "https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY"
+        urls: ["https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY"]
       ],
       variant: EthereumJSONRPC.Geth
     )
