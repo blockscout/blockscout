@@ -202,7 +202,16 @@ defmodule Explorer.Chain.SmartContract do
                              ~w()a
                          end)
 
-  @languages_enum (@default_languages ++ @chain_type_languages) |> Enum.with_index(1)
+  @languages @default_languages ++ @chain_type_languages
+  @languages_enum @languages |> Enum.with_index(1)
+
+  @doc """
+    Returns list of languages supported by the database schema.
+  """
+  @spec language_strings() :: [String.t()]
+  def language_strings do
+    @languages |> Enum.map(&to_string/1)
+  end
 
   @doc """
     Returns burn address hash
