@@ -10,6 +10,7 @@ defmodule Explorer.Chain.Search do
       order_by: 3,
       subquery: 1,
       union: 2,
+      union_all: 2,
       where: 3
     ]
 
@@ -49,6 +50,7 @@ defmodule Explorer.Chain.Search do
               order_by: [
                 desc: items.priority,
                 desc_nulls_last: items.certified,
+                # desc_nulls_last: fragment("smart_contract_fields->>'certified'"),
                 desc_nulls_last: items.circulating_market_cap,
                 desc_nulls_last: items.exchange_rate,
                 desc_nulls_last: items.is_verified_via_admin_panel,
@@ -83,8 +85,13 @@ defmodule Explorer.Chain.Search do
   end
 
   def base_joint_query(string, term) do
-    tokens_query =
-      string |> search_token_query(term) |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+    tokens_query_certified =
+      string |> search_token_query_certified(term) |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+
+    tokens_query_not_certified =
+      string
+      |> search_token_query_not_certified(term)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
 
     contracts_query = term |> search_contract_query() |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
     labels_query = search_label_query(term)
@@ -93,30 +100,31 @@ defmodule Explorer.Chain.Search do
 
     basic_query =
       from(
-        tokens in subquery(tokens_query),
-        union: ^contracts_query,
-        union: ^labels_query
+        tokens in subquery(tokens_query_certified),
+        union_all: ^tokens_query_not_certified,
+        union_all: ^contracts_query,
+        union_all: ^labels_query
       )
 
     cond do
       address_query ->
         basic_query
-        |> union(^address_query)
+        |> union_all(^address_query)
 
       valid_full_hash?(string) ->
         transaction_query = search_transaction_query(string)
 
         transaction_block_query =
           basic_query
-          |> union(^transaction_query)
-          |> union(^block_query)
+          |> union_all(^transaction_query)
+          |> union_all(^block_query)
 
         transaction_block_op_query =
           if UserOperation.enabled?() do
             user_operation_query = search_user_operation_query(string)
 
             transaction_block_query
-            |> union(^user_operation_query)
+            |> union_all(^user_operation_query)
           else
             transaction_block_query
           end
@@ -125,14 +133,14 @@ defmodule Explorer.Chain.Search do
           blob_query = search_blob_query(string)
 
           transaction_block_op_query
-          |> union(^blob_query)
+          |> union_all(^blob_query)
         else
           transaction_block_op_query
         end
 
       block_query ->
         basic_query
-        |> union(^block_query)
+        |> union_all(^block_query)
 
       true ->
         basic_query
@@ -162,7 +170,7 @@ defmodule Explorer.Chain.Search do
       {:some, term} ->
         tokens_result =
           search_query
-          |> search_token_query(term)
+          |> search_token_query_not_certified(term)
           |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
           |> order_by([token],
             desc_nulls_last: token.circulating_market_cap,
@@ -303,6 +311,17 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:name, dynamic([_, at, _], at.display_name))
       |> Map.put(:inserted_at, dynamic([att, _, _], att.inserted_at))
       |> Map.put(:verified, dynamic([_, _, smart_contract], not is_nil(smart_contract)))
+      # |> Map.put(
+      #   :smart_contract_fields,
+      #   dynamic(
+      #     [_, _, smart_contract],
+      #     fragment(
+      #       "jsonb_build_object('certified', ?, 'verified', ?)",
+      #       smart_contract.certified,
+      #       not is_nil(smart_contract)
+      #     )
+      #   )
+      # )
       |> Map.put(:priority, 1)
 
     inner_query =
@@ -320,23 +339,48 @@ defmodule Explorer.Chain.Search do
     )
   end
 
-  defp search_token_query(string, term) do
+  # UNION_ALL instead of UNION
+  # somehow preserve the order of the selected fields in map from search_fields
+  defp search_token_query_not_certified(string, term) do
     token_search_fields =
       search_fields()
-      |> Map.put(:address_hash, dynamic([token, _], token.contract_address_hash))
+      |> Map.put(:address_hash, dynamic([token], token.contract_address_hash))
       |> Map.put(:type, "token")
-      |> Map.put(:name, dynamic([token, _], token.name))
-      |> Map.put(:symbol, dynamic([token, _], token.symbol))
-      |> Map.put(:holder_count, dynamic([token, _], token.holder_count))
-      |> Map.put(:inserted_at, dynamic([token, _], token.inserted_at))
-      |> Map.put(:icon_url, dynamic([token, _], token.icon_url))
-      |> Map.put(:token_type, dynamic([token, _], token.type))
+      |> Map.put(:name, dynamic([token], token.name))
+      |> Map.put(:symbol, dynamic([token], token.symbol))
+      |> Map.put(:holder_count, dynamic([token], token.holder_count))
+      |> Map.put(:inserted_at, dynamic([token], token.inserted_at))
+      |> Map.put(:icon_url, dynamic([token], token.icon_url))
+      |> Map.put(:token_type, dynamic([token], token.type))
+      |> Map.put(:exchange_rate, dynamic([token], token.fiat_value))
+      |> Map.put(:total_supply, dynamic([token], token.total_supply))
+      |> Map.put(:circulating_market_cap, dynamic([token], token.circulating_market_cap))
+      |> Map.put(:is_verified_via_admin_panel, dynamic([token], token.is_verified_via_admin_panel))
       |> Map.put(:verified, dynamic([_, smart_contract], not is_nil(smart_contract)))
       |> Map.put(:certified, dynamic([_, smart_contract], smart_contract.certified))
-      |> Map.put(:exchange_rate, dynamic([token, _], token.fiat_value))
-      |> Map.put(:total_supply, dynamic([token, _], token.total_supply))
-      |> Map.put(:circulating_market_cap, dynamic([token, _], token.circulating_market_cap))
-      |> Map.put(:is_verified_via_admin_panel, dynamic([token, _], token.is_verified_via_admin_panel))
+
+    # |> Map.put(:smart_contract_fields,   dynamic([token, smart_contract],  fragment(
+    #   """
+    #       SELECT COALESCE(
+    #         (SELECT jsonb_build_object('certified', sc.certified, 'verified', true)
+    #           FROM smart_contracts sc
+    #           WHERE sc.address_hash = ?),
+    #         jsonb_build_object('certified', null, 'verified', false)
+    #       )
+    #   """,
+    #   token.contract_address_hash
+    # )))
+    # |> Map.put(
+    #   :smart_contract_fields,
+    #   dynamic(
+    #     [token, smart_contract],
+    #     fragment(
+    #       "jsonb_build_object('certified', ?, 'verified', ?)",
+    #       smart_contract.certified,
+    #       not is_nil(smart_contract)
+    #     )
+    #   )
+    # )
 
     case Chain.string_to_address_hash(string) do
       {:ok, address_hash} ->
@@ -351,8 +395,105 @@ defmodule Explorer.Chain.Search do
         from(token in Token,
           left_join: smart_contract in SmartContract,
           on: token.contract_address_hash == smart_contract.address_hash,
+          where: is_nil(smart_contract.certified) or not smart_contract.certified,
           where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
+          select: ^token_search_fields,
+          order_by: [
+            desc_nulls_last: token.circulating_market_cap,
+            desc_nulls_last: token.fiat_value,
+            desc_nulls_last: token.is_verified_via_admin_panel,
+            desc_nulls_last: token.holder_count,
+            asc: token.name,
+            desc: token.inserted_at
+          ],
+          limit: 50,
+          offset: 0
+          # ,
+          # select_merge: %{
+          #   smart_contract_fields:
+          #     fragment(
+          #       """
+          #           SELECT COALESCE(
+          #             (SELECT jsonb_build_object('certified', sc.certified, 'verified', true)
+          #               FROM smart_contracts sc
+          #               WHERE sc.address_hash = ?),
+          #             jsonb_build_object('certified', false, 'verified', false)
+          #           )
+          #       """,
+          #       token.contract_address_hash
+          #     )
+          # }
+        )
+    end
+  end
+
+  defp search_token_query_certified(string, term) do
+    token_search_fields =
+      search_fields()
+      |> Map.put(:address_hash, dynamic([token], token.contract_address_hash))
+      |> Map.put(:type, "token")
+      |> Map.put(:name, dynamic([token], token.name))
+      |> Map.put(:symbol, dynamic([token], token.symbol))
+      |> Map.put(:holder_count, dynamic([token], token.holder_count))
+      |> Map.put(:inserted_at, dynamic([token], token.inserted_at))
+      |> Map.put(:icon_url, dynamic([token], token.icon_url))
+      |> Map.put(:token_type, dynamic([token], token.type))
+      |> Map.put(:exchange_rate, dynamic([token], token.fiat_value))
+      |> Map.put(:total_supply, dynamic([token], token.total_supply))
+      |> Map.put(:circulating_market_cap, dynamic([token], token.circulating_market_cap))
+      |> Map.put(:is_verified_via_admin_panel, dynamic([token], token.is_verified_via_admin_panel))
+      |> Map.put(:verified, dynamic([_, smart_contract], not is_nil(smart_contract)))
+      |> Map.put(:certified, dynamic([_, smart_contract], smart_contract.certified))
+
+    # |> Map.put(:smart_contract_fields,   dynamic([token, smart_contract],  fragment(
+    #   """
+    #       SELECT COALESCE(
+    #         (SELECT jsonb_build_object('certified', sc.certified, 'verified', true)
+    #           FROM smart_contracts sc
+    #           WHERE sc.address_hash = ?),
+    #         jsonb_build_object('certified', null, 'verified', false)
+    #       )
+    #   """,
+    #   token.contract_address_hash
+    # )))
+    # |> Map.put(
+    #   :smart_contract_fields,
+    #   dynamic(
+    #     [token, smart_contract],
+    #     fragment(
+    #       "jsonb_build_object('certified', ?, 'verified', ?)",
+    #       true,
+    #       not is_nil(smart_contract)
+    #     )
+    #   )
+    # )
+
+    case Chain.string_to_address_hash(string) do
+      {:ok, address_hash} ->
+        from(token in Token,
+          left_join: smart_contract in SmartContract,
+          on: token.contract_address_hash == smart_contract.address_hash,
+          where: token.contract_address_hash == ^address_hash,
           select: ^token_search_fields
+        )
+
+      _ ->
+        from(token in Token,
+          left_join: smart_contract in SmartContract,
+          on: token.contract_address_hash == smart_contract.address_hash,
+          where: smart_contract.certified,
+          where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
+          select: ^token_search_fields,
+          order_by: [
+            desc_nulls_last: token.circulating_market_cap,
+            desc_nulls_last: token.fiat_value,
+            desc_nulls_last: token.is_verified_via_admin_panel,
+            desc_nulls_last: token.holder_count,
+            asc: token.name,
+            desc: token.inserted_at
+          ],
+          limit: 50,
+          offset: 0
         )
     end
   end
@@ -360,20 +501,42 @@ defmodule Explorer.Chain.Search do
   defp search_contract_query(term) do
     contract_search_fields =
       search_fields()
-      |> Map.put(:address_hash, dynamic([smart_contract, _], smart_contract.address_hash))
+      |> Map.put(:address_hash, dynamic([smart_contract], smart_contract.address_hash))
       |> Map.put(:type, "contract")
-      |> Map.put(:name, dynamic([smart_contract, _], smart_contract.name))
-      |> Map.put(:inserted_at, dynamic([_, address], address.inserted_at))
-      |> Map.put(:certified, dynamic([smart_contract, _], smart_contract.certified))
+      |> Map.put(:name, dynamic([smart_contract], smart_contract.name))
+      |> Map.put(:inserted_at, dynamic([smart_contract], smart_contract.inserted_at))
+      |> Map.put(:certified, dynamic([smart_contract], smart_contract.certified))
       |> Map.put(:verified, true)
 
+    # |> Map.put(
+    #   :smart_contract_fields,
+    #   dynamic(
+    #     [smart_contract],
+    #     fragment("jsonb_build_object('certified', ?, 'verified', true)", smart_contract.certified)
+    #   )
+    # )
+
     from(smart_contract in SmartContract,
-      left_join: address in Address,
-      on: smart_contract.address_hash == address.hash,
       where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", smart_contract.name, ^term),
-      select: ^contract_search_fields
+      select: ^contract_search_fields,
+      order_by: [
+        desc_nulls_last: smart_contract.certified,
+        asc: smart_contract.name,
+        desc: smart_contract.inserted_at
+      ],
+      limit: 50,
+      offset: 0
     )
   end
+
+  # desc: items.priority,
+  # desc_nulls_last: fragment("smart_contract_fields->>'certified'"),
+  # desc_nulls_last: items.circulating_market_cap,
+  # desc_nulls_last: items.exchange_rate,
+  # desc_nulls_last: items.is_verified_via_admin_panel,
+  # desc_nulls_last: items.holder_count,
+  # asc: items.name,
+  # desc: items.inserted_at
 
   defp search_address_query(term) do
     case Chain.string_to_address_hash(term) do
@@ -386,6 +549,14 @@ defmodule Explorer.Chain.Search do
           |> Map.put(:inserted_at, dynamic([_, address_name, _], address_name.inserted_at))
           |> Map.put(:verified, dynamic([address, _, _], address.verified))
           |> Map.put(:certified, dynamic([_, _, smart_contract], smart_contract.certified))
+
+        # |> Map.put(
+        #   :smart_contract_fields,
+        #   dynamic(
+        #     [address, _, smart_contract],
+        #     fragment("jsonb_build_object('certified', ?, 'verified', ?)", smart_contract.certified, address.verified)
+        #   )
+        # )
 
         from(address in Address,
           left_join:
@@ -673,6 +844,7 @@ defmodule Explorer.Chain.Search do
       circulating_market_cap: nil,
       priority: 0,
       is_verified_via_admin_panel: nil
+      # smart_contract_fields: dynamic([_], type(^%{"certified" => false, "verified" => false}, :map))
     }
   end
 end

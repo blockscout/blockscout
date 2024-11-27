@@ -24,8 +24,7 @@ defmodule BlockScoutWeb.API.V2.SearchController do
     offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
     search_results_plus_one =
-      paging_options
-      |> Search.joint_search(offset, query, @api_true)
+      paging_options |> Search.joint_search(offset, query, @api_true) |> dbg()
 
     {search_results, next_page} = split_list_by_page(search_results_plus_one)
 
