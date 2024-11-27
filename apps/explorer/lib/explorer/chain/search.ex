@@ -793,7 +793,6 @@ defmodule Explorer.Chain.Search do
       circulating_market_cap: nil,
       priority: 0,
       is_verified_via_admin_panel: nil
-      # smart_contract_fields: dynamic([_], type(^%{"certified" => false, "verified" => false}, :map))
     }
   end
 end
