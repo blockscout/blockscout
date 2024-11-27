@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Search do
     Search function used in web interface. Returns paginated search results
   """
   @spec joint_search(PagingOptions.t(), integer(), binary(), [Chain.api?()] | []) :: list
-  def joint_search(paging_options, offset, raw_string, options \\ []) do
+  def joint_search(paging_options, offset\\0, raw_string, options \\ []) do
     string = String.trim(raw_string)
 
     ens_task = maybe_run_ens_task(paging_options, raw_string, options)
@@ -43,14 +43,13 @@ defmodule Explorer.Chain.Search do
     result =
       case prepare_search_term(string) do
         {:some, term} ->
-          query = base_joint_query(string, term)
+          query = base_joint_query(string, term, paging_options)
 
           ordered_query =
             from(items in subquery(query),
               order_by: [
                 desc: items.priority,
                 desc_nulls_last: items.certified,
-                # desc_nulls_last: fragment("smart_contract_fields->>'certified'"),
                 desc_nulls_last: items.circulating_market_cap,
                 desc_nulls_last: items.exchange_rate,
                 desc_nulls_last: items.is_verified_via_admin_panel,
@@ -84,17 +83,21 @@ defmodule Explorer.Chain.Search do
     ens_result ++ result
   end
 
-  def base_joint_query(string, term) do
+  def base_joint_query(string, term, paging_options) do
     tokens_query_certified =
-      string |> search_token_query_certified(term) |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+      string
+      |> search_token_query_certified(term, paging_options)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
 
     tokens_query_not_certified =
       string
-      |> search_token_query_not_certified(term)
+      |> search_token_query_not_certified(term, paging_options)
       |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
 
-    contracts_query = term |> search_contract_query() |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
-    labels_query = search_label_query(term)
+    contracts_query =
+      term |> search_contract_query(paging_options) |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
+
+    labels_query = search_label_query(term, paging_options)
     address_query = string |> search_address_query() |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
     block_query = search_block_query(string)
 
@@ -170,30 +173,18 @@ defmodule Explorer.Chain.Search do
       {:some, term} ->
         tokens_result =
           search_query
-          |> search_token_query_not_certified(term)
+          |> search_token_query_not_certified(term, paging_options)
           |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
-          |> order_by([token],
-            desc_nulls_last: token.circulating_market_cap,
-            desc_nulls_last: token.fiat_value,
-            desc_nulls_last: token.is_verified_via_admin_panel,
-            desc_nulls_last: token.holder_count,
-            asc: token.name,
-            desc: token.inserted_at
-          )
-          |> limit(^paging_options.page_size)
-          |> select_repo(options).all()
 
         contracts_result =
           term
-          |> search_contract_query()
+          |> search_contract_query(paging_options)
           |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
-          |> order_by([items], asc: items.name, desc: items.inserted_at)
-          |> limit(^paging_options.page_size)
           |> select_repo(options).all()
 
         labels_result =
           term
-          |> search_label_query()
+          |> search_label_query(paging_options)
           |> order_by([att, at], asc: at.display_name, desc: att.inserted_at)
           |> limit(^paging_options.page_size)
           |> select_repo(options).all()
@@ -303,7 +294,7 @@ defmodule Explorer.Chain.Search do
     end
   end
 
-  defp search_label_query(term) do
+  defp search_label_query(term, paging_options) do
     label_search_fields =
       search_fields()
       |> Map.put(:address_hash, dynamic([att, _, _], att.address_hash))
@@ -311,17 +302,6 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:name, dynamic([_, at, _], at.display_name))
       |> Map.put(:inserted_at, dynamic([att, _, _], att.inserted_at))
       |> Map.put(:verified, dynamic([_, _, smart_contract], not is_nil(smart_contract)))
-      # |> Map.put(
-      #   :smart_contract_fields,
-      #   dynamic(
-      #     [_, _, smart_contract],
-      #     fragment(
-      #       "jsonb_build_object('certified', ?, 'verified', ?)",
-      #       smart_contract.certified,
-      #       not is_nil(smart_contract)
-      #     )
-      #   )
-      # )
       |> Map.put(:priority, 1)
 
     inner_query =
@@ -330,18 +310,21 @@ defmodule Explorer.Chain.Search do
         select: tag
       )
 
-    from(att in AddressToTag,
-      inner_join: at in subquery(inner_query),
-      on: att.tag_id == at.id,
-      left_join: smart_contract in SmartContract,
-      on: att.address_hash == smart_contract.address_hash,
-      select: ^label_search_fields
-    )
+    base_query =
+      from(att in AddressToTag,
+        inner_join: at in subquery(inner_query),
+        on: att.tag_id == at.id,
+        left_join: smart_contract in SmartContract,
+        on: att.address_hash == smart_contract.address_hash,
+        select: ^label_search_fields,
+        order_by: [asc: at.display_name, desc: att.inserted_at]
+      )
+
+    base_query
+    |> page_search_results(paging_options, :label)
   end
 
-  # UNION_ALL instead of UNION
-  # somehow preserve the order of the selected fields in map from search_fields
-  defp search_token_query_not_certified(string, term) do
+  defp search_token_query_not_certified(string, term, paging_options) do
     token_search_fields =
       search_fields()
       |> Map.put(:address_hash, dynamic([token], token.contract_address_hash))
@@ -359,29 +342,6 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:verified, dynamic([_, smart_contract], not is_nil(smart_contract)))
       |> Map.put(:certified, dynamic([_, smart_contract], smart_contract.certified))
 
-    # |> Map.put(:smart_contract_fields,   dynamic([token, smart_contract],  fragment(
-    #   """
-    #       SELECT COALESCE(
-    #         (SELECT jsonb_build_object('certified', sc.certified, 'verified', true)
-    #           FROM smart_contracts sc
-    #           WHERE sc.address_hash = ?),
-    #         jsonb_build_object('certified', null, 'verified', false)
-    #       )
-    #   """,
-    #   token.contract_address_hash
-    # )))
-    # |> Map.put(
-    #   :smart_contract_fields,
-    #   dynamic(
-    #     [token, smart_contract],
-    #     fragment(
-    #       "jsonb_build_object('certified', ?, 'verified', ?)",
-    #       smart_contract.certified,
-    #       not is_nil(smart_contract)
-    #     )
-    #   )
-    # )
-
     case Chain.string_to_address_hash(string) do
       {:ok, address_hash} ->
         from(token in Token,
@@ -392,42 +352,29 @@ defmodule Explorer.Chain.Search do
         )
 
       _ ->
-        from(token in Token,
-          left_join: smart_contract in SmartContract,
-          on: token.contract_address_hash == smart_contract.address_hash,
-          where: is_nil(smart_contract.certified) or not smart_contract.certified,
-          where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
-          select: ^token_search_fields,
-          order_by: [
-            desc_nulls_last: token.circulating_market_cap,
-            desc_nulls_last: token.fiat_value,
-            desc_nulls_last: token.is_verified_via_admin_panel,
-            desc_nulls_last: token.holder_count,
-            asc: token.name,
-            desc: token.inserted_at
-          ],
-          limit: 50,
-          offset: 0
-          # ,
-          # select_merge: %{
-          #   smart_contract_fields:
-          #     fragment(
-          #       """
-          #           SELECT COALESCE(
-          #             (SELECT jsonb_build_object('certified', sc.certified, 'verified', true)
-          #               FROM smart_contracts sc
-          #               WHERE sc.address_hash = ?),
-          #             jsonb_build_object('certified', false, 'verified', false)
-          #           )
-          #       """,
-          #       token.contract_address_hash
-          #     )
-          # }
-        )
+        base_query =
+          from(token in Token,
+            left_join: smart_contract in SmartContract,
+            on: token.contract_address_hash == smart_contract.address_hash,
+            where: is_nil(smart_contract.certified) or not smart_contract.certified,
+            where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
+            select: ^token_search_fields,
+            order_by: [
+              desc_nulls_last: token.circulating_market_cap,
+              desc_nulls_last: token.fiat_value,
+              desc_nulls_last: token.is_verified_via_admin_panel,
+              desc_nulls_last: token.holder_count,
+              asc: token.name,
+              desc: token.inserted_at
+            ]
+          )
+
+        base_query
+        |> page_search_results(paging_options, :token)
     end
   end
 
-  defp search_token_query_certified(string, term) do
+  defp search_token_query_certified(string, term, paging_options) do
     token_search_fields =
       search_fields()
       |> Map.put(:address_hash, dynamic([token], token.contract_address_hash))
@@ -445,29 +392,6 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:verified, dynamic([_, smart_contract], not is_nil(smart_contract)))
       |> Map.put(:certified, dynamic([_, smart_contract], smart_contract.certified))
 
-    # |> Map.put(:smart_contract_fields,   dynamic([token, smart_contract],  fragment(
-    #   """
-    #       SELECT COALESCE(
-    #         (SELECT jsonb_build_object('certified', sc.certified, 'verified', true)
-    #           FROM smart_contracts sc
-    #           WHERE sc.address_hash = ?),
-    #         jsonb_build_object('certified', null, 'verified', false)
-    #       )
-    #   """,
-    #   token.contract_address_hash
-    # )))
-    # |> Map.put(
-    #   :smart_contract_fields,
-    #   dynamic(
-    #     [token, smart_contract],
-    #     fragment(
-    #       "jsonb_build_object('certified', ?, 'verified', ?)",
-    #       true,
-    #       not is_nil(smart_contract)
-    #     )
-    #   )
-    # )
-
     case Chain.string_to_address_hash(string) do
       {:ok, address_hash} ->
         from(token in Token,
@@ -478,27 +402,28 @@ defmodule Explorer.Chain.Search do
         )
 
       _ ->
-        from(token in Token,
-          left_join: smart_contract in SmartContract,
-          on: token.contract_address_hash == smart_contract.address_hash,
-          where: smart_contract.certified,
-          where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
-          select: ^token_search_fields,
-          order_by: [
-            desc_nulls_last: token.circulating_market_cap,
-            desc_nulls_last: token.fiat_value,
-            desc_nulls_last: token.is_verified_via_admin_panel,
-            desc_nulls_last: token.holder_count,
-            asc: token.name,
-            desc: token.inserted_at
-          ],
-          limit: 50,
-          offset: 0
-        )
+        base_query =
+          from(token in Token,
+            left_join: smart_contract in SmartContract,
+            on: token.contract_address_hash == smart_contract.address_hash,
+            where: smart_contract.certified,
+            where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term),
+            select: ^token_search_fields,
+            order_by: [
+              desc_nulls_last: token.circulating_market_cap,
+              desc_nulls_last: token.fiat_value,
+              desc_nulls_last: token.is_verified_via_admin_panel,
+              desc_nulls_last: token.holder_count,
+              asc: token.name,
+              desc: token.inserted_at
+            ]
+          )
+
+        base_query |> page_search_results(paging_options, :token)
     end
   end
 
-  defp search_contract_query(term) do
+  defp search_contract_query(term, paging_options) do
     contract_search_fields =
       search_fields()
       |> Map.put(:address_hash, dynamic([smart_contract], smart_contract.address_hash))
@@ -508,35 +433,20 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:certified, dynamic([smart_contract], smart_contract.certified))
       |> Map.put(:verified, true)
 
-    # |> Map.put(
-    #   :smart_contract_fields,
-    #   dynamic(
-    #     [smart_contract],
-    #     fragment("jsonb_build_object('certified', ?, 'verified', true)", smart_contract.certified)
-    #   )
-    # )
+    base_query =
+      from(smart_contract in SmartContract,
+        where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", smart_contract.name, ^term),
+        select: ^contract_search_fields,
+        order_by: [
+          desc_nulls_last: smart_contract.certified,
+          asc: smart_contract.name,
+          desc: smart_contract.inserted_at
+        ]
+      )
 
-    from(smart_contract in SmartContract,
-      where: fragment("to_tsvector('english', ?) @@ to_tsquery(?)", smart_contract.name, ^term),
-      select: ^contract_search_fields,
-      order_by: [
-        desc_nulls_last: smart_contract.certified,
-        asc: smart_contract.name,
-        desc: smart_contract.inserted_at
-      ],
-      limit: 50,
-      offset: 0
-    )
+    base_query
+    |> page_search_results(paging_options, :contract)
   end
-
-  # desc: items.priority,
-  # desc_nulls_last: fragment("smart_contract_fields->>'certified'"),
-  # desc_nulls_last: items.circulating_market_cap,
-  # desc_nulls_last: items.exchange_rate,
-  # desc_nulls_last: items.is_verified_via_admin_panel,
-  # desc_nulls_last: items.holder_count,
-  # asc: items.name,
-  # desc: items.inserted_at
 
   defp search_address_query(term) do
     case Chain.string_to_address_hash(term) do
@@ -549,14 +459,6 @@ defmodule Explorer.Chain.Search do
           |> Map.put(:inserted_at, dynamic([_, address_name, _], address_name.inserted_at))
           |> Map.put(:verified, dynamic([address, _, _], address.verified))
           |> Map.put(:certified, dynamic([_, _, smart_contract], smart_contract.certified))
-
-        # |> Map.put(
-        #   :smart_contract_fields,
-        #   dynamic(
-        #     [address, _, smart_contract],
-        #     fragment("jsonb_build_object('certified', ?, 'verified', ?)", smart_contract.certified, address.verified)
-        #   )
-        # )
 
         from(address in Address,
           left_join:
@@ -710,6 +612,53 @@ defmodule Explorer.Chain.Search do
            item.type == ^item_type) or
         item.type != ^item_type
     )
+  end
+
+  defp page_search_results(query, %PagingOptions{key: nil, page_size: page_size}, _query_type),
+    do: limit(query, ^page_size)
+
+  defp page_search_results(
+         query,
+         %PagingOptions{
+           key: {_address_hash, _transaction_hash, _block_hash, _holder_count, name, inserted_at, _item_type},
+           page_size: page_size
+         },
+         :label
+       ) do
+    query
+    |> where([item], item.display_name > ^name or (item.display_name == ^name and item.inserted_at < ^inserted_at))
+    |> limit(^page_size)
+  end
+
+  defp page_search_results(
+         query,
+         %PagingOptions{
+           key: {_address_hash, _transaction_hash, _block_hash, holder_count, name, inserted_at, _item_type},
+           page_size: page_size
+         },
+         query_type
+       )
+       when holder_count in [nil, ""] or query_type != :token do
+    query
+    |> where([item], item.name > ^name or (item.name == ^name and item.inserted_at < ^inserted_at))
+    |> limit(^page_size)
+  end
+
+  defp page_search_results(
+         query,
+         %PagingOptions{
+           key: {_address_hash, _transaction_hash, _block_hash, holder_count, name, inserted_at, _item_type},
+           page_size: page_size
+         },
+         :token
+       ) do
+    query
+    |> where(
+      [item],
+      item.holder_count < ^holder_count or (item.holder_count == ^holder_count and item.name > ^name) or
+        (item.holder_count == ^holder_count and item.name == ^name and item.inserted_at < ^inserted_at)
+    )
+    |> limit(^page_size)
   end
 
   defp take_all_categories([], taken_lengths, _remained), do: taken_lengths

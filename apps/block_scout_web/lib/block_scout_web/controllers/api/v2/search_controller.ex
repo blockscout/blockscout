@@ -21,10 +21,9 @@ defmodule BlockScoutWeb.API.V2.SearchController do
 
   def search(conn, %{"q" => query} = params) do
     [paging_options: paging_options] = paging_options(params)
-    offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
     search_results_plus_one =
-      paging_options |> Search.joint_search(offset, query, @api_true) |> dbg()
+      paging_options |> Search.joint_search(query, @api_true)
 
     {search_results, next_page} = split_list_by_page(search_results_plus_one)
 
