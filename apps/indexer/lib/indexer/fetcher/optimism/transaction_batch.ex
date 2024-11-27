@@ -102,8 +102,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
            {:system_config_valid, Helper.address_correct?(system_config)},
          {:genesis_block_l2_invalid, false} <-
            {:genesis_block_l2_invalid, is_nil(env[:genesis_block_l2]) or env[:genesis_block_l2] < 0},
-         {:reorg_monitor_started, true} <-
-           {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
+         _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {:system_config_read, {start_block_l1, batch_inbox, batch_submitter}} <-
@@ -158,13 +157,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
       {:genesis_block_l2_invalid, true} ->
         Logger.error("L2 genesis block number is undefined or invalid.")
-        {:stop, :normal, state}
-
-      {:reorg_monitor_started, false} ->
-        Logger.error(
-          "Cannot start this process as reorg monitor in Indexer.Fetcher.RollupL1ReorgMonitor is not started."
-        )
-
         {:stop, :normal, state}
 
       {:rpc_l1_undefined, true} ->
