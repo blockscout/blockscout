@@ -99,9 +99,9 @@
       <%= if session && !session[:email_verified] do %>
         <p class="alert alert-warning" role="alert" style="margin-bottom: 0"><%= gettext("Please confirm your email address to use the My Account feature.") %> <%= gettext("A confirmation email was sent to") %> <a href="mailto:<%= session[:email] %>"><%=session[:email] %></a> <%= gettext "on sign up. Didn’t receive?" %> <a href="/api/account/v2/email/resend" class="ajax"><%= gettext "Resend verification email" %></a>.</p>
       <% else %>
-        <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+        <p class="alert alert-info" role="alert"><%= Map.get(@conn.private, :phoenix_flash) && get_flash(@conn, :info) %></p>
       <% end %>
-      <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+      <p class="alert alert-danger" role="alert"><%= Map.get(@conn.private, :phoenix_flash) && get_flash(@conn, :error) %></p>
       <main class="js-ad-dependant-pt pt-5">
         <%= @inner_content %>
       </main>

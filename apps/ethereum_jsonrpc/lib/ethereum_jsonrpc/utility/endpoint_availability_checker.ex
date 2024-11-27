@@ -38,7 +38,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
       Enum.reduce(unavailable_endpoints_arguments, [], fn {json_rpc_named_arguments, url_type}, acc ->
         case fetch_latest_block_number(json_rpc_named_arguments) do
           {:ok, _number} ->
-            url = json_rpc_named_arguments[:transport_options][:url]
+            [url] = json_rpc_named_arguments[:transport_options][:urls]
 
             EndpointAvailabilityObserver.enable_endpoint(url, url_type, json_rpc_named_arguments)
             acc
