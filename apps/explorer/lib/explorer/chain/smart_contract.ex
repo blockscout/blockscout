@@ -1349,21 +1349,39 @@ defmodule Explorer.Chain.SmartContract do
     )
   end
 
+  defp filter_contracts(basic_query, nil), do: basic_query
+
   defp filter_contracts(basic_query, :solidity) do
-    basic_query
-    |> where(is_vyper_contract: ^false)
+    from(
+      query in basic_query,
+      where:
+        query.is_vyper_contract == false or
+          query.language == :solidity
+    )
   end
 
   defp filter_contracts(basic_query, :vyper) do
-    basic_query
-    |> where(is_vyper_contract: ^true)
+    from(
+      query in basic_query,
+      where:
+        query.is_vyper_contract == true or
+          query.language == :vyper
+    )
   end
 
   defp filter_contracts(basic_query, :yul) do
-    from(query in basic_query, where: is_nil(query.abi))
+    from(query in basic_query,
+      where:
+        is_nil(query.abi) or
+          query.language == :yul
+    )
   end
 
-  defp filter_contracts(basic_query, _), do: basic_query
+  defp filter_contracts(basic_query, language) do
+    from(query in basic_query,
+      where: query.language == ^language
+    )
+  end
 
   @doc """
   Retrieves the constructor arguments for a zkSync smart contract.
