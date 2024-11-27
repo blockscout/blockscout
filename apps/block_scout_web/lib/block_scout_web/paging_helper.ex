@@ -226,11 +226,12 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def delete_parameters_from_next_page_params(_), do: nil
 
-  def current_filter(%{"filter" => language}) do
-    if language in SmartContract.language_strings() do
-      [filter: language]
-    else
-      []
+  def current_filter(%{"filter" => language_string}) do
+    SmartContract.language_string_to_atom()
+    |> Map.fetch(language_string)
+    |> case do
+      {:ok, language} -> [filter: language]
+      :error -> []
     end
   end
 

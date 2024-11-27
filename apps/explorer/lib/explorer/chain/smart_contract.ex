@@ -204,13 +204,14 @@ defmodule Explorer.Chain.SmartContract do
 
   @languages @default_languages ++ @chain_type_languages
   @languages_enum @languages |> Enum.with_index(1)
+  @language_string_to_atom @languages |> Map.new(&{to_string(&1), &1})
 
   @doc """
     Returns list of languages supported by the database schema.
   """
-  @spec language_strings() :: [String.t()]
-  def language_strings do
-    @languages |> Enum.map(&to_string/1)
+  @spec language_string_to_atom() :: %{String.t() => atom()}
+  def language_string_to_atom do
+    @language_string_to_atom
   end
 
   @doc """
@@ -1361,12 +1362,8 @@ defmodule Explorer.Chain.SmartContract do
   defp filter_contracts(basic_query, nil), do: basic_query
 
   defp filter_contracts(basic_query, :solidity) do
-    from(
-      query in basic_query,
-      where:
-        query.is_vyper_contract == false or
-          query.language == :solidity
-    )
+    basic_query
+    |> where(is_vyper_contract: false, language: :solidity)
   end
 
   defp filter_contracts(basic_query, :vyper) do
