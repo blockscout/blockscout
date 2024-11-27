@@ -1439,25 +1439,51 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
 
-    case Helper.repeated_call(
-           &json_rpc/2,
-           [requests, json_rpc_named_arguments],
-           error_message,
-           Helper.finite_retries_number()
-         ) do
-      {:ok, responses} ->
-        start_block = quantity_to_integer(Enum.at(responses, 0).result)
-        "0x000000000000000000000000" <> batch_inbox = Enum.at(responses, 1).result
-        "0x000000000000000000000000" <> batch_submitter = Enum.at(responses, 2).result
-        {start_block, String.downcase("0x" <> batch_inbox), String.downcase("0x" <> batch_submitter)}
+    env = Application.get_all_env(:indexer)[__MODULE__]
+    fallback_start_block = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:start_block_l1]
 
-      _ ->
-        start_block = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:start_block_l1]
-        env = Application.get_all_env(:indexer)[__MODULE__]
+    {start_block, batch_inbox, batch_submitter} =
+      case Helper.repeated_call(
+             &json_rpc/2,
+             [requests, json_rpc_named_arguments],
+             error_message,
+             Helper.finite_retries_number()
+           ) do
+        {:ok, responses} ->
+          start_block =
+            responses
+            |> Enum.at(0)
+            |> Map.get(:result, fallback_start_block)
+            |> quantity_to_integer()
 
-        if not is_nil(start_block) and Helper.address_correct?(env[:inbox]) and Helper.address_correct?(env[:submitter]) do
-          {start_block, String.downcase(env[:inbox]), String.downcase(env[:submitter])}
-        end
+          inbox_result = Map.get(Enum.at(responses, 1), :result)
+          submitter_result = Map.get(Enum.at(responses, 2), :result)
+
+          {batch_inbox, batch_submitter} =
+            with {:nil_result, true, _, _} <-
+                   {:nil_result, is_nil(inbox_result) or is_nil(submitter_result), inbox_result, submitter_result},
+                 {:fallback_defined, true} <-
+                   {:fallback_defined,
+                    Helper.address_correct?(env[:inbox]) and Helper.address_correct?(env[:submitter])} do
+              {env[:inbox], env[:submitter]}
+            else
+              {:nil_result, false, inbox, submitter} ->
+                "0x000000000000000000000000" <> batch_inbox = inbox
+                "0x000000000000000000000000" <> batch_submitter = submitter
+                {"0x" <> batch_inbox, "0x" <> batch_submitter}
+
+              {:fallback_defined, false} ->
+                {nil, nil}
+            end
+
+          {start_block, batch_inbox, batch_submitter}
+
+        _ ->
+          {fallback_start_block, env[:inbox], env[:submitter]}
+      end
+
+    if !is_nil(start_block) and Helper.address_correct?(batch_inbox) and Helper.address_correct?(batch_submitter) do
+      {start_block, String.downcase(batch_inbox), String.downcase(batch_submitter)}
     end
   end
 

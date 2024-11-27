@@ -346,23 +346,46 @@ defmodule Indexer.Fetcher.Optimism do
 
     error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
 
-    case Helper.repeated_call(
-           &json_rpc/2,
-           [requests, json_rpc_named_arguments],
-           error_message,
-           Helper.finite_retries_number()
-         ) do
-      {:ok, responses} ->
-        "0x000000000000000000000000" <> optimism_portal = Enum.at(responses, 0).result
-        start_block = quantity_to_integer(Enum.at(responses, 1).result)
-        {"0x" <> optimism_portal, start_block}
+    env = Application.get_all_env(:indexer)[__MODULE__]
+    fallback_start_block = env[:start_block_l1]
 
-      _ ->
-        env = Application.get_all_env(:indexer)[__MODULE__]
+    {optimism_portal, start_block} =
+      case Helper.repeated_call(
+             &json_rpc/2,
+             [requests, json_rpc_named_arguments],
+             error_message,
+             Helper.finite_retries_number()
+           ) do
+        {:ok, responses} ->
+          optimism_portal_result = Map.get(Enum.at(responses, 0), :result)
 
-        if Helper.address_correct?(env[:portal]) and not is_nil(env[:start_block_l1]) do
-          {env[:portal], env[:start_block_l1]}
-        end
+          optimism_portal =
+            with {:nil_result, true, _} <- {:nil_result, is_nil(optimism_portal_result), optimism_portal_result},
+                 {:fallback_defined, true} <- {:fallback_defined, Helper.address_correct?(env[:portal])} do
+              env[:portal]
+            else
+              {:nil_result, false, portal} ->
+                "0x000000000000000000000000" <> optimism_portal = portal
+                "0x" <> optimism_portal
+
+              {:fallback_defined, false} ->
+                nil
+            end
+
+          start_block =
+            responses
+            |> Enum.at(1)
+            |> Map.get(:result, fallback_start_block)
+            |> quantity_to_integer()
+
+          {optimism_portal, start_block}
+
+        _ ->
+          {env[:portal], fallback_start_block}
+      end
+
+    if Helper.address_correct?(optimism_portal) and !is_nil(start_block) do
+      {String.downcase(optimism_portal), start_block}
     end
   end
 
