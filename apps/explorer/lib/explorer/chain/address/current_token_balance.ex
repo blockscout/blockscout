@@ -348,7 +348,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       |> Stream.map(fn ctb ->
         [
           Address.checksum(ctb.address_hash),
-          CurrencyHelper.divide_decimals(ctb.value, token.decimals)
+          CurrencyHelper.divide_decimals(ctb.value, token.decimals) |> Decimal.to_string(:xsd)
         ]
       end)
 
