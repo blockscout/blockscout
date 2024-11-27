@@ -366,6 +366,9 @@ defmodule BlockScoutWeb.TransactionViewTest do
         end
       )
 
+      init_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
+
       revert_reason = TransactionView.transaction_revert_reason(transaction, nil)
 
       assert revert_reason ==
@@ -373,6 +376,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
                 [
                   {"reason", "string", "UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT"}
                 ]}
+
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, init_config)
     end
   end
 end

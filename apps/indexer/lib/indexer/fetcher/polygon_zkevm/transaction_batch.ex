@@ -173,23 +173,23 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
 
     {:ok, responses} = Helper.repeated_call(&json_rpc/2, [requests, json_rpc_named_arguments], error_message, 3)
 
-    # For every batch info extract batches' L1 sequence tx and L1 verify tx
+    # For every batch info extract batches' L1 sequence transaction and L1 verify transaction
     {sequence_hashes, verify_hashes} =
       responses
       |> Enum.reduce({[], []}, fn res, {sequences, verifies} = _acc ->
-        send_sequences_tx_hash = get_tx_hash(res.result, "sendSequencesTxHash")
-        verify_batch_tx_hash = get_tx_hash(res.result, "verifyBatchTxHash")
+        send_sequences_transaction_hash = get_transaction_hash(res.result, "sendSequencesTxHash")
+        verify_batch_transaction_hash = get_transaction_hash(res.result, "verifyBatchTxHash")
 
         sequences =
-          if send_sequences_tx_hash != @zero_hash do
-            [Base.decode16!(send_sequences_tx_hash, case: :mixed) | sequences]
+          if send_sequences_transaction_hash != @zero_hash do
+            [Base.decode16!(send_sequences_transaction_hash, case: :mixed) | sequences]
           else
             sequences
           end
 
         verifies =
-          if verify_batch_tx_hash != @zero_hash do
-            [Base.decode16!(verify_batch_tx_hash, case: :mixed) | verifies]
+          if verify_batch_transaction_hash != @zero_hash do
+            [Base.decode16!(verify_batch_transaction_hash, case: :mixed) | verifies]
           else
             verifies
           end
@@ -198,22 +198,22 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
       end)
 
     # All L1 transactions in one list without repetition
-    l1_tx_hashes = Enum.uniq(sequence_hashes ++ verify_hashes)
+    l1_transaction_hashes = Enum.uniq(sequence_hashes ++ verify_hashes)
 
-    # Receive all IDs for L1 txs
+    # Receive all IDs for L1 transactions
     hash_to_id =
-      l1_tx_hashes
+      l1_transaction_hashes
       |> Reader.lifecycle_transactions()
       |> Enum.reduce(%{}, fn {hash, id}, acc ->
         Map.put(acc, hash.bytes, id)
       end)
 
     # For every batch build batch representation, collect associated L1 and L2 transactions
-    {batches_to_import, l2_txs_to_import, l1_txs_to_import, _, _} =
+    {batches_to_import, l2_transactions_to_import, l1_transactions_to_import, _, _} =
       responses
       |> Enum.reduce({[], [], [], Reader.next_id(), hash_to_id}, fn res,
-                                                                    {batches, l2_txs, l1_txs, next_id, hash_to_id} =
-                                                                      _acc ->
+                                                                    {batches, l2_transactions, l1_transactions, next_id,
+                                                                     hash_to_id} = _acc ->
         number = quantity_to_integer(Map.get(res.result, "number"))
 
         # the timestamp is undefined for unfinalized batches
@@ -229,32 +229,32 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
         state_root = Map.get(res.result, "stateRoot")
 
         # Get ID for sequence transaction (new ID if the batch is just sequenced)
-        {sequence_id, l1_txs, next_id, hash_to_id} =
+        {sequence_id, l1_transactions, next_id, hash_to_id} =
           res.result
-          |> get_tx_hash("sendSequencesTxHash")
-          |> handle_tx_hash(hash_to_id, next_id, l1_txs, false)
+          |> get_transaction_hash("sendSequencesTxHash")
+          |> handle_transaction_hash(hash_to_id, next_id, l1_transactions, false)
 
         # Get ID for verify transaction (new ID if the batch is just verified)
-        {verify_id, l1_txs, next_id, hash_to_id} =
+        {verify_id, l1_transactions, next_id, hash_to_id} =
           res.result
-          |> get_tx_hash("verifyBatchTxHash")
-          |> handle_tx_hash(hash_to_id, next_id, l1_txs, true)
+          |> get_transaction_hash("verifyBatchTxHash")
+          |> handle_transaction_hash(hash_to_id, next_id, l1_transactions, true)
 
         # Associate every transaction from batch with the batch number
-        l2_txs_append =
+        l2_transactions_append =
           l2_transaction_hashes
           |> Kernel.||([])
-          |> Enum.map(fn l2_tx_hash ->
+          |> Enum.map(fn l2_transaction_hash ->
             %{
               batch_number: number,
-              hash: l2_tx_hash
+              hash: l2_transaction_hash
             }
           end)
 
         batch = %{
           number: number,
           timestamp: timestamp,
-          l2_transactions_count: Enum.count(l2_txs_append),
+          l2_transactions_count: Enum.count(l2_transactions_append),
           global_exit_root: global_exit_root,
           acc_input_hash: acc_input_hash,
           state_root: state_root,
@@ -262,15 +262,15 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
           verify_id: verify_id
         }
 
-        {[batch | batches], l2_txs ++ l2_txs_append, l1_txs, next_id, hash_to_id}
+        {[batch | batches], l2_transactions ++ l2_transactions_append, l1_transactions, next_id, hash_to_id}
       end)
 
     # Update batches list, L1 transactions list and L2 transaction list
     {:ok, _} =
       Chain.import(%{
-        polygon_zkevm_lifecycle_transactions: %{params: l1_txs_to_import},
+        polygon_zkevm_lifecycle_transactions: %{params: l1_transactions_to_import},
         polygon_zkevm_transaction_batches: %{params: batches_to_import},
-        polygon_zkevm_batch_transactions: %{params: l2_txs_to_import},
+        polygon_zkevm_batch_transactions: %{params: l2_transactions_to_import},
         timeout: :infinity
       })
 
@@ -306,27 +306,27 @@ defmodule Indexer.Fetcher.PolygonZkevm.TransactionBatch do
     {latest_batch_number, virtual_batch_number, verified_batch_number}
   end
 
-  defp get_tx_hash(result, type) do
+  defp get_transaction_hash(result, type) do
     case Map.get(result, type) do
-      "0x" <> tx_hash -> tx_hash
+      "0x" <> transaction_hash -> transaction_hash
       nil -> @zero_hash
     end
   end
 
-  defp handle_tx_hash(encoded_tx_hash, hash_to_id, next_id, l1_txs, is_verify) do
-    if encoded_tx_hash != @zero_hash do
-      tx_hash = Base.decode16!(encoded_tx_hash, case: :mixed)
+  defp handle_transaction_hash(encoded_transaction_hash, hash_to_id, next_id, l1_transactions, is_verify) do
+    if encoded_transaction_hash != @zero_hash do
+      transaction_hash = Base.decode16!(encoded_transaction_hash, case: :mixed)
 
-      id = Map.get(hash_to_id, tx_hash)
+      id = Map.get(hash_to_id, transaction_hash)
 
       if is_nil(id) do
-        {next_id, [%{id: next_id, hash: tx_hash, is_verify: is_verify} | l1_txs], next_id + 1,
-         Map.put(hash_to_id, tx_hash, next_id)}
+        {next_id, [%{id: next_id, hash: transaction_hash, is_verify: is_verify} | l1_transactions], next_id + 1,
+         Map.put(hash_to_id, transaction_hash, next_id)}
       else
-        {id, l1_txs, next_id, hash_to_id}
+        {id, l1_transactions, next_id, hash_to_id}
       end
     else
-      {nil, l1_txs, next_id, hash_to_id}
+      {nil, l1_transactions, next_id, hash_to_id}
     end
   end
 end

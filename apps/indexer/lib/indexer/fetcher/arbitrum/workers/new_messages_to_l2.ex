@@ -281,13 +281,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   defp get_messages_from_logs([], _, _), do: []
 
   defp get_messages_from_logs(logs, json_rpc_named_arguments, chunk_size) do
-    {messages, txs_requests} = parse_logs_for_l1_to_l2_messages(logs)
+    {messages, transactions_requests} = parse_logs_for_l1_to_l2_messages(logs)
 
-    txs_to_from = Rpc.execute_transactions_requests_and_get_from(txs_requests, json_rpc_named_arguments, chunk_size)
+    transactions_to_from =
+      Rpc.execute_transactions_requests_and_get_from(transactions_requests, json_rpc_named_arguments, chunk_size)
 
     Enum.map(messages, fn msg ->
       Map.merge(msg, %{
-        originator_address: txs_to_from[msg.originating_transaction_hash],
+        originator_address: transactions_to_from[msg.originating_transaction_hash],
         status: :initiated
       })
     end)
@@ -307,45 +308,45 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   # ## Returns
   # - A tuple comprising:
   #   - `messages`: A list of maps, each containing an incomplete representation of a message.
-  #   - `txs_requests`: A list of RPC request `eth_getTransactionByHash` structured to fetch
+  #   - `transactions_requests`: A list of RPC request `eth_getTransactionByHash` structured to fetch
   #     additional data needed to finalize the message descriptions.
   defp parse_logs_for_l1_to_l2_messages(logs) do
-    {messages, txs_requests} =
+    {messages, transactions_requests} =
       logs
-      |> Enum.reduce({[], %{}}, fn event, {messages, txs_requests} ->
+      |> Enum.reduce({[], %{}}, fn event, {messages, transactions_requests} ->
         {msg_id, type, ts} = message_delivered_event_parse(event)
 
         if type in @types_of_l1_messages_forwarded_to_l2 do
-          tx_hash = event["transactionHash"]
+          transaction_hash = event["transactionHash"]
           blk_num = quantity_to_integer(event["blockNumber"])
 
           updated_messages = [
             %{
               direction: :to_l2,
               message_id: msg_id,
-              originating_transaction_hash: tx_hash,
+              originating_transaction_hash: transaction_hash,
               origination_timestamp: ts,
               originating_transaction_block_number: blk_num
             }
             | messages
           ]
 
-          updated_txs_requests =
+          updated_transactions_requests =
             Map.put(
-              txs_requests,
-              tx_hash,
-              Rpc.transaction_by_hash_request(%{id: 0, hash: tx_hash})
+              transactions_requests,
+              transaction_hash,
+              Rpc.transaction_by_hash_request(%{id: 0, hash: transaction_hash})
             )
 
-          log_debug("L1 to L2 message #{tx_hash} found with the type #{type}")
+          log_debug("L1 to L2 message #{transaction_hash} found with the type #{type}")
 
-          {updated_messages, updated_txs_requests}
+          {updated_messages, updated_transactions_requests}
         else
-          {messages, txs_requests}
+          {messages, transactions_requests}
         end
       end)
 
-    {messages, Map.values(txs_requests)}
+    {messages, Map.values(transactions_requests)}
   end
 
   # Parses the `MessageDelivered` event to extract relevant message details.

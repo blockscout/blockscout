@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/operations/:user_operation_hash_param/summary` endpoint.
   """
   @spec summary(Plug.Conn.t(), map()) ::
-          {:error | :format | :tx_interpreter_enabled | non_neg_integer(), any()} | Plug.Conn.t()
+          {:error | :format | :transaction_interpreter_enabled | non_neg_integer(), any()} | Plug.Conn.t()
   def summary(conn, %{"operation_hash_param" => operation_hash_string, "just_request_body" => "true"}) do
     with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_transaction_hash(operation_hash_string)},
          {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
@@ -35,12 +35,13 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
 
   def summary(conn, %{"operation_hash_param" => operation_hash_string}) do
     with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_transaction_hash(operation_hash_string)},
-         {:tx_interpreter_enabled, true} <- {:tx_interpreter_enabled, TransactionInterpretationService.enabled?()},
+         {:transaction_interpreter_enabled, true} <-
+           {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
          {200, %{"hash" => _} = user_op} <- AccountAbstraction.get_user_ops_by_hash(operation_hash_string) do
       {response, code} =
         case TransactionInterpretationService.interpret_user_operation(user_op) do
           {:ok, response} -> {response, 200}
-          {:error, %Jason.DecodeError{}} -> {%{error: "Error while tx interpreter response decoding"}, 500}
+          {:error, %Jason.DecodeError{}} -> {%{error: "Error while transaction interpreter response decoding"}, 500}
           {{:error, error}, code} -> {%{error: error}, code}
         end
 
@@ -158,7 +159,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
         necessity_by_association: %{
           :names => :optional,
           :smart_contract => :optional,
-          :proxy_implementations => :optional
+          proxy_implementations_association() => :optional
         },
         api?: true
       )
@@ -233,10 +234,10 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   defp try_to_decode_call_data(%{"call_data" => _call_data} = user_op) do
     user_op_hash = user_op["hash"]
 
-    {_mock_tx, _decoded_call_data, decoded_call_data_json} =
+    {_mock_transaction, _decoded_call_data, decoded_call_data_json} =
       TransactionInterpretationService.decode_user_op_calldata(user_op_hash, user_op["call_data"])
 
-    {_mock_tx, _decoded_execute_call_data, decoded_execute_call_data_json} =
+    {_mock_transaction, _decoded_execute_call_data, decoded_execute_call_data_json} =
       TransactionInterpretationService.decode_user_op_calldata(user_op_hash, user_op["execute_call_data"])
 
     user_op

@@ -57,6 +57,7 @@ defmodule Explorer.Application do
       Supervisor.child_spec({Task.Supervisor, name: Explorer.LookUpSmartContractSourcesTaskSupervisor},
         id: LookUpSmartContractSourcesTaskSupervisor
       ),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.WETHMigratorSupervisor}, id: WETHMigratorSupervisor),
       Explorer.SmartContract.SolcDownloader,
       Explorer.SmartContract.VyperDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
@@ -140,7 +141,22 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers),
         configure(Explorer.Migrator.TransactionBlockConsensus),
         configure(Explorer.Migrator.TokenTransferBlockConsensus),
-        configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability)
+        configure(Explorer.Migrator.RestoreOmittedWETHTransfers),
+        configure(Explorer.Migrator.FilecoinPendingAddressOperations),
+        configure_mode_dependent_process(Explorer.Migrator.ShrinkInternalTransactions, :indexer),
+        configure_chain_type_dependent_process(Explorer.Chain.Cache.BlackfortValidatorsCounters, :blackfort),
+        configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability),
+        Explorer.Migrator.SanitizeDuplicatedLogIndexLogs
+        |> configure()
+        |> configure_chain_type_dependent_process([
+          :polygon_zkevm,
+          :rsk,
+          :filecoin
+        ]),
+        configure_mode_dependent_process(Explorer.Migrator.SanitizeMissingTokenBalances, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.SanitizeReplacedTransactions, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, :indexer),
+        Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync)
       ]
       |> List.flatten()
 
@@ -150,18 +166,23 @@ defmodule Explorer.Application do
   defp repos_by_chain_type do
     if Mix.env() == :test do
       [
+        Explorer.Repo.Arbitrum,
         Explorer.Repo.Beacon,
+        Explorer.Repo.Blackfort,
+        Explorer.Repo.BridgedTokens,
+        Explorer.Repo.Celo,
+        Explorer.Repo.Filecoin,
         Explorer.Repo.Optimism,
         Explorer.Repo.PolygonEdge,
         Explorer.Repo.PolygonZkevm,
-        Explorer.Repo.ZkSync,
         Explorer.Repo.RSK,
+        Explorer.Repo.Scroll,
         Explorer.Repo.Shibarium,
+        Explorer.Repo.ShrunkInternalTransactions,
+        Explorer.Repo.Stability,
         Explorer.Repo.Suave,
-        Explorer.Repo.Arbitrum,
-        Explorer.Repo.BridgedTokens,
-        Explorer.Repo.Filecoin,
-        Explorer.Repo.Stability
+        Explorer.Repo.Zilliqa,
+        Explorer.Repo.ZkSync
       ]
     else
       []
@@ -169,7 +190,7 @@ defmodule Explorer.Application do
   end
 
   defp account_repo do
-    if System.get_env("ACCOUNT_DATABASE_URL") || Mix.env() == :test do
+    if Application.get_env(:explorer, Explorer.Account)[:enabled] || Mix.env() == :test do
       [Explorer.Repo.Account]
     else
       []
@@ -196,8 +217,24 @@ defmodule Explorer.Application do
     end
   end
 
+  defp configure_chain_type_dependent_process(process, chain_types) when is_list(chain_types) do
+    if Application.get_env(:explorer, :chain_type) in chain_types do
+      process
+    else
+      []
+    end
+  end
+
   defp configure_chain_type_dependent_process(process, chain_type) do
     if Application.get_env(:explorer, :chain_type) == chain_type do
+      process
+    else
+      []
+    end
+  end
+
+  defp configure_mode_dependent_process(process, mode) do
+    if should_start?(process) and Application.get_env(:explorer, :mode) in [mode, :all] do
       process
     else
       []

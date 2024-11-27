@@ -8,33 +8,48 @@ defmodule EthereumJSONRPC.Block do
 
   alias EthereumJSONRPC.{Transactions, Uncles, Withdrawals}
 
+  alias EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate, as: ZilliqaAggregateQuorumCertificate
+  alias EthereumJSONRPC.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
+
+  # Because proof of stake does not naturally produce uncles like proof of work,
+  # the list of these in each block is empty, and the hash of this list
+  # (sha3Uncles) is the RLP-encoded hash of an empty list.
+  @sha3_uncles_empty_list "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
+
   case Application.compile_env(:explorer, :chain_type) do
     :rsk ->
       @chain_type_fields quote(
                            do: [
-                             bitcoin_merged_mining_header: EthereumJSONRPC.data(),
-                             bitcoin_merged_mining_coinbase_transaction: EthereumJSONRPC.data(),
-                             bitcoin_merged_mining_merkle_proof: EthereumJSONRPC.data(),
-                             hash_for_merged_mining: EthereumJSONRPC.data(),
-                             minimum_gas_price: non_neg_integer()
+                             {optional(:bitcoin_merged_mining_header), EthereumJSONRPC.data()},
+                             {optional(:bitcoin_merged_mining_coinbase_transaction), EthereumJSONRPC.data()},
+                             {optional(:bitcoin_merged_mining_merkle_proof), EthereumJSONRPC.data()},
+                             {optional(:hash_for_merged_mining), EthereumJSONRPC.data()},
+                             {optional(:minimum_gas_price), non_neg_integer()}
                            ]
                          )
 
     :ethereum ->
       @chain_type_fields quote(
                            do: [
-                             withdrawals_root: EthereumJSONRPC.hash(),
-                             blob_gas_used: non_neg_integer(),
-                             excess_blob_gas: non_neg_integer()
+                             {optional(:withdrawals_root), EthereumJSONRPC.hash()},
+                             {optional(:blob_gas_used), non_neg_integer()},
+                             {optional(:excess_blob_gas), non_neg_integer()}
                            ]
                          )
 
     :arbitrum ->
       @chain_type_fields quote(
                            do: [
-                             send_count: non_neg_integer(),
-                             send_root: EthereumJSONRPC.hash(),
-                             l1_block_number: non_neg_integer()
+                             {optional(:send_count), non_neg_integer()},
+                             {optional(:send_root), EthereumJSONRPC.hash()},
+                             {optional(:l1_block_number), non_neg_integer()}
+                           ]
+                         )
+
+    :zilliqa ->
+      @chain_type_fields quote(
+                           do: [
+                             {optional(:zilliqa_view), non_neg_integer()}
                            ]
                          )
 
@@ -42,7 +57,14 @@ defmodule EthereumJSONRPC.Block do
       @chain_type_fields quote(do: [])
   end
 
-  @type elixir :: %{String.t() => non_neg_integer | DateTime.t() | String.t() | nil}
+  @type elixir :: %{
+          String.t() =>
+            non_neg_integer
+            | DateTime.t()
+            | String.t()
+            | map()
+            | nil
+        }
   @type params :: %{
           unquote_splicing(@chain_type_fields),
           difficulty: pos_integer(),
@@ -186,6 +208,15 @@ defmodule EthereumJSONRPC.Block do
           "sendCount" => 91,\
           "l1BlockNumber" => 19828534,\
       """
+    :zilliqa -> """
+          "view" => "0x115cca",\
+          "quorumCertificate" => %{\
+            "block_hash" => "0x4b8939a7fb0d7de4b288bafd4d5caa02f53abf3c1e348fca5038eebbf68248fa",\
+            "cosigned" => "[1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",\
+            "signature" => "0xa78c7f3e07e1df963ddeda17a1e5afd97c7c8a6fc8e0616249c22a2a1cc91f8eef6073cab8ba22b50cc7b38090f1ad9109473d30f24d57858d1f28c6679b3c4deeb800e5572b5e15604596594d506d3103a44d8b707da581f1a4b82310aeecb6",\
+            "view" => "0x115cc7"\
+          },\
+      """
     _ -> ""
   end}
       ...>     "uncles" => []
@@ -227,6 +258,9 @@ defmodule EthereumJSONRPC.Block do
             send_root: "0xc71ee2cf4201f65590aa6c052270dc41e926e628f213e268a58d9a8d8f739f82",\
             send_count: 91,\
             l1_block_number: 19828534,\
+      """
+    :zilliqa -> """
+            zilliqa_view: "0x115cca",\
       """
     _ -> ""
   end}
@@ -296,6 +330,9 @@ defmodule EthereumJSONRPC.Block do
             send_count: nil,\
             l1_block_number: nil,\
       """
+    :zilliqa -> """
+            zilliqa_view: nil,\
+      """
     _ -> ""
   end}
         uncles: []
@@ -320,13 +357,11 @@ defmodule EthereumJSONRPC.Block do
            "number" => number,
            "parentHash" => parent_hash,
            "receiptsRoot" => receipts_root,
-           "sha3Uncles" => sha3_uncles,
            "size" => size,
            "stateRoot" => state_root,
            "timestamp" => timestamp,
            "totalDifficulty" => total_difficulty,
            "transactionsRoot" => transactions_root,
-           "uncles" => uncles,
            "baseFeePerGas" => base_fee_per_gas
          } = elixir
        ) do
@@ -343,13 +378,15 @@ defmodule EthereumJSONRPC.Block do
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
-      sha3_uncles: sha3_uncles,
+      # In case of CELO, `sha3_uncles` may not be returned by eth_getBlockByHash
+      sha3_uncles: Map.get(elixir, "sha3Uncles", @sha3_uncles_empty_list),
       size: size,
       state_root: state_root,
       timestamp: timestamp,
       total_difficulty: total_difficulty,
       transactions_root: transactions_root,
-      uncles: uncles,
+      # In case of CELO, `uncles` may not be returned by eth_getBlockByHash
+      uncles: Map.get(elixir, "uncles", []),
       base_fee_per_gas: base_fee_per_gas
     }
   end
@@ -366,12 +403,10 @@ defmodule EthereumJSONRPC.Block do
            "number" => number,
            "parentHash" => parent_hash,
            "receiptsRoot" => receipts_root,
-           "sha3Uncles" => sha3_uncles,
            "size" => size,
            "stateRoot" => state_root,
            "timestamp" => timestamp,
            "transactionsRoot" => transactions_root,
-           "uncles" => uncles,
            "baseFeePerGas" => base_fee_per_gas
          } = elixir
        ) do
@@ -388,12 +423,14 @@ defmodule EthereumJSONRPC.Block do
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
-      sha3_uncles: sha3_uncles,
+      # In case of CELO, `sha3_uncles` may not be returned by eth_getBlockByHash
+      sha3_uncles: Map.get(elixir, "sha3Uncles", @sha3_uncles_empty_list),
       size: size,
       state_root: state_root,
       timestamp: timestamp,
       transactions_root: transactions_root,
-      uncles: uncles,
+      # In case of CELO, `uncles` may not be returned by eth_getBlockByHash
+      uncles: Map.get(elixir, "uncles", []),
       base_fee_per_gas: base_fee_per_gas
     }
   end
@@ -410,13 +447,11 @@ defmodule EthereumJSONRPC.Block do
            "number" => number,
            "parentHash" => parent_hash,
            "receiptsRoot" => receipts_root,
-           "sha3Uncles" => sha3_uncles,
            "size" => size,
            "stateRoot" => state_root,
            "timestamp" => timestamp,
            "totalDifficulty" => total_difficulty,
-           "transactionsRoot" => transactions_root,
-           "uncles" => uncles
+           "transactionsRoot" => transactions_root
          } = elixir
        ) do
     %{
@@ -432,13 +467,15 @@ defmodule EthereumJSONRPC.Block do
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
-      sha3_uncles: sha3_uncles,
+      # In case of CELO, `sha3_uncles` may not be returned by eth_getBlockByHash
+      sha3_uncles: Map.get(elixir, "sha3Uncles", @sha3_uncles_empty_list),
       size: size,
       state_root: state_root,
       timestamp: timestamp,
       total_difficulty: total_difficulty,
       transactions_root: transactions_root,
-      uncles: uncles
+      # In case of CELO, `uncles` may not be returned by eth_getBlockByHash
+      uncles: Map.get(elixir, "uncles", [])
     }
   end
 
@@ -455,12 +492,10 @@ defmodule EthereumJSONRPC.Block do
            "number" => number,
            "parentHash" => parent_hash,
            "receiptsRoot" => receipts_root,
-           "sha3Uncles" => sha3_uncles,
            "size" => size,
            "stateRoot" => state_root,
            "timestamp" => timestamp,
-           "transactionsRoot" => transactions_root,
-           "uncles" => uncles
+           "transactionsRoot" => transactions_root
          } = elixir
        ) do
     %{
@@ -476,15 +511,18 @@ defmodule EthereumJSONRPC.Block do
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
-      sha3_uncles: sha3_uncles,
+      # In case of CELO, `sha3_uncles` may not be returned by eth_getBlockByHash
+      sha3_uncles: Map.get(elixir, "sha3Uncles", @sha3_uncles_empty_list),
       size: size,
       state_root: state_root,
       timestamp: timestamp,
       transactions_root: transactions_root,
-      uncles: uncles
+      # In case of CELO, `uncles` may not be returned by eth_getBlockByHash
+      uncles: Map.get(elixir, "uncles", [])
     }
   end
 
+  @spec chain_type_fields(params, elixir) :: params
   case Application.compile_env(:explorer, :chain_type) do
     :rsk ->
       defp chain_type_fields(params, elixir) do
@@ -516,6 +554,14 @@ defmodule EthereumJSONRPC.Block do
           send_count: Map.get(elixir, "sendCount"),
           send_root: Map.get(elixir, "sendRoot"),
           l1_block_number: Map.get(elixir, "l1BlockNumber")
+        })
+      end
+
+    :zilliqa ->
+      defp chain_type_fields(params, elixir) do
+        params
+        |> Map.merge(%{
+          zilliqa_view: Map.get(elixir, "view")
         })
       end
 
@@ -659,6 +705,8 @@ defmodule EthereumJSONRPC.Block do
     |> Enum.map(fn {uncle_hash, index} -> %{"hash" => uncle_hash, "nephewHash" => nephew_hash, "index" => index} end)
   end
 
+  def elixir_to_uncles(_), do: []
+
   @doc """
   Get `t:EthereumJSONRPC.Withdrawals.elixir/0` from `t:elixir/0`.
 
@@ -725,6 +773,30 @@ defmodule EthereumJSONRPC.Block do
   @spec elixir_to_withdrawals(elixir) :: Withdrawals.elixir()
   def elixir_to_withdrawals(%{"withdrawals" => withdrawals}), do: withdrawals
   def elixir_to_withdrawals(_), do: []
+
+  @doc """
+  Get `t:EthereumJSONRPC.Zilliqa.QuorumCertificate.elixir/0` from `t:elixir/0`.
+  """
+  @spec elixir_to_zilliqa_quorum_certificate(elixir()) :: ZilliqaQuorumCertificate.t() | nil
+  def elixir_to_zilliqa_quorum_certificate(%{"quorumCertificate" => quorum_certificate}),
+    do: quorum_certificate
+
+  # WARN: This clause is introduced as a workaround to fix tests. HOWEVER, it
+  # allows the block with a `quorumCertificate` field to be successfully
+  # imported. This is a temporary solution and should be addressed in the future.
+  def elixir_to_zilliqa_quorum_certificate(_), do: nil
+
+  @doc """
+  Get `t:EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate.elixir/0` from `t:elixir/0`.
+  """
+  @spec elixir_to_zilliqa_aggregate_quorum_certificate(elixir()) ::
+          ZilliqaAggregateQuorumCertificate.t() | nil
+  def elixir_to_zilliqa_aggregate_quorum_certificate(%{
+        "aggregateQuorumCertificate" => aggregate_quorum_certificate
+      }),
+      do: aggregate_quorum_certificate
+
+  def elixir_to_zilliqa_aggregate_quorum_certificate(_), do: nil
 
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0` and the timestamps to `t:DateTime.t/0`
@@ -827,7 +899,7 @@ defmodule EthereumJSONRPC.Block do
 
   defp entry_to_elixir({key, quantity}, _block)
        when key in ~w(difficulty gasLimit gasUsed minimumGasPrice baseFeePerGas number size
-                      cumulativeDifficulty totalDifficulty paidFees minimumGasPrice blobGasUsed
+                      cumulativeDifficulty totalDifficulty paidFees blobGasUsed
                       excessBlobGas l1BlockNumber sendCount) and
               not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
@@ -863,6 +935,26 @@ defmodule EthereumJSONRPC.Block do
   defp entry_to_elixir({"withdrawals" = key, withdrawals}, %{"hash" => block_hash, "number" => block_number})
        when not is_nil(block_number) do
     {key, Withdrawals.to_elixir(withdrawals, block_hash, quantity_to_integer(block_number))}
+  end
+
+  case Application.compile_env(:explorer, :chain_type) do
+    :zilliqa ->
+      defp entry_to_elixir({"view" = key, quantity}, _block) when not is_nil(quantity) do
+        {key, quantity_to_integer(quantity)}
+      end
+
+      defp entry_to_elixir({"quorumCertificate" = key, entry}, %{"hash" => block_hash}) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        {key, EthereumJSONRPC.Zilliqa.QuorumCertificate.new(entry, block_hash)}
+      end
+
+      defp entry_to_elixir({"aggregateQuorumCertificate" = key, entry}, %{"hash" => block_hash}) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        {key, EthereumJSONRPC.Zilliqa.AggregateQuorumCertificate.new(entry, block_hash)}
+      end
+
+    _ ->
+      :ok
   end
 
   # bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningHeader bitcoinMergedMiningMerkleProof hashForMergedMining - RSK https://github.com/blockscout/blockscout/pull/2934

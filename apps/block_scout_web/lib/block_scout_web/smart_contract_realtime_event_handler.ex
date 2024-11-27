@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.SmartContractRealtimeEventHandler do
     Subscriber.to(:contract_verification_result, :on_demand)
     Subscriber.to(:smart_contract_was_verified, :on_demand)
     Subscriber.to(:smart_contract_was_not_verified, :on_demand)
+    Subscriber.to(:eth_bytecode_db_lookup_started, :on_demand)
     {:ok, []}
   end
 

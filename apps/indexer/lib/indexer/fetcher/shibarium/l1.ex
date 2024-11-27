@@ -23,6 +23,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   import Indexer.Fetcher.Shibarium.Helper,
     only: [calc_operation_hash: 5, prepare_insert_items: 2, recalculate_cached_count: 0]
 
+  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Chain.Shibarium.Bridge
   alias Explorer.{Chain, Repo}
   alias Indexer.Fetcher.RollupL1ReorgMonitor
@@ -135,8 +136,10 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          {:start_block_valid, true} <-
            {:start_block_valid, start_block <= last_l1_block_number || last_l1_block_number == 0},
          json_rpc_named_arguments = json_rpc_named_arguments(rpc),
-         {:ok, last_l1_tx} <- Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
-         {:l1_tx_not_found, false} <- {:l1_tx_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_tx)},
+         {:ok, last_l1_transaction} <-
+           Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:l1_transaction_not_found, false} <-
+           {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {:ok, block_check_interval, latest_block} <- get_block_check_interval(json_rpc_named_arguments),
          {:start_block_valid, true} <- {:start_block_valid, start_block <= latest_block} do
       recalculate_cached_count()
@@ -204,7 +207,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
 
         {:stop, :normal, %{}}
 
-      {:l1_tx_not_found, true} ->
+      {:l1_transaction_not_found, true} ->
         Logger.error(
           "Cannot find last L1 transaction from RPC by its hash. Probably, there was a reorg on L1 chain. Please, check shibarium_bridge table."
         )
@@ -282,7 +285,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)
@@ -314,6 +317,27 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary()
+  def l1_rpc_url do
+    Application.get_all_env(:indexer)[__MODULE__][:rpc]
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    for this module.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    module_config = Application.get_all_env(:indexer)[__MODULE__]
+    not is_nil(module_config[:start_block])
   end
 
   defp filter_deposit_events(events) do
@@ -543,7 +567,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: rpc_url,
+        urls: [rpc_url],
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),

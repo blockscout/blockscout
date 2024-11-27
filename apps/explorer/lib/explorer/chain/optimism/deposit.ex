@@ -53,6 +53,22 @@ defmodule Explorer.Chain.Optimism.Deposit do
   end
 
   @doc """
+    Forms a query to remove all Deposits with the specified L1 block number.
+    Used by the `Indexer.Fetcher.Optimism.Deposit` module.
+
+    ## Parameters
+    - `l1_block_number`: The L1 block number for which the Deposits should be removed
+                         from the `op_deposits` database table.
+
+    ## Returns
+    - A query which can be used by the `delete_all` function.
+  """
+  @spec remove_deposits_query(non_neg_integer()) :: Ecto.Queryable.t()
+  def remove_deposits_query(l1_block_number) do
+    from(d in __MODULE__, where: d.l1_block_number == ^l1_block_number)
+  end
+
+  @doc """
   Lists `t:Explorer.Chain.Optimism.Deposit.t/0`'s' in descending order based on l1_block_number and l2_transaction_hash.
 
   """
@@ -61,7 +77,7 @@ defmodule Explorer.Chain.Optimism.Deposit do
     paging_options = Keyword.get(options, :paging_options, default_paging_options())
 
     case paging_options do
-      %PagingOptions{key: {0, _l2_tx_hash}} ->
+      %PagingOptions{key: {0, _l2_transaction_hash}} ->
         []
 
       _ ->
@@ -74,16 +90,16 @@ defmodule Explorer.Chain.Optimism.Deposit do
         |> join_association(:l2_transaction, :required)
         |> page_deposits(paging_options)
         |> limit(^paging_options.page_size)
-        |> select_repo(options).all()
+        |> select_repo(options).all(timeout: :infinity)
     end
   end
 
   defp page_deposits(query, %PagingOptions{key: nil}), do: query
 
-  defp page_deposits(query, %PagingOptions{key: {block_number, l2_tx_hash}}) do
+  defp page_deposits(query, %PagingOptions{key: {block_number, l2_transaction_hash}}) do
     from(d in query,
       where: d.l1_block_number < ^block_number,
-      or_where: d.l1_block_number == ^block_number and d.l2_transaction_hash < ^l2_tx_hash
+      or_where: d.l1_block_number == ^block_number and d.l2_transaction_hash < ^l2_transaction_hash
     )
   end
 end

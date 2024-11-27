@@ -38,6 +38,33 @@ defmodule BlockScoutWeb.AddressChannel do
   @burn_address_hash burn_address_hash
   @current_token_balances_limit 50
 
+  case Application.compile_env(:explorer, :chain_type) do
+    :celo ->
+      @chain_type_transaction_associations [
+        :gas_token
+      ]
+
+    _ ->
+      @chain_type_transaction_associations []
+  end
+
+  @transaction_associations [
+                              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+                              to_address: [
+                                :scam_badge,
+                                :names,
+                                :smart_contract,
+                                proxy_implementations_association()
+                              ],
+                              created_contract_address: [
+                                :scam_badge,
+                                :names,
+                                :smart_contract,
+                                proxy_implementations_association()
+                              ]
+                            ] ++
+                              @chain_type_transaction_associations
+
   def join("addresses:" <> address_hash, _params, socket) do
     {:ok, %{}, assign(socket, :address_hash, address_hash)}
   end
@@ -335,13 +362,7 @@ defmodule BlockScoutWeb.AddressChannel do
       TransactionViewAPI.render("transactions.json", %{
         transactions:
           transactions
-          |> Repo.preload([
-            [
-              from_address: [:names, :smart_contract, :proxy_implementations],
-              to_address: [:names, :smart_contract, :proxy_implementations],
-              created_contract_address: [:names, :smart_contract, :proxy_implementations]
-            ]
-          ]),
+          |> Repo.preload(@transaction_associations),
         conn: nil
       })
 
@@ -393,8 +414,8 @@ defmodule BlockScoutWeb.AddressChannel do
           token_transfers
           |> Repo.preload([
             [
-              from_address: [:names, :smart_contract, :proxy_implementations],
-              to_address: [:names, :smart_contract, :proxy_implementations]
+              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+              to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
             ]
           ]),
         conn: nil

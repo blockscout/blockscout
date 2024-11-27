@@ -38,9 +38,9 @@ defmodule Explorer.Account.Notifier.NotifyTest do
 
   describe "notify" do
     test "when address not in any watchlist" do
-      tx = with_block(insert(:transaction))
+      transaction = with_block(insert(:transaction))
 
-      notify = Notify.call([tx])
+      notify = Notify.call([transaction])
 
       wn =
         WatchlistNotification
@@ -60,17 +60,17 @@ defmodule Explorer.Account.Notifier.NotifyTest do
 
       _watchlist_address = Repo.preload(wa, watchlist: :identity)
 
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction, to_address: %Chain.Address{hash: address_hash}))
 
-      {_, fee} = Transaction.fee(tx, :gwei)
-      amount = Wei.to(tx.value, :ether)
-      notify = Notify.call([tx])
+      {_, fee} = Transaction.fee(transaction, :gwei)
+      amount = Wei.to(transaction.value, :ether)
+      notify = Notify.call([transaction])
 
       wn =
         WatchlistNotification
@@ -83,7 +83,7 @@ defmodule Explorer.Account.Notifier.NotifyTest do
       assert wn.direction == "incoming"
       assert wn.method == "transfer"
       assert wn.subject == "Coin transaction"
-      assert wn.tx_fee == fee
+      assert wn.transaction_fee == fee
       assert wn.type == "COIN"
     end
 
@@ -99,17 +99,17 @@ defmodule Explorer.Account.Notifier.NotifyTest do
 
       _watchlist_address = Repo.preload(wa, watchlist: :identity)
 
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction, to_address: %Chain.Address{hash: address_hash}))
 
-      {_, fee} = Transaction.fee(tx, :gwei)
-      amount = Wei.to(tx.value, :ether)
-      notify = Notify.call([tx])
+      {_, fee} = Transaction.fee(transaction, :gwei)
+      amount = Wei.to(transaction.value, :ether)
+      notify = Notify.call([transaction])
 
       wn =
         WatchlistNotification
@@ -122,19 +122,19 @@ defmodule Explorer.Account.Notifier.NotifyTest do
       assert wn.direction == "incoming"
       assert wn.method == "transfer"
       assert wn.subject == "Coin transaction"
-      assert wn.tx_fee == fee
+      assert wn.transaction_fee == fee
       assert wn.type == "COIN"
       address = Repo.get(Chain.Address, address_hash)
 
-      tx =
+      transaction =
         %Transaction{
           from_address: _from_address,
           to_address: _to_address,
           block_number: _block_number,
-          hash: _tx_hash
+          hash: _transaction_hash
         } = with_block(insert(:transaction, to_address: address))
 
-      Notify.call([tx])
+      Notify.call([transaction])
 
       WatchlistNotification
       |> first

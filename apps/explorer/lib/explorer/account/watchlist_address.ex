@@ -7,7 +7,7 @@ defmodule Explorer.Account.WatchlistAddress do
 
   import Ecto.Changeset
 
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Notifier.ForbiddenAddress
   alias Explorer.Account.Watchlist
   alias Explorer.{Chain, PagingOptions, Repo}
@@ -19,6 +19,7 @@ defmodule Explorer.Account.WatchlistAddress do
     field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:name, Explorer.Encrypted.Binary, null: false)
     field(:address_hash, Explorer.Encrypted.AddressHash, null: false)
+    field(:user_created, :boolean, null: false, default: true)
 
     belongs_to(:watchlist, Watchlist, null: false)
 
@@ -112,9 +113,6 @@ defmodule Explorer.Account.WatchlistAddress do
     else
       {:error, reason} ->
         add_error(changeset, :address_hash, reason)
-
-      _ ->
-        add_error(changeset, :address_hash, "Address error")
     end
   end
 
@@ -212,4 +210,54 @@ defmodule Explorer.Account.WatchlistAddress do
   end
 
   def preload_address_fetched_coin_balance(watchlist), do: watchlist
+
+  @doc """
+  Merges watchlist addresses into a primary watchlist.
+
+  This function is used to merge multiple watchlists into a single primary watchlist. It updates
+  the `watchlist_id` of all addresses belonging to the watchlists being merged to point to the
+  primary watchlist.
+
+  ## Parameters
+
+    * `multi` - An `Ecto.Multi` struct representing the current multi-operation transaction.
+
+  ## Returns
+
+  Returns an updated `Ecto.Multi` struct with an additional `:merge_watchlist_addresses` operation.
+
+  ## Operation Details
+
+  The function adds a `:merge_watchlist_addresses` operation to the `Ecto.Multi` struct. This operation:
+
+  1. Identifies the primary watchlist and the watchlists to be merged from the results of previous operations.
+  2. Updates all watchlist addresses associated with the watchlists being merged:
+     - Sets their `watchlist_id` to the ID of the primary watchlist.
+     - Sets their `user_created` flag to `false`.
+
+  ## Notes
+
+  - This function assumes that the `Explorer.Account.Watchlist.acquire_for_merge/3` function has been called previously in the
+    `Ecto.Multi` chain to provide the necessary data for the merge operation.
+  - After this operation, all addresses from the merged watchlists will be associated with the
+    primary watchlist, and their `user_created` status will be set to `false`.
+  """
+  @spec merge(Multi.t()) :: Multi.t()
+  def merge(multi) do
+    multi
+    |> Multi.run(:merge_watchlist_addresses, fn repo,
+                                                %{
+                                                  acquire_primary_watchlist: [primary_watchlist | _],
+                                                  acquire_watchlists_to_merge: watchlists_to_merge
+                                                } ->
+      primary_watchlist_id = primary_watchlist.id
+      watchlists_to_merge_ids = Enum.map(watchlists_to_merge, & &1.id)
+
+      {:ok,
+       repo.update_all(
+         from(key in __MODULE__, where: key.watchlist_id in ^watchlists_to_merge_ids),
+         set: [watchlist_id: primary_watchlist_id, user_created: false]
+       )}
+    end)
+  end
 end

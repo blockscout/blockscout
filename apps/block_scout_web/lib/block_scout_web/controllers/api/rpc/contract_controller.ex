@@ -17,6 +17,12 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.ThirdPartyIntegrations.Sourcify
   import BlockScoutWeb.API.V2.AddressController, only: [validate_address: 2, validate_address: 3]
 
+  if Application.compile_env(:explorer, :chain_type) == :zksync do
+    @optimization_runs "0"
+  else
+    @optimization_runs 200
+  end
+
   @smth_went_wrong "Something went wrong while publishing the contract"
   @verified "Smart-contract already verified."
   @invalid_address "Invalid address hash"
@@ -95,17 +101,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
         render(conn, :error, error: "#{@smth_went_wrong}: #{inspect(error.errors)}")
 
-      {:publish, error} ->
-        Logger.error(fn ->
-          [
-            @smth_went_wrong,
-            ": ",
-            inspect(error)
-          ]
-        end)
-
-        render(conn, :error, error: @smth_went_wrong)
-
       {:format, :error} ->
         render(conn, :error, error: @invalid_address)
 
@@ -136,9 +131,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
           else
             {:error, error} ->
               render(conn, :error, error: error)
-
-            _ ->
-              render(conn, :error, error: "Invalid body")
           end
       end
     end
@@ -639,6 +631,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "compilerversion", "compiler_version")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
     |> optional_param(params, "licenseType", "license_type")
+    |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
+          do: optional_param(&1, params, "zksolcVersion", "zk_compiler_version"),
+          else: &1
+        )).()
   end
 
   defp fetch_verifysourcecode_solidity_single_file_params(params) do
@@ -661,7 +657,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         {:ok, Map.put(opts, "optimization_runs", runs_int)}
 
       _ ->
-        {:ok, Map.put(opts, "optimization_runs", 200)}
+        {:ok, Map.put(opts, "optimization_runs", @optimization_runs)}
     end
   end
 
@@ -670,7 +666,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   defp parse_optimization_runs({:ok, opts}) do
-    {:ok, Map.put(opts, "optimization_runs", 200)}
+    {:ok, Map.put(opts, "optimization_runs", @optimization_runs)}
   end
 
   defp parse_optimization_runs(other), do: other

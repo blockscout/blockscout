@@ -108,17 +108,17 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       |> Map.put(:timestamps, timestamps)
 
     multi
-    |> Multi.run(:filter_placeholders, fn _, _ ->
+    |> Multi.run(:filter_ctb_placeholders, fn _, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> TokenBalances.filter_placeholders(changes_list) end,
         :block_following,
         :current_token_balances,
-        :filter_placeholders
+        :filter_ctb_placeholders
       )
     end)
-    |> Multi.run(:address_current_token_balances, fn repo, _ ->
+    |> Multi.run(:address_current_token_balances, fn repo, %{filter_ctb_placeholders: filtered_changes_list} ->
       Instrumenter.block_import_stage_runner(
-        fn -> insert(repo, changes_list, insert_options) end,
+        fn -> insert(repo, filtered_changes_list, insert_options) end,
         :block_following,
         :current_token_balances,
         :address_current_token_balances

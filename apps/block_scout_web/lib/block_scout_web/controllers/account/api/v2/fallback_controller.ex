@@ -1,7 +1,7 @@
-defmodule BlockScoutWeb.Account.Api.V2.FallbackController do
+defmodule BlockScoutWeb.Account.API.V2.FallbackController do
   use Phoenix.Controller
 
-  alias BlockScoutWeb.Account.Api.V2.UserView
+  alias BlockScoutWeb.Account.API.V2.UserView
   alias Ecto.Changeset
 
   def call(conn, {:identity, _}) do
@@ -30,6 +30,20 @@ defmodule BlockScoutWeb.Account.Api.V2.FallbackController do
     |> put_status(:unprocessable_entity)
     |> put_view(UserView)
     |> render(:changeset_errors, changeset: changeset)
+  end
+
+  def call(conn, {:error, message}) do
+    conn
+    |> put_status(500)
+    |> put_view(UserView)
+    |> render(:message, %{message: message})
+  end
+
+  def call(conn, :error) do
+    conn
+    |> put_status(500)
+    |> put_view(UserView)
+    |> render(:message, %{message: "Unexpected error"})
   end
 
   def call(conn, {:create_tag, {:error, message}}) do
@@ -109,6 +123,20 @@ defmodule BlockScoutWeb.Account.Api.V2.FallbackController do
     |> put_status(:too_many_requests)
     |> put_view(UserView)
     |> json(%{message: "Email resend is available in #{remain} seconds.", seconds_before_next_resend: remain})
+  end
+
+  def call(conn, {:format, _params}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UserView)
+    |> render(:message, %{message: "Invalid parameter(s)"})
+  end
+
+  def call(conn, {:recaptcha, _}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(UserView)
+    |> render(:message, %{message: "Invalid reCAPTCHA response"})
   end
 
   defp unauthorized_error(%{email_verified: false, email: email}) do

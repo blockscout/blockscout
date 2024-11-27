@@ -167,19 +167,13 @@ defmodule BlockScoutWeb.TransactionController do
             transaction: transaction,
             from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
             to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-            tx_tags:
+            transaction_tags:
               get_transaction_with_addresses_tags(
                 transaction,
                 current_user(conn)
               )
           )
         else
-          :not_found ->
-            set_not_found_view(conn, id)
-
-          :error ->
-            unprocessable_entity(conn)
-
           {:error, :not_found} ->
             set_not_found_view(conn, id)
 
@@ -202,19 +196,13 @@ defmodule BlockScoutWeb.TransactionController do
             transaction: transaction,
             from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
             to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-            tx_tags:
+            transaction_tags:
               get_transaction_with_addresses_tags(
                 transaction,
                 current_user(conn)
               )
           )
         else
-          :not_found ->
-            set_not_found_view(conn, id)
-
-          :error ->
-            unprocessable_entity(conn)
-
           {:error, :not_found} ->
             set_not_found_view(conn, id)
 

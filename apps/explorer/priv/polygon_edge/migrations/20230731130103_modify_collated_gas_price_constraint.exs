@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.ModifyCollatedGasPriceConstraint do
+defmodule Explorer.Repo.PolygonEdge.Migrations.ModifyCollatedGasPriceConstraint do
   use Ecto.Migration
 
   def change do

@@ -124,6 +124,25 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
      }}
   end
 
+  def parse_batch_accompanying_data(batch_number, <<
+        keyset_hash::binary-size(32),
+        data_hash::binary-size(32),
+        timeout::big-unsigned-integer-size(64),
+        signers_mask::big-unsigned-integer-size(64),
+        bls_signature::binary-size(96)
+      >>) do
+    # https://github.com/OffchainLabs/nitro/blob/ad9ab00723e13cf98307b9b65774ad455594ef7b/arbstate/das_reader.go#L95-L151
+    {:ok, :in_anytrust,
+     %__MODULE__{
+       batch_number: batch_number,
+       keyset_hash: keyset_hash,
+       data_hash: data_hash,
+       timeout: IndexerHelper.timestamp_to_datetime(timeout),
+       signers_mask: signers_mask,
+       bls_signature: bls_signature
+     }}
+  end
+
   def parse_batch_accompanying_data(_, _) do
     log_error("Can not parse Anytrust DA message.")
     {:error, nil, nil}

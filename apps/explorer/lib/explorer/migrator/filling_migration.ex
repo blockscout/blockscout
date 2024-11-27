@@ -4,10 +4,12 @@ defmodule Explorer.Migrator.FillingMigration do
   """
 
   @callback migration_name :: String.t()
-  @callback unprocessed_data_query :: Ecto.Query.t()
-  @callback last_unprocessed_identifiers :: [any()]
+  @callback unprocessed_data_query :: Ecto.Query.t() | nil
+  @callback last_unprocessed_identifiers(map()) :: {[any()], map()}
   @callback update_batch([any()]) :: any()
   @callback update_cache :: any()
+  @callback on_finish :: any()
+  @callback before_start :: any()
 
   defmacro __using__(_opts) do
     quote do
@@ -37,35 +39,39 @@ defmodule Explorer.Migrator.FillingMigration do
 
       @impl true
       def handle_continue(:ok, state) do
-        case MigrationStatus.get_status(migration_name()) do
-          "completed" ->
+        case MigrationStatus.fetch(migration_name()) do
+          %{status: "completed"} ->
             update_cache()
             {:stop, :normal, state}
 
-          _ ->
+          migration_status ->
             MigrationStatus.set_status(migration_name(), "started")
+            before_start()
             schedule_batch_migration()
-            {:noreply, %{}}
+            {:noreply, (migration_status && migration_status.meta) || %{}}
         end
       end
 
       @impl true
       def handle_info(:migrate_batch, state) do
-        case last_unprocessed_identifiers() do
-          [] ->
+        case last_unprocessed_identifiers(state) do
+          {[], new_state} ->
+            on_finish()
             update_cache()
             MigrationStatus.set_status(migration_name(), "completed")
-            {:stop, :normal, state}
+            {:stop, :normal, new_state}
 
-          hashes ->
-            hashes
+          {identifiers, new_state} ->
+            identifiers
             |> Enum.chunk_every(batch_size())
             |> Enum.map(&run_task/1)
             |> Task.await_many(:infinity)
 
+            MigrationStatus.update_meta(migration_name(), new_state)
+
             schedule_batch_migration()
 
-            {:noreply, state}
+            {:noreply, new_state}
         end
       end
 
@@ -84,6 +90,16 @@ defmodule Explorer.Migrator.FillingMigration do
 
         Application.get_env(:explorer, __MODULE__)[:concurrency] || default
       end
+
+      def on_finish do
+        :ignore
+      end
+
+      def before_start do
+        :ignore
+      end
+
+      defoverridable on_finish: 0, before_start: 0
     end
   end
 end

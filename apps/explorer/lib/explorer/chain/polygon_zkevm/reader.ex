@@ -190,12 +190,12 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
     Reads a list of L1 transactions by their hashes from `polygon_zkevm_lifecycle_l1_transactions` table.
   """
   @spec lifecycle_transactions(list()) :: list()
-  def lifecycle_transactions(l1_tx_hashes) do
+  def lifecycle_transactions(l1_transaction_hashes) do
     query =
       from(
         lt in LifecycleTransaction,
         select: {lt.hash, lt.id},
-        where: lt.hash in ^l1_tx_hashes
+        where: lt.hash in ^l1_transaction_hashes
       )
 
     Repo.all(query, timeout: :infinity)
@@ -335,6 +335,14 @@ defmodule Explorer.Chain.PolygonZkevm.Reader do
     else
       decimals
     end
+  end
+
+  @doc """
+    Filters token symbol (cannot be longer than 16 characters).
+  """
+  @spec sanitize_symbol(String.t()) :: String.t()
+  def sanitize_symbol(symbol) do
+    String.slice(symbol, 0, 16)
   end
 
   defp page_batches(query, %PagingOptions{key: nil}), do: query

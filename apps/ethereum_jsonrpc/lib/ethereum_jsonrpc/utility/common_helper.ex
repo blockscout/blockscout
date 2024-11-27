@@ -17,6 +17,30 @@ defmodule EthereumJSONRPC.Utility.CommonHelper do
     end
   end
 
+  @doc """
+  Puts value under nested key in keyword.
+  Similar to `Kernel.put_in/3` but inserts values in the middle if they're missing
+  """
+  @spec put_in_keyword_nested(Keyword.t(), [atom()], any()) :: Keyword.t()
+  def put_in_keyword_nested(keyword, [last_path], value) do
+    Keyword.put(keyword || [], last_path, value)
+  end
+
+  def put_in_keyword_nested(keyword, [nearest_path | rest_path], value) do
+    Keyword.put(keyword || [], nearest_path, put_in_keyword_nested(keyword[nearest_path], rest_path, value))
+  end
+
+  @doc """
+  Extracts urls corresponding to `url_type` from json rpc transport options
+  """
+  @spec url_type_to_urls(atom(), Keyword.t(), atom() | String.t()) :: [String.t()]
+  def url_type_to_urls(url_type, json_rpc_transport_options, subtype \\ nil) do
+    key_prefix = (subtype && "#{subtype}_") || ""
+    url_prefix = (url_type == :http && "") || "#{url_type}_"
+    urls_key = String.to_existing_atom("#{key_prefix}#{url_prefix}urls")
+    json_rpc_transport_options[urls_key]
+  end
+
   defp convert_to_ms(number, "s"), do: :timer.seconds(number)
   defp convert_to_ms(number, "m"), do: :timer.minutes(number)
   defp convert_to_ms(number, "h"), do: :timer.hours(number)

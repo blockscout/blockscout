@@ -10,7 +10,7 @@ defmodule Explorer.SmartContract.SigProviderInterface do
   @request_error_msg "Error while sending request to sig-provider"
 
   def decode_function_call(input) do
-    base_url = tx_input_decode_url()
+    base_url = transaction_input_decode_url()
 
     url =
       base_url
@@ -74,7 +74,7 @@ defmodule Explorer.SmartContract.SigProviderInterface do
 
   def process_sig_provider_response(other_responses), do: {:error, other_responses}
 
-  def tx_input_decode_url, do: "#{base_api_url()}" <> "/function"
+  def transaction_input_decode_url, do: "#{base_api_url()}" <> "/function"
 
   def event_decode_url, do: "#{base_api_url()}" <> "/event"
 

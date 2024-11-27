@@ -1,8 +1,7 @@
 defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias BlockScoutWeb.Models.UserFromAuth
-  alias Explorer.Account.WatchlistAddress
+  alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.Repo
 
@@ -37,20 +36,20 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
   end
 
   describe "/main-page/transactions" do
-    test "get empty list when no txs", %{conn: conn} do
+    test "get empty list when no transactions", %{conn: conn} do
       request = get(conn, "/api/v2/main-page/transactions")
       assert [] = json_response(request, 200)
     end
 
-    test "get last 6 txs", %{conn: conn} do
-      txs = insert_list(10, :transaction) |> with_block() |> Enum.take(-6) |> Enum.reverse()
+    test "get last 6 transactions", %{conn: conn} do
+      transactions = insert_list(10, :transaction) |> with_block() |> Enum.take(-6) |> Enum.reverse()
 
       request = get(conn, "/api/v2/main-page/transactions")
       assert response = json_response(request, 200)
       assert Enum.count(response) == 6
 
       for i <- 0..5 do
-        compare_item(Enum.at(txs, i), Enum.at(response, i))
+        compare_item(Enum.at(transactions, i), Enum.at(response, i))
       end
     end
   end
@@ -61,11 +60,11 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
       assert %{"message" => "Unauthorized"} = json_response(request, 401)
     end
 
-    test "get last 6 txs", %{conn: conn} do
+    test "get last 6 transactions", %{conn: conn} do
       insert_list(10, :transaction) |> with_block()
 
       auth = build(:auth)
-      {:ok, user} = UserFromAuth.find_or_create(auth)
+      {:ok, user} = Identity.find_or_create(auth)
 
       conn = Plug.Test.init_test_session(conn, current_user: user)
 
@@ -107,17 +106,17 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
           notify_email: true
         })
 
-      txs_1 = insert_list(2, :transaction, from_address: address_1) |> with_block()
-      txs_2 = insert_list(1, :transaction, from_address: address_2, to_address: address_1) |> with_block()
-      txs_3 = insert_list(3, :transaction, to_address: address_2) |> with_block()
-      txs = (txs_1 ++ txs_2 ++ txs_3) |> Enum.reverse()
+      transactions_1 = insert_list(2, :transaction, from_address: address_1) |> with_block()
+      transactions_2 = insert_list(1, :transaction, from_address: address_2, to_address: address_1) |> with_block()
+      transactions_3 = insert_list(3, :transaction, to_address: address_2) |> with_block()
+      transactions = (transactions_1 ++ transactions_2 ++ transactions_3) |> Enum.reverse()
 
       request = get(conn, "/api/v2/main-page/transactions/watchlist")
       assert response = json_response(request, 200)
       assert Enum.count(response) == 6
 
       for i <- 0..5 do
-        compare_item(Enum.at(txs, i), Enum.at(response, i), %{
+        compare_item(Enum.at(transactions, i), Enum.at(response, i), %{
           address_1.hash => watchlist_address_1.name,
           address_2.hash => watchlist_address_2.name
         })
@@ -144,7 +143,7 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
 
   defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
-    assert transaction.block_number == json["block"]
+    assert transaction.block_number == json["block_number"]
     assert to_string(transaction.value.value) == json["value"]
     assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
@@ -152,7 +151,7 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
 
   defp compare_item(%Transaction{} = transaction, json, wl_names) do
     assert to_string(transaction.hash) == json["hash"]
-    assert transaction.block_number == json["block"]
+    assert transaction.block_number == json["block_number"]
     assert to_string(transaction.value.value) == json["value"]
     assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]

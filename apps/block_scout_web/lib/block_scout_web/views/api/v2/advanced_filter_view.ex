@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
+  alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView}
   alias Explorer.Chain.{Address, Data, Transaction}
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
@@ -112,7 +112,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       method:
         if(advanced_filter.type != "coin_transfer",
           do:
-            TransactionView.method_name(
+            Transaction.method_name(
               %Transaction{
                 to_address: %Address{
                   hash: advanced_filter.token_transfer.token.contract_address_hash,
@@ -123,7 +123,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
               decoded_input
             ),
           else:
-            TransactionView.method_name(
+            Transaction.method_name(
               %Transaction{to_address: advanced_filter.to_address, input: advanced_filter.input},
               decoded_input
             )
@@ -152,7 +152,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       value: advanced_filter.value,
       total:
         if(advanced_filter.type != "coin_transfer",
-          do: TransactionView.prepare_token_transfer_total(advanced_filter.token_transfer),
+          do: TokenTransferView.prepare_token_transfer_total(advanced_filter.token_transfer),
           else: nil
         ),
       token:
