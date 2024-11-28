@@ -10,14 +10,14 @@ defmodule BlockScoutWeb.API.V2.SearchController do
   @api_true [api?: true]
   @min_query_length 3
 
-  def search(conn, %{"q" => query}) when byte_size(query) < @min_query_length do
-    conn
-    |> put_status(200)
-    |> render(:search_results, %{
-      search_results: [],
-      next_page_params: nil
-    })
-  end
+  # def search(conn, %{"q" => query}) when byte_size(query) < @min_query_length do
+  #   conn
+  #   |> put_status(200)
+  #   |> render(:search_results, %{
+  #     search_results: [],
+  #     next_page_params: nil
+  #   })
+  # end
 
   def search(conn, %{"q" => query} = params) do
     [paging_options: paging_options] = paging_options(params)
@@ -37,11 +37,11 @@ defmodule BlockScoutWeb.API.V2.SearchController do
     })
   end
 
-  def check_redirect(conn, %{"q" => query}) when byte_size(query) < @min_query_length do
-    conn
-    |> put_status(200)
-    |> render(:search_results, %{result: {:error, :not_found}})
-  end
+  # def check_redirect(conn, %{"q" => query}) when byte_size(query) < @min_query_length do
+  #   conn
+  #   |> put_status(200)
+  #   |> render(:search_results, %{result: {:error, :not_found}})
+  # end
 
   def check_redirect(conn, %{"q" => query}) do
     result =

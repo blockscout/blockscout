@@ -171,9 +171,14 @@ defmodule Explorer.Chain.Search do
     case prepare_search_term(search_query) do
       {:some, term} ->
         tokens_result =
-          search_query
-          |> search_token_query_not_certified(term, paging_options)
-          |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+          (search_query
+           |> search_token_query_certified(term, paging_options)
+           |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+           |> select_repo(options).all()) ++
+            (search_query
+             |> search_token_query_not_certified(term, paging_options)
+             |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+             |> select_repo(options).all())
 
         contracts_result =
           term
@@ -332,6 +337,7 @@ defmodule Explorer.Chain.Search do
           left_join: smart_contract in SmartContract,
           on: token.contract_address_hash == smart_contract.address_hash,
           where: token.contract_address_hash == ^address_hash,
+          where: is_nil(smart_contract.certified) or not smart_contract.certified,
           select: ^token_search_fields
         )
 
@@ -367,6 +373,7 @@ defmodule Explorer.Chain.Search do
           left_join: smart_contract in SmartContract,
           on: token.contract_address_hash == smart_contract.address_hash,
           where: token.contract_address_hash == ^address_hash,
+          where: smart_contract.certified,
           select: ^token_search_fields
         )
 
@@ -595,7 +602,7 @@ defmodule Explorer.Chain.Search do
          :label
        ) do
     query
-    |> where([item], item.display_name > ^name or (item.display_name == ^name and item.inserted_at < ^inserted_at))
+    |> where([att, at], at.display_name > ^name or (at.display_name == ^name and att.inserted_at < ^inserted_at))
     |> limit(^page_size)
   end
 
