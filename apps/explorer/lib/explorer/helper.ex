@@ -5,7 +5,7 @@ defmodule Explorer.Helper do
 
   alias ABI.TypeDecoder
   alias Explorer.Chain
-  alias Explorer.Chain.Data
+  alias Explorer.Chain.{Data, Hash}
 
   import Ecto.Query, only: [join: 5, where: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -295,5 +295,19 @@ defmodule Explorer.Helper do
   @spec get_app_host :: String.t()
   def get_app_host do
     Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
+  end
+
+  @doc """
+  Converts `Explorer.Chain.Hash.t()` or string hash to DB-acceptable format.
+  For example "0xabcdef1234567890abcdef1234567890abcdef" -> "\\xabcdef1234567890abcdef1234567890abcdef"
+  """
+  @spec hash_to_query_string(Hash.t() | String.t()) :: String.t()
+  def hash_to_query_string(hash) do
+    s_hash =
+      hash
+      |> to_string()
+      |> String.trim_leading("0")
+
+    "\\#{s_hash}"
   end
 end
