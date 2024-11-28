@@ -78,8 +78,8 @@
         "blockreward",
         "blockscout",
         "blockscoutuser",
-        "bools",
         "Boneh",
+        "bools",
         "bridgedtokenlist",
         "brotli",
         "browserconfig",
@@ -255,6 +255,7 @@
         "grecaptcha",
         "greymatter",
         "gtag",
+        "gzipped",
         "happygokitty",
         "haspopup",
         "Hazkne",
@@ -643,12 +644,12 @@
         "xakgj",
         "xbaddress",
         "xdai",
-        "Xname",
         "xffff",
         "xlevel",
         "xlink",
         "xmark",
         "xmlhttprequest",
+        "Xname",
         "xnonsense",
         "xzzz",
         "yellowgreen",
@@ -671,5 +672,5 @@
         "dotenv",
         "html-eex",
         "makefile"
-    ],
+    ]
 }
