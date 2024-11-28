@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.{Chain, Helper, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
   alias Explorer.Chain.Address.TokenBalance
 
@@ -353,5 +353,26 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       end)
 
     Stream.concat([row_names], holders_list)
+  end
+
+  @doc """
+  Encode `address_hash`, `token_contract_address_hash` and `token_id` into a string that can be used in
+  `(address_hash, token_contract_address_hash, token_id) IN (...)` WHERE clause
+  """
+  @spec encode_ids([{Hash.t(), Hash.t(), non_neg_integer()}] | [{Hash.t(), Hash.t()}]) :: binary()
+  def encode_ids(ids) do
+    encoded_values =
+      ids
+      |> Enum.reduce("", fn
+        {address_hash, token_hash, token_id}, acc ->
+          acc <>
+            "('#{Helper.hash_to_query_string(address_hash)}', '#{Helper.hash_to_query_string(token_hash)}', #{token_id}),"
+
+        {address_hash, token_hash}, acc ->
+          acc <> "('#{Helper.hash_to_query_string(address_hash)}', '#{Helper.hash_to_query_string(token_hash)}'),"
+      end)
+      |> String.trim_trailing(",")
+
+    "(#{encoded_values})"
   end
 end
