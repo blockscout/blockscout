@@ -9,7 +9,6 @@ defmodule Explorer.Chain.Search do
       limit: 2,
       order_by: 3,
       subquery: 1,
-      union: 2,
       union_all: 2,
       where: 3
     ]
@@ -35,7 +34,7 @@ defmodule Explorer.Chain.Search do
     Search function used in web interface. Returns paginated search results
   """
   @spec joint_search(PagingOptions.t(), integer(), binary(), [Chain.api?()] | []) :: list
-  def joint_search(paging_options, offset\\0, raw_string, options \\ []) do
+  def joint_search(paging_options, offset, raw_string, options \\ []) do
     string = String.trim(raw_string)
 
     ens_task = maybe_run_ens_task(paging_options, raw_string, options)
@@ -325,22 +324,7 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_token_query_not_certified(string, term, paging_options) do
-    token_search_fields =
-      search_fields()
-      |> Map.put(:address_hash, dynamic([token], token.contract_address_hash))
-      |> Map.put(:type, "token")
-      |> Map.put(:name, dynamic([token], token.name))
-      |> Map.put(:symbol, dynamic([token], token.symbol))
-      |> Map.put(:holder_count, dynamic([token], token.holder_count))
-      |> Map.put(:inserted_at, dynamic([token], token.inserted_at))
-      |> Map.put(:icon_url, dynamic([token], token.icon_url))
-      |> Map.put(:token_type, dynamic([token], token.type))
-      |> Map.put(:exchange_rate, dynamic([token], token.fiat_value))
-      |> Map.put(:total_supply, dynamic([token], token.total_supply))
-      |> Map.put(:circulating_market_cap, dynamic([token], token.circulating_market_cap))
-      |> Map.put(:is_verified_via_admin_panel, dynamic([token], token.is_verified_via_admin_panel))
-      |> Map.put(:verified, dynamic([_, smart_contract], not is_nil(smart_contract)))
-      |> Map.put(:certified, dynamic([_, smart_contract], smart_contract.certified))
+    token_search_fields = token_search_fields()
 
     case Chain.string_to_address_hash(string) do
       {:ok, address_hash} ->
@@ -375,22 +359,7 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_token_query_certified(string, term, paging_options) do
-    token_search_fields =
-      search_fields()
-      |> Map.put(:address_hash, dynamic([token], token.contract_address_hash))
-      |> Map.put(:type, "token")
-      |> Map.put(:name, dynamic([token], token.name))
-      |> Map.put(:symbol, dynamic([token], token.symbol))
-      |> Map.put(:holder_count, dynamic([token], token.holder_count))
-      |> Map.put(:inserted_at, dynamic([token], token.inserted_at))
-      |> Map.put(:icon_url, dynamic([token], token.icon_url))
-      |> Map.put(:token_type, dynamic([token], token.type))
-      |> Map.put(:exchange_rate, dynamic([token], token.fiat_value))
-      |> Map.put(:total_supply, dynamic([token], token.total_supply))
-      |> Map.put(:circulating_market_cap, dynamic([token], token.circulating_market_cap))
-      |> Map.put(:is_verified_via_admin_panel, dynamic([token], token.is_verified_via_admin_panel))
-      |> Map.put(:verified, dynamic([_, smart_contract], not is_nil(smart_contract)))
-      |> Map.put(:certified, dynamic([_, smart_contract], smart_contract.certified))
+    token_search_fields = token_search_fields()
 
     case Chain.string_to_address_hash(string) do
       {:ok, address_hash} ->
@@ -794,5 +763,23 @@ defmodule Explorer.Chain.Search do
       priority: 0,
       is_verified_via_admin_panel: nil
     }
+  end
+
+  defp token_search_fields do
+    search_fields()
+    |> Map.put(:address_hash, dynamic([token], token.contract_address_hash))
+    |> Map.put(:type, "token")
+    |> Map.put(:name, dynamic([token], token.name))
+    |> Map.put(:symbol, dynamic([token], token.symbol))
+    |> Map.put(:holder_count, dynamic([token], token.holder_count))
+    |> Map.put(:inserted_at, dynamic([token], token.inserted_at))
+    |> Map.put(:icon_url, dynamic([token], token.icon_url))
+    |> Map.put(:token_type, dynamic([token], token.type))
+    |> Map.put(:exchange_rate, dynamic([token], token.fiat_value))
+    |> Map.put(:total_supply, dynamic([token], token.total_supply))
+    |> Map.put(:circulating_market_cap, dynamic([token], token.circulating_market_cap))
+    |> Map.put(:is_verified_via_admin_panel, dynamic([token], token.is_verified_via_admin_panel))
+    |> Map.put(:verified, dynamic([_, smart_contract], not is_nil(smart_contract)))
+    |> Map.put(:certified, dynamic([_, smart_contract], smart_contract.certified))
   end
 end
