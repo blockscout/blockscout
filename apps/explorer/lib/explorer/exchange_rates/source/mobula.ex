@@ -4,6 +4,7 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   """
 
   require Logger
+  alias Explorer.Chain.Hash.Address
   alias Explorer.ExchangeRates.{Source, Token}
 
   import Source, only: [to_decimal: 1]
@@ -23,18 +24,36 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
       %Token{
         available_supply: to_decimal(market_data["circulating_supply"]),
         total_supply: to_decimal(market_data["total_supply"]) || to_decimal(market_data["circulating_supply"]),
-        btc_value: btc_value,
+        btc_value: to_decimal(btc_value),
         id: id,
         last_updated: nil,
         market_cap_usd: to_decimal(market_data["market_cap"]),
         tvl_usd: nil,
         name: market_data["name"],
         symbol: String.upcase(market_data["symbol"]),
-        usd_value: current_price,
+        usd_value: to_decimal(current_price),
         volume_24h_usd: to_decimal(market_data["volume"]),
         image_url: image_url
       }
     ]
+  end
+
+  @impl Source
+  def format_data(%{"data" => data}) when is_list(data) do
+    chain = chain()
+
+    Enum.reduce(data, [], fn
+      item, acc ->
+        with %{"blockchains" => blockchains, "contracts" => contracts}
+             when is_list(blockchains) and is_list(contracts) <- item,
+             index when not is_nil(index) <- Enum.find_index(blockchains, &(String.downcase(&1) == chain)),
+             contract when not is_nil(contract) <- Enum.at(contracts, index),
+             {:ok, token_contract_hash} <- Address.cast(contract) do
+          [token_contract_hash | acc]
+        else
+          _ -> acc
+        end
+    end)
   end
 
   @impl Source
@@ -65,7 +84,19 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @impl Source
   def source_url do
-    "#{base_url()}/market/data?asset=#{Explorer.coin()}"
+    coin_id = config(:coin_id)
+    symbol = if Explorer.coin(), do: String.upcase(Explorer.coin()), else: nil
+
+    cond do
+      coin_id ->
+        "#{base_url()}/market/data?asset=#{coin_id}"
+
+      symbol ->
+        "#{base_url()}/market/data?symbol=#{symbol}"
+
+      true ->
+        nil
+    end
   end
 
   @impl Source
@@ -76,9 +107,14 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   end
 
   @impl Source
+  def source_url(:coins_list) do
+    "#{base_url()}/all?fields=contracts,blockchains"
+  end
+
+  @impl Source
   def source_url(input) do
     symbol = input
-    "#{base_url()}/market/data&asset=#{symbol}"
+    "#{base_url()}/market/data?symbol=#{symbol}"
   end
 
   @impl Source
@@ -96,7 +132,19 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
 
   @spec history_source_url() :: String.t()
   def history_source_url do
-    "#{base_url()}/market/history?asset=#{Explorer.coin()}"
+    coin_id = config(:coin_id)
+    symbol = if Explorer.coin(), do: String.upcase(Explorer.coin()), else: nil
+
+    cond do
+      coin_id ->
+        "#{base_url()}/market/history?asset=#{coin_id}"
+
+      symbol ->
+        "#{base_url()}/market/history?symbol=#{symbol}"
+
+      true ->
+        nil
+    end
   end
 
   @spec history_url(non_neg_integer(), boolean()) :: String.t()
@@ -154,7 +202,8 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
   end
 
   defp chain do
-    config(:platform) || "ethereum"
+    (config(:platform) || "ethereum")
+    |> String.downcase()
   end
 
   defp base_url do
