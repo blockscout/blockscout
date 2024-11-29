@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   alias Indexer.Helper
 
   @fetcher_name :rollup_l1_reorg_monitor
+  @start_recheck_period_seconds 3
 
   @modules_can_use_reorg_monitor (case Application.compile_env(:explorer, :chain_type) do
                                     :optimism ->
@@ -67,6 +68,11 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     GenServer.start_link(__MODULE__, args, Keyword.put_new(gen_server_options, :name, __MODULE__))
   end
 
+  @impl GenServer
+  def init(_args) do
+    {:ok, %{}, {:continue, :ok}}
+  end
+
   @doc """
     This function initializes L1 blocks reorg monitor for the current rollup
     defined by CHAIN_TYPE. If the current chain is not a rollup, the module just doesn't start.
@@ -84,10 +90,10 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
     ## Returns
     - `{:ok, state}` with the determined parameters for the monitor loop if at least one rollup module is launched.
-    - `:ignore` if the monitor is not needed.
+    - `{:stop, :normal, %{}}` if the monitor is not needed.
   """
   @impl GenServer
-  def init(_args) do
+  def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
     modules_using_reorg_monitor =
@@ -96,7 +102,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
     if Enum.empty?(modules_using_reorg_monitor) do
       # don't start reorg monitor as there is no module which would use it
-      :ignore
+      {:stop, :normal, %{}}
     else
       l1_rpc = Enum.at(modules_using_reorg_monitor, 0).l1_rpc_url()
 
@@ -106,7 +112,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
       Process.send(self(), :reorg_monitor, [])
 
-      {:ok,
+      {:noreply,
        %{
          block_check_interval: block_check_interval,
          json_rpc_named_arguments: json_rpc_named_arguments,
@@ -154,5 +160,35 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
     Process.send_after(self(), :reorg_monitor, block_check_interval)
 
     {:noreply, %{state | prev_latest: latest}}
+  end
+
+  @doc """
+    Infinitely waits for the module to be initialized and started.
+
+    ## Parameters
+    - `waiting_module`: The module which called this function.
+
+    ## Returns
+    - nothing
+  """
+  @spec wait_for_start(module()) :: any()
+  def wait_for_start(waiting_module) do
+    state =
+      try do
+        __MODULE__
+        |> Process.whereis()
+        |> :sys.get_state()
+      catch
+        :exit, _ -> %{}
+      end
+
+    if map_size(state) == 0 do
+      Logger.warning(
+        "#{waiting_module} waits for #{__MODULE__} to start. Rechecking in #{@start_recheck_period_seconds} second(s)..."
+      )
+
+      :timer.sleep(@start_recheck_period_seconds * 1_000)
+      wait_for_start(waiting_module)
+    end
   end
 end
