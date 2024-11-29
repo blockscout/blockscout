@@ -187,7 +187,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
         "#{waiting_module} waits for #{__MODULE__} to start. Rechecking in #{@start_recheck_period_seconds} second(s)..."
       )
 
-      :timer.sleep(@start_recheck_period_seconds * 1000)
+      :timer.sleep(@start_recheck_period_seconds * 1_000)
       wait_for_start(waiting_module)
     end
   end
