@@ -189,7 +189,8 @@ config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
   headers:
     %{"Content-Type" => "application/json"}
     |> Map.merge(ConfigHelper.parse_json_env_var("ETHEREUM_JSONRPC_HTTP_HEADERS", "{}"))
-    |> Map.to_list()
+    |> Map.to_list(),
+  gzip_enabled?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_HTTP_GZIP_ENABLED", "false")
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   block_traceable?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_GETH_TRACE_BY_BLOCK"),
