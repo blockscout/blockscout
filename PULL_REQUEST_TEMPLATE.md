@@ -12,7 +12,7 @@
 
 ### Bug Fixes
 
-*Things you changed that fix bugs.  If a fixes a bug, but in so doing adds a new requirement, removes code, or requires a database reset and reindex, the breaking part of the change should be added to Incompatible Changes below also.*
+*Things you changed that fix bugs.  If it fixes a bug, but in so doing adds a new requirement, removes code, or requires a database reset and reindex, the breaking part of the change should be added to Incompatible Changes below also.*
 
 ### Incompatible Changes
 
