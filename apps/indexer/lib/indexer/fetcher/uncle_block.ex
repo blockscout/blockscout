@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.UncleBlock do
   alias Explorer.Chain
   alias Explorer.Chain.Cache.{Accounts, Uncles}
   alias Explorer.Chain.Hash
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.{Block, BufferedTask, Tracer}
   alias Indexer.Fetcher.UncleBlock
   alias Indexer.Fetcher.UncleBlock.Supervisor, as: UncleBlockSupervisor
@@ -142,6 +143,13 @@ defmodule Indexer.Fetcher.UncleBlock do
       {:ok, imported} ->
         Accounts.drop(imported[:addresses])
         Uncles.update_from_second_degree_relations(imported[:block_second_degree_relations])
+
+        MultichainSearch.batch_import(%{
+          addresses: imported[:addresses] || [],
+          blocks: imported[:blocks] || [],
+          transactions: imported[:transactions] || []
+        })
+
         retry(errors)
 
       {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
@@ -181,6 +189,12 @@ defmodule Indexer.Fetcher.UncleBlock do
       # * TokenBalance.async_fetch is not called because it uses block numbers from consensus, not uncles
 
       UncleBlock.async_fetch_blocks(block_second_degree_relations)
+
+      MultichainSearch.batch_import(%{
+        addresses: imported[:addresses] || [],
+        blocks: imported[:blocks] || [],
+        transactions: imported[:transactions] || []
+      })
 
       {:ok, imported}
     end

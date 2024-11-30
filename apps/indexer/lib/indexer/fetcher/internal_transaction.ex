@@ -21,6 +21,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.{Accounts, Blocks}
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
   alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
@@ -332,6 +333,12 @@ defmodule Indexer.Fetcher.InternalTransaction do
       {:ok, imported} ->
         Accounts.drop(imported[:addresses])
         Blocks.drop_nonconsensus(imported[:remove_consensus_of_missing_transactions_blocks])
+
+        MultichainSearch.batch_import(%{
+          addresses: imported[:addresses] || [],
+          blocks: [],
+          transactions: []
+        })
 
         async_import_coin_balances(imported, %{
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number

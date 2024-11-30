@@ -18,6 +18,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
   alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Counters.AverageBlockTime
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
   alias Timex.Duration
 
@@ -192,10 +193,17 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
       {:ok, %{params_list: params_list}} ->
         address_params = CoinBalanceHelper.balances_params_to_address_params(params_list)
 
-        Chain.import(%{
-          addresses: %{params: address_params, with: :balance_changeset},
-          broadcast: :on_demand
-        })
+        with {:ok, imported} <-
+               Chain.import(%{
+                 addresses: %{params: address_params, with: :balance_changeset},
+                 broadcast: :on_demand
+               }) do
+          MultichainSearch.batch_import(%{
+            addresses: imported[:addresses] || [],
+            blocks: [],
+            transactions: []
+          })
+        end
 
       _ ->
         :ok

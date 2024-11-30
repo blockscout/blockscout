@@ -11,6 +11,7 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
   alias Explorer.Chain
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Chain.Hash
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.BufferedTask
 
   @doc false
@@ -104,12 +105,19 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
 
     addresses_params = balances_params_to_address_params(importable_balances_params)
 
-    Chain.import(%{
-      addresses: %{params: addresses_params, with: :balance_changeset},
-      address_coin_balances: %{params: importable_balances_params},
-      address_coin_balances_daily: %{params: importable_balances_daily_params},
-      broadcast: broadcast_type
-    })
+    with {:ok, imported} <-
+           Chain.import(%{
+             addresses: %{params: addresses_params, with: :balance_changeset},
+             address_coin_balances: %{params: importable_balances_params},
+             address_coin_balances_daily: %{params: importable_balances_daily_params},
+             broadcast: broadcast_type
+           }) do
+      MultichainSearch.batch_import(%{
+        addresses: imported[:addresses] || [],
+        blocks: [],
+        transactions: []
+      })
+    end
   end
 
   def import_fetched_daily_balances(%FetchedBalances{params_list: params_list}, broadcast_type \\ false) do
@@ -123,11 +131,18 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
 
     addresses_params = balances_params_to_address_params(importable_balances_params)
 
-    Chain.import(%{
-      addresses: %{params: addresses_params, with: :balance_changeset},
-      address_coin_balances_daily: %{params: importable_balances_daily_params},
-      broadcast: broadcast_type
-    })
+    with {:ok, imported} <-
+           Chain.import(%{
+             addresses: %{params: addresses_params, with: :balance_changeset},
+             address_coin_balances_daily: %{params: importable_balances_daily_params},
+             broadcast: broadcast_type
+           }) do
+      MultichainSearch.batch_import(%{
+        addresses: imported[:addresses] || [],
+        blocks: [],
+        transactions: []
+      })
+    end
   end
 
   defp run_fetched_balances(%FetchedBalances{errors: errors} = fetched_balances, fetcher_type) do

@@ -18,6 +18,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
   alias Explorer.Chain.PolygonZkevm.Reader
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Helper, as: IndexerHelper
   alias Indexer.Transform.Addresses
 
@@ -104,12 +105,18 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
         polygon_zkevm_bridge_operations: operations
       })
 
-    {:ok, _} =
+    {:ok, imported} =
       Chain.import(%{
         addresses: %{params: addresses, on_conflict: :nothing},
         polygon_zkevm_bridge_operations: %{params: operations},
         timeout: :infinity
       })
+
+    MultichainSearch.batch_import(%{
+      addresses: imported[:addresses] || [],
+      blocks: [],
+      transactions: []
+    })
   end
 
   @doc """

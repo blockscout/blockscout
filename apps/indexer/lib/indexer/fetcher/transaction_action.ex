@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.TransactionAction do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, BlockNumberHelper, Log, TransactionAction}
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Transform.{Addresses, TransactionActions}
 
   @stage_first_block "transaction_action_first_block"
@@ -183,12 +184,18 @@ defmodule Indexer.Fetcher.TransactionAction do
           Map.put(action, :data, Map.delete(action.data, :block_number))
         end)
 
-      {:ok, _} =
+      {:ok, imported} =
         Chain.import(%{
           addresses: %{params: addresses, on_conflict: :nothing},
           transaction_actions: %{params: transaction_actions_with_data},
           timeout: :infinity
         })
+
+      MultichainSearch.batch_import(%{
+        addresses: imported[:addresses] || [],
+        blocks: [],
+        transactions: []
+      })
 
       blocks_processed = last_block - block_number + 1
 

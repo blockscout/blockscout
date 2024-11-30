@@ -28,6 +28,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
   alias Explorer.Chain.NullRoundHeight
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Utility.{MassiveBlock, MissingRangesManipulator}
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Catchup.TaskSupervisor
@@ -120,6 +121,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
         imported,
         Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors})
       )
+
+      MultichainSearch.batch_import(%{
+        addresses: imported[:addresses] || [],
+        blocks: imported[:blocks] || [],
+        transactions: imported[:transactions] || []
+      })
 
       ok
     end

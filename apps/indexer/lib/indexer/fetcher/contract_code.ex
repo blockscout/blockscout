@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Explorer.Chain.{Address, Block, Hash}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
   alias Indexer.Fetcher.Zilliqa.ScillaSmartContracts, as: ZilliqaScillaSmartContractsFetcher
@@ -176,9 +177,21 @@ defmodule Indexer.Fetcher.ContractCode do
                addresses: %{params: merged_addresses_params},
                timeout: :infinity
              }) do
+<<<<<<< HEAD
           {:ok, %{addresses: addresses}} ->
             Accounts.drop(addresses)
             zilliqa_verify_scilla_contracts(entries, addresses)
+=======
+          {:ok, imported} ->
+            Accounts.drop(imported[:addresses])
+
+            MultichainSearch.batch_import(%{
+              addresses: imported[:addresses] || [],
+              blocks: [],
+              transactions: []
+            })
+
+>>>>>>> cf725a9bde (feature: Export data to Multichain Search DB)
             :ok
 
           {:error, step, reason, _changes_so_far} ->
