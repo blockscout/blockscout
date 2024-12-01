@@ -151,7 +151,8 @@ defmodule Explorer.Repo do
         Explorer.Repo.Stability,
         Explorer.Repo.Suave,
         Explorer.Repo.Zilliqa,
-        Explorer.Repo.ZkSync
+        Explorer.Repo.ZkSync,
+        Explorer.Repo.Neon
       ] do
     defmodule repo do
       use Ecto.Repo,
