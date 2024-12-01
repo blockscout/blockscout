@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.6.0",
-    "@amplitude/analytics-browser": "^2.11.8",
+    "@amplitude/analytics-browser": "^2.11.9",
     "@tarekraafat/autocomplete.js": "^10.2.9",
     "@walletconnect/web3-provider": "^1.8.0",
     "assert": "^2.1.0",
