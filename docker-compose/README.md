@@ -45,7 +45,7 @@ The repo contains built-in configs for different JSON RPC clients without need t
 | Erigon  | `docker-compose -f erigon.yml up -d`    |
 | Geth (suitable for Reth as well) | `docker-compose -f geth.yml up -d`     |
 | Geth Clique    | `docker-compose -f geth-clique-consensus.yml up -d`    |
-| Nethermind, OpenEthereum    | `docker-compose -f nethermind up -d`    |
+| Nethermind, OpenEthereum    | `docker-compose -f nethermind.yml up -d`    |
 | Ganache    | `docker-compose -f ganache.yml up -d`    |
 | HardHat network    | `docker-compose -f hardhat-network.yml up -d`    |
 
