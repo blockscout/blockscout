@@ -167,11 +167,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
           :l2_block_start => non_neg_integer(),
           :l2_block_end => non_neg_integer(),
           :transaction_count => non_neg_integer(),
-          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-          :tx_count => non_neg_integer(),
           :l1_transaction_hashes => list(),
-          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hashes` property
-          :l1_tx_hashes => list(),
           :batch_data_container => :in_blob4844 | :in_celestia | :in_calldata | nil
         }
   def prepare_base_info_for_batch(
@@ -188,11 +184,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
       :l2_block_start => l2_block_number_from,
       :l2_block_end => l2_block_number_to,
       :transaction_count => transaction_count,
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-      :tx_count => transaction_count,
       :l1_transaction_hashes => batch.l1_transaction_hashes,
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hashes` property
-      :l1_tx_hashes => batch.l1_transaction_hashes,
       :batch_data_container => batch_data_container
     }
   end

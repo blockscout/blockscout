@@ -81,8 +81,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   def prepare_address({address, transaction_count}) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
-    # todo: keep `tx_count` for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-    |> Map.put(:tx_count, to_string(transaction_count))
     |> Map.put(:transaction_count, to_string(transaction_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
@@ -106,8 +104,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       Map.merge(base_info, %{
         "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
         "creation_transaction_hash" => creation_transaction_hash,
-        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `creation_transaction_hash` property
-        "creation_tx_hash" => creation_transaction_hash,
         "token" => token,
         "coin_balance" => balance,
         "exchange_rate" => exchange_rate,

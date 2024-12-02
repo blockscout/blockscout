@@ -178,8 +178,6 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         value: transaction_with_meta.value,
         method: Transaction.method_name(transaction_with_meta, Transaction.format_decoded_input(decoded_input)),
         status: transaction_with_meta.status,
-        # todo: keep `tx_types` for compatibility with interpreter and remove when new interpreter is bound to `transaction_types` property
-        tx_types: TransactionView.transaction_types(transaction_with_meta),
         transaction_types: TransactionView.transaction_types(transaction_with_meta),
         raw_input: transaction_with_meta.input,
         decoded_input: decoded_input_data,
