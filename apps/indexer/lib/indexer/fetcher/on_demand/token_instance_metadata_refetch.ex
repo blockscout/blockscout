@@ -46,7 +46,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   end
 
   defp fetch_and_broadcast_metadata(token_instance, _state) do
-    from_base_uri? = Application.get_env(:indexer, __MODULE__)[:base_uri_retry?]
+    from_base_uri? = Application.get_env(:indexer, TokenInstanceHelper)[:base_uri_retry?]
 
     token_id = TokenInstanceHelper.prepare_token_id(token_instance.token_id)
     contract_address_hash_string = to_string(token_instance.token_contract_address_hash)
