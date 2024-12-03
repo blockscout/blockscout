@@ -8,6 +8,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Celo.PendingEpochBlockOperation
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, as: EpochBlockOperationsSupervisor
   alias Indexer.Transform.Addresses
   alias Indexer.{BufferedTask, Tracer}
@@ -138,6 +139,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
         celo_election_rewards: %{params: election_rewards},
         celo_epoch_rewards: %{params: [distributions]}
       })
+
+    MultichainSearch.batch_import(%{
+      addresses: imported[:addresses] || [],
+      blocks: [],
+      transactions: []
+    })
 
     Logger.info("Fetched epoch rewards for block number: #{pending_operation.block_number}")
 

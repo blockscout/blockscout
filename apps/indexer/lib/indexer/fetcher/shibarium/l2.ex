@@ -28,6 +28,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
   alias EthereumJSONRPC.{Blocks, Logs, Receipt}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Shibarium.Bridge
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Helper
   alias Indexer.Transform.Addresses
 
@@ -190,12 +191,18 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
           shibarium_bridge_operations: insert_items
         })
 
-      {:ok, _} =
+      {:ok, imported} =
         Chain.import(%{
           addresses: %{params: addresses, on_conflict: :nothing},
           shibarium_bridge_operations: %{params: insert_items},
           timeout: :infinity
         })
+
+      MultichainSearch.batch_import(%{
+        addresses: imported[:addresses] || [],
+        blocks: [],
+        transactions: []
+      })
 
       Helper.log_blocks_chunk_handling(
         chunk_start,

@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.Withdrawal do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Withdrawal
   alias Explorer.Helper
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Transform.Addresses
 
   @interval :timer.seconds(10)
@@ -132,7 +133,13 @@ defmodule Indexer.Fetcher.Withdrawal do
     addresses = Addresses.extract_addresses(%{withdrawals: withdrawals_params})
 
     case Chain.import(%{addresses: %{params: addresses}, withdrawals: %{params: withdrawals_params}}) do
-      {:ok, _} ->
+      {:ok, imported} ->
+        MultichainSearch.batch_import(%{
+          addresses: imported[:addresses] || [],
+          blocks: [],
+          transactions: []
+        })
+
         acc
 
       {:error, reason} ->

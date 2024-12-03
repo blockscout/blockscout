@@ -12,30 +12,42 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
   describe "GET last_block_status/0" do
     test "returns error when there are no blocks in db", %{conn: conn} do
-      request = get(conn, api_v1_health_path(conn, :health))
+      request = get(conn, api_health_path(conn, :health))
 
       assert request.status == 500
 
-      assert request.resp_body ==
-               "{\"error_code\":5002,\"error_description\":\"There are no blocks in the DB\",\"error_title\":\"no blocks in db\",\"healthy\":false}"
+      expected_response =
+        %{
+          healthy: false,
+          error: %{
+            code: 5002,
+            message: "There are no blocks in the DB."
+          }
+        }
+        |> Jason.encode!()
+
+      assert request.resp_body == expected_response
     end
 
     test "returns error when last block is stale", %{conn: conn} do
       insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
 
-      request = get(conn, api_v1_health_path(conn, :health))
+      request = get(conn, api_health_path(conn, :health))
 
       assert request.status == 500
 
       assert %{
                "healthy" => false,
-               "error_code" => 5001,
-               "error_title" => "blocks fetching is stuck",
-               "error_description" =>
-                 "There are no new blocks in the DB for the last 5 mins. Check the healthiness of Ethereum archive node or the Blockscout DB instance",
-               "data" => %{
-                 "latest_block_number" => _,
-                 "latest_block_inserted_at" => _
+               "error" => %{
+                 "code" => 5001,
+                 "message" =>
+                   "There are no new blocks in the DB for the last 5 mins. Check the healthiness of the JSON RPC archive node or the DB."
+               },
+               "metadata" => %{
+                 "latest_block" => %{
+                   "number" => _,
+                   "timestamp" => _
+                 }
                }
              } = Poison.decode!(request.resp_body)
     end
@@ -44,7 +56,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
       block1 = insert(:block, consensus: true, timestamp: DateTime.utc_now(), number: 2)
       insert(:block, consensus: true, timestamp: DateTime.utc_now(), number: 1)
 
-      request = get(conn, api_v1_health_path(conn, :health))
+      request = get(conn, api_health_path(conn, :health))
 
       assert request.status == 200
 
@@ -53,11 +65,17 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
       assert result["healthy"] == true
 
       assert %{
-               "latest_block_number" => to_string(block1.number),
-               "latest_block_inserted_at" => to_string(block1.timestamp),
-               "cache_latest_block_number" => to_string(block1.number),
-               "cache_latest_block_inserted_at" => to_string(block1.timestamp)
-             } == result["data"]
+               "latest_block" => %{
+                 "db" => %{
+                   "number" => to_string(block1.number),
+                   "timestamp" => to_string(block1.timestamp)
+                 },
+                 "cache" => %{
+                   "number" => to_string(block1.number),
+                   "timestamp" => to_string(block1.timestamp)
+                 }
+               }
+             } == result["metadata"]
     end
   end
 
@@ -71,24 +89,27 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
     assert [%{hash: ^state_block_hash}] = Chain.list_blocks(paging_options: %PagingOptions{page_size: 1})
 
-    request = get(conn, api_v1_health_path(conn, :health))
+    request = get(conn, api_health_path(conn, :health))
 
     assert request.status == 500
 
     assert %{
              "healthy" => false,
-             "error_code" => 5001,
-             "error_title" => "blocks fetching is stuck",
-             "error_description" =>
-               "There are no new blocks in the DB for the last 5 mins. Check the healthiness of Ethereum archive node or the Blockscout DB instance",
-             "data" => %{
-               "latest_block_number" => _,
-               "latest_block_inserted_at" => _
+             "error" => %{
+               "code" => 5001,
+               "message" =>
+                 "There are no new blocks in the DB for the last 5 mins. Check the healthiness of the JSON RPC archive node or the DB."
+             },
+             "metadata" => %{
+               "latest_block" => %{
+                 "number" => _,
+                 "timestamp" => _
+               }
              }
            } = Poison.decode!(request.resp_body)
   end
 
-  defp api_v1_health_path(conn, action) do
-    "/api" <> ApiRoutes.api_v1_health_path(conn, action)
+  defp api_health_path(conn, action) do
+    "/api" <> ApiRoutes.health_path(conn, action)
   end
 end

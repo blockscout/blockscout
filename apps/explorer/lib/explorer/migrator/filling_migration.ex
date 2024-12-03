@@ -1,6 +1,6 @@
 defmodule Explorer.Migrator.FillingMigration do
   @moduledoc """
-  Template for creating migrations that fills some fields in existing entities
+  Template for creating migrations that fills some fields in existing entities or migrates data to another storages (e.g. multichain search DB)
   """
 
   @callback migration_name :: String.t()

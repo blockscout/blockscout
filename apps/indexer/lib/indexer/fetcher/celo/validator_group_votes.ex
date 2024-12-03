@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
   alias Explorer.Application.Constants
   alias Explorer.Chain
   alias Explorer.Chain.Cache.CeloCoreContracts
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Helper, as: IndexerHelper
   alias Indexer.Transform.Addresses
 
@@ -144,11 +145,17 @@ defmodule Indexer.Fetcher.Celo.ValidatorGroupVotes do
         celo_validator_group_votes: validator_group_votes
       })
 
-    {:ok, _imported} =
+    {:ok, imported} =
       Chain.import(%{
         addresses: %{params: addresses_params},
         celo_validator_group_votes: %{params: validator_group_votes}
       })
+
+    MultichainSearch.batch_import(%{
+      addresses: imported[:addresses] || [],
+      blocks: [],
+      transactions: []
+    })
 
     Constants.set_constant_value(@last_fetched_block_key, to_string(chunk_to_block))
 

@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Fetcher.PendingTransaction
   alias Indexer.Transform.Addresses
 
@@ -176,6 +177,13 @@ defmodule Indexer.Fetcher.PendingTransaction do
          }) do
       {:ok, imported} ->
         Accounts.drop(imported[:addresses])
+
+        MultichainSearch.batch_import(%{
+          addresses: imported[:addresses] || [],
+          blocks: [],
+          transactions: imported[:transactions] || []
+        })
+
         :ok
 
       {:error, [%Changeset{} | _] = changesets} ->

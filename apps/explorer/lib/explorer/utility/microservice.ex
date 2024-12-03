@@ -28,12 +28,26 @@ defmodule Explorer.Utility.Microservice do
   @doc """
     Returns :ok if Application.get_env(:explorer, module)[:enabled] is true (module is enabled)
   """
-  @spec check_enabled(atom) :: :ok | {:error, :disabled}
+  @spec check_enabled(atom(), atom()) :: :ok | {:error, :disabled}
   def check_enabled(application \\ :explorer, module) do
     if Application.get_env(application, module)[:enabled] && base_url(application, module) do
       :ok
     else
       {:error, :disabled}
     end
+  end
+
+  @doc """
+  Retrieves the API key for the microservice.
+
+  ## Examples
+
+      iex> Explorer.Utility.Microservice.api_key()
+      "your_api_key_here"
+
+  """
+  @spec api_key(atom(), atom()) :: String.t()
+  def api_key(application \\ :explorer, module) do
+    Application.get_env(application, module)[:api_key]
   end
 end

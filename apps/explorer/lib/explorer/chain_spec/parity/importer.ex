@@ -14,6 +14,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   alias Explorer.ChainSpec.GenesisData
   alias Explorer.ChainSpec.POA.Importer, as: PoaEmissionImporter
   alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
 
   import Ecto.Query
 
@@ -64,7 +65,19 @@ defmodule Explorer.ChainSpec.Parity.Importer do
       addresses: %{params: address_params}
     }
 
-    Chain.import(params)
+    case Chain.import(params) do
+      {:ok, imported} = result ->
+        MultichainSearch.batch_import(%{
+          addresses: imported[:addresses] || [],
+          blocks: [],
+          transactions: []
+        })
+
+        result
+
+      other_result ->
+        other_result
+    end
   end
 
   defp import_rewards_from_chain_spec(chain_spec) do

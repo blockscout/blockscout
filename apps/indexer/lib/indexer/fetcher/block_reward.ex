@@ -18,6 +18,7 @@ defmodule Indexer.Fetcher.BlockReward do
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Wei}
   alias Explorer.Chain.Cache.Accounts
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.BlockReward.Supervisor, as: BlockRewardSupervisor
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
@@ -274,11 +275,23 @@ defmodule Indexer.Fetcher.BlockReward do
     addresses_params = Addresses.extract_addresses(%{block_reward_contract_beneficiaries: block_rewards_params})
     address_coin_balances_params_set = AddressCoinBalances.params_set(%{beneficiary_params: block_rewards_params})
 
-    Chain.import(%{
-      addresses: %{params: addresses_params},
-      address_coin_balances: %{params: address_coin_balances_params_set},
-      block_rewards: %{params: block_rewards_params}
-    })
+    case Chain.import(%{
+           addresses: %{params: addresses_params},
+           address_coin_balances: %{params: address_coin_balances_params_set},
+           block_rewards: %{params: block_rewards_params}
+         }) do
+      {:ok, imported} ->
+        MultichainSearch.batch_import(%{
+          addresses: imported[:addresses] || [],
+          blocks: [],
+          transactions: []
+        })
+
+        {:ok, imported}
+
+      other_result ->
+        other_result
+    end
   end
 
   defp retry_beneficiaries_params(beneficiaries_params) when is_list(beneficiaries_params) do

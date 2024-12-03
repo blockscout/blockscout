@@ -13,6 +13,7 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
   alias Indexer.Transform.Addresses
@@ -133,6 +134,13 @@ defmodule Indexer.Fetcher.ContractCode do
              }) do
           {:ok, imported} ->
             Accounts.drop(imported[:addresses])
+
+            MultichainSearch.batch_import(%{
+              addresses: imported[:addresses] || [],
+              blocks: [],
+              transactions: []
+            })
+
             :ok
 
           {:error, step, reason, _changes_so_far} ->
