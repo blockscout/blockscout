@@ -51,7 +51,8 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
   @impl GenServer
   def init(_args) do
-    {:ok, %{}, {:continue, :ok}}
+    :ignore
+    #{:ok, %{}, {:continue, :ok}}
   end
 
   @impl GenServer
