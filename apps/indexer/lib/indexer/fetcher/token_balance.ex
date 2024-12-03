@@ -259,14 +259,15 @@ defmodule Indexer.Fetcher.TokenBalance do
     end
   end
 
-  defp entry(%{
-         token_contract_address_hash: token_contract_address_hash,
-         address_hash: address_hash,
-         block_number: block_number,
-         token_type: token_type,
-         token_id: token_id,
-         retries_count: retries_count
-       }) do
+  defp entry(
+         %{
+           token_contract_address_hash: token_contract_address_hash,
+           address_hash: address_hash,
+           block_number: block_number,
+           token_type: token_type,
+           token_id: token_id
+         } = params
+       ) do
     token_id_int =
       case token_id do
         %Decimal{} -> Decimal.to_integer(token_id)
@@ -274,7 +275,14 @@ defmodule Indexer.Fetcher.TokenBalance do
         _ -> token_id
       end
 
-    {address_hash.bytes, token_contract_address_hash.bytes, block_number, token_type, token_id_int, retries_count || 0}
+    {
+      address_hash.bytes,
+      token_contract_address_hash.bytes,
+      block_number,
+      token_type,
+      token_id_int,
+      Map.get(params, :retries_count) || 0
+    }
   end
 
   defp format_params(
