@@ -5,12 +5,6 @@ defmodule Explorer.Chain.Celo.Reader do
 
   import Ecto.Query, only: [limit: 2]
 
-  import Explorer.Chain,
-    only: [
-      select_repo: 1,
-      join_associations: 2
-    ]
-
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Blocks, CeloCoreContracts}
@@ -58,8 +52,8 @@ defmodule Explorer.Chain.Celo.Reader do
     |> ElectionReward.join_token()
     |> ElectionReward.paginate(paging_options)
     |> limit(^paging_options.page_size)
-    |> join_associations(necessity_by_association)
-    |> select_repo(options).all()
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
   end
 
   @doc """
@@ -97,8 +91,8 @@ defmodule Explorer.Chain.Celo.Reader do
     |> ElectionReward.block_hash_to_rewards_by_type_query(reward_type)
     |> ElectionReward.paginate(paging_options)
     |> limit(^paging_options.page_size)
-    |> join_associations(necessity_by_association)
-    |> select_repo(options).all()
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
   end
 
   @doc """
@@ -135,7 +129,7 @@ defmodule Explorer.Chain.Celo.Reader do
     reward_type_to_aggregated_rewards =
       block_hash
       |> ElectionReward.block_hash_to_aggregated_rewards_by_type_query()
-      |> select_repo(options).all()
+      |> Chain.select_repo(options).all()
       |> Map.new(fn {type, total, count} ->
         {type, %{total: total, count: count}}
       end)
