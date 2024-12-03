@@ -470,7 +470,7 @@ jobs:
       - matrix-builder
     services:
       postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -533,7 +533,7 @@ jobs:
       - matrix-builder
     services:
       postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -608,7 +608,7 @@ jobs:
       - matrix-builder
     services:
       postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -680,7 +680,7 @@ jobs:
           - 6379:6379
 
       postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
