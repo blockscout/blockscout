@@ -76,7 +76,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   @impl GenServer
   def init(args) do
-    {:ok, %{json_rpc_named_arguments_l2: args[:json_rpc_named_arguments]}, {:continue, nil}}
+    :ignore
+    #{:ok, %{json_rpc_named_arguments_l2: args[:json_rpc_named_arguments]}, {:continue, nil}}
   end
 
   @impl GenServer
