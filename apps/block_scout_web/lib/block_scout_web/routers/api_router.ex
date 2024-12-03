@@ -463,6 +463,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     get("/logs-csv", AddressTransactionController, :logs_csv)
 
+    if Application.compile_env(:explorer, :chain_type) == :celo do
+      get("/celo-election-rewards-csv", AddressTransactionController, :celo_election_rewards_csv)
+    end
+
     scope "/health" do
       get("/", HealthController, :health)
       get("/liveness", HealthController, :liveness)

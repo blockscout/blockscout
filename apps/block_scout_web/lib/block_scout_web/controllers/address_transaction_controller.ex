@@ -22,6 +22,9 @@ defmodule BlockScoutWeb.AddressTransactionController do
     AddressTransactionCsvExporter
   }
 
+  alias Explorer.Chain.CSVExport.Celo.AddressElectionRewardsCsvExporter,
+    as: CeloAddressElectionRewardsCsvExporter
+
   alias Explorer.Chain.{DenormalizationHelper, Transaction, Wei}
 
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
@@ -222,5 +225,10 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   def logs_csv(conn, params) do
     items_csv(conn, params, AddressLogCsvExporter)
+  end
+
+  @spec celo_election_rewards_csv(Conn.t(), map()) :: Conn.t()
+  def celo_election_rewards_csv(conn, params) do
+    items_csv(conn, params, CeloAddressElectionRewardsCsvExporter)
   end
 end
