@@ -338,12 +338,24 @@ defmodule ConfigHelper do
     System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URL") || System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || default
   end
 
+  @spec parse_urls_list(String.t(), String.t(), String.t() | nil) :: [String.t()]
   def parse_urls_list(urls_var, url_var, default_url \\ nil) do
-    default = default_url || System.get_env("ETHEREUM_JSONRPC_HTTP_URL")
+    with [] <- parse_list_env_var(urls_var),
+         "" <- safe_get_env(url_var, default_url) do
+      case urls_var do
+        "ETHEREUM_JSONRPC_HTTP_URLS" ->
+          raise "ETHEREUM_JSONRPC_HTTP_URL (or ETHEREUM_JSONRPC_HTTP_URLS) env variable is required"
 
-    case parse_list_env_var(urls_var) do
-      [] -> [safe_get_env(url_var, default)]
-      urls -> urls
+        "ETHEREUM_JSONRPC_FALLBACK_HTTP_URLS" ->
+          define_default_urls(:regular)
+
+        _other ->
+          url_type = if String.contains?(urls_var, "FALLBACK"), do: :fallback, else: :regular
+          define_default_urls(url_type)
+      end
+    else
+      urls when is_list(urls) -> urls
+      url -> [url]
     end
   end
 
@@ -384,4 +396,9 @@ defmodule ConfigHelper do
   end
 
   defp valid_url?(_), do: false
+
+  defp define_default_urls(:regular), do: parse_urls_list("ETHEREUM_JSONRPC_HTTP_URLS", "ETHEREUM_JSONRPC_HTTP_URL")
+
+  defp define_default_urls(:fallback),
+    do: parse_urls_list("ETHEREUM_JSONRPC_FALLBACK_HTTP_URLS", "ETHEREUM_JSONRPC_FALLBACK_HTTP_URL")
 end
