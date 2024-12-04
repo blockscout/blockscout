@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [fetch_blocks_by_numbers: 3, json_rpc: 2]
+  import EthereumJSONRPC, only: [fetch_blocks_by_numbers: 3, json_rpc: 2, quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
@@ -22,6 +22,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   @fetcher_name :optimism_eip1559_config_updates
   @latest_block_check_interval_seconds 60
+  @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   def child_spec(start_link_arguments) do
     spec = %{
@@ -62,6 +63,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
       Logger.debug("l2_block_number = #{l2_block_number}")
       Logger.debug("last_l2_block_number = #{last_l2_block_number}")
+
 
       Process.send(self(), :continue, [])
 
@@ -105,7 +107,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
         chunk_end,
         start_block,
         end_block,
-        "#{Enum.count(updates_count)} update(s).",
+        "#{updates_count} update(s).",
         :L2
       )
     end)
@@ -134,7 +136,10 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   defp handle_updates(block_numbers, json_rpc_named_arguments) do
     case fetch_blocks_by_numbers(block_numbers, json_rpc_named_arguments, false) do
       {:ok, %Blocks{blocks_params: blocks_params, errors: []}} ->
+        last_block_number = List.last(block_numbers)
+
         Enum.reduce(block_numbers, 0, fn block_number, acc ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           block = Enum.find(blocks_params, %{extra_data: "0x"}, fn b -> b.number == block_number end)
 
           extra_data =
@@ -142,27 +147,34 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
             |> String.trim_leading("0x")
             |> Base.decode16!(case: :mixed)
 
-          with {:valid_format, true} <- {:valid_format, byte_size(extra_data) >= 9},
-               <<version::size(8), denominator::size(32), elasticity::size(32), _::binary>> = extra_data,
-               {:valid_version, _version, true} <- {:valid_version, version, version == 0},
-               prev_config = actual_config_for_block(block.number),
-               new_config = {denominator, elasticity},
-               {:updated_config, true} <- {:updated_config, prev_config != new_config} do
-            update_config(block.number, block.hash, denominator, elasticity)
-            Logger.info("Config was updated at block #{block.number}. Previous one: #{inspect(prev_config)}. New one: #{inspect(new_config)}.")
-            acc + 1
-          else
-            {:valid_format, false} ->
-              Logger.warn("extraData of the block ##{block_number} has invalid format. Ignoring it.")
-              acc
+          return =
+            with {:valid_format, true} <- {:valid_format, byte_size(extra_data) >= 9},
+                 <<version::size(8), denominator::size(32), elasticity::size(32), _::binary>> = extra_data,
+                 {:valid_version, _version, true} <- {:valid_version, version, version == 0},
+                 prev_config = actual_config_for_block(block.number),
+                 new_config = {denominator, elasticity},
+                 {:updated_config, true} <- {:updated_config, prev_config != new_config} do
+              update_config(block.number, block.hash, denominator, elasticity)
+              Logger.info("Config was updated at block #{block.number}. Previous one: #{inspect(prev_config)}. New one: #{inspect(new_config)}.")
+              acc + 1
+            else
+              {:valid_format, false} ->
+                Logger.warn("extraData of the block ##{block_number} has invalid format. Ignoring it.")
+                acc
 
-            {:valid_version, version, false} ->
-              Logger.warn("extraData of the block ##{block_number} has invalid version #{version}. Ignoring it.")
-              acc
+              {:valid_version, version, false} ->
+                Logger.warn("extraData of the block ##{block_number} has invalid version #{version}. Ignoring it.")
+                acc
 
-            {:updated_config, false} ->
-              acc
+              {:updated_config, false} ->
+                acc
+            end
+
+          if block.number == last_block_number do
+            EIP1559ConfigUpdate.set_last_l2_block_hash(block.hash)
           end
+
+          return
         end)
 
       {_, message_or_errors} ->
@@ -294,32 +306,61 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   # ## Returns
   # - `{:ok, number}` tuple with the block number of the last actual row. The number can be `0` if there are no rows.
   # - `{:error, message}` tuple in case of RPC error.
-  @spec get_last_l2_block_number(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer() | {:error, any()}
+  @spec get_last_l2_block_number(EthereumJSONRPC.json_rpc_named_arguments()) :: {:ok, non_neg_integer()} | {:error, any()}
   defp get_last_l2_block_number(json_rpc_named_arguments) do
-    {last_l2_block_number, last_l2_block_hash} =
-      from(u in EIP1559ConfigUpdate, select: {u.l2_block_number, u.l2_block_hash}, order_by: [desc: u.l2_block_number], limit: 1)
-      |> Repo.one()
-      |> Kernel.||({0, nil})
+    last_l2_block_hash = EIP1559ConfigUpdate.last_l2_block_hash()
 
-    with {:empty_hash, false} <- {:empty_hash, is_nil(last_l2_block_hash)},
-         {:ok, last_l2_block} <- get_block_by_hash(last_l2_block_hash, json_rpc_named_arguments),
-         {:empty_block, false} <- {:empty_block, is_nil(last_l2_block)} do
-      {:ok, last_l2_block_number}
+    last_l2_block_number =
+      if last_l2_block_hash != @empty_hash do
+        case get_block_by_hash(last_l2_block_hash, json_rpc_named_arguments) do
+          {:ok, nil} ->
+            # it seems there was a reorg, so we need to reset the block hash in the counter
+            # and then use the below approach taking the block hash from `op_eip1559_config_updates` table
+            EIP1559ConfigUpdate.set_last_l2_block_hash(@empty_hash)
+            nil
+
+          {:ok, last_l2_block} ->
+            # the block hash is actual, so use the block number
+            last_l2_block
+            |> Map.get("number")
+            |> quantity_to_integer()
+
+          {:error, _} ->
+            # something went wrong, so use the below approach
+            nil
+        end
+      end
+    
+    if is_nil(last_l2_block_number) do
+      query = from(u in EIP1559ConfigUpdate, select: {u.l2_block_number, u.l2_block_hash}, order_by: [desc: u.l2_block_number], limit: 1)
+
+      {last_l2_block_number, last_l2_block_hash} =
+        query
+        |> Repo.one()
+        |> Kernel.||({0, nil})
+
+      with {:empty_hash, false} <- {:empty_hash, is_nil(last_l2_block_hash)},
+           {:ok, last_l2_block} <- get_block_by_hash(last_l2_block_hash, json_rpc_named_arguments),
+           {:empty_block, false} <- {:empty_block, is_nil(last_l2_block)} do
+        {:ok, last_l2_block_number}
+      else
+        {:empty_hash, true} ->
+          {:ok, 0}
+
+        {:error, _} = error ->
+          error
+
+        {:empty_block, true} ->
+          Logger.error(
+            "Cannot find the last L2 block from RPC by its hash (#{last_l2_block_hash}). Probably, there was a reorg on L2 chain. Trying to check preceding block..."
+          )
+
+          Repo.delete_all(from(u in EIP1559ConfigUpdate, where: u.l2_block_number == ^last_l2_block_number))
+
+          get_last_l2_block_number(json_rpc_named_arguments)
+      end
     else
-      {:empty_hash, true} ->
-        {:ok, 0}
-
-      {:error, _} = error ->
-        error
-
-      {:empty_block, true} ->
-        Logger.error(
-          "Cannot find the last L2 block from RPC by its hash (#{last_l2_block_hash}). Probably, there was a reorg on L2 chain. Trying to check preceding block..."
-        )
-
-        Repo.delete_all(from(u in EIP1559ConfigUpdate, where: u.l2_block_number == ^last_l2_block_number))
-
-        get_last_l2_block_number(json_rpc_named_arguments)
+      {:ok, last_l2_block_number}
     end
   end
 
