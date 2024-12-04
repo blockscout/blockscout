@@ -8,6 +8,7 @@ MIX_FILES=(
     "$(pwd)/apps/indexer/mix.exs"
     "$(pwd)/apps/ethereum_jsonrpc/mix.exs"
     "$(pwd)/apps/utils/mix.exs"
+    "$(pwd)/apps/nft_media_handler/mix.exs"
 )
 CONFIG_FILE="$(pwd)/rel/config.exs"
 DOCKER_COMPOSE_FILE="$(pwd)/docker-compose/docker-compose.yml"
