@@ -9,7 +9,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
-  alias EthereumJSONRPC.Arbitrum
+  alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
@@ -193,7 +193,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
         fields =
           event
-          |> Arbitrum.l2_to_l1_event_parse()
+          |> ArbitrumRpc.l2_to_l1_event_parse()
 
         message =
           %{
