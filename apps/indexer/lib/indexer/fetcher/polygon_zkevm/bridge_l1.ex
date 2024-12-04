@@ -57,7 +57,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
     env_l2 = Application.get_all_env(:indexer)[Indexer.Fetcher.PolygonZkevm.BridgeL2]
 
     with {:start_block_undefined, false} <- {:start_block_undefined, is_nil(env[:start_block])},
-         {:reorg_monitor_started, true} <- {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
+         _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          rpc = env[:rpc],
          {:rpc_undefined, false} <- {:rpc_undefined, is_nil(rpc)},
          {:rollup_network_id_l1_is_valid, true} <-
@@ -99,10 +99,6 @@ defmodule Indexer.Fetcher.PolygonZkevm.BridgeL1 do
     else
       {:start_block_undefined, true} ->
         # the process shouldn't start if the start block is not defined
-        {:stop, :normal, %{}}
-
-      {:reorg_monitor_started, false} ->
-        Logger.error("Cannot start this process as Indexer.Fetcher.RollupL1ReorgMonitor is not started.")
         {:stop, :normal, %{}}
 
       {:rpc_undefined, true} ->
