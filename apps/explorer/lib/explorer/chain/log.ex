@@ -197,7 +197,7 @@ defmodule Explorer.Chain.Log do
   defp handle_method_decode_error(error, log, transaction, options, skip_sig_provider?, contracts_acc, events_acc) do
     case error do
       {:error, _reason} ->
-        case find_method_candidates(log, transaction, options, events_acc, skip_sig_provider?) do
+        case find_method_candidates(log, transaction, options, events_acc) do
           {{:error, :contract_not_verified, []}, events_acc} ->
             {decode_event_via_sig_provider(log, transaction, false, skip_sig_provider?), contracts_acc, events_acc}
 
@@ -233,28 +233,33 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  defp find_method_candidates(log, transaction, options, events_acc, skip_sig_provider?) do
+  defp find_method_candidates(log, transaction, options, events_acc) do
     if is_nil(log.first_topic) do
       {{:error, :could_not_decode}, events_acc}
     else
       <<method_id::binary-size(4), _rest::binary>> = log.first_topic.bytes
-      key = {method_id, log.second_topic, log.third_topic, log.fourth_topic}
 
-      if Map.has_key?(events_acc, key) do
-        {events_acc[key], events_acc}
+      if Map.has_key?(events_acc, method_id) do
+        {find_and_decode_in_candidates(events_acc[method_id], log, transaction), events_acc}
       else
-        result = find_method_candidates_from_db(method_id, log, transaction, options, skip_sig_provider?)
-        {result, Map.put(events_acc, key, result)}
+        {result, event_candidates} = find_method_candidates_from_db(method_id, log, transaction, options)
+        {result, Map.put(events_acc, method_id, event_candidates)}
       end
     end
   end
 
-  defp find_method_candidates_from_db(method_id, log, transaction, options, skip_sig_provider?) do
-    candidates_query = ContractMethod.find_contract_method_query(method_id, 3)
-
-    candidates =
-      candidates_query
+  defp find_method_candidates_from_db(method_id, log, transaction, options) do
+    event_candidates =
+      method_id
+      |> ContractMethod.find_contract_method_query(3)
       |> Chain.select_repo(options).all()
+
+    {find_and_decode_in_candidates(event_candidates, log, transaction), event_candidates}
+  end
+
+  defp find_and_decode_in_candidates(event_candidates, log, transaction) do
+    result =
+      event_candidates
       |> Enum.flat_map(fn contract_method ->
         case find_and_decode([contract_method.abi], log, transaction.hash) do
           {:ok, selector, mapping} ->
@@ -269,15 +274,7 @@ defmodule Explorer.Chain.Log do
       end)
       |> Enum.take(1)
 
-    {:error, :contract_not_verified,
-     if(candidates == [],
-       do:
-         if(skip_sig_provider?,
-           do: [],
-           else: decode_event_via_sig_provider(log, transaction, true)
-         ),
-       else: candidates
-     )}
+    {:error, :contract_not_verified, result}
   end
 
   @spec find_and_decode([map()], __MODULE__.t(), Hash.t()) ::
@@ -351,7 +348,7 @@ defmodule Explorer.Chain.Log do
          log,
          transaction,
          only_candidates?,
-         skip_sig_provider? \\ false
+         skip_sig_provider?
        ) do
     with true <- SigProviderInterface.enabled?(),
          false <- skip_sig_provider?,
