@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.ChainController do
   def token_autocomplete(conn, %{"q" => term} = params) when is_binary(term) do
     [paging_options: paging_options] = paging_options(params)
 
-    results =
+    {results, _} =
       paging_options
       |> Search.joint_search(term)
 
