@@ -1050,7 +1050,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert Address.checksum(instance.owner_address_hash) == data["owner"]["hash"]
     end
 
-    test "get token instance by token id which is not presented in DB", %{conn: conn} do
+    test "get 404 on token instance which is not presented in DB", %{conn: conn} do
       token = insert(:token, type: "ERC-721")
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
