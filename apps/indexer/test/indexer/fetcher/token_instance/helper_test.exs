@@ -548,7 +548,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       assert instance.is_banned
     end
 
-    test "set is_banned (VM execution error)" do
+    test "set is_banned (VM execution error) if retries_count > 9" do
       erc_721_token = insert(:token, type: "ERC-721")
 
       token_instance =
@@ -601,7 +601,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       assert instance.is_banned
     end
 
-    test "don't set is_banned (VM execution error)" do
+    test "don't set is_banned (VM execution error) if retries_count < 9" do
       erc_721_token = insert(:token, type: "ERC-721")
 
       token_instance =

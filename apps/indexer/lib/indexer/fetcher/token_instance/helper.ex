@@ -252,10 +252,11 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     end
   end
 
-  def normalize_token_id("ERC-1155", token_id),
+  @spec normalize_token_id(binary(), integer()) :: nil | binary()
+  defp normalize_token_id("ERC-1155", token_id),
     do: token_id |> Integer.to_string(16) |> String.downcase() |> String.pad_leading(64, "0")
 
-  def normalize_token_id(_token_type, _token_id), do: nil
+  defp normalize_token_id(_token_type, _token_id), do: nil
 
   defp result_to_insert_params({:ok, %{metadata: metadata}}, token_contract_address_hash, token_id) do
     %{
