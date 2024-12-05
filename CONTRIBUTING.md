@@ -74,7 +74,6 @@ When contributing to the codebase, please adhere to the following naming convent
 
 By following these conventions, we can maintain a clean and understandable codebase.
 
-
 ### API V2 Naming Convention
 
 When contributing to the API v2, please adhere to the following naming conventions for response fields to ensure clarity and consistency:
@@ -82,4 +81,24 @@ When contributing to the API v2, please adhere to the following naming conventio
 - The block number should be returned as a number in the `block_number` property.
 - The transaction hash should be returned as a hex string in the `transaction_hash` property.
 - All fields that contain the "index" suffix should be returned as numbers.
+
+## Compile time Environment Variables
+
+When working with compile time environment variables in the codebase, follow these guidelines:
+
+- Always use the `Utils.CompileTimeEnvHelper` module instead of direct `Application.compile_env/2` calls:
+
+```elixir
+# DO use this approach
+use Utils.CompileTimeEnvHelper,
+    attribute_name: [:app, :test]
+
+# Access the value using the module attribute
+@attribute_name
+
+# DON'T use this approach
+Application.compile_env(:app, :test)  # avoid direct compile_env calls
+```
+
+This approach provides faster compilation time and simplifies development and maintenance.
 

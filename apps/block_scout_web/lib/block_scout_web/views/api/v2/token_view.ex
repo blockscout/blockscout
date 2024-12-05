@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TokenView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelper
@@ -141,7 +142,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     end
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :filecoin ->
       defp chain_type_fields(result, params) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage

@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.AddressChannel do
   Establishes pub/sub channel for address page live updates.
   """
   use BlockScoutWeb, :channel
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
@@ -38,7 +39,7 @@ defmodule BlockScoutWeb.AddressChannel do
   @burn_address_hash burn_address_hash
   @current_token_balances_limit 50
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :celo ->
       @chain_type_transaction_associations [
         :gas_token

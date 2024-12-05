@@ -3,6 +3,7 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
     Helper functions for transforming data for Scroll L1 fee parameters
     in realtime block fetcher.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
@@ -22,7 +23,7 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
   @spec parse([map()]) :: [Explorer.Chain.Scroll.L1FeeParam.to_import()]
   def parse(logs)
 
-  if Application.compile_env(:explorer, :chain_type) == :scroll do
+  if @chain_type == :scroll do
     def parse(logs) do
       prev_metadata = Logger.metadata()
       Logger.metadata(fetcher: :scroll_l1_fee_params_realtime)

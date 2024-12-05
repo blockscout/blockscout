@@ -7,6 +7,8 @@ defmodule EthereumJSONRPC.Transaction do
   [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblockhashandindex),
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionbyblocknumberandindex)
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   import EthereumJSONRPC,
     only: [
       quantity_to_integer: 1,
@@ -18,7 +20,7 @@ defmodule EthereumJSONRPC.Transaction do
   alias EthereumJSONRPC
   alias EthereumJSONRPC.SignedAuthorization
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :ethereum ->
       @chain_type_fields quote(
                            do: [
@@ -122,7 +124,7 @@ defmodule EthereumJSONRPC.Transaction do
    * `"maxFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"type"` - `t:EthereumJSONRPC.quantity/0` denotes transaction type. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"authorizationList"` - `t:list/0` of `t:EthereumJSONRPC.SignedAuthorization.t/0` authorization tuples. Introduced in [EIP-7702](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-7702.md)
-   #{case Application.compile_env(:explorer, :chain_type) do
+   #{case @chain_type do
     :ethereum -> """
        * `"maxFeePerBlobGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of blob gas used. Introduced in [EIP-4844](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4844.md)
        * `"blobVersionedHashes"` - `t:list/0` of `t:EthereumJSONRPC.hash/0` of included data blobs hashes. Introduced in [EIP-4844](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4844.md)
@@ -740,7 +742,7 @@ defmodule EthereumJSONRPC.Transaction do
     do: {key, value |> Enum.map(&SignedAuthorization.to_params/1)}
 
   # Celo-specific fields
-  if Application.compile_env(:explorer, :chain_type) == :celo do
+  if @chain_type == :celo do
     defp entry_to_elixir({key, value})
          when key in ~w(feeCurrency gatewayFeeRecipient),
          do: {key, value}

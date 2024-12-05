@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.MainPageController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.{Chain, PagingOptions}
   alias BlockScoutWeb.API.V2.{BlockView, OptimismView, TransactionView}
@@ -10,7 +11,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :celo ->
       @chain_type_transaction_necessity_by_association %{
         :gas_token => :optional

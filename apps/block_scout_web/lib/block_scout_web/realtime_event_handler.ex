@@ -2,8 +2,8 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
   @moduledoc """
   Subscribing process for broadcast events from realtime.
   """
-
   use GenServer
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.Notifier
   alias Explorer.Chain.Events.Subscriber
@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       def chain_type_specific_subscriptions do
         Subscriber.to(:new_arbitrum_batches, :realtime)

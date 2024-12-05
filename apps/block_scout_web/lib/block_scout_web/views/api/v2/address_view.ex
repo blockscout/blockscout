@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.AddressView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
@@ -242,7 +243,7 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     })
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :filecoin ->
       defp chain_type_fields(result, params) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage

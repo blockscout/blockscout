@@ -1,11 +1,13 @@
-if Application.compile_env(:explorer, :chain_type) == :zilliqa do
-  defmodule BlockScoutWeb.API.V2.ZilliqaView do
-    @moduledoc """
-    View functions for rendering Zilliqa-related data in JSON format.
-    """
+defmodule BlockScoutWeb.API.V2.ZilliqaView do
+  @moduledoc """
+  View functions for rendering Zilliqa-related data in JSON format.
+  """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-    alias Explorer.Chain.Block
-    alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}
+  if @chain_type == :zilliqa do
+    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
+    alias Explorer.Chain.Block, warn: false
+    alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}, warn: false
 
     @doc """
     Extends the JSON output with a sub-map containing information related to Zilliqa,

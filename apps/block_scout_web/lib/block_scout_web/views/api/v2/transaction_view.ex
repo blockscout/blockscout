@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.API.V2.{ApiView, Helper, InternalTransactionView, TokenTransferView, TokenView}
 
@@ -780,7 +781,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     Map.merge(map, %{"change" => change})
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :polygon_edge ->
       defp chain_type_transformations(transactions) do
         transactions

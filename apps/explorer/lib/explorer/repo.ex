@@ -111,8 +111,10 @@ defmodule Explorer.Repo do
   if Mix.env() == :test do
     def replica, do: __MODULE__
   else
-    def replica, do: Explorer.Repo.Replica1
+    def replica, do: (Application.get_env(:explorer, :replica_inaccessible?) && Explorer.Repo) || replica_repo()
   end
+
+  def replica_repo, do: Explorer.Repo.Replica1
 
   def account_repo, do: Explorer.Repo.Account
 

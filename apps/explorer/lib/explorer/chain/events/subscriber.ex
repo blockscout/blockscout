@@ -2,6 +2,7 @@ defmodule Explorer.Chain.Events.Subscriber do
   @moduledoc """
   Subscribes to events related to the Chain context.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   @common_allowed_broadcast_events ~w(addresses address_coin_balances address_token_balances
     address_current_token_balances blocks block_rewards internal_transactions
@@ -10,7 +11,7 @@ defmodule Explorer.Chain.Events.Subscriber do
     smart_contract_was_verified zkevm_confirmed_batches eth_bytecode_db_lookup_started
     smart_contract_was_not_verified)a
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       @chain_type_specific_allowed_broadcast_events ~w(new_arbitrum_batches new_messages_to_arbitrum_amount)a
 

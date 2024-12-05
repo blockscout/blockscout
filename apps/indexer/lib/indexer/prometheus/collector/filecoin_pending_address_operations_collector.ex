@@ -1,14 +1,16 @@
-if Application.compile_env(:explorer, :chain_type) == :filecoin do
-  defmodule Indexer.Prometheus.Collector.FilecoinPendingAddressOperations do
-    @moduledoc """
-    Custom collector to count number of records in filecoin_pending_address_operations table.
-    """
+defmodule Indexer.Prometheus.Collector.FilecoinPendingAddressOperations do
+  @moduledoc """
+  Custom collector to count number of records in filecoin_pending_address_operations table.
+  """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
+  if @chain_type == :filecoin do
     use Prometheus.Collector
 
-    alias Explorer.Chain.Filecoin.PendingAddressOperation
-    alias Explorer.Repo
-    alias Prometheus.Model
+    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
+    alias Explorer.Chain.Filecoin.PendingAddressOperation, warn: false
+    alias Explorer.Repo, warn: false
+    alias Prometheus.Model, warn: false
 
     def collect_mf(_registry, callback) do
       callback.(

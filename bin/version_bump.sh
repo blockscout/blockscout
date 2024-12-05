@@ -7,6 +7,7 @@ MIX_FILES=(
     "$(pwd)/apps/explorer/mix.exs"
     "$(pwd)/apps/indexer/mix.exs"
     "$(pwd)/apps/ethereum_jsonrpc/mix.exs"
+    "$(pwd)/apps/utils/mix.exs"
 )
 CONFIG_FILE="$(pwd)/rel/config.exs"
 DOCKER_COMPOSE_FILE="$(pwd)/docker-compose/docker-compose.yml"

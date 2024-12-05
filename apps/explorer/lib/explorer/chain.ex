@@ -3740,11 +3740,12 @@ defmodule Explorer.Chain do
         when accumulator: term()
   def stream_token_instances_with_error(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     # likely to get valid metadata
-    high_priority = ["request error: 429", ":checkout_timeout", ":econnrefused", ":timeout"]
+    high_priority = ["request error: 429", ":checkout_timeout"]
     # almost impossible to get valid metadata
     negative_priority = ["VM execution error", "no uri", "invalid json"]
 
     Instance
+    |> where([instance], is_nil(instance.is_banned) or not instance.is_banned)
     |> where([instance], not is_nil(instance.error))
     |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after < ^DateTime.utc_now())
     |> select([instance], %{
@@ -3947,14 +3948,15 @@ defmodule Explorer.Chain do
   @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def upsert_token_instance(params) do
     changeset = Instance.changeset(%Instance{}, params)
+    max_retries_count_before_ban = Instance.error_to_max_retries_count_before_ban(params[:error])
 
     Repo.insert(changeset,
-      on_conflict: token_instance_metadata_on_conflict(),
+      on_conflict: token_instance_metadata_on_conflict(max_retries_count_before_ban),
       conflict_target: [:token_id, :token_contract_address_hash]
     )
   end
 
-  defp token_instance_metadata_on_conflict do
+  defp token_instance_metadata_on_conflict(max_retries_count_before_ban) do
     config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
 
     coef = config[:exp_timeout_coeff]
@@ -3978,16 +3980,29 @@ defmodule Explorer.Chain do
           refetch_after:
             fragment(
               """
-              CASE WHEN EXCLUDED.metadata IS NULL THEN
-                NOW() AT TIME ZONE 'UTC' + interval '1 seconds' * (? * ? ^ LEAST(? + 1.0, ?))
+              CASE
+                WHEN ? > ? THEN
+                  NULL
+                WHEN EXCLUDED.metadata IS NULL THEN
+                  NOW() AT TIME ZONE 'UTC' + interval '1 seconds' * (? * ? ^ LEAST(? + 1.0, ?))
               ELSE
                 NULL
               END
               """,
+              token_instance.retries_count + 1,
+              ^max_retries_count_before_ban,
               ^coef,
               ^base,
               token_instance.retries_count,
               ^max_retry_count
+            ),
+          is_banned:
+            fragment(
+              """
+              CASE WHEN ? > ? THEN TRUE ELSE FALSE END
+              """,
+              token_instance.retries_count + 1,
+              ^max_retries_count_before_ban
             )
         ]
       ],

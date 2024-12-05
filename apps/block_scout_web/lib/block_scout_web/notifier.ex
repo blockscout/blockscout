@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Notifier do
   @moduledoc """
   Responds to events by sending appropriate channel updates to front-end.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
@@ -31,7 +32,7 @@ defmodule BlockScoutWeb.Notifier do
 
   @check_broadcast_sequence_period 500
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       @chain_type_specific_events ~w(new_arbitrum_batches new_messages_to_arbitrum_amount)a
 
@@ -296,7 +297,7 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       def handle_event({:chain_event, topic, _, _} = event) when topic in @chain_type_specific_events,
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage

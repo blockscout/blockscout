@@ -67,7 +67,6 @@ defmodule Explorer.Mixfile do
       {:bypass, "~> 2.1", only: :test},
       {:briefly, "~> 0.4", github: "CargoSense/briefly"},
       {:comeonin, "~> 5.3"},
-      {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 2.0.0"},
       {:decimal, "~> 2.0"},
@@ -128,7 +127,8 @@ defmodule Explorer.Mixfile do
       {:ueberauth_auth0, "~> 2.0"},
       {:oauth2, "~> 2.0"},
       {:siwe, github: "royal-markets/siwe-ex", ref: "51c9c08240eb7eea3c35693011f8d260cd9bb3be"},
-      {:joken, "~> 2.6"}
+      {:joken, "~> 2.6"},
+      {:utils, in_umbrella: true}
     ]
   end
 

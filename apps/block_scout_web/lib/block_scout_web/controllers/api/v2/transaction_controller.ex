@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TransactionController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   alias BlockScoutWeb.API.V2.BlobView
@@ -51,7 +52,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :ethereum ->
       @chain_type_transaction_necessity_by_association %{
         :beacon_blob_transaction => :optional

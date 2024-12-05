@@ -20,6 +20,7 @@ defmodule Indexer.Fetcher.Optimism do
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Contract
   alias Explorer.Repo
+  alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
 
   @fetcher_name :optimism
@@ -238,8 +239,7 @@ defmodule Indexer.Fetcher.Optimism do
     optimism_l1_rpc = l1_rpc_url()
 
     with {:system_config_valid, true} <- {:system_config_valid, Helper.address_correct?(system_config)},
-         {:reorg_monitor_started, true} <-
-           {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.RollupL1ReorgMonitor))},
+         _ <- RollupL1ReorgMonitor.wait_for_start(caller),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc),
          {optimism_portal, start_block_l1} <- read_system_config(system_config, json_rpc_named_arguments),
@@ -275,13 +275,6 @@ defmodule Indexer.Fetcher.Optimism do
          stop: false
        }}
     else
-      {:reorg_monitor_started, false} ->
-        Logger.error(
-          "Cannot start this process as reorg monitor in Indexer.Fetcher.RollupL1ReorgMonitor is not started."
-        )
-
-        {:stop, :normal, %{}}
-
       {:rpc_l1_undefined, true} ->
         Logger.error("L1 RPC URL is not defined.")
         {:stop, :normal, %{}}
@@ -353,23 +346,46 @@ defmodule Indexer.Fetcher.Optimism do
 
     error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
 
-    case Helper.repeated_call(
-           &json_rpc/2,
-           [requests, json_rpc_named_arguments],
-           error_message,
-           Helper.finite_retries_number()
-         ) do
-      {:ok, responses} ->
-        "0x000000000000000000000000" <> optimism_portal = Enum.at(responses, 0).result
-        start_block = quantity_to_integer(Enum.at(responses, 1).result)
-        {"0x" <> optimism_portal, start_block}
+    env = Application.get_all_env(:indexer)[__MODULE__]
+    fallback_start_block = env[:start_block_l1]
 
-      _ ->
-        env = Application.get_all_env(:indexer)[__MODULE__]
+    {optimism_portal, start_block} =
+      case Helper.repeated_call(
+             &json_rpc/2,
+             [requests, json_rpc_named_arguments],
+             error_message,
+             Helper.finite_retries_number()
+           ) do
+        {:ok, responses} ->
+          optimism_portal_result = Map.get(Enum.at(responses, 0), :result)
 
-        if Helper.address_correct?(env[:portal]) and not is_nil(env[:start_block_l1]) do
-          {env[:portal], env[:start_block_l1]}
-        end
+          optimism_portal =
+            with {:nil_result, true, _} <- {:nil_result, is_nil(optimism_portal_result), optimism_portal_result},
+                 {:fallback_defined, true} <- {:fallback_defined, Helper.address_correct?(env[:portal])} do
+              env[:portal]
+            else
+              {:nil_result, false, portal} ->
+                "0x000000000000000000000000" <> optimism_portal = portal
+                "0x" <> optimism_portal
+
+              {:fallback_defined, false} ->
+                nil
+            end
+
+          start_block =
+            responses
+            |> Enum.at(1)
+            |> Map.get(:result, fallback_start_block)
+            |> quantity_to_integer()
+
+          {optimism_portal, start_block}
+
+        _ ->
+          {env[:portal], fallback_start_block}
+      end
+
+    if Helper.address_correct?(optimism_portal) and !is_nil(start_block) do
+      {String.downcase(optimism_portal), start_block}
     end
   end
 

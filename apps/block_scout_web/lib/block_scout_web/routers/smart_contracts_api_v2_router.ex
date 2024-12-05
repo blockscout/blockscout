@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     Router for /api/v2/smart-contracts. This route has separate router in order to ignore sobelow's warning about missing CSRF protection
   """
   use BlockScoutWeb, :router
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias BlockScoutWeb.API.V2
   alias BlockScoutWeb.Plug.{CheckApiV2, RateLimit}
 
@@ -71,7 +73,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
 
     post("/standard-input", V2.VerificationController, :verification_via_standard_input)
 
-    if Application.compile_env(:explorer, :chain_type) !== :zksync do
+    if @chain_type !== :zksync do
       post("/flattened-code", V2.VerificationController, :verification_via_flattened_code)
       post("/sourcify", V2.VerificationController, :verification_via_sourcify)
       post("/multi-part", V2.VerificationController, :verification_via_multi_part)
@@ -80,7 +82,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
       post("/vyper-standard-input", V2.VerificationController, :verification_via_vyper_standard_input)
     end
 
-    if Application.compile_env(:explorer, :chain_type) === :arbitrum do
+    if @chain_type === :arbitrum do
       post("/stylus-github-repository", V2.VerificationController, :verification_via_stylus_github_repository)
     end
   end
