@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   @doc """
-    Function to render GET requests to `/api/v2/arbitrum/messages/claim/:position` endpoint.
+    Function to render GET requests to `/api/v2/arbitrum/messages/claim/:message_id` endpoint.
   """
   def render("arbitrum_claim_message.json", %{calldata: calldata, address: address}) do
     %{

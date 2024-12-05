@@ -16,8 +16,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   alias Explorer.Chain.Hash
   alias Explorer.PagingOptions
 
-  require Logger
-
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @batch_necessity_by_association %{:commitment_transaction => :required}
@@ -64,10 +62,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/arbitrum/messages/claim/:position` endpoint.
+    Function to handle GET requests to `/api/v2/arbitrum/messages/claim/:message_id` endpoint.
   """
   @spec claim_message(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def claim_message(conn, %{"position" => message_id} = _params) do
+  def claim_message(conn, %{"message_id" => message_id} = _params) do
     message_id = String.to_integer(message_id)
 
     case ClaimRollupMessage.claim(message_id) do
