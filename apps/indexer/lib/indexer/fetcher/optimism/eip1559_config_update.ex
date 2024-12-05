@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, RollupReorgMonitorQueue}
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
   alias Explorer.{Chain, Repo}
   alias Indexer.Fetcher.Optimism
@@ -64,7 +64,6 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       Logger.debug("l2_block_number = #{l2_block_number}")
       Logger.debug("last_l2_block_number = #{last_l2_block_number}")
 
-
       Process.send(self(), :continue, [])
 
       {:noreply, %{
@@ -92,35 +91,83 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       json_rpc_named_arguments: json_rpc_named_arguments
     } = state
   ) do
-    start_block..end_block
-    |> Enum.chunk_every(10)
-    |> Enum.each(fn block_numbers ->
-      chunk_start = List.first(block_numbers)
-      chunk_end = List.last(block_numbers)
+    {new_start_block, new_end_block} =
+      start_block..end_block
+      |> Enum.chunk_every(10)
+      |> Enum.reduce_while({nil, nil}, fn block_numbers, _acc ->
+        chunk_start = List.first(block_numbers)
+        chunk_end = List.last(block_numbers)
 
-      Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L2)
+        Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L2)
 
-      updates_count = handle_updates(block_numbers, json_rpc_named_arguments)
+        updates_count = handle_updates(block_numbers, json_rpc_named_arguments)
 
-      Helper.log_blocks_chunk_handling(
-        chunk_start,
-        chunk_end,
-        start_block,
-        end_block,
-        "#{updates_count} update(s).",
-        :L2
-      )
-    end)
+        Helper.log_blocks_chunk_handling(
+          chunk_start,
+          chunk_end,
+          start_block,
+          end_block,
+          "#{updates_count} update(s).",
+          :L2
+        )
 
-    Process.send(self(), :handle_realtime, [])
+        reorg_block_number =
+          Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
+            reorg_block_number = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
-    {:noreply, state}
+            if is_nil(reorg_block_number) do
+              {:halt, acc}
+            else
+              handle_reorg(reorg_block_number)
+              {:cont, min(reorg_block_number, acc)}
+            end
+          end)
+
+        cond do
+          is_nil(reorg_block_number) or reorg_block_number > end_block ->
+            {:cont, {nil, nil}}
+
+          reorg_block_number < start_block ->
+            {:halt, {nil, nil}}
+
+          true ->
+            new_start_block = min(chunk_end + 1, reorg_block_number)
+            new_end_block = reorg_block_number
+            {:halt, {new_start_block, new_end_block}}
+        end
+      end)
+
+    if is_nil(new_start_block) or is_nil(new_end_block) do
+      Logger.info("The historical fetcher loop finished. Switching to realtime mode...")
+      Process.send(self(), :handle_realtime, [])
+      {:noreply, state}
+    else
+      Process.send(self(), :continue, [])
+      {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
+    end
   end
 
   @impl GenServer
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
+  end
+
+  @spec handle_realtime_l2_reorg(non_neg_integer()) :: any()
+  def handle_realtime_l2_reorg(reorg_block) do
+    Logger.warning("L2 reorg was detected at block #{reorg_block}.")
+    RollupReorgMonitorQueue.reorg_block_push(reorg_block, __MODULE__)
+  end
+
+  @spec handle_reorg(non_neg_integer()) :: any()
+  defp handle_reorg(reorg_block_number) do
+    deleted_count = remove_invalid_updates(0, reorg_block_number - 1)
+
+    Logger.warning(
+      "As L2 reorg was detected, all rows with l2_block_number >= #{reorg_block_number} were removed from the op_eip1559_config_updates table. Number of removed rows: #{deleted_count}."
+    )
+
+    EIP1559ConfigUpdate.set_last_l2_block_hash(@empty_hash)
   end
 
   # Retrieves updated config parameters from the specified blocks and saves them to the database.
@@ -438,9 +485,19 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   # ## Parameters
   # - `block_number`: L2 block number of the Holocene upgrade.
   # - `latest_block_number`: The latest block number.
-  @spec remove_invalid_updates(non_neg_integer(), non_neg_integer()) :: any()
+  #
+  # ## Returns
+  # - A number of removed rows.
+  @spec remove_invalid_updates(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
+
+  defp remove_invalid_updates(0, latest_block_number) do
+    {deleted_count, _} = Repo.delete_all(from(u in EIP1559ConfigUpdate, where: u.l2_block_number > ^latest_block_number))
+    deleted_count
+  end
+
   defp remove_invalid_updates(block_number, latest_block_number) do
-    Repo.delete_all(from(u in EIP1559ConfigUpdate, where: u.l2_block_number < ^block_number or u.l2_block_number > ^latest_block_number))
+    {deleted_count, _} = Repo.delete_all(from(u in EIP1559ConfigUpdate, where: u.l2_block_number < ^block_number or u.l2_block_number > ^latest_block_number))
+    deleted_count
   end
 
   # Infinitely waits for the OP Holocene upgrade.
