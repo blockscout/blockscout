@@ -453,11 +453,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address(result, params)
       end
 
-    :arbitrum ->
       defp chain_type_fields(result, _params, false),
         do: result
 
-      defp chain_type_fields(result, %{target_contract: target_contract}, true) do
+    :arbitrum ->
+      defp chain_type_fields(result, %{target_contract: target_contract}, _single?) do
         result
         |> Map.put("package_name", target_contract.package_name)
         |> Map.put("github_repository_metadata", target_contract.github_repository_metadata)

@@ -1961,7 +1961,6 @@ defmodule Explorer.Chain do
     |> Repo.stream_reduce(initial, reducer)
   end
 
-
   @spec stream_mined_transactions(
           fields :: [
             :block_hash

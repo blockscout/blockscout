@@ -137,7 +137,7 @@ defmodule Explorer.Chain.SmartContract do
   @dead_address_hash_string "0x000000000000000000000000000000000000dEaD"
 
   @default_required_attrs ~w(optimization address_hash contract_code_md5 language)a
-  @chain_type_required_attrs (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_required_attrs (case @chain_type do
                                 :zilliqa -> ~w()a
                                 _ -> ~w(compiler_version)a
                               end)
@@ -163,7 +163,7 @@ defmodule Explorer.Chain.SmartContract do
                               end)
 
   @chain_type_attrs_for_validation ~w(contract_source_code)a ++
-                                     (case Application.compile_env(:explorer, :chain_type) do
+                                     (case @chain_type do
                                         :zilliqa -> ~w()a
                                         _ -> ~w(name)a
                                       end)
@@ -194,7 +194,7 @@ defmodule Explorer.Chain.SmartContract do
   ]
 
   @default_languages ~w(solidity vyper yul stylys_rust)a
-  @chain_type_languages (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_languages (case @chain_type do
                            :zilliqa ->
                              ~w(scilla)a
 
