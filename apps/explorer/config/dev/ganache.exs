@@ -12,21 +12,10 @@ config :explorer,
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
-      urls:
-        ConfigHelper.parse_urls_list("ETHEREUM_JSONRPC_HTTP_URLS", "ETHEREUM_JSONRPC_HTTP_URL", "http://localhost:7545"),
-      eth_call_urls:
-        ConfigHelper.parse_urls_list(
-          "ETHEREUM_JSONRPC_ETH_CALL_URLS",
-          "ETHEREUM_JSONRPC_ETH_CALL_URL",
-          "http://localhost:7545"
-        ),
-      fallback_urls:
-        ConfigHelper.parse_urls_list("ETHEREUM_JSONRPC_FALLBACK_HTTP_URLS", "ETHEREUM_JSONRPC_FALLBACK_HTTP_URL"),
-      fallback_eth_call_urls:
-        ConfigHelper.parse_urls_list(
-          "ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URLS",
-          "ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URL"
-        ),
+      urls: ConfigHelper.parse_urls_list(:http, "http://localhost:7545"),
+      eth_call_urls: ConfigHelper.parse_urls_list(:eth_call, "http://localhost:7545"),
+      fallback_urls: ConfigHelper.parse_urls_list(:fallback_http),
+      fallback_eth_call_urls: ConfigHelper.parse_urls_list(:fallback_eth_call),
       method_to_url: [
         eth_call: :eth_call
       ],

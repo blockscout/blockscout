@@ -333,17 +333,32 @@ defmodule ConfigHelper do
   @spec mode :: atom()
   def mode, do: parse_catalog_value("APPLICATION_MODE", @supported_modes, true, "all")
 
-  @spec eth_call_url(String.t() | nil) :: String.t() | nil
-  def eth_call_url(default \\ nil) do
-    System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URL") || System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || default
-  end
+  @doc """
+  Retrieves json rpc urls list based on `urls_type`
+  """
+  @spec parse_urls_list(
+          :http | :trace | :eth_call | :fallback_http | :fallback_trace | :fallback_eth_call,
+          String.t() | nil
+        ) :: [String.t()]
+  def parse_urls_list(urls_type, default_url \\ nil) do
+    {urls_var, url_var} = define_urls_vars(urls_type)
 
-  def parse_urls_list(urls_var, url_var, default_url \\ nil) do
-    default = default_url || System.get_env("ETHEREUM_JSONRPC_HTTP_URL")
+    with [] <- parse_list_env_var(urls_var),
+         "" <- safe_get_env(url_var, default_url) do
+      case urls_type do
+        :http ->
+          raise "ETHEREUM_JSONRPC_HTTP_URL (or ETHEREUM_JSONRPC_HTTP_URLS) env variable is required"
 
-    case parse_list_env_var(urls_var) do
-      [] -> [safe_get_env(url_var, default)]
-      urls -> urls
+        :fallback_http ->
+          parse_urls_list(:http)
+
+        _other ->
+          new_urls_type = if String.contains?(to_string(urls_type), "fallback"), do: :fallback_http, else: :http
+          parse_urls_list(new_urls_type)
+      end
+    else
+      urls when is_list(urls) -> urls
+      url -> [url]
     end
   end
 
@@ -384,4 +399,17 @@ defmodule ConfigHelper do
   end
 
   defp valid_url?(_), do: false
+
+  defp define_urls_vars(:http), do: {"ETHEREUM_JSONRPC_HTTP_URLS", "ETHEREUM_JSONRPC_HTTP_URL"}
+  defp define_urls_vars(:trace), do: {"ETHEREUM_JSONRPC_TRACE_URLS", "ETHEREUM_JSONRPC_TRACE_URL"}
+  defp define_urls_vars(:eth_call), do: {"ETHEREUM_JSONRPC_ETH_CALL_URLS", "ETHEREUM_JSONRPC_ETH_CALL_URL"}
+
+  defp define_urls_vars(:fallback_http),
+    do: {"ETHEREUM_JSONRPC_FALLBACK_HTTP_URLS", "ETHEREUM_JSONRPC_FALLBACK_HTTP_URL"}
+
+  defp define_urls_vars(:fallback_trace),
+    do: {"ETHEREUM_JSONRPC_FALLBACK_TRACE_URLS", "ETHEREUM_JSONRPC_FALLBACK_TRACE_URL"}
+
+  defp define_urls_vars(:fallback_eth_call),
+    do: {"ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URLS", "ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URL"}
 end
