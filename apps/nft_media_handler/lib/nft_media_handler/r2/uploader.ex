@@ -22,8 +22,8 @@ defmodule NFTMediaHandler.R2.Uploader do
     r2_config = Application.get_env(:ex_aws, :s3)
     file_path = Path.join(r2_folder, file_name)
 
-    with %ExAws.Operation.S3{} = request <- ExAws.S3.put_object(r2_config[:bucket_name], file_path, file_binary) do
-      ExAws.request(request)
-    end
+    r2_config[:bucket_name]
+    |> ExAws.S3.put_object(file_path, file_binary)
+    |> ExAws.request()
   end
 end
