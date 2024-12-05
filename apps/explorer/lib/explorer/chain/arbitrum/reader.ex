@@ -649,7 +649,6 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - A list of matching logs ordered by index, or empty list if none found
   """
   @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary(), api?: boolean()) :: [Log.t()]
-  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary()) :: [Log.t()]
   def transaction_to_logs_by_topic0(transaction_hash, topic0, options \\ []) when is_list(options) do
     log_with_transactions =
       from(log in Log,
