@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.{Block, RollupReorgMonitorQueue}
+  alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
   alias Explorer.{Chain, Repo}
   alias Indexer.Fetcher.Optimism
@@ -49,14 +50,14 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   def handle_continue(json_rpc_named_arguments, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
+    env = Application.get_all_env(:indexer)[__MODULE__]
     optimism_env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
-    timestamp = optimism_env[:holocene_timestamp_l2]
-
-    # todo: Subscriber.to
+    timestamp = env[:holocene_timestamp_l2]
 
     with false <- is_nil(timestamp),
-         {:ok, latest_block_number} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
          wait_for_holocene(timestamp, json_rpc_named_arguments),
+         Subscriber.to(:blocks, :realtime),
+         {:ok, latest_block_number} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
          l2_block_number = block_number_by_timestamp(timestamp, optimism_env[:block_duration], json_rpc_named_arguments),
          remove_invalid_updates(l2_block_number, latest_block_number),
          {:ok, last_l2_block_number} <- get_last_l2_block_number(json_rpc_named_arguments) do
@@ -69,6 +70,10 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       {:noreply, %{
         start_block: max(l2_block_number, last_l2_block_number),
         end_block: latest_block_number,
+        chunk_size: env[:chunk_size],
+        timestamp: timestamp,
+        mode: :catchup,
+        realtime_range: nil,
         json_rpc_named_arguments: json_rpc_named_arguments
       }}
     else
@@ -88,12 +93,14 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     %{
       start_block: start_block,
       end_block: end_block,
+      chunk_size: chunk_size,
+      mode: mode,
       json_rpc_named_arguments: json_rpc_named_arguments
     } = state
   ) do
     {new_start_block, new_end_block} =
       start_block..end_block
-      |> Enum.chunk_every(10)
+      |> Enum.chunk_every(chunk_size)
       |> Enum.reduce_while({nil, nil}, fn block_numbers, _acc ->
         chunk_start = List.first(block_numbers)
         chunk_end = List.last(block_numbers)
@@ -138,12 +145,51 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       end)
 
     if is_nil(new_start_block) or is_nil(new_end_block) do
-      Logger.info("The historical fetcher loop finished. Switching to realtime mode...")
+      Logger.info("The fetcher loop for the range #{inspect(start_block..end_block)} finished.")
+      
+      if mode == :catchup do
+        Logger.info("Switching to realtime mode...")
+      end
+      
       Process.send(self(), :handle_realtime, [])
       {:noreply, state}
     else
       Process.send(self(), :continue, [])
       {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
+    end
+  end
+
+  @impl GenServer
+  def handle_info({:chain_event, :blocks, :realtime, blocks}, %{end_block: end_block} = state) do
+    {new_min, new_max} =
+      blocks
+      |> Enum.filter(fn block ->
+        block.number > end_block
+      end)
+      |> Enum.map(fn block -> block.number end)
+      |> Enum.min_max(fn -> {nil, nil} end)
+
+    new_realtime_range =
+      if !is_nil(new_min) and !is_nil(new_max) do
+        case Map.get(state, :realtime_range) do
+          nil -> Range.new(new_min, new_max)
+          prev_min..prev_max -> Range.new(min(prev_min, new_min), max(prev_max, new_max))
+        end
+      end
+
+    {:noreply, %{state | realtime_range: new_realtime_range}}
+  end
+
+  @impl GenServer
+  def handle_info(:handle_realtime, state) do
+    case Map.get(state, :realtime_range) do
+      nil -> 
+        Process.send_after(self(), :handle_realtime, 3000)
+        {:noreply, state}
+
+      start_block..end_block ->
+        Process.send(self(), :continue, [])
+        {:noreply, %{state | start_block: start_block, end_block: end_block, mode: :realtime, realtime_range: nil}}
     end
   end
 
@@ -183,6 +229,14 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   defp handle_updates(block_numbers, json_rpc_named_arguments) do
     case fetch_blocks_by_numbers(block_numbers, json_rpc_named_arguments, false) do
       {:ok, %Blocks{blocks_params: blocks_params, errors: []}} ->
+        block_numbers =
+          block_numbers
+          |> Enum.filter(fn block_number ->
+            Enum.any?(blocks_params, fn b ->
+              !is_nil(b) and b.number == block_number
+            end)
+          end)
+
         last_block_number = List.last(block_numbers)
 
         Enum.reduce(block_numbers, 0, fn block_number, acc ->
