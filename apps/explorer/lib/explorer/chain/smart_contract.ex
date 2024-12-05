@@ -1363,24 +1363,16 @@ defmodule Explorer.Chain.SmartContract do
 
   defp filter_contracts(basic_query, :solidity) do
     basic_query
-    |> where(is_vyper_contract: false, language: :solidity)
+    |> where(is_vyper_contract: ^false)
   end
 
   defp filter_contracts(basic_query, :vyper) do
-    from(
-      query in basic_query,
-      where:
-        query.is_vyper_contract == true or
-          query.language == :vyper
-    )
+    basic_query
+    |> where(is_vyper_contract: ^true)
   end
 
   defp filter_contracts(basic_query, :yul) do
-    from(query in basic_query,
-      where:
-        is_nil(query.abi) or
-          query.language == :yul
-    )
+    from(query in basic_query, where: is_nil(query.abi))
   end
 
   defp filter_contracts(basic_query, language) do

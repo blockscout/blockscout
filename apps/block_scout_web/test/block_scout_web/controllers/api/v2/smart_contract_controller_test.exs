@@ -3715,6 +3715,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       is_nil(smart_contract.abi) ->
         "yul"
 
+      is_nil(smart_contract.language) ->
+        "solidity"
+
       true ->
         to_string(smart_contract.language)
     end
