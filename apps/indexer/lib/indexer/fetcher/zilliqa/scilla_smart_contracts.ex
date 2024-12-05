@@ -10,8 +10,8 @@ defmodule Indexer.Fetcher.Zilliqa.ScillaSmartContracts do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, SmartContract}
+  alias Explorer.Chain.Zilliqa.Reader
 
   @behaviour BufferedTask
 
@@ -73,7 +73,7 @@ defmodule Indexer.Fetcher.Zilliqa.ScillaSmartContracts do
   @impl BufferedTask
   def init(initial, reducer, _json_rpc_named_arguments) do
     {:ok, final} =
-      Chain.stream_unverified_scilla_smart_contract_addresses(
+      Reader.stream_unverified_scilla_smart_contract_addresses(
         initial,
         reducer,
         true
