@@ -608,7 +608,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   # Determines the associated L1 transaction and its status for the given message direction.
-  # TODO: it's need to take into account the tx on L2 may initiate consist several withdrawals.
+  # TODO: it's need to take into account the tx on L2 may initiate several withdrawals.
   #       The current architecture doesn't support that.
   @spec l1_transaction_and_status_for_message(
           %{

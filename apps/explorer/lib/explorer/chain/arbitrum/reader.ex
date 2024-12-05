@@ -679,8 +679,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     - Instance of `Explorer.Chain.Arbitrum.Message` with the provided message id,
       or nil if message with the given id doesn't exist.
   """
-  @spec l2_to_l1_message_with_id(non_neg_integer(), api?: boolean()) :: Message.t() | nil
-  def l2_to_l1_message_with_id(message_id, options) do
+  @spec l2_to_l1_message_by_id(non_neg_integer(), api?: boolean()) :: Message.t() | nil
+  def l2_to_l1_message_by_id(message_id, options) do
     query =
       from(message in Message,
         where: message.message_id == ^message_id

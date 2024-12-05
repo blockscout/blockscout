@@ -182,7 +182,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   """
   @spec claim(non_neg_integer()) :: {:ok, [contract_address: String.t(), calldata: String.t()]} | {:error, term()}
   def claim(message_id) do
-    case ArbitrumReader.l2_to_l1_message_with_id(message_id, api?: true) do
+    case ArbitrumReader.l2_to_l1_message_by_id(message_id, api?: true) do
       nil ->
         Logger.error("Unable to find withdrawal with id #{message_id}")
         {:error, :not_found}
@@ -297,18 +297,18 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
       # For :initiated and :sent statuses, we need to verify the actual message status
       # since the database status could be outdated if Arbitrum fetchers were stopped.
-      status =
+      message_status =
         case message.status do
-          stat when stat == :initiated or stat == :sent ->
+          status when status == :initiated or status == :sent ->
             get_actual_message_status(message.message_id)
 
-          s ->
-            s
+          status ->
+            status
         end
 
       %Explorer.Arbitrum.Withdraw{
         message_id: Hash.to_integer(log.fourth_topic),
-        status: status,
+        status: message_status,
         caller: caller_address,
         destination: destination_address,
         arb_block_number: fields.arb_block_number,

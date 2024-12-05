@@ -33,7 +33,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
 
   import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
 
-  alias EthereumJSONRPC.Arbitrum
+  alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
 
   alias Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2
 
@@ -122,7 +122,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
         %{config: %{l1_rollup_address: _, json_l1_rpc_named_arguments: _, l1_start_block: _}, data: _} = state
       ) do
     %{bridge: bridge_address} =
-      Arbitrum.get_contracts_for_rollup(
+      ArbitrumRpc.get_contracts_for_rollup(
         state.config.l1_rollup_address,
         :bridge,
         state.config.json_l1_rpc_named_arguments

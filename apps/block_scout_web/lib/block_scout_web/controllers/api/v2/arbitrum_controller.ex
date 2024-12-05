@@ -69,10 +69,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     message_id = String.to_integer(message_id)
 
     case ClaimRollupMessage.claim(message_id) do
-      {:ok, [contract_address: outbox_contract, calldata: calldata]} ->
+      {:ok, [contract_address: outbox_contract_address, calldata: calldata]} ->
         conn
         |> put_status(200)
-        |> render(:arbitrum_claim_message, %{calldata: calldata, address: outbox_contract})
+        |> render(:arbitrum_claim_message, %{calldata: calldata, address: outbox_contract_address})
 
       {:error, :not_found} ->
         conn

@@ -341,6 +341,7 @@ defmodule EthereumJSONRPC.Arbitrum do
            @rollup_contract_abi,
            json_rpc_l1_named_arguments
          ) do
+      # `createdAtBlock` property of node tuple
       {:ok, [fields]} -> {:ok, fields |> Kernel.elem(10)}
       {:error, err} -> {:error, err}
     end
