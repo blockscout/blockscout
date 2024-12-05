@@ -176,7 +176,9 @@ config :ueberauth, Ueberauth, logout_url: "https://#{System.get_env("ACCOUNT_AUT
 ### Ethereum JSONRPC ###
 ########################
 
-trace_url_missing? = System.get_env("ETHEREUM_JSONRPC_TRACE_URL") in ["", nil]
+trace_url_missing? =
+  System.get_env("ETHEREUM_JSONRPC_TRACE_URL") in ["", nil] and
+    System.get_env("ETHEREUM_JSONRPC_TRACE_URLS") in ["", nil]
 
 config :ethereum_jsonrpc,
   rpc_transport: if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http", do: :http, else: :ipc),

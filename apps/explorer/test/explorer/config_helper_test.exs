@@ -13,14 +13,14 @@ defmodule ConfigHelperTest do
   describe "parse_urls_list/3" do
     test "common case" do
       System.put_env("ETHEREUM_JSONRPC_HTTP_URLS", "test")
-      assert ConfigHelper.parse_urls_list("ETHEREUM_JSONRPC_HTTP_URLS", "ETHEREUM_JSONRPC_HTTP_URL") == ["test"]
+      assert ConfigHelper.parse_urls_list(:http) == ["test"]
     end
 
     test "using defined default" do
       System.put_env("ETHEREUM_JSONRPC_HTTP_URL", "test")
       refute System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URLS")
       refute System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URL")
-      assert ConfigHelper.parse_urls_list("ETHEREUM_JSONRPC_ETH_CALL_URLS", "ETHEREUM_JSONRPC_ETH_CALL_URL") == ["test"]
+      assert ConfigHelper.parse_urls_list(:eth_call) == ["test"]
     end
 
     test "using defined fallback default" do
@@ -28,10 +28,7 @@ defmodule ConfigHelperTest do
       refute System.get_env("ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URLS")
       refute System.get_env("ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URL")
 
-      assert ConfigHelper.parse_urls_list(
-               "ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URLS",
-               "ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URL"
-             ) == ["test"]
+      assert ConfigHelper.parse_urls_list(:fallback_eth_call) == ["test"]
     end
 
     test "raise if ETHEREUM_JSONRPC_HTTP_URL and ETHEREUM_JSONRPC_HTTP_URLS are not provided" do
@@ -41,7 +38,7 @@ defmodule ConfigHelperTest do
       assert_raise RuntimeError,
                    "ETHEREUM_JSONRPC_HTTP_URL (or ETHEREUM_JSONRPC_HTTP_URLS) env variable is required",
                    fn ->
-                     ConfigHelper.parse_urls_list("ETHEREUM_JSONRPC_TRACE_URLS", "ETHEREUM_JSONRPC_TRACE_URL")
+                     ConfigHelper.parse_urls_list(:trace)
                    end
     end
 
@@ -50,8 +47,7 @@ defmodule ConfigHelperTest do
       refute System.get_env("ETHEREUM_JSONRPC_FALLBACK_TRACE_URLS")
       refute System.get_env("ETHEREUM_JSONRPC_FALLBACK_TRACE_URL")
 
-      assert ConfigHelper.parse_urls_list("ETHEREUM_JSONRPC_FALLBACK_TRACE_URLS", "ETHEREUM_JSONRPC_FALLBACK_TRACE_URL") ==
-               ["test"]
+      assert ConfigHelper.parse_urls_list(:fallback_trace) == ["test"]
     end
   end
 
