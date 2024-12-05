@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.BlockView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
@@ -103,7 +104,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   def count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
   def count_withdrawals(_), do: nil
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :rsk ->
       defp chain_type_fields(result, block, single_block?) do
         if single_block? do

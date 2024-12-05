@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.SearchView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.{BlockView, Endpoint}
   alias Explorer.Chain
@@ -165,7 +166,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{"type" => "blob", "parameter" => to_string(item.hash)}
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :filecoin ->
       defp chain_type_fields(result) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage

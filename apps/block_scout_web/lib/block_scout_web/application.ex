@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.Application do
   """
 
   use Application
+  use Utils.CompileTimeEnvHelper, disable_api?: [:block_scout_web, :disable_api?]
 
   alias BlockScoutWeb.Endpoint
 
@@ -22,7 +23,7 @@ defmodule BlockScoutWeb.Application do
     :ok
   end
 
-  if Application.compile_env(:block_scout_web, :disable_api?) do
+  if @disable_api? do
     defp setup_and_define_children, do: []
   else
     defp setup_and_define_children do

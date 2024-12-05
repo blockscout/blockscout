@@ -1,9 +1,10 @@
 defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
   @moduledoc false
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.GraphQL.Resolvers.{Block, InternalTransaction}
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :celo ->
       @chain_type_fields quote(
                            do: [
@@ -62,8 +63,10 @@ defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
 end
 
 defmodule BlockScoutWeb.GraphQL.Schema.SmartContracts do
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   @moduledoc false
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :zksync ->
       @chain_type_fields quote(
                            do: [

@@ -2,6 +2,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Transaction.t/0`.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Ecto.Query
 
@@ -108,7 +109,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   end
 
   # todo: avoid code duplication
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :suave ->
       defp default_on_conflict do
         from(

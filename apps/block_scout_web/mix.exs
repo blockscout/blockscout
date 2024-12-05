@@ -87,7 +87,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:bypass, "~> 2.1", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 3.0"},
-      {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 2.0.0"},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
@@ -156,6 +155,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_json_schema, "~> 0.10.1"},
       {:ueberauth, "~> 0.7"},
       {:ueberauth_auth0, "~> 2.0"},
+      {:utils, in_umbrella: true},
       {:bureaucrat, "~> 0.2.9", only: :test},
       {:logger_json, "~> 5.1"}
     ]

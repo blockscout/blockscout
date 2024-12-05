@@ -6,15 +6,13 @@ defmodule BlockScoutWeb.Counters.InternalTransactionsIndexedCounter do
   """
 
   use GenServer
-
-  alias BlockScoutWeb.Notifier
-  alias Explorer.Chain
-
   # It is undesirable to automatically start the counter in all environments.
   # Consider the test environment: if it initiates but does not finish before a
   # test ends, that test will fail.
-  config = Application.compile_env(:block_scout_web, __MODULE__)
-  @enabled Keyword.get(config, :enabled)
+  use Utils.CompileTimeEnvHelper, enabled: [:block_scout_web, [__MODULE__, :enabled]]
+
+  alias BlockScoutWeb.Notifier
+  alias Explorer.Chain
 
   @doc """
   Starts a process to periodically update the % of internal transactions indexed.

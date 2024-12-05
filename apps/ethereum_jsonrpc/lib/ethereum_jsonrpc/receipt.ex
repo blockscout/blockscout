@@ -3,12 +3,13 @@ defmodule EthereumJSONRPC.Receipt do
   Receipts format as returned by
   [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionreceipt).
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Logs
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :ethereum ->
       @chain_type_fields quote(
                            do: [
@@ -117,7 +118,7 @@ defmodule EthereumJSONRPC.Receipt do
         status: :ok,
         transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
         transaction_index: 0,\
-  #{case Application.compile_env(:explorer, :chain_type) do
+  #{case @chain_type do
     :ethereum -> """
             blob_gas_price: 0,\
             blob_gas_used: 0\
@@ -169,7 +170,7 @@ defmodule EthereumJSONRPC.Receipt do
         status: nil,
         transaction_hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
         transaction_index: 0,\
-  #{case Application.compile_env(:explorer, :chain_type) do
+  #{case @chain_type do
     :ethereum -> """
             blob_gas_price: 0,\
             blob_gas_used: 0\
@@ -230,7 +231,7 @@ defmodule EthereumJSONRPC.Receipt do
 
   defp maybe_append_gas_price(params, _), do: params
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :ethereum ->
       defp chain_type_fields(params, elixir) do
         params

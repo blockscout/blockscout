@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.VerificationController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
 
@@ -21,7 +22,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   @sc_verification_started "Smart-contract verification started"
   @zk_optimization_modes ["0", "1", "2", "3", "s", "z"]
 
-  if Application.compile_env(:explorer, :chain_type) == :zksync do
+  if @chain_type == :zksync do
     @optimization_runs "0"
   else
     @optimization_runs 200

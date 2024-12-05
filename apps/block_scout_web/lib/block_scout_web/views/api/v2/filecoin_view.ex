@@ -1,11 +1,13 @@
-if Application.compile_env(:explorer, :chain_type) == :filecoin do
-  defmodule BlockScoutWeb.API.V2.FilecoinView do
-    @moduledoc """
-    View functions for rendering Filecoin-related data in JSON format.
-    """
+defmodule BlockScoutWeb.API.V2.FilecoinView do
+  @moduledoc """
+  View functions for rendering Filecoin-related data in JSON format.
+  """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-    alias Explorer.Chain
-    alias Explorer.Chain.Address
+  if @chain_type == :filecoin do
+    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
+    alias Explorer.Chain, warn: false
+    alias Explorer.Chain.Address, warn: false
 
     @api_true [api?: true]
 
@@ -108,3 +110,5 @@ if Application.compile_env(:explorer, :chain_type) == :filecoin do
     end
   end
 end
+
+# end

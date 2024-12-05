@@ -21,10 +21,10 @@ on:
       - production-zksync
       - staging-l2
     paths-ignore:
-      - 'CHANGELOG.md'
-      - '**/README.md'
-      - 'docker/*'
-      - 'docker-compose/*'
+      - "CHANGELOG.md"
+      - "**/README.md"
+      - "docker/*"
+      - "docker-compose/*"
   pull_request:
     types: [opened, synchronize, reopened, labeled]
     branches:
@@ -458,6 +458,34 @@ jobs:
 
       - run: ./node_modules/.bin/jest
         working-directory: apps/block_scout_web/assets
+
+  test_utils:
+    name: Utils Tests
+    runs-on: ubuntu-latest
+    needs: build-and-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          hexpm-mirrors: |
+            https://builds.hex.pm
+            https://cdn.jsdelivr.net/hex
+
+      - name: Restore Mix Deps Cache
+        uses: actions/cache/restore@v4
+        id: deps-cache
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
+
+      - working-directory: apps/utils
+        run: mix test
 
   test_nethermind_mox_ethereum_jsonrpc:
     strategy:
