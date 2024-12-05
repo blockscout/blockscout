@@ -1,6 +1,7 @@
 defmodule NFTMediaHandler.DispatcherInterface do
   @moduledoc """
-  Documentation for `NFTMediaHandler.DispatcherInterface`.
+  Interface to call the Indexer.NFTMediaHandler.Queue.
+  Calls performed either via direct call to Queue module, or via :rpc.call/4
   """
   require Logger
   use GenServer
