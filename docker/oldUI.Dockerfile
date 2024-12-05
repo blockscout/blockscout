@@ -11,6 +11,7 @@ COPY apps/block_scout_web/mix.exs ./apps/block_scout_web/
 COPY apps/explorer/mix.exs ./apps/explorer/
 COPY apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 COPY apps/indexer/mix.exs ./apps/indexer/
+COPY apps/utils/mix.exs ./apps/utils/
 
 ENV MIX_ENV="prod"
 ENV MIX_HOME=/opt/mix
