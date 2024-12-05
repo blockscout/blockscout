@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Indexer.Fetcher.Zilliqa.ScillaSmartContracts, as: ZilliqaScillaSmartContractsFetcher
   alias Indexer.Transform.Addresses
 
-  @transaction_fields ~w(block_number created_contract_address_hash hash v)a
+  @transaction_fields ~w(block_number created_contract_address_hash hash type)a
 
   @typedoc """
   Represents a list of entries, where each entry is a map containing transaction
@@ -29,13 +29,13 @@ defmodule Indexer.Fetcher.ContractCode do
     - `:created_contract_address_hash` - The hash of the created contract
       address.
     - `:hash` - The hash of the transaction.
-    - `:v` - A decimal value representing a transaction parameter.
+    - `:type` - The type of the transaction.
   """
   @type entry :: %{
           required(:block_number) => Block.block_number(),
           required(:created_contract_address_hash) => Hash.Full.t(),
           required(:hash) => Hash.Full.t(),
-          required(:v) => Decimal.t()
+          required(:type) => Decimal.t()
         }
 
   @behaviour BufferedTask
@@ -211,7 +211,7 @@ defmodule Indexer.Fetcher.ContractCode do
   defp zilliqa_verify_scilla_contracts(entries, addresses) do
     zilliqa_contract_address_hashes =
       entries
-      |> Enum.filter(&ZilliqaHelper.scilla_transaction?(&1.v))
+      |> Enum.filter(&ZilliqaHelper.scilla_transaction?(&1.type))
       |> MapSet.new(& &1.created_contract_address_hash)
 
     addresses

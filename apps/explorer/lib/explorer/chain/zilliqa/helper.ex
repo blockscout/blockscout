@@ -5,14 +5,14 @@ defmodule Explorer.Chain.Zilliqa.Helper do
 
   alias Explorer.Chain.Transaction
 
-  @scilla_transactions_v Decimal.new(0)
+  @scilla_transactions_type 907_376
 
   @doc """
   Checks if a transaction is a Scilla transaction.
 
-  Scilla transactions have `v` set to #{@scilla_transactions_v}.
+  Scilla transactions have `type` set to #{@scilla_transactions_type}.
   """
   @spec scilla_transaction?(Transaction.t() | integer()) :: boolean()
-  def scilla_transaction?(%Transaction{v: v}), do: scilla_transaction?(v)
-  def scilla_transaction?(v), do: v == @scilla_transactions_v
+  def scilla_transaction?(%Transaction{type: type}), do: scilla_transaction?(type)
+  def scilla_transaction?(type), do: type == @scilla_transactions_type
 end
