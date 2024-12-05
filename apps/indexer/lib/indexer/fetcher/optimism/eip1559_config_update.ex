@@ -59,7 +59,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
          Subscriber.to(:blocks, :realtime),
          {:ok, latest_block_number} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
          l2_block_number = block_number_by_timestamp(timestamp, optimism_env[:block_duration], json_rpc_named_arguments),
-         remove_invalid_updates(l2_block_number, latest_block_number),
+         EIP1559ConfigUpdate.remove_invalid_updates(l2_block_number, latest_block_number),
          {:ok, last_l2_block_number} <- get_last_l2_block_number(json_rpc_named_arguments) do
 
       Logger.debug("l2_block_number = #{l2_block_number}")
@@ -207,7 +207,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   @spec handle_reorg(non_neg_integer()) :: any()
   defp handle_reorg(reorg_block_number) do
-    deleted_count = remove_invalid_updates(0, reorg_block_number - 1)
+    deleted_count = EIP1559ConfigUpdate.remove_invalid_updates(0, reorg_block_number - 1)
 
     Logger.warning(
       "As L2 reorg was detected, all rows with l2_block_number >= #{reorg_block_number} were removed from the op_eip1559_config_updates table. Number of removed rows: #{deleted_count}."
@@ -252,7 +252,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
             with {:valid_format, true} <- {:valid_format, byte_size(extra_data) >= 9},
                  <<version::size(8), denominator::size(32), elasticity::size(32), _::binary>> = extra_data,
                  {:valid_version, _version, true} <- {:valid_version, version, version == 0},
-                 prev_config = actual_config_for_block(block.number),
+                 prev_config = EIP1559ConfigUpdate.actual_config_for_block(block.number),
                  new_config = {denominator, elasticity},
                  {:updated_config, true} <- {:updated_config, prev_config != new_config} do
               update_config(block.number, block.hash, denominator, elasticity)
@@ -292,27 +292,6 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
         :timer.sleep(3000)
         handle_updates(block_numbers, json_rpc_named_arguments)
     end
-  end
-
-  # Reads the config actual before the specified block from the `op_eip1559_config_updates` table.
-  #
-  # ## Parameters
-  # - `block_number`: The block number for which we need to read the actual config.
-  #
-  # ## Returns
-  # - `{denominator, multiplier}` tuple in case the config exists.
-  # - `nil` if the config is unknown.
-  @spec actual_config_for_block(non_neg_integer()) :: {non_neg_integer(), non_neg_integer()} | nil
-  defp actual_config_for_block(block_number) do
-    query =
-      from(u in EIP1559ConfigUpdate,
-        select: {u.base_fee_max_change_denominator, u.elasticity_multiplier},
-        where: u.l2_block_number < ^block_number,
-        order_by: [desc: u.l2_block_number],
-        limit: 1
-      )
-
-    Repo.one(query)
   end
 
   # Inserts a new row into the `op_eip1559_config_updates` database table.
@@ -433,12 +412,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       end
     
     if is_nil(last_l2_block_number) do
-      query = from(u in EIP1559ConfigUpdate, select: {u.l2_block_number, u.l2_block_hash}, order_by: [desc: u.l2_block_number], limit: 1)
-
-      {last_l2_block_number, last_l2_block_hash} =
-        query
-        |> Repo.one()
-        |> Kernel.||({0, nil})
+      {last_l2_block_number, last_l2_block_hash} = EIP1559ConfigUpdate.get_last_item()
 
       with {:empty_hash, false} <- {:empty_hash, is_nil(last_l2_block_hash)},
            {:ok, last_l2_block} <- get_block_by_hash(last_l2_block_hash, json_rpc_named_arguments),
@@ -456,7 +430,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
             "Cannot find the last L2 block from RPC by its hash (#{last_l2_block_hash}). Probably, there was a reorg on L2 chain. Trying to check preceding block..."
           )
 
-          Repo.delete_all(from(u in EIP1559ConfigUpdate, where: u.l2_block_number == ^last_l2_block_number))
+          EIP1559ConfigUpdate.remove_invalid_updates(0, last_l2_block_number - 1)
 
           get_last_l2_block_number(json_rpc_named_arguments)
       end
@@ -529,29 +503,6 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
         block_number_by_timestamp_from_rpc(timestamp, next_block_timestamp - block_timestamp, json_rpc_named_arguments, block_number, block_timestamp)
       end
     end
-  end
-
-  # Removes rows from the `op_eip1559_config_updates` table which relate to
-  # pre-Holocene period or which have l2_block_number greater than the latest block number.
-  # They could be created mistakenly as a result of the incorrect value of
-  # INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP env variable or due to reorg.
-  #
-  # ## Parameters
-  # - `block_number`: L2 block number of the Holocene upgrade.
-  # - `latest_block_number`: The latest block number.
-  #
-  # ## Returns
-  # - A number of removed rows.
-  @spec remove_invalid_updates(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
-
-  defp remove_invalid_updates(0, latest_block_number) do
-    {deleted_count, _} = Repo.delete_all(from(u in EIP1559ConfigUpdate, where: u.l2_block_number > ^latest_block_number))
-    deleted_count
-  end
-
-  defp remove_invalid_updates(block_number, latest_block_number) do
-    {deleted_count, _} = Repo.delete_all(from(u in EIP1559ConfigUpdate, where: u.l2_block_number < ^block_number or u.l2_block_number > ^latest_block_number))
-    deleted_count
   end
 
   # Infinitely waits for the OP Holocene upgrade.
