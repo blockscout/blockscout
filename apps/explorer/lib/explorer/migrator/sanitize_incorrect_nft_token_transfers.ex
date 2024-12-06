@@ -35,7 +35,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
 
       _ ->
         MigrationStatus.set_status(@migration_name, "started")
-        schedule_batch_migration()
+        schedule_batch_migration(0)
         {:noreply, %{step: :delete}}
     end
   end
@@ -117,8 +117,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
     Block.set_refetch_needed(block_numbers)
   end
 
-  defp schedule_batch_migration do
-    Process.send(self(), :migrate_batch, [])
+  defp schedule_batch_migration(timeout \\ nil) do
+    Process.send_after(self(), :migrate_batch, timeout || Application.get_env(:explorer, __MODULE__)[:timeout])
   end
 
   defp batch_size do
