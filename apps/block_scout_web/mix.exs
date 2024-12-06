@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :app_tree,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.13",
+      elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env(), Application.get_env(:block_scout_web, :disable_api?)),
       lockfile: "../../mix.lock",
       package: package(),
@@ -119,8 +119,9 @@ defmodule BlockScoutWeb.Mixfile do
       {:number, "~> 1.0.1"},
       {:phoenix, "== 1.5.14"},
       {:phoenix_ecto, "~> 4.1"},
-      {:phoenix_html, "== 3.0.4"},
+      {:phoenix_html, "== 3.3.4"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
+      {:phoenix_live_view, "~> 0.17"},
       {:phoenix_pubsub, "~> 2.0"},
       {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       # use `:cowboy` for WebServer with `:plug`

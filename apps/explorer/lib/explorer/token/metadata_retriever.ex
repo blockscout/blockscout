@@ -441,8 +441,25 @@ defmodule Explorer.Token.MetadataRetriever do
     String.replace(string, "\0", "")
   end
 
+  @doc """
+  Generates an IPFS link for the given unique identifier (UID).
+
+  ## Parameters
+
+    - uid: The unique identifier for which the IPFS link is to be generated.
+
+  ## Returns
+
+    - A string representing the IPFS link for the given UID.
+
+  ## Examples
+
+      iex> ipfs_link("QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5")
+      "https://ipfs.io/ipfs/QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5"
+
+  """
   @spec ipfs_link(uid :: any()) :: String.t()
-  defp ipfs_link(uid) do
+  def ipfs_link(uid) do
     base_url =
       :indexer
       |> Application.get_env(:ipfs)
@@ -467,8 +484,20 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
+  @doc """
+  Returns the headers required for making requests to IPFS.
+
+  ## Examples
+
+      iex> Explorer.Token.MetadataRetriever.ipfs_headers()
+      [
+        {"User-Agent", "blockscout-6.9.0"},
+        {"Authorization", "Bearer <token>"}
+      ]
+
+  """
   @spec ipfs_headers() :: [{binary(), binary()}]
-  defp ipfs_headers do
+  def ipfs_headers do
     ipfs_params = Application.get_env(:indexer, :ipfs)
 
     if ipfs_params[:gateway_url_param_location] == :header do

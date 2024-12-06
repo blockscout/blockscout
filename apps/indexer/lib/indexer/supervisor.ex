@@ -5,6 +5,8 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
+  import Cachex.Spec
+
   alias Explorer.Chain.BridgedToken
 
   alias Indexer.{
@@ -255,6 +257,7 @@ defmodule Indexer.Supervisor do
       |> maybe_add_block_reward_fetcher(
         {BlockReward.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
       )
+      |> maybe_add_nft_media_handler_processes()
 
     Supervisor.init(
       all_fetchers,
@@ -309,6 +312,44 @@ defmodule Indexer.Supervisor do
 
       _ ->
         fetchers
+    end
+  end
+
+  defp maybe_add_nft_media_handler_processes(fetchers) do
+    base_children = [
+      Indexer.NFTMediaHandler.Queue,
+      {Cachex,
+       [
+         Application.get_env(:nft_media_handler, :cache_uniqueness_name),
+         [
+           hooks: [
+             hook(
+               module: Cachex.Limit.Scheduled,
+               args: {
+                 # setting cache max size
+                 Application.get_env(:nft_media_handler, :cache_uniqueness_max_size),
+                 # options for `Cachex.prune/3`
+                 [],
+                 # options for `Cachex.Limit.Scheduled`
+                 []
+               }
+             )
+           ]
+         ]
+       ]}
+    ]
+
+    children =
+      if Application.get_env(:nft_media_handler, Indexer.NFTMediaHandler.Backfiller)[:enabled?] do
+        [Indexer.NFTMediaHandler.Backfiller | base_children]
+      else
+        base_children
+      end
+
+    if Application.get_env(:nft_media_handler, :enabled?) && !Application.get_env(:nft_media_handler, :worker?) do
+      fetchers ++ children
+    else
+      fetchers
     end
   end
 

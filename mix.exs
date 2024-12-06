@@ -11,7 +11,7 @@ defmodule BlockScout.Mixfile do
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
-      elixir: "~> 1.13",
+      elixir: "~> 1.17",
       preferred_cli_env: [
         credo: :test,
         dialyzer: :test
@@ -24,7 +24,8 @@ defmodule BlockScout.Mixfile do
             ethereum_jsonrpc: :permanent,
             explorer: :permanent,
             indexer: :permanent,
-            utils: :permanent
+            utils: :permanent,
+            nft_media_handler: :permanent
           ],
           steps: [:assemble, &copy_prod_runtime_config/1],
           validate_compile_env: false

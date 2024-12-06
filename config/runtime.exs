@@ -67,6 +67,16 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: BlockScoutWeb.PubSub
 
+config :block_scout_web, BlockScoutWeb.HealthEndpoint,
+  server: true,
+  url: [
+    path: network_path,
+    scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "http",
+    host: System.get_env("BLOCKSCOUT_HOST") || "localhost"
+  ],
+  render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
+  pubsub_server: BlockScoutWeb.PubSub
+
 config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
   subnetwork: System.get_env("SUBNETWORK"),
@@ -1157,6 +1167,42 @@ config :indexer, Indexer.Fetcher.Scroll.BridgeL1.Supervisor, disabled?: ConfigHe
 config :indexer, Indexer.Fetcher.Scroll.BridgeL2.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
 
 config :indexer, Indexer.Fetcher.Scroll.Batch.Supervisor, disabled?: ConfigHelper.chain_type() != :scroll
+
+config :ex_aws,
+  json_codec: Jason,
+  access_key_id: System.get_env("NFT_MEDIA_HANDLER_AWS_ACCESS_KEY_ID"),
+  secret_access_key: System.get_env("NFT_MEDIA_HANDLER_AWS_SECRET_ACCESS_KEY")
+
+config :ex_aws, :s3,
+  scheme: "https://",
+  host: System.get_env("NFT_MEDIA_HANDLER_AWS_BUCKET_HOST"),
+  port: nil,
+  public_r2_url: ConfigHelper.parse_url_env_var("NFT_MEDIA_HANDLER_AWS_PUBLIC_BUCKET_URL", nil, false),
+  bucket_name: System.get_env("NFT_MEDIA_HANDLER_AWS_BUCKET_NAME")
+
+nmh_enabled? = ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_ENABLED")
+nmh_remote? = ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_REMOTE_DISPATCHER_NODE_MODE_ENABLED")
+nmh_worker? = ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_IS_WORKER")
+nodes_map = ConfigHelper.parse_json_with_atom_keys_env_var("NFT_MEDIA_HANDLER_NODES_MAP")
+
+config :nft_media_handler,
+  enabled?: nmh_enabled?,
+  tmp_dir: "./temp",
+  remote?: nmh_remote?,
+  worker?: nmh_worker?,
+  nodes_map: nodes_map,
+  standalone_media_worker?: nmh_enabled? && nmh_remote? && nmh_worker?,
+  worker_concurrency: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_WORKER_CONCURRENCY", 10),
+  worker_batch_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_WORKER_BATCH_SIZE", 10),
+  worker_spawn_tasks_timeout: ConfigHelper.parse_time_env_var("NFT_MEDIA_HANDLER_WORKER_SPAWN_TASKS_TIMEOUT", "100ms"),
+  cache_uniqueness_name: :cache_uniqueness,
+  cache_uniqueness_max_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_CACHE_UNIQUENESS_MAX_SIZE", 100_000)
+
+config :nft_media_handler, Indexer.NFTMediaHandler.Backfiller,
+  enabled?: ConfigHelper.parse_bool_env_var("NFT_MEDIA_HANDLER_BACKFILL_ENABLED"),
+  queue_size: ConfigHelper.parse_integer_env_var("NFT_MEDIA_HANDLER_BACKFILL_QUEUE_SIZE", 1000),
+  enqueue_busy_waiting_timeout:
+    ConfigHelper.parse_time_env_var("NFT_MEDIA_HANDLER_BACKFILL_ENQUEUE_BUSY_WAITING_TIMEOUT", "1s")
 
 Code.require_file("#{config_env()}.exs", "config/runtime")
 

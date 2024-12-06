@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Token.Instance do
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token.Instance
+  alias Explorer.Chain.Token.Instance.Thumbnails
   alias Explorer.PagingOptions
 
   @timeout 60_000
@@ -21,6 +22,9 @@ defmodule Explorer.Chain.Token.Instance do
   * `refetch_after` - when to refetch the token instance
   * `retries_count` - number of times the token instance has been retried
   * `is_banned` - if the token instance is banned
+  * `thumbnails` - info for deriving thumbnails urls. Stored as array: [file_path, sizes, original_uploaded?]
+  * `media_type` - mime type of media
+  * `cdn_upload_error` - error while processing(resizing)/uploading media to CDN
   """
   @primary_key false
   typed_schema "token_instances" do
@@ -34,6 +38,9 @@ defmodule Explorer.Chain.Token.Instance do
     field(:refetch_after, :utc_datetime_usec)
     field(:retries_count, :integer)
     field(:is_banned, :boolean, default: false)
+    field(:thumbnails, Thumbnails)
+    field(:media_type, :string)
+    field(:cdn_upload_error, :string)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -62,7 +69,10 @@ defmodule Explorer.Chain.Token.Instance do
       :owner_updated_at_log_index,
       :refetch_after,
       :retries_count,
-      :is_banned
+      :is_banned,
+      :thumbnails,
+      :media_type,
+      :cdn_upload_error
     ])
     |> validate_required([:token_id, :token_contract_address_hash])
     |> foreign_key_constraint(:token_contract_address_hash)
@@ -626,7 +636,7 @@ defmodule Explorer.Chain.Token.Instance do
   @doc """
   Sets set_metadata for the given Explorer.Chain.Token.Instance
   """
-  @spec set_metadata(__MODULE__, map()) :: {non_neg_integer(), nil}
+  @spec set_metadata(t(), map()) :: {non_neg_integer(), nil}
   def set_metadata(token_instance, metadata) when is_map(metadata) do
     now = DateTime.utc_now()
 
@@ -635,7 +645,7 @@ defmodule Explorer.Chain.Token.Instance do
         where: instance.token_contract_address_hash == ^token_instance.token_contract_address_hash,
         where: instance.token_id == ^token_instance.token_id
       ),
-      [set: [metadata: metadata, error: nil, updated_at: now]],
+      [set: [metadata: metadata, error: nil, updated_at: now, thumbnails: nil, media_type: nil, cdn_upload_error: nil]],
       timeout: @timeout
     )
   end
@@ -680,5 +690,184 @@ defmodule Explorer.Chain.Token.Instance do
         String.starts_with?(error, error_pattern)
       end) && interval
     end) || 13
+  end
+
+  @doc """
+  Retrieves the media URL from the given NFT metadata.
+
+  ## Parameters
+
+    - metadata: A map containing the metadata of the NFT.
+
+  ## Returns
+
+    - The media URL as a string if found in the metadata, otherwise `nil`.
+
+  ## Examples
+
+      iex> metadata = %{"image" => "https://example.com/image.png"}
+      iex> get_media_url_from_metadata_for_nft_media_handler(metadata)
+      "https://example.com/image.png"
+
+      iex> metadata = %{"animation_url" => "https://example.com/animation.mp4"}
+      iex> get_media_url_from_metadata_for_nft_media_handler(metadata)
+      "https://example.com/animation.mp4"
+
+      iex> metadata = %{}
+      iex> get_media_url_from_metadata_for_nft_media_handler(metadata)
+      nil
+  """
+  @spec get_media_url_from_metadata_for_nft_media_handler(nil | map()) :: nil | binary()
+  def get_media_url_from_metadata_for_nft_media_handler(metadata) when is_map(metadata) do
+    result =
+      cond do
+        metadata["image_url"] ->
+          metadata["image_url"]
+
+        metadata["image"] ->
+          metadata["image"]
+
+        is_map(metadata["properties"]) && is_binary(metadata["properties"]["image"]) ->
+          metadata["properties"]["image"]
+
+        metadata["animation_url"] ->
+          metadata["animation_url"]
+
+        true ->
+          nil
+      end
+
+    if result && String.trim(result) == "", do: nil, else: result
+  end
+
+  def get_media_url_from_metadata_for_nft_media_handler(nil), do: nil
+
+  @doc """
+  Sets the media URLs for a given token.
+
+  ## Parameters
+
+    - `token_contract_address_hash`: The hash of the token contract address.
+    - `token_id`: The ID of the token.
+    - `urls`: list of Explorer.Chain.Token.Instance.Thumbnails format
+    - `media_type`: The type of media associated with the URLs.
+
+  ## Examples
+
+      iex> set_media_urls({"0x1234", 1}, ["/folder_1/0004dfda159ea2def5098bf8f19f5f27207f4e1f_{}.png", [60, 250, 500], true], {"image", "png"})
+      :ok
+
+  """
+  @spec set_media_urls({Hash.Address.t(), non_neg_integer() | Decimal.t()}, list(), {binary(), binary()}) ::
+          any()
+  def set_media_urls({token_contract_address_hash, token_id}, urls, media_type) do
+    now = DateTime.utc_now()
+
+    token_id
+    |> token_instance_query(token_contract_address_hash)
+    |> Repo.update_all(
+      [set: [thumbnails: urls, media_type: media_type_to_string(media_type), updated_at: now]],
+      timeout: @timeout
+    )
+  end
+
+  @doc """
+  Sets the CDN upload error for a given token.
+
+  ## Parameters
+
+    - `token_contract_address_hash`: The hash of the token contract address.
+    - `token_id`: The ID of the token.
+    - `error`: The error message to be set.
+
+  ## Examples
+
+      iex> set_cdn_upload_error({"0x1234", 1}, "Upload failed")
+      :ok
+
+  """
+  @spec set_cdn_upload_error({Hash.Address.t(), non_neg_integer() | Decimal.t()}, binary()) :: any()
+  def set_cdn_upload_error({token_contract_address_hash, token_id}, error) do
+    now = DateTime.utc_now()
+
+    token_id
+    |> token_instance_query(token_contract_address_hash)
+    |> Repo.update_all(
+      [set: [cdn_upload_error: error, updated_at: now]],
+      timeout: @timeout
+    )
+  end
+
+  @doc """
+  Streams instances that need to be resized and uploaded.
+
+  ## Parameters
+
+    - each_fun: A function to be applied to each instance.
+  """
+  @spec stream_instances_to_resize_and_upload((t() -> any())) :: any()
+  def stream_instances_to_resize_and_upload(each_fun) do
+    __MODULE__
+    |> where([ti], not is_nil(ti.metadata) and is_nil(ti.thumbnails) and is_nil(ti.cdn_upload_error))
+    |> Repo.stream_each(each_fun)
+  end
+
+  @doc """
+  Sets the CDN result for a given token.
+
+  ## Parameters
+
+    - `token_contract_address_hash`: The hash of the token contract address.
+    - `token_id`: The ID of the token.
+    - `params`: A map containing the parameters for the CDN result.
+
+  ## Returns
+
+    - The result of setting the CDN for the given token instance.
+
+  """
+  @spec set_cdn_result({Hash.Address.t(), non_neg_integer() | Decimal.t()}, %{
+          :cdn_upload_error => any(),
+          :media_type => any(),
+          :thumbnails => any()
+        }) :: any()
+  def set_cdn_result({token_contract_address_hash, token_id}, %{
+        thumbnails: thumbnails,
+        media_type: media_type,
+        cdn_upload_error: cdn_upload_error
+      }) do
+    now = DateTime.utc_now()
+
+    token_id
+    |> token_instance_query(token_contract_address_hash)
+    |> Repo.update_all(
+      [
+        set: [
+          cdn_upload_error: cdn_upload_error,
+          thumbnails: thumbnails,
+          media_type: media_type,
+          updated_at: now
+        ]
+      ],
+      timeout: @timeout
+    )
+  end
+
+  @doc """
+  Converts a media type tuple to a string.
+
+  ## Parameters
+  - media_type: A tuple containing two binaries representing the media type.
+
+  ## Returns
+  - A non-empty binary string representation of the media type.
+
+  ## Examples
+    iex> media_type_to_string({"image", "png"})
+    "image/png"
+  """
+  @spec media_type_to_string({binary(), binary()}) :: nonempty_binary()
+  def media_type_to_string({type, subtype}) do
+    "#{type}/#{subtype}"
   end
 end
