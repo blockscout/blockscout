@@ -458,7 +458,7 @@ defmodule Explorer.Chain.Block do
   def gas_target(block) do
     if Decimal.compare(block.gas_limit, 0) == :gt do
       elasticity_multiplier =
-        with true <- @chain_type == :optimism,
+        with true <- Application.get_env(:explorer, :chain_type) == :optimism,
              # credo:disable-for-next-line Credo.Check.Design.AliasUsage
              config = Explorer.Chain.Optimism.EIP1559ConfigUpdate.actual_config_for_block(block.number),
              false <- is_nil(config) do
@@ -521,7 +521,7 @@ defmodule Explorer.Chain.Block do
   @spec next_block_base_fee_per_gas(t()) :: Decimal.t() | nil
   def next_block_base_fee_per_gas(block) do
     {base_fee_max_change_denominator, elasticity_multiplier} =
-      with true <- @chain_type == :optimism,
+      with true <- Application.get_env(:explorer, :chain_type) == :optimism,
            # credo:disable-for-next-line Credo.Check.Design.AliasUsage
            config = Explorer.Chain.Optimism.EIP1559ConfigUpdate.actual_config_for_block(block.number),
            false <- is_nil(config) do
