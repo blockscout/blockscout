@@ -69,7 +69,7 @@ You can adjust BlockScout environment variables:
 
 Descriptions of the ENVs are available
 
-- for [backend](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
+- for [backend](https://docs.blockscout.com/setup/env-variables)
 - for [frontend](https://github.com/blockscout/frontend/blob/main/docs/ENVS.md).
 
 ## Running Docker containers via Makefile
