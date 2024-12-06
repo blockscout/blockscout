@@ -444,11 +444,29 @@ defmodule Explorer.Chain.Block do
 
   The gas target represents the percentage by which the actual gas used is above or below the gas target for the block, adjusted by the elasticity multiplier.
   If the `gas_limit` is greater than 0, it calculates the ratio of `gas_used` to `gas_limit` adjusted by this multiplier.
+
+  The multiplier is read from the `EIP_1559_ELASTICITY_MULTIPLIER` env variable or from the `op_eip1559_config_updates` table
+  as a dynamic parameter (if OP Holocene upgrade is activated).
+
+  ## Parameters
+  - `block`: A map representing block for which the gas target should be calculated.
+
+  ## Returns
+  - A float value representing the gas target percentage.
   """
   @spec gas_target(t()) :: float()
   def gas_target(block) do
     if Decimal.compare(block.gas_limit, 0) == :gt do
-      elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
+      elasticity_multiplier =
+        with true <- @chain_type == :optimism,
+             config = Explorer.Chain.Optimism.EIP1559ConfigUpdate.actual_config_for_block(block.number),
+             false <- is_nil(config) do
+          {_, multiplier} = config
+          multiplier
+        else
+          _ -> Application.get_env(:explorer, :elasticity_multiplier)
+        end
+
       ratio = Decimal.div(block.gas_used, Decimal.div(block.gas_limit, elasticity_multiplier))
       ratio |> Decimal.sub(1) |> Decimal.mult(100) |> Decimal.to_float()
     else
@@ -478,11 +496,11 @@ defmodule Explorer.Chain.Block do
       gas_target = gas_limit / elasticity_multiplier
       base_fee_for_next_block = base_fee_per_gas + (base_fee_per_gas * gas_used_delta / gas_target / base_fee_max_change_denominator)
 
-  where elasticity_multiplier is an env variable `EIP_1559_ELASTICITY_MULTIPLIER`,
-  `gas_used_delta` is the difference between the actual gas used and the target gas
-  and `base_fee_max_change_denominator` is an env variable `EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR` that limits the maximum change of the base fee from one block to the next.
-
-
+  where `elasticity_multiplier` is an env variable `EIP_1559_ELASTICITY_MULTIPLIER` or the dynamic value
+  got from the `op_eip1559_config_updates` database table. The `gas_used_delta` is the difference between
+  the actual gas used and the target gas. The `base_fee_max_change_denominator` is an env variable
+  `EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR` (or the dynamic value got from the `op_eip1559_config_updates`
+  table) that limits the maximum change of the base fee from one block to the next.
   """
   @spec next_block_base_fee_per_gas :: Decimal.t() | nil
   def next_block_base_fee_per_gas do
@@ -501,8 +519,16 @@ defmodule Explorer.Chain.Block do
 
   @spec next_block_base_fee_per_gas(t()) :: Decimal.t() | nil
   def next_block_base_fee_per_gas(block) do
-    elasticity_multiplier = Application.get_env(:explorer, :elasticity_multiplier)
-    base_fee_max_change_denominator = Application.get_env(:explorer, :base_fee_max_change_denominator)
+    {base_fee_max_change_denominator, elasticity_multiplier} =
+      with true <- @chain_type == :optimism,
+           config = Explorer.Chain.Optimism.EIP1559ConfigUpdate.actual_config_for_block(block.number),
+           false <- is_nil(config) do
+        config
+      else
+        _ ->
+          {Application.get_env(:explorer, :base_fee_max_change_denominator),
+           Application.get_env(:explorer, :elasticity_multiplier)}
+      end
 
     gas_target = Decimal.div(block.gas_limit, elasticity_multiplier)
 
