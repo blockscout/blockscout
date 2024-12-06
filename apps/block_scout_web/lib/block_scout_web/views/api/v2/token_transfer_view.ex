@@ -46,8 +46,6 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
   def prepare_token_transfer(token_transfer, _conn, decoded_input) do
     %{
       "transaction_hash" => token_transfer.transaction_hash,
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_hash` property
-      "tx_hash" => token_transfer.transaction_hash,
       "from" => Helper.address_with_info(nil, token_transfer.from_address, token_transfer.from_address_hash, false),
       "to" => Helper.address_with_info(nil, token_transfer.to_address, token_transfer.to_address_hash, false),
       "total" => prepare_token_transfer_total(token_transfer),

@@ -462,8 +462,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     out
     |> Map.merge(%{
       "height" => Map.get(da_info, "height"),
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-      "tx_commitment" => Map.get(da_info, "transaction_commitment"),
       "transaction_commitment" => Map.get(da_info, "transaction_commitment")
     })
   end
