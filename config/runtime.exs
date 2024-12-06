@@ -221,13 +221,14 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Utility.EndpointAvailabilityChecker, e
 
 disable_indexer? = ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 disable_webapp? = ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP")
+app_mode = ConfigHelper.mode()
 disable_exchange_rates? = ConfigHelper.parse_bool_env_var("DISABLE_EXCHANGE_RATES")
 
 checksum_function = System.get_env("CHECKSUM_FUNCTION")
 exchange_rates_coin = System.get_env("EXCHANGE_RATES_COIN")
 
 config :explorer,
-  mode: ConfigHelper.mode(),
+  mode: app_mode,
   coin: System.get_env("COIN") || exchange_rates_coin || "ETH",
   coin_name: System.get_env("COIN_NAME") || exchange_rates_coin || "ETH",
   allowed_solidity_evm_versions:
@@ -239,10 +240,10 @@ config :explorer,
   include_uncles_in_average_block_time: ConfigHelper.parse_bool_env_var("UNCLES_IN_AVERAGE_BLOCK_TIME"),
   healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTHY_BLOCKS_PERIOD", "5m"),
   realtime_events_sender:
-    if(disable_api? or disable_webapp?,
-      do: Explorer.Chain.Events.DBSender,
-      else: Explorer.Chain.Events.SimpleSender
-    ),
+    (case app_mode do
+       :all -> Explorer.Chain.Events.SimpleSender
+       separate_setup when separate_setup in [:indexer, :api] -> Explorer.Chain.Events.DBSender
+     end),
   restricted_list: System.get_env("RESTRICTED_LIST"),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY"),
   checksum_function: checksum_function && String.to_atom(checksum_function),
@@ -259,7 +260,7 @@ config :explorer, :proxy,
   fallback_cached_implementation_data_ttl: :timer.seconds(4),
   implementation_data_fetching_timeout: :timer.seconds(2)
 
-config :explorer, Explorer.Chain.Events.Listener, enabled: disable_indexer?
+config :explorer, Explorer.Chain.Events.Listener, enabled: app_mode == :api
 
 precompiled_config_base_dir =
   case config_env() do
