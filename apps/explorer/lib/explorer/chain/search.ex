@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Search do
   @moduledoc """
-    Search related functions
+    Search-related functions
   """
   import Ecto.Query
   import Explorer.Chain, only: [select_repo: 1]
@@ -49,7 +49,7 @@ defmodule Explorer.Chain.Search do
   @label_sorting [{:asc, :display_name, :address_tag}, {:desc, :inserted_at, :address_to_tag}]
 
   @doc """
-    Search function used in web interface. Returns paginated search results
+  Search function used in web interface and API v2. Returns paginated search results
   """
   @spec joint_search(PagingOptions.t(), binary(), [Chain.api?()] | []) :: {list(), map() | nil}
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
@@ -223,6 +223,8 @@ defmodule Explorer.Chain.Search do
           For example if was found 50 tokens, 50 smart-contracts, 50 labels, 1 address, 1 transaction and 2 blocks (impossible, just example) and page_size=50. Then function will return:
             [1 address, 1 transaction, 2 blocks, 16 tokens, 15 smart-contracts, 15 labels]
       2. Results couldn't be paginated
+
+    `balanced_unpaginated_search` function is used at api/v2/search/quick endpoint.
   """
   @spec balanced_unpaginated_search(PagingOptions.t(), binary(), [Chain.api?()] | []) :: list
   def balanced_unpaginated_search(paging_options, query_string, options \\ []) do
@@ -925,6 +927,18 @@ defmodule Explorer.Chain.Search do
     }
   end
 
+  @doc """
+  Parses paging options from the given parameters when the `next_page_params_type` is "search".
+
+  ## Parameters
+
+    - paging_params: A map containing the paging parameters, including "next_page_params_type".
+
+  ## Returns
+
+  A keyword list with paging options, where key is the map with the parsed paging options.
+  """
+  @spec parse_paging_options(map()) :: [paging_options: PagingOptions.t()]
   def parse_paging_options(%{"next_page_params_type" => "search"} = paging_params) do
     key =
       Enum.reduce(@paginated_types, %{}, fn type, acc ->
@@ -942,9 +956,11 @@ defmodule Explorer.Chain.Search do
     [paging_options: default_paging_options()]
   end
 
-  def paging_options(paging_options) when is_map(paging_options) do
+  defp paging_options(paging_options) when is_map(paging_options) do
     paging_options
   end
+
+  defp paging_options(_), do: nil
 
   defp parse_possible_nil(""), do: nil
   defp parse_possible_nil(other), do: other

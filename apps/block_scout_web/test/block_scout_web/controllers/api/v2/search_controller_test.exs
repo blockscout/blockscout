@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.{Address, Block}
-  alias Explorer.Repo
   alias Explorer.Tags.AddressTag
 
   describe "/search" do
