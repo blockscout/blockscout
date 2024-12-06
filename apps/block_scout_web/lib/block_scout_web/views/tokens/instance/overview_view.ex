@@ -30,8 +30,12 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   end
 
   def media_type(media_src) do
-    {type, _} = TokenInstanceHelper.media_type(media_src)
-    type
+    with {type, _} <- TokenInstanceHelper.media_type(media_src) do
+      type
+    else
+      other ->
+        other
+    end
   end
 
   def total_supply_usd(token) do
