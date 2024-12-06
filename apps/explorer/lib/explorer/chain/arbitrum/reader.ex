@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   """
 
   import Ecto.Query, only: [dynamic: 2, from: 2, limit: 2, order_by: 2, select: 3, subquery: 1, where: 2, where: 3]
-  import Explorer.Chain, only: [select_repo: 1]
+  import Explorer.Chain, only: [log_with_transactions_query: 0, select_repo: 1]
 
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
@@ -650,20 +650,9 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   """
   @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary(), api?: boolean()) :: [Log.t()]
   def transaction_to_logs_by_topic0(transaction_hash, topic0, options \\ []) when is_list(options) do
-    log_with_transactions =
-      from(log in Log,
-        inner_join: transaction in Transaction,
-        on:
-          transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
-            transaction.hash == log.transaction_hash
-      )
-
-    query =
-      log_with_transactions
-      |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
-      |> order_by(asc: :index)
-
-    query
+    log_with_transactions_query()
+    |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
+    |> order_by(asc: :index)
     |> select_repo(options).all()
   end
 
