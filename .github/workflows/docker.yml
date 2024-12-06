@@ -71,3 +71,5 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             VERSION=${{ env.VERSION }}
+            BLOCKSCOUT_VERSION=v${{ env.VERSION }}
+            RELEASE_VERSION=${{ env.VERSION }}
