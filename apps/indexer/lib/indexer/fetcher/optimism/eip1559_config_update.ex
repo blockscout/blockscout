@@ -571,7 +571,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   #
   # If the found block was created later or earlier than the given timestamp
   # (that can happen if the average block timestamp is not constant), the function
-  # additionally clarifies the block duration using the neighbour block's timestamp
+  # additionally clarifies the block duration using the next block's timestamp
   # and tries to calculate the block number again.
   #
   # ## Parameters
