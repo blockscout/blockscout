@@ -1,6 +1,24 @@
 defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   @moduledoc """
-  Fills op_eip1559_config_updates DB table.
+    Fills op_eip1559_config_updates DB table.
+
+    The table stores points when EIP-1559 denominator and multiplier were changed,
+    and the updated values of these parameters. The point is the L2 block number
+    and its hash. The block hash is needed to detect a possible past reorg when starting
+    this fetcher. If the past reorg is detected, the module tries to start from
+    the previous block and so on until a consensus block is found.
+
+    The parameter values are taken from the `extraData` field of each block. They
+    are stored in a block starting from the block of Holocene upgrade. Each block
+    contains the parameters actual for the next blocks (until they are changed again).
+    The `extraData` field has a format described on the page
+    https://specs.optimism.io/protocol/holocene/exec-engine.html#dynamic-eip-1559-parameters
+
+    The Holocene activation block is defined with INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP env variable
+    setting the block timestamp. If this env is not defined, the module won't work. In this case
+    EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR and EIP_1559_ELASTICITY_MULTIPLIER env variables
+    will be used as fallback static values. The timestamp can be defined as `0` meaning the Holocene
+    is activated from genesis block.
   """
 
   use GenServer
@@ -46,7 +64,31 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     {:ok, %{}, {:continue, json_rpc_named_arguments}}
   end
 
+  # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
+  # during initialization. It checks the value of INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP env variable, waits for the
+  # Holocene block (if the module starts before Holocene activation), defines the block range which must be scanned
+  # to handle `extraData` fields, and retrieves the dynamic EIP-1559 parameters (denominator and multiplier) for each block.
+  # The changed parameter values are then written to the `op_eip1559_config_updates` database table.
+  #
+  # The block range is split into chunks which max size is defined by INDEXER_OPTIMISM_L2_HOLOCENE_BLOCKS_CHUNK_SIZE
+  # env variable.
+  #
+  # If the Holocene is not activated yet, the function waits for the Holocene block first.
+  #
+  # When the initialization succeeds, the `:continue` message is sent to GenServer to start the catchup loop
+  # retrieving and saving historical parameter updates.
+  #
+  # ## Parameters
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to L2 RPC node.
+  # - `_state`: Initial state of the fetcher (empty map when starting).
+  #
+  # ## Returns
+  # - `{:noreply, state}` when the initialization is successful and the fetching can start. The `state` contains
+  #                       necessary parameters needed for the fetching.
+  # - `{:stop, :normal, %{}}` in case of error or when the INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP is not defined.
   @impl GenServer
+  @spec handle_continue(EthereumJSONRPC.json_rpc_named_arguments(), map()) ::
+          {:noreply, map()} | {:stop, :normal, map()}
   def handle_continue(json_rpc_named_arguments, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
@@ -57,25 +99,27 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     with false <- is_nil(timestamp),
          wait_for_holocene(timestamp, json_rpc_named_arguments),
          Subscriber.to(:blocks, :realtime),
-         {:ok, latest_block_number} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
-         l2_block_number = block_number_by_timestamp(timestamp, optimism_env[:block_duration], json_rpc_named_arguments),
+         {:ok, latest_block_number} =
+           Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
+         l2_block_number =
+           block_number_by_timestamp(timestamp, optimism_env[:block_duration], json_rpc_named_arguments),
          EIP1559ConfigUpdate.remove_invalid_updates(l2_block_number, latest_block_number),
          {:ok, last_l2_block_number} <- get_last_l2_block_number(json_rpc_named_arguments) do
-
       Logger.debug("l2_block_number = #{l2_block_number}")
       Logger.debug("last_l2_block_number = #{last_l2_block_number}")
 
       Process.send(self(), :continue, [])
 
-      {:noreply, %{
-        start_block: max(l2_block_number, last_l2_block_number),
-        end_block: latest_block_number,
-        chunk_size: env[:chunk_size],
-        timestamp: timestamp,
-        mode: :catchup,
-        realtime_range: nil,
-        json_rpc_named_arguments: json_rpc_named_arguments
-      }}
+      {:noreply,
+       %{
+         start_block: max(l2_block_number, last_l2_block_number),
+         end_block: latest_block_number,
+         chunk_size: env[:chunk_size],
+         timestamp: timestamp,
+         mode: :catchup,
+         realtime_range: nil,
+         json_rpc_named_arguments: json_rpc_named_arguments
+       }}
     else
       true ->
         # Holocene timestamp is not defined, so we don't start this module
@@ -87,17 +131,30 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     end
   end
 
+  # Performs the main handling loop for the specified block range. The block range is split into chunks.
+  # Max size of a chunk is defined by INDEXER_OPTIMISM_L2_HOLOCENE_BLOCKS_CHUNK_SIZE env variable.
+  #
+  # If there are reorg blocks in the block range, the reorgs are handled. In a normal situation,
+  # the `:handle_realtime` message is sent to GenServer to get the new block range collected from the
+  # realtime block fetcher.
+  #
+  # ## Parameters
+  # - `:continue`: The GenServer message.
+  # - `state`: The current state of the fetcher containing block range, max chunk size, etc.
+  #
+  # ## Returns
+  # - `{:noreply, state}` tuple where `state` is the new state of the fetcher containing the updated block range.
   @impl GenServer
   def handle_info(
-    :continue,
-    %{
-      start_block: start_block,
-      end_block: end_block,
-      chunk_size: chunk_size,
-      mode: mode,
-      json_rpc_named_arguments: json_rpc_named_arguments
-    } = state
-  ) do
+        :continue,
+        %{
+          start_block: start_block,
+          end_block: end_block,
+          chunk_size: chunk_size,
+          mode: mode,
+          json_rpc_named_arguments: json_rpc_named_arguments
+        } = state
+      ) do
     {new_start_block, new_end_block} =
       start_block..end_block
       |> Enum.chunk_every(chunk_size)
@@ -146,11 +203,11 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
     if is_nil(new_start_block) or is_nil(new_end_block) do
       Logger.info("The fetcher loop for the range #{inspect(start_block..end_block)} finished.")
-      
+
       if mode == :catchup do
         Logger.info("Switching to realtime mode...")
       end
-      
+
       Process.send(self(), :handle_realtime, [])
       {:noreply, state}
     else
@@ -159,6 +216,40 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     end
   end
 
+  # Gets the updated block range, sends it to the main handling loop, and resets the range
+  # to collect the next range from the realtime block fetcher. If the range is not defined yet,
+  # the function waits for 3 seconds and repeats the range checking.
+  #
+  # ## Parameters
+  # - `:handle_realtime`: The GenServer message.
+  # - `state`: The current state of the fetcher.
+  #
+  # ## Returns
+  # - `{:noreply, state}` tuple where `state` is the new state of the fetcher containing the updated block range
+  #                       used by the main loop.
+  @impl GenServer
+  def handle_info(:handle_realtime, state) do
+    case Map.get(state, :realtime_range) do
+      nil ->
+        Process.send_after(self(), :handle_realtime, 3_000)
+        {:noreply, state}
+
+      start_block..end_block ->
+        Process.send(self(), :continue, [])
+        {:noreply, %{state | start_block: start_block, end_block: end_block, mode: :realtime, realtime_range: nil}}
+    end
+  end
+
+  # Catches new block from the realtime block fetcher to form the next block range to handle by the main loop.
+  #
+  # ## Parameters
+  # - `{:chain_event, :blocks, :realtime, blocks}`: The GenServer message containing the list of blocks
+  #                                                 taken by the realtime block fetcher.
+  # - `state`: The current fetcher state containing the end block of the current main loop range.
+  #
+  # ## Returns
+  # - `{:noreply, state}` tuple where `state` is the new state of the fetcher containing the updated block range
+  #                       used by the `:handle_realtime` handler.
   @impl GenServer
   def handle_info({:chain_event, :blocks, :realtime, blocks}, %{end_block: end_block} = state) do
     {new_min, new_max} =
@@ -181,30 +272,35 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   end
 
   @impl GenServer
-  def handle_info(:handle_realtime, state) do
-    case Map.get(state, :realtime_range) do
-      nil -> 
-        Process.send_after(self(), :handle_realtime, 3000)
-        {:noreply, state}
-
-      start_block..end_block ->
-        Process.send(self(), :continue, [])
-        {:noreply, %{state | start_block: start_block, end_block: end_block, mode: :realtime, realtime_range: nil}}
-    end
-  end
-
-  @impl GenServer
   def handle_info({ref, _result}, state) do
     Process.demonitor(ref, [:flush])
     {:noreply, state}
   end
 
+  @doc """
+    Catches L2 reorg block from the realtime block fetcher and keeps it in a queue
+    to handle that later by the main loop.
+
+    ## Parameters
+    - `reorg_block`: The number of reorg block.
+
+    ## Returns
+    - nothing.
+  """
   @spec handle_realtime_l2_reorg(non_neg_integer()) :: any()
   def handle_realtime_l2_reorg(reorg_block) do
     Logger.warning("L2 reorg was detected at block #{reorg_block}.")
     RollupReorgMonitorQueue.reorg_block_push(reorg_block, __MODULE__)
   end
 
+  # Removes all rows from the `op_eip1559_config_updates` table which have `l2_block_number` greater or equal to the reorg block number.
+  # Also, resets the last handled L2 block number in the `last_fetched_counters` database table.
+  #
+  # ## Parameters
+  # - `reorg_block_number`: The L2 reorg block number.
+  #
+  # ## Returns
+  # - nothing.
   @spec handle_reorg(non_neg_integer()) :: any()
   defp handle_reorg(reorg_block_number) do
     deleted_count = EIP1559ConfigUpdate.remove_invalid_updates(0, reorg_block_number - 1)
@@ -217,6 +313,11 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   end
 
   # Retrieves updated config parameters from the specified blocks and saves them to the database.
+  # The parameters are read from the `extraData` field which format is as follows:
+  # 1-byte version ++ 4-byte denominator ++ 4-byte elasticity
+  #
+  # The last handled block is kept in the `last_fetched_counters` table to start from that after
+  # instance restart.
   #
   # ## Parameters
   # - `block_numbers`: The list of block numbers for which we need to check and update config parameters.
@@ -256,7 +357,11 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
                  new_config = {denominator, elasticity},
                  {:updated_config, true} <- {:updated_config, prev_config != new_config} do
               update_config(block.number, block.hash, denominator, elasticity)
-              Logger.info("Config was updated at block #{block.number}. Previous one: #{inspect(prev_config)}. New one: #{inspect(new_config)}.")
+
+              Logger.info(
+                "Config was updated at block #{block.number}. Previous one: #{inspect(prev_config)}. New one: #{inspect(new_config)}."
+              )
+
               acc + 1
             else
               {:valid_format, false} ->
@@ -288,7 +393,10 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
         chunk_start = List.first(block_numbers)
         chunk_end = List.last(block_numbers)
 
-        Logger.error("Cannot fetch blocks #{inspect(chunk_start..chunk_end)}. Error(s): #{inspect(message)} Retrying...")
+        Logger.error(
+          "Cannot fetch blocks #{inspect(chunk_start..chunk_end)}. Error(s): #{inspect(message)} Retrying..."
+        )
+
         :timer.sleep(3000)
         handle_updates(block_numbers, json_rpc_named_arguments)
     end
@@ -303,12 +411,14 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   # - `elasticity_multiplier`: A new value for EIP-1559 multiplier.
   @spec update_config(non_neg_integer(), binary(), non_neg_integer(), non_neg_integer()) :: no_return()
   defp update_config(l2_block_number, l2_block_hash, base_fee_max_change_denominator, elasticity_multiplier) do
-    updates = [%{
-      l2_block_number: l2_block_number,
-      l2_block_hash: l2_block_hash,
-      base_fee_max_change_denominator: base_fee_max_change_denominator,
-      elasticity_multiplier: elasticity_multiplier
-    }]
+    updates = [
+      %{
+        l2_block_number: l2_block_number,
+        l2_block_hash: l2_block_hash,
+        base_fee_max_change_denominator: base_fee_max_change_denominator,
+        elasticity_multiplier: elasticity_multiplier
+      }
+    ]
 
     {:ok, _} =
       Chain.import(%{
@@ -327,9 +437,10 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   #
   # ## Returns
   # - The block number corresponding to the given timestamp.
-  @spec block_number_by_timestamp(non_neg_integer(), non_neg_integer(), EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer()
+  @spec block_number_by_timestamp(non_neg_integer(), non_neg_integer(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          non_neg_integer()
   defp block_number_by_timestamp(timestamp, block_duration, json_rpc_named_arguments)
-  
+
   defp block_number_by_timestamp(0, _block_duration, _json_rpc_named_arguments), do: 0
 
   defp block_number_by_timestamp(timestamp, block_duration, json_rpc_named_arguments) do
@@ -348,7 +459,10 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     block_number = Repo.one(query)
 
     if is_nil(block_number) do
-      Logger.info("Cannot detect Holocene block number using indexed L2 blocks. Trying to calculate the number using RPC requests...")
+      Logger.info(
+        "Cannot detect Holocene block number using indexed L2 blocks. Trying to calculate the number using RPC requests..."
+      )
+
       block_number_by_timestamp_from_rpc(timestamp, block_duration, json_rpc_named_arguments)
     else
       Logger.info("Holocene block number is detected using indexed L2 blocks. The block number is #{block_number}")
@@ -386,7 +500,8 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   # ## Returns
   # - `{:ok, number}` tuple with the block number of the last actual row. The number can be `0` if there are no rows.
   # - `{:error, message}` tuple in case of RPC error.
-  @spec get_last_l2_block_number(EthereumJSONRPC.json_rpc_named_arguments()) :: {:ok, non_neg_integer()} | {:error, any()}
+  @spec get_last_l2_block_number(EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {:ok, non_neg_integer()} | {:error, any()}
   defp get_last_l2_block_number(json_rpc_named_arguments) do
     last_l2_block_hash = EIP1559ConfigUpdate.last_l2_block_hash()
 
@@ -410,7 +525,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
             nil
         end
       end
-    
+
     if is_nil(last_l2_block_number) do
       {last_l2_block_number, last_l2_block_hash} = EIP1559ConfigUpdate.get_last_item()
 
@@ -457,11 +572,25 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   #
   # ## Returns
   # - The block number corresponding to the given timestamp.
-  @spec block_number_by_timestamp_from_rpc(non_neg_integer(), non_neg_integer(), EthereumJSONRPC.json_rpc_named_arguments(), non_neg_integer() | nil, non_neg_integer() | nil) :: non_neg_integer()
-  defp block_number_by_timestamp_from_rpc(timestamp, block_duration, json_rpc_named_arguments, ref_block_number \\ nil, ref_block_timestamp \\ nil) do
+  @spec block_number_by_timestamp_from_rpc(
+          non_neg_integer(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          non_neg_integer() | nil,
+          non_neg_integer() | nil
+        ) :: non_neg_integer()
+  defp block_number_by_timestamp_from_rpc(
+         timestamp,
+         block_duration,
+         json_rpc_named_arguments,
+         ref_block_number \\ nil,
+         ref_block_timestamp \\ nil
+       ) do
     ref_block_number =
       if is_nil(ref_block_number) do
-        {:ok, latest_block_number} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+        {:ok, latest_block_number} =
+          Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+
         latest_block_number
       else
         ref_block_number
@@ -469,7 +598,13 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
     ref_block_timestamp =
       if is_nil(ref_block_timestamp) do
-        {:ok, ref_block_timestamp} = Helper.get_block_timestamp_by_number(ref_block_number, json_rpc_named_arguments, Helper.infinite_retries_number())
+        {:ok, ref_block_timestamp} =
+          Helper.get_block_timestamp_by_number(
+            ref_block_number,
+            json_rpc_named_arguments,
+            Helper.infinite_retries_number()
+          )
+
         ref_block_timestamp
       else
         ref_block_timestamp
@@ -484,23 +619,43 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
         ref_block_number + gap
       end
 
-    {:ok, block_timestamp} = Helper.get_block_timestamp_by_number(block_number, json_rpc_named_arguments, Helper.infinite_retries_number())
+    {:ok, block_timestamp} =
+      Helper.get_block_timestamp_by_number(block_number, json_rpc_named_arguments, Helper.infinite_retries_number())
 
     if block_timestamp == timestamp do
       Logger.info("Holocene block number was successfully calculated using RPC. The block number is #{block_number}")
       block_number
     else
       next_block_number = block_number + 1
-      {:ok, next_block_timestamp} = Helper.get_block_timestamp_by_number(next_block_number, json_rpc_named_arguments, Helper.infinite_retries_number())
+
+      {:ok, next_block_timestamp} =
+        Helper.get_block_timestamp_by_number(
+          next_block_number,
+          json_rpc_named_arguments,
+          Helper.infinite_retries_number()
+        )
 
       if next_block_timestamp == timestamp do
-        Logger.info("Holocene block number was successfully calculated using RPC. The block number is #{next_block_number}")
+        Logger.info(
+          "Holocene block number was successfully calculated using RPC. The block number is #{next_block_number}"
+        )
+
         next_block_number
       else
         :timer.sleep(1000)
         Logger.info("Another try for Holocene block number calculation using RPC...")
-        Logger.debug("block_number = #{block_number}, next_block_number = #{next_block_number}, block_timestamp = #{block_timestamp}, next_block_timestamp = #{next_block_timestamp}")
-        block_number_by_timestamp_from_rpc(timestamp, next_block_timestamp - block_timestamp, json_rpc_named_arguments, block_number, block_timestamp)
+
+        Logger.debug(
+          "block_number = #{block_number}, next_block_number = #{next_block_number}, block_timestamp = #{block_timestamp}, next_block_timestamp = #{next_block_timestamp}"
+        )
+
+        block_number_by_timestamp_from_rpc(
+          timestamp,
+          next_block_timestamp - block_timestamp,
+          json_rpc_named_arguments,
+          block_number,
+          block_timestamp
+        )
       end
     end
   end
@@ -512,7 +667,8 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
   @spec wait_for_holocene(non_neg_integer(), EthereumJSONRPC.json_rpc_named_arguments()) :: any()
   defp wait_for_holocene(timestamp, json_rpc_named_arguments) do
-    {:ok, latest_timestamp} = Helper.get_block_timestamp_by_number(:latest, json_rpc_named_arguments, Helper.infinite_retries_number())
+    {:ok, latest_timestamp} =
+      Helper.get_block_timestamp_by_number(:latest, json_rpc_named_arguments, Helper.infinite_retries_number())
 
     if latest_timestamp < timestamp do
       Logger.info("Holocene is not activated yet. Waiting for the timestamp #{timestamp} to be reached...")

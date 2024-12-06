@@ -66,7 +66,8 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
   """
   @spec get_last_item() :: {non_neg_integer(), binary() | nil}
   def get_last_item do
-    query = from(u in __MODULE__, select: {u.l2_block_number, u.l2_block_hash}, order_by: [desc: u.l2_block_number], limit: 1)
+    query =
+      from(u in __MODULE__, select: {u.l2_block_number, u.l2_block_hash}, order_by: [desc: u.l2_block_number], limit: 1)
 
     query
     |> Repo.one()
@@ -92,7 +93,11 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
   end
 
   def remove_invalid_updates(block_number, latest_block_number) do
-    {deleted_count, _} = Repo.delete_all(from(u in __MODULE__, where: u.l2_block_number < ^block_number or u.l2_block_number > ^latest_block_number))
+    {deleted_count, _} =
+      Repo.delete_all(
+        from(u in __MODULE__, where: u.l2_block_number < ^block_number or u.l2_block_number > ^latest_block_number)
+      )
+
     deleted_count
   end
 
@@ -106,12 +111,12 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
   """
   @spec last_l2_block_hash() :: binary()
   def last_l2_block_hash do
-    "0x" <> (
-      @counter_type
-      |> get_last_fetched_counter()
-      |> Decimal.to_integer()
-      |> Integer.to_string(16)
-      |> String.pad_leading(64, "0"))
+    "0x" <>
+      (@counter_type
+       |> get_last_fetched_counter()
+       |> Decimal.to_integer()
+       |> Integer.to_string(16)
+       |> String.pad_leading(64, "0"))
   end
 
   @doc """
