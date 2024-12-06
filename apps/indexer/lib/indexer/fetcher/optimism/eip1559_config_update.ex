@@ -175,17 +175,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
           :L2
         )
 
-        reorg_block_number =
-          Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
-            reorg_block_number = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
-
-            if is_nil(reorg_block_number) do
-              {:halt, acc}
-            else
-              handle_reorg(reorg_block_number)
-              {:cont, min(reorg_block_number, acc)}
-            end
-          end)
+        reorg_block_number = handle_reorgs_queue()
 
         cond do
           is_nil(reorg_block_number) or reorg_block_number > end_block ->
@@ -312,6 +302,26 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     EIP1559ConfigUpdate.set_last_l2_block_hash(@empty_hash)
   end
 
+  # Reads reorg block numbers queue, pops the block numbers from that,
+  # and handles each reorg block from the queue.
+  #
+  # ## Returns
+  # - The earliest reorg block number.
+  # - `nil` if the queue is empty.
+  @spec handle_reorgs_queue() :: non_neg_integer() | nil
+  defp handle_reorgs_queue do
+    Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
+      reorg_block_number = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
+
+      if is_nil(reorg_block_number) do
+        {:halt, acc}
+      else
+        handle_reorg(reorg_block_number)
+        {:cont, min(reorg_block_number, acc)}
+      end
+    end)
+  end
+
   # Retrieves updated config parameters from the specified blocks and saves them to the database.
   # The parameters are read from the `extraData` field which format is as follows:
   # 1-byte version ++ 4-byte denominator ++ 4-byte elasticity
@@ -376,6 +386,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
                 acc
             end
 
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           if block.number == last_block_number do
             EIP1559ConfigUpdate.set_last_l2_block_hash(block.hash)
           end
