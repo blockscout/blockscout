@@ -43,13 +43,6 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            DISABLE_WEBAPP=false
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
@@ -73,11 +66,6 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_API=true
-            DISABLE_WEBAPP=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
@@ -101,13 +89,6 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_INDEXER=true
-            DISABLE_WEBAPP=true
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
@@ -130,13 +111,6 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            DISABLE_WEBAPP=false
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
@@ -161,11 +135,6 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_API=true
-            DISABLE_WEBAPP=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
@@ -190,13 +159,6 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_INDEXER=true
-            DISABLE_WEBAPP=true
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=

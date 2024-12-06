@@ -41,13 +41,6 @@ jobs:
             linux/arm64/v8
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
-            DISABLE_WEBAPP=false
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
@@ -66,11 +59,6 @@ jobs:
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             DISABLE_API=true
-            DISABLE_WEBAPP=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
@@ -89,11 +77,6 @@ jobs:
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             DISABLE_INDEXER=true
-            DISABLE_WEBAPP=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
@@ -111,13 +94,6 @@ jobs:
             linux/arm64/v8
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
-            CACHE_EXCHANGE_RATES_PERIOD=
-            API_V1_READ_METHODS_DISABLED=false
-            DISABLE_WEBAPP=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
@@ -136,12 +112,7 @@ jobs:
             linux/arm64/v8
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
-            CACHE_EXCHANGE_RATES_PERIOD=
-            DISABLE_WEBAPP=true
             DISABLE_API=true
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
@@ -160,12 +131,7 @@ jobs:
             linux/arm64/v8
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
-            CACHE_EXCHANGE_RATES_PERIOD=
-            DISABLE_WEBAPP=true
             DISABLE_INDEXER=true
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            ADMIN_PANEL_ENABLED=false
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
