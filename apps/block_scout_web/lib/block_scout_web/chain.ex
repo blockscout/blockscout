@@ -179,28 +179,6 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{
-        "address_hash" => address_hash_string,
-        "transaction_hash" => transaction_hash_string,
-        "block_hash" => block_hash_string,
-        "holder_count" => holder_count_string,
-        "name" => name_string,
-        "inserted_at" => inserted_at_string,
-        "item_type" => item_type_string
-      })
-      when is_binary(address_hash_string) and is_binary(transaction_hash_string) and is_binary(block_hash_string) and
-             is_binary(holder_count_string) and is_binary(name_string) and is_binary(inserted_at_string) and
-             is_binary(item_type_string) do
-    [
-      paging_options: %{
-        @default_paging_options
-        | key:
-            {address_hash_string, transaction_hash_string, block_hash_string, holder_count_string, name_string,
-             inserted_at_string, item_type_string}
-      }
-    ]
-  end
-
   def paging_options(
         %{
           "market_cap" => market_cap_string,
@@ -745,29 +723,6 @@ defmodule BlockScoutWeb.Chain do
   # clause for zkEVM & Scroll batches pagination
   defp paging_params(%{number: number}) do
     %{"number" => number}
-  end
-
-  # clause for search results pagination
-  defp paging_params(%{
-         address_hash: address_hash,
-         transaction_hash: transaction_hash,
-         block_hash: block_hash,
-         holder_count: holder_count,
-         name: name,
-         inserted_at: inserted_at,
-         type: type
-       }) do
-    inserted_at_datetime = DateTime.to_iso8601(inserted_at)
-
-    %{
-      "address_hash" => address_hash,
-      "transaction_hash" => transaction_hash,
-      "block_hash" => block_hash,
-      "holder_count" => holder_count,
-      "name" => name,
-      "inserted_at" => inserted_at_datetime,
-      "item_type" => type
-    }
   end
 
   defp paging_params(%Instance{token_id: token_id}) do
