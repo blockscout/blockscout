@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.PagingHelper do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{SmartContract, Transaction}
   alias Explorer.{Helper, PagingOptions, SortingHelper}
 
   @page_size 50
@@ -226,16 +226,13 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def delete_parameters_from_next_page_params(_), do: nil
 
-  def current_filter(%{"filter" => "solidity"}) do
-    [filter: :solidity]
-  end
-
-  def current_filter(%{"filter" => "vyper"}) do
-    [filter: :vyper]
-  end
-
-  def current_filter(%{"filter" => "yul"}) do
-    [filter: :yul]
+  def current_filter(%{"filter" => language_string}) do
+    SmartContract.language_string_to_atom()
+    |> Map.fetch(language_string)
+    |> case do
+      {:ok, language} -> [filter: language]
+      :error -> []
+    end
   end
 
   def current_filter(_), do: []
