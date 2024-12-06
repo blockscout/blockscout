@@ -2,8 +2,8 @@ name: Release for Zilliqa
 
 on:
   workflow_dispatch:
-  release:
-    types: [published]
+  # release:
+  #   types: [published]
 
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
