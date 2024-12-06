@@ -47,7 +47,7 @@ defmodule Explorer.Migrator.FillingMigration do
           migration_status ->
             MigrationStatus.set_status(migration_name(), "started")
             before_start()
-            schedule_batch_migration()
+            schedule_batch_migration(0)
             {:noreply, (migration_status && migration_status.meta) || %{}}
         end
       end
@@ -77,8 +77,8 @@ defmodule Explorer.Migrator.FillingMigration do
 
       defp run_task(batch), do: Task.async(fn -> update_batch(batch) end)
 
-      defp schedule_batch_migration do
-        Process.send(self(), :migrate_batch, [])
+      defp schedule_batch_migration(timeout \\ nil) do
+        Process.send_after(self(), :migrate_batch, timeout || Application.get_env(:explorer, __MODULE__)[:timeout] || 0)
       end
 
       defp batch_size do
