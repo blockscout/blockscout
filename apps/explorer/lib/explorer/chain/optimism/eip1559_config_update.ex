@@ -36,14 +36,16 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
     |> validate_required(@required_attrs)
   end
 
-  # Reads the config actual before the specified block from the `op_eip1559_config_updates` table.
-  #
-  # ## Parameters
-  # - `block_number`: The block number for which we need to read the actual config.
-  #
-  # ## Returns
-  # - `{denominator, multiplier}` tuple in case the config exists.
-  # - `nil` if the config is unknown.
+  @doc """
+    Reads the config actual before the specified block from the `op_eip1559_config_updates` table.
+
+    ## Parameters
+    - `block_number`: The block number for which we need to read the actual config.
+
+    ## Returns
+    - `{denominator, multiplier}` tuple in case the config exists.
+    - `nil` if the config is unknown.
+  """
   @spec actual_config_for_block(non_neg_integer()) :: {non_neg_integer(), non_neg_integer()} | nil
   def actual_config_for_block(block_number) do
     query =
@@ -74,17 +76,19 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
     |> Kernel.||({0, nil})
   end
 
-  # Removes rows from the `op_eip1559_config_updates` table which relate to
-  # pre-Holocene period or which have l2_block_number greater than the latest block number.
-  # They could be created mistakenly as a result of the incorrect value of
-  # INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP env variable or due to reorg.
-  #
-  # ## Parameters
-  # - `block_number`: L2 block number of the Holocene upgrade.
-  # - `latest_block_number`: The latest block number.
-  #
-  # ## Returns
-  # - A number of removed rows.
+  @doc """
+    Removes rows from the `op_eip1559_config_updates` table which relate to
+    pre-Holocene period or which have l2_block_number greater than the latest block number.
+    They could be created mistakenly as a result of the incorrect value of
+    INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP env variable or due to reorg.
+
+    ## Parameters
+    - `block_number`: L2 block number of the Holocene upgrade.
+    - `latest_block_number`: The latest block number.
+
+    ## Returns
+    - A number of removed rows.
+  """
   @spec remove_invalid_updates(non_neg_integer(), integer()) :: non_neg_integer()
 
   def remove_invalid_updates(0, latest_block_number) do
