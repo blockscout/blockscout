@@ -423,6 +423,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if @chain_type == :arbitrum do
         get("/messages/:direction", V2.ArbitrumController, :messages)
         get("/messages/:direction/count", V2.ArbitrumController, :messages_count)
+        get("/messages/claim/:message_id", V2.ArbitrumController, :claim_message)
+        get("/messages/withdrawals/:transaction_hash", V2.ArbitrumController, :withdrawals)
         get("/batches", V2.ArbitrumController, :batches)
         get("/batches/count", V2.ArbitrumController, :batches_count)
         get("/batches/:batch_number", V2.ArbitrumController, :batch)

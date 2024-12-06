@@ -1,9 +1,18 @@
 defmodule BlockScoutWeb.API.V2.ArbitrumView do
   use BlockScoutWeb, :view
 
+  alias BlockScoutWeb.API.V2.ApiView
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction, Reader}
+
+  @doc """
+    Function to render error\\text responses for GET requests
+    to `/api/v2/arbitrum/messages/claim/:position` endpoint.
+  """
+  def render("message.json", assigns) do
+    ApiView.render("message.json", assigns)
+  end
 
   @doc """
     Function to render GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
@@ -56,6 +65,40 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   """
   def render("arbitrum_messages_count.json", %{count: count}) do
     count
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/arbitrum/messages/claim/:message_id` endpoint.
+  """
+  def render("arbitrum_claim_message.json", %{calldata: calldata, address: address}) do
+    %{
+      "calldata" => calldata,
+      "outbox_address" => address
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/arbitrum/messages/from-rollup/:msg_id/proof` endpoint.
+  """
+  def render("arbitrum_withdrawals.json", %{withdrawals: withdrawals}) do
+    withdrawals_out =
+      withdrawals
+      |> Enum.map(fn withdraw ->
+        %{
+          "id" => withdraw.message_id,
+          "status" => withdraw.status,
+          "caller" => withdraw.caller,
+          "destination" => withdraw.destination,
+          "arb_block_number" => withdraw.arb_block_number,
+          "eth_block_number" => withdraw.eth_block_number,
+          "l2_timestamp" => withdraw.l2_timestamp,
+          "callvalue" => withdraw.callvalue,
+          "data" => withdraw.data,
+          "token" => withdraw.token
+        }
+      end)
+
+    %{items: withdrawals_out}
   end
 
   @doc """
@@ -564,6 +607,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   # Determines the associated L1 transaction and its status for the given message direction.
+  # TODO: it's need to take into account the tx on L2 may initiate several withdrawals.
+  #       The current architecture doesn't support that.
   @spec l1_transaction_and_status_for_message(
           %{
             :__struct__ => Transaction,
@@ -603,7 +648,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           end
       end
 
-    %{"associated_l1_transaction" => l1_transaction, "message_status" => status}
+    %{
+      "message_id" => APIV2Helper.get_2map_data(arbitrum_transaction, :arbitrum_message_from_l2, :message_id),
+      "associated_l1_transaction" => l1_transaction,
+      "message_status" => status
+    }
   end
 
   # Extends the output JSON with information from Arbitrum-specific fields of the transaction.

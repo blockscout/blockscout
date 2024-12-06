@@ -292,13 +292,15 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches blocks by block hashes.
 
-  Transaction data is included for each block.
+  Transaction data is included for each block by default.
+  Set `with_transactions` parameter to false to exclude tx data.
   """
-  @spec fetch_blocks_by_hash([hash()], json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
-  def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments) do
+  @spec fetch_blocks_by_hash([hash()], json_rpc_named_arguments, boolean()) ::
+          {:ok, Blocks.t()} | {:error, reason :: term}
+  def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments, with_transactions? \\ true) do
     block_hashes
     |> Enum.map(fn block_hash -> %{hash: block_hash} end)
-    |> fetch_blocks_by_params(&Block.ByHash.request/1, json_rpc_named_arguments)
+    |> fetch_blocks_by_params(&Block.ByHash.request(&1, with_transactions?), json_rpc_named_arguments)
   end
 
   @doc """
