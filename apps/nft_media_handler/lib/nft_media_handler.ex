@@ -12,8 +12,6 @@ defmodule NFTMediaHandler do
   alias NFTMediaHandler.R2.Uploader
   alias Vix.Vips.Image, as: VipsImage
 
-  @ipfs_protocol "ipfs://"
-
   @doc """
   Prepares and uploads media by its URL.
 
@@ -173,27 +171,41 @@ defmodule NFTMediaHandler do
     end
   end
 
-  defp maybe_process_ipfs("#{@ipfs_protocol}ipfs/" <> right) do
-    {TokenMetadataRetriever.ipfs_link(right), TokenMetadataRetriever.ipfs_headers()}
-  end
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp maybe_process_ipfs(uri) do
+    case URI.parse(uri) do
+      %URI{scheme: "ipfs", host: host, path: path} ->
+        resource_id =
+          with "ipfs" <- host,
+               "/" <> resource_id <- path do
+            resource_id
+          else
+            _ ->
+              if is_nil(path), do: host, else: host <> path
+          end
 
-  defp maybe_process_ipfs("ipfs/" <> right) do
-    {TokenMetadataRetriever.ipfs_link(right), TokenMetadataRetriever.ipfs_headers()}
-  end
+        {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
 
-  defp maybe_process_ipfs(@ipfs_protocol <> right) do
-    {TokenMetadataRetriever.ipfs_link(right), TokenMetadataRetriever.ipfs_headers()}
-  end
+      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
+        {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
 
-  defp maybe_process_ipfs("Qm" <> _ = result) do
-    if String.length(result) == 46 do
-      {TokenMetadataRetriever.ipfs_link(result), TokenMetadataRetriever.ipfs_headers()}
-    else
-      {result, []}
+      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
+        {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
+
+      %URI{scheme: scheme} when not is_nil(scheme) ->
+        {uri, []}
+
+      %URI{path: path} ->
+        case path do
+          "Qm" <> <<_::binary-size(44)>> = resource_id ->
+            {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
+
+          "bafybe" <> _ = resource_id ->
+            {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
+
+          _ ->
+            {uri, []}
+        end
     end
-  end
-
-  defp maybe_process_ipfs(url) do
-    {url, []}
   end
 end

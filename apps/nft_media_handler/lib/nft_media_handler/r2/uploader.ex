@@ -2,6 +2,7 @@ defmodule NFTMediaHandler.R2.Uploader do
   @moduledoc """
   Uploads an image to R2/S3
   """
+  alias ExAws.S3
 
   @doc """
   Uploads an image to the specified destination.
@@ -23,7 +24,7 @@ defmodule NFTMediaHandler.R2.Uploader do
     file_path = Path.join(r2_folder, file_name)
 
     r2_config[:bucket_name]
-    |> ExAws.S3.put_object(file_path, file_binary)
+    |> S3.put_object(file_path, file_binary)
     |> ExAws.request()
   end
 end
