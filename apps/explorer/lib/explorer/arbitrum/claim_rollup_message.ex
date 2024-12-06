@@ -215,7 +215,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # - `{:error, :internal_error}` if the message status is unknown
   @spec claim_message(Explorer.Chain.Arbitrum.Message.t()) ::
           {:ok, list({:contract_address, binary()} | {:calldata, binary()})}
-          | {:error, term()}
+          | {:error, :initiated | :sent | :relayed | :internal_error}
   defp claim_message(message) do
     # request associated log from the database
     case message.originating_transaction_hash
@@ -286,7 +286,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
     if fields.message_id == message.message_id do
       # extract token withdrawal info from the associated event's data
-      token = decode_withdraw_token_data(fields.data)
+      token = decode_token_withdrawal_data(fields.data)
 
       data_hex =
         fields.data
@@ -352,7 +352,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
     status = get_actual_message_status(fields.message_id)
 
-    token = decode_withdraw_token_data(fields.data)
+    token = decode_token_withdrawal_data(fields.data)
 
     data_hex =
       fields.data
@@ -453,14 +453,14 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # - `nil` if data is void or doesn't match finalizeInboundTransfer method (which
   #   happens when the L2->L1 message is for arbitrary data transfer, such as a remote
   #   call of a smart contract on L1)
-  @spec decode_withdraw_token_data(binary()) ::
+  @spec decode_token_withdrawal_data(binary()) ::
           %{
             address: Explorer.Chain.Hash.Address.t(),
             destination: Explorer.Chain.Hash.Address.t(),
             amount: non_neg_integer()
           }
           | nil
-  defp decode_withdraw_token_data(<<0x2E567B36::32, rest_data::binary>>) do
+  defp decode_token_withdrawal_data(<<0x2E567B36::32, rest_data::binary>>) do
     [token, _, to, amount, _] = ABI.decode(@finalize_inbound_transfer_selector, rest_data)
 
     token_bin =
@@ -482,7 +482,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     }
   end
 
-  defp decode_withdraw_token_data(_binary) do
+  defp decode_token_withdrawal_data(_binary) do
     nil
   end
 
