@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.7.2",
+      version: "6.9.2",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
@@ -87,7 +87,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:bypass, "~> 2.1", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 3.0"},
-      {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 2.0.0"},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
@@ -97,6 +96,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_cldr, "~> 2.38"},
       {:ex_cldr_numbers, "~> 2.33"},
       {:ex_cldr_units, "~> 3.17"},
+      {:ex_keccak, "~> 0.7.5"},
       {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       {:explorer, in_umbrella: true},
@@ -105,7 +105,7 @@ defmodule BlockScoutWeb.Mixfile do
       # HTML CSS selectors for Phoenix controller tests
       {:floki, "~> 0.31"},
       {:flow, "~> 1.2"},
-      {:gettext, "~> 0.24.0"},
+      {:gettext, "~> 0.26.1"},
       {:hammer, "~> 6.0"},
       {:httpoison, "~> 2.0"},
       {:indexer, in_umbrella: true, runtime: false},
@@ -152,10 +152,10 @@ defmodule BlockScoutWeb.Mixfile do
       {:timex, "~> 3.7.1"},
       {:wallaby, "~> 0.30", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
-      {:websocket_client, git: "https://github.com/blockscout/websocket_client.git", branch: "master", override: true},
       {:ex_json_schema, "~> 0.10.1"},
       {:ueberauth, "~> 0.7"},
       {:ueberauth_auth0, "~> 2.0"},
+      {:utils, in_umbrella: true},
       {:bureaucrat, "~> 0.2.9", only: :test},
       {:logger_json, "~> 5.1"}
     ]

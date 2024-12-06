@@ -10,6 +10,8 @@ Runs Blockscout locally in Docker containers with [docker-compose](https://githu
 
 ## Building Docker containers from source
 
+**Note**: in all below examples, you can use `docker compose` instead of `docker-compose`, if compose v2 plugin is installed in Docker.
+
 ```bash
 cd ./docker-compose
 docker-compose up --build
@@ -38,14 +40,12 @@ and 5 containers for microservices (written in Rust):
 
 The repo contains built-in configs for different JSON RPC clients without need to build the image.
 
-**Note**: in all below examples, you can use `docker compose` instead of `docker-compose`, if compose v2 plugin is installed in Docker.
-
 | __JSON RPC Client__    | __Docker compose launch command__ |
 | -------- | ------- |
 | Erigon  | `docker-compose -f erigon.yml up -d`    |
 | Geth (suitable for Reth as well) | `docker-compose -f geth.yml up -d`     |
 | Geth Clique    | `docker-compose -f geth-clique-consensus.yml up -d`    |
-| Nethermind, OpenEthereum    | `docker-compose -f nethermind up -d`    |
+| Nethermind, OpenEthereum    | `docker-compose -f nethermind.yml up -d`    |
 | Ganache    | `docker-compose -f ganache.yml up -d`    |
 | HardHat network    | `docker-compose -f hardhat-network.yml up -d`    |
 
@@ -53,6 +53,7 @@ The repo contains built-in configs for different JSON RPC clients without need t
 - Running explorer with external backend: `docker-compose -f external-backend.yml up -d`
 - Running explorer with external frontend: `docker-compose -f external-frontend.yml up -d`
 - Running all microservices: `docker-compose -f microservices.yml up -d`
+- Running only explorer without microservices: `docker-compose -f no-services.yml up -d`
 
 All of the configs assume the Ethereum JSON RPC is running at http://localhost:8545.
 

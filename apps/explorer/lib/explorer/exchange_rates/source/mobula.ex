@@ -81,6 +81,12 @@ defmodule Explorer.ExchangeRates.Source.Mobula do
     "#{base_url()}/market/data&asset=#{symbol}"
   end
 
+  @impl Source
+  def secondary_source_url do
+    id = config(:secondary_coin_id)
+    if id, do: "#{base_url()}/market/data?asset=#{id}", else: nil
+  end
+
   @spec secondary_history_source_url() :: String.t()
   def secondary_history_source_url do
     id = config(:secondary_coin_id)

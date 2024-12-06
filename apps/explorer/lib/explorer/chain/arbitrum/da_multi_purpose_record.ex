@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Arbitrum.DaMultiPurposeRecord do
   @allowed_attrs @optional_attrs ++ @required_attrs
 
   @typedoc """
-  Descriptor of the a multi purpose record related to Data Availability for Arbitrum rollups:
+  Descriptor of the multi purpose record related to Data Availability for Arbitrum rollups:
     * `data_key` - The hash of the data key.
     * `data_type` - The type of the data.
     * `data` - The data
@@ -84,22 +84,23 @@ defmodule Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper do
 
     ## Parameters
     - `height`: The height of the block in the Celestia network.
-    - `tx_commitment`: The transaction commitment.
+    - `transaction_commitment`: The transaction commitment.
 
     ## Returns
     - A binary representing the calculated data key for the record containing
       Celestia blob data.
   """
   @spec calculate_celestia_data_key(binary() | non_neg_integer(), binary() | Explorer.Chain.Hash.t()) :: binary()
-  def calculate_celestia_data_key(height, tx_commitment) when is_binary(height) do
-    calculate_celestia_data_key(String.to_integer(height), tx_commitment)
+  def calculate_celestia_data_key(height, transaction_commitment) when is_binary(height) do
+    calculate_celestia_data_key(String.to_integer(height), transaction_commitment)
   end
 
-  def calculate_celestia_data_key(height, %Hash{} = tx_commitment) when is_integer(height) do
-    calculate_celestia_data_key(height, tx_commitment.bytes)
+  def calculate_celestia_data_key(height, %Hash{} = transaction_commitment) when is_integer(height) do
+    calculate_celestia_data_key(height, transaction_commitment.bytes)
   end
 
-  def calculate_celestia_data_key(height, tx_commitment) when is_integer(height) and is_binary(tx_commitment) do
-    :crypto.hash(:sha256, :binary.encode_unsigned(height) <> tx_commitment)
+  def calculate_celestia_data_key(height, transaction_commitment)
+      when is_integer(height) and is_binary(transaction_commitment) do
+    :crypto.hash(:sha256, :binary.encode_unsigned(height) <> transaction_commitment)
   end
 end

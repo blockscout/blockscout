@@ -139,23 +139,23 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
     end
 
     test "combine_proxy_implementation_abi/2 returns [] abi for unverified proxy" do
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       proxy_contract_address = insert(:contract_address)
 
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [], contract_code_md5: "123")
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
       assert Proxy.combine_proxy_implementation_abi(smart_contract) == []
     end
 
     test "combine_proxy_implementation_abi/2 returns proxy abi if implementation is not verified" do
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       proxy_contract_address = insert(:contract_address)
 
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
 
       assert Proxy.combine_proxy_implementation_abi(smart_contract) == @proxy_abi
     end
@@ -163,38 +163,27 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
     test "combine_proxy_implementation_abi/2 returns proxy + implementation abi if implementation is verified" do
       proxy_contract_address = insert(:contract_address)
 
-      smart_contract =
+      proxy_smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
       implementation_contract_address = insert(:contract_address)
 
-      insert(:smart_contract,
-        address_hash: implementation_contract_address.hash,
-        abi: @implementation_abi,
-        contract_code_md5: "123"
+      implementation_smart_contract =
+        insert(:smart_contract,
+          address_hash: implementation_contract_address.hash,
+          abi: @implementation_abi,
+          contract_code_md5: "123",
+          name: "impl"
+        )
+
+      insert(:proxy_implementation,
+        proxy_address_hash: proxy_contract_address.hash,
+        proxy_type: "eip1167",
+        address_hashes: [implementation_contract_address.hash],
+        names: [implementation_smart_contract.name]
       )
 
-      implementation_contract_address_hash_string =
-        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
-             }
-           ]}
-        end
-      )
-
-      combined_abi = Proxy.combine_proxy_implementation_abi(smart_contract)
+      combined_abi = Proxy.combine_proxy_implementation_abi(proxy_smart_contract)
 
       assert Enum.any?(@proxy_abi, fn el -> el == Enum.at(@implementation_abi, 0) end) == false
       assert Enum.any?(@proxy_abi, fn el -> el == Enum.at(@implementation_abi, 1) end) == false
@@ -210,17 +199,6 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
                []
              ) ==
                []
-    end
-
-    test "get_implementation_abi_from_proxy/2 returns [] abi for unverified proxy" do
-      proxy_contract_address = insert(:contract_address)
-
-      smart_contract =
-        insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: [], contract_code_md5: "123")
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
-      assert Proxy.combine_proxy_implementation_abi(smart_contract) == []
     end
 
     test "get_implementation_abi_from_proxy/2 returns [] if implementation is not verified" do
@@ -489,6 +467,13 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
 
     assert Proxy.proxy_contract?(smart_contract)
     verify!(EthereumJSONRPC.Mox)
+
+    proxy =
+      :explorer
+      |> Application.get_env(:proxy)
+      |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+
+    Application.put_env(:explorer, :proxy, proxy)
   end
 
   defp eip_1967_beacon_proxy_mock_requests(

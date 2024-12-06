@@ -18,6 +18,7 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Block.Catchup, as: BlockCatchup
   alias Indexer.Block.Realtime, as: BlockRealtime
+  alias Indexer.Fetcher.Blackfort.Validator, as: ValidatorBlackfort
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
@@ -46,6 +47,7 @@ defmodule Indexer.Supervisor do
     Withdrawal
   }
 
+  alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Arbitrum.RollupMessagesCatchup, as: ArbitrumRollupMessagesCatchup
   alias Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses, as: ArbitrumTrackingBatchesStatuses
   alias Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1, as: ArbitrumTrackingMessagesOnL1
@@ -143,7 +145,7 @@ defmodule Indexer.Supervisor do
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
         {Indexer.Fetcher.RollupL1ReorgMonitor.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(
-          Indexer.Fetcher.Optimism.TxnBatch.Supervisor,
+          Indexer.Fetcher.Optimism.TransactionBatch.Supervisor,
           [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
         ),
         configure(Indexer.Fetcher.Optimism.OutputRoot.Supervisor, [[memory_monitor: memory_monitor]]),
@@ -166,6 +168,22 @@ defmodule Indexer.Supervisor do
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
         configure(Indexer.Fetcher.Shibarium.L1.Supervisor, [[memory_monitor: memory_monitor]]),
+        {Indexer.Fetcher.Scroll.BridgeL1.Supervisor,
+         [
+           [memory_monitor: memory_monitor]
+         ]},
+        {Indexer.Fetcher.Scroll.BridgeL2.Supervisor,
+         [
+           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+         ]},
+        {Indexer.Fetcher.Scroll.L1FeeParam.Supervisor,
+         [
+           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+         ]},
+        {Indexer.Fetcher.Scroll.Batch.Supervisor,
+         [
+           [memory_monitor: memory_monitor]
+         ]},
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, [
@@ -188,6 +206,16 @@ defmodule Indexer.Supervisor do
         ]),
         configure(ArbitrumRollupMessagesCatchup.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        {ArbitrumMessagesToL2Matcher.Supervisor, [[memory_monitor: memory_monitor]]},
+        configure(Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(Indexer.Fetcher.Filecoin.AddressInfo.Supervisor, [
+          [memory_monitor: memory_monitor]
         ]),
         {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},
 
@@ -276,12 +304,16 @@ defmodule Indexer.Supervisor do
       :stability ->
         [{ValidatorStability, []} | fetchers]
 
+      :blackfort ->
+        [{ValidatorBlackfort, []} | fetchers]
+
       _ ->
         fetchers
     end
   end
 
   defp configure(process, opts) do
+    # todo: shouldn't we pay attention to process.disabled?() predicate?
     if Application.get_env(:indexer, process)[:enabled] do
       [{process, opts}]
     else

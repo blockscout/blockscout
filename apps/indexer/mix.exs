@@ -14,13 +14,13 @@ defmodule Indexer.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "6.7.2",
+      version: "6.9.2",
       xref: [
         exclude: [
           Explorer.Chain.Optimism.Deposit,
           Explorer.Chain.Optimism.FrameSequence,
           Explorer.Chain.Optimism.OutputRoot,
-          Explorer.Chain.Optimism.TxnBatch,
+          Explorer.Chain.Optimism.TransactionBatch,
           Explorer.Chain.Optimism.Withdrawal,
           Explorer.Chain.Optimism.WithdrawalEvent
         ]
@@ -31,7 +31,7 @@ defmodule Indexer.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :os_mon],
       mod: {Indexer.Application, []}
     ]
   end
@@ -53,6 +53,7 @@ defmodule Indexer.MixProject do
       {:ethereum_jsonrpc, in_umbrella: true},
       # Brotli compression/decompression
       {:brotli, "~> 0.3.2"},
+      {:ex_keccak, "~> 0.7.5"},
       # RLP encoding
       {:ex_rlp, "~> 0.6.0"},
       # Importing to database
@@ -69,7 +70,8 @@ defmodule Indexer.MixProject do
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 1.0"},
       {:logger_json, "~> 5.1"},
-      {:varint, "~> 1.4"}
+      {:varint, "~> 1.4"},
+      {:utils, in_umbrella: true}
     ]
   end
 

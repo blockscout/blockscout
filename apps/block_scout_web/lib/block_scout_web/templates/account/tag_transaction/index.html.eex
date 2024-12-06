@@ -8,7 +8,7 @@
           <br>
           <div class="col-sm">
             <div class="mb-3 row o-flow-x">
-              <%= if @tx_tags == [] do %>
+              <%= if @transaction_tags == [] do %>
               <div style="min-width: 100%;">
                 <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
                   <%= gettext "You don't have transaction tags yet" %>
@@ -25,15 +25,15 @@
                     </tr>
                   </thead>
                   <tbody style="font-size: 15px; color: #6c757d" >
-                    <%= Enum.map(@tx_tags, fn at ->
-                      render("row.html", tx_tag: at, conn: @conn)
+                    <%= Enum.map(@transaction_tags, fn at ->
+                      render("row.html", transaction_tag: at, conn: @conn)
                       end) %>
                   </tbody>
                 </table>
               <% end %>
             </div>
           </div>
-          <%= if Enum.count(@tx_tags) < TagTransaction.get_max_tags_count() do %>
+          <%= if Enum.count(@transaction_tags) < TagTransaction.get_max_tags_count() do %>
             <a class="add-transaction-tag-button button button-primary button-sm" href="<%= tag_transaction_path(@conn, :new) %>"><%= gettext "Add transaction tag" %></a>
           <% end %>
         </div>

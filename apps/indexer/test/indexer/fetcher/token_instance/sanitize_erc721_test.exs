@@ -10,14 +10,14 @@ defmodule Indexer.Fetcher.TokenInstance.SanitizeERC721Test do
       for x <- 0..3 do
         erc_721_token = insert(:token, type: "ERC-721")
 
-        tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+        transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
         address = insert(:address)
 
         insert(:token_transfer,
-          transaction: tx,
-          block: tx.block,
-          block_number: tx.block_number,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
           from_address: address,
           token_contract_address: erc_721_token.contract_address,
           token_ids: [x]

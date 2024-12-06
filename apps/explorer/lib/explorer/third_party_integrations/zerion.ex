@@ -3,6 +3,8 @@ defmodule Explorer.ThirdPartyIntegrations.Zerion do
   Module for Zerion API integration https://developers.zerion.io/reference
   """
 
+  require Logger
+
   alias Explorer.Helper
   alias Explorer.Utility.Microservice
 
@@ -11,7 +13,7 @@ defmodule Explorer.ThirdPartyIntegrations.Zerion do
   @doc """
   Proxy request to Zerion API endpoints
   """
-  @spec api_request(String.t(), Plug.Conn.t(), :get | :post_transactions) :: {any(), integer()}
+  @spec api_request(String.t(), Plug.Conn.t(), atom()) :: {any(), integer()}
   def api_request(url, conn, method \\ :get)
 
   def api_request(url, _conn, :get) do
@@ -22,13 +24,17 @@ defmodule Explorer.ThirdPartyIntegrations.Zerion do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {Helper.decode_json(body), status}
 
-      _ ->
+      {:error, reason} ->
+        Logger.error(fn ->
+          ["Error while requesting Zerion API endpoint #{url}. The reason is: ", inspect(reason)]
+        end)
+
         {nil, 500}
     end
   end
 
   @doc """
-  Zerion /wallets/{accountAddress}/portfolio endpoint
+  Zerion /wallets/:address_hash/portfolio endpoint
   """
   @spec wallet_portfolio_url(String.t()) :: String.t()
   def wallet_portfolio_url(address_hash_string) do

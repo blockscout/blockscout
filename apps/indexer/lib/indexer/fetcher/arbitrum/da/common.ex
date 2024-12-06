@@ -124,8 +124,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
         {:error, nil, nil}
 
       128 ->
-        log_error("DAS messages are not supported.")
-        {:error, nil, nil}
+        Anytrust.parse_batch_accompanying_data(batch_number, rest)
 
       136 ->
         Anytrust.parse_batch_accompanying_data(batch_number, rest)

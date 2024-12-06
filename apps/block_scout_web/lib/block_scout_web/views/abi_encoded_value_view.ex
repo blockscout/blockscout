@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   use BlockScoutWeb, :view
 
   alias ABI.FunctionSelector
+  alias Explorer.Chain.{Address, Hash}
   alias Phoenix.HTML
 
   require Logger
@@ -196,7 +197,10 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   end
 
   defp base_value_json(:address, value) do
-    hex_for_json(value)
+    case Hash.Address.cast(value) do
+      {:ok, address} -> Address.checksum(address)
+      :error -> "0x"
+    end
   end
 
   defp base_value_json(:bytes, value) do

@@ -3,6 +3,8 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   Module for Noves.Fi API integration https://blockscout.noves.fi/swagger/index.html
   """
 
+  require Logger
+
   alias Explorer.Helper
   alias Explorer.Utility.Microservice
 
@@ -33,7 +35,11 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {Helper.decode_json(body), status}
 
-      _ ->
+      {:error, reason} ->
+        Logger.error(fn ->
+          ["Error while requesting Noves.Fi API endpoint #{url}. The reason is: ", inspect(reason)]
+        end)
+
         {nil, 500}
     end
   end
@@ -47,33 +53,37 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {Helper.decode_json(body), status}
 
-      _ ->
+      {:error, reason} ->
+        Logger.error(fn ->
+          ["Error while requesting Noves.Fi API endpoint #{url}. The reason is: ", inspect(reason)]
+        end)
+
         {nil, 500}
     end
   end
 
   @doc """
-  Noves.fi /evm/{chain}/tx/{txHash} endpoint
+  Noves.fi /evm/:chain/tx/:transaction_hash endpoint
   """
-  @spec tx_url(String.t()) :: String.t()
-  def tx_url(transaction_hash_string) do
+  @spec transaction_url(String.t()) :: String.t()
+  def transaction_url(transaction_hash_string) do
     "#{base_url()}/evm/#{chain_name()}/tx/#{transaction_hash_string}"
   end
 
   @doc """
-  Noves.fi /evm/{chain}/describeTxs endpoint
+  Noves.fi /evm/:chain/describeTxs endpoint
   """
-  @spec describe_txs_url() :: String.t()
-  def describe_txs_url do
+  @spec describe_transactions_url() :: String.t()
+  def describe_transactions_url do
     "#{base_url()}/evm/#{chain_name()}/describeTxs"
   end
 
   @doc """
-  Noves.fi /evm/{chain}/txs/{accountAddress} endpoint
+  Noves.fi /evm/:chain/transactions/:address_hash endpoint
   """
-  @spec address_txs_url(String.t()) :: String.t()
-  def address_txs_url(address_hash_string) do
-    "#{base_url()}/evm/#{chain_name()}/txs/#{address_hash_string}"
+  @spec address_transactions_url(String.t()) :: String.t()
+  def address_transactions_url(address_hash_string) do
+    "#{base_url()}/evm/#{chain_name()}/transactions/#{address_hash_string}"
   end
 
   defp base_url do

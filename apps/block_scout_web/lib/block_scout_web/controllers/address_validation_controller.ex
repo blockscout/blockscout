@@ -91,9 +91,6 @@ defmodule BlockScoutWeb.AddressValidationController do
 
       :error ->
         unprocessable_entity(conn)
-
-      {:error, :not_found} ->
-        not_found(conn)
     end
   end
 end

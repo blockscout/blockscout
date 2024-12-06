@@ -1,6 +1,6 @@
 <section class="container">
 
-  <% is_proxy = BlockScoutWeb.AddressView.smart_contract_is_proxy?(@address) %>
+  <% is_proxy = SmartContractHelper.address_is_proxy?(@address) %>
 
   <%= render BlockScoutWeb.AddressView, "overview.html", address: @address, is_proxy: is_proxy, conn: @conn, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status, counters_path: @counters_path, tags: @tags %>
 
@@ -9,17 +9,17 @@
       <%= render BlockScoutWeb.AddressView, "_tabs.html", address: @address, is_proxy: is_proxy, conn: @conn %>
       <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
         <div class="clearfix">
-        
+
           <h2 class="card-title float-left"><%= gettext "Withdrawals" %></h2>
           <div class="top-pagination-outer-container float-right">
             <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
           </div>
         </div>
-        
+
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
         </button>
-        
+
         <div class="addresses-table-container">
           <div class="stakes-table-container">
             <table>
@@ -54,7 +54,7 @@
             <%= gettext "There are no withdrawals for this address." %>
           </div>
         </div>
-        
+
         <div class="top-pagination-outer-container float-right">
             <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
         </div>

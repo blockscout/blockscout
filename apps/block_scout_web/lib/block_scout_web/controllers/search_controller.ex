@@ -7,6 +7,18 @@ defmodule BlockScoutWeb.SearchController do
   alias Explorer.Chain.Search
   alias Phoenix.View
 
+  @min_query_length 3
+
+  def search_results(conn, %{"q" => query, "type" => "JSON"}) when byte_size(query) < @min_query_length do
+    json(
+      conn,
+      %{
+        items: [],
+        next_page_path: nil
+      }
+    )
+  end
+
   def search_results(conn, %{"q" => query, "type" => "JSON"} = params) do
     [paging_options: paging_options] = paging_options(params)
     offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size

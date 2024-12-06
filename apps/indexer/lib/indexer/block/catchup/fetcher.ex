@@ -11,13 +11,15 @@ defmodule Indexer.Block.Catchup.Fetcher do
     only: [
       async_import_blobs: 2,
       async_import_block_rewards: 2,
+      async_import_celo_epoch_block_operations: 2,
       async_import_coin_balances: 2,
       async_import_created_contract_codes: 2,
+      async_import_filecoin_addresses_info: 2,
       async_import_internal_transactions: 2,
       async_import_replaced_transactions: 2,
-      async_import_tokens: 2,
       async_import_token_balances: 2,
       async_import_token_instances: 1,
+      async_import_tokens: 2,
       async_import_uncles: 2,
       fetch_and_import_range: 2
     ]
@@ -56,8 +58,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
         }
 
       missing_ranges ->
-        first.._ = List.first(missing_ranges)
-        _..last = List.last(missing_ranges)
+        first.._//_ = List.first(missing_ranges)
+        _..last//_ = List.last(missing_ranges)
 
         Logger.metadata(first_block_number: first, last_block_number: last)
 
@@ -139,6 +141,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_replaced_transactions(imported, realtime?)
     async_import_token_instances(imported)
     async_import_blobs(imported, realtime?)
+    async_import_celo_epoch_block_operations(imported, realtime?)
+    async_import_filecoin_addresses_info(imported, realtime?)
   end
 
   defp stream_fetch_and_import(state, ranges) do
@@ -161,7 +165,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
             )
   defp fetch_and_import_missing_range(
          %__MODULE__{block_fetcher: %Block.Fetcher{} = block_fetcher},
-         first..last = range
+         first..last//_ = range
        ) do
     Logger.metadata(fetcher: :block_catchup, first_block_number: first, last_block_number: last)
     Process.flag(:trap_exit, true)
@@ -172,8 +176,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     case result do
       {:ok, %{inserted: inserted, errors: errors}} ->
-        handle_null_rounds(errors)
-        clear_missing_ranges(range, errors)
+        valid_errors = handle_null_rounds(errors)
+        clear_missing_ranges(range, valid_errors)
 
         {:ok, inserted: inserted}
 
@@ -266,7 +270,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
         number, nil ->
           {:cont, number..number}
 
-        number, first..last when number == last - 1 ->
+        number, first..last//_ when number == last - 1 ->
           {:cont, first..number}
 
         number, range ->

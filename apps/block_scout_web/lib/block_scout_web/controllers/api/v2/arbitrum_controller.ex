@@ -81,7 +81,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/batches/da/:data_hash` or
-    `/api/v2/arbitrum/batches/da/:tx_commitment/:height` endpoints.
+    `/api/v2/arbitrum/batches/da/:transaction_commitment/:height` endpoints.
   """
   @spec batch_by_data_availability_info(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch_by_data_availability_info(conn, %{"data_hash" => data_hash} = _params) do
@@ -95,10 +95,13 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     end
   end
 
-  def batch_by_data_availability_info(conn, %{"tx_commitment" => tx_commitment, "height" => height} = _params) do
+  def batch_by_data_availability_info(
+        conn,
+        %{"transaction_commitment" => transaction_commitment, "height" => height} = _params
+      ) do
     # In case of Celestia, `data_key` is the hash of the height and the commitment hash
-    with {:ok, :hash, tx_commitment_hash} <- parse_block_hash_or_number_param(tx_commitment),
-         key <- calculate_celestia_data_key(height, tx_commitment_hash) do
+    with {:ok, :hash, transaction_commitment_hash} <- parse_block_hash_or_number_param(transaction_commitment),
+         key <- calculate_celestia_data_key(height, transaction_commitment_hash) do
       case Reader.get_da_record_by_data_key(key, api?: true) do
         {:ok, {batch_number, _}} ->
           batch(conn, %{"batch_number" => batch_number})

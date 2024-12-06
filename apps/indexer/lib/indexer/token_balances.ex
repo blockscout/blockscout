@@ -8,9 +8,7 @@ defmodule Indexer.TokenBalances do
   require Indexer.Tracer
   require Logger
 
-  alias Explorer.Chain
   alias Explorer.Token.BalanceReader
-  alias Indexer.Fetcher.TokenBalance
   alias Indexer.Tracer
 
   @nft_balance_function_abi [
@@ -85,7 +83,7 @@ defmodule Indexer.TokenBalances do
     requested_token_balances
     |> handle_killed_tasks(token_balances)
     |> unfetched_token_balances(fetched_token_balances)
-    |> schedule_token_balances
+    |> log_fetching_errors()
 
     failed_token_balances =
       requested_token_balances
@@ -119,27 +117,6 @@ defmodule Indexer.TokenBalances do
     Map.merge(token_balance, %{value: nil, value_fetched_at: nil, error: error_message})
   end
 
-  defp schedule_token_balances([]), do: nil
-
-  defp schedule_token_balances(unfetched_token_balances) do
-    Logger.debug(fn -> "#{Enum.count(unfetched_token_balances)} token balances will be retried" end)
-
-    log_fetching_errors(unfetched_token_balances)
-
-    unfetched_token_balances
-    |> Enum.map(fn token_balance ->
-      {:ok, address_hash} = Chain.string_to_address_hash(token_balance.address_hash)
-      {:ok, token_hash} = Chain.string_to_address_hash(token_balance.token_contract_address_hash)
-
-      Map.merge(token_balance, %{
-        address_hash: address_hash,
-        token_contract_address_hash: token_hash,
-        block_number: token_balance.block_number
-      })
-    end)
-    |> TokenBalance.async_fetch(false)
-  end
-
   defp ignore_request_with_errors(%{value: nil, value_fetched_at: nil, error: _error}), do: false
   defp ignore_request_with_errors(_token_balance), do: true
 
@@ -161,7 +138,7 @@ defmodule Indexer.TokenBalances do
       end)
 
     if Enum.any?(error_messages) do
-      Logger.debug(
+      Logger.error(
         [
           "Errors while fetching TokenBalances through Contract interaction: \n",
           error_messages

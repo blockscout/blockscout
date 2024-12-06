@@ -17,7 +17,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
   @impl Historian
   def compile_records(num_days, records \\ []) do
-    Logger.info("tx/per day chart: collect records for txs per day stats")
+    Logger.info("tx/per day chart: collect records for transactions per day stats")
 
     if num_days == 1 do
       Logger.info("tx/per day chart: records collected #{inspect(records)}")
@@ -38,7 +38,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       from_api = false
 
       with {:ok, min_block} <- Chain.timestamp_to_block_number(earliest, :after, from_api),
-           {:ok, max_block} <- Chain.timestamp_to_block_number(latest, :after, from_api) do
+           {:ok, max_block} <- Chain.timestamp_to_block_number(latest, :before, from_api) do
         record =
           min_block
           |> compile_records_in_range(max_block)

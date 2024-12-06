@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.TransactionStateView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Address, Wei}
 
   import Explorer.Chain.Transaction.StateChange, only: [from_loss: 1, has_diff?: 1, to_profit: 1]
 
@@ -22,8 +22,8 @@ defmodule BlockScoutWeb.TransactionStateView do
     Decimal.abs(val)
   end
 
-  def has_state_changes?(tx) do
-    has_diff?(from_loss(tx)) or has_diff?(to_profit(tx))
+  def has_state_changes?(transaction) do
+    has_diff?(from_loss(transaction)) or has_diff?(to_profit(transaction))
   end
 
   def display_value(balance, :coin, _token_id) do

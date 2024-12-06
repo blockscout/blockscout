@@ -9,7 +9,13 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
 
   @suave_bid_event "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e"
 
-  def extend_transaction_json_response(%Transaction{} = transaction, out_json, single_tx?, conn, watchlist_names) do
+  def extend_transaction_json_response(
+        %Transaction{} = transaction,
+        out_json,
+        single_transaction?,
+        conn,
+        watchlist_names
+      ) do
     if is_nil(Map.get(transaction, :execution_node_hash)) do
       out_json
     else
@@ -27,8 +33,8 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
       wrapped_max_fee_per_gas = Map.get(transaction, :wrapped_max_fee_per_gas)
       wrapped_value = Map.get(transaction, :wrapped_value)
 
-      {[wrapped_decoded_input], _, _} =
-        TransactionView.decode_transactions(
+      [wrapped_decoded_input] =
+        Transaction.decode_transactions(
           [
             %Transaction{
               to_address: wrapped_to_address,
@@ -36,7 +42,8 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
               hash: wrapped_hash
             }
           ],
-          false
+          false,
+          api?: true
         )
 
       out_json
@@ -47,7 +54,7 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
           conn,
           execution_node,
           execution_node_hash,
-          single_tx?,
+          single_transaction?,
           watchlist_names
         )
       )
@@ -59,7 +66,7 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
             conn,
             wrapped_to_address,
             wrapped_to_address_hash,
-            single_tx?,
+            single_transaction?,
             watchlist_names
           ),
         "gas_limit" => wrapped_gas,
@@ -76,7 +83,7 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
         "value" => wrapped_value,
         "hash" => wrapped_hash,
         "method" =>
-          TransactionView.method_name(
+          Transaction.method_name(
             %Transaction{to_address: wrapped_to_address, input: wrapped_input},
             wrapped_decoded_input
           ),

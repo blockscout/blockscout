@@ -239,19 +239,24 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     end
   end
 
-  def prepare_request(_token_type, contract_address_hash_string, token_id, _retry) do
-    %{
+  def prepare_request(_token_type, contract_address_hash_string, token_id, from_base_uri?) do
+    request = %{
       contract_address: contract_address_hash_string,
-      method_id: @uri,
-      args: [token_id],
       block_number: nil
     }
+
+    if from_base_uri? do
+      request |> Map.put(:method_id, @base_uri) |> Map.put(:args, [])
+    else
+      request |> Map.put(:method_id, @uri) |> Map.put(:args, [token_id])
+    end
   end
 
-  def normalize_token_id("ERC-721", _token_id), do: nil
-
-  def normalize_token_id(_token_type, token_id),
+  @spec normalize_token_id(binary(), integer()) :: nil | binary()
+  defp normalize_token_id("ERC-1155", token_id),
     do: token_id |> Integer.to_string(16) |> String.downcase() |> String.pad_leading(64, "0")
+
+  defp normalize_token_id(_token_type, _token_id), do: nil
 
   defp result_to_insert_params({:ok, %{metadata: metadata}}, token_contract_address_hash, token_id) do
     %{

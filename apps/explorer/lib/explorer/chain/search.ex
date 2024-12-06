@@ -83,10 +83,12 @@ defmodule Explorer.Chain.Search do
   end
 
   def base_joint_query(string, term) do
-    tokens_query = search_token_query(string, term)
-    contracts_query = search_contract_query(term)
+    tokens_query =
+      string |> search_token_query(term) |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+
+    contracts_query = term |> search_contract_query() |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
     labels_query = search_label_query(term)
-    address_query = search_address_query(string)
+    address_query = string |> search_address_query() |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
     block_query = search_block_query(string)
 
     basic_query =
@@ -102,30 +104,30 @@ defmodule Explorer.Chain.Search do
         |> union(^address_query)
 
       valid_full_hash?(string) ->
-        tx_query = search_tx_query(string)
+        transaction_query = search_transaction_query(string)
 
-        tx_block_query =
+        transaction_block_query =
           basic_query
-          |> union(^tx_query)
+          |> union(^transaction_query)
           |> union(^block_query)
 
-        tx_block_op_query =
+        transaction_block_op_query =
           if UserOperation.enabled?() do
             user_operation_query = search_user_operation_query(string)
 
-            tx_block_query
+            transaction_block_query
             |> union(^user_operation_query)
           else
-            tx_block_query
+            transaction_block_query
           end
 
         if Application.get_env(:explorer, :chain_type) == :ethereum do
           blob_query = search_blob_query(string)
 
-          tx_block_op_query
+          transaction_block_op_query
           |> union(^blob_query)
         else
-          tx_block_op_query
+          transaction_block_op_query
         end
 
       block_query ->
@@ -161,6 +163,7 @@ defmodule Explorer.Chain.Search do
         tokens_result =
           search_query
           |> search_token_query(term)
+          |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
           |> order_by([token],
             desc_nulls_last: token.circulating_market_cap,
             desc_nulls_last: token.fiat_value,
@@ -175,6 +178,7 @@ defmodule Explorer.Chain.Search do
         contracts_result =
           term
           |> search_contract_query()
+          |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
           |> order_by([items], asc: items.name, desc: items.inserted_at)
           |> limit(^paging_options.page_size)
           |> select_repo(options).all()
@@ -186,10 +190,10 @@ defmodule Explorer.Chain.Search do
           |> limit(^paging_options.page_size)
           |> select_repo(options).all()
 
-        tx_result =
+        transaction_result =
           if valid_full_hash?(search_query) do
             search_query
-            |> search_tx_query()
+            |> search_transaction_query()
             |> select_repo(options).all()
           else
             []
@@ -216,6 +220,7 @@ defmodule Explorer.Chain.Search do
         address_result =
           if query = search_address_query(search_query) do
             query
+            |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
             |> select_repo(options).all()
           else
             []
@@ -237,7 +242,7 @@ defmodule Explorer.Chain.Search do
             tokens_result,
             contracts_result,
             labels_result,
-            tx_result,
+            transaction_result,
             op_result,
             blob_result,
             address_result,
@@ -405,16 +410,16 @@ defmodule Explorer.Chain.Search do
 
   defp valid_full_hash?(string_input) do
     case Chain.string_to_transaction_hash(string_input) do
-      {:ok, _tx_hash} -> true
+      {:ok, _transaction_hash} -> true
       _ -> false
     end
   end
 
-  defp search_tx_query(term) do
+  defp search_transaction_query(term) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       transaction_search_fields =
         search_fields()
-        |> Map.put(:tx_hash, dynamic([transaction], transaction.hash))
+        |> Map.put(:transaction_hash, dynamic([transaction], transaction.hash))
         |> Map.put(:block_hash, dynamic([transaction], transaction.block_hash))
         |> Map.put(:type, "transaction")
         |> Map.put(:block_number, dynamic([transaction], transaction.block_number))
@@ -428,7 +433,7 @@ defmodule Explorer.Chain.Search do
     else
       transaction_search_fields =
         search_fields()
-        |> Map.put(:tx_hash, dynamic([transaction, _], transaction.hash))
+        |> Map.put(:transaction_hash, dynamic([transaction, _], transaction.hash))
         |> Map.put(:block_hash, dynamic([transaction, _], transaction.block_hash))
         |> Map.put(:type, "transaction")
         |> Map.put(:block_number, dynamic([transaction, _], transaction.block_number))
@@ -508,7 +513,7 @@ defmodule Explorer.Chain.Search do
   defp page_search_results(query, %PagingOptions{key: nil}), do: query
 
   defp page_search_results(query, %PagingOptions{
-         key: {_address_hash, _tx_hash, _block_hash, holder_count, name, inserted_at, item_type}
+         key: {_address_hash, _transaction_hash, _block_hash, holder_count, name, inserted_at, item_type}
        })
        when holder_count in [nil, ""] do
     where(
@@ -523,7 +528,7 @@ defmodule Explorer.Chain.Search do
 
   # credo:disable-for-next-line
   defp page_search_results(query, %PagingOptions{
-         key: {_address_hash, _tx_hash, _block_hash, holder_count, name, inserted_at, item_type}
+         key: {_address_hash, _transaction_hash, _block_hash, holder_count, name, inserted_at, item_type}
        }) do
     where(
       query,
@@ -587,7 +592,7 @@ defmodule Explorer.Chain.Search do
     end
   end
 
-  # For some reasons timestamp for blocks and txs returns as ~N[2023-06-25 19:39:47.339493]
+  # For some reasons timestamp for blocks and transactions returns as ~N[2023-06-25 19:39:47.339493]
   defp format_timestamp(result) do
     if result.timestamp do
       result
@@ -602,6 +607,7 @@ defmodule Explorer.Chain.Search do
       [
         result[:address_hash]
         |> search_address_query()
+        |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
         |> select_repo(options).all()
         |> merge_address_search_result_with_ens_info(result)
       ]
@@ -647,7 +653,7 @@ defmodule Explorer.Chain.Search do
   defp search_fields do
     %{
       address_hash: dynamic([_], type(^nil, :binary)),
-      tx_hash: dynamic([_], type(^nil, :binary)),
+      transaction_hash: dynamic([_], type(^nil, :binary)),
       user_operation_hash: dynamic([_], type(^nil, :binary)),
       blob_hash: dynamic([_], type(^nil, :binary)),
       block_hash: dynamic([_], type(^nil, :binary)),

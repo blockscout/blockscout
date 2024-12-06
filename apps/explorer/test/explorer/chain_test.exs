@@ -280,9 +280,7 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      _log1 = insert(:log, transaction: transaction, index: 1, address: address, block_number: transaction.block_number)
-
-      2..51
+      1..51
       |> Enum.map(fn index ->
         insert(:log,
           block: transaction.block,
@@ -292,7 +290,6 @@ defmodule Explorer.ChainTest do
           block_number: transaction.block_number
         )
       end)
-      |> Enum.map(& &1.index)
 
       paging_options1 = %PagingOptions{page_size: 1}
 
@@ -485,7 +482,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "block_to_gas_used_by_1559_txs/1" do
+  describe "block_to_gas_used_by_1559_transactions/1" do
     test "sum of gas_usd from all transactions including legacy" do
       block = insert(:block, base_fee_per_gas: 4)
 
@@ -507,12 +504,12 @@ defmodule Explorer.ChainTest do
         index: 2
       )
 
-      assert Decimal.new(10) == Chain.block_to_gas_used_by_1559_txs(block.hash)
+      assert Decimal.new(10) == Chain.block_to_gas_used_by_1559_transactions(block.hash)
     end
   end
 
-  describe "block_to_priority_fee_of_1559_txs/1" do
-    test "with transactions: tx.max_fee_per_gas = 0" do
+  describe "block_to_priority_fee_of_1559_transactions/1" do
+    test "with transactions: transaction.max_fee_per_gas = 0" do
       block = insert(:block, base_fee_per_gas: 4)
 
       insert(:transaction,
@@ -525,10 +522,10 @@ defmodule Explorer.ChainTest do
         max_priority_fee_per_gas: 3
       )
 
-      assert Decimal.new(0) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+      assert Decimal.new(0) == Chain.block_to_priority_fee_of_1559_transactions(block.hash)
     end
 
-    test "with transactions: tx.max_fee_per_gas - block.base_fee_per_gas >= tx.max_priority_fee_per_gas" do
+    test "with transactions: transaction.max_fee_per_gas - block.base_fee_per_gas >= transaction.max_priority_fee_per_gas" do
       block = insert(:block, base_fee_per_gas: 1)
 
       insert(:transaction,
@@ -541,10 +538,10 @@ defmodule Explorer.ChainTest do
         max_priority_fee_per_gas: 1
       )
 
-      assert Decimal.new(3) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+      assert Decimal.new(3) == Chain.block_to_priority_fee_of_1559_transactions(block.hash)
     end
 
-    test "with transactions: tx.max_fee_per_gas - block.base_fee_per_gas < tx.max_priority_fee_per_gas" do
+    test "with transactions: transaction.max_fee_per_gas - block.base_fee_per_gas < transaction.max_priority_fee_per_gas" do
       block = insert(:block, base_fee_per_gas: 4)
 
       insert(:transaction,
@@ -557,7 +554,7 @@ defmodule Explorer.ChainTest do
         max_priority_fee_per_gas: 3
       )
 
-      assert Decimal.new(4) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+      assert Decimal.new(4) == Chain.block_to_priority_fee_of_1559_transactions(block.hash)
     end
 
     test "with legacy transactions" do
@@ -572,7 +569,7 @@ defmodule Explorer.ChainTest do
         index: 1
       )
 
-      assert Decimal.new(24) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+      assert Decimal.new(24) == Chain.block_to_priority_fee_of_1559_transactions(block.hash)
     end
 
     test "0 in blockchain with no EIP-1559 implemented" do
@@ -587,7 +584,7 @@ defmodule Explorer.ChainTest do
         index: 1
       )
 
-      assert 0 == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+      assert 0 == Chain.block_to_priority_fee_of_1559_transactions(block.hash)
     end
   end
 
@@ -746,7 +743,7 @@ defmodule Explorer.ChainTest do
       assert Chain.finished_indexing_internal_transactions?()
     end
 
-    test "finished indexing (no txs)" do
+    test "finished indexing (no transactions)" do
       assert Chain.finished_indexing_internal_transactions?()
     end
 
@@ -758,6 +755,13 @@ defmodule Explorer.ChainTest do
       |> with_block(block)
 
       insert(:pending_block_operation, block: block, block_number: block.number)
+
+      configuration = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)
+      Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, configuration)
+      end)
 
       refute Chain.finished_indexing_internal_transactions?()
     end
@@ -1069,9 +1073,12 @@ defmodule Explorer.ChainTest do
     setup do
       Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
       Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
+      configuration = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)
+      Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false)
 
       on_exit(fn ->
         Application.put_env(:indexer, :trace_first_block, 0)
+        Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, configuration)
         Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
       end)
     end
@@ -2599,7 +2606,8 @@ defmodule Explorer.ChainTest do
           :contracts_creation_internal_transaction,
           :contracts_creation_transaction,
           :token,
-          [smart_contract: :smart_contract_additional_sources]
+          [smart_contract: :smart_contract_additional_sources],
+          Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
         ])
 
       options = [
@@ -2611,8 +2619,6 @@ defmodule Explorer.ChainTest do
           :contracts_creation_transaction => :optional
         }
       ]
-
-      TestHelper.get_eip1967_implementation_zero_addresses()
 
       response = Chain.find_contract_address(address.hash, options, true)
 
@@ -3040,7 +3046,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(block)
 
-      insert(:log, address: address, transaction: transaction)
+      insert(:log, address: address, transaction: transaction, block: block, block_number: block.number)
 
       balance = insert(:unfetched_balance, address_hash: address.hash, block_number: block.number)
 
@@ -3230,7 +3236,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(log_block)
 
-      insert(:log, address: miner, transaction: log_transaction)
+      insert(:log, address: miner, transaction: log_transaction, block: log_block, block_number: log_block.number)
       insert(:unfetched_balance, address_hash: miner.hash, block_number: log_block.number)
 
       from_internal_transaction_block = insert(:block)
@@ -3311,7 +3317,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(block)
 
-      insert(:log, address: miner, transaction: log_transaction)
+      insert(:log, address: miner, transaction: log_transaction, block: block, block_number: block.number)
 
       from_internal_transaction_transaction =
         :transaction
@@ -4325,6 +4331,9 @@ defmodule Explorer.ChainTest do
         end
       )
 
+      init_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
+
       assert Chain.transaction_to_revert_reason(transaction) == hex_reason
 
       assert Transaction.decoded_revert_reason(transaction, hex_reason) == {
@@ -4333,6 +4342,20 @@ defmodule Explorer.ChainTest do
                "Error(string reason)",
                [{"reason", "string", "No credit of that type"}]
              }
+
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, init_config)
+    end
+  end
+
+  describe "timestamp_to_block_number/3" do
+    test "returns correct block number when given timestamp is equal to block timestamp" do
+      timestamp = DateTime.from_unix!(60 * 60 * 24 * 1, :second)
+      block = insert(:block, timestamp: timestamp)
+      expected = {:ok, block.number}
+
+      assert ^expected = Chain.timestamp_to_block_number(timestamp, :after, true)
+
+      assert ^expected = Chain.timestamp_to_block_number(timestamp, :before, true)
     end
   end
 end

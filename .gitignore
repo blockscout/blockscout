@@ -58,6 +58,8 @@ dump.rdb
 *.iml
 
 .vscode
+.cursorignore
+.cursorrules
 
 **.dec**
 
@@ -65,3 +67,4 @@ dump.rdb
 *.env.example
 *.env.local
 *.env.staging
+.devcontainer/.blockscout_config

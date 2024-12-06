@@ -35,7 +35,9 @@ defmodule Explorer.Account.Notifier.Email do
     |> add_dynamic_field("block_number", notification.block_number)
     |> add_dynamic_field("amount", amount(notification))
     |> add_dynamic_field("name", notification.name)
-    |> add_dynamic_field("tx_fee", notification.tx_fee)
+    # todo: keep next line for compatibility with old version of SendGrid template. Remove it when the changes released and Sendgrid template updated.
+    |> add_dynamic_field("tx_fee", notification.transaction_fee)
+    |> add_dynamic_field("transaction_fee", notification.transaction_fee)
     |> add_dynamic_field("direction", direction(notification))
     |> add_dynamic_field("method", notification.method)
     |> add_dynamic_field("transaction_url", transaction_url(notification))

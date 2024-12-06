@@ -6,6 +6,7 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Helper, only: [truncate_address_hash: 1]
 
   alias Explorer.{Helper, Repo}
   alias Explorer.Chain.{Hash, Token, TokenTransfer}
@@ -62,14 +63,7 @@ defmodule Indexer.Transform.TokenTransfers do
     token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
 
     token_transfers
-    |> Enum.filter(fn token_transfer ->
-      token_transfer.to_address_hash == burn_address_hash_string() ||
-        token_transfer.from_address_hash == burn_address_hash_string()
-    end)
-    |> Enum.map(fn token_transfer ->
-      token_transfer.token_contract_address_hash
-    end)
-    |> Enum.uniq()
+    |> filter_tokens_for_supply_update()
     |> TokenTotalSupplyUpdater.add_tokens()
 
     tokens_uniq = tokens |> Enum.uniq()
@@ -483,10 +477,14 @@ defmodule Indexer.Transform.TokenTransfers do
     end
   end
 
-  defp truncate_address_hash(nil), do: burn_address_hash_string()
-
-  defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
-    "0x#{truncated_hash}"
+  def filter_tokens_for_supply_update(token_transfers) do
+    token_transfers
+    |> Enum.filter(fn token_transfer ->
+      token_transfer.to_address_hash == burn_address_hash_string() ||
+        token_transfer.from_address_hash == burn_address_hash_string()
+    end)
+    |> Enum.map(& &1.token_contract_address_hash)
+    |> Enum.uniq()
   end
 
   defp encode_address_hash(binary) do

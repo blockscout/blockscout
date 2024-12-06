@@ -38,9 +38,9 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       Application.put_env(:indexer, :last_block, 200)
 
       insert(:missing_block_range, from_number: 250, to_number: 220)
-      insert(:missing_block_range, from_number: 220, to_number: 190)
+      insert(:missing_block_range, from_number: 219, to_number: 190)
       insert(:missing_block_range, from_number: 120, to_number: 90)
-      insert(:missing_block_range, from_number: 90, to_number: 80)
+      insert(:missing_block_range, from_number: 89, to_number: 80)
 
       MissingRangesCollector.start_link([])
       Process.sleep(500)

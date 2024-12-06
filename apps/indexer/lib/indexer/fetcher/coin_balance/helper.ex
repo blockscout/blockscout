@@ -9,7 +9,7 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
 
   alias EthereumJSONRPC.{Blocks, FetchedBalances, Utility.RangesHelper}
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.Accounts
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Chain.Hash
   alias Indexer.BufferedTask
 
@@ -55,7 +55,7 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
 
     unique_filtered_entries
     |> Enum.map(&entry_to_params/1)
-    |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments)
+    |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, BlockNumber.get_max())
     |> case do
       {:ok, fetched_balances} ->
         run_fetched_balances(fetched_balances, fetcher_type)

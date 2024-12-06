@@ -3,9 +3,12 @@ defmodule BlockScoutWeb.GraphQL.Schema do
 
   use Absinthe.Schema
   use Absinthe.Relay.Schema, :modern
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  alias Absinthe.Middleware.Dataloader, as: AbsintheMiddlewareDataloader
+  alias Absinthe.Middleware.Dataloader, as: AbsintheDataloaderMiddleware
   alias Absinthe.Plugin, as: AbsinthePlugin
+
+  alias BlockScoutWeb.GraphQL.Middleware.ApiEnabled, as: ApiEnabledMiddleware
 
   alias BlockScoutWeb.GraphQL.Resolvers.{
     Address,
@@ -21,6 +24,10 @@ defmodule BlockScoutWeb.GraphQL.Schema do
   alias Explorer.Chain.Transaction, as: ExplorerChainTransaction
 
   import_types(BlockScoutWeb.GraphQL.Schema.Types)
+
+  if @chain_type == :celo do
+    import_types(BlockScoutWeb.GraphQL.Celo.Schema.Types)
+  end
 
   node interface do
     resolve_type(fn
@@ -100,6 +107,13 @@ defmodule BlockScoutWeb.GraphQL.Schema do
       arg(:hash, non_null(:full_hash))
       resolve(&Transaction.get_by/3)
     end
+
+    if @chain_type == :celo do
+      require BlockScoutWeb.GraphQL.Celo.QueryFields
+      alias BlockScoutWeb.GraphQL.Celo.QueryFields
+
+      QueryFields.generate()
+    end
   end
 
   subscription do
@@ -125,7 +139,11 @@ defmodule BlockScoutWeb.GraphQL.Schema do
     end
   end
 
+  def middleware(middleware, _field, _object) do
+    [ApiEnabledMiddleware | middleware]
+  end
+
   def plugins do
-    [AbsintheMiddlewareDataloader] ++ AbsinthePlugin.defaults()
+    [AbsintheDataloaderMiddleware] ++ AbsinthePlugin.defaults()
   end
 end

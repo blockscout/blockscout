@@ -344,6 +344,38 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       schema = resolve_getblockreward_schema()
       assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
+
+    test "returns any nearest block within arbitrary range of time", %{conn: conn} do
+      timestamp_string = "1617020209"
+      {:ok, timestamp} = Chain.param_to_block_timestamp(timestamp_string)
+      block = insert(:block, timestamp: timestamp)
+
+      {timestamp_int, _} = Integer.parse(timestamp_string)
+
+      timestamp_in_the_past_str =
+        (timestamp_int - 2 * 60)
+        |> to_string()
+
+      expected_result = %{
+        "blockNumber" => "#{block.number}"
+      }
+
+      assert response =
+               conn
+               |> get("/api", %{
+                 "module" => "block",
+                 "action" => "getblocknobytime",
+                 "timestamp" => "#{timestamp_in_the_past_str}",
+                 "closest" => "after"
+               })
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      schema = resolve_getblockreward_schema()
+      assert :ok = ExJsonSchema.Validator.validate(schema, response)
+    end
   end
 
   defp resolve_getblockreward_schema() do

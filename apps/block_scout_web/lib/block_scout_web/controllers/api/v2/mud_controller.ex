@@ -4,13 +4,19 @@ defmodule BlockScoutWeb.API.V2.MudController do
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 4,
-      split_list_by_page: 1,
-      default_paging_options: 0
+      split_list_by_page: 1
     ]
 
   import BlockScoutWeb.PagingHelper, only: [mud_records_sorting: 1]
+  import Explorer.PagingOptions, only: [default_paging_options: 0]
 
-  alias Explorer.Chain.{Data, Hash, Mud, Mud.Schema.FieldSchema, Mud.Table}
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address, Data, Hash, Mud, Mud.Schema.FieldSchema, Mud.Table}
+
+  @api_true [api?: true]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -25,6 +31,18 @@ defmodule BlockScoutWeb.API.V2.MudController do
       |> Mud.worlds_list()
       |> split_list_by_page()
 
+    world_addresses =
+      worlds
+      |> Chain.hashes_to_addresses(
+        necessity_by_association: %{
+          :names => :optional,
+          :smart_contract => :optional,
+          proxy_implementations_association() => :optional
+        },
+        api?: true
+      )
+      |> Enum.into(%{}, &{&1.hash, &1})
+
     next_page_params =
       next_page_params(next_page, worlds, conn.query_params, fn item ->
         %{"world" => item}
@@ -32,7 +50,14 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
     conn
     |> put_status(200)
-    |> render(:worlds, %{worlds: worlds, next_page_params: next_page_params})
+    |> render(:worlds, %{
+      worlds:
+        worlds
+        |> Enum.map(fn world -> Map.get(world_addresses, world, %Address{hash: world}) end)
+        |> maybe_preload_ens()
+        |> maybe_preload_metadata(),
+      next_page_params: next_page_params
+    })
   end
 
   @doc """
@@ -68,6 +93,34 @@ defmodule BlockScoutWeb.API.V2.MudController do
       conn
       |> put_status(200)
       |> render(:tables, %{tables: tables, next_page_params: next_page_params})
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/mud/worlds/:world/systems` endpoint.
+  """
+  @spec world_systems(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def world_systems(conn, %{"world" => world_param} = _params) do
+    with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)} do
+      systems = world |> Mud.world_systems()
+
+      conn
+      |> put_status(200)
+      |> render(:systems, %{systems: systems})
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/mud/worlds/:world/systems/:system` endpoint.
+  """
+  @spec world_system(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def world_system(conn, %{"world" => world_param, "system" => system_param} = _params) do
+    with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)},
+         {:format, {:ok, system}} <- {:format, Hash.Address.cast(system_param)},
+         {:ok, system_id, abi} <- Mud.world_system(world, system, @api_true) do
+      conn
+      |> put_status(200)
+      |> render(:system, %{system_id: system_id, abi: abi})
     end
   end
 
@@ -190,7 +243,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
         ns |> String.pad_trailing(14, <<0>>)
 
       _ ->
-        nil
+        :error
     end
   end
 
@@ -225,17 +278,19 @@ defmodule BlockScoutWeb.API.V2.MudController do
         <<1::256>>
 
       "0x" <> hex ->
-        bin = Base.decode16!(hex, case: :mixed)
-        # addresses are padded to 32 bytes with zeros on the right
-        if FieldSchema.type_of(schema.key_schema, field_idx) == 97 do
-          <<0::size(256 - byte_size(bin) * 8), bin::binary>>
-        else
-          <<bin::binary, 0::size(256 - byte_size(bin) * 8)>>
+        with {:ok, bin} <- Base.decode16(hex, case: :mixed) do
+          # addresses are padded to 32 bytes with zeros on the right
+          if FieldSchema.type_of(schema.key_schema, field_idx) == 97 do
+            <<0::size(256 - byte_size(bin) * 8), bin::binary>>
+          else
+            <<bin::binary, 0::size(256 - byte_size(bin) * 8)>>
+          end
         end
 
       dec ->
-        num = dec |> Integer.parse() |> elem(0)
-        <<num::256>>
+        with {num, _} <- Integer.parse(dec) do
+          <<num::256>>
+        end
     end
   end
 

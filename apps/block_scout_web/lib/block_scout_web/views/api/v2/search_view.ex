@@ -1,16 +1,20 @@
 defmodule BlockScoutWeb.API.V2.SearchView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.{BlockView, Endpoint}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Beacon.Blob, Block, Hash, Transaction, UserOperation}
 
   def render("search_results.json", %{search_results: search_results, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(search_results, &prepare_search_result/1), "next_page_params" => next_page_params}
+    %{
+      "items" => search_results |> Enum.map(&prepare_search_result/1) |> chain_type_fields(),
+      "next_page_params" => next_page_params
+    }
   end
 
   def render("search_results.json", %{search_results: search_results}) do
-    Enum.map(search_results, &prepare_search_result/1)
+    search_results |> Enum.map(&prepare_search_result/1) |> chain_type_fields()
   end
 
   def render("search_results.json", %{result: {:ok, result}}) do
@@ -92,12 +96,14 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   end
 
   def prepare_search_result(%{type: "transaction"} = search_result) do
-    tx_hash = hash_to_string(search_result.tx_hash)
+    transaction_hash = hash_to_string(search_result.transaction_hash)
 
     %{
       "type" => search_result.type,
-      "tx_hash" => tx_hash,
-      "url" => transaction_path(Endpoint, :show, tx_hash),
+      "transaction_hash" => transaction_hash,
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_hash` property
+      "tx_hash" => transaction_hash,
+      "url" => transaction_path(Endpoint, :show, transaction_hash),
       "timestamp" => search_result.timestamp,
       "priority" => search_result.priority
     }
@@ -158,5 +164,18 @@ defmodule BlockScoutWeb.API.V2.SearchView do
 
   defp redirect_search_results(%Blob{} = item) do
     %{"type" => "blob", "parameter" => to_string(item.hash)}
+  end
+
+  case @chain_type do
+    :filecoin ->
+      defp chain_type_fields(result) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address_to_search_results(result)
+      end
+
+    _ ->
+      defp chain_type_fields(result) do
+        result
+      end
   end
 end

@@ -2,6 +2,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Token.t/0`.
   """
+  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   require Ecto.Query
 
@@ -139,7 +140,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       )
   end
 
-  if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+  if @bridged_tokens_enabled do
     def default_on_conflict do
       from(
         token in Token,

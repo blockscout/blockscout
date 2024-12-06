@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.ContractCode do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
-  alias Explorer.Chain.Cache.Accounts
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
   alias Indexer.Transform.Addresses
@@ -120,7 +120,7 @@ defmodule Indexer.Fetcher.ContractCode do
   defp import_with_balances(addresses_params, entries, json_rpc_named_arguments) do
     entries
     |> coin_balances_request_params()
-    |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments)
+    |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, BlockNumber.get_max())
     |> case do
       {:ok, fetched_balances} ->
         balance_addresses_params = CoinBalanceHelper.balances_params_to_address_params(fetched_balances.params_list)
