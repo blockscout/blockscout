@@ -15,6 +15,8 @@ defmodule Explorer.Account.CustomABI do
 
   @max_abis_per_account 15
 
+  @user_not_found "User not found"
+
   typed_schema "account_custom_abis" do
     field(:abi, {:array, :map}, null: false)
     field(:given_abi, :string, virtual: true)
@@ -37,7 +39,7 @@ defmodule Explorer.Account.CustomABI do
     |> validate_required(@attrs, message: "Required")
     |> validate_custom_abi()
     |> check_smart_contract_address()
-    |> foreign_key_constraint(:identity_id, message: "User not found")
+    |> foreign_key_constraint(:identity_id, message: @user_not_found)
     |> put_hashed_fields()
     |> unique_constraint([:identity_id, :address_hash_hash],
       message: "Custom ABI for this address has already been added before"
@@ -149,10 +151,62 @@ defmodule Explorer.Account.CustomABI do
 
   def custom_abi_count_constraint(%Changeset{} = custom_abi), do: custom_abi
 
+  @doc """
+  Creates a new custom ABI entry for a smart contract address.
+
+  The function performs several validations including checking the ABI format,
+  verifying the smart contract address, and ensuring the user hasn't exceeded their
+  ABI limit. The operation is executed within a database transaction that includes
+  identity verification.
+
+  ## Parameters
+  - `attrs`: A map containing:
+    - `identity_id`: The ID of the user creating the ABI
+    - `abi`: The ABI specification as a JSON string or list of maps
+    - `name`: The name for this custom ABI entry
+    - `address_hash`: The smart contract address this ABI corresponds to
+
+  ## Returns
+  - `{:ok, custom_abi}` if the creation is successful
+  - `{:error, changeset}` if:
+    - The identity doesn't exist
+    - The ABI format is invalid
+    - The address is not a smart contract
+    - The user has reached their ABI limit
+    - The ABI already exists for this address
+    - Required fields are missing
+  """
+  @spec create(map()) :: {:ok, t()} | {:error, Changeset.t()}
+  def create(%{identity_id: identity_id} = attrs) do
+    Multi.new()
+    |> Identity.acquire_with_lock(identity_id)
+    |> Multi.insert(:custom_abi, fn _ ->
+      %__MODULE__{}
+      |> changeset(attrs)
+    end)
+    |> Repo.account_repo().transaction()
+    |> case do
+      {:ok, %{custom_abi: custom_abi}} ->
+        {:ok, custom_abi}
+
+      {:error, :acquire_identity, :not_found, _changes} ->
+        {:error,
+         %__MODULE__{}
+         |> changeset(attrs)
+         |> add_error(:identity_id, @user_not_found,
+           constraint: :foreign,
+           constraint_name: "account_custom_abis_identity_id_fkey"
+         )}
+
+      {:error, _failed_operation, error, _changes} ->
+        {:error, error}
+    end
+  end
+
   def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> Repo.account_repo().insert()
+    {:error,
+     %__MODULE__{}
+     |> changeset(attrs)}
   end
 
   def custom_abis_by_identity_id_query(id) when not is_nil(id) do

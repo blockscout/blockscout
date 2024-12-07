@@ -64,31 +64,27 @@ defmodule Explorer.Account.Api.Key do
   @spec create(map()) :: {:ok, t()} | {:error, Changeset.t()}
   def create(%{identity_id: identity_id} = attrs) do
     Multi.new()
-    |> Multi.run(:acquire_identity, fn repo, _changes ->
-      identity_query = from(identity in Identity, where: identity.id == ^identity_id, lock: "FOR UPDATE")
-
-      case repo.one(identity_query) do
-        nil ->
-          {:error,
-           %__MODULE__{}
-           |> changeset(Map.put(attrs, :value, generate_api_key()))
-           |> add_error(:identity_id, @user_not_found,
-             constraint: :foreign,
-             constraint_name: "account_api_keys_identity_id_fkey"
-           )}
-
-        identity ->
-          {:ok, identity}
-      end
-    end)
+    |> Identity.acquire_with_lock(identity_id)
     |> Multi.insert(:api_key, fn _ ->
       %__MODULE__{}
       |> changeset(Map.put(attrs, :value, generate_api_key()))
     end)
     |> Repo.account_repo().transaction()
     |> case do
-      {:ok, %{api_key: api_key}} -> {:ok, api_key}
-      {:error, _failed_operation, error, _changes} -> {:error, error}
+      {:ok, %{api_key: api_key}} ->
+        {:ok, api_key}
+
+      {:error, :acquire_identity, :not_found, _changes} ->
+        {:error,
+         %__MODULE__{}
+         |> changeset(Map.put(attrs, :value, generate_api_key()))
+         |> add_error(:identity_id, @user_not_found,
+           constraint: :foreign,
+           constraint_name: "account_api_keys_identity_id_fkey"
+         )}
+
+      {:error, _failed_operation, error, _changes} ->
+        {:error, error}
     end
   end
 

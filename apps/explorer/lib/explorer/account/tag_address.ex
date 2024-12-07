@@ -14,6 +14,8 @@ defmodule Explorer.Account.TagAddress do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
+  @user_not_found "User not found"
+
   typed_schema "account_tag_addresses" do
     field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:name, Explorer.Encrypted.Binary, null: false)
@@ -39,15 +41,61 @@ defmodule Explorer.Account.TagAddress do
     |> validate_required(@attrs, message: "Required")
     |> validate_length(:name, min: 1, max: 35)
     |> put_hashed_fields()
+    |> foreign_key_constraint(:identity_id, message: @user_not_found)
     |> unique_constraint([:identity_id, :address_hash_hash], message: "Address tag already exists")
     |> check_existence_or_create_address()
     |> tag_address_count_constraint()
   end
 
+  @doc """
+  Creates a new tag address record in a transactional context.
+
+  Attempts to create a tag address while ensuring the referenced identity exists by
+  acquiring a database lock. The function handles both the case where the identity
+  ID is provided and where it is missing.
+
+  ## Parameters
+  - `attrs`: A map of attributes that must include:
+    - `:identity_id`: The ID of the associated identity
+
+  ## Returns
+  - `{:ok, tag_address}` - The created tag address record
+  - `{:error, changeset}` - A changeset with validation errors if:
+    - The identity doesn't exist
+    - The identity ID is missing
+    - Other validation constraints are not met
+  """
+  @spec create(map()) :: {:ok, t()} | {:error, Changeset.t()}
+  def create(%{identity_id: identity_id} = attrs) do
+    Multi.new()
+    |> Identity.acquire_with_lock(identity_id)
+    |> Multi.insert(:tag_address, fn _ ->
+      %__MODULE__{}
+      |> changeset(attrs)
+    end)
+    |> Repo.account_repo().transaction()
+    |> case do
+      {:ok, %{tag_address: tag_address}} ->
+        {:ok, tag_address}
+
+      {:error, :acquire_identity, :not_found, _changes} ->
+        {:error,
+         %__MODULE__{}
+         |> changeset(attrs)
+         |> add_error(:identity_id, @user_not_found,
+           constraint: :foreign,
+           constraint_name: "account_tag_addresses_identity_id_fkey"
+         )}
+
+      {:error, _failed_operation, error, _changes} ->
+        {:error, error}
+    end
+  end
+
   def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> Repo.account_repo().insert()
+    {:error,
+     %__MODULE__{}
+     |> changeset(attrs)}
   end
 
   defp put_hashed_fields(changeset) do

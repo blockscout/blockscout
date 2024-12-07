@@ -224,6 +224,38 @@ defmodule Explorer.Account.Identity do
     end)
   end
 
+  @doc """
+  Adds an operation to acquire and lock an account identity record in the database.
+
+  This operation performs a SELECT FOR UPDATE on the identity record, which prevents
+  concurrent modifications of the record until the transaction is committed or rolled
+  back.
+
+  ## Parameters
+  - `multi`: An Ecto.Multi struct representing a series of database operations
+  - `identity_id`: The ID of the account identity to lock
+
+  ## Returns
+  - An updated Ecto.Multi struct with the `:acquire_identity` operation added. The
+    operation will return:
+    - `{:ok, identity}` if the identity is found and locked successfully
+    - `{:error, :not_found}` if no identity exists with the given ID
+  """
+  @spec acquire_with_lock(Multi.t(), integer()) :: Multi.t()
+  def acquire_with_lock(multi, identity_id) do
+    Multi.run(multi, :acquire_identity, fn repo, _ ->
+      identity_query = from(identity in __MODULE__, where: identity.id == ^identity_id, lock: "FOR UPDATE")
+
+      case repo.one(identity_query) do
+        nil ->
+          {:error, :not_found}
+
+        identity ->
+          {:ok, identity}
+      end
+    end)
+  end
+
   defp session_info(auth, identity) do
     if email_verified_from_auth(auth) do
       %{watchlists: [watchlist | _]} = Repo.account_repo().preload(identity, :watchlists)

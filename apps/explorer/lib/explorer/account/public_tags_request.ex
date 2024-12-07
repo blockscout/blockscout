@@ -19,6 +19,8 @@ defmodule Explorer.Account.PublicTagsRequest do
   @max_tags_per_request 2
   @max_tag_length 35
 
+  @user_not_found "User not found"
+
   typed_schema "account_public_tags_requests" do
     field(:company, :string)
     field(:website, :string)
@@ -60,7 +62,7 @@ defmodule Explorer.Account.PublicTagsRequest do
     |> validate_format(:email, ~r/^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i, message: "is invalid")
     |> validate_length(:addresses, min: 1, max: @max_addresses_per_request)
     |> extract_and_validate_addresses()
-    |> foreign_key_constraint(:identity_id)
+    |> foreign_key_constraint(:identity_id, message: @user_not_found)
     |> public_tags_request_count_constraint()
     |> public_tags_request_time_interval_uniqueness()
   end
@@ -70,11 +72,64 @@ defmodule Explorer.Account.PublicTagsRequest do
     |> cast(attrs, @attrs ++ @required_attrs)
   end
 
+  @doc """
+  Creates a new public tags request within a database transaction.
+
+  The creation process involves verifying the existence of the associated identity
+  and ensuring data consistency through a database lock. The transaction prevents
+  concurrent modifications of the same identity record.
+
+  ## Parameters
+  - `attrs`: Map containing the following fields:
+    - `:identity_id`: Required. The ID of the identity associated with the request
+    - `:company`: Optional. The company name
+    - `:website`: Optional. The company's website
+    - `:tags`: Required. The requested tags
+    - `:addresses`: Required. List of blockchain addresses
+    - `:description`: Optional. Description of the request
+    - `:additional_comment`: Required. Additional information about the request
+    - `:request_type`: Required. The type of the request
+    - `:is_owner`: Optional. Boolean indicating ownership (defaults to true)
+    - `:remove_reason`: Optional. Reason for tag removal if applicable
+    - `:request_id`: Optional. External request identifier
+    - `:full_name`: Required. Encrypted full name of the requester
+    - `:email`: Required. Encrypted email of the requester
+
+  ## Returns
+  - `{:ok, public_tags_request}` - Returns the created public tags request
+  - `{:error, changeset}` - Returns a changeset with errors if:
+    - The identity doesn't exist
+    - The provided data is invalid
+    - Required fields are missing
+  """
+  @spec create(map()) :: {:ok, t()} | {:error, Changeset.t()}
+  def create(%{identity_id: identity_id} = attrs) do
+    Multi.new()
+    |> Identity.acquire_with_lock(identity_id)
+    |> Multi.insert(:public_tags_request, fn _ ->
+      %__MODULE__{}
+      |> changeset(Map.put(attrs, :request_type, "add"))
+    end)
+    |> Repo.account_repo().transaction()
+    |> case do
+      {:ok, %{public_tags_request: public_tags_request}} ->
+        {:ok, public_tags_request} |> AirTable.submit()
+
+      {:error, :acquire_identity, :not_found, _changes} ->
+        {:error,
+         %__MODULE__{}
+         |> changeset(Map.put(attrs, :request_type, "add"))
+         |> add_error(:identity_id, @user_not_found,
+           constraint: :foreign,
+           constraint_name: "account_public_tags_requests_identity_id_fkey"
+         )}
+    end
+  end
+
   def create(attrs) do
-    %__MODULE__{}
-    |> changeset(Map.put(attrs, :request_type, "add"))
-    |> Repo.account_repo().insert()
-    |> AirTable.submit()
+    {:error,
+     %__MODULE__{}
+     |> changeset(Map.put(attrs, :request_type, "add"))}
   end
 
   defp trim_empty_addresses(%{addresses: addresses} = attrs) when is_list(addresses) do
