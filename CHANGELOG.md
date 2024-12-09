@@ -14,7 +14,6 @@
 - Add Stylus verificaiton support ([#11183](https://github.com/blockscout/blockscout/issues/11183))
 - Multiple json rpc urls ([#10934](https://github.com/blockscout/blockscout/issues/10934))
 - Gas prices with base fee if no transactions ([#11132](https://github.com/blockscout/blockscout/issues/11132))
-- Xname app proxy ([#11010](https://github.com/blockscout/blockscout/issues/11010))
 - Zilliqa consensus data related to block  ([#10699](https://github.com/blockscout/blockscout/issues/10699))
 - Add filecoin robust addresses to proxy implementations ([#11102](https://github.com/blockscout/blockscout/issues/11102))
 
@@ -47,7 +46,6 @@
 - Invalid metadata requests ([#11210](https://github.com/blockscout/blockscout/issues/11210))
 - *(nginx-conf)* Redirect `/api-docs` to frontend. ([#11202](https://github.com/blockscout/blockscout/issues/11202))
 - Fix failed filecoin tests ([#11187](https://github.com/blockscout/blockscout/issues/11187))
-- Add `auth0-forwarded-for` header in auth0 ([#11178](https://github.com/blockscout/blockscout/issues/11178))
 - Fix missing `signers` field in nested quorum certificate ([#11185](https://github.com/blockscout/blockscout/issues/11185))
 - Return `l1_tx_hashes` in the response of /batches/da/celestia/... API endpoint ([#11184](https://github.com/blockscout/blockscout/issues/11184))
 - Omit pbo for blocks lower than trace first block for indexing status ([#11053](https://github.com/blockscout/blockscout/issues/11053))
@@ -75,7 +73,6 @@
 - Fix watchlist address flaking test ([#11242](https://github.com/blockscout/blockscout/issues/11242))
 - OP modules improvements ([#11073](https://github.com/blockscout/blockscout/issues/11073))
 - Invalid association `token_transfers` ([#11204](https://github.com/blockscout/blockscout/issues/11204))
-- Extend recaptcha logging ([#11182](https://github.com/blockscout/blockscout/issues/11182))
 - Update Github Actions packages versions ([#11144](https://github.com/blockscout/blockscout/issues/11144))
 - Convinient way to manage known_hosts within devcontainer ([#11091](https://github.com/blockscout/blockscout/issues/11091))
 - Add docker compose file without microservices ([#11097](https://github.com/blockscout/blockscout/issues/11097))
@@ -114,6 +111,31 @@
 | `NFT_MEDIA_HANDLER_BACKFILL_ENQUEUE_BUSY_WAITING_TIMEOUT` | Timeout before new attempt to append item to backfill queue if it's full                                                                                                                                                         | <p>Version: v6.10.0+<br>Default: <code>1s</code><br>Applications: Indexer</p>       |
 | `NFT_MEDIA_HANDLER_CACHE_UNIQUENESS_MAX_SIZE`             | Max size of cache, where stored already uploaded token instances media                                                                                                                                                           | <p>Version: v6.10.0+<br>Default: <code>100_000</code><br>Applications: Indexer</p>  |
 
+## 6.9.2
+
+### 🚀 Features
+
+- Xname app proxy ([#11010](https://github.com/blockscout/blockscout/issues/11010))
+
+| Variable              | Description                                                                                                                                                      | Parameters                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `XNAME_BASE_API_URL` | [Xname API](https://xname.app/) base URL. Implemented in [#11010](https://github.com/blockscout/blockscout/pull/11010). | <p>Version: v6.9.2+<br>Default: <code>https://gateway.xname.app</code><br>Applications: API</p> |
+| `XNAME_API_TOKEN`    | [Xname API](https://xname.app/) token. Implemented in [#11010](https://github.com/blockscout/blockscout/pull/11010).    | <p>Version: v6.9.2+<br>Default: (empty)<br>Applications: API</p>
+
+## 6.9.1
+
+### 🐛 Bug Fixes
+
+- Add `auth0-forwarded-for` header in auth0 ([#11178](https://github.com/blockscout/blockscout/issues/11178))
+
+### ⚙️ Miscellaneous Tasks
+
+- Extend recaptcha logging ([#11182](https://github.com/blockscout/blockscout/issues/11182))
+
+
+| Variable                                    | Description                                                                                                                                                                                                                                            | Parameters                                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `RE_CAPTCHA_SCORE_THRESHOLD`| Changes reCAPTCHA score threshold. Implemented in [#11182](https://github.com/blockscout/blockscout/pull/11182)                                                                                                   | <p>Version: v6.9.1+<br>Default: <code>0.5</code><br>Applications: API</p>    |
 
 ## 6.9.0
 
