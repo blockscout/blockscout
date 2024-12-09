@@ -963,5 +963,6 @@ defmodule Explorer.Chain.Search do
   defp paging_options(_), do: nil
 
   defp parse_possible_nil(""), do: nil
+  defp parse_possible_nil("null"), do: nil
   defp parse_possible_nil(other), do: other
 end

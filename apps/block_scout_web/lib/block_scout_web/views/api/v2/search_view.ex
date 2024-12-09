@@ -4,11 +4,12 @@ defmodule BlockScoutWeb.API.V2.SearchView do
   alias BlockScoutWeb.{BlockView, Endpoint}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Beacon.Blob, Block, Hash, Transaction, UserOperation}
+  alias Plug.Conn.Query
 
   def render("search_results.json", %{search_results: search_results, next_page_params: next_page_params}) do
     %{
       "items" => search_results |> Enum.map(&prepare_search_result/1) |> chain_type_fields(),
-      "next_page_params" => next_page_params
+      "next_page_params" => next_page_params |> encode_next_page_params()
     }
   end
 
@@ -177,4 +178,21 @@ defmodule BlockScoutWeb.API.V2.SearchView do
         result
       end
   end
+
+  defp encode_next_page_params(next_page_params) when is_map(next_page_params) do
+    result =
+      next_page_params
+      |> Query.encode()
+      |> URI.decode_query()
+      |> Enum.map(fn {k, v} ->
+        {k, unless(v == "", do: v)}
+      end)
+      |> Enum.into(%{})
+
+    unless result == %{} do
+      result
+    end
+  end
+
+  defp encode_next_page_params(next_page_params), do: next_page_params
 end
