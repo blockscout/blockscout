@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
   alias Explorer.Chain.{Address, Block}
   alias Explorer.Tags.AddressTag
+  alias Plug.Conn.Query
 
   describe "/search" do
     test "search block", %{conn: conn} do
@@ -139,7 +140,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["type"] == "contract"
       assert item["name"] == name
 
-      request_2 = get(conn, "/api/v2/search", response["next_page_params"])
+      request_2 = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
       assert response_2 = json_response(request_2, 200)
 
       assert Enum.count(response_2["items"]) == 1
@@ -172,7 +173,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert Enum.at(response["items"], 0)["type"] == "label"
       assert Enum.at(response["items"], 49)["type"] == "label"
 
-      request_2 = get(conn, "/api/v2/search", response["next_page_params"])
+      request_2 = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
       assert response_2 = json_response(request_2, 200)
 
       assert Enum.count(response_2["items"]) == 50
@@ -181,7 +182,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert Enum.at(response_2["items"], 1)["type"] == "token"
       assert Enum.at(response_2["items"], 49)["type"] == "token"
 
-      request_3 = get(conn, "/api/v2/search", response_2["next_page_params"])
+      request_3 = get(conn, "/api/v2/search", response_2["next_page_params"] |> Query.encode() |> Query.decode())
       assert response_3 = json_response(request_3, 200)
 
       assert Enum.count(response_3["items"]) == 50
@@ -191,7 +192,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert Enum.at(response_3["items"], 2)["type"] == "contract"
       assert Enum.at(response_3["items"], 49)["type"] == "contract"
 
-      request_4 = get(conn, "/api/v2/search", response_3["next_page_params"])
+      request_4 = get(conn, "/api/v2/search", response_3["next_page_params"] |> Query.encode() |> Query.decode())
       assert response_4 = json_response(request_4, 200)
 
       assert Enum.count(response_4["items"]) == 3
@@ -245,7 +246,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert Enum.at(response["items"], 0)["type"] == "label"
       assert Enum.at(response["items"], 49)["type"] == "label"
 
-      request_2 = get(conn, "/api/v2/search", response["next_page_params"])
+      request_2 = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
       assert response_2 = json_response(request_2, 200)
 
       assert Enum.count(response_2["items"]) == 50
@@ -254,7 +255,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert Enum.at(response_2["items"], 1)["type"] == "token"
       assert Enum.at(response_2["items"], 49)["type"] == "token"
 
-      request_3 = get(conn, "/api/v2/search", response_2["next_page_params"])
+      request_3 = get(conn, "/api/v2/search", response_2["next_page_params"] |> Query.encode() |> Query.decode())
       assert response_3 = json_response(request_3, 200)
 
       assert Enum.count(response_3["items"]) == 50
@@ -264,7 +265,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert Enum.at(response_3["items"], 2)["type"] == "contract"
       assert Enum.at(response_3["items"], 49)["type"] == "contract"
 
-      request_4 = get(conn, "/api/v2/search", response_3["next_page_params"])
+      request_4 = get(conn, "/api/v2/search", response_3["next_page_params"] |> Query.encode() |> Query.decode())
       assert response_4 = json_response(request_4, 200)
 
       assert Enum.count(response_4["items"]) == 3
