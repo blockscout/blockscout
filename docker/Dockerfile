@@ -12,6 +12,7 @@ COPY apps/explorer/mix.exs ./apps/explorer/
 COPY apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 COPY apps/indexer/mix.exs ./apps/indexer/
 COPY apps/utils/mix.exs ./apps/utils/
+COPY apps/nft_media_handler/mix.exs ./apps/nft_media_handler/
 
 ENV MIX_ENV="prod"
 ENV MIX_HOME=/opt/mix
