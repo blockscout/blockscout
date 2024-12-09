@@ -35,7 +35,7 @@ defmodule Indexer.Fetcher.ContractCode do
           required(:block_number) => Block.block_number(),
           required(:created_contract_address_hash) => Hash.Full.t(),
           required(:hash) => Hash.Full.t(),
-          required(:type) => Decimal.t()
+          required(:type) => integer()
         }
 
   @behaviour BufferedTask
