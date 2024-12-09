@@ -20,6 +20,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix Noves.fi endpoints for bulk transactions ([#11375](https://github.com/blockscout/blockscout/issues/11375))
 - Fix docker container build after adding NFT media handler ([#11373](https://github.com/blockscout/blockscout/issues/11373))
 - Handle simultaneous account entities creation ([#11341](https://github.com/blockscout/blockscout/issues/11341))
 - Webscoket configuration ([#11357](https://github.com/blockscout/blockscout/issues/11357))
