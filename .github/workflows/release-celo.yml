@@ -41,7 +41,7 @@ jobs:
             linux/arm64/v8
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
 
@@ -59,7 +59,7 @@ jobs:
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             DISABLE_API=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
 
@@ -77,7 +77,7 @@ jobs:
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             DISABLE_INDEXER=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
 
@@ -94,7 +94,7 @@ jobs:
             linux/arm64/v8
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
@@ -113,7 +113,7 @@ jobs:
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             DISABLE_API=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
@@ -132,7 +132,7 @@ jobs:
           build-args: |
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             DISABLE_INDEXER=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=celo
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true

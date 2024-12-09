@@ -91,7 +91,7 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=polygon_zkevm
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
@@ -108,7 +108,7 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=polygon_zkevm
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
@@ -125,7 +125,7 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-alpha.${{ inputs.number }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=polygon_zkevm
             SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
