@@ -79,11 +79,11 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   end
 
   @doc """
-  Noves.fi /evm/:chain/transactions/:address_hash endpoint
+  Noves.fi /evm/:chain/txs/:address_hash endpoint
   """
   @spec address_transactions_url(String.t()) :: String.t()
   def address_transactions_url(address_hash_string) do
-    "#{base_url()}/evm/#{chain_name()}/transactions/#{address_hash_string}"
+    "#{base_url()}/evm/#{chain_name()}/txs/#{address_hash_string}"
   end
 
   defp base_url do
