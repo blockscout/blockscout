@@ -10,7 +10,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     env:
-      RELEASE_VERSION: 6.9.2
+      RELEASE_VERSION: 6.10.0
       DOCKER_CHAIN_NAME: celo
       API_GRAPHQL_MAX_COMPLEXITY: 10400
     steps:

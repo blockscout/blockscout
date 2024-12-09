@@ -12,6 +12,7 @@ MIX_FILES=(
 )
 CONFIG_FILE="$(pwd)/rel/config.exs"
 DOCKER_COMPOSE_FILE="$(pwd)/docker-compose/docker-compose.yml"
+DOCKER_COMPOSE_NO_SERVICES_FILE="$(pwd)/docker-compose/no-services.yml"
 MAKE_FILE="$(pwd)/docker/Makefile"
 WORKFLOW_FILES=($(find "$(pwd)/.github/workflows" -type f \( -name "pre-release*" -o -name "release*" -o -name "publish-regular-docker-image-on-demand*" -o -name "publish-docker-image-*" \)))
 METADATA_RETRIEVER_FILE="$(pwd)/apps/explorer/lib/explorer/token/metadata_retriever.ex"
@@ -65,6 +66,7 @@ bump_version() {
 
     sed -i '' "s/version: \"$current_version/version: \"$new_version/" "$CONFIG_FILE"
     sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_FILE"
+    sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_NO_SERVICES_FILE"
     sed -i '' "s/RELEASE_VERSION ?= '$current_version'/RELEASE_VERSION ?= '$new_version'/" "$MAKE_FILE"
 
     # Replace the old version with the new version in the GitHub workflows files

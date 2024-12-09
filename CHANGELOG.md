@@ -1,5 +1,119 @@
 # Changelog
 
+## 6.10.0
+
+### 🚀 Features
+
+- CDN ([#10675](https://github.com/blockscout/blockscout/issues/10675))
+- Arbitrum L2->L1 message claiming ([#10804](https://github.com/blockscout/blockscout/issues/10804))
+- Add is_banned to token_instances table ([#11235](https://github.com/blockscout/blockscout/issues/11235))
+- Add CSV export of epoch transactions for address ([#11195](https://github.com/blockscout/blockscout/issues/11195))
+- Add request to /cache/{tx_hash} of transaction interpreter ([#11279](https://github.com/blockscout/blockscout/issues/11279))
+- Switch DB requests from replica to master in case of replica inaccessibility ([#11020](https://github.com/blockscout/blockscout/issues/11020))
+- Add gzip encoding option ([#11292](https://github.com/blockscout/blockscout/issues/11292))
+- Add Stylus verificaiton support ([#11183](https://github.com/blockscout/blockscout/issues/11183))
+- Multiple json rpc urls ([#10934](https://github.com/blockscout/blockscout/issues/10934))
+- Gas prices with base fee if no transactions ([#11132](https://github.com/blockscout/blockscout/issues/11132))
+- Xname app proxy ([#11010](https://github.com/blockscout/blockscout/issues/11010))
+- Zilliqa consensus data related to block  ([#10699](https://github.com/blockscout/blockscout/issues/10699))
+- Add filecoin robust addresses to proxy implementations ([#11102](https://github.com/blockscout/blockscout/issues/11102))
+
+### 🐛 Bug Fixes
+
+- Fix docker container build after adding NFT media handler ([#11373](https://github.com/blockscout/blockscout/issues/11373))
+- Handle simultaneous account entities creation ([#11341](https://github.com/blockscout/blockscout/issues/11341))
+- Webscoket configuration ([#11357](https://github.com/blockscout/blockscout/issues/11357))
+- 403 instead of 404 on wrong captcha in api/v1 ([#11348](https://github.com/blockscout/blockscout/issues/11348))
+- Upgrade fallback urls propagation ([#11331](https://github.com/blockscout/blockscout/issues/11331))
+- Add utils to dockerfile ([#11345](https://github.com/blockscout/blockscout/issues/11345))
+- Fix log decoding bug ([#11266](https://github.com/blockscout/blockscout/issues/11266))
+- Return 404 instead of 200 for nonexistent NFT ([#11280](https://github.com/blockscout/blockscout/issues/11280))
+- Fix metrics modules warnings ([#11340](https://github.com/blockscout/blockscout/issues/11340))
+- Handle entries with not specified `retries_count` ([#11206](https://github.com/blockscout/blockscout/issues/11206))
+- Get rid of scientific notation in CSV token holders export ([#11281](https://github.com/blockscout/blockscout/issues/11281))
+- Wrong usage of env in TokenInstanceMetadataRefetch ([#11317](https://github.com/blockscout/blockscout/issues/11317))
+- Rework initialization of the `RollupL1ReorgMonitor` and fix `read_system_config` for fallback cases ([#11275](https://github.com/blockscout/blockscout/issues/11275))
+- Eth_getLogs paging ([#11248](https://github.com/blockscout/blockscout/issues/11248))
+- Handle excessive otp confirmations ([#11244](https://github.com/blockscout/blockscout/issues/11244))
+- Check if flash is fetched before getting it in app.html ([#11270](https://github.com/blockscout/blockscout/issues/11270))
+- Multiple json rpc urls fixes ([#11264](https://github.com/blockscout/blockscout/issues/11264))
+- Handle eth rpc request without params ([#11269](https://github.com/blockscout/blockscout/issues/11269))
+- Fixate 6.9.2 as the latest release ([#11265](https://github.com/blockscout/blockscout/issues/11265))
+- Fix ETH JSON RPC deriving for Stylus verification ([#11247](https://github.com/blockscout/blockscout/issues/11247))
+- Fix fake json_rpc_named_arguments for multiple urls usage ([#11243](https://github.com/blockscout/blockscout/issues/11243))
+- Handle simultaneous api key creation ([#11233](https://github.com/blockscout/blockscout/issues/11233))
+- Fixate 6.9.1 as the latest release in master branch
+- Invalid metadata requests ([#11210](https://github.com/blockscout/blockscout/issues/11210))
+- *(nginx-conf)* Redirect `/api-docs` to frontend. ([#11202](https://github.com/blockscout/blockscout/issues/11202))
+- Fix failed filecoin tests ([#11187](https://github.com/blockscout/blockscout/issues/11187))
+- Add `auth0-forwarded-for` header in auth0 ([#11178](https://github.com/blockscout/blockscout/issues/11178))
+- Fix missing `signers` field in nested quorum certificate ([#11185](https://github.com/blockscout/blockscout/issues/11185))
+- Return `l1_tx_hashes` in the response of /batches/da/celestia/... API endpoint ([#11184](https://github.com/blockscout/blockscout/issues/11184))
+- Omit pbo for blocks lower than trace first block for indexing status ([#11053](https://github.com/blockscout/blockscout/issues/11053))
+- Update overview.html.eex ([#11094](https://github.com/blockscout/blockscout/issues/11094))
+- Fix sitemap timeout; optimize OrderedCache preloads ([#11131](https://github.com/blockscout/blockscout/issues/11131))
+
+### 🚜 Refactor
+
+- Cspell configuration ([#11146](https://github.com/blockscout/blockscout/issues/11146))
+
+### ⚡ Performance
+
+- Advanced filters optimization ([#11186](https://github.com/blockscout/blockscout/issues/11186))
+
+### ⚙️ Miscellaneous Tasks
+
+- Background migrations timeout ([#11358](https://github.com/blockscout/blockscout/issues/11358))
+- Remove obsolete compile-time vars ([#11336](https://github.com/blockscout/blockscout/issues/11336))
+- Fixate Postgres 17 version in Docker compose and Github Actions workflows ([#11334](https://github.com/blockscout/blockscout/issues/11334))
+- Remove shorthands-duplicates from API responses ([#11319](https://github.com/blockscout/blockscout/issues/11319))
+- Refactor compile time envs usage ([#11148](https://github.com/blockscout/blockscout/issues/11148))
+- Refactor Dockerfile ([#11130](https://github.com/blockscout/blockscout/issues/11130))
+- Refactor import stages ([#11013](https://github.com/blockscout/blockscout/issues/11013))
+- Optimize CurrentTokenBalances import runner ([#11191](https://github.com/blockscout/blockscout/issues/11191))
+- Fix watchlist address flaking test ([#11242](https://github.com/blockscout/blockscout/issues/11242))
+- OP modules improvements ([#11073](https://github.com/blockscout/blockscout/issues/11073))
+- Invalid association `token_transfers` ([#11204](https://github.com/blockscout/blockscout/issues/11204))
+- Extend recaptcha logging ([#11182](https://github.com/blockscout/blockscout/issues/11182))
+- Update Github Actions packages versions ([#11144](https://github.com/blockscout/blockscout/issues/11144))
+- Convinient way to manage known_hosts within devcontainer ([#11091](https://github.com/blockscout/blockscout/issues/11091))
+- Add docker compose file without microservices ([#11097](https://github.com/blockscout/blockscout/issues/11097))
+
+### New ENV Variables
+
+| Variable                                    | Description                                                                                                                                                                                                                                            | Parameters                                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `ETHEREUM_JSONRPC_HTTP_URLS`                            | Analogue of `ETHEREUM_JSONRPC_HTTP_URL` for multiple values. Implemented in [#10934](https://github.com/blockscout/blockscout/pull/10934)                                                                                                                                                                                                                                                                                                          | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: API, Indexer</p>                                                                   |
+| `ETHEREUM_JSONRPC_FALLBACK_HTTP_URLS`                   | Analogue of `ETHEREUM_JSONRPC_FALLBACK_HTTP_URL` for multiple values. Implemented in [#10934](https://github.com/blockscout/blockscout/pull/10934)                                                                                                                                                                                                                                                                                                                                             | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: API, Indexer</p>                                                                                                  |
+| `ETHEREUM_JSONRPC_TRACE_URLS`                           | Analogue of `ETHEREUM_JSONRPC_TRACE_URL` for multiple values. Implemented in [#10934](https://github.com/blockscout/blockscout/pull/10934)                                                                                                                                                                                                                                                                        | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: API, Indexer</p>                                                                                  |
+| `ETHEREUM_JSONRPC_FALLBACK_TRACE_URLS`                  | Analogue of `ETHEREUM_JSONRPC_FALLBACK_TRACE_URL` for multiple values. Implemented in [#10934](https://github.com/blockscout/blockscout/pull/10934)                                                                                                                                                                                                                                                                                                                                            | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: API, Indexer</p>                                                                                                  |
+| `ETHEREUM_JSONRPC_ETH_CALL_URLS`                        | Analogue of `ETHEREUM_JSONRPC_ETH_CALL_URL` for multiple values. Implemented in [#10934](https://github.com/blockscout/blockscout/pull/10934)                                                                                                                                                                                                                                                                                                                                     | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: API, Indexer</p>                                                                                                  |
+| `ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URLS`               | Analogue of `ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URL` for multiple values. Implemented in [#10934](https://github.com/blockscout/blockscout/pull/10934)                                                                                                                                                                                                                                                                                                                                       | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: API, Indexer</p>                                                                                                  |
+| `ETHEREUM_JSONRPC_HTTP_GZIP_ENABLED`              | If `true`, then send gzip encoding header and expect encoding in response. Implemented in [#11292](https://github.com/blockscout/blockscout/pull/11292).                                                                                                                                                                                                                                                                                                           | <p>Version: v6.10.0+<br>Default: <code>false</code><br>Applications: API, Indexer</p>                                                                                                       |
+| `REPLICA_MAX_LAG`                                       | Defines the max lag for read-only replica. If the actual lag is higher than this, replica is considered unavailable and all requests to it are redirected to main DB. Implemented in [#11020](https://github.com/blockscout/blockscout/pull/11020)                                                                                                                                                                                                 | <p>Version: v6.10.0+<br>Default: 5m<br>Applications: API</p>                                                                                                                 |
+| `SANITIZE_INCORRECT_NFT_TIMEOUT`                             | Timeout between sanitizing token transfer batches processing. Implemented in [#11358](https://github.com/blockscout/blockscout/pull/11358)                                                                     | <p>Version: v6.10.0+<br>Default: <code>0</code><br>Applications: API, Indexer</p>        |
+| `SANITIZE_INCORRECT_WETH_TIMEOUT`                            | Timeout between sanitizing token transfer batches processing. Implemented in [#11358](https://github.com/blockscout/blockscout/pull/11358)                                                                     | <p>Version: v6.10.0+<br>Default: <code>0</code><br>Applications: API, Indexer</p>        |
+| `REINDEX_INTERNAL_TRANSACTIONS_STATUS_BATCH_SIZE`            | Number of internal transactions to reindex in the batch. Implemented in [#11358](https://github.com/blockscout/blockscout/pull/11358)                                                                          | <p>Version: v6.10.0+<br>Default: <code>100</code><br>Applications: API, Indexer</p>      |
+| `REINDEX_INTERNAL_TRANSACTIONS_STATUS_CONCURRENCY`           | Number of parallel reindexing internal transaction batches processing. Implemented in [#11358](https://github.com/blockscout/blockscout/pull/11358)                                                            | <p>Version: v6.10.0+<br>Default: <code>1</code><br>Applications: API, Indexer</p>        |
+| `REINDEX_INTERNAL_TRANSACTIONS_STATUS_TIMEOUT`               | Timeout between reindexing internal transaction batches processing. Implemented in [#11358](https://github.com/blockscout/blockscout/pull/11358)                                                               | <p>Version: v6.10.0+<br>Default: <code>0</code><br>Applications: API, Indexer</p>        |
+| `NFT_MEDIA_HANDLER_AWS_ACCESS_KEY_ID`                     | S3 API Access Key ID                                                                                                                                                                                                             | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: NFT_MEDIA_HANDLER</p> |
+| `NFT_MEDIA_HANDLER_AWS_SECRET_ACCESS_KEY`                 | S3 API Secret Access Key                                                                                                                                                                                                         | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: NFT_MEDIA_HANDLER</p> |
+| `NFT_MEDIA_HANDLER_AWS_BUCKET_HOST`                       | S3 API URL                                                                                                                                                                                                                       | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: NFT_MEDIA_HANDLER</p> |
+| `NFT_MEDIA_HANDLER_AWS_BUCKET_NAME`                       | S3 bucket name                                                                                                                                                                                                                   | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: NFT_MEDIA_HANDLER</p> |
+| `NFT_MEDIA_HANDLER_AWS_PUBLIC_BUCKET_URL`                 | Public S3 bucket URL                                                                                                                                                                                                             | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: API</p>               |
+| `NFT_MEDIA_HANDLER_ENABLED`                               | if `true`, CDN feature enabled                                                                                                                                                                                                   | <p>Version: v6.10.0+<br>Default: <code>false</code><br>Applications: Indexer, NFT_MEDIA_HANDLER</p>    |
+| `NFT_MEDIA_HANDLER_REMOTE_DISPATCHER_NODE_MODE_ENABLED`   | if `true`, nft media handler is supposed to run separately.                                                                                                                                                                      | <p>Version: v6.10.0+<br>Default: <code>false</code><br>Applications: Indexer, NFT_MEDIA_HANDLER</p>    |
+| `NFT_MEDIA_HANDLER_IS_WORKER`                             | if `true`, and `NFT_MEDIA_HANDLER_REMOTE_DISPATCHER_NODE_MODE_ENABLED=true` will be started only nft_media_handler app                                                                                                           | <p>Version: v6.10.0+<br>Default: <code>false</code><br>Applications: Indexer, NFT_MEDIA_HANDLER</p>    |
+| `NFT_MEDIA_HANDLER_NODES_MAP`                             | String in json map format, where key is erland node and value is folder in R2/S3 bucket, example: `"{\"producer@172.18.0.4\": \"/folder_1\"}"`. If nft_media_handler runs in one pod with indexer, map should contain `self` key | <p>Version: v6.10.0+<br>Default: (empty)<br>Applications: NFT_MEDIA_HANDLER</p>               |
+| `NFT_MEDIA_HANDLER_WORKER_CONCURRENCY`                    | Concurrency of media handling (resizing/uploading)                                                                                                                                                                               | <p>Version: v6.10.0+<br>Default: <code>10</code><br>Applications: NFT_MEDIA_HANDLER</p>       |
+| `NFT_MEDIA_HANDLER_WORKER_BATCH_SIZE`                     | Number of url processed by one async task                                                                                                                                                                                        | <p>Version: v6.10.0+<br>Default: <code>10</code><br>Applications: NFT_MEDIA_HANDLER</p>       |
+| `NFT_MEDIA_HANDLER_WORKER_SPAWN_TASKS_TIMEOUT`            | Timeout before spawn new task                                                                                                                                                                                                    | <p>Version: v6.10.0+<br>Default: <code>100ms</code><br>Applications: NFT_MEDIA_HANDLER</p>    |
+| `NFT_MEDIA_HANDLER_BACKFILL_ENABLED`                      | If `true`, unprocessed token instnaces from DB will be processed via nft_media_handler                                                                                                                                           | <p>Version: v6.10.0+<br>Default: <code>false</code><br>Applications: Indexer</p>    |
+| `NFT_MEDIA_HANDLER_BACKFILL_QUEUE_SIZE`                   | Max size of backfill queue                                                                                                                                                                                                       | <p>Version: v6.10.0+<br>Default: <code>1000</code><br>Applications: Indexer</p>     |
+| `NFT_MEDIA_HANDLER_BACKFILL_ENQUEUE_BUSY_WAITING_TIMEOUT` | Timeout before new attempt to append item to backfill queue if it's full                                                                                                                                                         | <p>Version: v6.10.0+<br>Default: <code>1s</code><br>Applications: Indexer</p>       |
+| `NFT_MEDIA_HANDLER_CACHE_UNIQUENESS_MAX_SIZE`             | Max size of cache, where stored already uploaded token instances media                                                                                                                                                           | <p>Version: v6.10.0+<br>Default: <code>100_000</code><br>Applications: Indexer</p>  |
+
+
 ## 6.9.0
 
 ### 🚀 Features

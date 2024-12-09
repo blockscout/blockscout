@@ -30,7 +30,7 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile
       args:
-        RELEASE_VERSION: 6.9.2
+        RELEASE_VERSION: 6.10.0
     links:
       - db:database
     environment:
@@ -49,7 +49,7 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile
       args:
-        RELEASE_VERSION: 6.9.2
+        RELEASE_VERSION: 6.10.0
 
   visualizer:
     extends:
