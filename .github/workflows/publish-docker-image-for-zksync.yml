@@ -35,7 +35,7 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=zksync
 
@@ -52,7 +52,7 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_API=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=zksync
 
@@ -69,7 +69,7 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_INDEXER=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=zksync
 
@@ -85,7 +85,7 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=zksync
 
@@ -102,7 +102,7 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_API=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=zksync
 
@@ -119,6 +119,6 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_INDEXER=true
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=zksync
