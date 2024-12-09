@@ -635,11 +635,18 @@ config :explorer, Explorer.Migrator.TokenTransferTokenType,
 
 config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
   batch_size: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_NFT_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_NFT_CONCURRENCY", 1)
+  concurrency: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_NFT_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("SANITIZE_INCORRECT_NFT_TIMEOUT", "0s")
 
 config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
   batch_size: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_WETH_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_WETH_CONCURRENCY", 1)
+  concurrency: ConfigHelper.parse_integer_env_var("SANITIZE_INCORRECT_WETH_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("SANITIZE_INCORRECT_WETH_TIMEOUT", "0s")
+
+config :explorer, Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus,
+  batch_size: ConfigHelper.parse_integer_env_var("REINDEX_INTERNAL_TRANSACTIONS_STATUS_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("REINDEX_INTERNAL_TRANSACTIONS_STATUS_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("REINDEX_INTERNAL_TRANSACTIONS_STATUS_TIMEOUT", "0s")
 
 config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_CONCURRENCY", 5),
