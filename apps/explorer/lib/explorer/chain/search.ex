@@ -399,17 +399,17 @@ defmodule Explorer.Chain.Search do
 
   defp search_token_query_not_certified(term, paging_options) do
     term
-    |> base_token_query(paging_options)
+    |> search_token_by_symbol_or_name_query(paging_options)
     |> where([smart_contract: smart_contract], is_nil(smart_contract.certified) or not smart_contract.certified)
   end
 
   defp search_token_query_certified(term, paging_options) do
     term
-    |> base_token_query(paging_options)
+    |> search_token_by_symbol_or_name_query(paging_options)
     |> where([smart_contract: smart_contract], smart_contract.certified)
   end
 
-  defp base_token_query(term, paging_options) do
+  defp search_token_by_symbol_or_name_query(term, paging_options) do
     base_query =
       from(token in Token,
         as: :token,
@@ -749,18 +749,18 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_ens_name(search_query, options) do
-    if result = search_ens_name_in_bens(search_query) do
-      {ens_result, address_hash} = result
+    case search_ens_name_in_bens(search_query) do
+      {ens_result, address_hash} ->
+        [
+          address_hash
+          |> search_address_by_address_hash_query()
+          |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
+          |> select_repo(options).all()
+          |> merge_address_search_result_with_ens_info(ens_result)
+        ]
 
-      [
-        address_hash
-        |> search_address_by_address_hash_query()
-        |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
-        |> select_repo(options).all()
-        |> merge_address_search_result_with_ens_info(ens_result)
-      ]
-    else
-      []
+      _ ->
+        []
     end
   end
 
