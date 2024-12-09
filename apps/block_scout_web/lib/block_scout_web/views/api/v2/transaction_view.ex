@@ -904,6 +904,16 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         BlockScoutWeb.API.V2.CeloView.extend_transaction_json_response(result, transaction)
       end
 
+    :zilliqa ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
+
+      defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.ZilliqaView.extend_transaction_json_response(result, transaction)
+      end
+
     _ ->
       defp chain_type_transformations(transactions) do
         transactions
