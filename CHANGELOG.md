@@ -62,6 +62,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Remove beta suffix from releases ([#11376](https://github.com/blockscout/blockscout/issues/11376))
 - Background migrations timeout ([#11358](https://github.com/blockscout/blockscout/issues/11358))
 - Remove obsolete compile-time vars ([#11336](https://github.com/blockscout/blockscout/issues/11336))
 - Fixate Postgres 17 version in Docker compose and Github Actions workflows ([#11334](https://github.com/blockscout/blockscout/issues/11334))
