@@ -347,8 +347,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         "compiler_version" => smart_contract.compiler_version,
         "optimization_enabled" => smart_contract.optimization,
         "transaction_count" => smart_contract.address.transactions_count,
-        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-        "tx_count" => smart_contract.address.transactions_count,
         "language" => smart_contract_language(smart_contract),
         "verified_at" => smart_contract.inserted_at,
         "market_cap" => token && token.circulating_market_cap,
