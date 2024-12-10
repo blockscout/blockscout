@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Optimism.WithdrawalEvent do
     field(:withdrawal_hash, Hash.Full, primary_key: true)
     field(:l1_event_type, Ecto.Enum, values: [:WithdrawalProven, :WithdrawalFinalized], primary_key: true)
     field(:l1_timestamp, :utc_datetime_usec)
-    field(:l1_transaction_hash, Hash.Full)
+    field(:l1_transaction_hash, Hash.Full, primary_key: true)
     field(:l1_block_number, :integer)
     field(:game_index, :integer)
 

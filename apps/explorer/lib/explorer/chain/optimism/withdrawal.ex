@@ -169,7 +169,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   def status(w, respected_games \\ nil)
 
   def status(w, respected_games) when is_nil(w.l1_transaction_hash) do
-    proven_event = proven_event_by_hash(w.hash)
+    proven_events = proven_events_by_hash(w.hash)
 
     respected_games =
       if is_nil(respected_games) do
@@ -178,7 +178,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         respected_games
       end
 
-    if is_nil(proven_event) do
+    if proven_events == [] do
       cond do
         appropriate_games_found(w.l2_block_number, respected_games) ->
           {@withdrawal_status_ready_to_prove, nil}
@@ -190,7 +190,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
           {@withdrawal_status_waiting_for_state_root, nil}
       end
     else
-      handle_proven_status(proven_event, respected_games)
+      handle_proven_status(proven_events, respected_games)
     end
   end
 
@@ -269,33 +269,58 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     end
   end
 
-  defp handle_proven_status({l1_timestamp, game_index}, respected_games) do
-    game = game_by_index(game_index)
+  defp handle_proven_status(proven_events, respected_games) do
+    statuses =
+      proven_events
+      |> Enum.reduce_while([], fn {l1_timestamp, game_index}, acc ->
+        game = game_by_index(game_index)
 
-    cond do
-      is_nil(game_index) and not Enum.empty?(respected_games) ->
-        # here we cannot exactly determine the status `Waiting a game to resolve` or
-        # `Ready for relay` or `In challenge period`
-        # as we don't know the game index. In this case we display the `Proven` status
-        {@withdrawal_status_proven, nil}
+        status =
+          cond do
+            is_nil(game_index) and not Enum.empty?(respected_games) ->
+              # here we cannot exactly determine the status `Waiting a game to resolve` or
+              # `Ready for relay` or `In challenge period`
+              # as we don't know the game index. In this case we display the `Proven` status
+              {@withdrawal_status_proven, nil}
 
-      is_nil(game) or DateTime.compare(l1_timestamp, game.created_at) == :lt ->
-        # the old status determining approach
-        pre_fault_proofs_status(l1_timestamp)
+            is_nil(game) or DateTime.compare(l1_timestamp, game.created_at) == :lt ->
+              # the old status determining approach
+              pre_fault_proofs_status(l1_timestamp)
 
-      true ->
-        # the new status determining approach
-        post_fault_proofs_status(l1_timestamp, game)
-    end
+            true ->
+              # the new status determining approach
+              post_fault_proofs_status(l1_timestamp, game)
+          end
+
+        if status == @withdrawal_status_ready_for_relay do
+          {:halt, [status]}
+        else
+          {:cont, [status | acc]}
+        end
+      end)
+
+    status_priority =
+      %{}
+      |> Map.put(@withdrawal_status_in_challenge, 30)
+      |> Map.put(@withdrawal_status_waiting_to_resolve, 20)
+      |> Map.put(@withdrawal_status_proven, 10)
+
+    statuses
+    |> Enum.sort_by(fn {s, timestamp} ->
+      {status_priority[s], (if not is_nil(timestamp), do: -DateTime.to_unix(timestamp))}
+    end, :desc)
+    |> Enum.at(0)
   end
 
-  defp proven_event_by_hash(withdrawal_hash) do
-    Repo.replica().one(
+  defp proven_events_by_hash(withdrawal_hash) do
+    Repo.replica().all(
       from(
         we in WithdrawalEvent,
         select: {we.l1_timestamp, we.game_index},
-        where: we.withdrawal_hash == ^withdrawal_hash and we.l1_event_type == :WithdrawalProven
-      )
+        where: we.withdrawal_hash == ^withdrawal_hash and we.l1_event_type == :WithdrawalProven,
+        order_by: [asc: we.l1_block_number]
+      ),
+      timeout: :infinity
     )
   end
 
