@@ -2,6 +2,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @moduledoc """
   Module for proxy smart-contract implementation detection
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias EthereumJSONRPC.Contract
   alias Explorer.Chain.{Address, Hash, SmartContract}
@@ -584,7 +585,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     end)
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :filecoin do
+  if @chain_type == :filecoin do
     def chain_type_fields(%{"address" => address_hash} = address, implementations_info) do
       Map.put(address, "filecoin_robust_address", implementations_info[address_hash])
     end

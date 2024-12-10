@@ -1,11 +1,14 @@
-if Application.compile_env(:explorer, :chain_type) == :zilliqa do
-  defmodule BlockScoutWeb.API.V2.ZilliqaView do
-    @moduledoc """
-    View functions for rendering Zilliqa-related data in JSON format.
-    """
+defmodule BlockScoutWeb.API.V2.ZilliqaView do
+  @moduledoc """
+  View functions for rendering Zilliqa-related data in JSON format.
+  """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-    alias Explorer.Chain.Block
-    alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}
+  if @chain_type == :zilliqa do
+    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
+    import Explorer.Chain.Zilliqa.Helper, only: [scilla_transaction?: 1], warn: false
+    alias Explorer.Chain.{Address, Block, Transaction}, warn: false
+    alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}, warn: false
 
     @doc """
     Extends the JSON output with a sub-map containing information related to Zilliqa,
@@ -31,6 +34,55 @@ if Application.compile_env(:explorer, :chain_type) == :zilliqa do
 
       Map.put(out_json, :zilliqa, zilliqa_json)
     end
+
+    @doc """
+    Extends the JSON output with a sub-map containing information related to Zilliqa,
+    such as if the transaction is a Scilla transaction.
+
+    ## Parameters
+    - `out_json`: A map defining the output JSON which will be extended.
+    - `transaction`: The transaction structure.
+
+    ## Returns
+    - A map extended with data related to Zilliqa.
+    """
+    @spec extend_transaction_json_response(map(), Transaction.t()) :: map()
+    def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
+      Map.put(out_json, :zilliqa, %{
+        is_scilla: scilla_transaction?(transaction)
+      })
+    end
+
+    @doc """
+    Extends the JSON output with a sub-map containing information related to
+    Zilliqa, such as if the address is a Scilla smart contract.
+
+    ## Parameters
+    - `out_json`: A map defining the output JSON which will be extended.
+    - `address`: The address structure.
+
+    ## Returns
+    - A map extended with data related to Zilliqa.
+    """
+    @spec extend_address_json_response(map(), Address.t()) :: map()
+    def extend_address_json_response(out_json, %Address{} = address) do
+      is_scilla_contract =
+        case address do
+          %Address{
+            contracts_creation_transaction: transaction
+          } ->
+            scilla_transaction?(transaction)
+
+          _ ->
+            false
+        end
+
+      Map.put(out_json, :zilliqa, %{
+        is_scilla_contract: is_scilla_contract
+      })
+    end
+
+    def extend_address_json_response(out_json, _address), do: out_json
 
     @spec add_quorum_certificate(map(), Block.t()) :: map()
     defp add_quorum_certificate(
@@ -77,7 +129,8 @@ if Application.compile_env(:explorer, :chain_type) == :zilliqa do
             &%{
               view: &1.view,
               signature: &1.signature,
-              proposed_by_validator_index: &1.proposed_by_validator_index
+              proposed_by_validator_index: &1.proposed_by_validator_index,
+              signers: &1.signers
             }
           )
       })

@@ -8,7 +8,11 @@ defmodule BlockScoutWeb.API.V1.HealthController do
 
   @ok_message "OK"
 
-  def health(conn, _) do
+  def health(conn, params) do
+    health(conn, params, Application.get_env(:nft_media_handler, :standalone_media_worker?))
+  end
+
+  defp health(conn, _params, false) do
     with {:ok, number, timestamp} <- Chain.last_db_block_status(),
          {:ok, cache_number, cache_timestamp} <- Chain.last_cache_block_status() do
       send_resp(conn, :ok, result(number, timestamp, cache_number, cache_timestamp))
@@ -17,12 +21,26 @@ defmodule BlockScoutWeb.API.V1.HealthController do
     end
   end
 
+  defp health(conn, _params, true) do
+    send_resp(
+      conn,
+      :ok,
+      %{
+        "healthy" => true,
+        "data" => %{}
+      }
+      |> Jason.encode!()
+    )
+  end
+
   def liveness(conn, _) do
     send_resp(conn, :ok, @ok_message)
   end
 
   def readiness(conn, _) do
-    Chain.last_db_block_status()
+    unless Application.get_env(:nft_media_handler, :standalone_media_worker?) do
+      Chain.last_db_block_status()
+    end
 
     send_resp(conn, :ok, @ok_message)
   end

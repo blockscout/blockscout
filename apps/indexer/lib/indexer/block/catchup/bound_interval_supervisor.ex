@@ -311,7 +311,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
         } = state
       ) do
     Logger.error(fn ->
-      "Catchup index stream exited because the archive node endpoint at #{Keyword.get(options, :url)} is unavailable. Restarting"
+      "Catchup index stream exited because the archive node endpoint at #{Keyword.get(options, :urls)} is unavailable. Restarting"
     end)
 
     send(self(), :catchup_index)

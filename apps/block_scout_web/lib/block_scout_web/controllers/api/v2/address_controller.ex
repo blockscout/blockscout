@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.AddressController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Chain,
     only: [
@@ -39,7 +40,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :celo ->
       @chain_type_transaction_necessity_by_association %{
         :gas_token => :optional
@@ -83,7 +84,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     api?: true
   ]
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :filecoin ->
       @contract_address_preloads [
         :smart_contract,
@@ -510,9 +511,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         token_balances: :token_balances_count,
         logs: :logs_count,
         withdrawals: :withdrawals_count,
-        # todo: support of 2 props in API endpoint is for compatibility with the current version of frontend.
-        # It should be ultimately removed.
-        internal_transactions: [:internal_transactions_count, :internal_txs_count],
+        internal_transactions: :internal_transactions_count,
         celo_election_rewards: :celo_election_rewards_count
       }
 
@@ -524,15 +523,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> Map.fetch(counter_name)
           |> case do
             {:ok, json_field_name} ->
-              # todo: array-type value processing here is temporary. Please remove it with updating frontend to the new version.
-              if is_list(json_field_name) do
-                # credo:disable-for-next-line
-                Enum.reduce(json_field_name, acc, fn field_name, acc2 ->
-                  Map.put(acc2, field_name, counter_value)
-                end)
-              else
-                Map.put(acc, json_field_name, counter_value)
-              end
+              Map.put(acc, json_field_name, counter_value)
 
             :error ->
               acc

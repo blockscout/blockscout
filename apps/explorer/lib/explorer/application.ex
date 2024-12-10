@@ -82,14 +82,19 @@ defmodule Explorer.Application do
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       {Redix, redix_opts()},
-      {Explorer.Utility.MissingRangesManipulator, []}
+      {Explorer.Utility.MissingRangesManipulator, []},
+      {Explorer.Utility.ReplicaAccessibilityManager, []}
     ]
 
     children = base_children ++ configurable_children()
 
     opts = [strategy: :one_for_one, name: Explorer.Supervisor, max_restarts: 1_000]
 
-    Supervisor.start_link(children, opts)
+    if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
+      Supervisor.start_link([], opts)
+    else
+      Supervisor.start_link(children, opts)
+    end
   end
 
   defp configurable_children do

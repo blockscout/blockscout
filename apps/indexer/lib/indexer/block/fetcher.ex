@@ -4,6 +4,7 @@ defmodule Indexer.Block.Fetcher do
   """
 
   use Spandex.Decorators
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
@@ -289,7 +290,7 @@ defmodule Indexer.Block.Fetcher do
     end
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :ethereum ->
       defp import_options(basic_import_options, %{transactions_with_receipts: transactions_with_receipts}) do
         basic_import_options
@@ -491,9 +492,17 @@ defmodule Indexer.Block.Fetcher do
         block_number: block_number,
         hash: hash,
         created_contract_address_hash: %Hash{} = created_contract_address_hash,
-        created_contract_code_indexed_at: nil
+        created_contract_code_indexed_at: nil,
+        type: type
       } ->
-        [%{block_number: block_number, hash: hash, created_contract_address_hash: created_contract_address_hash}]
+        [
+          %{
+            block_number: block_number,
+            hash: hash,
+            created_contract_address_hash: created_contract_address_hash,
+            type: type
+          }
+        ]
 
       %Transaction{created_contract_address_hash: nil} ->
         []

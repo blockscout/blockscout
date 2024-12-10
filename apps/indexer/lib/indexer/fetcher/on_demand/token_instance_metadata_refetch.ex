@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   alias Explorer.Token.MetadataRetriever
   alias Explorer.Utility.TokenInstanceMetadataRefetchAttempt
   alias Indexer.Fetcher.TokenInstance.Helper, as: TokenInstanceHelper
+  alias Indexer.NFTMediaHandler.Queue
 
   @max_delay :timer.hours(168)
 
@@ -46,7 +47,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   end
 
   defp fetch_and_broadcast_metadata(token_instance, _state) do
-    from_base_uri? = Application.get_env(:indexer, __MODULE__)[:base_uri_retry?]
+    from_base_uri? = Application.get_env(:indexer, TokenInstanceHelper)[:base_uri_retry?]
 
     token_id = TokenInstanceHelper.prepare_token_id(token_instance.token_id)
     contract_address_hash_string = to_string(token_instance.token_contract_address_hash)
@@ -77,6 +78,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
         %{fetched_token_instance_metadata: [to_string(token_instance.token_contract_address_hash), token_id, metadata]},
         :on_demand
       )
+
+      Queue.process_new_instance({:ok, %TokenInstance{token_instance | metadata: metadata}})
     else
       {:empty_result, true} ->
         :ok

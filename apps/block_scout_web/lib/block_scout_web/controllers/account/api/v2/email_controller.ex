@@ -1,16 +1,16 @@
 defmodule BlockScoutWeb.Account.API.V2.EmailController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, invalid_session_key: [:block_scout_web, :invalid_session_key]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
+  alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Account.API.V2.AuthenticateController
   alias Explorer.Account.Identity
   alias Explorer.{Helper, Repo}
   alias Explorer.ThirdPartyIntegrations.Auth0
 
   require Logger
-
-  @invalid_session_key Application.compile_env(:block_scout_web, :invalid_session_key)
 
   action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
 
@@ -97,7 +97,7 @@ defmodule BlockScoutWeb.Account.API.V2.EmailController do
           | Plug.Conn.t()
   def link_email(conn, %{"email" => email, "otp" => otp}) do
     with {:auth, %{} = user} <- {:auth, current_user(conn)},
-         {:ok, auth} <- Auth0.link_email(user, email, otp) do
+         {:ok, auth} <- Auth0.link_email(user, email, otp, AccessHelper.conn_to_ip_string(conn)) do
       AuthenticateController.put_auth_to_session(conn, auth)
     end
   end

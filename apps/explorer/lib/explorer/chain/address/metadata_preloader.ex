@@ -86,9 +86,8 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   def preload_metadata_to_list(items) do
     address_hash_strings =
       items
-      |> Enum.reduce([], fn item, acc ->
-        item_to_address_hash_strings(item) ++ acc
-      end)
+      |> Enum.flat_map(&item_to_address_hash_strings/1)
+      |> Enum.filter(&(&1 != ""))
       |> Enum.uniq()
 
     case Metadata.get_addresses_tags(address_hash_strings) do

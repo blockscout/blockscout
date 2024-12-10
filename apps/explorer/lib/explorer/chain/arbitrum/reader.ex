@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   """
 
   import Ecto.Query, only: [dynamic: 2, from: 2, limit: 2, order_by: 2, select: 3, subquery: 1, where: 2, where: 3]
-  import Explorer.Chain, only: [select_repo: 1]
+  import Explorer.Chain, only: [log_with_transactions_query: 0, select_repo: 1]
 
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
@@ -605,6 +605,76 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+    Retrieves L2-to-L1 messages initiated by specified transaction.
+
+    The messages are filtered by the originating transaction hash (with any status).
+    In the common case a transaction can initiate several messages.
+
+    ## Parameters
+    - `transaction_hash`: The transaction hash which initiated the messages.
+
+    ## Returns
+    - Instances of `Explorer.Chain.Arbitrum.Message` initiated by the transaction
+      with the given hash, or `[]` if no messages with the given status are found.
+  """
+  @spec l2_to_l1_messages_by_transaction_hash(Hash.Full.t(), api?: boolean()) :: [
+          Message.t()
+        ]
+  def l2_to_l1_messages_by_transaction_hash(transaction_hash, options \\ []) when is_list(options) do
+    query =
+      from(msg in Message,
+        where: msg.direction == :from_l2 and msg.originating_transaction_hash == ^transaction_hash,
+        order_by: [desc: msg.message_id]
+      )
+
+    query
+    |> select_repo(options).all()
+  end
+
+  @doc """
+    Retrieves logs from a transaction that match a specific topic.
+
+    Fetches all logs emitted by the specified transaction that have the given topic
+    as their first topic, ordered by log index.
+
+    ## Parameters
+    - `transaction_hash`: The hash of the transaction to fetch logs from
+    - `topic0`: The first topic to filter logs by
+    - `options`: Optional keyword list with `:api?` flag to use replica database
+
+    ## Returns
+    - A list of matching logs ordered by index, or empty list if none found
+  """
+  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary(), api?: boolean()) :: [Log.t()]
+  def transaction_to_logs_by_topic0(transaction_hash, topic0, options \\ []) when is_list(options) do
+    log_with_transactions_query()
+    |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
+    |> order_by(asc: :index)
+    |> select_repo(options).all()
+  end
+
+  @doc """
+    Retrieves L2-to-L1 message by message id.
+
+    ## Parameters
+    - `message_id`: message ID
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - Instance of `Explorer.Chain.Arbitrum.Message` with the provided message id,
+      or nil if message with the given id doesn't exist.
+  """
+  @spec l2_to_l1_message_by_id(non_neg_integer(), api?: boolean()) :: Message.t() | nil
+  def l2_to_l1_message_by_id(message_id, options) do
+    query =
+      from(message in Message,
+        where: message.message_id == ^message_id
+      )
+
+    select_repo(options).one(query)
   end
 
   @doc """

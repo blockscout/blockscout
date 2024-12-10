@@ -3,14 +3,12 @@ defmodule Explorer.Counters.BlockBurntFeeCounter do
   Caches Block Burnt Fee counter.
   """
   use GenServer
+  use Utils.CompileTimeEnvHelper, enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
   alias Explorer.Chain
   alias Explorer.Counters.Helper
 
   @cache_name :block_burnt_fee_counter
-
-  config = Application.compile_env(:explorer, __MODULE__)
-  @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do

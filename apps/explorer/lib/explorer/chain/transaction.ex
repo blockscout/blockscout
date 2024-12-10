@@ -5,6 +5,7 @@ defmodule Explorer.Chain.Transaction.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Transactions
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain
 
@@ -29,7 +30,7 @@ defmodule Explorer.Chain.Transaction.Schema do
   alias Explorer.Chain.Transaction.{Fork, Status}
   alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
 
-  @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_fields (case @chain_type do
                         :ethereum ->
                           # elem(quote do ... end, 2) doesn't work with a single has_one instruction
                           quote do
@@ -296,6 +297,10 @@ defmodule Explorer.Chain.Transaction do
 
   use Explorer.Schema
 
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    decode_not_a_contract_calls: [:explorer, :decode_not_a_contract_calls]
+
   require Logger
   require Explorer.Chain.Transaction.Schema
 
@@ -328,7 +333,7 @@ defmodule Explorer.Chain.Transaction do
                      gas_used index created_contract_code_indexed_at status
                      to_address_hash revert_reason type has_error_in_internal_transactions r s v)a
 
-  @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_optional_attrs (case @chain_type do
                                 :optimism ->
                                   ~w(l1_fee l1_fee_scalar l1_gas_price l1_gas_used l1_transaction_origin l1_block_number)a
 
@@ -810,7 +815,7 @@ defmodule Explorer.Chain.Transaction do
   end
 
   # skip decoding if to_address is not a contract unless DECODE_NOT_A_CONTRACT_CALLS is set
-  if not Application.compile_env(:explorer, :decode_not_a_contract_calls) do
+  if not @decode_not_a_contract_calls do
     def decoded_input_data(
           %__MODULE__{to_address: %{contract_code: nil}},
           _,
@@ -1853,7 +1858,7 @@ defmodule Explorer.Chain.Transaction do
     {:maximum, fee_calc(transaction, gas_price, gas, unit)}
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :optimism do
+  if @chain_type == :optimism do
     def fee(%Transaction{gas_price: nil, gas_used: _gas_used}, _unit) do
       {:actual, nil}
     end

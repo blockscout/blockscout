@@ -407,6 +407,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       assert instance.retries_count == 0
       assert DateTime.diff(refetch_after, instance.refetch_after) < 1
       assert !is_nil(instance.error)
+      assert not instance.is_banned
     end
 
     test "proper updates retries count and refetch after on retry" do
@@ -438,6 +439,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       assert instance.retries_count == 1
       assert DateTime.diff(refetch_after, instance.refetch_after) < 1
       assert !is_nil(instance.error)
+      assert not instance.is_banned
     end
 
     test "success insert after retry" do
@@ -468,6 +470,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       assert instance.retries_count == 1
       assert DateTime.diff(refetch_after, instance.refetch_after) < 1
       assert !is_nil(instance.error)
+      assert not instance.is_banned
 
       token_address = to_string(erc_721_token.contract_address_hash)
 
@@ -511,6 +514,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       assert instance.retries_count == 2
       assert is_nil(instance.refetch_after)
       assert is_nil(instance.error)
+      assert not instance.is_banned
 
       assert instance.metadata == %{
                "name" => "OMNI404 #300067000000000000",
@@ -522,12 +526,6 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
     end
 
     test "Don't fail on high retries count" do
-      config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
-
-      coef = config[:exp_timeout_coeff]
-      base = config[:exp_timeout_base]
-      max_refetch_interval = config[:max_refetch_interval]
-
       erc_721_token = insert(:token, type: "ERC-721")
 
       token_instance =
@@ -542,14 +540,201 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
       ])
 
-      now = DateTime.utc_now()
-      refetch_after = DateTime.add(now, max_refetch_interval, :millisecond)
-
       [instance] = Repo.all(Instance)
 
       assert instance.retries_count == 51
-      assert DateTime.diff(refetch_after, instance.refetch_after) < 1
+      assert is_nil(instance.refetch_after)
       assert !is_nil(instance.error)
+      assert instance.is_banned
+    end
+
+    test "set is_banned (VM execution error) if retries_count > 9" do
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      token_instance =
+        insert(:token_instance,
+          token_contract_address_hash: erc_721_token.contract_address_hash,
+          error: "error",
+          metadata: nil,
+          retries_count: 9
+        )
+
+      token_address = to_string(erc_721_token.contract_address_hash)
+
+      data =
+        "0xc87b56dd" <>
+          (ABI.TypeEncoder.encode([Decimal.to_integer(token_instance.token_id)], [{:uint, 256}])
+           |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data: ^data,
+                                      to: ^token_address
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             error: %{code: -32015, data: "Reverted 0x", message: "execution reverted"},
+             id: id,
+             jsonrpc: "2.0"
+           }
+         ]}
+      end)
+
+      Helper.batch_fetch_instances([
+        %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+      ])
+
+      [instance] = Repo.all(Instance)
+      assert instance.error == "VM execution error"
+      assert instance.is_banned
+    end
+
+    test "don't set is_banned (VM execution error) if retries_count < 9" do
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      token_instance =
+        insert(:token_instance,
+          token_contract_address_hash: erc_721_token.contract_address_hash,
+          error: "error",
+          metadata: nil,
+          retries_count: 8
+        )
+
+      token_address = to_string(erc_721_token.contract_address_hash)
+
+      data =
+        "0xc87b56dd" <>
+          (ABI.TypeEncoder.encode([Decimal.to_integer(token_instance.token_id)], [{:uint, 256}])
+           |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data: ^data,
+                                      to: ^token_address
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             error: %{code: -32015, data: "Reverted 0x", message: "execution reverted"},
+             id: id,
+             jsonrpc: "2.0"
+           }
+         ]}
+      end)
+
+      Helper.batch_fetch_instances([
+        %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+      ])
+
+      [instance] = Repo.all(Instance)
+      assert instance.error =~ "VM execution error"
+      assert not instance.is_banned
+    end
+
+    test "don't set is_banned (429 error)", %{bypass: bypass} do
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      token_instance =
+        insert(:token_instance,
+          token_contract_address_hash: erc_721_token.contract_address_hash,
+          error: "error",
+          metadata: nil,
+          retries_count: 1000
+        )
+
+      token_address = to_string(erc_721_token.contract_address_hash)
+
+      data =
+        "0xc87b56dd" <>
+          (ABI.TypeEncoder.encode([Decimal.to_integer(token_instance.token_id)], [{:uint, 256}])
+           |> Base.encode16(case: :lower))
+
+      encoded_url =
+        "0x" <>
+          (ABI.TypeEncoder.encode(["http://localhost:#{bypass.port}/api/card"], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data: ^data,
+                                      to: ^token_address
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             result: encoded_url
+           }
+         ]}
+      end)
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/card",
+        fn conn ->
+          Conn.resp(conn, 429, "429 Too many requests")
+        end
+      )
+
+      Helper.batch_fetch_instances([
+        %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+      ])
+
+      now = DateTime.utc_now()
+
+      refetch_after =
+        DateTime.add(
+          now,
+          Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)[:max_refetch_interval],
+          :millisecond
+        )
+
+      [instance] = Repo.all(Instance)
+      assert DateTime.diff(refetch_after, instance.refetch_after) < 1
+      assert instance.error =~ "request error: 429"
+      assert instance.retries_count == 1001
+      assert not instance.is_banned
     end
   end
 end

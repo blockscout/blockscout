@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Notifier do
   @moduledoc """
   Responds to events by sending appropriate channel updates to front-end.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
@@ -31,9 +32,12 @@ defmodule BlockScoutWeb.Notifier do
 
   @check_broadcast_sequence_period 500
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       @chain_type_specific_events ~w(new_arbitrum_batches new_messages_to_arbitrum_amount)a
+
+    :optimism ->
+      @chain_type_specific_events ~w(new_optimism_batches new_optimism_deposits)a
 
     _ ->
       nil
@@ -275,10 +279,6 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:#{to_string(address_hash)}", "changed_bytecode", %{})
   end
 
-  def handle_event({:chain_event, :optimism_deposits, :realtime, deposits}) do
-    broadcast_optimism_deposits(deposits, "optimism_deposits:new_deposits", "deposits")
-  end
-
   def handle_event({:chain_event, :smart_contract_was_verified = event, :on_demand, [address_hash]}) do
     broadcast_automatic_verification_events(event, address_hash)
   end
@@ -297,11 +297,16 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       def handle_event({:chain_event, topic, _, _} = event) when topic in @chain_type_specific_events,
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         do: BlockScoutWeb.Notifiers.Arbitrum.handle_event(event)
+
+    :optimism ->
+      def handle_event({:chain_event, topic, _, _} = event) when topic in @chain_type_specific_events,
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        do: BlockScoutWeb.Notifiers.Optimism.handle_event(event)
 
     _ ->
       nil
@@ -455,10 +460,6 @@ defmodule BlockScoutWeb.Notifier do
         internal_transaction: internal_transaction
       })
     end
-  end
-
-  defp broadcast_optimism_deposits(deposits, deposit_channel, event) do
-    Endpoint.broadcast(deposit_channel, event, %{deposits: deposits})
   end
 
   defp broadcast_transactions_websocket_v2(transactions) do

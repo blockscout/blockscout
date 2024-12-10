@@ -1,9 +1,8 @@
 defmodule BlockScoutWeb.API.V2.APIKeyController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, api_v2_temp_token_key: [:block_scout_web, :api_v2_temp_token_key]
 
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
-
-  @api_v2_temp_token_key Application.compile_env(:block_scout_web, :api_v2_temp_token_key)
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 

@@ -13,8 +13,6 @@ defmodule BlockScoutWeb.Account.API.V2.TagsView do
       }) do
     %{
       personal_transaction_tag: prepare_transaction_tag(personal_transaction_tag),
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `personal_transaction_tag` property
-      personal_tx_tag: prepare_transaction_tag(personal_transaction_tag),
       personal_tags: personal_tags,
       watchlist_names: watchlist_names,
       common_tags: common_tags

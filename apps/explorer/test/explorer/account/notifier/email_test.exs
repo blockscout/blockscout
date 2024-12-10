@@ -110,8 +110,6 @@ defmodule Explorer.Account.Notifier.EmailTest do
                        "transaction_url" =>
                          "https://eth.blockscout.com/tx/0x5d5ff210261f1b2d6e4af22ea494f428f9997d4ab614a629d4f1390004b3e80d",
                        "transaction_fee" => Decimal.new(210_000),
-                       # todo: keep next line for compatibility with old version of SendGrid template. Remove it when the changes released and Sendgrid template updated.
-                       "tx_fee" => Decimal.new(210_000),
                        "username" => "John Snow"
                      },
                      template_id: "d-666"

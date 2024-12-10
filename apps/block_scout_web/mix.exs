@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :app_tree,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.13",
+      elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env(), Application.get_env(:block_scout_web, :disable_api?)),
       lockfile: "../../mix.lock",
       package: package(),
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.9.0",
+      version: "6.10.0",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,
@@ -87,7 +87,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:bypass, "~> 2.1", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 3.0"},
-      {:credo, "~> 1.5", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 2.0.0"},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
@@ -120,8 +119,9 @@ defmodule BlockScoutWeb.Mixfile do
       {:number, "~> 1.0.1"},
       {:phoenix, "== 1.5.14"},
       {:phoenix_ecto, "~> 4.1"},
-      {:phoenix_html, "== 3.0.4"},
+      {:phoenix_html, "== 3.3.4"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
+      {:phoenix_live_view, "~> 0.17"},
       {:phoenix_pubsub, "~> 2.0"},
       {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       # use `:cowboy` for WebServer with `:plug`
@@ -156,6 +156,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_json_schema, "~> 0.10.1"},
       {:ueberauth, "~> 0.7"},
       {:ueberauth_auth0, "~> 2.0"},
+      {:utils, in_umbrella: true},
       {:bureaucrat, "~> 0.2.9", only: :test},
       {:logger_json, "~> 5.1"}
     ]

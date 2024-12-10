@@ -5,6 +5,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   alias Explorer.Chain
   alias Explorer.SmartContract.Reader
   alias Explorer.Token.MetadataRetriever
+  alias Indexer.NFTMediaHandler.Queue
 
   require Logger
 
@@ -252,10 +253,11 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     end
   end
 
-  def normalize_token_id("ERC-721", _token_id), do: nil
-
-  def normalize_token_id(_token_type, token_id),
+  @spec normalize_token_id(binary(), integer()) :: nil | binary()
+  defp normalize_token_id("ERC-1155", token_id),
     do: token_id |> Integer.to_string(16) |> String.downcase() |> String.pad_leading(64, "0")
+
+  defp normalize_token_id(_token_type, _token_id), do: nil
 
   defp result_to_insert_params({:ok, %{metadata: metadata}}, token_contract_address_hash, token_id) do
     %{
@@ -290,7 +292,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   end
 
   defp upsert_with_rescue(insert_params, token_id, token_contract_address_hash, retrying? \\ false) do
-    Chain.upsert_token_instance(insert_params)
+    insert_params |> Chain.upsert_token_instance() |> Queue.process_new_instance()
   rescue
     error in Postgrex.Error ->
       if retrying? do

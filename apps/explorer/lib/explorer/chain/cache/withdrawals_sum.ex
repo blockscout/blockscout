@@ -1,15 +1,15 @@
 defmodule Explorer.Chain.Cache.WithdrawalsSum do
-  config = Application.compile_env(:explorer, __MODULE__)
-  @enable_consolidation Keyword.get(config, :enable_consolidation)
-  @update_interval_in_milliseconds Keyword.get(config, :update_interval_in_milliseconds)
-
   @moduledoc """
   Caches the sum of all withdrawals.
 
-  It loads the sum asynchronously and in a time interval of #{@update_interval_in_milliseconds} milliseconds.
+  It loads the sum asynchronously and in a time interval of 30 minutes.
   """
 
   use GenServer
+
+  use Utils.CompileTimeEnvHelper,
+    enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]],
+    update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
   alias Explorer.Chain
   alias Explorer.Chain.Wei

@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
   @moduledoc """
   A helper for CAPTCHA
   """
+  require Logger
 
   alias Explorer.Helper
 
@@ -49,26 +50,42 @@ defmodule BlockScoutWeb.CaptchaHelper do
       false ->
         true
 
-      _ ->
+      error ->
+        Logger.error("Failed to verify reCAPTCHA: #{inspect(error)}")
         false
     end
   end
 
   # v3 case
   defp success?(%{"success" => true, "score" => score, "hostname" => hostname}) do
+    unless Helper.get_app_host() == hostname do
+      Logger.warning("reCAPTCHA v3 Hostname mismatch: #{inspect(hostname)} != #{inspect(Helper.get_app_host())}")
+    end
+
+    if Helper.get_app_host() == hostname and not check_recaptcha_v3_score(score) do
+      Logger.warning("reCAPTCHA v3 low score: #{inspect(score)} < #{inspect(score_threshold())}")
+    end
+
     (!check_hostname?() || Helper.get_app_host() == hostname) &&
       check_recaptcha_v3_score(score)
   end
 
   # v2 case
   defp success?(%{"success" => true, "hostname" => hostname}) do
+    unless Helper.get_app_host() == hostname do
+      Logger.warning("reCAPTCHA v2 Hostname mismatch: #{inspect(hostname)} != #{inspect(Helper.get_app_host())}")
+    end
+
     !check_hostname?() || Helper.get_app_host() == hostname
   end
 
-  defp success?(_resp), do: false
+  defp success?(resp) do
+    Logger.error("Failed to verify reCAPTCHA, unexpected response: #{inspect(resp)}")
+    false
+  end
 
   defp check_recaptcha_v3_score(score) do
-    if score >= 0.5 do
+    if score >= score_threshold() do
       true
     else
       false
@@ -77,5 +94,9 @@ defmodule BlockScoutWeb.CaptchaHelper do
 
   defp check_hostname? do
     Application.get_env(:block_scout_web, :recaptcha)[:check_hostname?]
+  end
+
+  defp score_threshold do
+    Application.get_env(:block_scout_web, :recaptcha)[:score_threshold]
   end
 end

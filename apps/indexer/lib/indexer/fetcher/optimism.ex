@@ -19,11 +19,12 @@ defmodule Indexer.Fetcher.Optimism do
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Contract
+  alias Explorer.Repo
+  alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
 
   @fetcher_name :optimism
   @block_check_interval_range_size 100
-  @eth_get_logs_range_size 250
   @finite_retries_number 3
 
   def child_spec(start_link_arguments) do
@@ -183,10 +184,6 @@ defmodule Indexer.Fetcher.Optimism do
     Helper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
-  def get_logs_range_size do
-    @eth_get_logs_range_size
-  end
-
   @doc """
   Forms JSON RPC named arguments for the given RPC URL.
   """
@@ -196,7 +193,7 @@ defmodule Indexer.Fetcher.Optimism do
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: optimism_l1_rpc,
+        urls: [optimism_l1_rpc],
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
@@ -207,24 +204,34 @@ defmodule Indexer.Fetcher.Optimism do
   end
 
   @doc """
-    Does initializations for `Indexer.Fetcher.Optimism.WithdrawalEvent` or `Indexer.Fetcher.Optimism.OutputRoot` module.
-    Contains common code used by both modules.
+    Does initializations for `Indexer.Fetcher.Optimism.WithdrawalEvent`, `Indexer.Fetcher.Optimism.OutputRoot`, or
+    `Indexer.Fetcher.Optimism.Deposit` module. Contains common code used by these modules.
 
     ## Parameters
-    - `output_oracle`: An address of L2OutputOracle contract on L1. Must be `nil` if the `caller` is not `OutputRoot` module.
+    - `output_oracle`: An address of L2OutputOracle contract on L1.
+                       Must be `nil` if the `caller` is not `Indexer.Fetcher.Optimism.OutputRoot` module.
     - `caller`: The module that called this function.
 
     ## Returns
-    - A map for the `handle_continue` handler of the calling module.
+    - A resulting map for the `handle_continue` handler of the calling module.
   """
   @spec init_continue(binary() | nil, module()) :: {:noreply, map()} | {:stop, :normal, %{}}
   def init_continue(output_oracle, caller)
-      when caller in [Indexer.Fetcher.Optimism.WithdrawalEvent, Indexer.Fetcher.Optimism.OutputRoot] do
+      when caller in [
+             Indexer.Fetcher.Optimism.Deposit,
+             Indexer.Fetcher.Optimism.WithdrawalEvent,
+             Indexer.Fetcher.Optimism.OutputRoot
+           ] do
     {contract_name, table_name, start_block_note} =
-      if caller == Indexer.Fetcher.Optimism.WithdrawalEvent do
-        {"Optimism Portal", "op_withdrawal_events", "Withdrawals L1"}
-      else
-        {"Output Oracle", "op_output_roots", "Output Roots"}
+      case caller do
+        Indexer.Fetcher.Optimism.Deposit ->
+          {"Optimism Portal", "op_deposits", "Deposits"}
+
+        Indexer.Fetcher.Optimism.WithdrawalEvent ->
+          {"Optimism Portal", "op_withdrawal_events", "Withdrawals L1"}
+
+        _ ->
+          {"Output Oracle", "op_output_roots", "Output Roots"}
       end
 
     optimism_env = Application.get_all_env(:indexer)[__MODULE__]
@@ -232,27 +239,25 @@ defmodule Indexer.Fetcher.Optimism do
     optimism_l1_rpc = l1_rpc_url()
 
     with {:system_config_valid, true} <- {:system_config_valid, Helper.address_correct?(system_config)},
-         {:reorg_monitor_started, true} <-
-           {:reorg_monitor_started, !is_nil(Process.whereis(Indexer.Fetcher.RollupL1ReorgMonitor))},
+         _ <- RollupL1ReorgMonitor.wait_for_start(caller),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          json_rpc_named_arguments = json_rpc_named_arguments(optimism_l1_rpc),
          {optimism_portal, start_block_l1} <- read_system_config(system_config, json_rpc_named_arguments),
          {:contract_is_valid, true} <-
-           {:contract_is_valid,
-            caller == Indexer.Fetcher.Optimism.WithdrawalEvent or Helper.address_correct?(output_oracle)},
+           {:contract_is_valid, caller != Indexer.Fetcher.Optimism.OutputRoot or Helper.address_correct?(output_oracle)},
          true <- start_block_l1 > 0,
-         {last_l1_block_number, last_l1_transaction_hash} <- caller.get_last_l1_item(),
+         {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction} <-
+           caller.get_last_l1_item(json_rpc_named_arguments),
          {:start_block_l1_valid, true} <-
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
-         {:ok, last_l1_transaction} <- get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:l1_transaction_not_found, false} <-
            {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
          {:ok, block_check_interval, last_safe_block} <- get_block_check_interval(json_rpc_named_arguments) do
       contract_address =
-        if caller == Indexer.Fetcher.Optimism.WithdrawalEvent do
-          optimism_portal
-        else
+        if caller == Indexer.Fetcher.Optimism.OutputRoot do
           output_oracle
+        else
+          optimism_portal
         end
 
       start_block = max(start_block_l1, last_l1_block_number)
@@ -266,16 +271,10 @@ defmodule Indexer.Fetcher.Optimism do
          start_block: start_block,
          end_block: last_safe_block,
          json_rpc_named_arguments: json_rpc_named_arguments,
+         eth_get_logs_range_size: optimism_env[:l1_eth_get_logs_range_size],
          stop: false
        }}
     else
-      {:reorg_monitor_started, false} ->
-        Logger.error(
-          "Cannot start this process as reorg monitor in Indexer.Fetcher.RollupL1ReorgMonitor is not started."
-        )
-
-        {:stop, :normal, %{}}
-
       {:rpc_l1_undefined, true} ->
         Logger.error("L1 RPC URL is not defined.")
         {:stop, :normal, %{}}
@@ -307,7 +306,7 @@ defmodule Indexer.Fetcher.Optimism do
         {:stop, :normal, %{}}
 
       nil ->
-        Logger.error("Cannot read SystemConfig contract.")
+        Logger.error("Cannot read SystemConfig contract and fallback envs are not correctly defined.")
         {:stop, :normal, %{}}
 
       _ ->
@@ -324,6 +323,9 @@ defmodule Indexer.Fetcher.Optimism do
     Reads some public getters of SystemConfig contract and returns retrieved values.
     Gets `OptimismPortal` contract address from the `SystemConfig` contract and
     the number of a start block (from which all Optimism fetchers should start).
+
+    If SystemConfig has obsolete implementation, the values are fallen back from the corresponding
+    env variables (INDEXER_OPTIMISM_L1_PORTAL_CONTRACT and INDEXER_OPTIMISM_L1_START_BLOCK).
 
     ## Parameters
     - `contract_address`: An address of SystemConfig contract.
@@ -344,19 +346,46 @@ defmodule Indexer.Fetcher.Optimism do
 
     error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
 
-    case Helper.repeated_call(
-           &json_rpc/2,
-           [requests, json_rpc_named_arguments],
-           error_message,
-           Helper.infinite_retries_number()
-         ) do
-      {:ok, responses} ->
-        "0x000000000000000000000000" <> optimism_portal = Enum.at(responses, 0).result
-        start_block = quantity_to_integer(Enum.at(responses, 1).result)
-        {"0x" <> optimism_portal, start_block}
+    env = Application.get_all_env(:indexer)[__MODULE__]
+    fallback_start_block = env[:start_block_l1]
 
-      _ ->
-        nil
+    {optimism_portal, start_block} =
+      case Helper.repeated_call(
+             &json_rpc/2,
+             [requests, json_rpc_named_arguments],
+             error_message,
+             Helper.finite_retries_number()
+           ) do
+        {:ok, responses} ->
+          optimism_portal_result = Map.get(Enum.at(responses, 0), :result)
+
+          optimism_portal =
+            with {:nil_result, true, _} <- {:nil_result, is_nil(optimism_portal_result), optimism_portal_result},
+                 {:fallback_defined, true} <- {:fallback_defined, Helper.address_correct?(env[:portal])} do
+              env[:portal]
+            else
+              {:nil_result, false, portal} ->
+                "0x000000000000000000000000" <> optimism_portal = portal
+                "0x" <> optimism_portal
+
+              {:fallback_defined, false} ->
+                nil
+            end
+
+          start_block =
+            responses
+            |> Enum.at(1)
+            |> Map.get(:result, fallback_start_block)
+            |> quantity_to_integer()
+
+          {optimism_portal, start_block}
+
+        _ ->
+          {env[:portal], fallback_start_block}
+      end
+
+    if Helper.address_correct?(optimism_portal) and !is_nil(start_block) do
+      {String.downcase(optimism_portal), start_block}
     end
   end
 
@@ -379,5 +408,67 @@ defmodule Indexer.Fetcher.Optimism do
   def requires_l1_reorg_monitor? do
     optimism_config = Application.get_all_env(:indexer)[__MODULE__]
     not is_nil(optimism_config[:optimism_l1_system_config])
+  end
+
+  @doc """
+    Determines the last saved block number, the last saved transaction hash, and the transaction info for
+    a certain entity defined by the passed functions.
+
+    Used by the OP fetcher modules to start fetching from a correct block number
+    after reorg has occurred.
+
+    ## Parameters
+    - `layer`: Just for logging purposes. Can be `:L1` or `:L2` depending on the layer of the entity.
+    - `last_block_number_query_fun`: A function which will be called to form database query
+                                     to get the latest item in the corresponding database table.
+    - `remove_query_fun`: A function which will be called to form database query to remove the entity rows
+                          created due to reorg from the corresponding table.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+                                  Used to get transaction info by its hash from the RPC node.
+                                  Can be `nil` if the transaction info is not needed.
+
+    ## Returns
+    - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
+      `last_block_number` is the last block number found in the corresponding table (0 if not found),
+      `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
+      `last_transaction` is the transaction info got from the RPC (nil if not found or not needed).
+    - A tuple `{:error, message}` in case the `eth_getTransactionByHash` RPC request failed.
+  """
+  @spec get_last_item(:L1 | :L2, function(), function(), EthereumJSONRPC.json_rpc_named_arguments() | nil) ::
+          {non_neg_integer(), binary() | nil, map() | nil} | {:error, any()}
+  def get_last_item(layer, last_block_number_query_fun, remove_query_fun, json_rpc_named_arguments \\ nil)
+      when is_function(last_block_number_query_fun, 0) and is_function(remove_query_fun, 1) do
+    {last_block_number, last_transaction_hash} =
+      last_block_number_query_fun.()
+      |> Repo.one()
+      |> Kernel.||({0, nil})
+
+    with {:empty_hash, false} <- {:empty_hash, is_nil(last_transaction_hash)},
+         {:empty_json_rpc_named_arguments, false} <-
+           {:empty_json_rpc_named_arguments, is_nil(json_rpc_named_arguments)},
+         {:ok, last_transaction} <- get_transaction_by_hash(last_transaction_hash, json_rpc_named_arguments),
+         {:empty_transaction, false} <- {:empty_transaction, is_nil(last_transaction)} do
+      {last_block_number, last_transaction_hash, last_transaction}
+    else
+      {:empty_hash, true} ->
+        {last_block_number, nil, nil}
+
+      {:empty_json_rpc_named_arguments, true} ->
+        {last_block_number, last_transaction_hash, nil}
+
+      {:error, _} = error ->
+        error
+
+      {:empty_transaction, true} ->
+        Logger.error(
+          "Cannot find last #{layer} transaction from RPC by its hash (#{last_transaction_hash}). Probably, there was a reorg on #{layer} chain. Trying to check preceding transaction..."
+        )
+
+        last_block_number
+        |> remove_query_fun.()
+        |> Repo.delete_all()
+
+        get_last_item(layer, last_block_number_query_fun, remove_query_fun, json_rpc_named_arguments)
+    end
   end
 end

@@ -88,7 +88,8 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
 
     ## Parameters
     - `internal_id`: Batch'es internal id.
-    - `options`: A keyword list of options that may include whether to use a replica database.
+    - `options`: A keyword list of options that may include whether to use a replica database
+                 and/or whether to include blobs (true by default).
 
     ## Returns
     - A map with info about L1 batch having the specified id.
@@ -108,26 +109,84 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
       l2_block_number_to = TransactionBatch.edge_l2_block_number(internal_id, :max)
       transaction_count = Transaction.transaction_count_for_block_range(l2_block_number_from..l2_block_number_to)
 
-      {batch_data_container, blobs} = FrameSequenceBlob.list(internal_id, options)
+      {batch_data_container, blobs} =
+        if Keyword.get(options, :include_blobs?, true) do
+          FrameSequenceBlob.list(internal_id, options)
+        else
+          {nil, []}
+        end
 
-      result = %{
-        "internal_id" => internal_id,
-        "l1_timestamp" => batch.l1_timestamp,
-        "l2_block_start" => l2_block_number_from,
-        "l2_block_end" => l2_block_number_to,
-        "transaction_count" => transaction_count,
-        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-        "tx_count" => transaction_count,
-        "l1_transaction_hashes" => batch.l1_transaction_hashes,
-        "batch_data_container" => batch_data_container
-      }
+      result =
+        prepare_base_info_for_batch(
+          internal_id,
+          l2_block_number_from,
+          l2_block_number_to,
+          transaction_count,
+          batch_data_container,
+          batch
+        )
 
       if Enum.empty?(blobs) do
         result
       else
-        Map.put(result, "blobs", blobs)
+        Map.put(result, :blobs, blobs)
       end
     end
+  end
+
+  @doc """
+    Transforms an L1 batch into a map format for HTTP response.
+
+    This function processes an Optimism L1 batch and converts it into a map that
+    includes basic batch information.
+
+    ## Parameters
+    - `internal_id`: The internal ID of the batch.
+    - `l2_block_number_from`: Start L2 block number of the batch block range.
+    - `l2_block_number_to`: End L2 block number of the batch block range.
+    - `transaction_count`: The L2 transaction count included into the blocks of the range.
+    - `batch_data_container`: Designates where the batch info is stored: :in_blob4844, :in_celestia, or :in_calldata.
+                              Can be `nil` if the container is unknown.
+    - `batch`: Either an `Explorer.Chain.Optimism.FrameSequence` entry or a map with
+               the corresponding fields.
+
+    ## Returns
+    - A map with detailed information about the batch formatted for use in JSON HTTP responses.
+  """
+  @spec prepare_base_info_for_batch(
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          :in_blob4844 | :in_celestia | :in_calldata | nil,
+          __MODULE__.t()
+          | %{:l1_timestamp => DateTime.t(), :l1_transaction_hashes => list(), optional(any()) => any()}
+        ) :: %{
+          :internal_id => non_neg_integer(),
+          :l1_timestamp => DateTime.t(),
+          :l2_block_start => non_neg_integer(),
+          :l2_block_end => non_neg_integer(),
+          :transaction_count => non_neg_integer(),
+          :l1_transaction_hashes => list(),
+          :batch_data_container => :in_blob4844 | :in_celestia | :in_calldata | nil
+        }
+  def prepare_base_info_for_batch(
+        internal_id,
+        l2_block_number_from,
+        l2_block_number_to,
+        transaction_count,
+        batch_data_container,
+        batch
+      ) do
+    %{
+      :internal_id => internal_id,
+      :l1_timestamp => batch.l1_timestamp,
+      :l2_block_start => l2_block_number_from,
+      :l2_block_end => l2_block_number_to,
+      :transaction_count => transaction_count,
+      :l1_transaction_hashes => batch.l1_transaction_hashes,
+      :batch_data_container => batch_data_container
+    }
   end
 
   @doc """
@@ -165,7 +224,7 @@ defmodule Explorer.Chain.Optimism.FrameSequence do
         base_query
         |> page_frame_sequences(paging_options)
         |> limit(^paging_options.page_size)
-        |> select_repo(options).all()
+        |> select_repo(options).all(timeout: :infinity)
     end
   end
 
