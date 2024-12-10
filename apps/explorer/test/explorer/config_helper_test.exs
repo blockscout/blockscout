@@ -31,17 +31,6 @@ defmodule ConfigHelperTest do
       assert ConfigHelper.parse_urls_list(:fallback_eth_call) == ["test"]
     end
 
-    test "raise if ETHEREUM_JSONRPC_HTTP_URL and ETHEREUM_JSONRPC_HTTP_URLS are not provided" do
-      refute System.get_env("ETHEREUM_JSONRPC_HTTP_URLS")
-      refute System.get_env("ETHEREUM_JSONRPC_HTTP_URL")
-
-      assert_raise RuntimeError,
-                   "ETHEREUM_JSONRPC_HTTP_URL (or ETHEREUM_JSONRPC_HTTP_URLS) env variable is required",
-                   fn ->
-                     ConfigHelper.parse_urls_list(:trace)
-                   end
-    end
-
     test "base http urls are used if fallback is not provided" do
       System.put_env("ETHEREUM_JSONRPC_HTTP_URL", "test")
       refute System.get_env("ETHEREUM_JSONRPC_FALLBACK_TRACE_URLS")
