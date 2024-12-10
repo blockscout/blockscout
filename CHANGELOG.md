@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Zilliqa scilla transactions and smart contracts ([#11069](https://github.com/blockscout/blockscout/issues/11069))
 - CDN ([#10675](https://github.com/blockscout/blockscout/issues/10675))
 - Arbitrum L2->L1 message claiming ([#10804](https://github.com/blockscout/blockscout/issues/10804))
 - Add is_banned to token_instances table ([#11235](https://github.com/blockscout/blockscout/issues/11235))
@@ -19,6 +20,8 @@
 
 ### 🐛 Bug Fixes
 
+- Handle "null" in paging options ([#11388](https://github.com/blockscout/blockscout/issues/11388))
+- Search timeout ([#11277](https://github.com/blockscout/blockscout/issues/11277))
 - Fix Noves.fi endpoints for bulk transactions ([#11375](https://github.com/blockscout/blockscout/issues/11375))
 - Fix docker container build after adding NFT media handler ([#11373](https://github.com/blockscout/blockscout/issues/11373))
 - Handle simultaneous account entities creation ([#11341](https://github.com/blockscout/blockscout/issues/11341))
