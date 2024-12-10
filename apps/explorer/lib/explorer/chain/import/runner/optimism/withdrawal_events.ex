@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Import.Runner.Optimism.WithdrawalEvents do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce WithdrawalEvent ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.withdrawal_hash, &1.l1_event_type})
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.withdrawal_hash, &1.l1_event_type, &1.l1_transaction_hash})
 
     {:ok, inserted} =
       Import.insert_changes_list(
@@ -72,7 +72,7 @@ defmodule Explorer.Chain.Import.Runner.Optimism.WithdrawalEvents do
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: [:withdrawal_hash, :l1_event_type],
+        conflict_target: [:withdrawal_hash, :l1_event_type, :l1_transaction_hash],
         on_conflict: on_conflict
       )
 
@@ -86,8 +86,8 @@ defmodule Explorer.Chain.Import.Runner.Optimism.WithdrawalEvents do
         set: [
           # don't update `withdrawal_hash` as it is a part of the composite primary key and used for the conflict target
           # don't update `l1_event_type` as it is a part of the composite primary key and used for the conflict target
+          # don't update `l1_transaction_hash` as it is a part of the composite primary key and used for the conflict target
           l1_timestamp: fragment("EXCLUDED.l1_timestamp"),
-          l1_transaction_hash: fragment("EXCLUDED.l1_transaction_hash"),
           l1_block_number: fragment("EXCLUDED.l1_block_number"),
           game_index: fragment("EXCLUDED.game_index"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", we.inserted_at),
@@ -96,9 +96,8 @@ defmodule Explorer.Chain.Import.Runner.Optimism.WithdrawalEvents do
       ],
       where:
         fragment(
-          "(EXCLUDED.l1_timestamp, EXCLUDED.l1_transaction_hash, EXCLUDED.l1_block_number, EXCLUDED.game_index) IS DISTINCT FROM (?, ?, ?, ?)",
+          "(EXCLUDED.l1_timestamp, EXCLUDED.l1_block_number, EXCLUDED.game_index) IS DISTINCT FROM (?, ?, ?)",
           we.l1_timestamp,
-          we.l1_transaction_hash,
           we.l1_block_number,
           we.game_index
         )
