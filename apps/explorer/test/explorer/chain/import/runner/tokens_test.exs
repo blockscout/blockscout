@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Import.Runner.TokensTest do
       assert is_nil(holder_count)
 
       assert {:ok, %{tokens: [%Token{holder_count: ^holder_count}]}} =
-               run_changes(%{contract_address_hash: contract_address_hash, type: type, name: name})
+               run_changes(%{contract_address_hash: contract_address_hash, type: type, name: name <> "name"})
     end
 
     test "existing tokens without nil holder counter do have their holder_count change" do
@@ -32,7 +32,7 @@ defmodule Explorer.Chain.Import.Runner.TokensTest do
       refute is_nil(holder_count)
 
       assert {:ok, %{tokens: [%Token{holder_count: ^holder_count}]}} =
-               run_changes(%{contract_address_hash: contract_address_hash, type: type, name: name})
+               run_changes(%{contract_address_hash: contract_address_hash, type: type, name: name <> "name"})
     end
   end
 

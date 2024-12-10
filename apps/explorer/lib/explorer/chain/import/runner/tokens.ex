@@ -96,9 +96,18 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :tokens, fn repo, _ ->
+    multi
+    |> Multi.run(:filter_token_params, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> insert(repo, changes_list, insert_options) end,
+        fn -> filter_token_params(repo, changes_list) end,
+        :block_referencing,
+        :tokens,
+        :filter_token_params
+      )
+    end)
+    |> Multi.run(:tokens, fn repo, %{filter_token_params: filtered_changes_list} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> insert(repo, filtered_changes_list, insert_options) end,
         :block_referencing,
         :tokens,
         :tokens
@@ -140,7 +149,27 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       )
   end
 
+  defp filter_token_params(repo, changes_list) do
+    existing_token_map =
+      changes_list
+      |> Enum.map(& &1[:contract_address_hash])
+      |> Enum.uniq()
+      |> Token.tokens_by_contract_address_hashes()
+      |> repo.all()
+      |> Map.new(&{&1.contract_address_hash, &1})
+
+    filtered_tokens =
+      Enum.filter(changes_list, fn token ->
+        existing_token = existing_token_map[token[:contract_address_hash]]
+        should_update?(token, existing_token)
+      end)
+
+    {:ok, filtered_tokens}
+  end
+
   if @bridged_tokens_enabled do
+    @fields_to_replace [:name, :symbol, :total_supply, :decimals, :type, :cataloged, :bridged, :skip_metadata]
+
     def default_on_conflict do
       from(
         token in Token,
@@ -176,6 +205,8 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       )
     end
   else
+    @fields_to_replace [:name, :symbol, :total_supply, :decimals, :type, :cataloged, :skip_metadata]
+
     def default_on_conflict do
       from(
         token in Token,
@@ -208,5 +239,19 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
           )
       )
     end
+  end
+
+  defp should_update?(_new_token, nil), do: true
+
+  defp should_update?(new_token, existing_token) do
+    new_token_params = Map.take(new_token, @fields_to_replace)
+
+    Enum.reduce_while(new_token_params, false, fn {key, value}, _acc ->
+      if Map.get(existing_token, key) == value do
+        {:cont, false}
+      else
+        {:halt, true}
+      end
+    end)
   end
 end
