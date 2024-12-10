@@ -17,6 +17,7 @@ defmodule Explorer.Chain.Transaction.Schema do
     Hash,
     InternalTransaction,
     Log,
+    PendingTransactionOperation,
     SignedAuthorization,
     TokenTransfer,
     TransactionAction,
@@ -285,6 +286,8 @@ defmodule Explorer.Chain.Transaction.Schema do
           foreign_key: :transaction_hash,
           references: :hash
         )
+
+        has_one(:pending_operation, PendingTransactionOperation, foreign_key: :transaction_hash, references: :hash)
 
         unquote_splicing(@chain_type_fields)
       end

@@ -9,13 +9,14 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
   require Logger
 
-  import Ecto.Query, only: [from: 2, subquery: 1, where: 3]
+  import Ecto.Query
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, request: 1]
 
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{Block, PendingBlockOperation, PendingTransactionOperation, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Utility.SwitchPendingOperations
 
   @interval :timer.seconds(10)
 
@@ -125,9 +126,18 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
     Repo.update(block_with_is_empty)
 
-    PendingBlockOperation
-    |> where([po], po.block_hash == ^block_hash)
-    |> Repo.delete_all()
+    case SwitchPendingOperations.pending_operations_type() do
+      "blocks" ->
+        PendingBlockOperation
+        |> where([po], po.block_hash == ^block_hash)
+        |> Repo.delete_all()
+
+      "transactions" ->
+        PendingTransactionOperation
+        |> join(:inner, [pto], t in assoc(pto, :transaction))
+        |> where([_pto, t], t.block_hash == ^block_hash)
+        |> Repo.delete_all()
+    end
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error}}
