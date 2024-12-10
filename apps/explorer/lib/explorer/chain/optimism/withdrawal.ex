@@ -162,10 +162,27 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     end)
   end
 
-  @spec status(map(), list() | nil) :: {String.t(), DateTime.t() | nil}
   @doc """
-    Gets Optimism Withdrawal status and remaining time to unlock (when the status is `In challenge period`).
+    Gets Optimism Withdrawal status and unlock datetime (only for `In challenge period`).
+
+    Since OP Fault Proofs implementation assumes having more than one WithdrawalProven events for
+    the same withdrawal, the function analyzes all the WithdrawalProven events and determines
+    the current withdrawal status for each of them. The first success status is taken and returned
+    as the final one.
+
+    ## Parameters
+    - `w`: A map with the withdrawal info.
+    - `respected_games`: A list of games returned by the `respected_games()` function.
+                         Used to avoid duplicated SQL requests when the `status` function
+                         is called in a loop. If `nil`, the `respected_games()` function
+                         is called internally.
+
+    ## Returns
+    - `{status, datetime}` tuple where the `status` is the current withdrawal status,
+                           `datetime` is the point of time when the challenge period ends.
+                           (only for `In challenge period` status).
   """
+  @spec status(map(), list() | nil) :: {String.t(), DateTime.t() | nil}
   def status(w, respected_games \\ nil)
 
   def status(w, respected_games) when is_nil(w.l1_transaction_hash) do
@@ -269,6 +286,17 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     end
   end
 
+  # Determines the current withdrawal status by the list of the bound WithdrawalProven events.
+  #
+  # ## Parameters
+  # - `proven_events`: A list of WithdrawalProven events. Each item is `{l1_timestamp, game_index}` tuple.
+  # - `respected_games`: A list of games returned by the `respected_games()` function.
+  #
+  # ## Returns
+  # - `{status, datetime}` tuple where the `status` is the current withdrawal status,
+  #                        `datetime` is the point of time when the challenge period ends.
+  #                        (only for `In challenge period` status).
+  @spec handle_proven_status(list(), list()) :: {String.t(), DateTime.t() | nil}
   defp handle_proven_status(proven_events, respected_games) do
     statuses =
       proven_events
@@ -306,12 +334,26 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       |> Map.put(@withdrawal_status_proven, 10)
 
     statuses
-    |> Enum.sort_by(fn {s, timestamp} ->
-      {status_priority[s], (if not is_nil(timestamp), do: -DateTime.to_unix(timestamp))}
-    end, :desc)
+    |> Enum.sort_by(
+      fn {s, timestamp} ->
+        {status_priority[s], if(not is_nil(timestamp), do: -DateTime.to_unix(timestamp))}
+      end,
+      :desc
+    )
     |> Enum.at(0)
   end
 
+  # Gets the list of WithdrawalProven events from the `op_withdrawal_events` database table
+  # bound with the given withdrawal hash. The returned events are sorted by `l1_block_number`
+  # in ascending order.
+  #
+  # ## Parameters
+  # - `withdrawal_hash`: The withdrawal hash for which the function should return the events.
+  #
+  # ## Returns
+  # - A list of `{l1_timestamp, game_index}` tuples where `l1_timestamp` is the L1 block timestamp
+  #   when the event appeared, `game_index` is the bound dispute game index (can be `nil`).
+  @spec proven_events_by_hash(Hash.t()) :: [{DateTime.t(), non_neg_integer()}]
   defp proven_events_by_hash(withdrawal_hash) do
     Repo.replica().all(
       from(

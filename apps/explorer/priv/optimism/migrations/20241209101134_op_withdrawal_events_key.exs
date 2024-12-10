@@ -2,7 +2,7 @@ defmodule Explorer.Repo.Optimism.Migrations.OPWithdrawalEventsKey do
   use Ecto.Migration
 
   def change do
-  	drop table(:op_withdrawal_events)
+    drop(table(:op_withdrawal_events))
 
     create table(:op_withdrawal_events, primary_key: false) do
       add(:withdrawal_hash, :bytea, null: false, primary_key: true)
