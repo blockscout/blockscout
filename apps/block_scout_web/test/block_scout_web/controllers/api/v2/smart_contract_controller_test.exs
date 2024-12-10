@@ -3502,6 +3502,41 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       assert sc["address"]["is_contract"] == true
     end
 
+    test "get filtered smart contracts when flags are set", %{conn: conn} do
+      smart_contract = insert(:smart_contract, abi: nil, language: :yul)
+      insert(:smart_contract)
+      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
+
+      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+      compare_item(smart_contract, sc)
+      assert sc["address"]["is_verified"] == true
+      assert sc["address"]["is_contract"] == true
+    end
+
+    test "get filtered smart contracts when language is set", %{conn: conn} do
+      smart_contract = insert(:smart_contract, is_vyper_contract: true, language: :vyper)
+      insert(:smart_contract, is_vyper_contract: false)
+      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "vyper"})
+
+      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+      compare_item(smart_contract, sc)
+      assert sc["address"]["is_verified"] == true
+      assert sc["address"]["is_contract"] == true
+    end
+
+    if Application.compile_env(:explorer, :chain_type) == :zilliqa do
+      test "get filtered scilla smart contracts when language is set", %{conn: conn} do
+        smart_contract = insert(:smart_contract, language: :scilla)
+        insert(:smart_contract)
+        request = get(conn, "/api/v2/smart-contracts", %{"filter" => "scilla"})
+
+        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+        compare_item(smart_contract, sc)
+        assert sc["address"]["is_verified"] == true
+        assert sc["address"]["is_contract"] == true
+      end
+    end
+
     test "check pagination", %{conn: conn} do
       smart_contracts =
         for _ <- 0..50 do
@@ -3638,7 +3673,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
     assert smart_contract.optimization == json["optimization_enabled"]
 
-    assert json["language"] == if(smart_contract.is_vyper_contract, do: "vyper", else: "solidity")
+    assert json["language"] == smart_contract_language(smart_contract)
     assert json["verified_at"]
     assert !is_nil(smart_contract.constructor_arguments) == json["has_constructor_args"]
     assert Address.checksum(smart_contract.address_hash) == json["address"]["hash"]
@@ -3680,8 +3715,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       is_nil(smart_contract.abi) ->
         "yul"
 
-      true ->
+      is_nil(smart_contract.language) ->
         "solidity"
+
+      true ->
+        to_string(smart_contract.language)
     end
   end
 

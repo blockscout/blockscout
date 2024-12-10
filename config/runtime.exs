@@ -1211,6 +1211,9 @@ config :nft_media_handler, Indexer.NFTMediaHandler.Backfiller,
   enqueue_busy_waiting_timeout:
     ConfigHelper.parse_time_env_var("NFT_MEDIA_HANDLER_BACKFILL_ENQUEUE_BUSY_WAITING_TIMEOUT", "1s")
 
+config :indexer, Indexer.Fetcher.Zilliqa.ScillaSmartContracts.Supervisor,
+  disabled?: ConfigHelper.chain_type() != :zilliqa
+
 Code.require_file("#{config_env()}.exs", "config/runtime")
 
 for config <- "../apps/*/config/runtime/#{config_env()}.exs" |> Path.expand(__DIR__) |> Path.wildcard() do
