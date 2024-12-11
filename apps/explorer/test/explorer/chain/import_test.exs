@@ -680,6 +680,11 @@ defmodule Explorer.Chain.ImportTest do
         }
       }
 
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+
       assert {:ok, _} = Import.all(options)
 
       {:ok, block_hash_casted} = Explorer.Chain.Hash.Full.cast(block_hash)
@@ -769,6 +774,11 @@ defmodule Explorer.Chain.ImportTest do
           with: :blockless_changeset
         }
       }
+
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
 
       assert {:ok, _} = Import.all(options)
 
