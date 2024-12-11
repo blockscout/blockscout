@@ -164,12 +164,8 @@ initialize_db() {
 
 # Define the recompile subroutine
 recompile() {
-    mix deps.clean block_scout_web
-    mix deps.clean explorer
-    mix deps.clean indexer
-    mix deps.clean ethereum_jsonrpc
-    mix deps.clean utils
-    mix deps.clean nft_media_handler
+    APPS=$($(dirname $0)/extract_apps.exs)
+    mix deps.clean $APPS
     mix deps.get
     mix deps.compile --force
 }
