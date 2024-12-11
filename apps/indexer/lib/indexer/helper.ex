@@ -14,7 +14,7 @@ defmodule Indexer.Helper do
       request: 1
     ]
 
-  alias EthereumJSONRPC.Block.ByNumber
+  alias EthereumJSONRPC.Block.{ByNumber, ByTag}
   alias EthereumJSONRPC.{Blocks, Transport}
   alias Explorer.Chain.Hash
   alias Explorer.SmartContract.Reader, as: ContractReader
@@ -610,9 +610,10 @@ defmodule Indexer.Helper do
 
   @doc """
   Fetches block timestamp by its number using RPC request.
+  The number can be `:latest`.
   Performs a specified number of retries (up to) if the first attempt returns error.
   """
-  @spec get_block_timestamp_by_number(non_neg_integer(), list(), non_neg_integer()) ::
+  @spec get_block_timestamp_by_number(non_neg_integer() | :latest, list(), non_neg_integer()) ::
           {:ok, non_neg_integer()} | {:error, any()}
   def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
     func = &get_block_timestamp_by_number_inner/2
@@ -622,10 +623,14 @@ defmodule Indexer.Helper do
   end
 
   defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
-    result =
-      %{id: 0, number: number}
-      |> ByNumber.request(false)
-      |> json_rpc(json_rpc_named_arguments)
+    request =
+      if number == :latest do
+        ByTag.request(%{id: 0, tag: "latest"})
+      else
+        ByNumber.request(%{id: 0, number: number}, false)
+      end
+
+    result = json_rpc(request, json_rpc_named_arguments)
 
     with {:ok, block} <- result,
          false <- is_nil(block),
