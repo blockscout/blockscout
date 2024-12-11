@@ -65,6 +65,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Follow updated response schema in interpreter microservice ([#11402](https://github.com/blockscout/blockscout/issues/11402))
 - Remove raise in case if ETHEREUM_JSONRPC_HTTP_URL is not provided ([#11392](https://github.com/blockscout/blockscout/issues/11392))
 - Remove beta suffix from releases ([#11376](https://github.com/blockscout/blockscout/issues/11376))
 - Background migrations timeout ([#11358](https://github.com/blockscout/blockscout/issues/11358))
