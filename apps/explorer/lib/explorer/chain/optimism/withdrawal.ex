@@ -320,7 +320,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
               post_fault_proofs_status(l1_timestamp, game)
           end
 
-        if status == @withdrawal_status_ready_for_relay do
+        if elem(status, 0) == @withdrawal_status_ready_for_relay do
           {:halt, [status]}
         else
           {:cont, [status | acc]}
