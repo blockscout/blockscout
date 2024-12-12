@@ -303,27 +303,24 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       |> Enum.reduce_while([], fn {l1_timestamp, game_index}, acc ->
         game = game_by_index(game_index)
 
-        status =
-          cond do
-            is_nil(game_index) and not Enum.empty?(respected_games) ->
-              # here we cannot exactly determine the status `Waiting a game to resolve` or
-              # `Ready for relay` or `In challenge period`
-              # as we don't know the game index. In this case we display the `Proven` status
-              {@withdrawal_status_proven, nil}
+        cond do
+          is_nil(game_index) and not Enum.empty?(respected_games) ->
+            # here we cannot exactly determine the status `Waiting a game to resolve` or
+            # `Ready for relay` or `In challenge period`
+            # as we don't know the game index. In this case we display the `Proven` status
+            {@withdrawal_status_proven, nil}
 
-            is_nil(game) or DateTime.compare(l1_timestamp, game.created_at) == :lt ->
-              # the old status determining approach
-              pre_fault_proofs_status(l1_timestamp)
+          is_nil(game) or DateTime.compare(l1_timestamp, game.created_at) == :lt ->
+            # the old status determining approach
+            pre_fault_proofs_status(l1_timestamp)
 
-            true ->
-              # the new status determining approach
-              post_fault_proofs_status(l1_timestamp, game)
-          end
-
-        if elem(status, 0) == @withdrawal_status_ready_for_relay do
-          {:halt, [status]}
-        else
-          {:cont, [status | acc]}
+          true ->
+            # the new status determining approach
+            post_fault_proofs_status(l1_timestamp, game)
+        end
+        |> case do
+          {@withdrawal_status_ready_for_relay, _} = status -> {:halt, [status]}
+          status -> {:cont, [status | acc]}
         end
       end)
 
