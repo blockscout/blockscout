@@ -21,6 +21,7 @@
 ### 🐛 Bug Fixes
 
 - Refactor CDN upload functions, prevent saving partially uploaded thumbnails ([#11400](https://github.com/blockscout/blockscout/issues/11400))
+- Take into account several proofs in OP Withdrawals ([#11399](https://github.com/blockscout/blockscout/issues/11399))
 - Handle "null" in paging options ([#11388](https://github.com/blockscout/blockscout/issues/11388))
 - Fix search timeout ([#11277](https://github.com/blockscout/blockscout/issues/11277))
 - Fix Noves.fi endpoints for bulk transactions ([#11375](https://github.com/blockscout/blockscout/issues/11375))
