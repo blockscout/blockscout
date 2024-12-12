@@ -337,7 +337,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       end,
       :desc
     )
-    |> Enum.at(0)
+    |> List.first()
   end
 
   # Gets the list of WithdrawalProven events from the `op_withdrawal_events` database table
