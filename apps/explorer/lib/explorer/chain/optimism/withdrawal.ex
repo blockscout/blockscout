@@ -303,6 +303,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       |> Enum.reduce_while([], fn {l1_timestamp, game_index}, acc ->
         game = game_by_index(game_index)
 
+        # credo:disable-for-lines:16 Credo.Check.Refactor.PipeChainStart
         cond do
           is_nil(game_index) and not Enum.empty?(respected_games) ->
             # here we cannot exactly determine the status `Waiting a game to resolve` or
