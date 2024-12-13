@@ -694,6 +694,14 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
 
 config :explorer, Explorer.Chain.Blackfort.Validator, api_url: System.get_env("BLACKFORT_VALIDATOR_API_URL")
 
+addresses_blacklist_url = ConfigHelper.parse_microservice_url("ADDRESSES_BLACKLIST_URL")
+
+config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
+  url: addresses_blacklist_url,
+  enabled: !is_nil(addresses_blacklist_url),
+  update_interval: ConfigHelper.parse_time_env_var("ADDRESSES_BLACKLIST_UPDATE_INTERVAL", "30m"),
+  retry_timeout: ConfigHelper.parse_time_env_var("ADDRESSES_BLACKLIST_RETRY_TIMEOUT", "5s")
+
 ###############
 ### Indexer ###
 ###############

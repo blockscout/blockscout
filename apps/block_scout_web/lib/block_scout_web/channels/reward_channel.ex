@@ -11,9 +11,14 @@ defmodule BlockScoutWeb.RewardChannel do
   intercept(["new_reward"])
 
   def join("rewards:" <> address_hash, _params, socket) do
-    with {:ok, hash} <- Chain.string_to_address_hash(address_hash),
-         {:ok, address} <- Chain.hash_to_address(hash) do
-      {:ok, %{}, assign(socket, :current_address, address)}
+    case valid_address_hash_and_not_restricted_access?(address_hash) do
+      :ok ->
+        {:ok, hash} = Chain.string_to_address_hash(address_hash)
+        {:ok, address} = Chain.hash_to_address(hash)
+        {:ok, %{}, assign(socket, :current_address, address)}
+
+      reason ->
+        {:error, %{reason: reason}}
     end
   end
 

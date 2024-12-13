@@ -67,7 +67,13 @@ defmodule BlockScoutWeb.AddressChannel do
                               @chain_type_transaction_associations
 
   def join("addresses:" <> address_hash, _params, socket) do
-    {:ok, %{}, assign(socket, :address_hash, address_hash)}
+    case valid_address_hash_and_not_restricted_access?(address_hash) do
+      :ok ->
+        {:ok, %{}, assign(socket, :address_hash, address_hash)}
+
+      reason ->
+        {:error, %{reason: reason}}
+    end
   end
 
   def handle_in("get_balance", _, socket) do
