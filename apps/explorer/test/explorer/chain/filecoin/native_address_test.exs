@@ -2,7 +2,6 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
   use ExUnit.Case, async: true
 
   alias Explorer.Chain.Hash
-  alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Filecoin.{NativeAddress, IDAddress}
 
   doctest NativeAddress
@@ -64,15 +63,26 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
 
     test "parses f4 addresses" do
       address = "f410fabpafjfjgqkc3douo3yzfug5tq4bwfvuhsewxji"
-      {:ok, evm_address} = Address.cast("0x005E02A4A934142D8DD476F192D0DD9C381B16B4")
-      evm_address_bytes = evm_address.bytes
+      {:ok, %Hash{bytes: eth_address_bytes}} = Hash.Address.cast("0x005E02A4A934142D8DD476F192D0DD9C381B16B4")
 
       assert {:ok,
               %NativeAddress{
                 protocol_indicator: 4,
                 actor_id: 10,
-                payload: ^evm_address_bytes
+                payload: ^eth_address_bytes
               }} = NativeAddress.cast(address)
+    end
+
+    test "parses ethereum addresses" do
+      {:ok, %Hash{bytes: eth_address_bytes} = eth_address_hash} =
+        Hash.Address.cast("0x005E02A4A934142D8DD476F192D0DD9C381B16B4")
+
+      assert {:ok,
+              %NativeAddress{
+                protocol_indicator: 4,
+                actor_id: 10,
+                payload: ^eth_address_bytes
+              }} = NativeAddress.cast(eth_address_hash)
     end
   end
 
@@ -91,7 +101,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
 
     test "converts f4 addresses" do
       address = "f410fabpafjfjgqkc3douo3yzfug5tq4bwfvuhsewxji"
-      {:ok, evm_address} = Address.cast("0x005E02A4A934142D8DD476F192D0DD9C381B16B4")
+      {:ok, evm_address} = Hash.Address.cast("0x005E02A4A934142D8DD476F192D0DD9C381B16B4")
       bytes = <<4, 10, evm_address.bytes::binary>>
 
       assert {:ok, ^bytes} =
@@ -126,7 +136,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
 
     test "decodes f4 addresses" do
       address = "f410fabpafjfjgqkc3douo3yzfug5tq4bwfvuhsewxji"
-      {:ok, %Hash{bytes: payload}} = Address.cast("0x005E02A4A934142D8DD476F192D0DD9C381B16B4")
+      {:ok, %Hash{bytes: payload}} = Hash.Address.cast("0x005E02A4A934142D8DD476F192D0DD9C381B16B4")
 
       assert {:ok,
               %NativeAddress{
@@ -163,6 +173,21 @@ defmodule Explorer.Chain.Filecoin.NativeAddressTest do
 
       assert ^address =
                address
+               |> NativeAddress.cast()
+               |> elem(1)
+               |> NativeAddress.dump()
+               |> elem(1)
+               |> NativeAddress.load()
+               |> elem(1)
+               |> NativeAddress.to_string()
+    end
+
+    test "converts ethereum addresses to string" do
+      {:ok, eth_address_hash} = Hash.Address.cast("0x005E02A4A934142D8DD476F192D0DD9C381B16B4")
+      address = "f410fabpafjfjgqkc3douo3yzfug5tq4bwfvuhsewxji"
+
+      assert address ==
+               eth_address_hash
                |> NativeAddress.cast()
                |> elem(1)
                |> NativeAddress.dump()

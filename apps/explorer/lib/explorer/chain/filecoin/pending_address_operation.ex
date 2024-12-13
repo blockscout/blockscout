@@ -64,8 +64,8 @@ defmodule Explorer.Chain.Filecoin.PendingAddressOperation do
       from(
         op in __MODULE__,
         select: op,
-        where: is_nil(op.http_status_code),
-        order_by: [desc: op.address_hash]
+        # operations with `http_status_code` set to `null` are returned first
+        order_by: [desc: op.address_hash, desc: op.http_status_code]
       )
 
     query
