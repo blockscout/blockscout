@@ -48,7 +48,8 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   @checksum_bytes_count 4
 
   @protocol_indicator_bytes_count 1
-  @max_protocol_indicator 2 ** (@protocol_indicator_bytes_count * Hash.bits_per_byte()) - 1
+  @max_actor_id 2 ** (@protocol_indicator_bytes_count * Hash.bits_per_byte()) - 1
+  @ethereum_actor_id 10
 
   @min_address_string_length 3
 
@@ -156,7 +157,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
           protocol_indicator: 4,
           actor_id: 10,
           payload: <<90, 174, 182, 5, 63, 62, 148, 201, 185, 160, 159, 51, 102, 148, 53, 231, 239, 27, 234, 237>>,
-          checksum: <<21, 98, 125, 219>>
+          checksum: <<238, 18, 207, 48>>
         }
       }
 
@@ -212,13 +213,14 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   end
 
   def cast(%Hash{bytes: payload}) do
-    checksum = to_checksum(payload)
+    dumped = <<4, @ethereum_actor_id, payload::binary>>
+    checksum = to_checksum(dumped)
 
     {
       :ok,
       %__MODULE__{
         protocol_indicator: 4,
-        actor_id: 10,
+        actor_id: @ethereum_actor_id,
         payload: payload,
         checksum: checksum
       }
@@ -318,7 +320,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       when is_integer(actor_id) and
              is_binary(payload) and
              actor_id >= 0 and
-             actor_id <= @max_protocol_indicator do
+             actor_id <= @max_actor_id do
     {:ok, <<4, actor_id, payload::binary>>}
   end
 
@@ -326,7 +328,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       when is_integer(protocol_indicator) and
              is_binary(payload) and
              protocol_indicator >= 0 and
-             protocol_indicator <= @max_protocol_indicator do
+             protocol_indicator <= @max_actor_id do
     {:ok, <<protocol_indicator, payload::binary>>}
   end
 
