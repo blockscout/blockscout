@@ -259,6 +259,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
          {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)} do
       conn
       |> Conn.fetch_session()
+      |> configure_session(renew: true)
       |> put_session(:current_user, session)
       |> delete_resp_cookie(Application.get_env(:block_scout_web, :invalid_session_key))
       |> put_status(200)
