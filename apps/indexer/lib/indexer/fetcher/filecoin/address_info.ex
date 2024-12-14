@@ -35,6 +35,13 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
           filecoin_actor_type: String.t() | nil
         }
 
+  @filfox_actor_type_renaming %{
+    "storagemarket" => "market",
+    "storageminer" => "miner",
+    "storagepower" => "power",
+    "verifiedregistry" => "verifreg"
+  }
+
   # @singleton_actor_ids %{
   #                        0 => :system,
   #                        1 => :init,
@@ -200,55 +207,20 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
     )
   end
 
-  @spec partial_fetch_address_info_using_json_rpc(
-          NativeAddress.t(),
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) ::
-          {:ok, :partial, filecoin_address_params()} | :error
-  defp partial_fetch_address_info_using_json_rpc(native_address, json_rpc_named_arguments) do
-    with %NativeAddress{protocol_indicator: 0} = id_address <- native_address,
-         {:ok, params} <-
-           fetch_robust_address_for_id_address(
-             id_address,
-             json_rpc_named_arguments
-           ) do
-      {:ok, :partial, params}
-    else
-      _ -> :error
-    end
-  end
-
-  @spec partial_derive_address_info(NativeAddress.t()) :: {:ok, :partial, filecoin_address_params()}
-  def partial_derive_address_info(native_address) do
-    case native_address do
-      %NativeAddress{protocol_indicator: 0} ->
-        {:ok, :partial,
-         %{
-           filecoin_id: to_string(native_address),
-           filecoin_robust: nil,
-           filecoin_actor_type: nil
-         }}
-
-      %NativeAddress{protocol_indicator: 4, actor_id: 10} ->
-        {:ok, :partial,
-         %{
-           filecoin_id: nil,
-           filecoin_robust: to_string(native_address),
-           filecoin_actor_type: nil
-         }}
-
-      _ ->
-        :error
-    end
-  end
-
   @spec full_fetch_address_info_using_beryx_api(PendingAddressOperation.t()) ::
           {:ok, :full, filecoin_address_params()} | :error
   defp full_fetch_address_info_using_beryx_api(operation) do
     with {:ok, body_json} <- operation.address_hash |> to_string() |> BeryxAPI.fetch_address_info(),
          {:ok, id_address_string} <- Map.fetch(body_json, "short"),
-         {:ok, robust_address_string} <- Map.fetch(body_json, "robust"),
+         {:ok, maybe_robust_address_string} <- Map.fetch(body_json, "robust"),
          {:ok, actor_type_string} <- Map.fetch(body_json, "actor_type") do
+      robust_address_string =
+        if maybe_robust_address_string !== "" do
+          maybe_robust_address_string
+        else
+          id_address_string
+        end
+
       {:ok, :full,
        %{
          filecoin_id: id_address_string,
@@ -282,13 +254,21 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
           {:ok, :full, filecoin_address_params()} | :error
   defp full_fetch_address_info_using_filfox_api(operation) do
     with {:ok, body_json} <- operation.address_hash |> to_string() |> FilfoxAPI.fetch_address_info(),
+         Logger.info("Filfox API response: #{inspect(body_json)}"),
          {:ok, id_address_string} <- Map.fetch(body_json, "id"),
          {:ok, actor_type_string} <- Map.fetch(body_json, "actor") do
+      renamed_actor_type =
+        Map.get(
+          @filfox_actor_type_renaming,
+          actor_type_string,
+          actor_type_string
+        )
+
       {:ok, :full,
        %{
          filecoin_id: id_address_string,
          filecoin_robust: Map.get(body_json, "robust", id_address_string),
-         filecoin_actor_type: actor_type_string
+         filecoin_actor_type: renamed_actor_type
        }}
     else
       {:error, status_code, %{"error" => reason}} when status_code in @http_error_codes ->
@@ -309,6 +289,54 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
 
       error ->
         Logger.error("Error processing Filfox API response: #{inspect(error)}")
+        :error
+    end
+  end
+
+  @spec partial_fetch_address_info_using_json_rpc(
+          NativeAddress.t(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) ::
+          {:ok, :partial, filecoin_address_params()} | :error
+  defp partial_fetch_address_info_using_json_rpc(native_address, json_rpc_named_arguments) do
+    with %NativeAddress{protocol_indicator: 0} = id_address <- native_address,
+         {:ok, params} <-
+           fetch_robust_address_for_id_address(
+             id_address,
+             json_rpc_named_arguments
+           ) do
+      {:ok, :partial, params}
+    else
+      %NativeAddress{} ->
+        Logger.error("Could not fetch address info using JSON RPC: not ID address")
+        :error
+
+      error ->
+        Logger.error("Could not fetch address info using JSON RPC: #{inspect(error)}")
+        :error
+    end
+  end
+
+  @spec partial_derive_address_info(NativeAddress.t()) :: {:ok, :partial, filecoin_address_params()}
+  def partial_derive_address_info(native_address) do
+    case native_address do
+      %NativeAddress{protocol_indicator: 0} ->
+        {:ok, :partial,
+         %{
+           filecoin_id: to_string(native_address),
+           filecoin_robust: nil,
+           filecoin_actor_type: nil
+         }}
+
+      %NativeAddress{protocol_indicator: 4, actor_id: 10} ->
+        {:ok, :partial,
+         %{
+           filecoin_id: nil,
+           filecoin_robust: to_string(native_address),
+           filecoin_actor_type: nil
+         }}
+
+      _ ->
         :error
     end
   end
