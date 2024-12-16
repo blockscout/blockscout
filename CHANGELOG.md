@@ -20,6 +20,8 @@
 
 ### 🐛 Bug Fixes
 
+- Fix get_media_url_from_metadata_for_nft_media_handler/1 ([#11437](https://github.com/blockscout/blockscout/issues/11437))
+- Fix check-redirect for ENS ([#11435](https://github.com/blockscout/blockscout/issues/11435))
 - Refactor CDN upload functions, prevent saving partially uploaded thumbnails ([#11400](https://github.com/blockscout/blockscout/issues/11400))
 - Take into account several proofs in OP Withdrawals ([#11399](https://github.com/blockscout/blockscout/issues/11399))
 - Handle "null" in paging options ([#11388](https://github.com/blockscout/blockscout/issues/11388))
@@ -67,6 +69,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Rename blob_tx_count per naming conventions ([#11438](https://github.com/blockscout/blockscout/issues/11438))
 - Follow updated response schema in interpreter microservice ([#11402](https://github.com/blockscout/blockscout/issues/11402))
 - Remove raise in case if ETHEREUM_JSONRPC_HTTP_URL is not provided ([#11392](https://github.com/blockscout/blockscout/issues/11392))
 - Remove beta suffix from releases ([#11376](https://github.com/blockscout/blockscout/issues/11376))
