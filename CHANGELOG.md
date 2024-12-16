@@ -20,6 +20,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix 500 on disabled metadata service ([#11443](https://github.com/blockscout/blockscout/issues/11443))
 - Fix get_media_url_from_metadata_for_nft_media_handler/1 ([#11437](https://github.com/blockscout/blockscout/issues/11437))
 - Fix check-redirect for ENS ([#11435](https://github.com/blockscout/blockscout/issues/11435))
 - Refactor CDN upload functions, prevent saving partially uploaded thumbnails ([#11400](https://github.com/blockscout/blockscout/issues/11400))
