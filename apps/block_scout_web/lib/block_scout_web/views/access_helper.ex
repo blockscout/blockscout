@@ -9,8 +9,7 @@ defmodule BlockScoutWeb.AccessHelper do
   alias BlockScoutWeb.API.RPC.RPCView
   alias BlockScoutWeb.API.V2.ApiView
   alias BlockScoutWeb.Routers.WebRouter.Helpers
-  alias Explorer.AccessHelper
-  alias Explorer.Chain
+  alias Explorer.{AccessHelper, Chain}
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Plug.Conn
 

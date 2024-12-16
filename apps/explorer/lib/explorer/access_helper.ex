@@ -6,6 +6,10 @@ defmodule Explorer.AccessHelper do
   alias Explorer.Chain
   alias Explorer.Chain.Fetcher.AddressesBlacklist
 
+  @spec restricted_access?(binary(), nil | map()) :: {:ok, false} | {:restricted_access, true}
+  def restricted_access?("", _), do: {:ok, false}
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def restricted_access?(address_hash_string, params) do
     restricted_list_var = Application.get_env(:explorer, :restricted_list)
     restricted_list = (restricted_list_var && String.split(restricted_list_var, ",")) || []
@@ -18,7 +22,7 @@ defmodule Explorer.AccessHelper do
 
     cond do
       blacklisted? ->
-        if !correct_key, do: {:restricted_access, true}, else: {:ok, false}
+        if correct_key, do: {:ok, false}, else: {:restricted_access, true}
 
       Enum.empty?(restricted_list) ->
         {:ok, false}
