@@ -721,16 +721,16 @@ defmodule Explorer.Chain.Token.Instance do
   def get_media_url_from_metadata_for_nft_media_handler(metadata) when is_map(metadata) do
     result =
       cond do
-        metadata["image_url"] ->
+        is_binary(metadata["image_url"]) ->
           metadata["image_url"]
 
-        metadata["image"] ->
+        is_binary(metadata["image"]) ->
           metadata["image"]
 
         is_map(metadata["properties"]) && is_binary(metadata["properties"]["image"]) ->
           metadata["properties"]["image"]
 
-        metadata["animation_url"] ->
+        is_binary(metadata["animation_url"]) ->
           metadata["animation_url"]
 
         true ->
