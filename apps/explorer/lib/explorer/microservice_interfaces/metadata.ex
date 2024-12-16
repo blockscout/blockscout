@@ -17,6 +17,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   @tags_per_address_limit 5
   @page_size 50
   @request_error_msg "Error while sending request to Metadata microservice"
+  @service_disabled "Service is disabled"
 
   @doc """
   Retrieves tags for a list of addresses.
@@ -61,6 +62,9 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
         |> Map.put("chain_id", Application.get_env(:block_scout_web, :chain_id))
 
       http_get_request_for_proxy_method(addresses_url(), params, &prepare_addresses_response/1)
+    else
+      _ ->
+        {501, %{error: @service_disabled}}
     end
   end
 
