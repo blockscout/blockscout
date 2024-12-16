@@ -35,7 +35,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.AverageBlockTime
-  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Utility.MissingRangesManipulator
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
@@ -236,12 +235,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
         imported,
         %{block_rewards: %{errors: block_reward_errors}}
       )
-
-      MultichainSearch.batch_import(%{
-        addresses: [],
-        blocks: imported[:blocks] || [],
-        transactions: []
-      })
 
       ok
     end

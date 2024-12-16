@@ -88,6 +88,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   alias Explorer.Market.MarketHistoryCache
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.{PagingOptions, Repo}
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -1426,7 +1427,31 @@ defmodule Explorer.Chain do
   """
   @spec import(Import.all_options()) :: Import.all_result()
   def import(options) do
-    Import.all(options)
+    case Import.all(options) do
+      {:ok, imported} = result ->
+        assets_to_import = %{
+          addresses: imported[:addresses] || [],
+          blocks: imported[:blocks] || [],
+          transactions: imported[:transactions] || []
+        }
+
+        if assets_to_import == %{
+             addresses: [],
+             blocks: [],
+             transactions: []
+           } do
+          result
+        else
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          case MultichainSearch.batch_import(assets_to_import) do
+            {:ok, _} -> result
+            _ -> {:error, :insert_to_multichain_search_db_failed}
+          end
+        end
+
+      other_result ->
+        other_result
+    end
   end
 
   @doc """

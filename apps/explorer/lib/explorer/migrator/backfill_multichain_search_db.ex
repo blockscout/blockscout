@@ -143,11 +143,10 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
                transactions: transactions
              }) do
           {:ok, _} = result ->
-            Logger.info("Batch export to the Multichain Search DB succeeded")
             result
 
           {:error, _} ->
-            Logger.error("Batch export to the Multichain Search DB failed")
+            Logger.error("Batch export to the Multichain Search DB failed for block numbers #{inspect(block_numbers)}")
             update_batch(block_numbers)
         end
 

@@ -20,10 +20,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           transactions: list()
         }) :: {:error, :disabled | <<_::416>> | Jason.DecodeError.t()} | {:ok, any()}
   def batch_import(params) do
-    with :ok <- Microservice.check_enabled(__MODULE__) do
-      body = format_batch_import_params(params)
+    case Microservice.check_enabled(__MODULE__) do
+      :ok ->
+        body = format_batch_import_params(params)
 
-      http_post_request(batch_import_url(), body)
+        http_post_request(batch_import_url(), body)
+
+      {:error, :disabled} ->
+        {:ok, :service_disabled}
     end
   end
 

@@ -14,13 +14,13 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Explorer.Chain.{Address, Block, Hash}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
-  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
   alias Indexer.Fetcher.Zilliqa.ScillaSmartContracts, as: ZilliqaScillaSmartContractsFetcher
   alias Indexer.Transform.Addresses
 
   @transaction_fields ~w(block_number created_contract_address_hash hash type)a
+  @failed_to_import "failed to import created_contract_code for transactions: "
 
   @typedoc """
   Represents a list of entries, where each entry is a map containing transaction
@@ -177,28 +177,31 @@ defmodule Indexer.Fetcher.ContractCode do
                addresses: %{params: merged_addresses_params},
                timeout: :infinity
              }) do
-          {:ok, %{addresses: addresses} = imported} ->
+          {:ok, %{addresses: addresses}} ->
             Accounts.drop(addresses)
             zilliqa_verify_scilla_contracts(entries, addresses)
-
-            MultichainSearch.batch_import(%{
-              addresses: imported[:addresses] || [],
-              blocks: [],
-              transactions: []
-            })
-
             :ok
 
           {:error, step, reason, _changes_so_far} ->
             Logger.error(
               fn ->
                 [
-                  "failed to import created_contract_code for transactions: ",
+                  @failed_to_import,
                   inspect(reason)
                 ]
               end,
               step: step
             )
+
+            {:retry, entries}
+
+          {:error, reason} ->
+            Logger.error(fn ->
+              [
+                @failed_to_import,
+                inspect(reason)
+              ]
+            end)
 
             {:retry, entries}
         end

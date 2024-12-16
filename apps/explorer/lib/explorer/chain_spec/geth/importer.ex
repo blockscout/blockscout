@@ -8,7 +8,6 @@ defmodule Explorer.ChainSpec.Geth.Importer do
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Helper}
   alias Explorer.Chain.Hash.Address
-  alias Explorer.MicroserviceInterfaces.MultichainSearch
 
   @doc """
     Imports genesis accounts into the database from a chain specification.
@@ -68,19 +67,7 @@ defmodule Explorer.ChainSpec.Geth.Importer do
       addresses: %{params: address_params}
     }
 
-    case Chain.import(params) do
-      {:ok, imported} = result ->
-        MultichainSearch.batch_import(%{
-          addresses: imported[:addresses] || [],
-          blocks: [],
-          transactions: []
-        })
-
-        result
-
-      other_result ->
-        other_result
-    end
+    Chain.import(params)
   end
 
   @doc """

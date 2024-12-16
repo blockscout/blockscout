@@ -21,7 +21,6 @@ defmodule Indexer.Fetcher.TokenBalance do
   alias Explorer.Chain
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.Hash
-  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Utility.MissingBalanceOfToken
   alias Indexer.{BufferedTask, TokenBalances, Tracer}
   alias Indexer.Fetcher.TokenBalance.Supervisor, as: TokenBalanceSupervisor
@@ -221,13 +220,7 @@ defmodule Indexer.Fetcher.TokenBalance do
     }
 
     case Chain.import(import_params) do
-      {:ok, imported} ->
-        MultichainSearch.batch_import(%{
-          addresses: imported[:addresses] || [],
-          blocks: [],
-          transactions: []
-        })
-
+      {:ok, _} ->
         :ok
 
       {:error, reason} ->
