@@ -20,8 +20,10 @@
 
 ### 🐛 Bug Fixes
 
+- Refactor CDN upload functions, prevent saving partially uploaded thumbnails ([#11400](https://github.com/blockscout/blockscout/issues/11400))
+- Take into account several proofs in OP Withdrawals ([#11399](https://github.com/blockscout/blockscout/issues/11399))
 - Handle "null" in paging options ([#11388](https://github.com/blockscout/blockscout/issues/11388))
-- Search timeout ([#11277](https://github.com/blockscout/blockscout/issues/11277))
+- Fix search timeout ([#11277](https://github.com/blockscout/blockscout/issues/11277))
 - Fix Noves.fi endpoints for bulk transactions ([#11375](https://github.com/blockscout/blockscout/issues/11375))
 - Fix docker container build after adding NFT media handler ([#11373](https://github.com/blockscout/blockscout/issues/11373))
 - Handle simultaneous account entities creation ([#11341](https://github.com/blockscout/blockscout/issues/11341))
@@ -65,6 +67,8 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Follow updated response schema in interpreter microservice ([#11402](https://github.com/blockscout/blockscout/issues/11402))
+- Remove raise in case if ETHEREUM_JSONRPC_HTTP_URL is not provided ([#11392](https://github.com/blockscout/blockscout/issues/11392))
 - Remove beta suffix from releases ([#11376](https://github.com/blockscout/blockscout/issues/11376))
 - Background migrations timeout ([#11358](https://github.com/blockscout/blockscout/issues/11358))
 - Remove obsolete compile-time vars ([#11336](https://github.com/blockscout/blockscout/issues/11336))

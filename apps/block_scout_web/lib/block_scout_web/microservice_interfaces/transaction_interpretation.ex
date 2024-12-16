@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp try_get_cached_value(hash) do
     with {:ok, %Response{body: body, status_code: 200}} <- HTTPoison.get(cache_url(hash)),
          {:ok, json} <- body |> Jason.decode() do
-      {:ok, json |> Map.get("response") |> Map.put("success", true)} |> preload_template_variables()
+      {:ok, json} |> preload_template_variables()
     else
       _ ->
         :no_cached_data
