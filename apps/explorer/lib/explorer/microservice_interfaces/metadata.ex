@@ -55,14 +55,15 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   """
   @spec get_addresses(map()) :: {:error | integer(), any()}
   def get_addresses(params) do
-    with :ok <- Microservice.check_enabled(__MODULE__) do
-      params =
-        params
-        |> Map.put("page_size", @page_size)
-        |> Map.put("chain_id", Application.get_env(:block_scout_web, :chain_id))
+    case Microservice.check_enabled(__MODULE__) do
+      :ok ->
+        params =
+          params
+          |> Map.put("page_size", @page_size)
+          |> Map.put("chain_id", Application.get_env(:block_scout_web, :chain_id))
 
-      http_get_request_for_proxy_method(addresses_url(), params, &prepare_addresses_response/1)
-    else
+        http_get_request_for_proxy_method(addresses_url(), params, &prepare_addresses_response/1)
+
       _ ->
         {501, %{error: @service_disabled}}
     end
