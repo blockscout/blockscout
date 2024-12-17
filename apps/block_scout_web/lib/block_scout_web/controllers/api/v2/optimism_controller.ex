@@ -89,6 +89,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
             end
 
           transaction_count =
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             case l2_block_range do
               nil -> 0
               range -> Transaction.transaction_count_for_block_range(range)
