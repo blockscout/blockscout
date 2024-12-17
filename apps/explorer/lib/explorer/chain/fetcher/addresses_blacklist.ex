@@ -1,13 +1,15 @@
 defmodule Explorer.Chain.Fetcher.AddressesBlacklist do
   @moduledoc """
-    Fetcher for addresses blacklist
+  General fetcher for addresses blacklist
   """
-  alias Explorer.Chain
-
   use GenServer
 
-  @keys_to_blacklist ["OFAC", "Malicious"]
   @cache_name :addresses_blacklist
+
+  @doc """
+  Fetches the addresses blacklist.
+  """
+  @callback fetch_addresses_blacklist() :: MapSet.t()
 
   @impl true
   @spec init(any()) :: {:ok, nil}
@@ -54,47 +56,16 @@ defmodule Explorer.Chain.Fetcher.AddressesBlacklist do
 
   @impl true
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
-    Process.send_after(self(), :fetch, retry_timeout())
+    Process.send_after(self(), :fetch, retry_interval())
     {:noreply, state}
   end
 
   defp run_fetch_task do
     Task.Supervisor.async_nolink(Explorer.GenesisDataTaskSupervisor, fn ->
-      fetch_addresses_blacklist()
+      select_provider_module().fetch_addresses_blacklist()
       |> MapSet.to_list()
       |> save_in_ets_cache()
     end)
-  end
-
-  defp fetch_addresses_blacklist do
-    case HTTPoison.get(url()) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        body
-        |> Jason.decode()
-        |> parse_blacklist()
-
-      _ ->
-        MapSet.new()
-    end
-  end
-
-  defp parse_blacklist({:ok, json}) when is_map(json) do
-    @keys_to_blacklist
-    |> Enum.reduce([], fn key, acc ->
-      acc ++
-        (json
-         |> Map.get(key, [])
-         |> Enum.map(fn address_hash_string ->
-           address_hash_or_nil = Chain.string_to_address_hash_or_nil(address_hash_string)
-           address_hash_or_nil && {address_hash_or_nil, nil}
-         end)
-         |> Enum.reject(&is_nil/1))
-    end)
-    |> MapSet.new()
-  end
-
-  defp parse_blacklist({:error, _}) do
-    MapSet.new()
   end
 
   defp save_in_ets_cache(blacklist) do
@@ -107,7 +78,7 @@ defmodule Explorer.Chain.Fetcher.AddressesBlacklist do
   end
 
   @spec url() :: any()
-  defp url do
+  def url do
     config()[:url]
   end
 
@@ -121,9 +92,16 @@ defmodule Explorer.Chain.Fetcher.AddressesBlacklist do
     config()[:update_interval]
   end
 
-  @spec retry_timeout() :: any()
-  defp retry_timeout do
-    config()[:retry_timeout]
+  @spec retry_interval() :: any()
+  defp retry_interval do
+    config()[:retry_interval]
+  end
+
+  defp select_provider_module do
+    case config()[:provider] do
+      _ ->
+        Explorer.Chain.Fetcher.AddressesBlacklist.Blockaid
+    end
   end
 
   @doc """

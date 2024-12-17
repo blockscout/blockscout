@@ -141,6 +141,10 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   end
 
   def call(conn, {:restricted_access, true}) do
+    Logger.error(fn ->
+      ["#{@restricted_access}"]
+    end)
+
     conn
     |> put_status(:forbidden)
     |> put_view(ApiView)

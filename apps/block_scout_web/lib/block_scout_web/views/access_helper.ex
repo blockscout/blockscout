@@ -17,6 +17,9 @@ defmodule BlockScoutWeb.AccessHelper do
 
   require Logger
 
+  @invalid_address_hash "Invalid address hash"
+  @restricted_access "Restricted access"
+
   def restricted_access?(address_hash, params) do
     AccessHelper.restricted_access?(address_hash, params)
   end
@@ -38,10 +41,10 @@ defmodule BlockScoutWeb.AccessHelper do
       :ok
     else
       nil ->
-        "Invalid address hash"
+        @invalid_address_hash
 
       {:restricted_access, true} ->
-        "Restricted access"
+        @restricted_access
     end
   end
 
