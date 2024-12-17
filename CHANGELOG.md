@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Addresses blacklist support ([#11417](https://github.com/blockscout/blockscout/issues/11417))
 - Zilliqa scilla transactions and smart contracts ([#11069](https://github.com/blockscout/blockscout/issues/11069))
 - CDN ([#10675](https://github.com/blockscout/blockscout/issues/10675))
 - Arbitrum L2->L1 message claiming ([#10804](https://github.com/blockscout/blockscout/issues/10804))
@@ -73,6 +74,7 @@
 - Rename blob_tx_count per naming conventions ([#11438](https://github.com/blockscout/blockscout/issues/11438))
 - Follow updated response schema in interpreter microservice ([#11402](https://github.com/blockscout/blockscout/issues/11402))
 - Remove raise in case if ETHEREUM_JSONRPC_HTTP_URL is not provided ([#11392](https://github.com/blockscout/blockscout/issues/11392))
+- Optimize tokens import ([#11389](https://github.com/blockscout/blockscout/issues/11389))
 - Remove beta suffix from releases ([#11376](https://github.com/blockscout/blockscout/issues/11376))
 - Background migrations timeout ([#11358](https://github.com/blockscout/blockscout/issues/11358))
 - Remove obsolete compile-time vars ([#11336](https://github.com/blockscout/blockscout/issues/11336))
