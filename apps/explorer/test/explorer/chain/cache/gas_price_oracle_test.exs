@@ -137,6 +137,68 @@ defmodule Explorer.Chain.Cache.GasPriceOracleTest do
                }}, []} = GasPriceOracle.get_average_gas_price(2, 35, 60, 90)
     end
 
+    test "returns base fee only gas estimation with average block time if there is no recent transactions with non-zero gas price" do
+      average_block_time_old_env = Application.get_env(:explorer, AverageBlockTime)
+
+      Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
+      start_supervised!(AverageBlockTime)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, AverageBlockTime, average_block_time_old_env)
+      end)
+
+      timestamp = ~U[2023-12-12 12:12:30.000000Z]
+
+      block1 =
+        insert(:block,
+          number: 100,
+          hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391",
+          base_fee_per_gas: 100,
+          timestamp: timestamp
+        )
+
+      block2 =
+        insert(:block,
+          number: 101,
+          hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729",
+          base_fee_per_gas: 100,
+          timestamp: timestamp
+        )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block1.hash,
+        block_number: block1.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 0,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+      :transaction
+      |> insert(
+        status: :ok,
+        block_hash: block2.hash,
+        block_number: block2.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        gas_price: 0,
+        hash: "0x5d5c2776f96704e7845f7d3c1fbba6685ab6efd6f82b6cd11d549f3b3a46bd03"
+      )
+
+      AverageBlockTime.refresh()
+
+      assert {{:ok,
+               %{
+                 average: %{base_fee: 0.01, priority_fee: +0.0, price: 0.01, time: +0.0},
+                 fast: %{base_fee: 0.01, priority_fee: +0.0, price: 0.01, time: +0.0},
+                 slow: %{base_fee: 0.01, priority_fee: +0.0, price: 0.01, time: +0.0}
+               }}, []} = GasPriceOracle.get_average_gas_price(2, 35, 60, 90)
+    end
+
     test "returns the same percentile values if gas price is the same over transactions" do
       block1 = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
       block2 = insert(:block, number: 101, hash: "0x76c3da57334fffdc66c0d954dce1a910fcff13ec889a13b2d8b0b6e9440ce729")
