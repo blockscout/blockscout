@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     * Address token balance token type migrations (both current and historical)
     * Token transfer token type migrations
     * Sanitization of duplicated log index logs
+    * Arbitrum DA records normalization
 
     Each migration status is cached to avoid frequent database checks, with a fallback mechanism
     that asynchronously updates the cache when a status is not found. The default status for
@@ -26,7 +27,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :tb_token_type_finished,
     key: :ctb_token_type_finished,
     key: :tt_denormalization_finished,
-    key: :sanitize_duplicated_log_index_logs_finished
+    key: :sanitize_duplicated_log_index_logs_finished,
+    key: :arbitrum_da_records_normalization_finished
 
   @dialyzer :no_match
 
@@ -35,7 +37,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     AddressTokenBalanceTokenType,
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
-    TransactionsDenormalization
+    TransactionsDenormalization,
+    ArbitrumDaRecordsNormalization
   }
 
   defp handle_fallback(:transactions_denormalization_finished) do
@@ -73,6 +76,14 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   defp handle_fallback(:sanitize_duplicated_log_index_logs_finished) do
     Task.start_link(fn ->
       set_sanitize_duplicated_log_index_logs_finished(SanitizeDuplicatedLogIndexLogs.migration_finished?())
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:arbitrum_da_records_normalization_finished) do
+    Task.start_link(fn ->
+      set_arbitrum_da_records_normalization_finished(ArbitrumDaRecordsNormalization.migration_finished?())
     end)
 
     {:return, false}
