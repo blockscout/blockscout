@@ -139,7 +139,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   import Ecto.Changeset
 
-  alias Explorer.{Chain, Helper}
+  alias Explorer.Chain
   alias Explorer.Chain.{DenormalizationHelper, Hash, Log, TokenTransfer}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{PagingOptions, Repo}
@@ -640,21 +640,6 @@ defmodule Explorer.Chain.TokenTransfer do
     |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
     |> where([tt, token: token], token.type == "ERC-721")
     |> preload([tt, token: token], [{:token, token}])
-  end
-
-  @doc """
-  To be used in migrators
-  """
-  @spec encode_token_transfer_ids([{Hash.t(), Hash.t(), non_neg_integer()}]) :: binary()
-  def encode_token_transfer_ids(ids) do
-    encoded_values =
-      ids
-      |> Enum.reduce("", fn {t_hash, b_hash, log_index}, acc ->
-        acc <> "('#{Helper.hash_to_query_string(t_hash)}', '#{Helper.hash_to_query_string(b_hash)}', #{log_index}),"
-      end)
-      |> String.trim_trailing(",")
-
-    "(#{encoded_values})"
   end
 
   @doc """
