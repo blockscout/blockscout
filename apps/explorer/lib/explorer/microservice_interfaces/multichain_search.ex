@@ -120,11 +120,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     }
   end
 
-  def token?(nil), do: false
+  defp token?(nil), do: false
 
-  def token?(%NotLoaded{}), do: false
+  defp token?(%NotLoaded{}), do: false
 
-  def token?(_), do: true
+  defp token?(_), do: true
 
   defp get_token_name(nil), do: nil
 
