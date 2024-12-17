@@ -10,6 +10,22 @@ defmodule BlockScoutWeb.API.V1.HealthController do
   @ok_message "OK"
   @backfill_multichain_search_db_migration_name "backfill_multichain_search_db"
 
+  @doc """
+  Handles health checks for the application.
+
+  This endpoint is used to determine if the application is healthy and operational. It performs checks on the status of the blockchain data in both the database and the cache.
+
+  ## Parameters
+
+    - conn: The connection struct representing the current HTTP connection.
+    - params: A map of parameters (not used in this function).
+
+  ## Returns
+
+    - The updated connection struct with the response sent.
+
+  If the application is not running in standalone media worker mode, it retrieves the latest block number and timestamp from both the database and the cache. It then sends an HTTP 200 response with this information.
+  """
   @spec health(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def health(conn, params) do
     health(conn, params, Application.get_env(:nft_media_handler, :standalone_media_worker?))
@@ -45,11 +61,43 @@ defmodule BlockScoutWeb.API.V1.HealthController do
     )
   end
 
+  @doc """
+  Handles liveness checks for the application.
+
+  This endpoint is used to determine if the application is running and able to handle requests.
+  It responds with an HTTP 200 status and a predefined message.
+
+  ## Parameters
+
+    - conn: The connection struct representing the current HTTP connection.
+    - _: A map of parameters (not used in this function).
+
+  ## Returns
+
+    - The updated connection struct with the response sent.
+  """
   @spec liveness(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def liveness(conn, _) do
     send_resp(conn, :ok, @ok_message)
   end
 
+  @doc """
+  Handles readiness checks for the application.
+
+  This endpoint is used to determine if the application is ready to handle incoming requests.
+  It performs a conditional check on the application's environment configuration and responds with an HTTP 200 status and a predefined message.
+
+  In the case of indexer/API application mode, it performs request in the DB to get the latest block.
+
+  ## Parameters
+
+    - conn: The connection struct representing the current HTTP connection.
+    - _: A map of parameters (not used in this function).
+
+  ## Returns
+
+    - The updated connection struct with the response sent.
+  """
   @spec readiness(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def readiness(conn, _) do
     unless Application.get_env(:nft_media_handler, :standalone_media_worker?) do

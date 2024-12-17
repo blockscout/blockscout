@@ -14,6 +14,20 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   @post_timeout :timer.minutes(5)
   @request_error_msg "Error while sending request to Multichain Search Service"
 
+  @doc """
+    Performs a batch import of addresses, blocks, and transactions to the Multichain Search microservice.
+
+    ## Parameters
+    - `params`: A map containing:
+      - `addresses`: List of address structs.
+      - `blocks`: List of block structs.
+      - `transactions`: List of transaction structs.
+
+    ## Returns
+    - `{:ok, :service_disabled}`: If the integration with Multichain Search Service is disabled.
+    - `{:ok, result}`: If the import was successful.
+    - `{:error, reason}`: If an error occurred.
+  """
   @spec batch_import(%{
           addresses: list(),
           blocks: list(),
@@ -44,7 +58,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
         Logger.error(fn ->
           [
-            "Error while sending request to microservice url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
+            "Error while sending request to microservice url: #{url}, body: #{inspect(body |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}: ",
             inspect(error, limit: :infinity, printable_limit: :infinity)
           ]
         end)
