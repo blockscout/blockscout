@@ -29,9 +29,13 @@ defmodule BlockScoutWeb.API.V2.EthereumView do
     blob_gas_used = Map.get(block, :blob_gas_used)
     excess_blob_gas = Map.get(block, :excess_blob_gas)
 
+    blob_transaction_count = count_blob_transactions(block)
+
     extended_out_json =
       out_json
-      |> Map.put("blob_tx_count", count_blob_transactions(block))
+      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `blob_transaction_count` property
+      |> Map.put("blob_tx_count", blob_transaction_count)
+      |> Map.put("blob_transaction_count", blob_transaction_count)
       |> Map.put("blob_gas_used", blob_gas_used)
       |> Map.put("excess_blob_gas", excess_blob_gas)
 

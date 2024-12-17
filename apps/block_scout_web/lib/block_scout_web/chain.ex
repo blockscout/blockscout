@@ -583,7 +583,7 @@ defmodule BlockScoutWeb.Chain do
       nil ->
         {:error, :not_found}
 
-      result ->
+      {result, _address_hash} ->
         {:ok, result}
     end
   end
