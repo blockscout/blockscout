@@ -89,12 +89,11 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
             end
 
           transaction_count =
-            if is_nil(l2_block_range) do
-              0
-            else
-              Transaction.transaction_count_for_block_range(l2_block_range)
+            case l2_block_range do
+              nil -> 0
+              range -> Transaction.transaction_count_for_block_range(range)
             end
-          
+
           {batch_data_container, _} = FrameSequenceBlob.list(fs.id, api?: true)
 
           fs
