@@ -6,6 +6,12 @@ defmodule Explorer.Migrator.MigrationStatus do
 
   alias Explorer.Repo
 
+  @typedoc """
+    The structure of status of a migration:
+    * `migration_name` - The name of the migration.
+    * `status` - The status of the migration.
+    * `meta` - The meta data of the migration.
+  """
   @primary_key false
   typed_schema "migrations_status" do
     field(:migration_name, :string, primary_key: true)
@@ -73,6 +79,15 @@ defmodule Explorer.Migrator.MigrationStatus do
     end
   end
 
+  # Builds a query to filter migration status records by migration name.
+  #
+  # ## Parameters
+  # - `query`: The base query to build upon, defaults to the module itself
+  # - `migration_name`: The name of the migration to filter by
+  #
+  # ## Returns
+  # - An `Ecto.Query` that filters records where migration_name matches the provided value
+  @spec get_by_migration_name_query(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   defp get_by_migration_name_query(query \\ __MODULE__, migration_name) do
     from(ms in query, where: ms.migration_name == ^migration_name)
   end

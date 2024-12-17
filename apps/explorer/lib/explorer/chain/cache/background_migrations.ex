@@ -1,6 +1,21 @@
 defmodule Explorer.Chain.Cache.BackgroundMigrations do
   @moduledoc """
-  Caches background migrations' status.
+    Caches the completion status of various background database migrations in the Blockscout system.
+
+    This module leverages the MapCache behavior to maintain an in-memory cache of whether specific
+    database migrations have completed. It tracks the status of several critical migrations:
+
+    * Transactions denormalization
+    * Address token balance token type migrations (both current and historical)
+    * Token transfer token type migrations
+    * Sanitization of duplicated log index logs
+
+    Each migration status is cached to avoid frequent database checks, with a fallback mechanism
+    that asynchronously updates the cache when a status is not found. The default status for
+    any uncached migration is `false`, indicating the migration is not complete.
+
+    The cache is particularly useful during the application startup and for performance-critical
+    operations that need to quickly check if certain data migrations have been completed.
   """
 
   require Logger
