@@ -683,8 +683,15 @@ defmodule EthereumJSONRPC do
       nil ->
         nil
 
-      quantity ->
+      # Litheum node sends time in format
+      # 1_734_416_449_321 -> seconds + milliseconds
+      quantity when quantity < 1_000_000_000 ->
+        # Assume seconds
         Timex.from_unix(quantity)
+
+      quantity ->
+        # Assume milliseconds
+        Timex.from_unix(quantity, :milliseconds)
     end
   end
 
