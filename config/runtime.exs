@@ -254,8 +254,8 @@ config :explorer,
        :all -> Explorer.Chain.Events.SimpleSender
        separate_setup when separate_setup in [:indexer, :api] -> Explorer.Chain.Events.DBSender
      end),
-  restricted_list: System.get_env("RESTRICTED_LIST"),
-  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY"),
+  addresses_blacklist: System.get_env("ADDRESSES_BLACKLIST"),
+  addresses_blacklist_key: System.get_env("ADDRESSES_BLACKLIST_KEY"),
   checksum_function: checksum_function && String.to_atom(checksum_function),
   elasticity_multiplier: ConfigHelper.parse_integer_env_var("EIP_1559_ELASTICITY_MULTIPLIER", 2),
   base_fee_max_change_denominator: ConfigHelper.parse_integer_env_var("EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR", 8),
@@ -693,6 +693,15 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   concurrency: ConfigHelper.parse_integer_env_var("FILECOIN_PENDING_ADDRESS_OPERATIONS_MIGRATION_CONCURRENCY", 1)
 
 config :explorer, Explorer.Chain.Blackfort.Validator, api_url: System.get_env("BLACKFORT_VALIDATOR_API_URL")
+
+addresses_blacklist_url = ConfigHelper.parse_microservice_url("ADDRESSES_BLACKLIST_URL")
+
+config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
+  url: addresses_blacklist_url,
+  enabled: !is_nil(addresses_blacklist_url),
+  update_interval: ConfigHelper.parse_time_env_var("ADDRESSES_BLACKLIST_UPDATE_INTERVAL", "15m"),
+  retry_interval: ConfigHelper.parse_time_env_var("ADDRESSES_BLACKLIST_RETRY_INTERVAL", "5s"),
+  provider: ConfigHelper.parse_catalog_value("ADDRESSES_BLACKLIST_PROVIDER", ["blockaid"], false, "blockaid")
 
 ###############
 ### Indexer ###
