@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Fetcher.AddressesBlacklist.Blockaid do
 
   @impl AddressesBlacklist
   def fetch_addresses_blacklist do
-    case HTTPoison.get(AddressesBlacklist.url(), [], recv_timeout: @timeout, timeout: @timeout) |>dbg()do
+    case HTTPoison.get(AddressesBlacklist.url(), [], recv_timeout: @timeout, timeout: @timeout) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         body
         |> Jason.decode()
