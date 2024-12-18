@@ -196,12 +196,19 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
     with {:ok, body_json} <- operation.address_hash |> to_string() |> BeryxAPI.fetch_address_info(),
          {:ok, id_address_string} <- Map.fetch(body_json, "short"),
          {:ok, maybe_robust_address_string} <- Map.fetch(body_json, "robust"),
-         {:ok, actor_type_string} <- Map.fetch(body_json, "actor_type") do
+         {:ok, maybe_actor_type_string} <- Map.fetch(body_json, "actor_type") do
       robust_address_string =
         if maybe_robust_address_string !== "" do
           maybe_robust_address_string
         else
           id_address_string
+        end
+
+      actor_type_string =
+        if maybe_actor_type_string !== "<unknown>" do
+          maybe_actor_type_string
+        else
+          nil
         end
 
       {:ok, :full,
