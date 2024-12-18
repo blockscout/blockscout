@@ -100,14 +100,6 @@ defmodule Explorer.Application.Constants do
   """
   @spec get_last_processed_token_address_hash(keyword()) :: nil | Explorer.Chain.Hash.t()
   def get_last_processed_token_address_hash(options \\ []) do
-    result = get_constant_by_key(@last_processed_erc_721_token, options)
-
-    case Chain.string_to_address_hash(result) do
-      {:ok, address_hash} ->
-        address_hash
-
-      _ ->
-        nil
-    end
+    @last_processed_erc_721_token |> get_constant_by_key(options) |> Chain.string_to_address_hash_or_nil()
   end
 end
