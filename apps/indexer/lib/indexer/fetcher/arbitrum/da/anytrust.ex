@@ -149,31 +149,32 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
   end
 
   @doc """
-    Prepares AnyTrust data availability information for import.
+    Transforms AnyTrust data availability information into database-ready records.
 
-    This function prepares a list of data structures for import into the database,
-    ensuring that AnyTrust DA information and related keysets are included. It
-    verifies if the keyset associated with the AnyTrust DA certificate is already
-    known or needs to be fetched from L1.
-
-    To avoid fetching the same keyset multiple times, the function uses a cache.
+    Creates database records for both the DA certificate and its association with a batch
+    number. Additionally checks if the certificate's keyset is already known or needs to
+    be fetched from L1.
 
     ## Parameters
-    - `source`: The initial list of data to be imported.
-    - `da_info`: The AnyTrust DA info struct containing details about the data blob.
-    - `l1_connection_config`: A map containing the address of the Sequencer Inbox contract
-      and configuration parameters for the JSON RPC connection.
-    - `cache`: A set of unique elements used to cache the checked keysets.
+    - A tuple containing:
+      - A list of existing DA records (`DaMultiPurposeRecord`)
+      - A list of existing batch-to-blob associations (`BatchToDaBlob`)
+    - `da_info`: The AnyTrust DA info struct containing the certificate data
+    - `l1_connection_config`: Configuration for L1 connection, including:
+      - `:sequencer_inbox_address`: Address of the Sequencer Inbox contract
+      - `:json_rpc_named_arguments`: JSON RPC connection parameters
+    - `cache`: A set of previously processed keyset hashes
 
     ## Returns
     - A tuple containing:
-      - An updated list of data structures ready for import, including the DA
-        certificate (`data_type` is `0`) and potentially a new keyset (`data_type`
-        is `1`) if required.
-      - The updated cache with the checked keysets.
+      - A tuple of updated record lists:
+        - DA records list with the new certificate (`data_type: 0`) and possibly
+          a new keyset (`data_type: 1`)
+        - Batch-to-blob associations list with the new mapping
+      - Updated keyset cache
   """
   @spec prepare_for_import(
-          list(),
+          {[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]},
           __MODULE__.t(),
           %{
             :sequencer_inbox_address => String.t(),
@@ -181,8 +182,8 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
           },
           MapSet.t()
         ) ::
-          {[Arbitrum.DaMultiPurposeRecord.to_import()], MapSet.t()}
-  def prepare_for_import(source, %__MODULE__{} = da_info, l1_connection_config, cache) do
+          {{[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]}, MapSet.t()}
+  def prepare_for_import({da_records_acc, batch_to_blob_acc}, %__MODULE__{} = da_info, l1_connection_config, cache) do
     data = %{
       keyset_hash: ArbitrumHelper.bytes_to_hex_str(da_info.keyset_hash),
       data_hash: ArbitrumHelper.bytes_to_hex_str(da_info.data_hash),
@@ -191,18 +192,27 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
       bls_signature: ArbitrumHelper.bytes_to_hex_str(da_info.bls_signature)
     }
 
-    res = [
-      %{
-        data_type: 0,
-        data_key: da_info.data_hash,
-        data: data,
-        batch_number: da_info.batch_number
-      }
-    ]
+    # Create `DaMultiPurposeRecord` record
+    da_record = %{
+      data_type: 0,
+      data_key: da_info.data_hash,
+      data: data,
+      # This field must be removed as soon as migration to a separate table for Batch-to-DA-record associations is completed.
+      batch_number: nil
+    }
+
+    # Create `BatchToDaBlob` record
+    batch_to_blob_record = %{
+      batch_number: da_info.batch_number,
+      data_blob_id: da_info.data_hash
+    }
 
     {check_result, keyset_map, updated_cache} = check_if_new_keyset(da_info.keyset_hash, l1_connection_config, cache)
 
-    updated_res =
+    da_records =
+      # If the keyset is new, add a new keyset record to the DA records list.
+      # As per the nature of `DaMultiPurposeRecord` it can contain not only DA
+      # certificates but also keysets.
       case check_result do
         :new_keyset ->
           [
@@ -212,14 +222,14 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
               data: keyset_map,
               batch_number: nil
             }
-            | res
+            | [da_record]
           ]
 
         _ ->
-          res
+          [da_record]
       end
 
-    {updated_res ++ source, updated_cache}
+    {{da_records ++ da_records_acc, [batch_to_blob_record | batch_to_blob_acc]}, updated_cache}
   end
 
   # Verifies the existence of an AnyTrust committee keyset in the database and fetches it from L1 if not found.
