@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
+    BatchToDaBlob,
     BatchTransaction,
     DaMultiPurposeRecord,
     L1Batch,
@@ -1209,6 +1210,12 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     Retrieves Data Availability (DA) information from the database using the provided
     batch number.
 
+    The function handles both pre- and post-migration database schemas:
+    - In the pre-migration schema, DA records were stored directly in the
+      arbitrum_da_multi_purpose table with a batch_number field.
+    - In the post-migration schema, a separate arbitrum_batches_to_da_blobs table
+      enables many-to-many relationships between batches and DA blobs.
+
     ## Parameters
     - `batch_number`: The batch number to be used for retrieval.
 
@@ -1217,6 +1224,39 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   """
   @spec get_da_info_by_batch_number(non_neg_integer()) :: map()
   def get_da_info_by_batch_number(batch_number) do
+    # The migration normalizes how Data Availability (DA) records are stored in the database.
+    # Before the migration, the association between batches and DA blobs was stored directly
+    # in the arbitrum_da_multi_purpose table using a batch_number field. This approach had
+    # limitations when the same DA blob was used for different batches in AnyTrust chains.
+    #
+    # After the migration, the associations are stored in a separate arbitrum_batches_to_da_blobs
+    # table, allowing many-to-many relationships between batches and DA blobs. This change
+    # ensures proper handling of cases where multiple batches share the same DA blob.
+    case Explorer.Chain.Cache.BackgroundMigrations.get_arbitrum_da_records_normalization_finished() do
+      true ->
+        # Migration is complete, use new schema
+        get_da_info_by_batch_number_new_schema(batch_number)
+      _ ->
+        # Migration in progress, try old schema first, then fallback to new
+        case get_da_info_by_batch_number_old_schema(batch_number) do
+          %{} = empty when map_size(empty) == 0 ->
+            get_da_info_by_batch_number_new_schema(batch_number)
+          result ->
+            result
+        end
+    end
+  end
+
+  # Retrieves DA info using the pre-migration database schema where DA records were stored
+  # directly in the arbitrum_da_multi_purpose table with a batch_number field.
+  #
+  # ## Parameters
+  # - `batch_number`: The batch number to lookup in the arbitrum_da_multi_purpose table
+  #
+  # ## Returns
+  # - A map containing the DA info if found, otherwise an empty map
+  @spec get_da_info_by_batch_number_old_schema(non_neg_integer()) :: map()
+  defp get_da_info_by_batch_number_old_schema(batch_number) do
     query =
       from(
         da_records in DaMultiPurposeRecord,
@@ -1225,7 +1265,37 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
     case Repo.one(query) do
       nil -> %{}
-      keyset -> keyset.data
+      record -> record.data
+    end
+  end
+
+  # Gets DA info using the post-migration database schema where DA records and their
+  # associations with batches are stored in separate tables:
+  #
+  # - `arbitrum_da_multi_purpose` (`DaMultiPurposeRecord`): Stores the actual DA
+  #   records with their data and type
+  # - `arbitrum_batches_to_da_blobs` (`BatchToDaBlob`): Maps batch numbers to DA
+  #   blob IDs.
+  #
+  # ## Parameters
+  # - `batch_number`: The batch number to lookup in the arbitrum_batches_to_da_blobs table
+  #
+  # ## Returns
+  # - A map containing the DA info if found, otherwise an empty map
+  @spec get_da_info_by_batch_number_new_schema(non_neg_integer()) :: map()
+  defp get_da_info_by_batch_number_new_schema(batch_number) do
+    query =
+      from(
+        link in BatchToDaBlob,
+        join: da_record in DaMultiPurposeRecord,
+        on: link.data_blob_id == da_record.data_key,
+        where: link.batch_number == ^batch_number and da_record.data_type == 0,
+        select: da_record.data
+      )
+
+    case Repo.one(query) do
+      nil -> %{}
+      data -> data
     end
   end
 
@@ -1233,8 +1303,14 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     Retrieves a Data Availability (DA) record from the database using the provided
     data key.
 
+    The function supports both old and new database schemas:
+    - In the old schema, batch numbers were stored directly in the arbitrum_da_multi_purpose table
+    - In the new schema, batch-to-blob associations are stored in the arbitrum_batches_to_da_blobs table
+
     ## Parameters
     - `data_key`: The key of the data to be retrieved.
+    - `options`: A keyword list of options:
+      - `:api?` - Whether the function is being called from an API context.
 
     ## Returns
     - `{:ok, {batch_number, da_info}}`, where
@@ -1249,6 +1325,32 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   def get_da_record_by_data_key(data_key, options) do
+    case Explorer.Chain.Cache.BackgroundMigrations.get_arbitrum_da_records_normalization_finished() do
+      true ->
+        # Migration is complete, use new schema
+        get_da_record_by_data_key_new_schema(data_key, options)
+      _ ->
+        # Migration in progress, try old schema first, then fallback to new
+        case get_da_record_by_data_key_old_schema(data_key, options) do
+          {:error, :not_found} -> get_da_record_by_data_key_new_schema(data_key, options)
+          result -> result
+        end
+    end
+  end
+
+  # Retrieves DA record using the pre-migration database schema where batch numbers
+  # were stored directly in the arbitrum_da_multi_purpose table.
+  #
+  # ## Parameters
+  # - `data_key`: The key of the data to be retrieved.
+  # - `options`: A keyword list of options:
+  #   - `:api?` - Whether the function is being called from an API context.
+  #
+  # ## Returns
+  # - `{:ok, {batch_number, da_info}}` if the record is found
+  # - `{:error, :not_found}` if no record is found
+  @spec get_da_record_by_data_key_old_schema(binary(), api?: boolean()) :: {:ok, {non_neg_integer(), map()}} | {:error, :not_found}
+  defp get_da_record_by_data_key_old_schema(data_key, options) do
     query =
       from(
         da_records in DaMultiPurposeRecord,
@@ -1258,6 +1360,39 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     case select_repo(options).one(query) do
       nil -> {:error, :not_found}
       keyset -> {:ok, {keyset.batch_number, keyset.data}}
+    end
+  end
+
+  # Gets DA record using the post-migration database schema where DA records and their
+  # associations with batches are stored in separate tables:
+  #
+  # - `arbitrum_da_multi_purpose` (`DaMultiPurposeRecord`): Stores the actual DA
+  #   records with their data and type
+  # - `arbitrum_batches_to_da_blobs` (`BatchToDaBlob`): Maps batch numbers to DA
+  #   blob IDs.
+  #
+  # ## Parameters
+  # - `data_key`: The key of the data to be retrieved.
+  # - `options`: A keyword list of options:
+  #   - `:api?` - Whether the function is being called from an API context.
+  #
+  # ## Returns
+  # - `{:ok, {batch_number, da_info}}` if the record is found
+  # - `{:error, :not_found}` if no record is found
+  @spec get_da_record_by_data_key_new_schema(binary(), api?: boolean()) :: {:ok, {non_neg_integer(), map()}} | {:error, :not_found}
+  defp get_da_record_by_data_key_new_schema(data_key, options) do
+    query =
+      from(
+        da_records in DaMultiPurposeRecord,
+        join: link in BatchToDaBlob,
+        on: da_records.data_key == link.data_blob_id,
+        where: da_records.data_key == ^data_key and da_records.data_type == 0,
+        select: {link.batch_number, da_records.data}
+      )
+
+    case select_repo(options).one(query) do
+      nil -> {:error, :not_found}
+      {batch_number, data} -> {:ok, {batch_number, data}}
     end
   end
 
