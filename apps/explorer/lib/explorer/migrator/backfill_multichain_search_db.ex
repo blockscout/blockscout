@@ -7,7 +7,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
 
   use Explorer.Migrator.FillingMigration
 
-  alias Explorer.Chain.{Block, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Migrator.FillingMigration
@@ -187,7 +187,9 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
     BackgroundMigrations.set_backfill_multichain_search_db_finished(true)
   end
 
-  @spec extract_address_from_result(Transaction.t() | InternalTransaction.t() | TokenTransfer.t() | Block.t()) :: list()
+  @spec extract_address_from_result(Transaction.t() | InternalTransaction.t() | TokenTransfer.t() | Block.t()) :: [
+          Address.t()
+        ]
   defp extract_address_from_result(result) do
     case result do
       %Transaction{} ->

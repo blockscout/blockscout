@@ -5,7 +5,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Cache.NetVersion
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Address, Block, Hash, Transaction}
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
 
@@ -29,10 +29,10 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     - `{:error, reason}`: If an error occurred.
   """
   @spec batch_import(%{
-          addresses: list(),
-          blocks: list(),
-          transactions: list()
-        }) :: {:error, :disabled | <<_::416>> | Jason.DecodeError.t()} | {:ok, any()}
+          addresses: [Address.t()],
+          blocks: [Block.t()],
+          transactions: [Transaction.t()]
+        }) :: {:error, :disabled | String.t() | Jason.DecodeError.t()} | {:ok, any()}
   def batch_import(params) do
     case Microservice.check_enabled(__MODULE__) do
       :ok ->
