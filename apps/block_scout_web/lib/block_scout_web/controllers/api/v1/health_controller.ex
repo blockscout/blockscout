@@ -128,19 +128,22 @@ defmodule BlockScoutWeb.API.V1.HealthController do
   """
   @spec multichain_search_db_export(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def multichain_search_db_export(conn, _) do
-    migration = MigrationStatus.fetch(@backfill_multichain_search_db_migration_name)
-    migration_status_finished? = migration.status == "completed"
+    case MigrationStatus.fetch(@backfill_multichain_search_db_migration_name) do
+      %{status: status, meta: meta} = _migration ->
+        response =
+          %{
+            migration: %{
+              finished: status == "completed",
+              metadata: meta
+            }
+          }
+          |> Jason.encode!()
 
-    response =
-      %{
-        migration: %{
-          finished: migration_status_finished?,
-          metadata: migration.meta
-        }
-      }
-      |> Jason.encode!()
+        send_resp(conn, :ok, response)
 
-    send_resp(conn, :ok, response)
+      _ ->
+        send_resp(conn, :internal_server_error, Jason.encode!(%{error: "Failed to fetch migration status"}))
+    end
   end
 
   defp result(
