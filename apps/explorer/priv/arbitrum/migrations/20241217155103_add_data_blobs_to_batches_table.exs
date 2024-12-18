@@ -3,8 +3,29 @@ defmodule Explorer.Repo.Arbitrum.Migrations.AddDataBlobsToBatchesTable do
 
   def change do
     create table(:arbitrum_batches_to_da_blobs, primary_key: false) do
-      add(:batch_number, :integer, null: false, primary_key: true)
-      add(:data_blob_id, :bytea, null: false)
+      add(
+        :batch_number,
+        references(:arbitrum_l1_batches,
+          column: :number,
+          on_delete: :delete_all,
+          on_update: :update_all,
+          type: :integer
+        ),
+        null: false,
+        primary_key: true
+      )
+
+      add(
+        :data_blob_id,
+        references(:arbitrum_da_multi_purpose,
+          column: :data_key,
+          on_delete: :delete_all,
+          on_update: :update_all,
+          type: :bytea
+        ),
+        null: false
+      )
+
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
