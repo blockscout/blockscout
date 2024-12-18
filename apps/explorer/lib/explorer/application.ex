@@ -31,6 +31,7 @@ defmodule Explorer.Application do
   alias Explorer.Chain.Supply.RSK
 
   alias Explorer.Market.MarketHistoryCache
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
@@ -258,7 +259,7 @@ defmodule Explorer.Application do
   end
 
   defp configure_multichain_search_microservice(process) do
-    if Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)[:enabled] do
+    if MultichainSearch.enabled?() do
       process
     else
       []

@@ -34,14 +34,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           transactions: [Transaction.t()]
         }) :: {:error, :disabled | String.t() | Jason.DecodeError.t()} | {:ok, any()}
   def batch_import(params) do
-    case Microservice.check_enabled(__MODULE__) do
-      :ok ->
-        body = format_batch_import_params(params)
+    if enabled?() do
+      body = format_batch_import_params(params)
 
-        http_post_request(batch_import_url(), body)
-
-      {:error, :disabled} ->
-        {:ok, :service_disabled}
+      http_post_request(batch_import_url(), body)
+    else
+      {:ok, :service_disabled}
     end
   end
 
@@ -182,10 +180,34 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   end
 
   defp base_url do
-    "#{Microservice.base_url(__MODULE__)}/api/v1"
+    microservice_base_url = Microservice.base_url(__MODULE__)
+
+    if microservice_base_url do
+      "#{microservice_base_url}/api/v1"
+    else
+      nil
+    end
   end
 
   defp api_key do
     Microservice.api_key(__MODULE__)
   end
+
+  @doc """
+  Checks if the multichain search microservice is enabled.
+
+  This function determines if the multichain search microservice is enabled by
+  checking if the base URL is not nil.
+
+  ## Examples
+
+    iex> Explorer.MicroserviceInterfaces.MultichainSearch.enabled?()
+    true
+
+    iex> Explorer.MicroserviceInterfaces.MultichainSearch.enabled?()
+    false
+
+  @return `true` if the base URL is not nil, `false` otherwise.
+  """
+  def enabled?, do: !is_nil(base_url())
 end
