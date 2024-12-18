@@ -5,12 +5,12 @@ defmodule Explorer.Migrator.FillingMigration do
 
     This module defines a template for creating migrations that can process entities in
     batches with parallel execution. It implements a GenServer that manages the
-    migration lifecycle and provides automatic checkpointing of migration progress.
+    migration lifecycle and automatically saves migration progress regularly.
 
     Key features:
     - Batch processing with configurable batch size
     - Parallel execution with configurable concurrency
-    - State persistence and automatic resumability through database checkpointing
+    - State persistence and ability to automatically resume after interruption
     - Integration with Explorer.Chain.Cache.BackgroundMigrations for status tracking
 
     ## Migration State Management
@@ -93,7 +93,7 @@ defmodule Explorer.Migrator.FillingMigration do
     `concurrency()` callbacks run in parallel as separate tasks, and the system
     waits for all callbacks to complete. Since no timeout is specified for tasks
     invoking this callback, implementations should complete within a reasonable
-    timeframe.
+    time period.
 
     After all callback tasks finish, the system schedules gathering of the next
     batch of identifiers according to the timeout configuration parameter in the
@@ -192,7 +192,7 @@ defmodule Explorer.Migrator.FillingMigration do
       # If the migration is already completed, updates the in-memory cache and stops normally.
       # Otherwise, marks the migration as started, executes pre-migration tasks via
       # before_start/0, and schedules the first batch with no delay. The migration process
-      # continues with the state that was checkpointed during the previous run - this allows
+      # continues with the state that was saved during the previous run - this allows
       # resuming long-running migrations from where they were interrupted.
       #
       # ## Parameters
