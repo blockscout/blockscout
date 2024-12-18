@@ -49,8 +49,24 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     headers = [{"Content-Type", "application/json"}]
 
     case HTTPoison.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        body |> Jason.decode()
+      {:ok, %Response{body: response_body, status_code: 200}} ->
+        response_body |> Jason.decode()
+
+      {:ok, %Response{body: response_body, status_code: status_code}} ->
+        old_truncate = Application.get_env(:logger, :truncate)
+        Logger.configure(truncate: :infinity)
+
+        Logger.error(fn ->
+          [
+            "Error while sending request to microservice url: #{url}, ",
+            "status_code: #{inspect(status_code)}, ",
+            "response_body: #{inspect(response_body, limit: :infinity, printable_limit: :infinity)}, ",
+            "request_body: #{inspect(body |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}"
+          ]
+        end)
+
+        Logger.configure(truncate: old_truncate)
+        {:error, @request_error_msg}
 
       error ->
         old_truncate = Application.get_env(:logger, :truncate)
@@ -58,7 +74,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
         Logger.error(fn ->
           [
-            "Error while sending request to microservice url: #{url}, body: #{inspect(body |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}: ",
+            "Error while sending request to microservice url: #{url}, request_body: #{inspect(body |> Map.drop([:api_key]), limit: :infinity, printable_limit: :infinity)}: ",
             inspect(error, limit: :infinity, printable_limit: :infinity)
           ]
         end)
@@ -90,6 +106,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           contract_name: get_smart_contract_name(address.smart_contract)
         }
       end)
+      |> Enum.uniq()
 
     block_hashes =
       blocks

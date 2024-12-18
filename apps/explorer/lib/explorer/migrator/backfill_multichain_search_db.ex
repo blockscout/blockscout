@@ -18,6 +18,8 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
   @migration_name "backfill_multichain_search_db"
 
   @failed_to_fetch_data_error "Failed to fetch data from the Blockscout DB for batch export to the Multichain Search DB"
+  @failed_to_export_data_error "Batch export to the Multichain Search DB failed"
+  @for " for block numbers "
 
   @impl FillingMigration
   def migration_name, do: @migration_name
@@ -66,96 +68,118 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
         |> Repo.all(timeout: :infinity)
       end)
 
-    transaction_preloads =
-      [
-        [from_address: [:names, :smart_contract, proxy_implementations_association()]],
-        [to_address: [:names, :smart_contract, proxy_implementations_association()]],
-        [created_contract_address: [:names, :smart_contract, proxy_implementations_association()]]
-      ]
-
-    transactions_query = from(transaction in Transaction, where: transaction.block_number in ^block_numbers)
-
-    transactions_task =
-      Task.async(fn ->
-        transactions_query
-        |> preload(^transaction_preloads)
-        |> Repo.all(timeout: :infinity)
-      end)
-
-    token_transfer_preloads = [
-      [from_address: [:names, :smart_contract, proxy_implementations_association()]],
-      [to_address: [:names, :smart_contract, proxy_implementations_association()]],
-      [token_contract_address: [:names, :smart_contract, proxy_implementations_association()]]
-    ]
-
-    internal_transactions_query =
-      from(internal_transaction in InternalTransaction, where: internal_transaction.block_number in ^block_numbers)
-
-    internal_transactions_task =
-      Task.async(fn ->
-        internal_transactions_query
-        |> preload(^transaction_preloads)
-        |> Repo.all(timeout: :infinity)
-      end)
-
-    token_transfers_query = from(token_transfer in TokenTransfer, where: token_transfer.block_number in ^block_numbers)
-
-    token_transfers_task =
-      Task.async(fn ->
-        token_transfers_query
-        |> preload(^token_transfer_preloads)
-        |> Repo.all(timeout: :infinity)
-      end)
-
-    tasks = [
-      transactions_task,
-      internal_transactions_task,
-      token_transfers_task,
-      blocks_task
-    ]
-
-    case tasks
-         |> Task.yield_many(:infinity) do
-      [
-        {_transactions_task, {:ok, transactions}},
-        {_internal_transactions_task, {:ok, internal_transactions}},
-        {_token_transfers_task, {:ok, token_transfers}},
-        {_blocks_task, {:ok, blocks}}
-      ] ->
-        addresses =
+    case Task.yield(blocks_task, :infinity) do
+      {:ok, blocks} ->
+        transaction_preloads =
           [
-            transactions,
-            internal_transactions,
-            token_transfers,
-            blocks
+            [from_address: [:names, :smart_contract, proxy_implementations_association()]],
+            [to_address: [:names, :smart_contract, proxy_implementations_association()]],
+            [created_contract_address: [:names, :smart_contract, proxy_implementations_association()]]
           ]
-          |> List.flatten()
-          |> Enum.reduce([], fn result, addresses_acc ->
-            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-            extract_address_from_result(result) ++ addresses_acc
+
+        transactions_query = from(transaction in Transaction, where: transaction.block_number in ^block_numbers)
+
+        transactions_task =
+          Task.async(fn ->
+            transactions_query
+            |> preload(^transaction_preloads)
+            |> Repo.all(timeout: :infinity)
           end)
-          |> Enum.uniq()
-          |> Enum.reject(&is_nil/1)
 
-        case MultichainSearch.batch_import(%{
-               addresses: addresses,
-               blocks: blocks,
-               transactions: transactions
-             }) do
-          {:ok, _} = result ->
-            result
+        token_transfer_preloads = [
+          [from_address: [:names, :smart_contract, proxy_implementations_association()]],
+          [to_address: [:names, :smart_contract, proxy_implementations_association()]],
+          [token_contract_address: [:names, :smart_contract, proxy_implementations_association()]]
+        ]
 
-          {:error, _} ->
-            Logger.error("Batch export to the Multichain Search DB failed for block numbers #{inspect(block_numbers)}")
-            update_batch(block_numbers)
+        block_hashes = blocks |> Enum.map(& &1.hash)
+
+        internal_transactions_query =
+          from(internal_transaction in InternalTransaction, where: internal_transaction.block_hash in ^block_hashes)
+
+        internal_transactions_task =
+          Task.async(fn ->
+            internal_transactions_query
+            |> preload(^transaction_preloads)
+            |> Repo.all(timeout: :infinity)
+          end)
+
+        token_transfers_query =
+          from(token_transfer in TokenTransfer, where: token_transfer.block_number in ^block_numbers)
+
+        token_transfers_task =
+          Task.async(fn ->
+            token_transfers_query
+            |> preload(^token_transfer_preloads)
+            |> Repo.all(timeout: :infinity)
+          end)
+
+        tasks = [
+          transactions_task,
+          internal_transactions_task,
+          token_transfers_task
+        ]
+
+        case tasks
+             |> Task.yield_many(:infinity) do
+          [
+            {_transactions_task, {:ok, transactions}},
+            {_internal_transactions_task, {:ok, internal_transactions}},
+            {_token_transfers_task, {:ok, token_transfers}}
+          ] ->
+            addresses =
+              [
+                transactions,
+                internal_transactions,
+                token_transfers,
+                blocks
+              ]
+              |> List.flatten()
+              |> Enum.reduce([], fn result, addresses_acc ->
+                # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+                extract_address_from_result(result) ++ addresses_acc
+              end)
+              |> Enum.uniq()
+              |> Enum.reject(&is_nil/1)
+
+            to_import = %{
+              addresses: addresses,
+              blocks: blocks,
+              transactions: transactions
+            }
+
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+            case MultichainSearch.batch_import(to_import) do
+              {:ok, _} = result ->
+                result
+
+              {:error, _} ->
+                Logger.error(fn ->
+                  ["#{@failed_to_export_data_error}", "#{@for}", "#{inspect(block_numbers)}"]
+                end)
+
+                :timer.sleep(1000)
+
+                update_batch(block_numbers)
+            end
+
+          _ ->
+            repeat_block_numbers_processing_on_error(block_numbers)
         end
 
       _ ->
-        {:error, @failed_to_fetch_data_error}
-        Logger.error(@failed_to_fetch_data_error)
-
-        update_batch(block_numbers)
+        repeat_block_numbers_processing_on_error(block_numbers)
     end
+  end
+
+  defp repeat_block_numbers_processing_on_error(block_numbers) do
+    Logger.error(fn ->
+      ["#{@failed_to_fetch_data_error}", "#{@for}", "#{inspect(block_numbers)}"]
+    end)
+
+    :timer.sleep(1000)
+
+    update_batch(block_numbers)
   end
 
   @impl FillingMigration
