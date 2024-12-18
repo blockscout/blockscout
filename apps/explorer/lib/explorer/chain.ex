@@ -2780,6 +2780,14 @@ defmodule Explorer.Chain do
 
   def string_to_address_hash(_), do: :error
 
+  @spec string_to_address_hash_or_nil(String.t()) :: Hash.Address.t() | nil
+  def string_to_address_hash_or_nil(string) do
+    case string_to_address_hash(string) do
+      {:ok, hash} -> hash
+      :error -> nil
+    end
+  end
+
   @doc """
   The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
 
