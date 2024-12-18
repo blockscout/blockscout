@@ -1306,6 +1306,10 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     Retrieves a Data Availability (DA) record from the database using the provided
     data key.
 
+    Although one data blob could correspond to multiple batches, the current
+    implementation returns only the first batch number that the data blob is associated
+    with.
+
     The function supports both old and new database schemas:
     - In the old schema, batch numbers were stored directly in the arbitrum_da_multi_purpose table
     - In the new schema, batch-to-blob associations are stored in the arbitrum_batches_to_da_blobs table
@@ -1328,6 +1332,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   def get_da_record_by_data_key(data_key, options) do
+    # TODO: implement the functionality to return all batch numbers that the data blob is associated with as soon as such functionality is implemented on UI side.
     case MigrationStatuses.get_arbitrum_da_records_normalization_finished() do
       true ->
         # Migration is complete, use new schema
