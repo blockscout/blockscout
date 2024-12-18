@@ -11,8 +11,8 @@ defmodule Explorer.Chain.Arbitrum.BatchToDaBlob do
 
   use Explorer.Schema
 
+  alias Explorer.Chain.Arbitrum.{DaMultiPurposeRecord, L1Batch}
   alias Explorer.Chain.Hash
-  alias Explorer.Chain.Arbitrum.{L1Batch, DaMultiPurposeRecord}
 
   @required_attrs ~w(batch_number data_blob_id)a
 

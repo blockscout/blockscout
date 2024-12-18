@@ -20,6 +20,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   alias Explorer.{Chain, PagingOptions, Repo}
 
   alias Explorer.Chain.Block, as: FullBlock
+  alias Explorer.Chain.Cache.BackgroundMigrations, as: MigrationStatuses
   alias Explorer.Chain.{Hash, Log, Transaction}
 
   # https://github.com/OffchainLabs/go-ethereum/blob/dff302de66598c36b964b971f72d35a95148e650/core/types/transaction.go#L44C2-L50
@@ -1232,7 +1233,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     # After the migration, the associations are stored in a separate arbitrum_batches_to_da_blobs
     # table, allowing many-to-many relationships between batches and DA blobs. This change
     # ensures proper handling of cases where multiple batches share the same DA blob.
-    case Explorer.Chain.Cache.BackgroundMigrations.get_arbitrum_da_records_normalization_finished() do
+    case MigrationStatuses.get_arbitrum_da_records_normalization_finished() do
       true ->
         # Migration is complete, use new schema
         get_da_info_by_batch_number_new_schema(batch_number)
@@ -1327,7 +1328,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   def get_da_record_by_data_key(data_key, options) do
-    case Explorer.Chain.Cache.BackgroundMigrations.get_arbitrum_da_records_normalization_finished() do
+    case MigrationStatuses.get_arbitrum_da_records_normalization_finished() do
       true ->
         # Migration is complete, use new schema
         get_da_record_by_data_key_new_schema(data_key, options)

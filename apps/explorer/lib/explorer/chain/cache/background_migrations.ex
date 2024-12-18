@@ -35,10 +35,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   alias Explorer.Migrator.{
     AddressCurrentTokenBalanceTokenType,
     AddressTokenBalanceTokenType,
+    ArbitrumDaRecordsNormalization,
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
-    TransactionsDenormalization,
-    ArbitrumDaRecordsNormalization
+    TransactionsDenormalization
   }
 
   defp handle_fallback(:transactions_denormalization_finished) do
