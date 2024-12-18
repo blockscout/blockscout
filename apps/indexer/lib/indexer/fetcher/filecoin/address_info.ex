@@ -42,22 +42,6 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
     "verifiedregistry" => "verifreg"
   }
 
-  # @singleton_actor_ids %{
-  #                        0 => :system,
-  #                        1 => :init,
-  #                        2 => :reward,
-  #                        3 => :cron,
-  #                        4 => :power,
-  #                        5 => :market,
-  #                        6 => :verifreg,
-  #                        7 => :datacap,
-  #                        1 => :eam,
-  #                        9 => BURNT_FUNDS_ACTOR9
-  #                      }
-  #                      |> Map.new(fn {id, actor_type} ->
-  #                        {IDAddress.cast(id), actor_type}
-  #                      end)
-
   @doc """
   Asynchronously fetches filecoin addresses info
   """
@@ -145,11 +129,10 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
           :ok | :retry
   def run([operation], json_rpc_named_arguments) do
     with {:ok, completeness, params} <- fetch(operation, json_rpc_named_arguments),
-         remove_operation? = completeness == :full,
          {:ok, _} <-
-           update_address_and_maybe_remove_operation(
+           update_address_and_remove_or_update_operation(
              operation,
-             remove_operation?,
+             completeness,
              params
            ) do
       :ok
@@ -230,18 +213,6 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
     else
       {:error, status_code, %{"error" => reason}} when status_code in @http_error_codes ->
         Logger.error("Beryx API returned error code #{status_code} with reason: #{reason}")
-
-        operation
-        |> PendingAddressOperation.changeset(%{http_status_code: status_code})
-        |> Repo.update()
-        |> case do
-          {:ok, _} ->
-            Logger.info("Updated pending operation with error status code")
-
-          {:error, changeset} ->
-            Logger.error("Could not update pending operation with error status code: #{inspect(changeset)}")
-        end
-
         :error
 
       error ->
@@ -273,18 +244,6 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
     else
       {:error, status_code, %{"error" => reason}} when status_code in @http_error_codes ->
         Logger.error("Filfox API returned error code #{status_code} with reason: #{reason}")
-
-        operation
-        |> PendingAddressOperation.changeset(%{http_status_code: status_code})
-        |> Repo.update()
-        |> case do
-          {:ok, _} ->
-            Logger.info("Updated pending operation with error status code")
-
-          {:error, changeset} ->
-            Logger.error("Could not update pending operation with error status code: #{inspect(changeset)}")
-        end
-
         :error
 
       error ->
@@ -300,12 +259,21 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
           {:ok, :partial, filecoin_address_params()} | :error
   defp partial_fetch_address_info_using_json_rpc(native_address, json_rpc_named_arguments) do
     with %NativeAddress{protocol_indicator: 0} = id_address <- native_address,
-         {:ok, params} <-
-           fetch_robust_address_for_id_address(
-             id_address,
-             json_rpc_named_arguments
-           ) do
-      {:ok, :partial, params}
+         id_address_string = to_string(id_address),
+         request =
+           EthereumJSONRPC.request(%{
+             id: 1,
+             method: "Filecoin.StateAccountKey",
+             params: [id_address_string, nil]
+           }),
+         {:ok, robust_address_string} when is_binary(robust_address_string) <-
+           EthereumJSONRPC.json_rpc(request, json_rpc_named_arguments) do
+      {:ok, :partial,
+       %{
+         filecoin_id: id_address_string,
+         filecoin_robust: robust_address_string,
+         filecoin_actor_type: nil
+       }}
     else
       %NativeAddress{} ->
         Logger.error("Could not fetch address info using JSON RPC: not ID address")
@@ -318,7 +286,7 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
   end
 
   @spec partial_derive_address_info(NativeAddress.t()) :: {:ok, :partial, filecoin_address_params()}
-  def partial_derive_address_info(native_address) do
+  defp partial_derive_address_info(native_address) do
     case native_address do
       %NativeAddress{protocol_indicator: 0} ->
         {:ok, :partial,
@@ -341,52 +309,17 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
     end
   end
 
-  @spec fetch_robust_address_for_id_address(
-          NativeAddress.t(),
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) ::
-          {:ok, filecoin_address_params()} | :error
-  defp fetch_robust_address_for_id_address(
-         address,
-         json_rpc_named_arguments
-       ) do
-    with %NativeAddress{protocol_indicator: 0} = id_address <- address,
-         id_address_string = to_string(id_address),
-         request =
-           EthereumJSONRPC.request(%{
-             id: 1,
-             method: "Filecoin.StateAccountKey",
-             params: [id_address_string, nil]
-           }),
-         {:ok, robust_address_string} when is_binary(robust_address_string) <-
-           EthereumJSONRPC.json_rpc(request, json_rpc_named_arguments) do
-      {:ok,
-       %{
-         filecoin_id: id_address_string,
-         filecoin_robust: robust_address_string,
-         filecoin_actor_type: nil
-       }}
-    else
-      # %NativeAddress{} ->
-      #   :error
-
-      {:error, error} ->
-        Logger.error("Could not fetch address for account: #{inspect(error)}")
-        :error
-    end
-  end
-
-  @spec update_address_and_maybe_remove_operation(
+  @spec update_address_and_remove_or_update_operation(
           PendingAddressOperation.t(),
-          boolean(),
+          :full | :partial,
           filecoin_address_params()
         ) ::
           {:ok, PendingAddressOperation.t()}
           | {:error, Ecto.Changeset.t()}
           | Ecto.Multi.failure()
-  defp update_address_and_maybe_remove_operation(
+  defp update_address_and_remove_or_update_operation(
          %PendingAddressOperation{} = operation,
-         remove_operation?,
+         completeness,
          new_address_params
        ) do
     Multi.new()
@@ -427,10 +360,18 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
     |> Multi.run(
       :delete_pending_operation,
       fn repo, %{acquire_pending_address_operation: operation} ->
-        if remove_operation? do
-          repo.delete(operation)
-        else
-          {:ok, operation}
+        case completeness do
+          :full ->
+            repo.delete(operation)
+
+          :partial ->
+            # TODO: Implement proper calculation of `refetch_after` when retry
+            # logic is implemented
+            operation
+            |> PendingAddressOperation.changeset(%{
+              refetch_after: DateTime.utc_now()
+            })
+            |> repo.update()
         end
       end
     )
