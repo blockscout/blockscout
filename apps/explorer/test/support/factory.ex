@@ -41,6 +41,7 @@ defmodule Explorer.Factory do
     InternalTransaction,
     Log,
     PendingBlockOperation,
+    PendingTransactionOperation,
     SmartContract,
     SmartContractAdditionalSource,
     Token,
@@ -734,6 +735,10 @@ defmodule Explorer.Factory do
 
   def pending_block_operation_factory do
     %PendingBlockOperation{}
+  end
+
+  def pending_transaction_operation_factory do
+    %PendingTransactionOperation{}
   end
 
   def internal_transaction_factory() do
