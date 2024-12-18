@@ -210,11 +210,11 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     {check_result, keyset_map, updated_cache} = check_if_new_keyset(da_info.keyset_hash, l1_connection_config, cache)
 
     da_records =
-      # If the keyset is new, add a new keyset record to the DA records list.
-      # As per the nature of `DaMultiPurposeRecord` it can contain not only DA
-      # certificates but also keysets.
       case check_result do
         :new_keyset ->
+          # If the keyset is new, add a new keyset record to the DA records list.
+          # As per the nature of `DaMultiPurposeRecord` it can contain not only DA
+          # certificates but also keysets.
           [
             %{
               data_type: 1,

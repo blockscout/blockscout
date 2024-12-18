@@ -77,6 +77,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
         %Anytrust{} ->
           {{da_records, batch_to_blobs}, updated_cache} =
             Anytrust.prepare_for_import({da_records_acc, batch_to_blob_acc}, info, l1_connection_config, cache)
+
           {{da_records, batch_to_blobs}, updated_cache}
 
         _ ->

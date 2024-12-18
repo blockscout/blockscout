@@ -116,7 +116,8 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
       data_type: 0,
       data_key: data_key,
       data: data,
-      batch_number: nil  # This field must be removed as soon as migration to a separate table for Batch-to-DA-record associations is completed.
+      # This field must be removed as soon as migration to a separate table for Batch-to-DA-record associations is completed.
+      batch_number: nil
     }
 
     # Create record for arbitrum_batches_to_da_blobs table

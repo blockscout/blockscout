@@ -1236,11 +1236,13 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       true ->
         # Migration is complete, use new schema
         get_da_info_by_batch_number_new_schema(batch_number)
+
       _ ->
         # Migration in progress, try old schema first, then fallback to new
         case get_da_info_by_batch_number_old_schema(batch_number) do
           %{} = empty when map_size(empty) == 0 ->
             get_da_info_by_batch_number_new_schema(batch_number)
+
           result ->
             result
         end
@@ -1329,6 +1331,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       true ->
         # Migration is complete, use new schema
         get_da_record_by_data_key_new_schema(data_key, options)
+
       _ ->
         # Migration in progress, try old schema first, then fallback to new
         case get_da_record_by_data_key_old_schema(data_key, options) do
@@ -1349,7 +1352,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   # ## Returns
   # - `{:ok, {batch_number, da_info}}` if the record is found
   # - `{:error, :not_found}` if no record is found
-  @spec get_da_record_by_data_key_old_schema(binary(), api?: boolean()) :: {:ok, {non_neg_integer(), map()}} | {:error, :not_found}
+  @spec get_da_record_by_data_key_old_schema(binary(), api?: boolean()) ::
+          {:ok, {non_neg_integer(), map()}} | {:error, :not_found}
   defp get_da_record_by_data_key_old_schema(data_key, options) do
     query =
       from(
@@ -1379,7 +1383,8 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   # ## Returns
   # - `{:ok, {batch_number, da_info}}` if the record is found
   # - `{:error, :not_found}` if no record is found
-  @spec get_da_record_by_data_key_new_schema(binary(), api?: boolean()) :: {:ok, {non_neg_integer(), map()}} | {:error, :not_found}
+  @spec get_da_record_by_data_key_new_schema(binary(), api?: boolean()) ::
+          {:ok, {non_neg_integer(), map()}} | {:error, :not_found}
   defp get_da_record_by_data_key_new_schema(data_key, options) do
     query =
       from(
