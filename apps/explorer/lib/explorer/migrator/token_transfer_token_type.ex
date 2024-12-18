@@ -37,27 +37,47 @@ defmodule Explorer.Migrator.TokenTransferTokenType do
 
   @impl FillingMigration
   def update_batch(token_transfer_ids) do
-    token_transfer_ids
-    |> build_update_query()
-    |> Repo.query!([], timeout: :infinity)
+    formatted_token_transfer_ids =
+      Enum.map(token_transfer_ids, fn {transaction_hash, block_hash, log_index} ->
+        {transaction_hash.bytes, block_hash.bytes, log_index}
+      end)
+
+    query =
+      from(tt in TokenTransfer,
+        join: t in assoc(tt, :token),
+        join: b in assoc(tt, :block),
+        where:
+          fragment(
+            "(?, ?, ?) = ANY(?::token_transfer_id[])",
+            tt.transaction_hash,
+            tt.block_hash,
+            tt.log_index,
+            ^formatted_token_transfer_ids
+          ),
+        update: [
+          set: [
+            block_consensus: b.consensus,
+            token_type:
+              fragment(
+                """
+                CASE WHEN ? = 'ERC-1155' AND ? IS NULL
+                THEN 'ERC-20'
+                ELSE ?
+                END
+                """,
+                t.type,
+                tt.token_ids,
+                t.type
+              )
+          ]
+        ]
+      )
+
+    Repo.update_all(query, [], timeout: :infinity)
   end
 
   @impl FillingMigration
   def update_cache do
     BackgroundMigrations.set_tt_denormalization_finished(true)
-  end
-
-  defp build_update_query(token_transfer_ids) do
-    """
-    UPDATE token_transfers tt
-    SET token_type = CASE WHEN t.type = 'ERC-1155' AND token_ids IS NULL THEN 'ERC-20'
-                          ELSE t.type
-                     END,
-        block_consensus = b.consensus
-    FROM tokens t, blocks b
-    WHERE tt.block_hash = b.hash
-      AND tt.token_contract_address_hash = t.contract_address_hash
-      AND (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{TokenTransfer.encode_token_transfer_ids(token_transfer_ids)};
-    """
   end
 end
