@@ -21,6 +21,8 @@
 
 ### 🐛 Bug Fixes
 
+- Fixed issue in db request (l2_to_l1_message_by_id/2) ([#11481](https://github.com/blockscout/blockscout/issues/11481))
+- Handle float time in compose_gas_price/5 ([#11476](https://github.com/blockscout/blockscout/issues/11476))
 - Fix 500 on disabled metadata service ([#11443](https://github.com/blockscout/blockscout/issues/11443))
 - Fix get_media_url_from_metadata_for_nft_media_handler/1 ([#11437](https://github.com/blockscout/blockscout/issues/11437))
 - Fix check-redirect for ENS ([#11435](https://github.com/blockscout/blockscout/issues/11435))
