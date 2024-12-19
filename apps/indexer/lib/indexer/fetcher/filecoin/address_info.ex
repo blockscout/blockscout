@@ -174,11 +174,11 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
         full_fetch_address_info_using_filfox_api(operation)
       end,
       fn ->
-        Logger.info("Fetching partial Filecoin address info for #{to_string(address_hash)} using JSON-RPC")
+        Logger.info("Fetching partial Filecoin address info for #{eth_address_hash_string} using JSON-RPC")
         partial_fetch_address_info_using_json_rpc(native_address, json_rpc_named_arguments)
       end,
       fn ->
-        Logger.info("Deriving partial Filecoin address info for #{to_string(address_hash)}")
+        Logger.info("Deriving partial Filecoin address info for #{eth_address_hash_string}")
         partial_derive_address_info(native_address)
       end
     ]
@@ -205,7 +205,6 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
       robust_address_string =
         if maybe_robust_address_string in ["", "<empty>"] do
           operation.address_hash
-          |> to_string()
           |> NativeAddress.cast()
           |> case do
             {:ok, native_address} -> to_string(native_address)

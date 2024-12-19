@@ -178,7 +178,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
       }
   """
   @impl Ecto.Type
-  @spec cast(t() | String.t()) :: {:ok, t()} | :error
+  @spec cast(t() | String.t() | Hash.Address.t()) :: {:ok, t()} | :error
   def cast(%__MODULE__{} = address), do: {:ok, address}
 
   def cast(address_string) when is_binary(address_string) do
