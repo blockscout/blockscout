@@ -6,6 +6,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Cache.NetVersion
   alias Explorer.Chain.{Address, Block, Hash, Transaction}
+  alias Explorer.Repo
   alias Explorer.Utility.Microservice
   alias HTTPoison.Response
 
@@ -83,15 +84,16 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   end
 
   defp format_batch_import_params(%{
-         addresses: addresses,
+         addresses: raw_addresses,
          blocks: blocks,
          transactions: transactions
        }) do
     chain_id = NetVersion.get_version()
     block_ranges = get_block_ranges(blocks)
 
-    address_hashes =
-      addresses
+    addresses =
+      raw_addresses
+      |> Repo.preload([:token, :names, :smart_contract])
       |> Enum.map(fn address ->
         %{
           hash: Hash.to_string(address.hash),
@@ -129,7 +131,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     %{
       api_key: api_key(),
       chain_id: to_string(chain_id),
-      addresses: address_hashes,
+      addresses: addresses,
       block_ranges: block_ranges,
       hashes: block_transaction_hashes
     }
@@ -157,7 +159,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp get_token_type(%NotLoaded{}), do: "UNSPECIFIED"
 
-  defp get_token_type(token), do: token.type
+  defp get_token_type(token) do
+    token.type
+    # todo: adding temporary formatting. It should be removed once multichain search allow token type as is.
+    |> String.replace("-", "")
+  end
 
   defp get_block_ranges([]), do: []
 

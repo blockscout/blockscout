@@ -13,7 +13,6 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
   alias Explorer.Migrator.FillingMigration
 
   import Ecto.Query
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @migration_name "backfill_multichain_search_db"
 
@@ -56,10 +55,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
   def update_batch(block_numbers) do
     blocks_query = from(block in Block, where: block.number in ^block_numbers)
 
-    blocks_preloads =
-      [
-        [miner: [:names, :smart_contract, proxy_implementations_association()]]
-      ]
+    blocks_preloads = [:miner]
 
     blocks_task =
       Task.async(fn ->
@@ -70,12 +66,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
 
     case Task.yield(blocks_task, :infinity) do
       {:ok, blocks} ->
-        transaction_preloads =
-          [
-            [from_address: [:names, :smart_contract, proxy_implementations_association()]],
-            [to_address: [:names, :smart_contract, proxy_implementations_association()]],
-            [created_contract_address: [:names, :smart_contract, proxy_implementations_association()]]
-          ]
+        transaction_preloads = [:from_address, :to_address, :created_contract_address]
 
         transactions_query = from(transaction in Transaction, where: transaction.block_number in ^block_numbers)
 
@@ -86,11 +77,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
             |> Repo.all(timeout: :infinity)
           end)
 
-        token_transfer_preloads = [
-          [from_address: [:names, :smart_contract, proxy_implementations_association()]],
-          [to_address: [:names, :smart_contract, proxy_implementations_association()]],
-          [token_contract_address: [:names, :smart_contract, proxy_implementations_association()]]
-        ]
+        token_transfer_preloads = [:from_address, :to_address, :token_contract_address]
 
         block_hashes = blocks |> Enum.map(& &1.hash)
 
