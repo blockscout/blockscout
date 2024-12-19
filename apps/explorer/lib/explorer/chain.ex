@@ -3146,7 +3146,7 @@ defmodule Explorer.Chain do
     Wei.to(value, unit)
   end
 
-  def smart_contract_bytecode(address_hash) do
+  def smart_contract_bytecode(address_hash, options \\ []) do
     query =
       from(
         address in Address,
@@ -3155,7 +3155,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.one()
+    |> select_repo(options).one()
     |> Data.to_string()
   end
 
