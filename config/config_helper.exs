@@ -117,7 +117,7 @@ defmodule ConfigHelper do
   def parse_catalog_value(env_var, catalog, shutdown_on_wrong_value?, default_value \\ nil) do
     value = env_var |> safe_get_env(default_value)
 
-    if value !== "" do
+    if value != "" do
       if value in catalog do
         String.to_atom(value)
       else
