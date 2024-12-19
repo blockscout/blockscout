@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ !github.event.issue.pull_request }}
     name: Antiscam
     runs-on: ubuntu-latest
 
