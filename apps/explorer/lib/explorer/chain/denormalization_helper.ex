@@ -46,6 +46,20 @@ defmodule Explorer.Chain.DenormalizationHelper do
     end
   end
 
+  @doc """
+    Checks if the transaction denormalization process has been completed.
+
+    This function retrieves the status of the transaction denormalization
+    background migration. The denormalization process copies `block.consensus` and
+    `block.timestamp` to the respective fields in the transactions table for all
+    transactions with a `block_hash`.
+
+    ## Returns
+    - `true` if all transactions with a `block_hash` have `block_consensus` and
+      `block_timestamp` set.
+    - `false` if the migration is still ongoing or the status is unknown.
+  """
+  @spec transactions_denormalization_finished?() :: boolean()
   def transactions_denormalization_finished?, do: BackgroundMigrations.get_transactions_denormalization_finished()
 
   def tt_denormalization_finished?, do: BackgroundMigrations.get_tt_denormalization_finished()
