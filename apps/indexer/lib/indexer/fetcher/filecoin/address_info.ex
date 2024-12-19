@@ -198,17 +198,23 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
          {:ok, maybe_robust_address_string} <- Map.fetch(body_json, "robust"),
          {:ok, maybe_actor_type_string} <- Map.fetch(body_json, "actor_type") do
       robust_address_string =
-        if maybe_robust_address_string !== "" do
-          maybe_robust_address_string
+        if maybe_robust_address_string in ["", "<empty>"] do
+          operation.address_hash
+          |> to_string()
+          |> NativeAddress.cast()
+          |> case do
+            {:ok, native_address} -> to_string(native_address)
+            _ -> nil
+          end
         else
-          id_address_string
+          maybe_robust_address_string
         end
 
       actor_type_string =
-        if maybe_actor_type_string !== "<unknown>" do
-          maybe_actor_type_string
-        else
+        if maybe_actor_type_string === "<unknown>" do
           nil
+        else
+          maybe_actor_type_string
         end
 
       {:ok, :full,
