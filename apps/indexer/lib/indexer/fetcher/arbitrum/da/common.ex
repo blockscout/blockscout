@@ -51,34 +51,40 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
       and configuration parameters for the JSON RPC connection.
 
     ## Returns
-    - A list of data structures ready for import, each containing:
-      - `:data_key`: A binary key identifying the data.
-      - `:data_type`: An integer indicating the type of data, which can be `0`
-        for data blob descriptors and `1` for Anytrust keyset descriptors.
-      - `:data`: A map containing the DA information.
-      - `:batch_number`: The batch number associated with the data, or `nil`.
+    - A tuple containing:
+      - A list of DA records (`DaMultiPurposeRecord`) ready for import, each containing:
+        - `:data_key`: A binary key identifying the data.
+        - `:data_type`: An integer indicating the type of data, which can be `0`
+          for data blob descriptors and `1` for Anytrust keyset descriptors.
+        - `:data`: A map containing the DA information.
+        - `:batch_number`: The batch number associated with the data, or `nil`.
+      - A list of batch-to-blob associations (`BatchToDaBlob`) ready for import.
   """
   @spec prepare_for_import([Celestia.t() | Anytrust.t() | map()], %{
           :sequencer_inbox_address => String.t(),
           :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments()
-        }) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
-  def prepare_for_import([], _), do: []
+        }) :: {[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]}
+  def prepare_for_import([], _), do: {[], []}
 
   def prepare_for_import(da_info, l1_connection_config) do
     da_info
-    |> Enum.reduce({[], MapSet.new()}, fn info, {acc, cache} ->
+    |> Enum.reduce({{[], []}, MapSet.new()}, fn info, {{da_records_acc, batch_to_blob_acc}, cache} ->
       case info do
         %Celestia{} ->
-          {Celestia.prepare_for_import(acc, info), cache}
+          {da_records, batch_to_blobs} = Celestia.prepare_for_import({da_records_acc, batch_to_blob_acc}, info)
+          {{da_records, batch_to_blobs}, cache}
 
         %Anytrust{} ->
-          Anytrust.prepare_for_import(acc, info, l1_connection_config, cache)
+          {{da_records, batch_to_blobs}, updated_cache} =
+            Anytrust.prepare_for_import({da_records_acc, batch_to_blob_acc}, info, l1_connection_config, cache)
+
+          {{da_records, batch_to_blobs}, updated_cache}
 
         _ ->
-          {acc, cache}
+          {{da_records_acc, batch_to_blob_acc}, cache}
       end
     end)
-    |> Kernel.elem(0)
+    |> then(fn {{da_records, batch_to_blobs}, _cache} -> {da_records, batch_to_blobs} end)
   end
 
   @doc """
