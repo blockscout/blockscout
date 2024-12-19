@@ -128,7 +128,8 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
         ) ::
           :ok | :retry
   def run([operation], json_rpc_named_arguments) do
-    with {:ok, completeness, params} <- fetch(operation, json_rpc_named_arguments),
+    with true <- PendingAddressOperation.exists?(operation),
+         {:ok, completeness, params} <- fetch(operation, json_rpc_named_arguments),
          {:ok, _} <-
            update_address_and_remove_or_update_operation(
              operation,
@@ -137,6 +138,10 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
            ) do
       :ok
     else
+      false ->
+        Logger.info("Pending address operation was already processed: #{to_string(operation.address_hash)}")
+        :ok
+
       _ ->
         Logger.error("Could not fetch Filecoin address info: #{to_string(operation.address_hash)}")
         # TODO: We should consider implementing retry logic when fetching
