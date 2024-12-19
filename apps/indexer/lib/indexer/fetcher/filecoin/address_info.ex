@@ -35,7 +35,7 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
           filecoin_actor_type: String.t() | nil
         }
 
-  @filfox_actor_type_renaming %{
+  @actor_type_renaming %{
     "storagemarket" => "market",
     "storageminer" => "miner",
     "storagepower" => "power",
@@ -215,11 +215,12 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
         end
 
       actor_type_string =
-        if maybe_actor_type_string === "<unknown>" do
-          nil
-        else
-          maybe_actor_type_string
+        maybe_actor_type_string
+        |> case do
+          "<unknown>" -> nil
+          actor_type -> actor_type
         end
+        |> rename_actor_type()
 
       {:ok, :full,
        %{
@@ -245,12 +246,7 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
          Logger.info("Filfox API response: #{inspect(body_json)}"),
          {:ok, id_address_string} <- Map.fetch(body_json, "id"),
          {:ok, actor_type_string} <- Map.fetch(body_json, "actor") do
-      renamed_actor_type =
-        Map.get(
-          @filfox_actor_type_renaming,
-          actor_type_string,
-          actor_type_string
-        )
+      renamed_actor_type = rename_actor_type(actor_type_string)
 
       {:ok, :full,
        %{
@@ -267,6 +263,10 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
         Logger.error("Error processing Filfox API response: #{inspect(error)}")
         :error
     end
+  end
+
+  defp rename_actor_type(actor_type) do
+    Map.get(@actor_type_renaming, actor_type, actor_type)
   end
 
   @spec partial_fetch_address_info_using_json_rpc(
