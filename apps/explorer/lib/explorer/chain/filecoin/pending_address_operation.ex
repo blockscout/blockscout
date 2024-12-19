@@ -33,7 +33,7 @@ defmodule Explorer.Chain.Filecoin.PendingAddressOperation do
   end
 
   @spec changeset(
-          Explorer.Chain.Filecoin.PendingAddressOperation.t(),
+          PendingAddressOperation.t(),
           :invalid | %{optional(:__struct__) => none(), optional(atom() | binary()) => any()}
         ) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = pending_ops, attrs) do
@@ -50,6 +50,20 @@ defmodule Explorer.Chain.Filecoin.PendingAddressOperation do
   @spec fresh_operations_query() :: Ecto.Query.t()
   def fresh_operations_query do
     from(p in __MODULE__, where: is_nil(p.refetch_after))
+  end
+
+  @doc """
+  Checks if a pending operation exists for a given address hash.
+  """
+  @spec exists?(PendingAddressOperation.t()) :: boolean()
+  def exists?(%__MODULE__{address_hash: address_hash}) do
+    query =
+      from(
+        op in __MODULE__,
+        where: op.address_hash == ^address_hash
+      )
+
+    Repo.exists?(query)
   end
 
   @doc """
