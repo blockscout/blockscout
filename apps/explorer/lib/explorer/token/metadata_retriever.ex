@@ -356,6 +356,7 @@ defmodule Explorer.Token.MetadataRetriever do
     contract_functions
     |> handle_invalid_strings(contract_address_hash)
     |> handle_large_strings
+    |> limit_decimals
   end
 
   defp atomized_key(@name_signature), do: :name
@@ -436,6 +437,16 @@ defmodule Explorer.Token.MetadataRetriever do
     do: string |> binary_part(0, 255) |> String.chunk(:valid) |> List.first()
 
   defp handle_large_string(string, _size), do: string
+
+  defp limit_decimals(%{decimals: decimals} = contract_functions) do
+    if decimals > 78 do
+      %{contract_functions | decimals: nil}
+    else
+      contract_functions
+    end
+  end
+
+  defp limit_decimals(contract_functions), do: contract_functions
 
   defp remove_null_bytes(string) do
     String.replace(string, "\0", "")
