@@ -424,43 +424,7 @@ defmodule EthereumJSONRPC.Receipt do
     end
   end
 
-  # fixes for latest ganache JSON RPC
-  defp entry_to_elixir({key, _}) when key in ~w(r s v) do
+  defp entry_to_elixir({_, _}) do
     :ignore
-  end
-
-  # Nethermind field
-  defp entry_to_elixir({"error", _}) do
-    :ignore
-  end
-
-  # Arbitrum fields
-  defp entry_to_elixir({key, _}) when key in ~w(returnData returnCode feeStats l1BlockNumber) do
-    :ignore
-  end
-
-  # Metis fields
-  defp entry_to_elixir({key, _}) when key in ~w(l1GasUsed l1GasPrice l1FeeScalar l1Fee) do
-    :ignore
-  end
-
-  # GoQuorum specific transaction receipt fields
-  defp entry_to_elixir({key, _}) when key in ~w(isPrivacyMarkerTransaction) do
-    :ignore
-  end
-
-  # Optimism specific transaction receipt fields
-  defp entry_to_elixir({key, _}) when key in ~w(depositNonce depositReceiptVersion) do
-    :ignore
-  end
-
-  # zkSync specific transaction receipt fields
-  defp entry_to_elixir({key, _})
-       when key in ~w(l1BatchNumber l1BatchTxIndex l2ToL1Logs) do
-    :ignore
-  end
-
-  defp entry_to_elixir({key, value}) do
-    {:error, {:unknown_key, %{key: key, value: value}}}
   end
 end
