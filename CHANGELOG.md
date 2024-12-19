@@ -5,6 +5,7 @@
 ### 🚀 Features
 
 - Addresses blacklist support ([#11417](https://github.com/blockscout/blockscout/issues/11417))
+- Multichain search DB filling ([#11139](https://github.com/blockscout/blockscout/issues/11139))
 - Zilliqa scilla transactions and smart contracts ([#11069](https://github.com/blockscout/blockscout/issues/11069))
 - CDN ([#10675](https://github.com/blockscout/blockscout/issues/10675))
 - Arbitrum L2->L1 message claiming ([#10804](https://github.com/blockscout/blockscout/issues/10804))
@@ -21,6 +22,8 @@
 
 ### 🐛 Bug Fixes
 
+- Limit max decimals value ([#11493](https://github.com/blockscout/blockscout/issues/11493))
+- Ignore unknown transaction receipt fields ([#11492](https://github.com/blockscout/blockscout/issues/11492))
 - Fixed issue in db request (l2_to_l1_message_by_id/2) ([#11481](https://github.com/blockscout/blockscout/issues/11481))
 - Handle float time in compose_gas_price/5 ([#11476](https://github.com/blockscout/blockscout/issues/11476))
 - Fix 500 on disabled metadata service ([#11443](https://github.com/blockscout/blockscout/issues/11443))
