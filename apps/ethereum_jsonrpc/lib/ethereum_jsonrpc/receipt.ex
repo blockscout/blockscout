@@ -460,6 +460,11 @@ defmodule EthereumJSONRPC.Receipt do
     :ignore
   end
 
+  # Neon fields
+  defp entry_to_elixir({key, _}) when key in ~w(scheduledParentTransactionHashes scheduledChildTransactionHashes) do
+    :ignore
+  end
+
   defp entry_to_elixir({key, value}) do
     {:error, {:unknown_key, %{key: key, value: value}}}
   end
