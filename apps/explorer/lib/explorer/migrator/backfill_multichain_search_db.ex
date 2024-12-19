@@ -77,8 +77,6 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
             |> Repo.all(timeout: :infinity)
           end)
 
-        token_transfer_preloads = [:from_address, :to_address, :token_contract_address]
-
         block_hashes = blocks |> Enum.map(& &1.hash)
 
         internal_transactions_query =
@@ -90,6 +88,8 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
             |> preload(^transaction_preloads)
             |> Repo.all(timeout: :infinity)
           end)
+
+        token_transfer_preloads = [:from_address, :to_address, :token_contract_address]
 
         token_transfers_query =
           from(token_transfer in TokenTransfer, where: token_transfer.block_number in ^block_numbers)

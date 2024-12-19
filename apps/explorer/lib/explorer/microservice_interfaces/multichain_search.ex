@@ -93,7 +93,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     addresses =
       raw_addresses
-      |> Repo.preload([:token, :names, :smart_contract])
+      |> Repo.preload([:token, :smart_contract])
       |> Enum.map(fn address ->
         %{
           hash: Hash.to_string(address.hash),
@@ -153,7 +153,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp get_smart_contract_name(%NotLoaded{}), do: nil
 
-  defp get_smart_contract_name(token), do: token.name
+  defp get_smart_contract_name(smart_contract), do: smart_contract.name
 
   defp get_token_type(nil), do: "UNSPECIFIED"
 
