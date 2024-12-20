@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
+  alias Explorer.Chain.Arbitrum.Reader.API, as: ArbitrumReader
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch

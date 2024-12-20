@@ -873,26 +873,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
-    Retrieves Data Availability (DA) information for a specific Arbitrum batch number.
-
-    This function queries the database for DA information stored in the
-    `DaMultiPurposeRecord`. It specifically looks for records where
-    the `data_type` is 0, which corresponds to batch-specific DA information.
-
-    ## Parameters
-    - `batch_number`: The Arbitrum batch number.
-
-    ## Returns
-    - A map containing the DA information for the specified batch number. This map
-      corresponds to the `data` field of the `DaMultiPurposeRecord`.
-    - An empty map (`%{}`) if no DA information is found for the given batch number.
-  """
-  @spec get_da_info_by_batch_number(non_neg_integer()) :: map()
-  def get_da_info_by_batch_number(batch_number) do
-    Reader.get_da_info_by_batch_number(batch_number)
-  end
-
-  @doc """
     Retrieves the list of uncompleted L2-to-L1 messages IDs.
 
     ## Returns

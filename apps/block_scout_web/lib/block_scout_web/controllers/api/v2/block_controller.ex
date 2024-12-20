@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   }
 
   alias Explorer.Chain
-  alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
+  alias Explorer.Chain.Arbitrum.Reader.API, as: ArbitrumReader
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
   alias Explorer.Chain.Celo.Reader, as: CeloReader
@@ -193,7 +193,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       params
       |> select_block_type()
       |> Keyword.merge(paging_options(params))
-      |> Keyword.merge(@api_true)
 
     {blocks, next_page} =
       batch_number
