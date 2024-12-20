@@ -65,27 +65,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
   end
 
   @doc """
-    Retrieves logs from a transaction that match a specific topic.
-
-    Fetches all logs emitted by the specified transaction that have the given topic
-    as their first topic, ordered by log index.
-
-    ## Parameters
-    - `transaction_hash`: The hash of the transaction to fetch logs from
-    - `topic0`: The first topic to filter logs by
-
-    ## Returns
-    - A list of matching logs ordered by index, or empty list if none found
-  """
-  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary()) :: [Log.t()]
-  def transaction_to_logs_by_topic0(transaction_hash, topic0) do
-    Chain.log_with_transactions_query()
-    |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
-    |> order_by(asc: :index)
-    |> select_repo(@api_true).all()
-  end
-
-  @doc """
     Retrieves L2-to-L1 message by message id.
 
     ## Parameters
@@ -599,5 +578,32 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
   @spec highest_confirmed_block() :: FullBlock.block_number() | nil
   def highest_confirmed_block do
     Common.highest_confirmed_block(@api_true)
+  end
+
+  #####################################################################################
+  ### Below are the functions that implement functionality not specific to Arbitrum ###
+  ### They are candidates for moving to chain agnostic module as soon as such need  ###
+  ### arises.                                                                       ###
+  #####################################################################################
+
+  @doc """
+    Retrieves logs from a transaction that match a specific topic.
+
+    Fetches all logs emitted by the specified transaction that have the given topic
+    as their first topic, ordered by log index.
+
+    ## Parameters
+    - `transaction_hash`: The hash of the transaction to fetch logs from
+    - `topic0`: The first topic to filter logs by
+
+    ## Returns
+    - A list of matching logs ordered by index, or empty list if none found
+  """
+  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary()) :: [Log.t()]
+  def transaction_to_logs_by_topic0(transaction_hash, topic0) do
+    Chain.log_with_transactions_query()
+    |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
+    |> order_by(asc: :index)
+    |> select_repo(@api_true).all()
   end
 end
