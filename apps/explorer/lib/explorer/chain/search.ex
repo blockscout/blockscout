@@ -994,8 +994,12 @@ defmodule Explorer.Chain.Search do
   defp parse_possible_nil("null"), do: nil
   defp parse_possible_nil(other), do: other
 
+  @spec maybe_parse_filecoin_address(binary()) ::
+          :ignore | {:ok, Explorer.Chain.Filecoin.IDAddress.t()} | {:ok, Explorer.Chain.Filecoin.NativeAddress.t()}
+  def maybe_parse_filecoin_address(string)
+
   if @chain_type == :filecoin do
-    defp maybe_parse_filecoin_address(string) do
+    def maybe_parse_filecoin_address(string) do
       # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
       id_address_result = Explorer.Chain.Filecoin.IDAddress.cast(string)
       native_address_result = Explorer.Chain.Filecoin.NativeAddress.cast(string)
@@ -1011,7 +1015,17 @@ defmodule Explorer.Chain.Search do
           :error
       end
     end
+  else
+    def maybe_parse_filecoin_address(_), do: :ignore
+  end
 
+  @spec address_by_filecoin_id_or_robust(
+          Explorer.Chain.Filecoin.IDAddress.t()
+          | Explorer.Chain.Filecoin.NativeAddress.t()
+        ) :: Ecto.Query.t() | nil
+  def address_by_filecoin_id_or_robust(address)
+
+  if @chain_type == :filecoin do
     def address_by_filecoin_id_or_robust(%Explorer.Chain.Filecoin.IDAddress{} = id) do
       base_filecoin_address_query()
       |> where([address], address.filecoin_id == ^id)
@@ -1034,8 +1048,6 @@ defmodule Explorer.Chain.Search do
       |> select_merge([address_name: address_name], %{name: address_name.name})
     end
   else
-    defp maybe_parse_filecoin_address(_), do: :ignore
-
     def address_by_filecoin_id_or_robust(_), do: nil
   end
 end
