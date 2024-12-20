@@ -61,8 +61,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
   alias Indexer.Helper, as: IndexerHelper
 
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Db
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
@@ -1565,7 +1567,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   defp get_confirmed_l2_to_l1_messages(block_number) do
     block_number
-    |> Db.sent_l2_to_l1_messages()
+    |> DbMessages.sent_l2_to_l1_messages()
     |> Enum.map(fn transaction ->
       Map.put(transaction, :status, :confirmed)
     end)

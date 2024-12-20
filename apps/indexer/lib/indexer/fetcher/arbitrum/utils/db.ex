@@ -5,18 +5,13 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
 
-  alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
   alias Explorer.Chain.Arbitrum.Reader
   alias Explorer.Chain.Block, as: FullBlock
-  alias Explorer.Chain.{Data, Hash}
 
-  alias Explorer.Utility.MissingBlockRange
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Tools, as: DbTools
 
   require Logger
-
-  # 32-byte signature of the event L2ToL1Tx(address caller, address indexed destination, uint256 indexed hash, uint256 indexed position, uint256 arbBlockNum, uint256 ethBlockNum, uint256 timestamp, uint256 callvalue, bytes data)
-  @l2_to_l1_event "0x3e7aafa77dbf186b7fd488006beff893744caa3c4f6f299e8a709fa2087374fc"
 
   @doc """
     Indexes L1 transactions provided in the input map. For transactions that
@@ -178,53 +173,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
-    Calculates the next L1 block number to search for the latest message sent to L2.
-
-    ## Parameters
-    - `value_if_nil`: The default value to return if no L1-to-L2 messages have been discovered.
-
-    ## Returns
-    - The L1 block number immediately following the latest discovered message to L2,
-      or `value_if_nil` if no messages to L2 have been found.
-  """
-  @spec l1_block_to_discover_latest_message_to_l2(nil | FullBlock.block_number()) :: nil | FullBlock.block_number()
-  def l1_block_to_discover_latest_message_to_l2(value_if_nil)
-      when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
-    case Reader.l1_block_of_latest_discovered_message_to_l2() do
-      nil ->
-        log_warning("No messages to L2 found in DB")
-        value_if_nil
-
-      value ->
-        value + 1
-    end
-  end
-
-  @doc """
-    Calculates the next L1 block number to start the search for messages sent to L2
-    that precede the earliest message already discovered.
-
-    ## Parameters
-    - `value_if_nil`: The default value to return if no L1-to-L2 messages have been discovered.
-
-    ## Returns
-    - The L1 block number immediately preceding the earliest discovered message to L2,
-      or `value_if_nil` if no messages to L2 have been found.
-  """
-  @spec l1_block_to_discover_earliest_message_to_l2(nil | FullBlock.block_number()) :: nil | FullBlock.block_number()
-  def l1_block_to_discover_earliest_message_to_l2(value_if_nil)
-      when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
-    case Reader.l1_block_of_earliest_discovered_message_to_l2() do
-      nil ->
-        log_warning("No messages to L2 found in DB")
-        value_if_nil
-
-      value ->
-        value - 1
-    end
-  end
-
-  @doc """
     Retrieves the L1 block number immediately following the block where the confirmation transaction
     for the highest confirmed rollup block was included.
 
@@ -265,55 +213,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     case Reader.highest_confirmed_block() do
       nil -> value_if_nil
       value -> value
-    end
-  end
-
-  @doc """
-    Determines the next L1 block number to search for the latest execution of an L2-to-L1 message.
-
-    ## Parameters
-    - `value_if_nil`: The default value to return if no execution transactions for L2-to-L1 messages
-      have been recorded.
-
-    ## Returns
-    - The L1 block number following the block that contains the latest execution transaction
-      for an L2-to-L1 message, or `value_if_nil` if no such executions have been found.
-  """
-  @spec l1_block_to_discover_latest_execution(nil | FullBlock.block_number()) :: nil | FullBlock.block_number()
-  def l1_block_to_discover_latest_execution(value_if_nil)
-      when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
-    case Reader.l1_block_of_latest_execution() do
-      nil ->
-        log_warning("No L1 executions found in DB")
-        value_if_nil
-
-      value ->
-        value + 1
-    end
-  end
-
-  @doc """
-    Determines the L1 block number just before the block that contains the earliest known
-    execution transaction for an L2-to-L1 message.
-
-    ## Parameters
-    - `value_if_nil`: The default value to return if no execution transactions for
-       L2-to-L1 messages have been found.
-
-    ## Returns
-    - The L1 block number preceding the earliest known execution transaction for
-      an L2-to-L1 message, or `value_if_nil` if no such executions are found in the database.
-  """
-  @spec l1_block_to_discover_earliest_execution(nil | FullBlock.block_number()) :: nil | FullBlock.block_number()
-  def l1_block_to_discover_earliest_execution(value_if_nil)
-      when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
-    case Reader.l1_block_of_earliest_execution() do
-      nil ->
-        log_warning("No L1 executions found in DB")
-        value_if_nil
-
-      value ->
-        value - 1
     end
   end
 
@@ -454,72 +353,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
-    Retrieves a list of L2-to-L1 messages that have been initiated up to
-    a specified rollup block number.
-
-    ## Parameters
-    - `block_number`: The block number up to which initiated L2-to-L1 messages
-      should be retrieved.
-
-    ## Returns
-    - A list of maps, each representing an initiated L2-to-L1 message compatible with the
-      database import operation. If no initiated messages are found up to the specified
-      block number, an empty list is returned.
-  """
-  @spec initiated_l2_to_l1_messages(FullBlock.block_number()) :: [Arbitrum.Message.to_import()]
-  def initiated_l2_to_l1_messages(block_number)
-      when is_integer(block_number) and block_number >= 0 do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:initiated, block_number)
-    |> Enum.map(&message_to_map/1)
-  end
-
-  @doc """
-    Retrieves a list of L2-to-L1 'sent' messages that have been included up to
-    a specified rollup block number.
-
-    A message is considered 'sent' when there is a batch including the transaction
-    that initiated the message, and this batch has been successfully delivered to L1.
-
-    ## Parameters
-    - `block_number`: The block number up to which sent L2-to-L1 messages are to be retrieved.
-
-    ## Returns
-    - A list of maps, each representing a sent L2-to-L1 message compatible with the
-      database import operation. If no messages with the 'sent' status are found by
-      the specified block number, an empty list is returned.
-  """
-  @spec sent_l2_to_l1_messages(FullBlock.block_number()) :: [Arbitrum.Message.to_import()]
-  def sent_l2_to_l1_messages(block_number)
-      when is_integer(block_number) and block_number >= 0 do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:sent, block_number)
-    |> Enum.map(&message_to_map/1)
-  end
-
-  @doc """
-    Retrieves a list of L2-to-L1 'confirmed' messages that have been included up to
-    a specified rollup block number.
-
-    A message is considered 'confirmed' when its transaction was included in a rollup block,
-    and the confirmation of this block has been delivered to L1.
-
-    ## Parameters
-    - `block_number`: The block number up to which confirmed L2-to-L1 messages are to be retrieved.
-
-    ## Returns
-    - A list of maps, each representing a confirmed L2-to-L1 message compatible with the
-      database import operation. If no messages with the 'confirmed' status are found by
-      the specified block number, an empty list is returned.
-  """
-  @spec confirmed_l2_to_l1_messages() :: [Arbitrum.Message.to_import()]
-  def confirmed_l2_to_l1_messages do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:confirmed, nil)
-    |> Enum.map(&message_to_map/1)
-  end
-
-  @doc """
     Checks if the numbers from the provided list correspond to the numbers of indexed batches.
 
     ## Parameters
@@ -533,22 +366,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   @spec batches_exist([non_neg_integer()]) :: [non_neg_integer()]
   def batches_exist(batches_numbers) when is_list(batches_numbers) do
     Reader.batches_exist(batches_numbers)
-  end
-
-  @doc """
-    Reads a list of transactions executing L2-to-L1 messages by their IDs.
-
-    ## Parameters
-    - `message_ids`: A list of IDs to retrieve executing transactions for.
-
-    ## Returns
-    - A list of `Explorer.Chain.Arbitrum.L1Execution` corresponding to the message IDs from
-      the input list. The output list may be smaller than the input list if some IDs do not
-      correspond to any existing transactions.
-  """
-  @spec l1_executions([non_neg_integer()]) :: [Arbitrum.L1Execution.t()]
-  def l1_executions(message_ids) when is_list(message_ids) do
-    Reader.l1_executions(message_ids)
   end
 
   @doc """
@@ -582,68 +399,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       {older_confirmation_l1_block, newer_confirmation_l1_block} ->
         {older_confirmation_l1_block + 1, newer_confirmation_l1_block - 1}
     end
-  end
-
-  @doc """
-    Retrieves the transaction hashes as strings for missed L1-to-L2 messages within
-    a specified block range.
-
-    The function identifies missed messages by checking transactions of specific
-    types that are supposed to contain L1-to-L2 messages and verifying if there are
-    corresponding entries in the messages table. A message is considered missed if
-    there is a transaction without a matching message record within the specified
-    block range.
-
-    ## Parameters
-    - `start_block`: The starting block number of the range.
-    - `end_block`: The ending block number of the range.
-
-    ## Returns
-    - A list of transaction hashes as strings for missed L1-to-L2 messages.
-  """
-  @spec transactions_for_missed_messages_to_l2(non_neg_integer(), non_neg_integer()) :: [String.t()]
-  def transactions_for_missed_messages_to_l2(start_block, end_block) do
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.transactions_for_missed_messages_to_l2(start_block, end_block)
-    |> Enum.map(&Hash.to_string/1)
-  end
-
-  @doc """
-    Retrieves the logs for missed L2-to-L1 messages within a specified block range
-    and converts them to maps.
-
-    The function identifies missed messages by checking logs for the specified
-    L2-to-L1 event and verifying if there are corresponding entries in the messages
-    table. A message is considered missed if there is a log entry without a
-    matching message record within the specified block range.
-
-    ## Parameters
-    - `start_block`: The starting block number of the range.
-    - `end_block`: The ending block number of the range.
-
-    ## Returns
-    - A list of maps representing the logs for missed L2-to-L1 messages.
-  """
-  @spec logs_for_missed_messages_from_l2(non_neg_integer(), non_neg_integer()) :: [
-          %{
-            data: String.t(),
-            index: non_neg_integer(),
-            first_topic: String.t(),
-            second_topic: String.t(),
-            third_topic: String.t(),
-            fourth_topic: String.t(),
-            address_hash: String.t(),
-            transaction_hash: String.t(),
-            block_hash: String.t(),
-            block_number: FullBlock.block_number()
-          }
-        ]
-  def logs_for_missed_messages_from_l2(start_block, end_block) do
-    arbsys_contract = Application.get_env(:indexer, Indexer.Fetcher.Arbitrum.Messaging)[:arbsys_contract]
-
-    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.logs_for_missed_messages_from_l2(start_block, end_block, arbsys_contract, @l2_to_l1_event)
-    |> Enum.map(&logs_to_map/1)
   end
 
   @doc """
@@ -819,46 +574,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
   end
 
   @doc """
-    Returns 32-byte signature of the event `L2ToL1Tx`
-  """
-  @spec l2_to_l1_event() :: <<_::528>>
-  def l2_to_l1_event, do: @l2_to_l1_event
-
-  @doc """
-    Determines whether a given range of block numbers has been fully indexed without any missing blocks.
-
-    ## Parameters
-    - `start_block`: The starting block number of the range to check for completeness in indexing.
-    - `end_block`: The ending block number of the range.
-
-    ## Returns
-    - `true` if the entire range from `start_block` to `end_block` is indexed and contains no missing
-      blocks, indicating no intersection with missing block ranges; `false` otherwise.
-  """
-  @spec indexed_blocks?(FullBlock.block_number(), FullBlock.block_number()) :: boolean()
-  def indexed_blocks?(start_block, end_block)
-      when is_integer(start_block) and start_block >= 0 and
-             is_integer(end_block) and start_block <= end_block do
-    is_nil(MissingBlockRange.intersects_with_range(start_block, end_block))
-  end
-
-  @doc """
-    Retrieves the block number for the closest block immediately after a given timestamp.
-
-    ## Parameters
-    - `timestamp`: The `DateTime` timestamp for which the closest subsequent block number is sought.
-
-    ## Returns
-    - `{:ok, block_number}` where `block_number` is the number of the closest block that occurred
-      after the specified timestamp.
-    - `{:error, :not_found}` if no block is found after the specified timestamp.
-  """
-  @spec closest_block_after_timestamp(DateTime.t()) :: {:error, :not_found} | {:ok, FullBlock.block_number()}
-  def closest_block_after_timestamp(timestamp) do
-    Chain.timestamp_to_block_number(timestamp, :after, false)
-  end
-
-  @doc """
     Checks if an AnyTrust keyset exists in the database using the provided keyset hash.
 
     ## Parameters
@@ -872,93 +587,15 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
     not Enum.empty?(Reader.get_anytrust_keyset(keyset_hash))
   end
 
-  @doc """
-    Retrieves the list of uncompleted L2-to-L1 messages IDs.
-
-    ## Returns
-    - A list of the IDs of uncompleted L2-to-L1 messages.
-  """
-  @spec get_uncompleted_l1_to_l2_messages_ids() :: [non_neg_integer()]
-  def get_uncompleted_l1_to_l2_messages_ids do
-    Reader.get_uncompleted_l1_to_l2_messages_ids()
-  end
-
   @spec lifecycle_transaction_to_map(Arbitrum.LifecycleTransaction.t()) :: Arbitrum.LifecycleTransaction.to_import()
   defp lifecycle_transaction_to_map(transaction) do
     [:id, :hash, :block_number, :timestamp, :status]
-    |> db_record_to_map(transaction)
+    |> DbTools.db_record_to_map(transaction)
   end
 
   @spec rollup_block_to_map(Arbitrum.BatchBlock.t()) :: Arbitrum.BatchBlock.to_import()
   defp rollup_block_to_map(block) do
     [:batch_number, :block_number, :confirmation_id]
-    |> db_record_to_map(block)
-  end
-
-  @spec message_to_map(Arbitrum.Message.t()) :: Arbitrum.Message.to_import()
-  defp message_to_map(message) do
-    [
-      :direction,
-      :message_id,
-      :originator_address,
-      :originating_transaction_hash,
-      :origination_timestamp,
-      :originating_transaction_block_number,
-      :completion_transaction_hash,
-      :status
-    ]
-    |> db_record_to_map(message)
-  end
-
-  defp logs_to_map(log) do
-    [
-      :data,
-      :index,
-      :first_topic,
-      :second_topic,
-      :third_topic,
-      :fourth_topic,
-      :address_hash,
-      :transaction_hash,
-      :block_hash,
-      :block_number
-    ]
-    |> db_record_to_map(log, true)
-  end
-
-  # Converts an Arbitrum-related database record to a map with specified keys and optional encoding.
-  #
-  # This function is used to transform various Arbitrum-specific database records
-  # (such as LifecycleTransaction, BatchBlock, or Message) into maps containing
-  # only the specified keys. It's particularly useful for preparing data for
-  # import or further processing of Arbitrum blockchain data.
-  #
-  # Parameters:
-  #   - `required_keys`: A list of atoms representing the keys to include in the
-  #     output map.
-  #   - `record`: The database record or struct to be converted.
-  #   - `encode`: Boolean flag to determine if Hash and Data types should be
-  #     encoded to strings (default: false). When true, Hash and Data are
-  #     converted to string representations; otherwise, their raw bytes are used.
-  #
-  # Returns:
-  #   - A map containing only the required keys from the input record. Hash and
-  #     Data types are either encoded to strings or left as raw bytes based on
-  #     the `encode` parameter.  @spec db_record_to_map([atom()], map(), boolean()) :: map()
-  defp db_record_to_map(required_keys, record, encode \\ false) do
-    required_keys
-    |> Enum.reduce(%{}, fn key, record_as_map ->
-      raw_value = Map.get(record, key)
-
-      # credo:disable-for-lines:5 Credo.Check.Refactor.Nesting
-      value =
-        case raw_value do
-          %Hash{} -> if(encode, do: Hash.to_string(raw_value), else: raw_value.bytes)
-          %Data{} -> if(encode, do: Data.to_string(raw_value), else: raw_value.bytes)
-          _ -> raw_value
-        end
-
-      Map.put(record_as_map, key, value)
-    end)
+    |> DbTools.db_record_to_map(block)
   end
 end

@@ -32,8 +32,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
   alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Db
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
+  alias Indexer.Fetcher.Arbitrum.Utils.{Logging, Rpc}
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
@@ -1715,7 +1717,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   @spec get_committed_l2_to_l1_messages(non_neg_integer()) :: [Arbitrum.Message.to_import()]
   defp get_committed_l2_to_l1_messages(block_number) do
     block_number
-    |> Db.initiated_l2_to_l1_messages()
+    |> DbMessages.initiated_l2_to_l1_messages()
     |> Enum.map(fn transaction ->
       Map.put(transaction, :status, :sent)
     end)

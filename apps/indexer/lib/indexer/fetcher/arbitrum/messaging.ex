@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Message
   alias Indexer.Fetcher.Arbitrum.Utils.Db
-
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   require Logger
 
   @zero_hex_prefix "0x" <> String.duplicate("0", 56)
@@ -117,7 +117,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     filtered_logs =
       logs
       |> Enum.filter(fn event ->
-        event.address_hash == arbsys_contract and event.first_topic == Db.l2_to_l1_event()
+        event.address_hash == arbsys_contract and event.first_topic == DbMessages.l2_to_l1_event()
       end)
 
     handle_filtered_l2_to_l1_messages(filtered_logs)
@@ -296,7 +296,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   defp find_and_update_executed_messages(messages) do
     messages
     |> Map.keys()
-    |> Db.l1_executions()
+    |> DbMessages.l1_executions()
     |> Enum.reduce(messages, fn execution, messages_acc ->
       message =
         messages_acc

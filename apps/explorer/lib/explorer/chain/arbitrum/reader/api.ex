@@ -580,11 +580,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
     Common.highest_confirmed_block(@api_true)
   end
 
-  #####################################################################################
-  ### Below are the functions that implement functionality not specific to Arbitrum ###
-  ### They are candidates for moving to chain agnostic module as soon as such need  ###
-  ### arises.                                                                       ###
-  #####################################################################################
+  #################################################################################
+  ### Below are functions that implement functionality not specific to Arbitrum ###
+  ### They are candidates for moving to a chain-agnostic module as soon as such ###
+  ### need arises.                                                              ###
+  #################################################################################
 
   @doc """
     Retrieves logs from a transaction that match a specific topic.
