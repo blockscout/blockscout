@@ -481,7 +481,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     # todo: remove it in the future. Path /api/health should be used instead.
     scope "/health" do
-      get("/", HealthController, :health)
+      get("/", HealthController, :health_old)
       get("/liveness", HealthController, :liveness)
       get("/readiness", HealthController, :readiness)
     end
