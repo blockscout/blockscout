@@ -108,9 +108,24 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
   defp run_task(batch, step), do: Task.async(fn -> handle_batch(batch, step) end)
 
   defp handle_batch(token_transfer_ids, :delete) do
-    token_transfer_ids
-    |> build_delete_query()
-    |> Repo.query!([], timeout: :infinity)
+    formatted_token_transfer_ids =
+      Enum.map(token_transfer_ids, fn {transaction_hash, block_hash, log_index} ->
+        {transaction_hash.bytes, block_hash.bytes, log_index}
+      end)
+
+    query =
+      from(tt in TokenTransfer,
+        where:
+          fragment(
+            "(?, ?, ?) = ANY(?::token_transfer_id[])",
+            tt.transaction_hash,
+            tt.block_hash,
+            tt.log_index,
+            ^formatted_token_transfer_ids
+          )
+      )
+
+    Repo.delete_all(query, timeout: :infinity)
   end
 
   defp handle_batch(block_numbers, :refetch) do
@@ -129,13 +144,5 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
     default = 4 * System.schedulers_online()
 
     Application.get_env(:explorer, __MODULE__)[:concurrency] || default
-  end
-
-  defp build_delete_query(token_transfer_ids) do
-    """
-    DELETE
-    FROM token_transfers tt
-    WHERE (tt.transaction_hash, tt.block_hash, tt.log_index) IN #{TokenTransfer.encode_token_transfer_ids(token_transfer_ids)}
-    """
   end
 end
