@@ -159,11 +159,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp get_token_type(%NotLoaded{}), do: "UNSPECIFIED"
 
-  defp get_token_type(token) do
-    token.type
-    # todo: adding temporary formatting. It should be removed once multichain search allow token type as is.
-    |> String.replace("-", "")
-  end
+  defp get_token_type(token), do: token.type
 
   defp get_block_ranges([]), do: []
 
