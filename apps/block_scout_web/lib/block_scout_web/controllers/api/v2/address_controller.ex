@@ -684,7 +684,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Enum.reduce(%{}, fn {counter_name, counter_value}, acc ->
               counter_name_to_json_field_name
               |> Map.fetch(counter_name)
-                # credo:disable-for-next-line
+              # credo:disable-for-next-line
               |> case do
                 {:ok, json_field_name} ->
                   Map.put(acc, json_field_name, counter_value)
