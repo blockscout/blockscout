@@ -478,6 +478,15 @@ defmodule Explorer.Chain.Search do
   end
 
   defp search_address_by_address_hash_query(address_hash) do
+    address_search_fields =
+      search_fields()
+      |> Map.put(:address_hash, dynamic([address: address], address.hash))
+      |> Map.put(:type, "address")
+      |> Map.put(:name, dynamic([address_name: address_name], address_name.name))
+      |> Map.put(:inserted_at, dynamic([address: address], address.inserted_at))
+      |> Map.put(:verified, dynamic([address: address], address.verified))
+      |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
+
     base_address_query()
     |> where([address: address], address.hash == ^address_hash)
     |> join(
@@ -493,24 +502,15 @@ defmodule Explorer.Chain.Search do
       on: address.hash == address_name.address_hash,
       as: :address_name
     )
-    |> select_merge([address_name: address_name], %{name: address_name.name})
+    |> select(^address_search_fields)
   end
 
   defp base_address_query do
-    address_search_fields =
-      search_fields()
-      |> Map.put(:address_hash, dynamic([address: address], address.hash))
-      |> Map.put(:type, "address")
-      |> Map.put(:inserted_at, dynamic([address: address], address.inserted_at))
-      |> Map.put(:verified, dynamic([address: address], address.verified))
-      |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
-
     from(address in Address,
       as: :address,
       left_join: smart_contract in SmartContract,
       as: :smart_contract,
-      on: address.hash == smart_contract.address_hash,
-      select: ^address_search_fields
+      on: address.hash == smart_contract.address_hash
     )
   end
 
@@ -1037,6 +1037,15 @@ defmodule Explorer.Chain.Search do
     end
 
     defp base_filecoin_address_query do
+      address_search_fields =
+        search_fields()
+        |> Map.put(:address_hash, dynamic([address: address], address.hash))
+        |> Map.put(:type, "address")
+        |> Map.put(:name, dynamic([address_name: address_name], address_name.name))
+        |> Map.put(:inserted_at, dynamic([address: address], address.inserted_at))
+        |> Map.put(:verified, dynamic([address: address], address.verified))
+        |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
+
       base_address_query()
       |> join(
         :left,
@@ -1045,7 +1054,7 @@ defmodule Explorer.Chain.Search do
         on: address.hash == address_name.address_hash,
         as: :address_name
       )
-      |> select_merge([address_name: address_name], %{name: address_name.name})
+      |> select(^address_search_fields)
     end
   else
     def address_by_filecoin_id_or_robust(_), do: nil
