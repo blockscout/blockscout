@@ -1,6 +1,14 @@
-defmodule Explorer.Chain.Arbitrum.Reader do
+defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
   @moduledoc """
-  Contains read functions for Arbitrum modules.
+    Provides database query functions for retrieving information about Arbitrum rollup batches
+    and state confirmations on the L1 chain.
+
+    This module focuses on reading settlement-related data for the Arbitrum indexer, including:
+
+    * L1 batches - Sequential groups of L2 blocks committed to L1 via commitment transactions
+    * Batch blocks - Individual L2 blocks included in L1 batches
+    * Block confirmations - L1 transactions that confirm the state of L2 blocks
+    * Data availability records - Additional data associated with batches (e.g., AnyTrust keysets)
   """
 
   import Ecto.Query, only: [from: 2, subquery: 1]
@@ -482,58 +490,5 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       )
 
     Repo.one(query, timeout: :infinity)
-  end
-
-  @doc """
-    Checks if a block with the given block number exists.
-
-    This function queries the database to determine if a block with the specified
-    block number exists and has been marked as having reached consensus.
-
-    ## Parameters
-    - `block_number`: The number of the block to check.
-
-    ## Returns
-    - `true` if the block exists and has reached consensus.
-    - `false` otherwise.
-  """
-  @spec rollup_block_exists?(FullBlock.block_number()) :: boolean()
-  def rollup_block_exists?(block_number) do
-    query =
-      from(
-        block in FullBlock,
-        where: block.number == ^block_number and block.consensus == true
-      )
-
-    Repo.exists?(query, timeout: :infinity)
-  end
-
-  @doc """
-    Retrieves full details of rollup blocks, including associated transactions, for each
-    block number specified in the input list.
-
-    ## Parameters
-    - `list_of_block_numbers`: A list of block numbers for which full block details are to be retrieved.
-
-    ## Returns
-    - A list of `Explorer.Chain.Block` instances containing detailed information for each
-      block number in the input list. Returns an empty list if no blocks are found for the given numbers.
-  """
-  @spec rollup_blocks([FullBlock.block_number()]) :: [FullBlock.t()]
-  def rollup_blocks(list_of_block_numbers)
-
-  def rollup_blocks([]), do: []
-
-  def rollup_blocks(list_of_block_numbers) do
-    query =
-      from(
-        block in FullBlock,
-        where: block.number in ^list_of_block_numbers
-      )
-
-    query
-    # :optional is used since a block may not have any transactions
-    |> Chain.join_associations(%{:transactions => :optional})
-    |> Repo.all()
   end
 end

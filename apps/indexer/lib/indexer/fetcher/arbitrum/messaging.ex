@@ -15,8 +15,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Message
-  alias Indexer.Fetcher.Arbitrum.Utils.Db
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   require Logger
 
   @zero_hex_prefix "0x" <> String.duplicate("0", 56)
@@ -183,8 +183,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   def handle_filtered_l2_to_l1_messages(filtered_logs, caller) when is_list(filtered_logs) do
     # Get values before the loop parsing the events to reduce number of DB requests
-    highest_committed_block = Db.highest_committed_block(-1)
-    highest_confirmed_block = Db.highest_confirmed_block(-1)
+    highest_committed_block = DbSettlement.highest_committed_block(-1)
+    highest_confirmed_block = DbSettlement.highest_confirmed_block(-1)
 
     messages_map =
       filtered_logs

@@ -32,9 +32,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
   alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
-  alias Indexer.Fetcher.Arbitrum.Utils.Db
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: DbCommon
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Fetcher.Arbitrum.Utils.{Logging, Rpc}
   alias Indexer.Helper, as: IndexerHelper
@@ -333,7 +334,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       log_info("Batch range for missing batches inspection: #{start_batch}..#{end_batch}")
 
       l1_block_ranges_for_missing_batches =
-        Db.get_l1_block_ranges_for_missing_batches(start_batch, end_batch, l1_rollup_init_block - 1)
+        DbSettlement.get_l1_block_ranges_for_missing_batches(start_batch, end_batch, l1_rollup_init_block - 1)
 
       unless l1_block_ranges_for_missing_batches == [] do
         discover_missing_batches(
@@ -751,7 +752,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     existing_batches =
       logs
       |> parse_logs_to_get_batch_numbers()
-      |> Db.batches_exist()
+      |> DbSettlement.batches_exist()
 
     {batches, transactions_requests, blocks_requests, existing_commitment_transactions} =
       parse_logs_for_new_batches(logs, existing_batches)
@@ -1279,7 +1280,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp get_expected_highest_block_and_step(batch_number) do
     # since the default direction for the block range exploration is chosen to be from the highest to lowest
     # the step is calculated to be positive
-    case Db.get_batch_by_number(batch_number) do
+    case DbSettlement.get_batch_by_number(batch_number) do
       nil ->
         {nil, nil}
 
@@ -1293,7 +1294,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp get_expected_lowest_block_and_step(batch_number) do
     # since the default direction for the block range exploration is chosen to be from the highest to lowest
     # the step is calculated to be negative
-    case Db.get_batch_by_number(batch_number) do
+    case DbSettlement.get_batch_by_number(batch_number) do
       nil ->
         {nil, nil}
 
@@ -1477,7 +1478,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #     and batch number, ready for database import.
   defp get_rollup_blocks_and_transactions_from_db(rollup_blocks_numbers, blocks_to_batches) do
     rollup_blocks_numbers
-    |> Db.rollup_blocks()
+    |> DbCommon.rollup_blocks()
     |> Enum.reduce({%{}, []}, fn block, {blocks_map, transactions_list} ->
       batch_num = blocks_to_batches[block.number]
 

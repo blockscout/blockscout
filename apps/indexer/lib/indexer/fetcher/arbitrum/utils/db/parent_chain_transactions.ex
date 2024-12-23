@@ -20,6 +20,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions do
   alias Explorer.Chain.Block, as: FullBlock
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Tools, as: DbTools
 
+  require Logger
+
   @doc """
     Indexes L1 transactions provided in the input map. For transactions that
     are already in the database, existing indices are taken. For new transactions,

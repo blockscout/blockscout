@@ -1,12 +1,21 @@
-defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
+defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
   @moduledoc """
-    Common functions to simplify DB routines for Indexer.Fetcher.Arbitrum fetchers
+    Provides utility functions for querying Arbitrum rollup settlement data.
+
+    This module serves as a wrapper around the database reader functions from
+    `Explorer.Chain.Arbitrum.Reader.Indexer.Settlement`, providing additional data
+    transformation and error handling capabilities for:
+
+    * L1 batches - Sequential groups of L2 blocks committed to L1
+    * Batch blocks - Individual L2 blocks included in L1 batches
+    * Block confirmations - L1 transactions confirming L2 block states
+    * Data availability records - Additional batch-related data (e.g., AnyTrust keysets)
   """
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
 
   alias Explorer.Chain.Arbitrum
-  alias Explorer.Chain.Arbitrum.Reader
+  alias Explorer.Chain.Arbitrum.Reader.Indexer.Settlement, as: Reader
   alias Explorer.Chain.Block, as: FullBlock
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Tools, as: DbTools
@@ -130,19 +139,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db do
       value -> value
     end
   end
-
-  @doc """
-    Retrieves full details of rollup blocks, including associated transactions, for each block number specified in the input list.
-
-    ## Parameters
-    - `list_of_block_numbers`: A list of block numbers for which full block details are to be retrieved.
-
-    ## Returns
-    - A list of `Explorer.Chain.Block` instances containing detailed information for each
-      block number in the input list. Returns an empty list if no blocks are found for the given numbers.
-  """
-  @spec rollup_blocks([FullBlock.block_number()]) :: [FullBlock.t()]
-  def rollup_blocks(list_of_block_numbers), do: Reader.rollup_blocks(list_of_block_numbers)
 
   @doc """
     Retrieves the block number associated with a specific hash of a rollup block.

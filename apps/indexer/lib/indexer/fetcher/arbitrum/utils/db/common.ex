@@ -13,6 +13,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Common do
   """
 
   alias Explorer.Chain
+  alias Explorer.Chain.Arbitrum.Reader.Indexer.General, as: ArbitrumReader
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Utility.MissingBlockRange
 
@@ -49,4 +50,17 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Common do
   def closest_block_after_timestamp(timestamp) do
     Chain.timestamp_to_block_number(timestamp, :after, false)
   end
+
+  @doc """
+    Retrieves full details of rollup blocks, including associated transactions, for each block number specified in the input list.
+
+    ## Parameters
+    - `list_of_block_numbers`: A list of block numbers for which full block details are to be retrieved.
+
+    ## Returns
+    - A list of `Explorer.Chain.Block` instances containing detailed information for each
+      block number in the input list. Returns an empty list if no blocks are found for the given numbers.
+  """
+  @spec rollup_blocks([FullBlock.block_number()]) :: [FullBlock.t()]
+  def rollup_blocks(list_of_block_numbers), do: ArbitrumReader.rollup_blocks(list_of_block_numbers)
 end
