@@ -105,7 +105,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
 
         Application.put_env(:explorer, :solc_bin_api_url, "https://solc-bin.ethereum.org")
 
-        contract_address = insert(:contract_address, contract_code: "0x")
+        contract_address = insert(:contract_address, contract_code: "0x01")
 
         :transaction
         |> insert(
