@@ -316,7 +316,8 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         l2_timestamp: fields.timestamp,
         callvalue: fields.callvalue,
         data: "0x" <> data_hex,
-        token: token
+        token: token,
+        completion_transaction_hash: message.completion_transaction_hash
       }
     else
       Logger.error(
@@ -336,6 +337,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # message is not found in the database, the function attempts to determine its
   # current status by comparing the message ID with the total count of messages sent
   # from L2.
+  #
+  # This function will always set `completion_transaction_hash` as nil because it's difficult
+  # to determine the completion transaction hash directly from the contract.
   #
   # ## Parameters
   # - `log`: The L2ToL1Tx event log containing withdrawal information
@@ -371,7 +375,8 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       l2_timestamp: fields.timestamp,
       callvalue: fields.callvalue,
       data: "0x" <> data_hex,
-      token: token
+      token: token,
+      completion_transaction_hash: nil
     }
   end
 

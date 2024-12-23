@@ -24,6 +24,7 @@ defmodule Explorer.Arbitrum.Withdraw do
     * `token_address` - extracted address of the token to withdraw in case of `data` field represents Bridge transaction
     * `token_destination` - extracted receiver address in case of `data` field represents Bridge transaction
     * `token_amount` - extracted token amount in case of `data` field represents Bridge transaction
+    * `completion_transaction_hash` - the hash of the execution transaction on L1 chain (nil if not yet relayed)
   """
 
   @type t :: %__MODULE__{
@@ -42,7 +43,8 @@ defmodule Explorer.Arbitrum.Withdraw do
               destination: token_destination,
               amount: token_amount
             }
-            | nil
+            | nil,
+          completion_transaction_hash: completion_transaction_hash | nil
         }
 
   @typep message_id :: non_neg_integer()
@@ -57,6 +59,7 @@ defmodule Explorer.Arbitrum.Withdraw do
   @typep token_address :: Hash.Address.t()
   @typep token_destination :: Hash.Address.t()
   @typep token_amount :: non_neg_integer()
+  @typep completion_transaction_hash :: Hash.t()
 
   defstruct [
     :message_id,
@@ -68,6 +71,7 @@ defmodule Explorer.Arbitrum.Withdraw do
     :l2_timestamp,
     :callvalue,
     :data,
-    token: nil
+    token: nil,
+    completion_transaction_hash: nil
   ]
 end

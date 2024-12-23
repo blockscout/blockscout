@@ -94,7 +94,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           "l2_timestamp" => withdraw.l2_timestamp,
           "callvalue" => withdraw.callvalue,
           "data" => withdraw.data,
-          "token" => withdraw.token
+          "token" => withdraw.token,
+          "completion_transaction_hash" => withdraw.completion_transaction_hash
         }
       end)
 
