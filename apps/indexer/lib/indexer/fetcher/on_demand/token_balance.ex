@@ -196,8 +196,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
 
   defp prepare_updated_balance({{:error, error}, ctb}, block_number) do
     error_message =
-      if ctb.id do
-        "Error on updating current token #{to_string(ctb.token_contract_address_hash)} balance for address #{to_string(ctb.address_hash)} and token id #{to_string(ctb.id)} at block number #{block_number}: "
+      if ctb.token_id do
+        "Error on updating current token #{to_string(ctb.token_contract_address_hash)} balance for address #{to_string(ctb.address_hash)} and token id #{to_string(ctb.token_id)} at block number #{block_number}: "
       else
         "Error on updating current token #{to_string(ctb.token_contract_address_hash)} balance for address #{to_string(ctb.address_hash)} at block number #{block_number}: "
       end
