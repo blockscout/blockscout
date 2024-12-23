@@ -63,6 +63,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
 
@@ -684,7 +685,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     existing_lifecycle_transactions =
       transaction_hashes
       |> Map.values()
-      |> Db.lifecycle_transactions()
+      |> DbParentChainTransactions.lifecycle_transactions()
       |> Enum.reduce(%{}, fn transaction, acc ->
         Map.put(acc, transaction.hash, transaction)
       end)
@@ -1505,7 +1506,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     lifecycle_transactions =
       basic_lifecycle_transactions
       |> ArbitrumHelper.extend_lifecycle_transactions_with_ts_and_status(l1_blocks_to_ts, track_finalization?)
-      |> Db.get_indices_for_l1_transactions()
+      |> DbParentChainTransactions.get_indices_for_l1_transactions()
 
     {updated_rollup_blocks, highest_confirmed_block_number} =
       confirmed_rollup_blocks

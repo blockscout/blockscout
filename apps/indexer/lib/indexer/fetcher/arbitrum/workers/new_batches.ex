@@ -34,6 +34,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
   alias Indexer.Fetcher.Arbitrum.Utils.Db
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Fetcher.Arbitrum.Utils.{Logging, Rpc}
   alias Indexer.Helper, as: IndexerHelper
@@ -781,7 +782,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
     lifecycle_transactions =
       lifecycle_transactions_wo_indices
-      |> Db.get_indices_for_l1_transactions()
+      |> DbParentChainTransactions.get_indices_for_l1_transactions()
 
     transaction_counts_per_batch = batches_to_rollup_transactions_amounts(rollup_transactions_to_import)
 
@@ -1343,7 +1344,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp update_lifecycle_transactions_for_new_blocks(existing_commitment_transactions, block_to_ts) do
     existing_commitment_transactions
     |> Map.keys()
-    |> Db.lifecycle_transactions()
+    |> DbParentChainTransactions.lifecycle_transactions()
     |> Enum.reduce(%{}, fn transaction, transactions ->
       block_number = existing_commitment_transactions[transaction.hash]
       ts = block_to_ts[block_number]
