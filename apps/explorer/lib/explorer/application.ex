@@ -31,6 +31,7 @@ defmodule Explorer.Application do
   alias Explorer.Chain.Supply.RSK
 
   alias Explorer.Market.MarketHistoryCache
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
@@ -134,7 +135,7 @@ defmodule Explorer.Application do
         configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
         configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
         configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
-        sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
+        configure_sc_microservice(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
         configure(Explorer.Chain.Cache.RootstockLockedBTC),
         configure(Explorer.Chain.Cache.OptimismFinalizationPeriod),
         configure(Explorer.Migrator.TransactionsDenormalization),
@@ -148,6 +149,9 @@ defmodule Explorer.Application do
         configure(Explorer.Migrator.TokenTransferBlockConsensus),
         configure(Explorer.Migrator.RestoreOmittedWETHTransfers),
         configure(Explorer.Migrator.FilecoinPendingAddressOperations),
+        Explorer.Migrator.BackfillMultichainSearchDB
+        |> configure_mode_dependent_process(:indexer)
+        |> configure_multichain_search_microservice(),
         configure_mode_dependent_process(Explorer.Migrator.ShrinkInternalTransactions, :indexer),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.BlackfortValidatorsCounters, :blackfort),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, :stability),
@@ -247,8 +251,16 @@ defmodule Explorer.Application do
     end
   end
 
-  defp sc_microservice_configure(process) do
+  defp configure_sc_microservice(process) do
     if Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)[:eth_bytecode_db?] do
+      process
+    else
+      []
+    end
+  end
+
+  defp configure_multichain_search_microservice(process) do
+    if MultichainSearch.enabled?() do
       process
     else
       []

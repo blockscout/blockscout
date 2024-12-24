@@ -556,6 +556,10 @@ config :explorer, Explorer.MicroserviceInterfaces.Metadata,
 config :explorer, Explorer.SmartContract.StylusVerifierInterface,
   service_url: ConfigHelper.parse_microservice_url("MICROSERVICE_STYLUS_VERIFIER_URL")
 
+config :explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+  api_key: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_API_KEY"),
+  service_url: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")
+
 config :explorer, :air_table_public_tags,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
   api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
@@ -665,6 +669,10 @@ config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
   batch_size: ConfigHelper.parse_integer_env_var("SHRINK_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("SHRINK_INTERNAL_TRANSACTIONS_CONCURRENCY", 10)
+
+config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
+  concurrency: 1,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_BATCH_SIZE", 10)
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
