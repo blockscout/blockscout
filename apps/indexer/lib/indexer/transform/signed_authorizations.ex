@@ -52,7 +52,7 @@ defmodule Indexer.Transform.SignedAuthorizations do
       )
 
     authority =
-      ec_recover(signed_message, signed_authorization.r, signed_authorization.s, signed_authorization.v)
+      ec_recover(signed_message, signed_authorization.r, signed_authorization.s, signed_authorization.yParity)
 
     authority
   end
