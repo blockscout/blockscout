@@ -580,6 +580,23 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
     Common.highest_confirmed_block(@api_true)
   end
 
+  @doc """
+    Retrieves an AnyTrust keyset from the database using the provided keyset hash.
+
+    It calls `Common.get_anytrust_keyset/1` with `api?: true` option to use
+    replica database.
+
+    ## Parameters
+    - `keyset_hash`: A binary representing the hash of the keyset to be retrieved.
+
+    ## Returns
+    - A map containing information about the AnyTrust keyset, otherwise an empty map.
+  """
+  @spec get_anytrust_keyset(binary()) :: map()
+  def get_anytrust_keyset(keyset_hash) do
+    Common.get_anytrust_keyset(keyset_hash, api?: true)
+  end
+
   #################################################################################
   ### Below are functions that implement functionality not specific to Arbitrum ###
   ### They are candidates for moving to a chain-agnostic module as soon as such ###

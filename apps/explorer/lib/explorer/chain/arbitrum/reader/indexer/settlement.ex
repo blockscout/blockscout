@@ -15,7 +15,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
 
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
-    DaMultiPurposeRecord,
     L1Batch,
     LifecycleTransaction
   }
@@ -380,28 +379,18 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
   @doc """
     Retrieves an AnyTrust keyset from the database using the provided keyset hash.
 
+    It calls `Common.get_anytrust_keyset/1` with `api?: false` option to use
+    primary database.
+
     ## Parameters
     - `keyset_hash`: A binary representing the hash of the keyset to be retrieved.
 
     ## Returns
     - A map containing information about the AnyTrust keyset, otherwise an empty map.
   """
-  @spec get_anytrust_keyset(binary()) :: map() | nil
-  def get_anytrust_keyset("0x" <> <<_::binary-size(64)>> = keyset_hash) do
-    get_anytrust_keyset(keyset_hash |> Chain.string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes))
-  end
-
+  @spec get_anytrust_keyset(binary()) :: map()
   def get_anytrust_keyset(keyset_hash) do
-    query =
-      from(
-        da_records in DaMultiPurposeRecord,
-        where: da_records.data_key == ^keyset_hash and da_records.data_type == 1
-      )
-
-    case Repo.one(query) do
-      nil -> %{}
-      keyset -> keyset.data
-    end
+    Common.get_anytrust_keyset(keyset_hash, api?: false)
   end
 
   @doc """

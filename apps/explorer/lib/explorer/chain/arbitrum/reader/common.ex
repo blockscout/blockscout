@@ -27,9 +27,13 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
   """
 
   import Ecto.Query, only: [from: 2]
-  import Explorer.Chain, only: [select_repo: 1]
+  import Explorer.Chain, only: [select_repo: 1, string_to_block_hash: 1]
 
-  alias Explorer.Chain.Arbitrum.BatchBlock
+  alias Explorer.Chain.Arbitrum.{
+    BatchBlock,
+    DaMultiPurposeRecord
+  }
+
   alias Explorer.Chain.Block, as: FullBlock
 
   @doc """
@@ -54,5 +58,34 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
       )
 
     select_repo(options).one(query)
+  end
+
+  @doc """
+    Retrieves an AnyTrust keyset from the database using the provided keyset hash.
+
+    ## Parameters
+    - `keyset_hash`: A binary representing the hash of the keyset to be retrieved.
+    - `options`: A keyword list of options:
+      - `:api?` - Whether the function is being called from an API context.
+
+    ## Returns
+    - A map containing information about the AnyTrust keyset, otherwise an empty map.
+  """
+  @spec get_anytrust_keyset(binary(), api?: boolean()) :: map()
+  def get_anytrust_keyset("0x" <> <<_::binary-size(64)>> = keyset_hash, options) do
+    get_anytrust_keyset(keyset_hash |> string_to_block_hash() |> Kernel.elem(1) |> Map.get(:bytes), options)
+  end
+
+  def get_anytrust_keyset(keyset_hash, options) do
+    query =
+      from(
+        da_records in DaMultiPurposeRecord,
+        where: da_records.data_key == ^keyset_hash and da_records.data_type == 1
+      )
+
+    case select_repo(options).one(query) do
+      nil -> %{}
+      keyset -> keyset.data
+    end
   end
 end
