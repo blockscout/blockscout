@@ -4,13 +4,13 @@
 
 ## Structure
 
-The indexer is split into multiple fetchers. Each fetcher has its own supervising tree with a separate `TaskSupervisor` for better detecting of memory, message or blocking problems.
+The indexer is split into multiple fetchers. Each fetcher has its own supervising tree with a separate `TaskSupervisor` for better detection of memory, message or blocking problems.
 
 Most fetchers have their `Supervisor` module generated automatically using `use Indexer.Fetcher` macro.
 
 There are different fetchers described below, but the final step of almost all of them is importing data into database.
 A map of lists of different entities is constructed and fed to `Explorer.Chain.import` method.
-This method assigns different runners from `Explorer.Chain.Import.Runner` namespace, matching key in map to `option_key` attribute of a runner.
+This method assigns different runners from `Explorer.Chain.Import.Runner` namespace, matching key in map to the `option_key` attribute of a runner.
 The runners are then performing according to the order specified in stages in `Explorer.Chain.Import.Stage`.
 
 ### Transformers
@@ -28,11 +28,11 @@ Some data has to be extracted from already fetched data, and there're several tr
 
 ### Root fetchers
 
-- `pending_transaction`: fetches pending transactions (i.e. not yet collated into a block) every second (`pending_transaction_interval`)
+- `pending_transaction`: fetches pending transactions (i.e., not yet collated into a block) every second (`pending_transaction_interval`)
 - `block/realtime`: listens for new blocks from websocket and polls node for new blocks, imports new ones one by one
 - `block/catchup`: gets unfetched ranges of blocks, imports them in batches
 - `transaction_action`: optionally fetches/rewrites transaction actions for old blocks (in a given range of blocks for given protocols)
-- `optimism/txn_batch`: fetches transaction batches of Optimism chain
+- `optimism/txn_batch`: fetches transaction batches of the Optimism chain
 - `optimism/output_root`: fetches output roots of Optimism chain
 - `optimism/deposit`: fetches deposits to Optimism chain
 - `optimism/withdrawal`: fetches withdrawals from Optimism chain
@@ -86,7 +86,7 @@ Most of them are based off `BufferedTask`, and the basic algorithm goes like thi
 7. Run `Chain.import` with fetched data.
 
 - `replaced_transaction`: not a fetcher per se, but rather an async worker, which discards previously pending transactions after they are replaced with new pending transactions with the same nonce, or are collated in a block.
-- `block_reward`: missing `block_rewards` for consensus blocks
+- `block_reward`: missing `block_rewards` data for consensus blocks
 - `uncle_block`: blocks for `block_second_degree_relations` with null `uncle_fetched_at`
 - `internal_transaction`: for either `blocks` (Nethermind) or `transactions` with null `internal_transactions_indexed_at`
 - `coin_balance`: for `address_coin_balances` with null `value_fetched_at`
@@ -110,9 +110,9 @@ After all deployed instances get all needed data, these fetchers should be depre
 
 ## Memory Usage
 
-The work queues for building the index of all blocks, balances (coin and token), and internal transactions can grow quite large.   By default, the soft-limit is 1 GiB, which can be changed by setting `INDEXER_MEMORY_LIMIT` environment variable https://docs.blockscout.com/for-developers/developer-faqs/how-do-i-update-memory-consumption-to-fix-indexer-memory-errors#updating-memory-consumption.
+The work queues for indexing of all blocks, balances (coin and token), and internal transactions can grow quite large.   By default, the soft-limit is 1 GiB, which can be changed by setting `INDEXER_MEMORY_LIMIT` environment variable https://docs.blockscout.com/for-developers/developer-faqs/how-do-i-update-memory-consumption-to-fix-indexer-memory-errors#updating-memory-consumption.
 
-Memory usage is checked once per minute.  If the soft-limit is reached, the shrinkable work queues will shed half their load.  The shed load will be restored from the database, the same as when a restart of the server occurs, so rebuilding the work queue will be slower, but use less memory.
+Memory usage is checked every minute.  If the soft-limit is reached, the shrinkable work queues will shed half their load.  The shed load will be restored from the database, the same as when a restart of the server occurs, so rebuilding the work queue will be slower, but use less memory.
 
 If all queues are at their minimum size, then no more memory can be reclaimed and an error will be logged.
 
