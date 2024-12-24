@@ -36,8 +36,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   alias Explorer.Migrator.{
     AddressCurrentTokenBalanceTokenType,
     AddressTokenBalanceTokenType,
-    BackfillMultichainSearchDB,
     ArbitrumDaRecordsNormalization,
+    BackfillMultichainSearchDB,
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
     TransactionsDenormalization
