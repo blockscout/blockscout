@@ -607,7 +607,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     logs
     |> Enum.chunk_every(new_batches_limit)
     |> Enum.each(fn chunked_logs ->
-      {batches, lifecycle_transactions, rollup_blocks, rollup_transactions, committed_transactions, da_records} =
+      {batches, lifecycle_transactions, rollup_blocks, rollup_transactions, committed_transactions, da_records,
+       batch_to_data_blobs} =
         handle_batches_from_logs(
           chunked_logs,
           messages_to_blocks_shift,
@@ -625,6 +626,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           arbitrum_batch_transactions: %{params: rollup_transactions},
           arbitrum_messages: %{params: committed_transactions},
           arbitrum_da_multi_purpose_records: %{params: da_records},
+          arbitrum_batches_to_da_blobs: %{params: batch_to_data_blobs},
           timeout: :infinity
         })
 
@@ -694,8 +696,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #
   # ## Returns
   # - A tuple containing lists of batches, lifecycle transactions, rollup blocks,
-  #   rollup transactions, committed messages (with the status `:sent`), and records
-  #   with DA-related information if applicable, all ready for database import.
+  #   rollup transactions, committed messages (with the status `:sent`), records
+  #   with DA-related information if applicable, and batch-to-DA-blob associations,
+  #   all ready for database import.
   @spec handle_batches_from_logs(
           [%{String.t() => any()}],
           non_neg_integer(),
@@ -717,7 +720,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           [Arbitrum.BatchBlock.to_import()],
           [Arbitrum.BatchTransaction.to_import()],
           [Arbitrum.Message.to_import()],
-          [Arbitrum.DaMultiPurposeRecord.to_import()]
+          [Arbitrum.DaMultiPurposeRecord.to_import()],
+          [Arbitrum.BatchToDaBlob.to_import()]
         }
   defp handle_batches_from_logs(
          logs,
@@ -728,7 +732,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
          rollup_rpc_config
        )
 
-  defp handle_batches_from_logs([], _, _, _, _, _), do: {[], [], [], [], [], []}
+  defp handle_batches_from_logs([], _, _, _, _, _), do: {[], [], [], [], [], [], []}
 
   defp handle_batches_from_logs(
          logs,
@@ -798,7 +802,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         ]
       end)
 
-    da_records =
+    {da_records, batch_to_data_blobs} =
       DataAvailabilityInfo.prepare_for_import(da_info, %{
         sequencer_inbox_address: sequencer_inbox_address,
         json_rpc_named_arguments: l1_rpc_config.json_rpc_named_arguments
@@ -817,7 +821,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       end
 
     {batches_list_to_import, Map.values(lifecycle_transactions), Map.values(blocks_to_import),
-     rollup_transactions_to_import, committed_messages, da_records}
+     rollup_transactions_to_import, committed_messages, da_records, batch_to_data_blobs}
   end
 
   # Extracts batch numbers from logs of SequencerBatchDelivered events.
@@ -1576,8 +1580,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # - A tuple containing:
   #   - A map of rollup blocks associated with the batch numbers, ready for
   #     database import.
-  #   - A list of transactions, each associated with its respective rollup block
-  #     and batch number, ready for database import.
+  #   - A list of transactions, each associated with its respective rollup
+  #     block and batch number, ready for database import.
   #   - The updated counter of processed chunks (usually ignored).
   @spec recover_rollup_blocks_and_transactions_from_rpc(
           [non_neg_integer()],
