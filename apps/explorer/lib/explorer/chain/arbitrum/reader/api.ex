@@ -416,7 +416,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
   end
 
   def get_da_record_by_data_key(data_key) do
-    # TODO: implement the functionality to return all batch numbers that the data blob is associated with as soon as such functionality is implemented on UI side.
     case MigrationStatuses.get_arbitrum_da_records_normalization_finished() do
       true ->
         # Migration is complete, use new schema
@@ -490,7 +489,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
 
     with da_record when not is_nil(da_record) <- repo.one(build_da_records_by_data_key_query(data_key)),
          batch_number when not is_nil(batch_number) <-
-           build_batch_numbers_by_data_key_query(data_key)
+           data_key
+           |> build_batch_numbers_by_data_key_query()
            |> limit(1)
            |> repo.one() do
       {:ok, {batch_number, da_record.data}}
