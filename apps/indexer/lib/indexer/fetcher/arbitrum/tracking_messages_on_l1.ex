@@ -37,8 +37,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
 
   alias Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2
 
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
   require Logger
 
@@ -129,8 +130,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
       )
 
     l1_start_block = Rpc.get_l1_start_block(state.config.l1_start_block, state.config.json_l1_rpc_named_arguments)
-    new_msg_to_l2_start_block = Db.l1_block_to_discover_latest_message_to_l2(l1_start_block)
-    historical_msg_to_l2_end_block = Db.l1_block_to_discover_earliest_message_to_l2(l1_start_block - 1)
+    new_msg_to_l2_start_block = DbMessages.l1_block_to_discover_latest_message_to_l2(l1_start_block)
+    historical_msg_to_l2_end_block = DbMessages.l1_block_to_discover_earliest_message_to_l2(l1_start_block - 1)
 
     Process.send(self(), :check_new_msgs_to_rollup, [])
 

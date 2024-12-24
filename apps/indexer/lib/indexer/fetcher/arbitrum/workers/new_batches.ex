@@ -32,8 +32,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
   alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: DbCommon
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
+  alias Indexer.Fetcher.Arbitrum.Utils.{Logging, Rpc}
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
@@ -330,7 +334,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       log_info("Batch range for missing batches inspection: #{start_batch}..#{end_batch}")
 
       l1_block_ranges_for_missing_batches =
-        Db.get_l1_block_ranges_for_missing_batches(start_batch, end_batch, l1_rollup_init_block - 1)
+        DbSettlement.get_l1_block_ranges_for_missing_batches(start_batch, end_batch, l1_rollup_init_block - 1)
 
       unless l1_block_ranges_for_missing_batches == [] do
         discover_missing_batches(
@@ -748,7 +752,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     existing_batches =
       logs
       |> parse_logs_to_get_batch_numbers()
-      |> Db.batches_exist()
+      |> DbSettlement.batches_exist()
 
     {batches, transactions_requests, blocks_requests, existing_commitment_transactions} =
       parse_logs_for_new_batches(logs, existing_batches)
@@ -779,7 +783,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
     lifecycle_transactions =
       lifecycle_transactions_wo_indices
-      |> Db.get_indices_for_l1_transactions()
+      |> DbParentChainTransactions.get_indices_for_l1_transactions()
 
     transaction_counts_per_batch = batches_to_rollup_transactions_amounts(rollup_transactions_to_import)
 
@@ -1276,7 +1280,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp get_expected_highest_block_and_step(batch_number) do
     # since the default direction for the block range exploration is chosen to be from the highest to lowest
     # the step is calculated to be positive
-    case Db.get_batch_by_number(batch_number) do
+    case DbSettlement.get_batch_by_number(batch_number) do
       nil ->
         {nil, nil}
 
@@ -1290,7 +1294,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp get_expected_lowest_block_and_step(batch_number) do
     # since the default direction for the block range exploration is chosen to be from the highest to lowest
     # the step is calculated to be negative
-    case Db.get_batch_by_number(batch_number) do
+    case DbSettlement.get_batch_by_number(batch_number) do
       nil ->
         {nil, nil}
 
@@ -1341,7 +1345,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp update_lifecycle_transactions_for_new_blocks(existing_commitment_transactions, block_to_ts) do
     existing_commitment_transactions
     |> Map.keys()
-    |> Db.lifecycle_transactions()
+    |> DbParentChainTransactions.lifecycle_transactions()
     |> Enum.reduce(%{}, fn transaction, transactions ->
       block_number = existing_commitment_transactions[transaction.hash]
       ts = block_to_ts[block_number]
@@ -1474,7 +1478,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #     and batch number, ready for database import.
   defp get_rollup_blocks_and_transactions_from_db(rollup_blocks_numbers, blocks_to_batches) do
     rollup_blocks_numbers
-    |> Db.rollup_blocks()
+    |> DbCommon.rollup_blocks()
     |> Enum.reduce({%{}, []}, fn block, {blocks_map, transactions_list} ->
       batch_num = blocks_to_batches[block.number]
 
@@ -1715,7 +1719,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   @spec get_committed_l2_to_l1_messages(non_neg_integer()) :: [Arbitrum.Message.to_import()]
   defp get_committed_l2_to_l1_messages(block_number) do
     block_number
-    |> Db.initiated_l2_to_l1_messages()
+    |> DbMessages.initiated_l2_to_l1_messages()
     |> Enum.map(fn transaction ->
       Map.put(transaction, :status, :sent)
     end)

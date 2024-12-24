@@ -24,8 +24,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
   import Explorer.Helper, only: [decode_data: 2]
 
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
@@ -298,7 +300,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     lifecycle_transactions =
       basic_lifecycle_transactions
       |> ArbitrumHelper.extend_lifecycle_transactions_with_ts_and_status(blocks_to_ts, track_finalization?)
-      |> Db.get_indices_for_l1_transactions()
+      |> DbParentChainTransactions.get_indices_for_l1_transactions()
 
     executions =
       basics_executions
@@ -396,7 +398,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     # will check all discovered historical messages to be marked as executed it is not
     # needed to handle :initiated and :sent of historical messages here, only for
     # new messages discovered and changed their status from `:sent` to `:confirmed`
-    confirmed_messages = Db.confirmed_l2_to_l1_messages()
+    confirmed_messages = DbMessages.confirmed_l2_to_l1_messages()
 
     if Enum.empty?(confirmed_messages) do
       []
@@ -411,7 +413,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
       messages_map
       |> Map.keys()
-      |> Db.l1_executions()
+      |> DbMessages.l1_executions()
       |> Enum.map(fn execution ->
         messages_map
         |> Map.get(execution.message_id)

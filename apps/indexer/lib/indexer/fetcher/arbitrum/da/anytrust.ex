@@ -8,8 +8,9 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
 
   import Explorer.Helper, only: [decode_data: 2]
 
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: Db
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain.Arbitrum
