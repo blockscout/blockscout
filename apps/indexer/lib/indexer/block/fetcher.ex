@@ -17,6 +17,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei}
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Block.Fetcher.Receipts
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Celo.EpochBlockOperations, as: CeloEpochBlockOperations
@@ -281,6 +282,12 @@ defmodule Indexer.Block.Fetcher do
       update_uncles_cache(inserted[:block_second_degree_relations])
       update_withdrawals_cache(inserted[:withdrawals])
 
+      update_multichain_search_db(%{
+        addresses: inserted[:addresses],
+        blocks: inserted[:blocks],
+        transactions: inserted[:transactions]
+      })
+
       async_match_arbitrum_messages_to_l2(arbitrum_transactions_for_further_handling)
 
       result
@@ -409,6 +416,14 @@ defmodule Indexer.Block.Fetcher do
 
   defp update_withdrawals_cache(_) do
     :ok
+  end
+
+  defp update_multichain_search_db(%{addresses: addresses, blocks: blocks, transactions: transactions}) do
+    MultichainSearch.batch_import(%{
+      addresses: addresses || [],
+      blocks: blocks || [],
+      transactions: transactions || []
+    })
   end
 
   def import(

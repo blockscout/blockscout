@@ -28,6 +28,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :ctb_token_type_finished,
     key: :tt_denormalization_finished,
     key: :sanitize_duplicated_log_index_logs_finished,
+    key: :backfill_multichain_search_db_finished,
     key: :arbitrum_da_records_normalization_finished
 
   @dialyzer :no_match
@@ -35,6 +36,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   alias Explorer.Migrator.{
     AddressCurrentTokenBalanceTokenType,
     AddressTokenBalanceTokenType,
+    BackfillMultichainSearchDB,
     ArbitrumDaRecordsNormalization,
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
@@ -76,6 +78,14 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   defp handle_fallback(:sanitize_duplicated_log_index_logs_finished) do
     Task.start_link(fn ->
       set_sanitize_duplicated_log_index_logs_finished(SanitizeDuplicatedLogIndexLogs.migration_finished?())
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:backfill_multichain_search_db_finished) do
+    Task.start_link(fn ->
+      set_backfill_multichain_search_db_finished(BackfillMultichainSearchDB.migration_finished?())
     end)
 
     {:return, false}

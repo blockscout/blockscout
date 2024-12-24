@@ -20,6 +20,7 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Indexer.Transform.Addresses
 
   @transaction_fields ~w(block_number created_contract_address_hash hash type)a
+  @failed_to_import "failed to import created_contract_code for transactions: "
 
   @typedoc """
   Represents a list of entries, where each entry is a map containing transaction
@@ -185,12 +186,22 @@ defmodule Indexer.Fetcher.ContractCode do
             Logger.error(
               fn ->
                 [
-                  "failed to import created_contract_code for transactions: ",
+                  @failed_to_import,
                   inspect(reason)
                 ]
               end,
               step: step
             )
+
+            {:retry, entries}
+
+          {:error, reason} ->
+            Logger.error(fn ->
+              [
+                @failed_to_import,
+                inspect(reason)
+              ]
+            end)
 
             {:retry, entries}
         end

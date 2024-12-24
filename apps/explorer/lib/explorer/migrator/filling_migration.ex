@@ -1,7 +1,8 @@
 defmodule Explorer.Migrator.FillingMigration do
   @moduledoc """
     Provides a behaviour and implementation for data migration tasks that fill or update
-    fields in existing database entities.
+    fields in existing database entities or migrates data to another storages (e.g.
+    multichain search DB)
 
     This module defines a template for creating migrations that can process entities in
     batches with parallel execution. It implements a GenServer that manages the
