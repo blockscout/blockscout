@@ -88,6 +88,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   alias Explorer.Market.MarketHistoryCache
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.{PagingOptions, Repo}
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -96,7 +97,7 @@ defmodule Explorer.Chain do
   @default_paging_options %PagingOptions{page_size: @default_page_size}
 
   @token_transfers_per_transaction_preview 10
-  @token_transfers_necessity_by_association %{
+  @token_transfer_necessity_by_association %{
     [from_address: :smart_contract] => :optional,
     [to_address: :smart_contract] => :optional,
     [from_address: :names] => :optional,
@@ -584,7 +585,7 @@ defmodule Explorer.Chain do
           do: &1,
           else:
             Enum.map(&1, fn transaction ->
-              preload_token_transfers(transaction, @token_transfers_necessity_by_association, options)
+              preload_token_transfers(transaction, @token_transfer_necessity_by_association, options)
             end)
         )).()
   end
@@ -603,7 +604,7 @@ defmodule Explorer.Chain do
     |> (& &1).()
     |> select_repo(options).all()
     |> (&Enum.map(&1, fn transaction ->
-          preload_token_transfers(transaction, @token_transfers_necessity_by_association, options)
+          preload_token_transfers(transaction, @token_transfer_necessity_by_association, options)
         end)).()
   end
 
@@ -1426,7 +1427,31 @@ defmodule Explorer.Chain do
   """
   @spec import(Import.all_options()) :: Import.all_result()
   def import(options) do
-    Import.all(options)
+    case Import.all(options) do
+      {:ok, imported} = result ->
+        assets_to_import = %{
+          addresses: imported[:addresses] || [],
+          blocks: imported[:blocks] || [],
+          transactions: imported[:transactions] || []
+        }
+
+        if assets_to_import == %{
+             addresses: [],
+             blocks: [],
+             transactions: []
+           } do
+          result
+        else
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          case MultichainSearch.batch_import(assets_to_import) do
+            {:ok, _} -> result
+            _ -> {:error, :insert_to_multichain_search_db_failed}
+          end
+        end
+
+      other_result ->
+        other_result
+    end
   end
 
   @doc """
@@ -2201,7 +2226,7 @@ defmodule Explorer.Chain do
     last_block_period = DateTime.diff(now, timestamp, :millisecond)
 
     if last_block_period > Application.get_env(:explorer, :healthy_blocks_period) do
-      {:error, number, timestamp}
+      {:stale, number, timestamp}
     else
       {:ok, number, timestamp}
     end
@@ -2669,7 +2694,7 @@ defmodule Explorer.Chain do
               do: &1,
               else:
                 Enum.map(&1, fn transaction ->
-                  preload_token_transfers(transaction, @token_transfers_necessity_by_association, options)
+                  preload_token_transfers(transaction, @token_transfer_necessity_by_association, options)
                 end)
             )).()
     end
