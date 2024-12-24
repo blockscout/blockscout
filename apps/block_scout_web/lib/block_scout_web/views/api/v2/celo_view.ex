@@ -252,7 +252,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   @spec burn_fraction_decimal(integer()) :: Decimal.t()
   defp burn_fraction_decimal(burn_fraction_fixidity_lib)
        when is_integer(burn_fraction_fixidity_lib) do
-    base = Decimal.new(1, 10, 24)
+    base = Decimal.new(1, 1, 24)
     fraction = Decimal.new(1, burn_fraction_fixidity_lib, 0)
     Decimal.div(fraction, base)
   end
