@@ -580,7 +580,7 @@ defmodule Explorer.Chain.Token.Instance do
     )
     |> where([token_transfer, token_instance], is_nil(token_instance.token_id))
     |> select([token_transfer, token_instance], %{
-      contract_address_hash: token_transfer.token_contract_address_hash,
+      token_contract_address_hash: token_transfer.token_contract_address_hash,
       token_id: token_transfer.token_id
     })
     |> limit(^limit)
@@ -597,7 +597,7 @@ defmodule Explorer.Chain.Token.Instance do
     )
     |> where([actb, ti], not is_nil(actb.token_id) and is_nil(ti.token_id))
     |> select([actb], %{
-      contract_address_hash: actb.token_contract_address_hash,
+      token_contract_address_hash: actb.token_contract_address_hash,
       token_id: actb.token_id
     })
     |> limit(^limit)

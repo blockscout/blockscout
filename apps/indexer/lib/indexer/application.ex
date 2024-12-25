@@ -32,7 +32,6 @@ defmodule Indexer.Application do
           Indexer.Fetcher.TokenInstance.Sanitize,
           Indexer.Fetcher.TokenInstance.Sanitize.Supervisor
         ) +
-        token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.LegacySanitize, nil) +
         token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC1155, nil) +
         token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC721, nil) + 1
 
