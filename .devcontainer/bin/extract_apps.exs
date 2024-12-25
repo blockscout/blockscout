@@ -1,5 +1,15 @@
 #!/usr/bin/env elixir
 
+defmodule LocalHelper do
+  # Helper function to safely get configuration values
+  def get_config_value(config, key, name) do
+    case Keyword.get(config, key) do
+      nil -> {:error, name}
+      value -> {:ok, value}
+    end
+  end
+end
+
 # Start Mix application
 Mix.start()
 
@@ -10,12 +20,26 @@ Mix.env(:dev)
 Code.require_file("mix.exs")
 
 # Get the applications from the project configuration
-apps = BlockScout.Mixfile.project()
-  |> Keyword.get(:releases)
-  |> Keyword.get(:blockscout)
-  |> Keyword.get(:applications)
-  |> Keyword.keys()
-  |> Enum.join("\n")
+apps =
+  try do
+    project = BlockScout.Mixfile.project()
+
+    with {:ok, releases} <- LocalHelper.get_config_value(project, :releases, "releases"),
+         {:ok, blockscout} <- LocalHelper.get_config_value(releases, :blockscout, "blockscout release"),
+         {:ok, applications} <- LocalHelper.get_config_value(blockscout, :applications, "applications") do
+      applications
+      |> Keyword.keys()
+      |> Enum.join("\n")
+    else
+      {:error, message} ->
+        IO.puts(:stderr, "Error: #{message} not found in mix.exs configuration")
+        System.halt(1)
+    end
+  rescue
+    error ->
+      IO.puts(:stderr, "Error: Failed to read mix.exs configuration - #{Exception.message(error)}")
+      System.halt(1)
+  end
 
 # Print the applications to stdout
 IO.puts(apps)
