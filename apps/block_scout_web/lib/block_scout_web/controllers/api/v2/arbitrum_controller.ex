@@ -16,7 +16,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   alias Explorer.Chain.Hash
   alias Explorer.PagingOptions
 
-  alias Explorer.Chain.Arbitrum.Reader.API, as: Reader
+  alias Explorer.Chain.Arbitrum.Reader.API.Messages, as: MessagesReader
+  alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: SettlementReader
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -33,7 +34,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
     {messages, next_page} =
       direction
-      |> Reader.messages(options)
+      |> MessagesReader.messages(options)
       |> split_list_by_page()
 
     next_page_params =
@@ -59,7 +60,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   def messages_count(conn, %{"direction" => direction} = _params) do
     conn
     |> put_status(200)
-    |> render(:arbitrum_messages_count, %{count: Reader.messages_count(direction)})
+    |> render(:arbitrum_messages_count, %{count: MessagesReader.messages_count(direction)})
   end
 
   @doc """
@@ -125,7 +126,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   """
   @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch(conn, %{"batch_number" => batch_number} = _params) do
-    case Reader.batch(batch_number, necessity_by_association: @batch_necessity_by_association) do
+    case SettlementReader.batch(batch_number, necessity_by_association: @batch_necessity_by_association) do
       {:ok, batch} ->
         conn
         |> put_status(200)
@@ -167,7 +168,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     # In case of Celestia, `data_key` is the hash of the height and the commitment hash
     with {:ok, :hash, transaction_commitment_hash} <- parse_block_hash_or_number_param(transaction_commitment),
          key <- calculate_celestia_data_key(height, transaction_commitment_hash) do
-      case Reader.get_da_record_by_data_key(key) do
+      case SettlementReader.get_da_record_by_data_key(key) do
         {:ok, {batch_number, _}} ->
           batch(conn, %{"batch_number" => batch_number})
 
@@ -191,7 +192,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   # - The connection struct with rendered response
   @spec one_batch_by_data_availability_info(Plug.Conn.t(), binary(), map()) :: Plug.Conn.t()
   defp one_batch_by_data_availability_info(conn, data_hash, _params) do
-    case Reader.get_da_record_by_data_key(data_hash) do
+    case SettlementReader.get_da_record_by_data_key(data_hash) do
       {:ok, {batch_number, _}} ->
         batch(conn, %{"batch_number" => batch_number})
 
@@ -211,7 +212,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   # - The connection struct with rendered response
   @spec all_batches_by_data_availability_info(Plug.Conn.t(), binary(), map()) :: Plug.Conn.t()
   defp all_batches_by_data_availability_info(conn, data_hash, params) do
-    case Reader.get_all_da_records_by_data_key(data_hash) do
+    case SettlementReader.get_all_da_records_by_data_key(data_hash) do
       {:ok, {batch_numbers, _}} ->
         params = Map.put(params, "batch_numbers", batch_numbers)
         batches(conn, params)
@@ -228,7 +229,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   def batches_count(conn, _params) do
     conn
     |> put_status(200)
-    |> render(:arbitrum_batches_count, %{count: Reader.batches_count()})
+    |> render(:arbitrum_batches_count, %{count: SettlementReader.batches_count()})
   end
 
   @doc """
@@ -251,7 +252,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       |> paging_options()
       |> maybe_add_batch_numbers(params)
       |> Keyword.put(:necessity_by_association, @batch_necessity_by_association)
-      |> Reader.batches()
+      |> SettlementReader.batches()
       |> split_list_by_page()
 
     next_page_params =
@@ -294,7 +295,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       []
       |> Keyword.put(:necessity_by_association, @batch_necessity_by_association)
       |> Keyword.put(:committed?, true)
-      |> Reader.batches()
+      |> SettlementReader.batches()
 
     conn
     |> put_status(200)
@@ -312,7 +313,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   defp batch_latest_number do
-    case Reader.batch(:latest) do
+    case SettlementReader.batch(:latest) do
       {:ok, batch} -> batch.number
       {:error, :not_found} -> 0
     end
@@ -323,7 +324,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   """
   @spec recent_messages_to_l2(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def recent_messages_to_l2(conn, _params) do
-    messages = Reader.relayed_l1_to_l2_messages(paging_options: %PagingOptions{page_size: 6})
+    messages = MessagesReader.relayed_l1_to_l2_messages(paging_options: %PagingOptions{page_size: 6})
 
     conn
     |> put_status(200)

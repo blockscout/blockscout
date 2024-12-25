@@ -4,7 +4,10 @@ This directory contains modules that provide structured access to Arbitrum-speci
 
 ## Module Overview
 
-- `api.ex` - API endpoint-specific functions
+- `api/` - API endpoint-specific functions:
+  - `messages.ex` - Cross-chain message queries
+  - `settlement.ex` - Batch management, DA blob data, and rollup blocks
+  - `general.ex` - General utility functions like transaction log queries
 - `common.ex` - Core query functionality shared between different components (API, Indexer) with configurable database selection
 - `indexer/messages.ex` - Cross-chain message handling
 - `indexer/parent_chain_transactions.ex` - L1 transaction lifecycle

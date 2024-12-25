@@ -19,7 +19,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
   alias EthereumJSONRPC.Encoder
   alias Explorer.Chain
-  alias Explorer.Chain.Arbitrum.Reader.API, as: ArbitrumReader
+  alias Explorer.Chain.Arbitrum.Reader.API.General, as: GeneralReader
+  alias Explorer.Chain.Arbitrum.Reader.API.Messages, as: MessagesReader
+  alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: SettlementReader
   alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Hash.Address
   alias Indexer.Helper, as: IndexerHelper
@@ -141,10 +143,10 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   @spec transaction_to_withdrawals(Hash.Full.t()) :: [Explorer.Arbitrum.Withdraw.t()]
   def transaction_to_withdrawals(transaction_hash) do
     # request messages initiated by the provided transaction from the database
-    messages = ArbitrumReader.l2_to_l1_messages_by_transaction_hash(transaction_hash)
+    messages = MessagesReader.l2_to_l1_messages_by_transaction_hash(transaction_hash)
 
     # request associated logs from the database
-    logs = ArbitrumReader.transaction_to_logs_by_topic0(transaction_hash, @l2_to_l1_event)
+    logs = GeneralReader.transaction_to_logs_by_topic0(transaction_hash, @l2_to_l1_event)
 
     logs
     |> Enum.map(fn log ->
@@ -182,7 +184,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   """
   @spec claim(non_neg_integer()) :: {:ok, [contract_address: String.t(), calldata: String.t()]} | {:error, term()}
   def claim(message_id) do
-    case ArbitrumReader.l2_to_l1_message_by_id(message_id) do
+    case MessagesReader.l2_to_l1_message_by_id(message_id) do
       nil ->
         Logger.error("Unable to find withdrawal with id #{message_id}")
         {:error, :not_found}
@@ -219,7 +221,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   defp claim_message(message) do
     # request associated log from the database
     case message.originating_transaction_hash
-         |> ArbitrumReader.transaction_to_logs_by_topic0(@l2_to_l1_event)
+         |> GeneralReader.transaction_to_logs_by_topic0(@l2_to_l1_event)
          |> Enum.find(fn log -> Hash.to_integer(log.fourth_topic) == message.message_id end) do
       nil ->
         Logger.error("Unable to find log with message_id #{message.message_id}")
@@ -596,7 +598,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # - `nil` if the required data is not found in the database
   @spec get_size_for_proof_from_database() :: non_neg_integer() | nil
   defp get_size_for_proof_from_database do
-    case ArbitrumReader.highest_confirmed_block() do
+    case SettlementReader.highest_confirmed_block() do
       nil ->
         nil
 
