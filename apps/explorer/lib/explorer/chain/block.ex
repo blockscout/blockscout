@@ -5,6 +5,8 @@ defmodule Explorer.Chain.Block.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Blocks
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias Explorer.Chain.{
     Address,
     Block,
@@ -23,7 +25,7 @@ defmodule Explorer.Chain.Block.Schema do
   alias Explorer.Chain.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
-  @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_fields (case @chain_type do
                         :ethereum ->
                           elem(
                             quote do
@@ -185,6 +187,7 @@ defmodule Explorer.Chain.Block do
   require Explorer.Chain.Block.Schema
 
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Block.{EmissionReward, Reward}
@@ -193,7 +196,7 @@ defmodule Explorer.Chain.Block do
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
 
-  @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_optional_attrs (case @chain_type do
                                 :rsk ->
                                   ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
@@ -246,7 +249,7 @@ defmodule Explorer.Chain.Block do
    * `refetch_needed` - `true` if block has missing data and has to be refetched.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `base_fee_per_gas` - Minimum fee required per unit of gas. Fee adjusts based on network congestion.
-  #{case Application.compile_env(:explorer, :chain_type) do
+  #{case @chain_type do
     :rsk -> """
        * `bitcoin_merged_mining_header` - Bitcoin merged mining header on Rootstock chains.
        * `bitcoin_merged_mining_coinbase_transaction` - Bitcoin merged mining coinbase transaction on Rootstock chains.

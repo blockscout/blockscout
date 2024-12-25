@@ -26,7 +26,7 @@ defmodule Explorer.ChainTest do
     Wei
   }
 
-  alias Explorer.{Chain, Etherscan, TestHelper}
+  alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
@@ -127,10 +127,10 @@ defmodule Explorer.ChainTest do
       assert {:ok, _, _} = Chain.last_db_block_status()
     end
 
-    test "return {:ok, last_block_period} if block is not in healthy period" do
+    test "return {:stale, _, _} if block is not in healthy period" do
       insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
 
-      assert {:error, _, _} = Chain.last_db_block_status()
+      assert {:stale, _, _} = Chain.last_db_block_status()
     end
   end
 
@@ -141,10 +141,10 @@ defmodule Explorer.ChainTest do
       assert {:ok, _, _} = Chain.last_cache_block_status()
     end
 
-    test "return error if cache is stale" do
+    test "return {:stale, _, _} if cache is stale" do
       insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
 
-      assert {:error, _, _} = Chain.last_cache_block_status()
+      assert {:stale, _, _} = Chain.last_cache_block_status()
     end
   end
 
@@ -756,6 +756,13 @@ defmodule Explorer.ChainTest do
 
       insert(:pending_block_operation, block: block, block_number: block.number)
 
+      configuration = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)
+      Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, configuration)
+      end)
+
       refute Chain.finished_indexing_internal_transactions?()
     end
   end
@@ -1066,9 +1073,12 @@ defmodule Explorer.ChainTest do
     setup do
       Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
       Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
+      configuration = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)
+      Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false)
 
       on_exit(fn ->
         Application.put_env(:indexer, :trace_first_block, 0)
+        Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, configuration)
         Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
       end)
     end

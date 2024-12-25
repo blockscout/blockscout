@@ -5,6 +5,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   use GenServer
   use Spandex.Decorators
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Indexer.Tracer
   require Logger
@@ -165,7 +166,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Process.cancel_timer(timer)
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :stability ->
       defp fetch_validators_async do
         GenServer.cast(Indexer.Fetcher.Stability.Validator, :update_validators_list)
@@ -307,7 +308,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @spec remove_assets_by_number(non_neg_integer()) :: any()
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :optimism ->
       # Removes all rows from `op_transaction_batches` and `op_withdrawals` tables
       # previously written starting from the reorg block number

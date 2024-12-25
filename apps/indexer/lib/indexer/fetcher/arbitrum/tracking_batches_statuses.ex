@@ -52,6 +52,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
   import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
 
+  alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
   alias Indexer.Helper, as: IndexerHelper
   alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
@@ -160,7 +161,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         } = state
       ) do
     %{outbox: outbox_address, sequencer_inbox: sequencer_inbox_address} =
-      Rpc.get_contracts_for_rollup(
+      ArbitrumRpc.get_contracts_for_rollup(
         l1_rollup_address,
         :inbox_outbox,
         json_l1_rpc_named_arguments

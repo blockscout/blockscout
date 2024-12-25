@@ -1,9 +1,10 @@
 defmodule Explorer.Chain.Token.Schema do
   @moduledoc false
+  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias Explorer.Chain.{Address, Hash}
 
-  if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+  if @bridged_token_enabled do
     @bridged_field [
       quote do
         field(:bridged, :boolean)

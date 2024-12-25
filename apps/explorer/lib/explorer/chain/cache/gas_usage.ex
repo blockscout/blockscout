@@ -2,6 +2,7 @@ defmodule Explorer.Chain.Cache.GasUsage do
   @moduledoc """
   Cache for total gas usage.
   """
+  use Utils.CompileTimeEnvHelper, enabled: [:explorer, [__MODULE__, :enabled]]
 
   require Logger
 
@@ -9,9 +10,6 @@ defmodule Explorer.Chain.Cache.GasUsage do
     only: [
       from: 2
     ]
-
-  config = Application.compile_env(:explorer, __MODULE__)
-  @enabled Keyword.get(config, :enabled)
 
   use Explorer.Chain.MapCache,
     name: :gas_usage,

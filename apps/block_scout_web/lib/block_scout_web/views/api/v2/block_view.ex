@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.BlockView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.BlockView
   alias BlockScoutWeb.API.V2.{ApiView, Helper}
@@ -37,8 +38,6 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "height" => block.number,
       "timestamp" => block.timestamp,
       "transaction_count" => count_transactions(block),
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-      "tx_count" => count_transactions(block),
       "miner" => Helper.address_with_info(nil, block.miner, block.miner_hash, false),
       "size" => block.size,
       "hash" => block.hash,
@@ -60,8 +59,6 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "burnt_fees_percentage" => burnt_fees_percentage(burnt_fees, transaction_fees),
       "type" => block |> BlockView.block_type() |> String.downcase(),
       "transaction_fees" => transaction_fees,
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_fees` property
-      "tx_fees" => transaction_fees,
       "withdrawals_count" => count_withdrawals(block)
     }
     |> chain_type_fields(block, single_block?)
@@ -103,7 +100,7 @@ defmodule BlockScoutWeb.API.V2.BlockView do
   def count_withdrawals(%Block{withdrawals: withdrawals}) when is_list(withdrawals), do: Enum.count(withdrawals)
   def count_withdrawals(_), do: nil
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :rsk ->
       defp chain_type_fields(result, block, single_block?) do
         if single_block? do

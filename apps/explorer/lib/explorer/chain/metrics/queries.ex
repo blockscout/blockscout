@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Metrics.Queries do
   @moduledoc """
-  Module for DB queries to get chain metrics exposed at /metrics endpoint
+  Module for DB queries to get chain metrics exposed at /public-metrics endpoint
   """
 
   import Ecto.Query,

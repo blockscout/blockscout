@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
   @moduledoc """
     API V2 helper
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Address
@@ -118,7 +119,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
     }
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :filecoin ->
       defp address_chain_type_fields(result, address) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage

@@ -17,10 +17,6 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       "root_hash" => batch.root_hash,
       "l1_transaction_count" => batch.l1_transaction_count,
       "l2_transaction_count" => batch.l2_transaction_count,
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_count` property
-      "l1_tx_count" => batch.l1_transaction_count,
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_count` property
-      "l2_tx_count" => batch.l2_transaction_count,
       "l1_gas_price" => batch.l1_gas_price,
       "l2_fair_gas_price" => batch.l2_fair_gas_price,
       "start_block" => batch.start_block,
@@ -68,8 +64,6 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       %{
         "number" => batch.number,
         "timestamp" => batch.timestamp,
-        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-        "tx_count" => batch.l1_transaction_count + batch.l2_transaction_count,
         "transaction_count" => batch.l1_transaction_count + batch.l2_transaction_count
       }
       |> add_l1_transactions_info_and_status(batch)

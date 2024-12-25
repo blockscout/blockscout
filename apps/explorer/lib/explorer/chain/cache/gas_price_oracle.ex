@@ -186,13 +186,14 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
       %Decimal{} = base_fee ->
         base_fee_wei = base_fee |> Wei.from(:wei)
         exchange_rate = Market.get_coin_exchange_rate()
-
         average_block_time = get_average_block_time()
 
+        gas_prices = compose_gas_price(base_fee_wei, average_block_time, exchange_rate, base_fee_wei, 0)
+
         %{
-          slow: compose_gas_price(base_fee_wei, average_block_time, exchange_rate, base_fee_wei, 0),
-          average: compose_gas_price(base_fee_wei, average_block_time, exchange_rate, base_fee_wei, 0),
-          fast: compose_gas_price(base_fee_wei, average_block_time, exchange_rate, base_fee_wei, 0)
+          slow: gas_prices,
+          average: gas_prices,
+          fast: gas_prices
         }
 
       _ ->
@@ -280,7 +281,12 @@ defmodule Explorer.Chain.Cache.GasPriceOracle do
   defp compose_gas_price(fee, time, exchange_rate, base_fee, priority_fee) do
     %{
       price: fee |> format_wei(),
-      time: time && time |> Decimal.to_float(),
+      time:
+        case time do
+          time when is_float(time) -> time
+          %Decimal{} = time -> Decimal.to_float(time)
+          _ -> nil
+        end,
       fiat_price: fiat_fee(fee, exchange_rate),
       base_fee: base_fee |> format_wei(),
       priority_fee: base_fee && priority_fee && priority_fee |> Decimal.new() |> Wei.from(:wei) |> format_wei(),

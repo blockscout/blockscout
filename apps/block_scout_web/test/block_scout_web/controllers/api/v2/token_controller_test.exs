@@ -1050,24 +1050,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert Address.checksum(instance.owner_address_hash) == data["owner"]["hash"]
     end
 
-    test "get token instance by token id which is not presented in DB", %{conn: conn} do
+    test "get 404 on token instance which is not presented in DB", %{conn: conn} do
       token = insert(:token, type: "ERC-721")
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
-      token_address = Address.checksum(token.contract_address.hash)
-      token_name = token.name
-      token_type = token.type
 
-      assert %{
-               "animation_url" => nil,
-               "external_app_url" => nil,
-               "id" => "0",
-               "image_url" => nil,
-               "is_unique" => true,
-               "metadata" => nil,
-               "owner" => nil,
-               "token" => %{"address" => ^token_address, "name" => ^token_name, "type" => ^token_type}
-             } = json_response(request, 200)
+      assert %{"message" => "Not found"} = json_response(request, 404)
     end
 
     # https://github.com/blockscout/blockscout/issues/9906
