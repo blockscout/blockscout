@@ -38,7 +38,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
     This function recursively collects daily transaction statistics, starting
     from the earliest date in the range and moving forward towards the current
-    date. Thhe current day's stats are set to zero to avoid presenting incomplete
+    date. The current day's stats are set to zero to avoid presenting incomplete
     data.
 
     The function attempts to find the appropriate block range for each day and
@@ -66,7 +66,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       records = [%{date: date_today(), number_of_transactions: 0, gas_used: 0, total_fee: 0} | records]
       {:ok, records}
     else
-      # Сalculate the date for which the stats are required by subtracting the specified
+      # Calculate the date for which the stats are required by subtracting the specified
       # number of days from the current moment,
       day_to_fetch = Date.add(date_today(), -1 * (num_days - 1))
 
