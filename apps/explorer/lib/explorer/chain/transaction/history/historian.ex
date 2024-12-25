@@ -53,7 +53,6 @@ defmodule Explorer.Chain.Transaction.History.Historian do
     - `{:ok, [dated_record()]}`: A list of daily transaction statistics on success.
     - `:error`: If an unrecoverable error occurs during compilation.
   """
-  @spec compile_records(non_neg_integer()) :: {:ok, [dated_record()]} | :error
   @spec compile_records(non_neg_integer(), [dated_record()]) :: {:ok, [dated_record()]} | :error
   def compile_records(num_days, records \\ []) do
     Logger.info("tx/per day chart: collect records for transactions per day stats")

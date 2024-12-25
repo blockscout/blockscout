@@ -101,7 +101,6 @@ defmodule Explorer.History.Process do
     - The configuration value if found in the :explorer application settings,
       otherwise the default value.
   """
-  @spec config_or_default(atom(), term()) :: term()
   @spec config_or_default(atom(), term(), module()) :: term()
   def config_or_default(key, default, module \\ __MODULE__) do
     Application.get_env(:explorer, module, [])[key] || default

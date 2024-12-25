@@ -46,7 +46,6 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
     each representing the transaction statistics for a single day within the
     specified range.
   """
-  @spec by_date_range(Date.t(), Date.t()) :: [__MODULE__]
   @spec by_date_range(Date.t(), Date.t(), keyword()) :: [__MODULE__]
   def by_date_range(earliest, latest, options \\ []) do
     # Create a query
