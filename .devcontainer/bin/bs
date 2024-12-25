@@ -164,7 +164,9 @@ initialize_db() {
 
 # Define the recompile subroutine
 recompile() {
-    APPS=$($(dirname $0)/extract_apps.exs)
+    FALLBACK_APPS="block_scout_web ethereum_jsonrpc explorer indexer"
+    APPS=$($(dirname $0)/extract_apps.exs) || APPS="$FALLBACK_APPS"
+    [ -z "$APPS" ] && APPS="$FALLBACK_APPS"
     mix deps.clean $APPS
     mix deps.get
     mix deps.compile --force
