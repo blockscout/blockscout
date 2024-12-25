@@ -24,6 +24,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.Settlement do
   import Explorer.Chain, only: [select_repo: 1]
 
   alias Explorer.Chain.Arbitrum.{
+    BatchBlock,
     BatchToDaBlob,
     BatchTransaction,
     DaMultiPurposeRecord,
