@@ -59,6 +59,51 @@ FORMAT=false
 DOCS=false
 HELP=false
 
+# Define the help function
+show_help() {
+    echo "Usage: bs [OPTION]"
+    echo "Orchestrate typical tasks when developing Blockscout backend server"
+    echo
+    echo "Options:"
+    echo "  --help        Show this help message and exit"
+    echo "  --init        Initialize the project directory"
+    echo "  --format      Run code formatter"
+    echo "  --spellcheck  Run spellcheck"
+    echo "  --dialyzer    Run dialyzer"
+    echo "  --credo       Run credo"
+    echo "  --docs        Generate documentation"
+    echo "  --recompile   Re-fetch dependencies and recompile"
+    echo "  --db-init     (Re)initialize the database"
+    echo "  --no-sync     Run the server with disabled indexer, so only the API is available"
+    echo
+    echo "If no option is provided, the script will run the backend server."
+}
+
+# Define valid arguments
+VALID_ARGS=(
+    "--help"
+    "--init"
+    "--no-sync"
+    "--db-init"
+    "--recompile"
+    "--spellcheck"
+    "--dialyzer"
+    "--credo"
+    "--format"
+    "--docs"
+)
+
+# Validate arguments
+for arg in "$@"
+do
+    if [[ ! " ${VALID_ARGS[@]} " =~ " ${arg} " ]]; then
+        echo "Error: Unknown argument '${arg}'"
+        echo
+        show_help
+        exit 1
+    fi
+done
+
 # Parse command line arguments
 for arg in "$@"
 do
@@ -105,26 +150,6 @@ do
         ;;
     esac
 done
-
-# Define the help function
-show_help() {
-    echo "Usage: bs [OPTION]"
-    echo "Orchestrate typical tasks when developing Blockscout backend server"
-    echo
-    echo "Options:"
-    echo "  --help        Show this help message and exit"
-    echo "  --init        Initialize the project directory"
-    echo "  --format      Run code formatter"
-    echo "  --spellcheck  Run spellcheck"
-    echo "  --dialyzer    Run dialyzer"
-    echo "  --credo       Run credo"
-    echo "  --docs        Generate documentation"
-    echo "  --recompile   Re-fetch dependencies and recompile"
-    echo "  --db-init     (Re)initialize the database"
-    echo "  --no-sync     Run the server with disabled indexer, so only the API is available"
-    echo
-    echo "If no option is provided, the script will run the backend server."
-}
 
 # If --help argument is passed, show help and exit
 if [ "$HELP" = true ]; then
