@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Cache.TransactionActionUniswapPools do
   """
   use GenServer
 
-  @cache_name :tx_actions_uniswap_pools_cache
+  @cache_name :transaction_actions_uniswap_pools_cache
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do

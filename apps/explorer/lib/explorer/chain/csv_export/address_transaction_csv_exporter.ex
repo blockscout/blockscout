@@ -19,7 +19,6 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
 
     transactions
     |> Transaction.decode_transactions(true, api?: true)
-    |> elem(0)
     |> Enum.zip(transactions)
     |> to_csv_format(address_hash, exchange_rate)
     |> Helper.dump_to_stream()
@@ -61,8 +60,8 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
     ]
 
     date_to_prices =
-      Enum.reduce(transactions_with_decoded_data, %{}, fn {_decoded_data, tx}, acc ->
-        date = tx |> Transaction.block_timestamp() |> DateTime.to_date()
+      Enum.reduce(transactions_with_decoded_data, %{}, fn {_decoded_data, transaction}, acc ->
+        date = transaction |> Transaction.block_timestamp() |> DateTime.to_date()
 
         if Map.has_key?(acc, date) do
           acc

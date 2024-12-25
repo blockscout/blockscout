@@ -19,9 +19,9 @@ defmodule Indexer.Fetcher.TransactionAction do
   alias Explorer.Chain.{Block, BlockNumberHelper, Log, TransactionAction}
   alias Indexer.Transform.{Addresses, TransactionActions}
 
-  @stage_first_block "tx_action_first_block"
-  @stage_next_block "tx_action_next_block"
-  @stage_last_block "tx_action_last_block"
+  @stage_first_block "transaction_action_first_block"
+  @stage_next_block "transaction_action_next_block"
+  @stage_last_block "transaction_action_last_block"
 
   defstruct first_block: nil, next_block: nil, last_block: nil, protocols: [], task: nil, pid: nil
 
@@ -178,7 +178,7 @@ defmodule Indexer.Fetcher.TransactionAction do
           transaction_actions: transaction_actions
         })
 
-      tx_actions =
+      transaction_actions_with_data =
         Enum.map(transaction_actions, fn action ->
           Map.put(action, :data, Map.delete(action.data, :block_number))
         end)
@@ -186,7 +186,7 @@ defmodule Indexer.Fetcher.TransactionAction do
       {:ok, _} =
         Chain.import(%{
           addresses: %{params: addresses, on_conflict: :nothing},
-          transaction_actions: %{params: tx_actions},
+          transaction_actions: %{params: transaction_actions_with_data},
           timeout: :infinity
         })
 
@@ -203,7 +203,7 @@ defmodule Indexer.Fetcher.TransactionAction do
 
       Logger.info(
         "Block #{block_number} handled successfully. Progress: #{progress_percentage}%. Initial block range: #{first_block}..#{last_block}." <>
-          " Actions found: #{Enum.count(tx_actions)}." <>
+          " Actions found: #{Enum.count(transaction_actions_with_data)}." <>
           if(next_block_new >= first_block, do: " Remaining block range: #{first_block}..#{next_block_new}", else: "")
       )
 

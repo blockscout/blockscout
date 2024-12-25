@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
-  alias Explorer.Chain.Import.Runner.{TokenInstances, Tokens}
+  alias Explorer.Chain.Import.Runner.{Addresses, TokenInstances, Tokens}
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Utility.MissingRangesManipulator
 
@@ -158,6 +158,23 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :address_referencing,
         :blocks,
         :derive_transaction_forks
+      )
+    end)
+    |> Multi.run(:delete_address_coin_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_address_coin_balances(repo, non_consensus_blocks, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_address_coin_balances
+      )
+    end)
+    |> Multi.run(:derive_address_fetched_coin_balances, fn repo,
+                                                           %{delete_address_coin_balances: delete_address_coin_balances} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> derive_address_fetched_coin_balances(repo, delete_address_coin_balances, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :derive_address_fetched_coin_balances
       )
     end)
     |> Multi.run(:delete_address_token_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
@@ -464,6 +481,66 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     )
   end
 
+  defp delete_address_coin_balances(_repo, [], _options), do: {:ok, []}
+
+  defp delete_address_coin_balances(repo, non_consensus_blocks, %{timeout: timeout}) do
+    non_consensus_block_numbers = Enum.map(non_consensus_blocks, fn {number, _hash} -> number end)
+
+    ordered_query =
+      from(cb in Address.CoinBalance,
+        where: cb.block_number in ^non_consensus_block_numbers,
+        select: map(cb, [:address_hash, :block_number]),
+        # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
+        order_by: [cb.address_hash, cb.block_number],
+        lock: "FOR UPDATE"
+      )
+
+    query =
+      from(cb in Address.CoinBalance,
+        select: cb.address_hash,
+        inner_join: ordered_address_coin_balance in subquery(ordered_query),
+        on:
+          ordered_address_coin_balance.address_hash == cb.address_hash and
+            ordered_address_coin_balance.block_number == cb.block_number
+      )
+
+    try do
+      {_count, deleted_coin_balances_address_hashes} = repo.delete_all(query, timeout: timeout)
+
+      {:ok, deleted_coin_balances_address_hashes}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, block_numbers: non_consensus_block_numbers}}
+    end
+  end
+
+  defp derive_address_fetched_coin_balances(_repo, [], _options), do: {:ok, []}
+
+  defp derive_address_fetched_coin_balances(repo, deleted_balances_address_hashes, options) do
+    last_balances_query =
+      from(cb in Address.CoinBalance,
+        where: cb.address_hash in ^deleted_balances_address_hashes,
+        where: not is_nil(cb.value),
+        distinct: cb.address_hash,
+        order_by: [asc: cb.address_hash, desc: cb.block_number],
+        select: %{
+          hash: cb.address_hash,
+          fetched_coin_balance: cb.value,
+          fetched_coin_balance_block_number: cb.block_number
+        }
+      )
+
+    addresses_params =
+      last_balances_query
+      |> repo.all()
+      |> Enum.sort_by(& &1.hash)
+
+    addresses_options =
+      Map.put(options, :on_conflict, {:replace, [:fetched_coin_balance, :fetched_coin_balance_block_number]})
+
+    Addresses.insert(repo, addresses_params, addresses_options)
+  end
+
   defp delete_address_token_balances(_, [], _), do: {:ok, []}
 
   defp delete_address_token_balances(repo, non_consensus_blocks, %{timeout: timeout}) do
@@ -530,10 +607,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select:
           map(ctb, [
             :address_hash,
-            :block_number,
             :token_contract_address_hash,
             :token_id,
-            :token_type,
             # Used to determine if `address_hash` was a holder of `token_contract_address_hash` before
 
             # `address_current_token_balance` is deleted in `update_tokens_holder_count`.
@@ -566,28 +641,43 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          %{timeout: timeout} = options
        )
        when is_list(deleted_address_current_token_balances) do
-    new_current_token_balances_placeholders =
-      Enum.map(deleted_address_current_token_balances, fn deleted_balance ->
-        now = DateTime.utc_now()
+    final_query = derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances)
 
-        %{
-          address_hash: deleted_balance.address_hash,
-          token_contract_address_hash: deleted_balance.token_contract_address_hash,
-          token_id: deleted_balance.token_id,
-          token_type: deleted_balance.token_type,
-          block_number: deleted_balance.block_number,
-          value: nil,
-          value_fetched_at: nil,
-          inserted_at: now,
-          updated_at: now
-        }
-      end)
+    new_current_token_balance_query =
+      from(new_current_token_balance in subquery(final_query),
+        inner_join: tb in Address.TokenBalance,
+        on:
+          tb.address_hash == new_current_token_balance.address_hash and
+            tb.token_contract_address_hash == new_current_token_balance.token_contract_address_hash and
+            ((is_nil(tb.token_id) and is_nil(new_current_token_balance.token_id)) or
+               (tb.token_id == new_current_token_balance.token_id and
+                  not is_nil(tb.token_id) and not is_nil(new_current_token_balance.token_id))) and
+            tb.block_number == new_current_token_balance.block_number,
+        select: %{
+          address_hash: new_current_token_balance.address_hash,
+          token_contract_address_hash: new_current_token_balance.token_contract_address_hash,
+          token_id: new_current_token_balance.token_id,
+          token_type: tb.token_type,
+          block_number: new_current_token_balance.block_number,
+          value: tb.value,
+          value_fetched_at: tb.value_fetched_at,
+          inserted_at: over(min(tb.inserted_at), :w),
+          updated_at: over(max(tb.updated_at), :w)
+        },
+        windows: [
+          w: [partition_by: [tb.address_hash, tb.token_contract_address_hash, tb.token_id]]
+        ]
+      )
+
+    current_token_balance =
+      new_current_token_balance_query
+      |> repo.all()
 
     timestamps = Import.timestamps()
 
     result =
       CurrentTokenBalances.insert_changes_list_with_and_without_token_id(
-        new_current_token_balances_placeholders,
+        current_token_balance,
         repo,
         timestamps,
         timeout,
@@ -738,61 +828,27 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp refs_to_token_transfers_query(historical_token_transfers_query, filtered_query) do
-    if Application.get_env(:explorer, :chain_type) == :polygon_zkevm do
-      from(historical_tt in subquery(historical_token_transfers_query),
-        inner_join: tt in subquery(filtered_query),
-        on:
-          tt.token_contract_address_hash == historical_tt.token_contract_address_hash and
-            tt.block_number == historical_tt.block_number and
-            fragment("? @> ARRAY[?::decimal]", tt.token_ids, historical_tt.token_id),
-        inner_join: t in Transaction,
-        on: tt.transaction_hash == t.hash,
-        select: %{
-          token_contract_address_hash: tt.token_contract_address_hash,
-          token_id: historical_tt.token_id,
-          block_number: tt.block_number,
-          transaction_hash: t.hash,
-          log_index: tt.log_index,
-          position:
-            over(row_number(),
-              partition_by: [tt.token_contract_address_hash, historical_tt.token_id, tt.block_number],
-              order_by: [desc: t.index, desc: tt.log_index]
-            )
-        }
-      )
-    else
-      from(historical_tt in subquery(historical_token_transfers_query),
-        inner_join: tt in subquery(filtered_query),
-        on:
-          tt.token_contract_address_hash == historical_tt.token_contract_address_hash and
-            tt.block_number == historical_tt.block_number and
-            fragment("? @> ARRAY[?::decimal]", tt.token_ids, historical_tt.token_id),
-        select: %{
-          token_contract_address_hash: tt.token_contract_address_hash,
-          token_id: historical_tt.token_id,
-          log_index: max(tt.log_index),
-          block_number: tt.block_number
-        },
-        group_by: [tt.token_contract_address_hash, historical_tt.token_id, tt.block_number]
-      )
-    end
+    from(historical_tt in subquery(historical_token_transfers_query),
+      inner_join: tt in subquery(filtered_query),
+      on:
+        tt.token_contract_address_hash == historical_tt.token_contract_address_hash and
+          tt.block_number == historical_tt.block_number and
+          fragment("? @> ARRAY[?::decimal]", tt.token_ids, historical_tt.token_id),
+      select: %{
+        token_contract_address_hash: tt.token_contract_address_hash,
+        token_id: historical_tt.token_id,
+        log_index: max(tt.log_index),
+        block_number: tt.block_number
+      },
+      group_by: [tt.token_contract_address_hash, historical_tt.token_id, tt.block_number]
+    )
   end
 
   defp derived_token_transfers_query(refs_to_token_transfers, filtered_query) do
-    if Application.get_env(:explorer, :chain_type) == :polygon_zkevm do
-      from(tt in filtered_query,
-        inner_join: tt_1 in subquery(refs_to_token_transfers),
-        on:
-          tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number and
-            tt_1.transaction_hash == tt.transaction_hash,
-        where: tt_1.position == 1
-      )
-    else
-      from(tt in filtered_query,
-        inner_join: tt_1 in subquery(refs_to_token_transfers),
-        on: tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number
-      )
-    end
+    from(tt in filtered_query,
+      inner_join: tt_1 in subquery(refs_to_token_transfers),
+      on: tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number
+    )
   end
 
   defp token_instances_on_conflict do
@@ -810,6 +866,43 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         ]
       ]
     )
+  end
+
+  defp derive_address_current_token_balances_grouped_query(deleted_address_current_token_balances) do
+    initial_query =
+      from(tb in Address.TokenBalance,
+        select: %{
+          address_hash: tb.address_hash,
+          token_contract_address_hash: tb.token_contract_address_hash,
+          token_id: tb.token_id,
+          block_number: max(tb.block_number)
+        },
+        group_by: [tb.address_hash, tb.token_contract_address_hash, tb.token_id]
+      )
+
+    Enum.reduce(deleted_address_current_token_balances, initial_query, fn %{
+                                                                            address_hash: address_hash,
+                                                                            token_contract_address_hash:
+                                                                              token_contract_address_hash,
+                                                                            token_id: token_id
+                                                                          },
+                                                                          acc_query ->
+      if token_id do
+        from(tb in acc_query,
+          or_where:
+            tb.address_hash == ^address_hash and
+              tb.token_contract_address_hash == ^token_contract_address_hash and
+              tb.token_id == ^token_id
+        )
+      else
+        from(tb in acc_query,
+          or_where:
+            tb.address_hash == ^address_hash and
+              tb.token_contract_address_hash == ^token_contract_address_hash and
+              is_nil(tb.token_id)
+        )
+      end
+    end)
   end
 
   # `block_rewards` are linked to `blocks.hash`, but fetched by `blocks.number`, so when a block with the same number is

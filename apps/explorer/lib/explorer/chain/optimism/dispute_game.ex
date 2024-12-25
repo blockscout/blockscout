@@ -78,7 +78,7 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
     base_query
     |> page_dispute_games(paging_options)
     |> limit(^paging_options.page_size)
-    |> select_repo(options).all()
+    |> select_repo(options).all(timeout: :infinity)
   end
 
   defp page_dispute_games(query, %PagingOptions{key: nil}), do: query

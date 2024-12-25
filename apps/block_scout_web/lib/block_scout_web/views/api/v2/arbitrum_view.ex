@@ -1,9 +1,18 @@
 defmodule BlockScoutWeb.API.V2.ArbitrumView do
   use BlockScoutWeb, :view
 
+  alias BlockScoutWeb.API.V2.ApiView
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction, Reader}
+
+  @doc """
+    Function to render error\\text responses for GET requests
+    to `/api/v2/arbitrum/messages/claim/:position` endpoint.
+  """
+  def render("message.json", assigns) do
+    ApiView.render("message.json", assigns)
+  end
 
   @doc """
     Function to render GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
@@ -59,6 +68,40 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   @doc """
+    Function to render GET requests to `/api/v2/arbitrum/messages/claim/:message_id` endpoint.
+  """
+  def render("arbitrum_claim_message.json", %{calldata: calldata, address: address}) do
+    %{
+      "calldata" => calldata,
+      "outbox_address" => address
+    }
+  end
+
+  @doc """
+    Function to render GET requests to `/api/v2/arbitrum/messages/from-rollup/:msg_id/proof` endpoint.
+  """
+  def render("arbitrum_withdrawals.json", %{withdrawals: withdrawals}) do
+    withdrawals_out =
+      withdrawals
+      |> Enum.map(fn withdraw ->
+        %{
+          "id" => withdraw.message_id,
+          "status" => withdraw.status,
+          "caller" => withdraw.caller,
+          "destination" => withdraw.destination,
+          "arb_block_number" => withdraw.arb_block_number,
+          "eth_block_number" => withdraw.eth_block_number,
+          "l2_timestamp" => withdraw.l2_timestamp,
+          "callvalue" => withdraw.callvalue,
+          "data" => withdraw.data,
+          "token" => withdraw.token
+        }
+      end)
+
+    %{items: withdrawals_out}
+  end
+
+  @doc """
     Function to render GET requests to `/api/v2/arbitrum/batches/:batch_number` endpoint.
   """
   def render("arbitrum_batch.json", %{batch: batch}) do
@@ -70,7 +113,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
       "before_acc" => batch.before_acc,
       "after_acc" => batch.after_acc
     }
-    |> add_l1_tx_info(batch)
+    |> add_l1_transaction_info(batch)
     |> add_da_info(batch)
   end
 
@@ -170,7 +213,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
       "blocks_count" => batch.end_block - batch.start_block + 1,
       "batch_data_container" => batch.batch_container
     }
-    |> add_l1_tx_info(batch)
+    |> add_l1_transaction_info(batch)
   end
 
   @doc """
@@ -245,7 +288,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
         }) :: map()
   defp extend_with_settlement_info(out_json, arbitrum_entity) do
     out_json
-    |> add_l1_txs_info_and_status(%{
+    |> add_l1_transactions_info_and_status(%{
       batch_number: get_batch_number(arbitrum_entity),
       commitment_transaction: arbitrum_entity.arbitrum_commitment_transaction,
       confirmation_transaction: arbitrum_entity.arbitrum_confirmation_transaction
@@ -285,25 +328,25 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   # Augments an output JSON with commit transaction details and its status.
-  @spec add_l1_tx_info(map(), %{
+  @spec add_l1_transaction_info(map(), %{
           :commitment_transaction => LifecycleTransaction.t() | LifecycleTransaction.to_import(),
           optional(any()) => any()
         }) :: map()
-  defp add_l1_tx_info(out_json, %L1Batch{} = batch) do
-    l1_tx = %{commitment_transaction: handle_associated_l1_txs_properly(batch.commitment_transaction)}
+  defp add_l1_transaction_info(out_json, %L1Batch{} = batch) do
+    l1_transaction = %{commitment_transaction: handle_associated_l1_transactions_properly(batch.commitment_transaction)}
 
     out_json
     |> Map.merge(%{
       "commitment_transaction" => %{
-        "hash" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :hash),
-        "block_number" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :block),
-        "timestamp" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :ts),
-        "status" => APIV2Helper.get_2map_data(l1_tx, :commitment_transaction, :status)
+        "hash" => APIV2Helper.get_2map_data(l1_transaction, :commitment_transaction, :hash),
+        "block_number" => APIV2Helper.get_2map_data(l1_transaction, :commitment_transaction, :block),
+        "timestamp" => APIV2Helper.get_2map_data(l1_transaction, :commitment_transaction, :ts),
+        "status" => APIV2Helper.get_2map_data(l1_transaction, :commitment_transaction, :status)
       }
     })
   end
 
-  defp add_l1_tx_info(out_json, %{
+  defp add_l1_transaction_info(out_json, %{
          commitment_transaction: %{
            hash: hash,
            block_number: block_number,
@@ -419,34 +462,34 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     out
     |> Map.merge(%{
       "height" => Map.get(da_info, "height"),
-      "tx_commitment" => Map.get(da_info, "tx_commitment")
+      "transaction_commitment" => Map.get(da_info, "transaction_commitment")
     })
   end
 
   # Augments an output JSON with commit and confirm transaction details and their statuses.
-  @spec add_l1_txs_info_and_status(map(), %{
+  @spec add_l1_transactions_info_and_status(map(), %{
           :commitment_transaction => any(),
           :confirmation_transaction => any(),
           optional(:batch_number) => any()
         }) :: map()
-  defp add_l1_txs_info_and_status(out_json, arbitrum_item)
+  defp add_l1_transactions_info_and_status(out_json, arbitrum_item)
        when is_map(arbitrum_item) and
               is_map_key(arbitrum_item, :commitment_transaction) and
               is_map_key(arbitrum_item, :confirmation_transaction) do
-    l1_txs = get_associated_l1_txs(arbitrum_item)
+    l1_transactions = get_associated_l1_transactions(arbitrum_item)
 
     out_json
     |> Map.merge(%{
       "status" => block_or_transaction_status(arbitrum_item),
       "commitment_transaction" => %{
-        "hash" => APIV2Helper.get_2map_data(l1_txs, :commitment_transaction, :hash),
-        "timestamp" => APIV2Helper.get_2map_data(l1_txs, :commitment_transaction, :ts),
-        "status" => APIV2Helper.get_2map_data(l1_txs, :commitment_transaction, :status)
+        "hash" => APIV2Helper.get_2map_data(l1_transactions, :commitment_transaction, :hash),
+        "timestamp" => APIV2Helper.get_2map_data(l1_transactions, :commitment_transaction, :ts),
+        "status" => APIV2Helper.get_2map_data(l1_transactions, :commitment_transaction, :status)
       },
       "confirmation_transaction" => %{
-        "hash" => APIV2Helper.get_2map_data(l1_txs, :confirmation_transaction, :hash),
-        "timestamp" => APIV2Helper.get_2map_data(l1_txs, :confirmation_transaction, :ts),
-        "status" => APIV2Helper.get_2map_data(l1_txs, :confirmation_transaction, :status)
+        "hash" => APIV2Helper.get_2map_data(l1_transactions, :confirmation_transaction, :hash),
+        "timestamp" => APIV2Helper.get_2map_data(l1_transactions, :confirmation_transaction, :ts),
+        "status" => APIV2Helper.get_2map_data(l1_transactions, :confirmation_transaction, :status)
       }
     })
   end
@@ -459,7 +502,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   #
   # ## Returns
   # A map containing nesting maps describing corresponding L1 transactions
-  @spec get_associated_l1_txs(%{
+  @spec get_associated_l1_transactions(%{
           :commitment_transaction => any(),
           :confirmation_transaction => any(),
           optional(any()) => any()
@@ -481,15 +524,15 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
                 :status => nil | :finalized | :unfinalized
               }
         }
-  defp get_associated_l1_txs(arbitrum_item) do
+  defp get_associated_l1_transactions(arbitrum_item) do
     [:commitment_transaction, :confirmation_transaction]
-    |> Enum.reduce(%{}, fn key, l1_txs ->
-      Map.put(l1_txs, key, handle_associated_l1_txs_properly(Map.get(arbitrum_item, key)))
+    |> Enum.reduce(%{}, fn key, l1_transactions ->
+      Map.put(l1_transactions, key, handle_associated_l1_transactions_properly(Map.get(arbitrum_item, key)))
     end)
   end
 
   # Returns details of an associated L1 transaction or nil if not loaded or not available.
-  @spec handle_associated_l1_txs_properly(LifecycleTransaction | Ecto.Association.NotLoaded.t() | nil) ::
+  @spec handle_associated_l1_transactions_properly(LifecycleTransaction | Ecto.Association.NotLoaded.t() | nil) ::
           nil
           | %{
               :hash => nil | binary(),
@@ -497,8 +540,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
               :ts => nil | DateTime.t(),
               :status => nil | :finalized | :unfinalized
             }
-  defp handle_associated_l1_txs_properly(associated_l1_tx) do
-    case associated_l1_tx do
+  defp handle_associated_l1_transactions_properly(associated_l1_transaction) do
+    case associated_l1_transaction do
       nil -> nil
       %Ecto.Association.NotLoaded{} -> nil
       value -> %{hash: value.hash, block: value.block_number, ts: value.timestamp, status: value.status}
@@ -531,7 +574,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   # direction of the message, its status and the associated L1 transaction.
   #
   # ## Parameters
-  # - `arbitrum_tx`: An Arbitrum transaction.
+  # - `arbitrum_transaction`: An Arbitrum transaction.
   #
   # ## Returns
   # - A map extended with fields indicating the direction of the message, its status
@@ -542,15 +585,15 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           :arbitrum_message_from_l2 => any(),
           optional(any()) => any()
         }) :: map()
-  defp extend_if_message(arbitrum_json, %Transaction{} = arbitrum_tx) do
+  defp extend_if_message(arbitrum_json, %Transaction{} = arbitrum_transaction) do
     {message_type, message_data} =
-      case {APIV2Helper.specified?(Map.get(arbitrum_tx, :arbitrum_message_to_l2)),
-            APIV2Helper.specified?(Map.get(arbitrum_tx, :arbitrum_message_from_l2))} do
+      case {APIV2Helper.specified?(Map.get(arbitrum_transaction, :arbitrum_message_to_l2)),
+            APIV2Helper.specified?(Map.get(arbitrum_transaction, :arbitrum_message_from_l2))} do
         {true, false} ->
-          {"incoming", l1_tx_and_status_for_message(arbitrum_tx, :incoming)}
+          {"incoming", l1_transaction_and_status_for_message(arbitrum_transaction, :incoming)}
 
         {false, true} ->
-          {"outcoming", l1_tx_and_status_for_message(arbitrum_tx, :outcoming)}
+          {"outcoming", l1_transaction_and_status_for_message(arbitrum_transaction, :outcoming)}
 
         _ ->
           {nil, %{}}
@@ -562,7 +605,9 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   # Determines the associated L1 transaction and its status for the given message direction.
-  @spec l1_tx_and_status_for_message(
+  # TODO: it's need to take into account the tx on L2 may initiate several withdrawals.
+  #       The current architecture doesn't support that.
+  @spec l1_transaction_and_status_for_message(
           %{
             :__struct__ => Transaction,
             :arbitrum_message_to_l2 => any(),
@@ -571,20 +616,21 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           },
           :incoming | :outcoming
         ) :: map()
-  defp l1_tx_and_status_for_message(arbitrum_tx, message_direction) do
-    {l1_tx, status} =
+  defp l1_transaction_and_status_for_message(arbitrum_transaction, message_direction) do
+    {l1_transaction, status} =
       case message_direction do
         :incoming ->
-          l1_tx = APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_to_l2, :originating_transaction_hash)
+          l1_transaction =
+            APIV2Helper.get_2map_data(arbitrum_transaction, :arbitrum_message_to_l2, :originating_transaction_hash)
 
-          if is_nil(l1_tx) do
+          if is_nil(l1_transaction) do
             {nil, "Syncing with base layer"}
           else
-            {l1_tx, "Relayed"}
+            {l1_transaction, "Relayed"}
           end
 
         :outcoming ->
-          case APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_from_l2, :status) do
+          case APIV2Helper.get_2map_data(arbitrum_transaction, :arbitrum_message_from_l2, :status) do
             :initiated ->
               {nil, "Settlement pending"}
 
@@ -595,12 +641,16 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
               {nil, "Ready for relay"}
 
             :relayed ->
-              {APIV2Helper.get_2map_data(arbitrum_tx, :arbitrum_message_from_l2, :completion_transaction_hash),
+              {APIV2Helper.get_2map_data(arbitrum_transaction, :arbitrum_message_from_l2, :completion_transaction_hash),
                "Relayed"}
           end
       end
 
-    %{"associated_l1_transaction" => l1_tx, "message_status" => status}
+    %{
+      "message_id" => APIV2Helper.get_2map_data(arbitrum_transaction, :arbitrum_message_from_l2, :message_id),
+      "associated_l1_transaction" => l1_transaction,
+      "message_status" => status
+    }
   end
 
   # Extends the output JSON with information from Arbitrum-specific fields of the transaction.
@@ -611,14 +661,14 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           :gas_price => Wei.t(),
           optional(any()) => any()
         }) :: map()
-  defp extend_with_transaction_info(out_json, %Transaction{} = arbitrum_tx) do
+  defp extend_with_transaction_info(out_json, %Transaction{} = arbitrum_transaction) do
     # Map.get is only needed for the case when the module is compiled with
     # chain_type different from "arbitrum", `|| 0` is used to avoid nil values
     # for the transaction prior to the migration to Arbitrum specific BS build.
-    gas_used_for_l1 = Map.get(arbitrum_tx, :gas_used_for_l1, 0) || 0
+    gas_used_for_l1 = Map.get(arbitrum_transaction, :gas_used_for_l1, 0) || 0
 
-    gas_used = Map.get(arbitrum_tx, :gas_used, 0) || 0
-    gas_price = Map.get(arbitrum_tx, :gas_price, 0) || 0
+    gas_used = Map.get(arbitrum_transaction, :gas_used, 0) || 0
+    gas_price = Map.get(arbitrum_transaction, :gas_price, 0) || 0
 
     gas_used_for_l2 =
       gas_used

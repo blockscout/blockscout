@@ -1,5 +1,6 @@
 defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Ecto.Query
 
@@ -60,10 +61,10 @@ defmodule Explorer.Factory do
   alias Explorer.Utility.{MissingBalanceOfToken, MissingBlockRange}
 
   alias Ueberauth.Strategy.Auth0
-  alias Ueberauth.Auth.Info
+  alias Ueberauth.Auth.{Extra, Info}
   alias Ueberauth.Auth
 
-  if Application.compile_env(:explorer, :chain_type) == :zksync do
+  if @chain_type == :zksync do
     @optimization_runs "1"
   else
     @optimization_runs 1
@@ -78,13 +79,20 @@ defmodule Explorer.Factory do
   end
 
   def auth_factory do
+    email = sequence(:email, &"test_user-#{&1}@blockscout.com")
+    image = sequence("https://example.com/avatar/test_user")
+    name = sequence("User Test")
+    nickname = sequence("test_user")
+    uid = sequence("blockscout|000")
+    address_hash = to_string(build(:contract_address).hash)
+
     %Auth{
       info: %Info{
         birthday: nil,
         description: nil,
-        email: sequence(:email, &"test_user-#{&1}@blockscout.com"),
+        email: email,
         first_name: nil,
-        image: sequence("https://example.com/avatar/test_user"),
+        image: image,
         last_name: nil,
         location: nil,
         name: sequence("User Test"),
@@ -94,7 +102,36 @@ defmodule Explorer.Factory do
       },
       provider: :auth0,
       strategy: Auth0,
-      uid: sequence("blockscout|000")
+      uid: uid,
+      extra: %Extra{
+        raw_info: %{
+          user: %{
+            "created_at" => "2024-09-06T13:49:20.481Z",
+            "email" => email,
+            "email_verified" => true,
+            "identities" => [
+              %{
+                "connection" => "email",
+                "isSocial" => false,
+                "provider" => "email",
+                "user_id" => "66db0852af53e2c0ae80ddb2"
+              }
+            ],
+            "last_ip" => "42.42.42.42",
+            "last_login" => "2024-09-14T12:14:26.965Z",
+            "logins_count" => 11,
+            "name" => name,
+            "nickname" => nickname,
+            "picture" => image,
+            "updated_at" => "2024-09-14T12:14:26.966Z",
+            "user_id" => uid,
+            "user_metadata" => %{
+              "web3_address_hash" => address_hash
+            }
+          },
+          token: nil
+        }
+      }
     }
   end
 
@@ -186,7 +223,7 @@ defmodule Explorer.Factory do
   end
 
   def tag_transaction_db_factory(%{user: user}) do
-    %TagTransaction{name: sequence("name"), tx_hash: insert(:transaction).hash, identity_id: user.id}
+    %TagTransaction{name: sequence("name"), transaction_hash: insert(:transaction).hash, identity_id: user.id}
   end
 
   def address_to_tag_factory do
@@ -229,6 +266,19 @@ defmodule Explorer.Factory do
     %Address{
       hash: address_hash()
     }
+    |> Map.merge(address_factory_chain_type_fields())
+  end
+
+  case @chain_type do
+    :zksync ->
+      defp address_factory_chain_type_fields() do
+        %{
+          contract_code_refetched: true
+        }
+      end
+
+    _ ->
+      defp address_factory_chain_type_fields(), do: %{}
   end
 
   def address_name_factory do
@@ -532,7 +582,7 @@ defmodule Explorer.Factory do
     |> Map.merge(block_factory_chain_type_fields())
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       defp block_factory_chain_type_fields() do
         %{
@@ -825,11 +875,12 @@ defmodule Explorer.Factory do
 
     token_address = insert(:contract_address, contract_code: contract_code)
     token = insert(:token, contract_address: token_address)
+    block = build(:block)
 
     %TokenTransfer{
-      block: build(:block),
+      block: block,
       amount: Decimal.new(1),
-      block_number: block_number(),
+      block_number: block.number,
       from_address: from_address,
       to_address: to_address,
       token_contract_address: token_address,
@@ -896,7 +947,7 @@ defmodule Explorer.Factory do
     |> Map.merge(transaction_factory_chain_type_fields())
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       defp transaction_factory_chain_type_fields() do
         %{

@@ -12,37 +12,9 @@ defmodule Indexer.Application do
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
 
   alias Indexer.Memory
-  alias Prometheus.Registry
-
-  @default_prometheus_collectors [
-    Indexer.Prometheus.Collector.PendingBlockOperations
-  ]
-
-  case Application.compile_env(:explorer, :chain_type) do
-    :filecoin ->
-      @chain_type_prometheus_collectors [
-        Indexer.Prometheus.Collector.FilecoinPendingAddressOperations
-      ]
-
-    _ ->
-      @chain_type_prometheus_collectors []
-  end
-
-  @prometheus_collectors @default_prometheus_collectors ++
-                           @chain_type_prometheus_collectors
 
   @impl Application
   def start(_type, _args) do
-    for collector <- @prometheus_collectors do
-      Registry.register_collector(collector)
-    end
-
-    memory_monitor_options =
-      case Application.get_env(:indexer, :memory_limit) do
-        nil -> %{}
-        integer when is_integer(integer) -> %{limit: integer}
-      end
-
     memory_monitor_name = Memory.Monitor
 
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
@@ -68,7 +40,7 @@ defmodule Indexer.Application do
 
     base_children = [
       :hackney_pool.child_spec(:token_instance_fetcher, max_connections: pool_size),
-      {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
+      {Memory.Monitor, [%{}, [name: memory_monitor_name]]},
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
       {ContractCodeOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenInstanceMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
@@ -89,7 +61,11 @@ defmodule Indexer.Application do
       name: Indexer.Application
     ]
 
-    Supervisor.start_link(children, opts)
+    if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
+      Supervisor.start_link([], opts)
+    else
+      Supervisor.start_link(children, opts)
+    end
   end
 
   defp token_instance_fetcher_pool_size(fetcher, nil) do

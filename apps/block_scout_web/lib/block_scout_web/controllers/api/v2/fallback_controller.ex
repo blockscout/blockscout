@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
 
   require Logger
 
-  alias BlockScoutWeb.Account.Api.V2.UserView
+  alias BlockScoutWeb.Account.API.V2.UserView
   alias BlockScoutWeb.API.V2.ApiView
   alias Ecto.Changeset
 
@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
   @vyper_smart_contract_is_not_supported "Vyper smart-contracts are not supported by SolidityScan"
   @unverified_smart_contract "Smart-contract is unverified"
   @empty_response "Empty response"
-  @tx_interpreter_service_disabled "Transaction Interpretation Service is disabled"
+  @transaction_interpreter_service_disabled "Transaction Interpretation Service is disabled"
   @disabled "API endpoint is disabled"
   @service_disabled "Service is disabled"
 
@@ -131,6 +131,13 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> put_status(:unprocessable_entity)
     |> put_view(UserView)
     |> render(:changeset_errors, changeset: changeset)
+  end
+
+  def call(conn, {:error, :badge_creation_failed}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UserView)
+    |> render(:message, %{message: "Badge creation failed"})
   end
 
   def call(conn, {:restricted_access, true}) do
@@ -275,13 +282,6 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @unverified_smart_contract})
   end
 
-  def call(conn, {:method, _}) do
-    conn
-    |> put_status(:not_found)
-    |> put_view(ApiView)
-    |> render(:message, %{message: @not_found})
-  end
-
   def call(conn, {:is_empty_response, true}) do
     conn
     |> put_status(500)
@@ -289,11 +289,11 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     |> render(:message, %{message: @empty_response})
   end
 
-  def call(conn, {:tx_interpreter_enabled, false}) do
+  def call(conn, {:transaction_interpreter_enabled, false}) do
     conn
     |> put_status(:forbidden)
     |> put_view(ApiView)
-    |> render(:message, %{message: @tx_interpreter_service_disabled})
+    |> render(:message, %{message: @transaction_interpreter_service_disabled})
   end
 
   def call(conn, {:disabled, _}) do

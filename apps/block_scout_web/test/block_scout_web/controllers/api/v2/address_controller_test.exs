@@ -4,10 +4,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ChannelCase
 
   alias ABI.{TypeDecoder, TypeEncoder}
-  alias BlockScoutWeb.Models.UserFromAuth
   alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.Events.Subscriber
 
   alias Explorer.Chain.{
     Address,
@@ -23,7 +21,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     Withdrawal
   }
 
-  alias Explorer.Account.WatchlistAddress
+  alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Plug.Conn
@@ -82,7 +80,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         "public_tags" => [],
         "watchlist_names" => [],
         "creator_address_hash" => nil,
-        "creation_tx_hash" => nil,
+        "creation_transaction_hash" => nil,
         "token" => nil,
         "coin_balance" => nil,
         "proxy_type" => nil,
@@ -115,7 +113,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert pattern_response["public_tags"] == response["public_tags"]
       assert pattern_response["watchlist_names"] == response["watchlist_names"]
       assert pattern_response["creator_address_hash"] == response["creator_address_hash"]
-      assert pattern_response["creation_tx_hash"] == response["creation_tx_hash"]
+      assert pattern_response["creation_transaction_hash"] == response["creation_transaction_hash"]
       assert pattern_response["token"] == response["token"]
       assert pattern_response["coin_balance"] == response["coin_balance"]
       assert pattern_response["implementation_address"] == response["implementation_address"]
@@ -172,7 +170,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract.address_hash.bytes, case: :lower)
 
-      proxy_tx_input =
+      proxy_transaction_input =
         "0x11b804ab000000000000000000000000" <>
           implementation_contract_address_hash_string <>
           "000000000000000000000000000000000000000000000000000000000000006035323031313537360000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000284e159163400000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd30000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d61100000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d6110000000000000000000000000000000000000000000000000000000000000003e8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd300000000000000000000000000000000000000000000000000000000000000184f7074696d69736d2053756273637269626572204e465473000000000000000000000000000000000000000000000000000000000000000000000000000000054f504e46540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000037697066733a2f2f516d66544e504839765651334b5952346d6b52325a6b757756424266456f5a5554545064395538666931503332752f300000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c82bbe41f2cf04e3a8efa18f7032bdd7f6d98a81000000000000000000000000efba8a2a82ec1fb1273806174f5e28fbb917cf9500000000000000000000000000000000000000000000000000000000"
@@ -185,16 +183,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           contract_code: proxy_deployed_bytecode
         )
 
-      tx =
+      transaction =
         insert(:transaction,
           created_contract_address_hash: proxy_address.hash,
-          input: proxy_tx_input
+          input: proxy_transaction_input
         )
         |> with_block(status: :ok)
 
       name = implementation_contract.name
-      from = Address.checksum(tx.from_address_hash)
-      tx_hash = to_string(tx.hash)
+      from = Address.checksum(transaction.from_address_hash)
+      transaction_hash = to_string(transaction.hash)
       address_hash = Address.checksum(proxy_address.hash)
 
       {:ok, implementation_contract_address_hash} =
@@ -220,7 +218,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "public_tags" => [],
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
-               "creation_tx_hash" => ^tx_hash,
+               "creation_transaction_hash" => ^transaction_hash,
                "proxy_type" => "eip1167",
                "implementations" => [
                  %{"address" => ^checksummed_implementation_contract_address_hash, "name" => ^name}
@@ -231,7 +229,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get EIP-1967 proxy contract info", %{conn: conn} do
       smart_contract = insert(:smart_contract)
 
-      tx =
+      transaction =
         insert(:transaction,
           to_address_hash: nil,
           to_address: nil,
@@ -247,8 +245,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       )
 
       name = smart_contract.name
-      from = Address.checksum(tx.from_address_hash)
-      tx_hash = to_string(tx.hash)
+      from = Address.checksum(transaction.from_address_hash)
+      transaction_hash = to_string(transaction.hash)
       address_hash = Address.checksum(smart_contract.address_hash)
 
       implementation_address = insert(:address)
@@ -266,7 +264,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "public_tags" => [],
                "watchlist_names" => [],
                "creator_address_hash" => ^from,
-               "creation_tx_hash" => ^tx_hash,
+               "creation_transaction_hash" => ^transaction_hash,
                "proxy_type" => "eip1967",
                "implementations" => [%{"address" => ^implementation_address_hash_string, "name" => nil}]
              } = json_response(request, 200)
@@ -275,7 +273,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get watchlist id", %{conn: conn} do
       auth = build(:auth)
       address = insert(:address)
-      {:ok, user} = UserFromAuth.find_or_create(auth)
+      {:ok, user} = Identity.find_or_create(auth)
 
       conn = Plug.Test.init_test_session(conn, current_user: user)
 
@@ -372,22 +370,22 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get counters", %{conn: conn} do
       address = insert(:address)
 
-      tx_from = insert(:transaction, from_address: address) |> with_block()
+      transaction_from = insert(:transaction, from_address: address) |> with_block()
       insert(:transaction, to_address: address) |> with_block()
-      another_tx = insert(:transaction) |> with_block()
+      another_transaction = insert(:transaction) |> with_block()
 
       insert(:token_transfer,
         from_address: address,
-        transaction: another_tx,
-        block: another_tx.block,
-        block_number: another_tx.block_number
+        transaction: another_transaction,
+        block: another_transaction.block,
+        block_number: another_transaction.block_number
       )
 
       insert(:token_transfer,
         to_address: address,
-        transaction: another_tx,
-        block: another_tx.block,
-        block_number: another_tx.block_number
+        transaction: another_transaction,
+        block: another_transaction.block,
+        block_number: another_transaction.block_number
       )
 
       insert(:block, miner: address)
@@ -398,7 +396,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/counters")
 
-      gas_used = to_string(tx_from.gas_used)
+      gas_used = to_string(transaction_from.gas_used)
 
       assert %{
                "transactions_count" => "2",
@@ -427,7 +425,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get relevant transaction", %{conn: conn} do
       address = insert(:address)
 
-      tx = insert(:transaction, from_address: address) |> with_block()
+      transaction = insert(:transaction, from_address: address) |> with_block()
 
       insert(:transaction) |> with_block()
 
@@ -436,14 +434,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
-      compare_item(tx, Enum.at(response["items"], 0))
+      compare_item(transaction, Enum.at(response["items"], 0))
     end
 
     test "get pending transaction", %{conn: conn} do
       address = insert(:address)
 
-      tx = insert(:transaction, from_address: address) |> with_block()
-      pending_tx = insert(:transaction, from_address: address)
+      transaction = insert(:transaction, from_address: address) |> with_block()
+      pending_transaction = insert(:transaction, from_address: address)
 
       insert(:transaction) |> with_block()
       insert(:transaction)
@@ -453,28 +451,28 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 2
       assert response["next_page_params"] == nil
-      compare_item(pending_tx, Enum.at(response["items"], 0))
-      compare_item(tx, Enum.at(response["items"], 1))
+      compare_item(pending_transaction, Enum.at(response["items"], 0))
+      compare_item(transaction, Enum.at(response["items"], 1))
     end
 
     test "get only :to transaction", %{conn: conn} do
       address = insert(:address)
 
       insert(:transaction, from_address: address) |> with_block()
-      tx = insert(:transaction, to_address: address) |> with_block()
+      transaction = insert(:transaction, to_address: address) |> with_block()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"filter" => "to"})
 
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
-      compare_item(tx, Enum.at(response["items"], 0))
+      compare_item(transaction, Enum.at(response["items"], 0))
     end
 
     test "get only :from transactions", %{conn: conn} do
       address = insert(:address)
 
-      tx = insert(:transaction, from_address: address) |> with_block()
+      transaction = insert(:transaction, from_address: address) |> with_block()
       insert(:transaction, to_address: address) |> with_block()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"filter" => "from"})
@@ -482,13 +480,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
-      compare_item(tx, Enum.at(response["items"], 0))
+      compare_item(transaction, Enum.at(response["items"], 0))
     end
 
-    test "validated txs can paginate", %{conn: conn} do
+    test "validated transactions can paginate", %{conn: conn} do
       address = insert(:address)
 
-      txs = insert_list(51, :transaction, from_address: address) |> with_block()
+      transactions = insert_list(51, :transaction, from_address: address) |> with_block()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
       assert response = json_response(request, 200)
@@ -496,13 +494,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/transactions", response["next_page_params"])
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, txs)
+      check_paginated_response(response, response_2nd_page, transactions)
     end
 
-    test "pending txs can paginate", %{conn: conn} do
+    test "pending transactions can paginate", %{conn: conn} do
       address = insert(:address)
 
-      txs = insert_list(51, :transaction, from_address: address)
+      transactions = insert_list(51, :transaction, from_address: address)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
       assert response = json_response(request, 200)
@@ -510,14 +508,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/transactions", response["next_page_params"])
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, txs)
+      check_paginated_response(response, response_2nd_page, transactions)
     end
 
-    test "pending + validated txs can paginate", %{conn: conn} do
+    test "pending + validated transactions can paginate", %{conn: conn} do
       address = insert(:address)
 
-      txs_pending = insert_list(51, :transaction, from_address: address)
-      txs_validated = insert_list(50, :transaction, to_address: address) |> with_block()
+      transactions_pending = insert_list(51, :transaction, from_address: address)
+      transactions_validated = insert_list(50, :transaction, to_address: address) |> with_block()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
       assert response = json_response(request, 200)
@@ -527,25 +525,29 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert Enum.count(response["items"]) == 50
       assert response["next_page_params"] != nil
-      compare_item(Enum.at(txs_pending, 50), Enum.at(response["items"], 0))
-      compare_item(Enum.at(txs_pending, 1), Enum.at(response["items"], 49))
+      compare_item(Enum.at(transactions_pending, 50), Enum.at(response["items"], 0))
+      compare_item(Enum.at(transactions_pending, 1), Enum.at(response["items"], 49))
 
       assert Enum.count(response_2nd_page["items"]) == 50
       assert response_2nd_page["next_page_params"] != nil
-      compare_item(Enum.at(txs_pending, 0), Enum.at(response_2nd_page["items"], 0))
-      compare_item(Enum.at(txs_validated, 49), Enum.at(response_2nd_page["items"], 1))
-      compare_item(Enum.at(txs_validated, 1), Enum.at(response_2nd_page["items"], 49))
+      compare_item(Enum.at(transactions_pending, 0), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(transactions_validated, 49), Enum.at(response_2nd_page["items"], 1))
+      compare_item(Enum.at(transactions_validated, 1), Enum.at(response_2nd_page["items"], 49))
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", response_2nd_page["next_page_params"])
       assert response = json_response(request, 200)
 
-      check_paginated_response(response_2nd_page, response, txs_validated ++ [Enum.at(txs_pending, 0)])
+      check_paginated_response(
+        response_2nd_page,
+        response,
+        transactions_validated ++ [Enum.at(transactions_pending, 0)]
+      )
     end
 
-    test ":to txs can paginate", %{conn: conn} do
+    test ":to transactions can paginate", %{conn: conn} do
       address = insert(:address)
 
-      txs = insert_list(51, :transaction, to_address: address) |> with_block()
+      transactions = insert_list(51, :transaction, to_address: address) |> with_block()
       insert_list(51, :transaction, from_address: address) |> with_block()
 
       filter = %{"filter" => "to"}
@@ -557,14 +559,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, txs)
+      check_paginated_response(response, response_2nd_page, transactions)
     end
 
-    test ":from txs can paginate", %{conn: conn} do
+    test ":from transactions can paginate", %{conn: conn} do
       address = insert(:address)
 
       insert_list(51, :transaction, to_address: address) |> with_block()
-      txs = insert_list(51, :transaction, from_address: address) |> with_block()
+      transactions = insert_list(51, :transaction, from_address: address) |> with_block()
 
       filter = %{"filter" => "from"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", filter)
@@ -575,14 +577,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, txs)
+      check_paginated_response(response, response_2nd_page, transactions)
     end
 
-    test ":from + :to txs can paginate", %{conn: conn} do
+    test ":from + :to transactions can paginate", %{conn: conn} do
       address = insert(:address)
 
-      txs_from = insert_list(50, :transaction, from_address: address) |> with_block()
-      txs_to = insert_list(51, :transaction, to_address: address) |> with_block()
+      transactions_from = insert_list(50, :transaction, from_address: address) |> with_block()
+      transactions_to = insert_list(51, :transaction, to_address: address) |> with_block()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
       assert response = json_response(request, 200)
@@ -592,25 +594,25 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert Enum.count(response["items"]) == 50
       assert response["next_page_params"] != nil
-      compare_item(Enum.at(txs_to, 50), Enum.at(response["items"], 0))
-      compare_item(Enum.at(txs_to, 1), Enum.at(response["items"], 49))
+      compare_item(Enum.at(transactions_to, 50), Enum.at(response["items"], 0))
+      compare_item(Enum.at(transactions_to, 1), Enum.at(response["items"], 49))
 
       assert Enum.count(response_2nd_page["items"]) == 50
       assert response_2nd_page["next_page_params"] != nil
-      compare_item(Enum.at(txs_to, 0), Enum.at(response_2nd_page["items"], 0))
-      compare_item(Enum.at(txs_from, 49), Enum.at(response_2nd_page["items"], 1))
-      compare_item(Enum.at(txs_from, 1), Enum.at(response_2nd_page["items"], 49))
+      compare_item(Enum.at(transactions_to, 0), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(transactions_from, 49), Enum.at(response_2nd_page["items"], 1))
+      compare_item(Enum.at(transactions_from, 1), Enum.at(response_2nd_page["items"], 49))
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", response_2nd_page["next_page_params"])
       assert response = json_response(request, 200)
 
-      check_paginated_response(response_2nd_page, response, txs_from ++ [Enum.at(txs_to, 0)])
+      check_paginated_response(response_2nd_page, response, transactions_from ++ [Enum.at(transactions_to, 0)])
     end
 
     test "ignores wrong ordering params", %{conn: conn} do
       address = insert(:address)
 
-      txs = insert_list(51, :transaction, from_address: address) |> with_block()
+      transactions = insert_list(51, :transaction, from_address: address) |> with_block()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "foo", "order" => "bar"})
       assert response = json_response(request, 200)
@@ -624,16 +626,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, txs)
+      check_paginated_response(response, response_2nd_page, transactions)
     end
 
     test "backward compatible with legacy paging params", %{conn: conn} do
       address = insert(:address)
       block = insert(:block)
 
-      txs = insert_list(51, :transaction, from_address: address) |> with_block(block)
+      transactions = insert_list(51, :transaction, from_address: address) |> with_block(block)
 
-      [_, tx_before_last | _] = txs
+      [_, transaction_before_last | _] = transactions
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
       assert response = json_response(request, 200)
@@ -642,20 +644,20 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         get(
           conn,
           "/api/v2/addresses/#{address.hash}/transactions",
-          %{"block_number" => to_string(block.number), "index" => to_string(tx_before_last.index)}
+          %{"block_number" => to_string(block.number), "index" => to_string(transaction_before_last.index)}
         )
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, txs)
+      check_paginated_response(response, response_2nd_page, transactions)
     end
 
     test "backward compatible with legacy paging params for pending transactions", %{conn: conn} do
       address = insert(:address)
 
-      txs = insert_list(51, :transaction, from_address: address)
+      transactions = insert_list(51, :transaction, from_address: address)
 
-      [_, tx_before_last | _] = txs
+      [_, transaction_before_last | _] = transactions
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
       assert response = json_response(request, 200)
@@ -664,22 +666,25 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         get(
           conn,
           "/api/v2/addresses/#{address.hash}/transactions",
-          %{"inserted_at" => to_string(tx_before_last.inserted_at), "hash" => to_string(tx_before_last.hash)}
+          %{
+            "inserted_at" => to_string(transaction_before_last.inserted_at),
+            "hash" => to_string(transaction_before_last.hash)
+          }
         )
 
       assert response_2nd_page_pending = json_response(request_2nd_page_pending, 200)
 
-      check_paginated_response(response, response_2nd_page_pending, txs)
+      check_paginated_response(response, response_2nd_page_pending, transactions)
     end
 
     test "can order and paginate by fee ascending", %{conn: conn} do
       address = insert(:address)
 
-      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
-      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+      transactions_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      transactions_to = insert_list(26, :transaction, to_address: address) |> with_block()
 
-      txs =
-        (txs_from ++ txs_to)
+      transactions =
+        (transactions_from ++ transactions_to)
         |> Enum.sort(
           &(Decimal.compare(&1 |> Transaction.fee(:wei) |> elem(1), &2 |> Transaction.fee(:wei) |> elem(1)) in [
               :eq,
@@ -701,24 +706,24 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert Enum.count(response["items"]) == 50
       assert response["next_page_params"] != nil
-      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
-      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+      compare_item(Enum.at(transactions, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(transactions, 49), Enum.at(response["items"], 49))
 
       assert Enum.count(response_2nd_page["items"]) == 1
       assert response_2nd_page["next_page_params"] == nil
-      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
 
-      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
+      check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
     end
 
     test "can order and paginate by fee descending", %{conn: conn} do
       address = insert(:address)
 
-      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
-      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+      transactions_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      transactions_to = insert_list(26, :transaction, to_address: address) |> with_block()
 
-      txs =
-        (txs_from ++ txs_to)
+      transactions =
+        (transactions_from ++ transactions_to)
         |> Enum.sort(
           &(Decimal.compare(&1 |> Transaction.fee(:wei) |> elem(1), &2 |> Transaction.fee(:wei) |> elem(1)) in [
               :eq,
@@ -740,24 +745,24 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert Enum.count(response["items"]) == 50
       assert response["next_page_params"] != nil
-      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
-      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+      compare_item(Enum.at(transactions, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(transactions, 49), Enum.at(response["items"], 49))
 
       assert Enum.count(response_2nd_page["items"]) == 1
       assert response_2nd_page["next_page_params"] == nil
-      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
 
-      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
+      check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
     end
 
     test "can order and paginate by value ascending", %{conn: conn} do
       address = insert(:address)
 
-      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
-      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+      transactions_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      transactions_to = insert_list(26, :transaction, to_address: address) |> with_block()
 
-      txs =
-        (txs_from ++ txs_to)
+      transactions =
+        (transactions_from ++ transactions_to)
         |> Enum.sort(&(Decimal.compare(Wei.to(&1.value, :wei), Wei.to(&2.value, :wei)) in [:eq, :lt]))
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "value", "order" => "asc"})
@@ -774,24 +779,24 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert Enum.count(response["items"]) == 50
       assert response["next_page_params"] != nil
-      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
-      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+      compare_item(Enum.at(transactions, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(transactions, 49), Enum.at(response["items"], 49))
 
       assert Enum.count(response_2nd_page["items"]) == 1
       assert response_2nd_page["next_page_params"] == nil
-      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
 
-      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
+      check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
     end
 
     test "can order and paginate by value descending", %{conn: conn} do
       address = insert(:address)
 
-      txs_from = insert_list(25, :transaction, from_address: address) |> with_block()
-      txs_to = insert_list(26, :transaction, to_address: address) |> with_block()
+      transactions_from = insert_list(25, :transaction, from_address: address) |> with_block()
+      transactions_to = insert_list(26, :transaction, to_address: address) |> with_block()
 
-      txs =
-        (txs_from ++ txs_to)
+      transactions =
+        (transactions_from ++ transactions_to)
         |> Enum.sort(&(Decimal.compare(Wei.to(&1.value, :wei), Wei.to(&2.value, :wei)) in [:eq, :gt]))
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "value", "order" => "desc"})
@@ -808,14 +813,90 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert Enum.count(response["items"]) == 50
       assert response["next_page_params"] != nil
-      compare_item(Enum.at(txs, 0), Enum.at(response["items"], 0))
-      compare_item(Enum.at(txs, 49), Enum.at(response["items"], 49))
+      compare_item(Enum.at(transactions, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(transactions, 49), Enum.at(response["items"], 49))
 
       assert Enum.count(response_2nd_page["items"]) == 1
       assert response_2nd_page["next_page_params"] == nil
-      compare_item(Enum.at(txs, 50), Enum.at(response_2nd_page["items"], 0))
+      compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
 
-      check_paginated_response(response, response_2nd_page, txs |> Enum.reverse())
+      check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
+    end
+
+    test "can order and paginate by block number ascending", %{conn: conn} do
+      address = insert(:address)
+
+      transactions_from =
+        for _ <- 0..24, do: insert(:transaction, from_address: address) |> with_block()
+
+      transactions_to = for _ <- 0..25, do: insert(:transaction, to_address: address) |> with_block()
+
+      transactions =
+        (transactions_from ++ transactions_to)
+        |> Enum.sort_by(& &1.block.number)
+
+      request =
+        get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "block_number", "order" => "asc"})
+
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "block_number", "order" => "asc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(transactions, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(transactions, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
+    end
+
+    test "can order and paginate by block number descending", %{conn: conn} do
+      address = insert(:address)
+
+      transactions_from =
+        for _ <- 0..24, do: insert(:transaction, from_address: address) |> with_block()
+
+      transactions_to = for _ <- 0..25, do: insert(:transaction, to_address: address) |> with_block()
+
+      transactions =
+        (transactions_from ++ transactions_to)
+        |> Enum.sort_by(& &1.block.number, :desc)
+
+      request =
+        get(conn, "/api/v2/addresses/#{address.hash}/transactions", %{"sort" => "block_number", "order" => "desc"})
+
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(
+          conn,
+          "/api/v2/addresses/#{address.hash}/transactions",
+          %{"sort" => "block_number", "order" => "desc"} |> Map.merge(response["next_page_params"])
+        )
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      compare_item(Enum.at(transactions, 0), Enum.at(response["items"], 0))
+      compare_item(Enum.at(transactions, 49), Enum.at(response["items"], 49))
+
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+      compare_item(Enum.at(transactions, 50), Enum.at(response_2nd_page["items"], 0))
+
+      check_paginated_response(response, response_2nd_page, transactions |> Enum.reverse())
     end
   end
 
@@ -855,12 +936,21 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get relevant token transfer", %{conn: conn} do
       address = insert(:address)
 
-      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-      insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number)
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
 
       token_transfer =
-        insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          from_address: address
+        )
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
 
@@ -891,17 +981,26 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       address = insert(:address)
 
-      tx =
+      transaction =
         insert(:transaction,
           input:
             "0x731133e9000000000000000000000000bb36c792b9b45aaf8b848a1392b0d6559202729e000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001700000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000"
         )
         |> with_block()
 
-      insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number)
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
 
       token_transfer =
-        insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          from_address: address
+        )
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
 
@@ -917,17 +1016,26 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       address = insert(:address)
 
-      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-      insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number)
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
 
-      insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        from_address: address
+      )
 
       token_transfer =
         insert(:token_transfer,
-          transaction: tx,
-          block: tx.block,
-          block_number: tx.block_number,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
           from_address: address,
           token_contract_address: token.contract_address
         )
@@ -950,19 +1058,19 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_transfers =
         for _ <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             from_address: address
           )
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             from_address: address,
             token_contract_address: token.contract_address
           )
@@ -983,12 +1091,22 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get only :to token transfer", %{conn: conn} do
       address = insert(:address)
 
-      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
-      insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        from_address: address
+      )
 
       token_transfer =
-        insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          to_address: address
+        )
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{"filter" => "to"})
 
@@ -1001,12 +1119,23 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get only :from token transfer", %{conn: conn} do
       address = insert(:address)
 
-      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       token_transfer =
-        insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          from_address: address
+        )
 
-      insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        to_address: address
+      )
+
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", %{"filter" => "from"})
 
       assert response = json_response(request, 200)
@@ -1020,12 +1149,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_transfers =
         for _ <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             from_address: address
           )
         end
@@ -1043,14 +1172,26 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       address = insert(:address)
 
       for _ <- 0..50 do
-        tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
-        insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, from_address: address)
+        transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          from_address: address
+        )
       end
 
       token_transfers =
         for _ <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
-          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+          insert(:token_transfer,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
+            to_address: address
+          )
         end
 
       filter = %{"filter" => "to"}
@@ -1070,19 +1211,25 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_transfers =
         for _ <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             from_address: address
           )
         end
 
       for _ <- 0..50 do
-        tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
-        insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
+        transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          to_address: address
+        )
       end
 
       filter = %{"filter" => "from"}
@@ -1102,20 +1249,26 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       tt_from =
         for _ <- 0..49 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             from_address: address
           )
         end
 
       tt_to =
         for _ <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
-          insert(:token_transfer, transaction: tx, block: tx.block, block_number: tx.block_number, to_address: address)
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+
+          insert(:token_transfer,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
+            to_address: address
+          )
         end
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
@@ -1148,12 +1301,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       erc_20_tt =
         for _ <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             from_address: address,
             token_contract_address: erc_20_token.contract_address,
             token_type: "ERC-20"
@@ -1164,12 +1317,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       erc_721_tt =
         for x <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             from_address: address,
             token_contract_address: erc_721_token.contract_address,
             token_ids: [x],
@@ -1181,12 +1334,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       erc_1155_tt =
         for x <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             from_address: address,
             token_contract_address: erc_1155_token.contract_address,
             token_ids: [x],
@@ -1276,12 +1429,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       erc_20_tt =
         for _ <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             from_address: address,
             token_contract_address: erc_20_token.contract_address,
             token_type: "ERC-20"
@@ -1292,12 +1445,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       erc_721_tt =
         for x <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             to_address: address,
             token_contract_address: erc_721_token.contract_address,
             token_ids: [x],
@@ -1356,13 +1509,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       tt =
         for _ <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
             to_address: address,
-            transaction: tx,
-            block: tx.block,
-            block_number: tx.block_number,
+            transaction: transaction,
+            block: transaction.block,
+            block_number: transaction.block_number,
             token_contract_address: token.contract_address,
             token_ids: Enum.map(0..50, fn _x -> id end),
             token_type: "ERC-1155",
@@ -1392,13 +1545,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_transfers =
         for i <- 0..50 do
-          tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+          transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
           insert(:token_transfer,
-            transaction: tx,
+            transaction: transaction,
             to_address: address,
-            block: tx.block,
-            block_number: tx.block_number,
+            block: transaction.block,
+            block_number: transaction.block_number,
             token_contract_address: token.contract_address,
             token_ids: [i],
             token_type: "ERC-721"
@@ -1419,14 +1572,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       address = insert(:address)
 
       token = insert(:token, type: "ERC-1155")
-      tx = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt =
         insert(:token_transfer,
-          transaction: tx,
+          transaction: transaction,
           to_address: address,
-          block: tx.block,
-          block_number: tx.block_number,
+          block: transaction.block,
+          block_number: transaction.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..50, fn x -> x end),
           token_type: "ERC-1155",
@@ -1462,14 +1615,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token = insert(:token, type: "ERC-1155")
 
-      tx_1 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction_1 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt_1 =
         insert(:token_transfer,
-          transaction: tx_1,
+          transaction: transaction_1,
           to_address: address,
-          block: tx_1.block,
-          block_number: tx_1.block_number,
+          block: transaction_1.block,
+          block_number: transaction_1.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
           token_type: "ERC-1155",
@@ -1481,14 +1634,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           %TokenTransfer{tt_1 | token_ids: [i], amount: i}
         end
 
-      tx_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt_2 =
         insert(:token_transfer,
-          transaction: tx_2,
+          transaction: transaction_2,
           to_address: address,
-          block: tx_2.block,
-          block_number: tx_2.block_number,
+          block: transaction_2.block,
+          block_number: transaction_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..49, fn x -> x end),
           token_type: "ERC-1155",
@@ -1502,10 +1655,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       tt_3 =
         insert(:token_transfer,
-          transaction: tx_2,
+          transaction: transaction_2,
           from_address: address,
-          block: tx_2.block,
-          block_number: tx_2.block_number,
+          block: transaction_2.block,
+          block_number: transaction_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: [50],
           token_type: "ERC-1155",
@@ -1527,14 +1680,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token = insert(:token, type: "ERC-1155")
 
-      tx_1 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction_1 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt_1 =
         insert(:token_transfer,
-          transaction: tx_1,
+          transaction: transaction_1,
           from_address: address,
-          block: tx_1.block,
-          block_number: tx_1.block_number,
+          block: transaction_1.block,
+          block_number: transaction_1.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(0..24, fn x -> x end),
           token_type: "ERC-1155",
@@ -1546,14 +1699,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           %TokenTransfer{tt_1 | token_ids: [i], amount: i}
         end
 
-      tx_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
+      transaction_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
 
       tt_2 =
         insert(:token_transfer,
-          transaction: tx_2,
+          transaction: transaction_2,
           to_address: address,
-          block: tx_2.block,
-          block_number: tx_2.block_number,
+          block: transaction_2.block,
+          block_number: transaction_2.block_number,
           token_contract_address: token.contract_address,
           token_ids: Enum.map(25..50, fn x -> x end),
           token_type: "ERC-1155",
@@ -1591,32 +1744,32 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
     end
 
-    test "get internal tx and filter working", %{conn: conn} do
+    test "get internal transaction and filter working", %{conn: conn} do
       address = insert(:address)
 
-      tx =
+      transaction =
         :transaction
         |> insert()
         |> with_block()
 
-      internal_tx_from =
+      internal_transaction_from =
         insert(:internal_transaction,
-          transaction: tx,
+          transaction: transaction,
           index: 1,
-          block_number: tx.block_number,
-          transaction_index: tx.index,
-          block_hash: tx.block_hash,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
           block_index: 1,
           from_address: address
         )
 
-      internal_tx_to =
+      internal_transaction_to =
         insert(:internal_transaction,
-          transaction: tx,
+          transaction: transaction,
           index: 2,
-          block_number: tx.block_number,
-          transaction_index: tx.index,
-          block_hash: tx.block_hash,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
           block_index: 2,
           to_address: address
         )
@@ -1627,40 +1780,40 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert Enum.count(response["items"]) == 2
       assert response["next_page_params"] == nil
 
-      compare_item(internal_tx_from, Enum.at(response["items"], 1))
-      compare_item(internal_tx_to, Enum.at(response["items"], 0))
+      compare_item(internal_transaction_from, Enum.at(response["items"], 1))
+      compare_item(internal_transaction_to, Enum.at(response["items"], 0))
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", %{"filter" => "from"})
 
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
-      compare_item(internal_tx_from, Enum.at(response["items"], 0))
+      compare_item(internal_transaction_from, Enum.at(response["items"], 0))
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", %{"filter" => "to"})
 
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
-      compare_item(internal_tx_to, Enum.at(response["items"], 0))
+      compare_item(internal_transaction_to, Enum.at(response["items"], 0))
     end
 
-    test "internal txs can paginate", %{conn: conn} do
+    test "internal transactions can paginate", %{conn: conn} do
       address = insert(:address)
 
-      tx =
+      transaction =
         :transaction
         |> insert()
         |> with_block()
 
-      itxs_from =
+      internal_transactions_from =
         for i <- 1..51 do
           insert(:internal_transaction,
-            transaction: tx,
+            transaction: transaction,
             index: i,
-            block_number: tx.block_number,
-            transaction_index: tx.index,
-            block_hash: tx.block_hash,
+            block_number: transaction.block_number,
+            transaction_index: transaction.index,
+            block_hash: transaction.block_hash,
             block_index: i,
             from_address: address
           )
@@ -1674,16 +1827,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, itxs_from)
+      check_paginated_response(response, response_2nd_page, internal_transactions_from)
 
-      itxs_to =
+      internal_transactions_to =
         for i <- 52..102 do
           insert(:internal_transaction,
-            transaction: tx,
+            transaction: transaction,
             index: i,
-            block_number: tx.block_number,
-            transaction_index: tx.index,
-            block_hash: tx.block_hash,
+            block_number: transaction.block_number,
+            transaction_index: transaction.index,
+            block_hash: transaction.block_hash,
             block_index: i,
             to_address: address
           )
@@ -1702,7 +1855,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, itxs_to)
+      check_paginated_response(response, response_2nd_page, internal_transactions_to)
 
       filter = %{"filter" => "from"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", filter)
@@ -1717,7 +1870,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
-      check_paginated_response(response, response_2nd_page, itxs_from)
+      check_paginated_response(response, response_2nd_page, internal_transactions_from)
     end
   end
 
@@ -1904,17 +2057,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "get log", %{conn: conn} do
       address = insert(:address)
 
-      tx =
+      transaction =
         :transaction
         |> insert()
         |> with_block()
 
       log =
         insert(:log,
-          transaction: tx,
+          transaction: transaction,
           index: 1,
-          block: tx.block,
-          block_number: tx.block_number,
+          block: transaction.block,
+          block_number: transaction.block_number,
           address: address
         )
 
@@ -1932,16 +2085,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       logs =
         for x <- 0..50 do
-          tx =
+          transaction =
             :transaction
             |> insert()
             |> with_block()
 
           insert(:log,
-            transaction: tx,
+            transaction: transaction,
             index: x,
-            block: tx.block,
-            block_number: tx.block_number,
+            block: transaction.block,
+            block_number: transaction.block_number,
             address: address
           )
         end
@@ -1958,17 +2111,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     test "regression test for 9926", %{conn: conn} do
       address = insert(:address, hash: "0x036cec1a199234fC02f72d29e596a09440825f1C")
 
-      tx =
+      transaction =
         :transaction
         |> insert()
         |> with_block()
 
       log =
         insert(:log,
-          transaction: tx,
+          transaction: transaction,
           index: 1,
-          block: tx.block,
-          block_number: tx.block_number,
+          block: transaction.block,
+          block_number: transaction.block_number,
           address: address
         )
 
@@ -2036,30 +2189,30 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       address = insert(:address)
 
       for x <- 0..20 do
-        tx =
+        transaction =
           :transaction
           |> insert()
           |> with_block()
 
         insert(:log,
-          transaction: tx,
+          transaction: transaction,
           index: x,
-          block: tx.block,
-          block_number: tx.block_number,
+          block: transaction.block,
+          block_number: transaction.block_number,
           address: address
         )
       end
 
-      tx =
+      transaction =
         :transaction
         |> insert()
         |> with_block()
 
       log =
         insert(:log,
-          transaction: tx,
-          block: tx.block,
-          block_number: tx.block_number,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
           address: address,
           first_topic: topic(@first_topic_hex_string_1)
         )
@@ -2554,7 +2707,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "token_balances_count" => 0,
                "logs_count" => 0,
                "withdrawals_count" => 0,
-               "internal_txs_count" => 0
+               "internal_transactions_count" => 0
              } = json_response(request, 200)
     end
 
@@ -2563,36 +2716,36 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       insert(:transaction, from_address: address) |> with_block()
       insert(:transaction, to_address: address) |> with_block()
-      another_tx = insert(:transaction) |> with_block()
+      another_transaction = insert(:transaction) |> with_block()
 
       insert(:token_transfer,
         from_address: address,
-        transaction: another_tx,
-        block: another_tx.block,
-        block_number: another_tx.block_number
+        transaction: another_transaction,
+        block: another_transaction.block,
+        block_number: another_transaction.block_number
       )
 
       insert(:token_transfer,
         to_address: address,
-        transaction: another_tx,
-        block: another_tx.block,
-        block_number: another_tx.block_number
+        transaction: another_transaction,
+        block: another_transaction.block,
+        block_number: another_transaction.block_number
       )
 
       insert(:block, miner: address)
 
-      tx =
+      transaction =
         :transaction
         |> insert()
         |> with_block()
 
       for x <- 1..2 do
         insert(:internal_transaction,
-          transaction: tx,
+          transaction: transaction,
           index: x,
-          block_number: tx.block_number,
-          transaction_index: tx.index,
-          block_hash: tx.block_hash,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
           block_index: x,
           from_address: address
         )
@@ -2603,16 +2756,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       end
 
       for x <- 0..60 do
-        tx =
+        transaction =
           :transaction
           |> insert()
           |> with_block()
 
         insert(:log,
-          transaction: tx,
+          transaction: transaction,
           index: x,
-          block: tx.block,
-          block_number: tx.block_number,
+          block: transaction.block,
+          block_number: transaction.block_number,
           address: address
         )
       end
@@ -2626,16 +2779,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "token_balances_count" => 51,
                "logs_count" => 51,
                "withdrawals_count" => 51,
-               "internal_txs_count" => 2
+               "internal_transactions_count" => 2
              } = json_response(request, 200)
 
       for x <- 3..4 do
         insert(:internal_transaction,
-          transaction: tx,
+          transaction: transaction,
           index: x,
-          block_number: tx.block_number,
-          transaction_index: tx.index,
-          block_hash: tx.block_hash,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
           block_index: x,
           from_address: address
         )
@@ -2650,7 +2803,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "token_balances_count" => 51,
                "logs_count" => 51,
                "withdrawals_count" => 51,
-               "internal_txs_count" => 2
+               "internal_transactions_count" => 2
              } = json_response(request, 200)
     end
 
@@ -2659,36 +2812,36 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       insert(:transaction, from_address: address) |> with_block()
       insert(:transaction, to_address: address) |> with_block()
-      another_tx = insert(:transaction) |> with_block()
+      another_transaction = insert(:transaction) |> with_block()
 
       insert(:token_transfer,
         from_address: address,
-        transaction: another_tx,
-        block: another_tx.block,
-        block_number: another_tx.block_number
+        transaction: another_transaction,
+        block: another_transaction.block,
+        block_number: another_transaction.block_number
       )
 
       insert(:token_transfer,
         to_address: address,
-        transaction: another_tx,
-        block: another_tx.block,
-        block_number: another_tx.block_number
+        transaction: another_transaction,
+        block: another_transaction.block,
+        block_number: another_transaction.block_number
       )
 
       insert(:block, miner: address)
 
-      tx =
+      transaction =
         :transaction
         |> insert()
         |> with_block()
 
       for x <- 1..2 do
         insert(:internal_transaction,
-          transaction: tx,
+          transaction: transaction,
           index: x,
-          block_number: tx.block_number,
-          transaction_index: tx.index,
-          block_hash: tx.block_hash,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
           block_index: x,
           from_address: address
         )
@@ -2699,16 +2852,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       end
 
       for x <- 0..60 do
-        tx =
+        transaction =
           :transaction
           |> insert()
           |> with_block()
 
         insert(:log,
-          transaction: tx,
+          transaction: transaction,
           index: x,
-          block: tx.block,
-          block_number: tx.block_number,
+          block: transaction.block,
+          block_number: transaction.block_number,
           address: address
         )
       end
@@ -2722,7 +2875,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "token_balances_count" => 51,
                "logs_count" => 51,
                "withdrawals_count" => 51,
-               "internal_txs_count" => 2
+               "internal_transactions_count" => 2
              } = json_response(request, 200)
 
       old_env = Application.get_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters)
@@ -2731,11 +2884,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       for x <- 3..4 do
         insert(:internal_transaction,
-          transaction: tx,
+          transaction: transaction,
           index: x,
-          block_number: tx.block_number,
-          transaction_index: tx.index,
-          block_hash: tx.block_hash,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
           block_index: x,
           from_address: address
         )
@@ -2753,7 +2906,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                "token_balances_count" => 51,
                "logs_count" => 51,
                "withdrawals_count" => 51,
-               "internal_txs_count" => 4
+               "internal_transactions_count" => 4
              } = json_response(request, 200)
 
       Application.put_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters, old_env)
@@ -3310,12 +3463,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   defp compare_item(%Address{} = address, json) do
     assert Address.checksum(address.hash) == json["hash"]
-    assert to_string(address.transactions_count) == json["tx_count"]
+    assert to_string(address.transactions_count) == json["transaction_count"]
   end
 
   defp compare_item(%Transaction{} = transaction, json) do
     assert to_string(transaction.hash) == json["hash"]
-    assert transaction.block_number == json["block"]
+    assert transaction.block_number == json["block_number"]
     assert to_string(transaction.value.value) == json["value"]
     assert Address.checksum(transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(transaction.to_address_hash) == json["to"]["hash"]
@@ -3324,21 +3477,21 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   defp compare_item(%TokenTransfer{} = token_transfer, json) do
     assert Address.checksum(token_transfer.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(token_transfer.to_address_hash) == json["to"]["hash"]
-    assert to_string(token_transfer.transaction_hash) == json["tx_hash"]
+    assert to_string(token_transfer.transaction_hash) == json["transaction_hash"]
     assert json["timestamp"] != nil
     assert json["method"] != nil
     assert to_string(token_transfer.block_hash) == json["block_hash"]
-    assert to_string(token_transfer.log_index) == json["log_index"]
+    assert token_transfer.log_index == json["log_index"]
     assert check_total(Repo.preload(token_transfer, [{:token, :contract_address}]).token, json["total"], token_transfer)
   end
 
-  defp compare_item(%InternalTransaction{} = internal_tx, json) do
-    assert internal_tx.block_number == json["block"]
-    assert to_string(internal_tx.gas) == json["gas_limit"]
-    assert internal_tx.index == json["index"]
-    assert to_string(internal_tx.transaction_hash) == json["transaction_hash"]
-    assert Address.checksum(internal_tx.from_address_hash) == json["from"]["hash"]
-    assert Address.checksum(internal_tx.to_address_hash) == json["to"]["hash"]
+  defp compare_item(%InternalTransaction{} = internal_transaction, json) do
+    assert internal_transaction.block_number == json["block_number"]
+    assert to_string(internal_transaction.gas) == json["gas_limit"]
+    assert internal_transaction.index == json["index"]
+    assert to_string(internal_transaction.transaction_hash) == json["transaction_hash"]
+    assert Address.checksum(internal_transaction.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(internal_transaction.to_address_hash) == json["to"]["hash"]
   end
 
   defp compare_item(%Block{} = block, json) do
@@ -3374,7 +3527,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert log.index == json["index"]
     assert to_string(log.data) == json["data"]
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
-    assert to_string(log.transaction_hash) == json["tx_hash"]
+    assert to_string(log.transaction_hash) == json["transaction_hash"]
     assert json["block_number"] == log.block_number
     assert json["block_hash"] == to_string(log.block_hash)
   end

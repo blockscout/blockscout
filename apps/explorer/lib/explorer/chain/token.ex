@@ -1,9 +1,10 @@
 defmodule Explorer.Chain.Token.Schema do
   @moduledoc false
+  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias Explorer.Chain.{Address, Hash}
 
-  if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+  if @bridged_token_enabled do
     @bridged_field [
       quote do
         field(:bridged, :boolean)
@@ -81,6 +82,7 @@ defmodule Explorer.Chain.Token do
   alias Ecto.Changeset
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{BridgedToken, Hash, Search, Token}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Repo
   alias Explorer.SmartContract.Helper
 
@@ -200,16 +202,22 @@ defmodule Explorer.Chain.Token do
           Chain.paging_options()
           | {:sorting, SortingHelper.sorting_params()}
           | {:token_type, [String.t()]}
+          | {:necessity_by_association, map()}
         ]) :: [Token.t()]
   def list_top(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     token_type = Keyword.get(options, :token_type, nil)
     sorting = Keyword.get(options, :sorting, [])
 
-    query = from(t in Token, preload: [:contract_address])
+    necessity_by_association =
+      Keyword.get(options, :necessity_by_association, %{
+        :contract_address => :optional
+      })
 
     sorted_paginated_query =
-      query
+      Token
+      |> Chain.join_associations(necessity_by_association)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
       |> apply_filter(token_type)
       |> SortingHelper.apply_sorting(sorting, @default_sorting)
       |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)

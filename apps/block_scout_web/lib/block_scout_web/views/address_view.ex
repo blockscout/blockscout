@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
@@ -437,13 +436,6 @@ defmodule BlockScoutWeb.AddressView do
       true -> "#{to_string(address)}"
     end
   end
-
-  def smart_contract_is_gnosis_safe_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    address.smart_contract.name == "GnosisSafeProxy" &&
-      Proxy.gnosis_safe_contract?(address.smart_contract.abi)
-  end
-
-  def smart_contract_is_gnosis_safe_proxy?(_address), do: false
 
   def tag_name_to_label(tag_name) do
     tag_name

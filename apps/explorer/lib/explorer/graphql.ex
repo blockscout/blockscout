@@ -11,14 +11,17 @@ defmodule Explorer.GraphQL do
       where: 3
     ]
 
+  alias Explorer.{Chain, Repo}
+
   alias Explorer.Chain.{
     Hash,
     InternalTransaction,
+    Token,
     TokenTransfer,
     Transaction
   }
 
-  alias Explorer.Repo
+  @api_true [api?: true]
 
   @doc """
   Returns a query to fetch transactions with a matching `to_address_hash`,
@@ -80,6 +83,31 @@ defmodule Explorer.GraphQL do
       {:ok, token_transfer}
     else
       {:error, "Token transfer not found."}
+    end
+  end
+
+  @doc """
+  Returns a token for a given contract address hash.
+  """
+  @spec get_token(map()) :: {:ok, Token.t()} | {:error, String.t()}
+  def get_token(%{contract_address_hash: _} = clauses) do
+    if token = Repo.replica().get_by(Token, clauses) do
+      {:ok, token}
+    else
+      {:error, "Token not found."}
+    end
+  end
+
+  @doc """
+  Returns a transaction for a given hash.
+  """
+  @spec get_transaction_by_hash(Hash.t()) :: {:ok, Transaction.t()} | {:error, String.t()}
+  def get_transaction_by_hash(hash) do
+    hash
+    |> Chain.hash_to_transaction(@api_true)
+    |> case do
+      {:ok, _} = result -> result
+      {:error, :not_found} -> {:error, "Transaction not found."}
     end
   end
 

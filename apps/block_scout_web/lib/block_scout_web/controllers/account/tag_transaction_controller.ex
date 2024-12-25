@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Account.TagTransactionController do
   def index(conn, _params) do
     current_user = authenticate!(conn)
 
-    render(conn, "index.html", tx_tags: TagTransaction.get_tags_transaction_by_identity_id(current_user.id))
+    render(conn, "index.html", transaction_tags: TagTransaction.get_tags_transaction_by_identity_id(current_user.id))
   end
 
   def new(conn, _params) do
@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.Account.TagTransactionController do
 
     case TagTransaction.create(%{
            name: tag_address["name"],
-           tx_hash: tag_address["tx_hash"],
+           transaction_hash: tag_address["transaction_hash"],
            identity_id: current_user.id
          }) do
       {:ok, _} ->

@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   @moduledoc """
   View functions for rendering Celo-related data in JSON format.
   """
+  use BlockScoutWeb, :view
 
   require Logger
 
@@ -20,7 +21,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     necessity_by_association: %{
       :names => :optional,
       :smart_contract => :optional,
-      :proxy_implementations => :optional
+      proxy_implementations_association() => :optional
     },
     api?: true
   ]
@@ -221,11 +222,12 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     }
   end
 
-  defp prepare_election_reward(%ElectionReward{} = reward) do
+  defp prepare_election_reward(%ElectionReward{token: %Token{}, block: %Block{}} = reward) do
     %{
       amount: reward.amount,
       block_number: reward.block.number,
       block_hash: reward.block_hash,
+      block_timestamp: reward.block.timestamp,
       epoch_number: reward.block.number |> CeloHelper.block_number_to_epoch_number(),
       account:
         Helper.address_with_info(
@@ -237,7 +239,12 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           reward.associated_account_address,
           reward.associated_account_address_hash
         ),
-      type: reward.type
+      type: reward.type,
+      token:
+        TokenView.render("token.json", %{
+          token: reward.token,
+          contract_address_hash: reward.token.contract_address_hash
+        })
     }
   end
 

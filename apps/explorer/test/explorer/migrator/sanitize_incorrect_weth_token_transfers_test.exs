@@ -115,7 +115,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
         batch_size: 1,
-        concurrency: 1
+        concurrency: 1,
+        timeout: 0
       )
 
       SanitizeIncorrectWETHTokenTransfers.start_link([])

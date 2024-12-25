@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
   For details on the structure of the `CELO_CORE_CONTRACTS` environment
   variable, see `app/explorer/lib/fetch_celo_core_contracts.ex`.
   """
-  @dialyzer :no_match
+  @dialyzer {:nowarn_function, get_address_updates: 1}
 
   require Logger
 
@@ -142,9 +142,6 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
 
         {:error, :event_name_not_found}
 
-      nil ->
-        {:error, :event_does_not_exist}
-
       {:contract_address, :error} ->
         Logger.error(fn ->
           [
@@ -161,7 +158,33 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     end
   end
 
-  defp get_address_updates(contract_atom) do
+  @doc """
+  Retrieves all address updates for a specified core contract.
+
+  ## Parameters
+
+  - `contract_atom` (`atom()`): The atom representing the core contract (e.g.,
+    `:accounts`, `:validators`).
+
+  ## Returns
+
+  - `{:ok, [map()]}`: On success, returns a list of maps containing address
+    updates for the contract.
+  - `{:error, reason}`: Returns an error tuple with one of the following
+    reasons: `:contract_atom_not_found`, `:contract_name_not_found`
+
+  ## Examples
+
+      iex> Explorer.Chain.Cache.CeloCoreContracts.get_address_updates(:validators)
+      {:ok, [%{"address" => "0x123...", "updated_at_block_number" => 1000000}, ...]}
+
+      iex> Explorer.Chain.Cache.CeloCoreContracts.get_address_updates(:unknown_contract)
+      {:error, :contract_atom_not_found}
+
+  """
+  @spec get_address_updates(atom()) ::
+          {:ok, [map()]} | {:error, :contract_atom_not_found | :contract_name_not_found}
+  def get_address_updates(contract_atom) do
     with {:atom, {:ok, contract_name}} <-
            {:atom, Map.fetch(@atom_to_contract_name, contract_atom)},
          {:addresses, {:ok, contract_name_to_addresses}} <-
@@ -223,6 +246,23 @@ defmodule Explorer.Chain.Cache.CeloCoreContracts do
     end
   end
 
+  @doc """
+  Retrieves the block number of the first address update for a given core
+  contract.
+
+  ## Parameters
+
+  - `contract_atom` (`atom()`): The atom representing the core contract.
+
+  ## Returns
+
+  - `{:ok, Block.block_number()}`: The block number of the first update.
+  - `{:error, :contract_atom_not_found}`: If the contract atom is not
+    recognized.
+  """
+  @spec get_first_update_block_number(atom()) ::
+          {:ok, Block.block_number() | nil}
+          | {:error, :contract_atom_not_found}
   def get_first_update_block_number(contract_atom) do
     with {:ok, address_updates} <- get_address_updates(contract_atom),
          %{"updated_at_block_number" => updated_at_block_number} <-

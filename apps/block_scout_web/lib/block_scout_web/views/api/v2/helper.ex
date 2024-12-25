@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
   @moduledoc """
     API V2 helper
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Address
@@ -64,28 +65,25 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def address_with_info(%Address{} = address, _address_hash) do
     smart_contract? = Address.smart_contract?(address)
 
-    {proxy_implementations, implementation_address_hashes, implementation_names, proxy_type} =
+    proxy_implementations =
       case address.proxy_implementations do
         %NotLoaded{} ->
-          {nil, [], [], nil}
+          nil
 
         nil ->
-          {nil, [], [], nil}
+          nil
 
         proxy_implementations ->
-          address_hashes = proxy_implementations.address_hashes
-          names = proxy_implementations.names
-          proxy_type = proxy_implementations.proxy_type
-
-          {proxy_implementations, address_hashes, names, proxy_type}
+          proxy_implementations
       end
 
     %{
       "hash" => Address.checksum(address),
       "is_contract" => smart_contract?,
       "name" => address_name(address),
-      "proxy_type" => proxy_type,
-      "implementations" => Proxy.proxy_object_info(implementation_address_hashes, implementation_names),
+      "is_scam" => address_marked_as_scam?(address),
+      "proxy_type" => proxy_implementations && proxy_implementations.proxy_type,
+      "implementations" => Proxy.proxy_object_info(proxy_implementations),
       "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
@@ -121,7 +119,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
     }
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :filecoin ->
       defp address_chain_type_fields(result, address) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
@@ -157,6 +155,16 @@ defmodule BlockScoutWeb.API.V2.Helper do
   end
 
   def address_name(_), do: nil
+
+  def address_marked_as_scam?(%Address{scam_badge: %Ecto.Association.NotLoaded{}}) do
+    false
+  end
+
+  def address_marked_as_scam?(%Address{scam_badge: scam_badge}) when not is_nil(scam_badge) do
+    true
+  end
+
+  def address_marked_as_scam?(_), do: false
 
   def verified?(%Address{smart_contract: nil}), do: false
   def verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false

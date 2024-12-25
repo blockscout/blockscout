@@ -1,6 +1,6 @@
 defmodule Explorer.Migrator.FillingMigration do
   @moduledoc """
-  Template for creating migrations that fills some fields in existing entities
+  Template for creating migrations that fills some fields in existing entities or migrates data to another storages (e.g. multichain search DB)
   """
 
   @callback migration_name :: String.t()
@@ -8,6 +8,8 @@ defmodule Explorer.Migrator.FillingMigration do
   @callback last_unprocessed_identifiers(map()) :: {[any()], map()}
   @callback update_batch([any()]) :: any()
   @callback update_cache :: any()
+  @callback on_finish :: any()
+  @callback before_start :: any()
 
   defmacro __using__(_opts) do
     quote do
@@ -44,7 +46,8 @@ defmodule Explorer.Migrator.FillingMigration do
 
           migration_status ->
             MigrationStatus.set_status(migration_name(), "started")
-            schedule_batch_migration()
+            before_start()
+            schedule_batch_migration(0)
             {:noreply, (migration_status && migration_status.meta) || %{}}
         end
       end
@@ -53,6 +56,7 @@ defmodule Explorer.Migrator.FillingMigration do
       def handle_info(:migrate_batch, state) do
         case last_unprocessed_identifiers(state) do
           {[], new_state} ->
+            on_finish()
             update_cache()
             MigrationStatus.set_status(migration_name(), "completed")
             {:stop, :normal, new_state}
@@ -73,8 +77,8 @@ defmodule Explorer.Migrator.FillingMigration do
 
       defp run_task(batch), do: Task.async(fn -> update_batch(batch) end)
 
-      defp schedule_batch_migration do
-        Process.send(self(), :migrate_batch, [])
+      defp schedule_batch_migration(timeout \\ nil) do
+        Process.send_after(self(), :migrate_batch, timeout || Application.get_env(:explorer, __MODULE__)[:timeout] || 0)
       end
 
       defp batch_size do
@@ -86,6 +90,16 @@ defmodule Explorer.Migrator.FillingMigration do
 
         Application.get_env(:explorer, __MODULE__)[:concurrency] || default
       end
+
+      def on_finish do
+        :ignore
+      end
+
+      def before_start do
+        :ignore
+      end
+
+      defoverridable on_finish: 0, before_start: 0
     end
   end
 end

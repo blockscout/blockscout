@@ -4,7 +4,14 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
   """
   use BlockScoutWeb, :router
 
-  alias BlockScoutWeb.Account.Api.V2.{AuthenticateController, EmailController, TagsController, UserController}
+  alias BlockScoutWeb.Account.API.V2.{
+    AddressController,
+    AuthenticateController,
+    EmailController,
+    TagsController,
+    UserController
+  }
+
   alias BlockScoutWeb.Plug.{CheckAccountAPI, CheckAccountWeb}
 
   @max_query_string_length 5_000
@@ -117,8 +124,13 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
 
     get("/get_csrf", UserController, :get_csrf)
 
+    scope "/address" do
+      post("/link", AddressController, :link_address)
+    end
+
     scope "/email" do
       get("/resend", EmailController, :resend_email)
+      post("/link", EmailController, :link_email)
     end
 
     scope "/user" do
@@ -169,5 +181,14 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
 
       get("/transaction/:transaction_hash", TagsController, :tags_transaction)
     end
+  end
+
+  scope "/v2" do
+    pipe_through(:api)
+
+    post("/authenticate_via_wallet", AuthenticateController, :authenticate_via_wallet)
+    post("/send_otp", AuthenticateController, :send_otp)
+    post("/confirm_otp", AuthenticateController, :confirm_otp)
+    get("/siwe_message", AuthenticateController, :siwe_message)
   end
 end

@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   @api_true [api?: true]
 
   def gettxinfo(conn, params) do
-    with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
+    with {:txhash_param, {:ok, txhash_param}} <- fetch_transaction_hash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
          {:transaction, {:ok, %Transaction{revert_reason: revert_reason, error: error} = transaction}} <-
            transaction_from_hash(transaction_hash),
@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
 
       transaction_updated =
         if (error == "Reverted" || error == "execution reverted") && !revert_reason do
-          %Transaction{transaction | revert_reason: Chain.fetch_tx_revert_reason(transaction)}
+          %Transaction{transaction | revert_reason: Chain.fetch_transaction_revert_reason(transaction)}
         else
           transaction
         end
@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   end
 
   def gettxreceiptstatus(conn, params) do
-    with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
+    with {:txhash_param, {:ok, txhash_param}} <- fetch_transaction_hash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param) do
       status = to_transaction_status(transaction_hash)
       render(conn, :gettxreceiptstatus, %{status: status})
@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   end
 
   def getstatus(conn, params) do
-    with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
+    with {:txhash_param, {:ok, txhash_param}} <- fetch_transaction_hash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param) do
       error = to_transaction_error(transaction_hash)
       render(conn, :getstatus, %{error: error})
@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
     end
   end
 
-  defp fetch_txhash(params) do
+  defp fetch_transaction_hash(params) do
     {:txhash_param, Map.fetch(params, "txhash")}
   end
 

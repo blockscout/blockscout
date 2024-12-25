@@ -86,121 +86,32 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
              "Tuple was written even though it is not distinct"
     end
 
-    test "update_token_instances_owner inserts correct token instances in cases when log_index is not unique within block",
-         %{
-           consensus_block: %{hash: previous_block_hash, miner_hash: miner_hash, number: previous_block_number},
-           options: options
-         } do
-      old_env = Application.get_env(:explorer, :chain_type)
+    test "coin balances are deleted and new balances are derived if some blocks lost consensus",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      %{hash: address_hash} = address = insert(:address)
 
-      Application.put_env(:explorer, :chain_type, :polygon_zkevm)
+      prev_block_number = block_number - 1
 
-      previous_consensus_block = insert(:block, hash: previous_block_hash, number: previous_block_number)
-      %{hash: block_hash, number: block_number} = consensus_block = insert(:block)
+      insert(:address_coin_balance, address: address, block_number: block_number)
+      %{value: prev_value} = insert(:address_coin_balance, address: address, block_number: prev_block_number)
 
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(consensus_block)
+      assert count(Address.CoinBalance) == 2
 
-      transaction_with_previous_transfer =
-        :transaction
-        |> insert()
-        |> with_block(previous_consensus_block, index: 1)
-
-      older_transaction_with_previous_transfer =
-        :transaction
-        |> insert()
-        |> with_block(previous_consensus_block, index: 0)
-
-      transaction_of_other_instance =
-        :transaction
-        |> insert()
-        |> with_block(previous_consensus_block)
-
-      token = insert(:token, type: "ERC-721")
-      correct_token_id = Decimal.new(1)
-
-      forked_token_transfer =
-        insert(:token_transfer,
-          token_type: "ERC-721",
-          token_contract_address: token.contract_address,
-          transaction: transaction,
-          token_ids: [correct_token_id],
-          block_number: block_number
-        )
-
-      _token_instance =
-        insert(:token_instance,
-          token_id: correct_token_id,
-          token_contract_address_hash: token.contract_address_hash,
-          owner_updated_at_block: block_number,
-          owner_updated_at_log_index: forked_token_transfer.log_index
-        )
-
-      _previous_token_transfer =
-        insert(:token_transfer,
-          token_type: "ERC-721",
-          token_contract_address: token.contract_address,
-          transaction: transaction_with_previous_transfer,
-          token_ids: [correct_token_id],
-          block_number: previous_block_number,
-          log_index: 10
-        )
-
-      _older_previous_token_transfer =
-        insert(:token_transfer,
-          token_type: "ERC-721",
-          token_contract_address: token.contract_address,
-          transaction: older_transaction_with_previous_transfer,
-          token_ids: [correct_token_id],
-          block_number: previous_block_number,
-          log_index: 11
-        )
-
-      _unsuitable_token_instance =
-        insert(:token_instance,
-          token_id: 2,
-          token_contract_address_hash: token.contract_address_hash,
-          owner_updated_at_block: previous_block_number,
-          owner_updated_at_log_index: forked_token_transfer.log_index
-        )
-
-      _unsuitable_token_transfer =
-        insert(:token_transfer,
-          token_type: "ERC-721",
-          token_contract_address: token.contract_address,
-          transaction: transaction_of_other_instance,
-          token_ids: [2],
-          block_number: previous_block_number,
-          log_index: forked_token_transfer.log_index
-        )
-
-      block_params =
-        params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: false)
-
-      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
-      changes_list = [block_changes]
-
-      assert {:ok, %{}}
+      insert(:block, number: block_number, consensus: true)
 
       assert {:ok,
               %{
-                update_token_instances_owner: [
+                delete_address_coin_balances: [^address_hash],
+                derive_address_fetched_coin_balances: [
                   %{
-                    token_id: ^correct_token_id,
-                    owner_updated_at_block: ^previous_block_number,
-                    owner_updated_at_log_index: 10
+                    hash: ^address_hash,
+                    fetched_coin_balance: ^prev_value,
+                    fetched_coin_balance_block_number: ^prev_block_number
                   }
                 ]
-              }} =
-               Multi.new()
-               |> Blocks.run(changes_list, options)
-               |> Repo.transaction()
+              }} = run_block_consensus_change(block, true, options)
 
-      on_exit(fn ->
-        Application.put_env(:explorer, :chain_type, old_env)
-      end)
+      assert %{value: ^prev_value, block_number: ^prev_block_number} = Repo.one(Address.CoinBalance)
     end
 
     test "delete_address_current_token_balances deletes rows with matching block number when consensus is true",
@@ -219,7 +130,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
                 ]
               }} = run_block_consensus_change(block, true, options)
 
-      assert %{value: nil} = Repo.one(Address.CurrentTokenBalance)
+      assert count(Address.CurrentTokenBalance) == 0
     end
 
     test "delete_address_current_token_balances does not delete rows with matching block number when consensus is false",
@@ -236,6 +147,100 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
               }} = run_block_consensus_change(block, false, options)
 
       assert count(Address.CurrentTokenBalance) == count
+    end
+
+    test "derive_address_current_token_balances inserts rows if there is an address_token_balance left for the rows deleted by delete_address_current_token_balances",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      token = insert(:token)
+      token_contract_address_hash = token.contract_address_hash
+
+      %Address{hash: address_hash} =
+        insert_address_with_token_balances(%{
+          previous: %{value: 1},
+          current: %{block_number: block_number, value: 2},
+          token_contract_address_hash: token_contract_address_hash
+        })
+
+      # Token must exist with non-`nil` `holder_count` for `blocks_update_token_holder_counts` to update
+      update_holder_count!(token_contract_address_hash, 1)
+
+      assert count(Address.TokenBalance) == 2
+      assert count(Address.CurrentTokenBalance) == 1
+
+      previous_block_number = block_number - 1
+
+      insert(:block, number: block_number, consensus: true)
+
+      assert {:ok,
+              %{
+                delete_address_current_token_balances: [
+                  %{
+                    address_hash: ^address_hash,
+                    token_contract_address_hash: ^token_contract_address_hash
+                  }
+                ],
+                delete_address_token_balances: [
+                  %{
+                    address_hash: ^address_hash,
+                    token_contract_address_hash: ^token_contract_address_hash,
+                    block_number: ^block_number
+                  }
+                ],
+                derive_address_current_token_balances: [
+                  %{
+                    address_hash: ^address_hash,
+                    token_contract_address_hash: ^token_contract_address_hash,
+                    block_number: ^previous_block_number
+                  }
+                ],
+                # no updates because it both deletes and derives a holder
+                blocks_update_token_holder_counts: []
+              }} = run_block_consensus_change(block, true, options)
+
+      assert count(Address.TokenBalance) == 1
+      assert count(Address.CurrentTokenBalance) == 1
+
+      previous_value = Decimal.new(1)
+
+      assert %Address.CurrentTokenBalance{block_number: ^previous_block_number, value: ^previous_value} =
+               Repo.get_by(Address.CurrentTokenBalance,
+                 address_hash: address_hash,
+                 token_contract_address_hash: token_contract_address_hash
+               )
+    end
+
+    test "a non-holder reverting to a holder increases the holder_count",
+         %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
+      token = insert(:token)
+      token_contract_address_hash = token.contract_address_hash
+
+      non_holder_reverts_to_holder(%{
+        current: %{block_number: block_number},
+        token_contract_address_hash: token_contract_address_hash
+      })
+
+      # Token must exist with non-`nil` `holder_count` for `blocks_update_token_holder_counts` to update
+      update_holder_count!(token_contract_address_hash, 0)
+
+      insert(:block, number: block_number, consensus: true)
+
+      block_params = params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: true)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+      changes_list = [block_changes]
+
+      assert {:ok,
+              %{
+                blocks_update_token_holder_counts: [
+                  %{
+                    contract_address_hash: ^token_contract_address_hash,
+                    holder_count: 1
+                  }
+                ]
+              }} =
+               Multi.new()
+               |> Blocks.run(changes_list, options)
+               |> Repo.transaction()
     end
 
     test "a holder reverting to a non-holder decreases the holder_count",
@@ -526,7 +531,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       consensus_block_2 = insert(:block, %{hash: hash_2, number: block_number - 2})
 
       for _ <- 0..10 do
-        tx =
+        transaction =
           :transaction
           |> insert()
           |> with_block(consensus_block_2)
@@ -534,7 +539,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         insert(:token_transfer,
           token_ids: [id],
           token_type: "ERC-721",
-          transaction: tx,
+          transaction: transaction,
           token_contract_address: tt.token_contract_address,
           block_number: consensus_block_2.number,
           block: consensus_block_2

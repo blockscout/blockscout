@@ -14,54 +14,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
   @default_binary_search_threshold 1000
 
-  # outbox()
-  @selector_outbox "ce11e6ab"
-  # sequencerInbox()
-  @selector_sequencer_inbox "ee35f327"
-  # bridge()
-  @selector_bridge "e78cea92"
-  @rollup_contract_abi [
-    %{
-      "inputs" => [],
-      "name" => "outbox",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "sequencerInbox",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "bridge",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
   # getKeysetCreationBlock(bytes32 ksHash)
   @selector_get_keyset_creation_block "258f0495"
   @selector_sequencer_inbox_contract_abi [
@@ -102,7 +54,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     Constructs a JSON RPC request to retrieve a transaction by its hash.
 
     ## Parameters
-    - `%{hash: tx_hash, id: id}`: A map containing the transaction hash (`tx_hash`) and
+    - `%{hash: transaction_hash, id: id}`: A map containing the transaction hash (`transaction_hash`) and
       an identifier (`id`) for the request, which can be used later to establish
       correspondence between requests and responses.
 
@@ -111,48 +63,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       the transaction details associated with the given hash.
   """
   @spec transaction_by_hash_request(%{hash: EthereumJSONRPC.hash(), id: non_neg_integer()}) :: Transport.request()
-  def transaction_by_hash_request(%{id: id, hash: tx_hash})
-      when is_binary(tx_hash) and is_integer(id) do
-    EthereumJSONRPC.request(%{id: id, method: "eth_getTransactionByHash", params: [tx_hash]})
-  end
-
-  @doc """
-    Retrieves specific contract addresses associated with Arbitrum rollup contract.
-
-    This function fetches the addresses of the bridge, sequencer inbox, and outbox
-    contracts related to the specified Arbitrum rollup address. It invokes one of
-    the contract methods `bridge()`, `sequencerInbox()`, or `outbox()` based on
-    the `contracts_set` parameter to obtain the required information.
-
-    ## Parameters
-    - `rollup_address`: The address of the Arbitrum rollup contract from which
-                        information is being retrieved.
-    - `contracts_set`: A symbol indicating the set of contracts to retrieve (`:bridge`
-                       for the bridge contract, `:inbox_outbox` for the sequencer
-                       inbox and outbox contracts).
-    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-
-    ## Returns
-    - A map with keys corresponding to the contract types (`:bridge`, `:sequencer_inbox`,
-      `:outbox`) and values representing the contract addresses.
-  """
-  @spec get_contracts_for_rollup(
-          EthereumJSONRPC.address(),
-          :bridge | :inbox_outbox,
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: %{(:bridge | :sequencer_inbox | :outbox) => binary()}
-  def get_contracts_for_rollup(rollup_address, contracts_set, json_rpc_named_arguments)
-
-  def get_contracts_for_rollup(rollup_address, :bridge, json_rpc_named_arguments) do
-    call_simple_getters_in_rollup_contract(rollup_address, [@selector_bridge], json_rpc_named_arguments)
-  end
-
-  def get_contracts_for_rollup(rollup_address, :inbox_outbox, json_rpc_named_arguments) do
-    call_simple_getters_in_rollup_contract(
-      rollup_address,
-      [@selector_sequencer_inbox, @selector_outbox],
-      json_rpc_named_arguments
-    )
+  def transaction_by_hash_request(%{id: id, hash: transaction_hash})
+      when is_binary(transaction_hash) and is_integer(id) do
+    EthereumJSONRPC.request(%{id: id, method: "eth_getTransactionByHash", params: [transaction_hash]})
   end
 
   @doc """
@@ -182,38 +95,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       @selector_sequencer_inbox_contract_abi,
       json_rpc_named_arguments
     )
-  end
-
-  # Calls getter functions on a rollup contract and collects their return values.
-  #
-  # This function is designed to interact with a rollup contract and invoke specified getter methods.
-  # It creates a list of requests for each method ID, executes these requests with retries as needed,
-  # and then maps the results to the corresponding method IDs.
-  #
-  # ## Parameters
-  # - `rollup_address`: The address of the rollup contract to interact with.
-  # - `method_ids`: A list of method identifiers representing the getter functions to be called.
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #
-  # ## Returns
-  # - A map where each key is a method identifier converted to an atom, and each value is the
-  #   response from calling the respective method on the contract.
-  defp call_simple_getters_in_rollup_contract(rollup_address, method_ids, json_rpc_named_arguments) do
-    method_ids
-    |> Enum.map(fn method_id ->
-      %{
-        contract_address: rollup_address,
-        method_id: method_id,
-        args: []
-      }
-    end)
-    |> IndexerHelper.read_contracts_with_retries(@rollup_contract_abi, json_rpc_named_arguments, @rpc_resend_attempts)
-    # Extracts the list of responses from the tuple returned by read_contracts_with_retries.
-    |> Kernel.elem(0)
-    |> Enum.zip(method_ids)
-    |> Enum.reduce(%{}, fn {{:ok, [response]}, method_id}, retval ->
-      Map.put(retval, atomized_key(method_id), response)
-    end)
   end
 
   @doc """
@@ -325,7 +206,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     Executes a list of transaction requests and retrieves the sender (from) addresses for each.
 
     ## Parameters
-    - `txs_requests`: A list of `Transport.request()` instances representing the transaction requests.
+    - `transactions_requests`: A list of `Transport.request()` instances representing the transaction requests.
     - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
     - `chunk_size`: The number of requests to be processed in each batch, defining the size of the chunks.
 
@@ -337,9 +218,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           EthereumJSONRPC.json_rpc_named_arguments(),
           non_neg_integer()
         ) :: [%{EthereumJSONRPC.hash() => EthereumJSONRPC.address()}]
-  def execute_transactions_requests_and_get_from(txs_requests, json_rpc_named_arguments, chunk_size)
-      when is_list(txs_requests) and is_integer(chunk_size) do
-    txs_requests
+  def execute_transactions_requests_and_get_from(transactions_requests, json_rpc_named_arguments, chunk_size)
+      when is_list(transactions_requests) and is_integer(chunk_size) do
+    transactions_requests
     |> Enum.chunk_every(chunk_size)
     |> Enum.reduce(%{}, fn chunk, result ->
       chunk
@@ -646,7 +527,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
       # inspected block is in the boundary of the required batch: the current batch is the same
       # as one found in the previous iteration or the step is not the smallest possible.
 
-      next_block_to_inspect = max(1, inspected_block - new_step)
+      # it is OK to use the earliest block 0 as since the corresponding batch (0)
+      # will be returned by get_batch_number_for_rollup_block.
+      next_block_to_inspect = max(0, inspected_block - new_step)
 
       do_binary_search_of_opposite_block(
         next_block_to_inspect,
@@ -724,7 +607,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
           [term()],
           [map()],
           EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: non_neg_integer()
+        ) :: non_neg_integer() | boolean()
   defp read_contract_and_handle_result_as_integer(
          contract_address,
          method_selector,
@@ -763,13 +646,13 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   @spec string_hash_to_bytes_hash(EthereumJSONRPC.hash() | nil) :: binary()
   def string_hash_to_bytes_hash(hash) do
     hash
-    |> json_tx_id_to_hash()
+    |> json_transaction_id_to_hash()
     |> Base.decode16!(case: :mixed)
   end
 
-  defp json_tx_id_to_hash(hash) do
+  defp json_transaction_id_to_hash(hash) do
     case hash do
-      "0x" <> tx_hash -> tx_hash
+      "0x" <> transaction_hash -> transaction_hash
       nil -> @zero_hash
     end
   end
@@ -784,8 +667,4 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   def get_resend_attempts do
     @rpc_resend_attempts
   end
-
-  defp atomized_key(@selector_outbox), do: :outbox
-  defp atomized_key(@selector_sequencer_inbox), do: :sequencer_inbox
-  defp atomized_key(@selector_bridge), do: :bridge
 end

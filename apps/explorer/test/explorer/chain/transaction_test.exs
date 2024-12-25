@@ -252,29 +252,33 @@ defmodule Explorer.Chain.TransactionTest do
     test "that a transaction that is not a contract call returns a commensurate error" do
       transaction = insert(:transaction)
 
-      assert {{:error, :not_a_contract_call}, _, _} = Transaction.decoded_input_data(transaction, [])
+      assert {:error, :not_a_contract_call} = Transaction.decoded_input_data(transaction, [])
     end
 
     test "that a contract call transaction that has no verified contract returns a commensurate error" do
       transaction =
         :transaction
-        |> insert(to_address: insert(:contract_address))
+        |> insert(to_address: insert(:contract_address), input: "0x1234567891")
         |> Repo.preload(to_address: :smart_contract)
 
-      assert {{:error, :contract_not_verified, []}, _, _} = Transaction.decoded_input_data(transaction, [])
+      assert {:error, :contract_not_verified, []} = Transaction.decoded_input_data(transaction, [])
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       transaction =
         :transaction_to_verified_contract
         |> insert()
         |> Repo.preload(to_address: :smart_contract)
 
-      assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}, _, _} =
+      assert {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]} =
                Transaction.decoded_input_data(transaction, [])
     end
 
     test "that a contract call will look up a match in contract_methods table" do
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       :transaction_to_verified_contract
       |> insert()
       |> Repo.preload(to_address: :smart_contract)
@@ -291,11 +295,13 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: contract.address, input: "0x" <> input_data)
         |> Repo.preload(to_address: :smart_contract)
 
-      assert {{:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}, _, _} =
+      assert {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]} =
                Transaction.decoded_input_data(transaction, [])
     end
 
     test "arguments name in function call replaced with argN if it's empty string" do
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
       contract =
         insert(:smart_contract,
           contract_code_md5: "123",
@@ -323,7 +329,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: contract.address, input: "0x" <> input_data)
         |> Repo.preload(to_address: :smart_contract)
 
-      assert {{:ok, "60fe47b1", "set(uint256 arg0)", [{"arg0", "uint256", 10}]}, _, _} =
+      assert {:ok, "60fe47b1", "set(uint256 arg0)", [{"arg0", "uint256", 10}]} =
                Transaction.decoded_input_data(transaction, [])
     end
   end

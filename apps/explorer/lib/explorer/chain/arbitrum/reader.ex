@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   """
 
   import Ecto.Query, only: [dynamic: 2, from: 2, limit: 2, order_by: 2, select: 3, subquery: 1, where: 2, where: 3]
-  import Explorer.Chain, only: [select_repo: 1]
+  import Explorer.Chain, only: [log_with_transactions_query: 0, select_repo: 1]
 
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
@@ -23,9 +23,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
 
   # https://github.com/OffchainLabs/go-ethereum/blob/dff302de66598c36b964b971f72d35a95148e650/core/types/transaction.go#L44C2-L50
   @message_to_l2_eth_deposit 100
-  @message_to_l2_submit_retryable_tx 105
-
-  @zero_wei 0
+  @message_to_l2_submit_retryable_transaction 105
+  @to_l2_messages_transaction_types [
+    @message_to_l2_eth_deposit,
+    @message_to_l2_submit_retryable_transaction
+  ]
 
   @doc """
     Retrieves the number of the latest L1 block where an L1-to-L2 message was discovered.
@@ -110,7 +112,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     missed_messages_to_l2_query()
     |> order_by(desc: :block_number)
     |> limit(1)
-    |> select([rollup_tx], rollup_tx.block_number)
+    |> select([rollup_transaction], rollup_transaction.block_number)
     |> Repo.one(timeout: :infinity)
   end
 
@@ -193,7 +195,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     Reads a list of L1 transactions by their hashes from the `arbitrum_lifecycle_l1_transactions` table and returns their IDs.
 
     ## Parameters
-    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+    - `l1_transaction_hashes`: A list of hashes to retrieve L1 transactions for.
 
     ## Returns
     - A list of tuples containing transaction hashes and IDs for the transaction
@@ -201,12 +203,12 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       list.
   """
   @spec lifecycle_transaction_ids([binary()]) :: [{Hash.t(), non_neg_integer}]
-  def lifecycle_transaction_ids(l1_tx_hashes) when is_list(l1_tx_hashes) do
+  def lifecycle_transaction_ids(l1_transaction_hashes) when is_list(l1_transaction_hashes) do
     query =
       from(
         lt in LifecycleTransaction,
         select: {lt.hash, lt.id},
-        where: lt.hash in ^l1_tx_hashes
+        where: lt.hash in ^l1_transaction_hashes
       )
 
     Repo.all(query)
@@ -216,7 +218,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     Reads a list of L1 transactions by their hashes from the `arbitrum_lifecycle_l1_transactions` table.
 
     ## Parameters
-    - `l1_tx_hashes`: A list of hashes to retrieve L1 transactions for.
+    - `l1_transaction_hashes`: A list of hashes to retrieve L1 transactions for.
 
     ## Returns
     - A list of `Explorer.Chain.Arbitrum.LifecycleTransaction` corresponding to the
@@ -224,11 +226,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
       list.
   """
   @spec lifecycle_transactions([binary()]) :: [LifecycleTransaction.t()]
-  def lifecycle_transactions(l1_tx_hashes) when is_list(l1_tx_hashes) do
+  def lifecycle_transactions(l1_transaction_hashes) when is_list(l1_transaction_hashes) do
     query =
       from(
         lt in LifecycleTransaction,
-        where: lt.hash in ^l1_tx_hashes
+        where: lt.hash in ^l1_transaction_hashes
       )
 
     Repo.all(query)
@@ -475,11 +477,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def l1_block_of_latest_execution do
     query =
       from(
-        tx in LifecycleTransaction,
+        transaction in LifecycleTransaction,
         inner_join: ex in L1Execution,
-        on: tx.id == ex.execution_id,
-        select: tx.block_number,
-        order_by: [desc: tx.block_number],
+        on: transaction.id == ex.execution_id,
+        select: transaction.block_number,
+        order_by: [desc: transaction.block_number],
         limit: 1
       )
 
@@ -497,11 +499,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   def l1_block_of_earliest_execution do
     query =
       from(
-        tx in LifecycleTransaction,
+        transaction in LifecycleTransaction,
         inner_join: ex in L1Execution,
-        on: tx.id == ex.execution_id,
-        select: tx.block_number,
-        order_by: [asc: tx.block_number],
+        on: transaction.id == ex.execution_id,
+        select: transaction.block_number,
+        order_by: [asc: transaction.block_number],
         limit: 1
       )
 
@@ -606,6 +608,76 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   end
 
   @doc """
+    Retrieves L2-to-L1 messages initiated by specified transaction.
+
+    The messages are filtered by the originating transaction hash (with any status).
+    In the common case a transaction can initiate several messages.
+
+    ## Parameters
+    - `transaction_hash`: The transaction hash which initiated the messages.
+
+    ## Returns
+    - Instances of `Explorer.Chain.Arbitrum.Message` initiated by the transaction
+      with the given hash, or `[]` if no messages with the given status are found.
+  """
+  @spec l2_to_l1_messages_by_transaction_hash(Hash.Full.t(), api?: boolean()) :: [
+          Message.t()
+        ]
+  def l2_to_l1_messages_by_transaction_hash(transaction_hash, options \\ []) when is_list(options) do
+    query =
+      from(msg in Message,
+        where: msg.direction == :from_l2 and msg.originating_transaction_hash == ^transaction_hash,
+        order_by: [desc: msg.message_id]
+      )
+
+    query
+    |> select_repo(options).all()
+  end
+
+  @doc """
+    Retrieves logs from a transaction that match a specific topic.
+
+    Fetches all logs emitted by the specified transaction that have the given topic
+    as their first topic, ordered by log index.
+
+    ## Parameters
+    - `transaction_hash`: The hash of the transaction to fetch logs from
+    - `topic0`: The first topic to filter logs by
+    - `options`: Optional keyword list with `:api?` flag to use replica database
+
+    ## Returns
+    - A list of matching logs ordered by index, or empty list if none found
+  """
+  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary(), api?: boolean()) :: [Log.t()]
+  def transaction_to_logs_by_topic0(transaction_hash, topic0, options \\ []) when is_list(options) do
+    log_with_transactions_query()
+    |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
+    |> order_by(asc: :index)
+    |> select_repo(options).all()
+  end
+
+  @doc """
+    Retrieves L2-to-L1 message by message id.
+
+    ## Parameters
+    - `message_id`: message ID
+    - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - Instance of `Explorer.Chain.Arbitrum.Message` with the provided message id,
+      or nil if message with the given id doesn't exist.
+  """
+  @spec l2_to_l1_message_by_id(non_neg_integer(), api?: boolean()) :: Message.t() | nil
+  def l2_to_l1_message_by_id(message_id, options) do
+    query =
+      from(message in Message,
+        where: message.direction == :from_l2 and message.message_id == ^message_id
+      )
+
+    select_repo(options).one(query)
+  end
+
+  @doc """
     Retrieves the numbers of the L1 blocks containing the confirmation transactions
     bounding the first interval where missed confirmation transactions could be found.
 
@@ -670,11 +742,11 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     main_query =
       from(
         subquery in subquery(confirmed_combined_ranges_query),
-        inner_join: tx_cur in LifecycleTransaction,
-        on: subquery.confirmation_id == tx_cur.id,
-        left_join: tx_prev in LifecycleTransaction,
-        on: subquery.prev_confirmation_id == tx_prev.id,
-        select: {tx_prev.block_number, tx_cur.block_number},
+        inner_join: current_transaction in LifecycleTransaction,
+        on: subquery.confirmation_id == current_transaction.id,
+        left_join: previous_transaction in LifecycleTransaction,
+        on: subquery.prev_confirmation_id == previous_transaction.id,
+        select: {previous_transaction.block_number, current_transaction.block_number},
         where: subquery.min_block_num - 1 != subquery.prev_max_number or is_nil(subquery.prev_max_number),
         order_by: [desc: subquery.min_block_num],
         limit: 1
@@ -824,9 +896,12 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   @spec transactions_for_missed_messages_to_l2(non_neg_integer(), non_neg_integer()) :: [Hash.t()]
   def transactions_for_missed_messages_to_l2(start_block, end_block) do
     missed_messages_to_l2_query()
-    |> where([rollup_tx], rollup_tx.block_number >= ^start_block and rollup_tx.block_number <= ^end_block)
+    |> where(
+      [rollup_transaction],
+      rollup_transaction.block_number >= ^start_block and rollup_transaction.block_number <= ^end_block
+    )
     |> order_by(desc: :block_timestamp)
-    |> select([rollup_tx], rollup_tx.hash)
+    |> select([rollup_transaction], rollup_transaction.hash)
     |> Repo.all()
   end
 
@@ -838,21 +913,14 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   # table. A message is considered missed if there is a transaction without a
   # matching message record.
   #
-  # For transactions that could be considered ETH deposits, it checks
-  # that the message value is not zero, as transactions with a zero value
-  # cannot be a deposit.
-  #
   # ## Returns
   #   - A query to retrieve missed L1-to-L2 messages.
   @spec missed_messages_to_l2_query() :: Ecto.Query.t()
   defp missed_messages_to_l2_query do
-    from(rollup_tx in Transaction,
+    from(rollup_transaction in Transaction,
       left_join: msg in Message,
-      on: rollup_tx.hash == msg.completion_transaction_hash and msg.direction == :to_l2,
-      where:
-        (rollup_tx.type == ^@message_to_l2_submit_retryable_tx or
-           (rollup_tx.type == ^@message_to_l2_eth_deposit and rollup_tx.value != ^@zero_wei)) and
-          is_nil(msg.completion_transaction_hash)
+      on: rollup_transaction.hash == msg.completion_transaction_hash and msg.direction == :to_l2,
+      where: rollup_transaction.type in @to_l2_messages_transaction_types and is_nil(msg.completion_transaction_hash)
     )
   end
 
@@ -1057,7 +1125,7 @@ defmodule Explorer.Chain.Arbitrum.Reader do
   """
   @spec batch_transactions(non_neg_integer() | binary(), api?: boolean()) :: [BatchTransaction.t()]
   def batch_transactions(batch_number, options) do
-    query = from(tx in BatchTransaction, where: tx.batch_number == ^batch_number)
+    query = from(transaction in BatchTransaction, where: transaction.batch_number == ^batch_number)
 
     select_repo(options).all(query)
   end
@@ -1336,5 +1404,22 @@ defmodule Explorer.Chain.Arbitrum.Reader do
     # :optional is used since a block may not have any transactions
     |> Chain.join_associations(%{:transactions => :optional})
     |> Repo.all()
+  end
+
+  @doc """
+    Retrieves the message IDs of uncompleted L1-to-L2 messages.
+
+    ## Returns
+    - A list of the message IDs of uncompleted L1-to-L2 messages.
+  """
+  @spec get_uncompleted_l1_to_l2_messages_ids() :: [non_neg_integer()]
+  def get_uncompleted_l1_to_l2_messages_ids do
+    query =
+      from(msg in Message,
+        where: msg.direction == :to_l2 and is_nil(msg.completion_transaction_hash),
+        select: msg.message_id
+      )
+
+    Repo.all(query)
   end
 end

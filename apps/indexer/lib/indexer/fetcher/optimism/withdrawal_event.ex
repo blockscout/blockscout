@@ -16,7 +16,8 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.WithdrawalEvent
-  alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
+  alias Explorer.Chain.RollupReorgMonitorQueue
+  alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
   @fetcher_name :optimism_withdrawal_events
@@ -68,20 +69,21 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
           block_check_interval: block_check_interval,
           start_block: start_block,
           end_block: end_block,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          eth_get_logs_range_size: eth_get_logs_range_size
         } = state
       ) do
     # credo:disable-for-next-line
     time_before = Timex.now()
 
-    chunks_number = ceil((end_block - start_block + 1) / Optimism.get_logs_range_size())
+    chunks_number = ceil((end_block - start_block + 1) / eth_get_logs_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
     last_written_block =
       chunk_range
       |> Enum.reduce_while(start_block - 1, fn current_chunk, _ ->
-        chunk_start = start_block + Optimism.get_logs_range_size() * current_chunk
-        chunk_end = min(chunk_start + Optimism.get_logs_range_size() - 1, end_block)
+        chunk_start = start_block + eth_get_logs_range_size * current_chunk
+        chunk_end = min(chunk_start + eth_get_logs_range_size - 1, end_block)
 
         if chunk_end >= chunk_start do
           Helper.log_blocks_chunk_handling(chunk_start, chunk_end, start_block, end_block, nil, :L1)
@@ -119,7 +121,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
           )
         end
 
-        reorg_block = RollupL1ReorgMonitor.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} = Repo.delete_all(from(we in WithdrawalEvent, where: we.l1_block_number >= ^reorg_block))
@@ -164,15 +166,15 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     end
   end
 
-  defp get_transaction_input_by_hash(blocks, tx_hashes) do
+  defp get_transaction_input_by_hash(blocks, transaction_hashes) do
     Enum.reduce(blocks, %{}, fn block, acc ->
       block
       |> Map.get("transactions", [])
-      |> Enum.filter(fn tx ->
-        Enum.member?(tx_hashes, tx["hash"])
+      |> Enum.filter(fn transaction ->
+        Enum.member?(transaction_hashes, transaction["hash"])
       end)
-      |> Enum.map(fn tx ->
-        {tx["hash"], tx["input"]}
+      |> Enum.map(fn transaction ->
+        {transaction["hash"], transaction["input"]}
       end)
       |> Enum.into(%{})
       |> Map.merge(acc)
@@ -184,7 +186,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
       events
       |> get_blocks_by_events(json_rpc_named_arguments, Helper.infinite_retries_number())
 
-    tx_hashes =
+    transaction_hashes =
       events
       |> Enum.reduce([], fn event, acc ->
         if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
@@ -194,7 +196,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         end
       end)
 
-    input_by_hash = get_transaction_input_by_hash(blocks, tx_hashes)
+    input_by_hash = get_transaction_input_by_hash(blocks, transaction_hashes)
 
     timestamps =
       blocks
@@ -206,13 +208,13 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
     events
     |> Enum.map(fn event ->
-      tx_hash = event["transactionHash"]
+      transaction_hash = event["transactionHash"]
 
       {l1_event_type, game_index} =
         if Enum.member?([@withdrawal_proven_event, @withdrawal_proven_event_blast], Enum.at(event["topics"], 0)) do
           game_index =
             input_by_hash
-            |> Map.get(tx_hash)
+            |> Map.get(transaction_hash)
             |> input_to_game_index()
 
           {"WithdrawalProven", game_index}
@@ -226,7 +228,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         withdrawal_hash: Enum.at(event["topics"], 1),
         l1_event_type: l1_event_type,
         l1_timestamp: Map.get(timestamps, l1_block_number),
-        l1_transaction_hash: tx_hash,
+        l1_transaction_hash: transaction_hash,
         l1_block_number: l1_block_number,
         game_index: game_index
       }
@@ -244,17 +246,52 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     |> Map.values()
   end
 
-  def get_last_l1_item do
-    query =
-      from(we in WithdrawalEvent,
-        select: {we.l1_block_number, we.l1_transaction_hash},
-        order_by: [desc: we.l1_timestamp],
-        limit: 1
-      )
+  @doc """
+    Determines the last saved L1 block number, the last saved transaction hash, and the transaction info for L1 Withdrawal events.
 
-    query
-    |> Repo.one()
-    |> Kernel.||({0, nil})
+    Used by the `Indexer.Fetcher.Optimism` module to start fetching from a correct block number
+    after reorg has occurred.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+                                  Used to get transaction info by its hash from the RPC node.
+
+    ## Returns
+    - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
+      `last_block_number` is the last block number found in the corresponding table (0 if not found),
+      `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
+      `last_transaction` is the transaction info got from the RPC (nil if not found).
+    - A tuple `{:error, message}` in case the `eth_getTransactionByHash` RPC request failed.
+  """
+  @spec get_last_l1_item(EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {non_neg_integer(), binary() | nil, map() | nil} | {:error, any()}
+  def get_last_l1_item(json_rpc_named_arguments) do
+    Optimism.get_last_item(
+      :L1,
+      &WithdrawalEvent.last_event_l1_block_number_query/0,
+      &WithdrawalEvent.remove_events_query/1,
+      json_rpc_named_arguments
+    )
+  end
+
+  @doc """
+    Returns L1 RPC URL for this module.
+  """
+  @spec l1_rpc_url() :: binary() | nil
+  def l1_rpc_url do
+    Optimism.l1_rpc_url()
+  end
+
+  @doc """
+    Determines if `Indexer.Fetcher.RollupL1ReorgMonitor` module must be up
+    before this fetcher starts.
+
+    ## Returns
+    - `true` if the reorg monitor must be active, `false` otherwise.
+  """
+  @spec requires_l1_reorg_monitor?() :: boolean()
+  def requires_l1_reorg_monitor? do
+    Optimism.requires_l1_reorg_monitor?()
   end
 
   defp get_blocks_by_events(events, json_rpc_named_arguments, retries) do
@@ -280,10 +317,10 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
     method_signature = String.slice(input, 0..9)
 
     if method_signature == "0x4870496f" do
-      # the signature of `proveWithdrawalTransaction(tuple _tx, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
+      # the signature of `proveWithdrawalTransaction(tuple _transaction, uint256 _disputeGameIndex, tuple _outputRootProof, bytes[] _withdrawalProof)` method
 
-      # to get (slice) `_disputeGameIndex` from the tx input, we need to know its offset in the input string (represented as 0x...):
-      # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_tx` tuple offset, totally is 74
+      # to get (slice) `_disputeGameIndex` from the transaction input, we need to know its offset in the input string (represented as 0x...):
+      # offset = 10 symbols of signature (incl. `0x` prefix) + 64 symbols (representing 32 bytes) of the `_transaction` tuple offset, totally is 74
       game_index_offset = String.length(method_signature) + 32 * 2
       game_index_length = 32 * 2
 

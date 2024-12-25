@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
           coin_balance: nil,
           items_count: "50",
           smart_contract_id: id,
-          tx_count: nil
+          transaction_count: nil
         )
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path

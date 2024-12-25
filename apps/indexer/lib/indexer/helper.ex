@@ -129,9 +129,9 @@ defmodule Indexer.Helper do
     - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
 
     ## Returns
-    `{block_num, latest}`: A tuple where
-    - `block_num` is the safe or latest block number.
-    - `latest` is a boolean, where `true` indicates that `block_num` is the latest block number fetched using the tag `latest`.
+    `{block_number, latest}`: A tuple where
+    - `block_number` is the safe or latest block number.
+    - `latest` is a boolean, where `true` indicates that `block_number` is the latest block number fetched using the tag `latest`.
   """
   @spec get_safe_block(EthereumJSONRPC.json_rpc_named_arguments()) :: {non_neg_integer(), boolean()}
   def get_safe_block(json_rpc_named_arguments) do
@@ -178,6 +178,21 @@ defmodule Indexer.Helper do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
+  @doc """
+    Returns a number of attempts for RPC requests sending by indexer modules.
+    The number is defined by @finite_retries_number attribute.
+  """
+  @spec finite_retries_number() :: non_neg_integer()
+  def finite_retries_number do
+    @finite_retries_number
+  end
+
+  @doc """
+    Returns a big number of attempts for RPC requests sending by indexer modules
+    (simulating an infinite number of attempts). The number is defined by
+    @infinite_retries_number attribute.
+  """
+  @spec infinite_retries_number() :: non_neg_integer()
   def infinite_retries_number do
     @infinite_retries_number
   end
@@ -191,7 +206,7 @@ defmodule Indexer.Helper do
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: rpc_url,
+        urls: [rpc_url],
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
@@ -220,7 +235,7 @@ defmodule Indexer.Helper do
       [1..3, 4..6, 7..9, 10..10]
   """
   @spec range_chunk_every(Range.t(), non_neg_integer()) :: Enum.t()
-  def range_chunk_every(from..to, chunk_size) do
+  def range_chunk_every(from..to//_, chunk_size) do
     chunks_number = floor((to - from + 1) / chunk_size)
 
     0..chunks_number
@@ -239,7 +254,10 @@ defmodule Indexer.Helper do
     - `from_block`: The starting block number (integer or hexadecimal string) for the log search.
     - `to_block`: The ending block number (integer or hexadecimal string) for the log search.
     - `address`: The address of the contract to filter logs from.
-    - `topics`: List of topics to filter the logs.
+    - `topics`: List of topics to filter the logs. The list represents each topic as follows:
+                [topic0, topic1, topic2, topic3]. The `topicN` can be either some value or
+                a list of possible values, e.g.: [[topic0_1, topic0_2], topic1, topic2, topic3].
+                If a topic is omitted or `nil`, it doesn't take part in the logs filtering.
     - `json_rpc_named_arguments`: Configuration for the JSON-RPC call.
     - `id`: (optional) JSON-RPC request identifier, defaults to 0.
     - `retries`: (optional) Number of retry attempts if the request fails, defaults to 3.
@@ -549,11 +567,22 @@ defmodule Indexer.Helper do
   end
 
   @doc """
-  Fetches blocks info from the given list of events (logs).
-  Performs a specified number of retries (up to) if the first attempt returns error.
+    Fetches blocks info from the given list of events (logs).
+    Performs a specified number of retries (up to) if the first attempt returns error.
+
+    ## Parameters
+    - `events`: The list of events to retrieve block numbers from.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+    - `retries`: Number of retry attempts if the request fails.
+    - `transaction_details`: Whether to include transaction details into the resulting list of blocks.
+
+    ## Returns
+    - The list of blocks. The list is empty if the HTTP response returns error.
   """
-  @spec get_blocks_by_events(list(), list(), non_neg_integer()) :: list()
-  def get_blocks_by_events(events, json_rpc_named_arguments, retries) do
+  @spec get_blocks_by_events(list(), EthereumJSONRPC.json_rpc_named_arguments(), non_neg_integer(), boolean()) :: [
+          %{String.t() => any()}
+        ]
+  def get_blocks_by_events(events, json_rpc_named_arguments, retries, transaction_details \\ false) do
     events
     |> Enum.reduce(%{}, fn event, acc ->
       block_number = Map.get(event, :block_number, event["blockNumber"])
@@ -562,7 +591,7 @@ defmodule Indexer.Helper do
     |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
     |> Stream.with_index()
     |> Enum.into(%{}, fn {params, id} -> {id, params} end)
-    |> Blocks.requests(&ByNumber.request(&1, false, false))
+    |> Blocks.requests(&ByNumber.request(&1, transaction_details, false))
     |> Enum.chunk_every(@block_by_number_chunk_size)
     |> Enum.reduce([], fn current_requests, results_acc ->
       error_message =

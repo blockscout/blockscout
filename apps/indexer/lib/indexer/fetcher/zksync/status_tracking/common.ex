@@ -10,18 +10,18 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
   @doc """
     Fetches the details of the batch with the given number and checks if the representation of
     the same batch in the database refers to the same commitment, proving, or executing transaction
-    depending on `tx_type`. If the transaction state changes, the new transaction is prepared for
+    depending on `transaction_type`. If the transaction state changes, the new transaction is prepared for
     import to the database.
 
     ## Parameters
     - `batch_number`: the number of the batch to check L1 transaction state.
-    - `tx_type`: a type of the transaction to check, one of :commit_tx, :execute_tx, or :prove_tx.
+    - `transaction_type`: a type of the transaction to check, one of :commit_transaction, :execute_transaction, or :prove_transaction.
     - `json_l2_rpc_named_arguments`: parameters for the RPC connections.
 
     ## Returns
-    - `{:look_for_batches, l1_tx_hash, l1_txs}` where
-      - `l1_tx_hash` is the hash of the L1 transaction.
-      - `l1_txs` is a map containing the transaction hash as a key, and values are maps
+    - `{:look_for_batches, l1_transaction_hash, l1_transactions}` where
+      - `l1_transaction_hash` is the hash of the L1 transaction.
+      - `l1_transactions` is a map containing the transaction hash as a key, and values are maps
         with transaction hashes and transaction timestamps.
     - `{:skip, "", %{}}` means the batch is not found in the database or the state of the transaction
       in the batch representation is the same as the state of the transaction for the batch
@@ -29,12 +29,12 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
   """
   @spec check_if_batch_status_changed(
           binary() | non_neg_integer(),
-          :commit_tx | :execute_tx | :prove_tx,
+          :commit_transaction | :execute_transaction | :prove_transaction,
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: {:look_for_batches, any(), any()} | {:skip, <<>>, %{}}
-  def check_if_batch_status_changed(batch_number, tx_type, json_l2_rpc_named_arguments)
+  def check_if_batch_status_changed(batch_number, transaction_type, json_l2_rpc_named_arguments)
       when (is_binary(batch_number) or is_integer(batch_number)) and
-             tx_type in [:commit_tx, :prove_tx, :execute_tx] and
+             transaction_type in [:commit_transaction, :prove_transaction, :execute_transaction] and
              is_list(json_l2_rpc_named_arguments) do
     batch_from_rpc = Rpc.fetch_batch_details_by_batch_number(batch_number, json_l2_rpc_named_arguments)
 
@@ -42,62 +42,67 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
       case Reader.batch(
              batch_number,
              necessity_by_association: %{
-               get_association(tx_type) => :optional
+               get_association(transaction_type) => :optional
              }
            ) do
-        {:ok, batch_from_db} -> transactions_of_batch_changed?(batch_from_db, batch_from_rpc, tx_type)
+        {:ok, batch_from_db} -> transactions_of_batch_changed?(batch_from_db, batch_from_rpc, transaction_type)
         {:error, :not_found} -> :error
       end
 
-    l1_tx = get_l1_tx_from_batch(batch_from_rpc, tx_type)
+    l1_transaction = get_l1_transaction_from_batch(batch_from_rpc, transaction_type)
 
-    if l1_tx.hash != Rpc.get_binary_zero_hash() and status_changed_or_error in [true, :error] do
-      l1_txs = Db.get_indices_for_l1_transactions(%{l1_tx.hash => l1_tx})
+    if l1_transaction.hash != Rpc.get_binary_zero_hash() and status_changed_or_error in [true, :error] do
+      l1_transactions = Db.get_indices_for_l1_transactions(%{l1_transaction.hash => l1_transaction})
 
-      {:look_for_batches, l1_tx.hash, l1_txs}
+      {:look_for_batches, l1_transaction.hash, l1_transactions}
     else
       {:skip, "", %{}}
     end
   end
 
-  defp get_association(tx_type) do
-    case tx_type do
-      :commit_tx -> :commit_transaction
-      :prove_tx -> :prove_transaction
-      :execute_tx -> :execute_transaction
+  defp get_association(transaction_type) do
+    case transaction_type do
+      :commit_transaction -> :commit_transaction
+      :prove_transaction -> :prove_transaction
+      :execute_transaction -> :execute_transaction
     end
   end
 
-  defp transactions_of_batch_changed?(batch_db, batch_json, tx_type) do
-    tx_hash_json =
-      case tx_type do
-        :commit_tx -> batch_json.commit_tx_hash
-        :prove_tx -> batch_json.prove_tx_hash
-        :execute_tx -> batch_json.executed_tx_hash
+  defp transactions_of_batch_changed?(batch_db, batch_json, transaction_type) do
+    transaction_hash_json =
+      case transaction_type do
+        :commit_transaction -> batch_json.commit_transaction_hash
+        :prove_transaction -> batch_json.prove_transaction_hash
+        :execute_transaction -> batch_json.executed_transaction_hash
       end
 
-    tx_hash_db =
-      case tx_type do
-        :commit_tx -> batch_db.commit_transaction
-        :prove_tx -> batch_db.prove_transaction
-        :execute_tx -> batch_db.execute_transaction
+    transaction_hash_db =
+      case transaction_type do
+        :commit_transaction -> batch_db.commit_transaction
+        :prove_transaction -> batch_db.prove_transaction
+        :execute_transaction -> batch_db.execute_transaction
       end
 
-    tx_hash_db_bytes =
-      if is_nil(tx_hash_db) do
+    transaction_hash_db_bytes =
+      if is_nil(transaction_hash_db) do
         Rpc.get_binary_zero_hash()
       else
-        tx_hash_db.hash.bytes
+        transaction_hash_db.hash.bytes
       end
 
-    tx_hash_json != tx_hash_db_bytes
+    transaction_hash_json != transaction_hash_db_bytes
   end
 
-  defp get_l1_tx_from_batch(batch_from_rpc, tx_type) do
-    case tx_type do
-      :commit_tx -> %{hash: batch_from_rpc.commit_tx_hash, timestamp: batch_from_rpc.commit_timestamp}
-      :prove_tx -> %{hash: batch_from_rpc.prove_tx_hash, timestamp: batch_from_rpc.prove_timestamp}
-      :execute_tx -> %{hash: batch_from_rpc.executed_tx_hash, timestamp: batch_from_rpc.executed_timestamp}
+  defp get_l1_transaction_from_batch(batch_from_rpc, transaction_type) do
+    case transaction_type do
+      :commit_transaction ->
+        %{hash: batch_from_rpc.commit_transaction_hash, timestamp: batch_from_rpc.commit_timestamp}
+
+      :prove_transaction ->
+        %{hash: batch_from_rpc.prove_transaction_hash, timestamp: batch_from_rpc.prove_timestamp}
+
+      :execute_transaction ->
+        %{hash: batch_from_rpc.executed_transaction_hash, timestamp: batch_from_rpc.executed_timestamp}
     end
   end
 
@@ -110,9 +115,9 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
 
     ## Parameters
     - `batches_numbers`: the list of batch numbers that must be updated.
-    - `l1_txs`: a map containing transaction hashes as keys, and values are maps
+    - `l1_transactions`: a map containing transaction hashes as keys, and values are maps
       with transaction hashes and transaction timestamps of L1 transactions to import to the database.
-    - `tx_hash`: the hash of the L1 transaction to build an association with.
+    - `transaction_hash`: the hash of the L1 transaction to build an association with.
     - `association_key`: the field in the batch description to build an association with L1
                          transactions.
 
@@ -123,15 +128,15 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.CommonUtils do
   """
   @spec associate_and_import_or_prepare_for_recovery([integer()], map(), binary(), :commit_id | :execute_id | :prove_id) ::
           :ok | {:recovery_required, [integer()]}
-  def associate_and_import_or_prepare_for_recovery(batches_numbers, l1_txs, tx_hash, association_key)
-      when is_list(batches_numbers) and is_map(l1_txs) and is_binary(tx_hash) and
+  def associate_and_import_or_prepare_for_recovery(batches_numbers, l1_transactions, transaction_hash, association_key)
+      when is_list(batches_numbers) and is_map(l1_transactions) and is_binary(transaction_hash) and
              association_key in [:commit_id, :prove_id, :execute_id] do
-    case prepare_batches_to_import(batches_numbers, %{association_key => l1_txs[tx_hash][:id]}) do
+    case prepare_batches_to_import(batches_numbers, %{association_key => l1_transactions[transaction_hash][:id]}) do
       {:error, batches_to_recover} ->
         {:recovery_required, batches_to_recover}
 
       {:ok, batches_to_import} ->
-        Db.import_to_db(batches_to_import, Map.values(l1_txs))
+        Db.import_to_db(batches_to_import, Map.values(l1_transactions))
         :ok
     end
   end

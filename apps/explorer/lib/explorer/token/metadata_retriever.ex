@@ -14,6 +14,7 @@ defmodule Explorer.Token.MetadataRetriever do
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @invalid_base64_data "invalid data:application/json;base64"
+  @default_headers [{"User-Agent", "blockscout-6.10.0"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -355,6 +356,7 @@ defmodule Explorer.Token.MetadataRetriever do
     contract_functions
     |> handle_invalid_strings(contract_address_hash)
     |> handle_large_strings
+    |> limit_decimals
   end
 
   defp atomized_key(@name_signature), do: :name
@@ -436,12 +438,39 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp handle_large_string(string, _size), do: string
 
+  defp limit_decimals(%{decimals: decimals} = contract_functions) do
+    if decimals > 78 do
+      %{contract_functions | decimals: nil}
+    else
+      contract_functions
+    end
+  end
+
+  defp limit_decimals(contract_functions), do: contract_functions
+
   defp remove_null_bytes(string) do
     String.replace(string, "\0", "")
   end
 
+  @doc """
+  Generates an IPFS link for the given unique identifier (UID).
+
+  ## Parameters
+
+    - uid: The unique identifier for which the IPFS link is to be generated.
+
+  ## Returns
+
+    - A string representing the IPFS link for the given UID.
+
+  ## Examples
+
+      iex> ipfs_link("QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5")
+      "https://ipfs.io/ipfs/QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5"
+
+  """
   @spec ipfs_link(uid :: any()) :: String.t()
-  defp ipfs_link(uid) do
+  def ipfs_link(uid) do
     base_url =
       :indexer
       |> Application.get_env(:ipfs)
@@ -466,8 +495,20 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
+  @doc """
+  Returns the headers required for making requests to IPFS.
+
+  ## Examples
+
+      iex> Explorer.Token.MetadataRetriever.ipfs_headers()
+      [
+        {"User-Agent", "blockscout-6.9.0"},
+        {"Authorization", "Bearer <token>"}
+      ]
+
+  """
   @spec ipfs_headers() :: [{binary(), binary()}]
-  defp ipfs_headers do
+  def ipfs_headers do
     ipfs_params = Application.get_env(:indexer, :ipfs)
 
     if ipfs_params[:gateway_url_param_location] == :header do
@@ -475,12 +516,12 @@ defmodule Explorer.Token.MetadataRetriever do
       gateway_url_param_value = ipfs_params[:gateway_url_param_value]
 
       if gateway_url_param_key && gateway_url_param_value do
-        [{gateway_url_param_key, gateway_url_param_value}]
+        [{gateway_url_param_key, gateway_url_param_value} | @default_headers]
       else
-        []
+        @default_headers
       end
     else
-      []
+      @default_headers
     end
   end
 
@@ -670,7 +711,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   defp fetch_metadata_from_uri_request(uri, hex_token_id, ipfs?) do
-    headers = if ipfs?, do: ipfs_headers(), else: []
+    headers = if ipfs?, do: ipfs_headers(), else: @default_headers
 
     case Application.get_env(:explorer, :http_adapter).get(uri, headers,
            recv_timeout: 30_000,

@@ -5,6 +5,8 @@ defmodule Explorer.Chain.Block.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.Blocks
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias Explorer.Chain.{
     Address,
     Block,
@@ -18,10 +20,12 @@ defmodule Explorer.Chain.Block.Schema do
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
   alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
-  alias Explorer.Chain.Optimism.TxnBatch, as: OptimismTxnBatch
+  alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
+  alias Explorer.Chain.Zilliqa.AggregateQuorumCertificate, as: ZilliqaAggregateQuorumCertificate
+  alias Explorer.Chain.Zilliqa.QuorumCertificate, as: ZilliqaQuorumCertificate
   alias Explorer.Chain.ZkSync.BatchBlock, as: ZkSyncBatchBlock
 
-  @chain_type_fields (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_fields (case @chain_type do
                         :ethereum ->
                           elem(
                             quote do
@@ -34,7 +38,7 @@ defmodule Explorer.Chain.Block.Schema do
                         :optimism ->
                           elem(
                             quote do
-                              has_one(:op_transaction_batch, OptimismTxnBatch,
+                              has_one(:op_transaction_batch, OptimismTransactionBatch,
                                 foreign_key: :l2_block_number,
                                 references: :number
                               )
@@ -106,6 +110,24 @@ defmodule Explorer.Chain.Block.Schema do
                             2
                           )
 
+                        :zilliqa ->
+                          elem(
+                            quote do
+                              field(:zilliqa_view, :integer)
+
+                              has_one(:zilliqa_quorum_certificate, ZilliqaQuorumCertificate,
+                                foreign_key: :block_hash,
+                                references: :hash
+                              )
+
+                              has_one(:zilliqa_aggregate_quorum_certificate, ZilliqaAggregateQuorumCertificate,
+                                foreign_key: :block_hash,
+                                references: :hash
+                              )
+                            end,
+                            2
+                          )
+
                         _ ->
                           []
                       end)
@@ -165,6 +187,7 @@ defmodule Explorer.Chain.Block do
   require Explorer.Chain.Block.Schema
 
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Block.{EmissionReward, Reward}
@@ -173,7 +196,7 @@ defmodule Explorer.Chain.Block do
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
 
-  @chain_type_optional_attrs (case Application.compile_env(:explorer, :chain_type) do
+  @chain_type_optional_attrs (case @chain_type do
                                 :rsk ->
                                   ~w(minimum_gas_price bitcoin_merged_mining_header bitcoin_merged_mining_coinbase_transaction bitcoin_merged_mining_merkle_proof hash_for_merged_mining)a
 
@@ -182,6 +205,9 @@ defmodule Explorer.Chain.Block do
 
                                 :arbitrum ->
                                   ~w(send_count send_root l1_block_number)a
+
+                                :zilliqa ->
+                                  ~w(zilliqa_view)a
 
                                 _ ->
                                   ~w()a
@@ -223,7 +249,7 @@ defmodule Explorer.Chain.Block do
    * `refetch_needed` - `true` if block has missing data and has to be refetched.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `base_fee_per_gas` - Minimum fee required per unit of gas. Fee adjusts based on network congestion.
-  #{case Application.compile_env(:explorer, :chain_type) do
+  #{case @chain_type do
     :rsk -> """
        * `bitcoin_merged_mining_header` - Bitcoin merged mining header on Rootstock chains.
        * `bitcoin_merged_mining_coinbase_transaction` - Bitcoin merged mining coinbase transaction on Rootstock chains.

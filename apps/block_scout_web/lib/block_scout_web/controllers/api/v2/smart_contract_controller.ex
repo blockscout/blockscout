@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
 
-  alias BlockScoutWeb.{AccessHelper, AddressView}
+  alias BlockScoutWeb.{AccessHelper, AddressView, CaptchaHelper}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract}
@@ -23,8 +23,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     necessity_by_association: %{
       :contracts_creation_internal_transaction => :optional,
       [smart_contract: :smart_contract_additional_sources] => :optional,
-      :contracts_creation_transaction => :optional,
-      :proxy_implementations => :optional
+      :contracts_creation_transaction => :optional
     },
     api?: true
   ]
@@ -39,12 +38,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          _ <- PublishHelper.sourcify_check(address_hash_string),
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options, false)} do
-      {implementations, proxy_type} =
-        SmartContractHelper.pre_fetch_implementations(address)
+      implementations = SmartContractHelper.pre_fetch_implementations(address)
 
       conn
       |> put_status(200)
-      |> render(:smart_contract, %{address: address, implementations: implementations, proxy_type: proxy_type})
+      |> render(:smart_contract, %{address: %Address{address | proxy_implementations: implementations}})
     end
   end
 
@@ -105,11 +103,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
          {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
-      implementation_address_hash_strings =
-        address.smart_contract
-        |> Implementation.get_implementation(@api_true)
-        |> Tuple.to_list()
-        |> List.first()
+      implementation_address_hash_strings = get_implementations_address_hashes(address)
 
       functions =
         implementation_address_hash_strings
@@ -136,11 +130,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:not_found, {:ok, address}} <-
            {:not_found, Chain.find_contract_address(address_hash, @smart_contract_address_options)},
          {:not_found, false} <- {:not_found, is_nil(address.smart_contract)} do
-      implementation_address_hash_strings =
-        address.smart_contract
-        |> Implementation.get_implementation(@api_true)
-        |> Tuple.to_list()
-        |> List.first()
+      implementation_address_hash_strings = get_implementations_address_hashes(address)
 
       functions =
         implementation_address_hash_strings
@@ -275,11 +265,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           | {:restricted_access, true}
           | Plug.Conn.t()
   def audit_report_submission(conn, %{"address_hash" => address_hash_string} = params) do
-    captcha_helper = Application.get_env(:block_scout_web, :captcha_helper)
-
     with {:disabled, true} <- {:disabled, Application.get_env(:explorer, :air_table_audit_reports)[:enabled]},
          {:ok, address_hash, _smart_contract} <- validate_smart_contract(params, address_hash_string),
-         {:recaptcha, _} <- {:recaptcha, captcha_helper.recaptcha_passed?(params["recaptcha_response"])},
+         {:recaptcha, _} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)},
          audit_report_params <- %{
            address_hash: address_hash,
            submitter_name: params["submitter_name"],
@@ -336,5 +324,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
            {:not_found, SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, @api_true)} do
       {:ok, address_hash, smart_contract}
     end
+  end
+
+  defp get_implementations_address_hashes(proxy_address) do
+    implementation =
+      proxy_address.smart_contract
+      |> Implementation.get_implementation(@api_true)
+
+    (implementation && implementation.address_hashes) || []
   end
 end

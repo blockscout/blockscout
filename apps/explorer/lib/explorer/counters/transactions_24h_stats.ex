@@ -10,11 +10,11 @@ defmodule Explorer.Counters.Transactions24hStats do
   import Ecto.Query
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{DenormalizationHelper, Transaction}
 
-  @tx_count_name "transaction_count_24h"
-  @tx_fee_sum_name "transaction_fee_sum_24h"
-  @tx_fee_average_name "transaction_fee_average_24h"
+  @transaction_count_name "transaction_count_24h"
+  @transaction_fee_sum_name "transaction_fee_sum_24h"
+  @transaction_fee_average_name "transaction_fee_average_24h"
 
   @doc """
   Starts a process to periodically update the counters.
@@ -55,24 +55,24 @@ defmodule Explorer.Counters.Transactions24hStats do
   end
 
   @doc """
-  Fetches the value for a `#{@tx_count_name}` counter type from the `last_fetched_counters` table.
+  Fetches the value for a `#{@transaction_count_name}` counter type from the `last_fetched_counters` table.
   """
   def fetch_count(options) do
-    Chain.get_last_fetched_counter(@tx_count_name, options)
+    Chain.get_last_fetched_counter(@transaction_count_name, options)
   end
 
   @doc """
-  Fetches the value for a `#{@tx_fee_sum_name}` counter type from the `last_fetched_counters` table.
+  Fetches the value for a `#{@transaction_fee_sum_name}` counter type from the `last_fetched_counters` table.
   """
   def fetch_fee_sum(options) do
-    Chain.get_last_fetched_counter(@tx_fee_sum_name, options)
+    Chain.get_last_fetched_counter(@transaction_fee_sum_name, options)
   end
 
   @doc """
-  Fetches the value for a `#{@tx_fee_average_name}` counter type from the `last_fetched_counters` table.
+  Fetches the value for a `#{@transaction_fee_average_name}` counter type from the `last_fetched_counters` table.
   """
   def fetch_fee_average(options) do
-    Chain.get_last_fetched_counter(@tx_fee_average_name, options)
+    Chain.get_last_fetched_counter(@transaction_fee_average_name, options)
   end
 
   @doc """
@@ -94,14 +94,17 @@ defmodule Explorer.Counters.Transactions24hStats do
     sum_query = dynamic([_, _], sum(^fee_query))
     avg_query = dynamic([_, _], avg(^fee_query))
 
-    query =
+    base_query =
       from(transaction in Transaction,
         join: block in assoc(transaction, :block),
-        where: block.timestamp >= ago(24, "hour"),
         select: %{count: count(transaction.hash)},
         select_merge: ^%{fee_sum: sum_query},
         select_merge: ^%{fee_average: avg_query}
       )
+
+    query =
+      base_query
+      |> where_block_timestamp_in_last_24_hours()
 
     %{
       count: count,
@@ -110,19 +113,27 @@ defmodule Explorer.Counters.Transactions24hStats do
     } = Repo.one!(query, timeout: :infinity)
 
     Chain.upsert_last_fetched_counter(%{
-      counter_type: @tx_count_name,
+      counter_type: @transaction_count_name,
       value: count
     })
 
     Chain.upsert_last_fetched_counter(%{
-      counter_type: @tx_fee_sum_name,
+      counter_type: @transaction_fee_sum_name,
       value: fee_sum
     })
 
     Chain.upsert_last_fetched_counter(%{
-      counter_type: @tx_fee_average_name,
+      counter_type: @transaction_fee_average_name,
       value: fee_average
     })
+  end
+
+  defp where_block_timestamp_in_last_24_hours(query) do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      where(query, [transaction, _block], transaction.block_timestamp >= ago(24, "hour"))
+    else
+      where(query, [_transaction, block], block.timestamp >= ago(24, "hour"))
+    end
   end
 
   @doc """
