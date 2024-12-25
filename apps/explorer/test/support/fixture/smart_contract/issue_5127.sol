@@ -39,7 +39,7 @@ interface IBlacklist {
 pragma solidity >=0.5.0;
  
 interface IKAP20Committee {
-  event SetCommittee(address oldCommittee, address newComittee);
+  event SetCommittee(address oldCommittee, address newCommittee);
  
   function committee() external view returns (address);
  
@@ -63,7 +63,7 @@ pragma solidity >=0.5.0;
 interface IKAP20KYC {
   event ActivateOnlyKYCAddress();
   event SetKYC(address oldKyc, address newKyc);
-  event SetAccecptedKycLevel(uint256 oldKycLevel, uint256 newKycLevel);
+  event SetAcceptedKycLevel(uint256 oldKycLevel, uint256 newKycLevel);
  
   function activateOnlyKycAddress() external;
   function setKYC(address _kyc) external;
@@ -292,7 +292,7 @@ abstract contract KYCHandler is IKAP20KYC {
   function _setAcceptedKycLevel(uint256 _kycLevel) internal virtual {
     uint256 oldKycLevel = acceptedKycLevel;
     acceptedKycLevel = _kycLevel;
-    emit SetAccecptedKycLevel(oldKycLevel, acceptedKycLevel);
+    emit SetAcceptedKycLevel(oldKycLevel, acceptedKycLevel);
   }
 }
  
