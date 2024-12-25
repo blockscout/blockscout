@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.AccessHelper do
   alias BlockScoutWeb.API.RPC.RPCView
   alias BlockScoutWeb.API.V2.ApiView
   alias BlockScoutWeb.Routers.WebRouter.Helpers
-  alias Explorer.AccessHelper
+  alias Explorer.{AccessHelper, Chain}
   alias Explorer.Account.Api.Key, as: ApiKey
   alias Plug.Conn
 
@@ -17,8 +17,35 @@ defmodule BlockScoutWeb.AccessHelper do
 
   require Logger
 
+  @invalid_address_hash "Invalid address hash"
+  @restricted_access "Restricted access"
+
   def restricted_access?(address_hash, params) do
     AccessHelper.restricted_access?(address_hash, params)
+  end
+
+  @doc """
+  Checks if the given address hash string is valid and not restricted.
+
+  ## Parameters
+  - address_hash_string: A string representing the address hash to be validated.
+
+  ## Returns
+  - :ok if the address hash is valid and access is not restricted.
+  - binary with reason otherwise.
+  """
+  @spec valid_address_hash_and_not_restricted_access?(binary()) :: :ok | binary()
+  def valid_address_hash_and_not_restricted_access?(address_hash_string) do
+    with address_hash when not is_nil(address_hash) <- Chain.string_to_address_hash_or_nil(address_hash_string),
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, %{}) do
+      :ok
+    else
+      nil ->
+        @invalid_address_hash
+
+      {:restricted_access, true} ->
+        @restricted_access
+    end
   end
 
   def get_path(conn, path, template, address_hash) do

@@ -254,8 +254,8 @@ config :explorer,
        :all -> Explorer.Chain.Events.SimpleSender
        separate_setup when separate_setup in [:indexer, :api] -> Explorer.Chain.Events.DBSender
      end),
-  restricted_list: System.get_env("RESTRICTED_LIST"),
-  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY"),
+  addresses_blacklist: System.get_env("ADDRESSES_BLACKLIST"),
+  addresses_blacklist_key: System.get_env("ADDRESSES_BLACKLIST_KEY"),
   checksum_function: checksum_function && String.to_atom(checksum_function),
   elasticity_multiplier: ConfigHelper.parse_integer_env_var("EIP_1559_ELASTICITY_MULTIPLIER", 2),
   base_fee_max_change_denominator: ConfigHelper.parse_integer_env_var("EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR", 8),
@@ -556,6 +556,10 @@ config :explorer, Explorer.MicroserviceInterfaces.Metadata,
 config :explorer, Explorer.SmartContract.StylusVerifierInterface,
   service_url: ConfigHelper.parse_microservice_url("MICROSERVICE_STYLUS_VERIFIER_URL")
 
+config :explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+  api_key: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_API_KEY"),
+  service_url: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")
+
 config :explorer, :air_table_public_tags,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
   api_key: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_API_KEY")
@@ -666,6 +670,10 @@ config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   batch_size: ConfigHelper.parse_integer_env_var("SHRINK_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("SHRINK_INTERNAL_TRANSACTIONS_CONCURRENCY", 10)
 
+config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
+  concurrency: 1,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_BATCH_SIZE", 10)
+
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
@@ -693,6 +701,15 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
   concurrency: ConfigHelper.parse_integer_env_var("FILECOIN_PENDING_ADDRESS_OPERATIONS_MIGRATION_CONCURRENCY", 1)
 
 config :explorer, Explorer.Chain.Blackfort.Validator, api_url: System.get_env("BLACKFORT_VALIDATOR_API_URL")
+
+addresses_blacklist_url = ConfigHelper.parse_microservice_url("ADDRESSES_BLACKLIST_URL")
+
+config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
+  url: addresses_blacklist_url,
+  enabled: !is_nil(addresses_blacklist_url),
+  update_interval: ConfigHelper.parse_time_env_var("ADDRESSES_BLACKLIST_UPDATE_INTERVAL", "15m"),
+  retry_interval: ConfigHelper.parse_time_env_var("ADDRESSES_BLACKLIST_RETRY_INTERVAL", "5s"),
+  provider: ConfigHelper.parse_catalog_value("ADDRESSES_BLACKLIST_PROVIDER", ["blockaid"], false, "blockaid")
 
 ###############
 ### Indexer ###

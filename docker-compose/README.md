@@ -57,7 +57,7 @@ The repo contains built-in configs for different JSON RPC clients without need t
 
 All of the configs assume the Ethereum JSON RPC is running at http://localhost:8545.
 
-In order to stop launched containers, run `docker-compose -d -f config_file.yml down`, replacing `config_file.yml` with the file name of the config which was previously launched.
+In order to stop launched containers, run `docker-compose -f config_file.yml down`, replacing `config_file.yml` with the file name of the config which was previously launched.
 
 You can adjust BlockScout environment variables:
 

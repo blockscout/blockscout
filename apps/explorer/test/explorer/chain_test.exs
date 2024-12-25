@@ -26,7 +26,7 @@ defmodule Explorer.ChainTest do
     Wei
   }
 
-  alias Explorer.{Chain, Etherscan, TestHelper}
+  alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
@@ -127,10 +127,10 @@ defmodule Explorer.ChainTest do
       assert {:ok, _, _} = Chain.last_db_block_status()
     end
 
-    test "return {:ok, last_block_period} if block is not in healthy period" do
+    test "return {:stale, _, _} if block is not in healthy period" do
       insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
 
-      assert {:error, _, _} = Chain.last_db_block_status()
+      assert {:stale, _, _} = Chain.last_db_block_status()
     end
   end
 
@@ -141,10 +141,10 @@ defmodule Explorer.ChainTest do
       assert {:ok, _, _} = Chain.last_cache_block_status()
     end
 
-    test "return error if cache is stale" do
+    test "return {:stale, _, _} if cache is stale" do
       insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
 
-      assert {:error, _, _} = Chain.last_cache_block_status()
+      assert {:stale, _, _} = Chain.last_cache_block_status()
     end
   end
 
