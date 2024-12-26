@@ -25,58 +25,46 @@ defmodule NFTMediaHandler do
     - :error if the preparation or upload fails.
     - A tuple containing a list of Explorer.Chain.Token.Instance.Thumbnails format and a tuple with content type if successful.
   """
-  @spec prepare_and_upload_by_url(binary(), binary()) :: :error | {list(), {binary(), binary()}}
+  @spec prepare_and_upload_by_url(binary(), binary()) :: {:error, any()} | {list(), {binary(), binary()}}
   def prepare_and_upload_by_url(url, r2_folder) do
     with {prepared_url, headers} <- maybe_process_ipfs(url),
-         {:ok, media_type, body} <- Fetcher.fetch_media(prepared_url, headers) do
-      prepare_and_upload_inner(media_type, body, url, r2_folder)
+         {:fetch, {:ok, media_type, body}} <- {:fetch, Fetcher.fetch_media(prepared_url, headers)},
+         {:ok, result} <- prepare_and_upload_inner(media_type, body, url, r2_folder) do
+      result
     else
-      {:error, reason} ->
+      {:fetch, {:error, reason}} ->
         Logger.warning("Error on fetching media: #{inspect(reason)}, from url (#{url})")
+        {:error, reason}
+
+      {:error, reason} ->
         {:error, reason}
     end
   end
 
   defp prepare_and_upload_inner({"image", _} = media_type, initial_image_binary, url, r2_folder) do
-    case {:image, Image.from_binary(initial_image_binary, pages: -1)} do
-      {:image, {:ok, image}} ->
-        extension = media_type_to_extension(media_type)
-
-        thumbnails = Resizer.resize(image, url, ".#{extension}")
-
-        uploaded_thumbnails_sizes =
-          thumbnails
-          |> Enum.map(fn {size, image, file_name} ->
-            # credo:disable-for-next-line
-            case Uploader.upload_image(image, file_name, r2_folder) do
-              {:ok, _result} ->
-                size
-
-              _ ->
-                nil
-            end
-          end)
-          |> Enum.reject(&is_nil/1)
-
-        original_uploaded? =
-          case Uploader.upload_image(
-                 initial_image_binary,
-                 Resizer.generate_file_name(url, ".#{extension}", "original"),
-                 r2_folder
-               ) do
-            {:ok, _result} ->
-              true
-
-            _ ->
-              false
-          end
-
-        file_path = Path.join(r2_folder, Resizer.generate_file_name(url, ".#{extension}", "{}"))
-        {[file_path, uploaded_thumbnails_sizes, original_uploaded?], media_type}
-
+    with {:image, {:ok, image}} <- {:image, Image.from_binary(initial_image_binary, pages: -1)},
+         extension <- media_type_to_extension(media_type),
+         thumbnails <- Resizer.resize(image, url, ".#{extension}"),
+         {:original, {:ok, _result}} <-
+           {:original,
+            Uploader.upload_image(
+              initial_image_binary,
+              Resizer.generate_file_name(url, ".#{extension}", "original"),
+              r2_folder
+            )},
+         {:thumbnails, {:ok, _result}} <- {:thumbnails, Uploader.upload_images(thumbnails, r2_folder)} do
+      file_path = Path.join(r2_folder, Resizer.generate_file_name(url, ".#{extension}", "{}"))
+      original_uploaded? = true
+      uploaded_thumbnails_sizes = thumbnails |> Enum.map(&elem(&1, 0))
+      {:ok, {[file_path, uploaded_thumbnails_sizes, original_uploaded?], media_type}}
+    else
       {:image, {:error, reason}} ->
         Logger.warning("Error on open image from url (#{url}): #{inspect(reason)}")
-        :error
+        {:error, reason}
+
+      {type, {:error, reason}} ->
+        Logger.warning("Error on uploading #{type} image from url (#{url}): #{inspect(reason)}")
+        {:error, reason}
     end
   end
 
@@ -86,37 +74,36 @@ defmodule NFTMediaHandler do
     path = "#{Application.get_env(:nft_media_handler, :tmp_dir)}#{file_name}"
 
     with {:file, :ok} <- {:file, File.write(path, body)},
-         {:ok, image} <-
-           Video.with_video(path, fn video ->
-             Video.image_from_video(video, frame: 0)
-           end) do
-      remove_file(path)
-
-      uploaded_thumbnails_sizes =
-        image
-        |> Resizer.resize(url, ".jpg")
-        |> Enum.map(fn {size, image, file_name} ->
-          case Uploader.upload_image(image, file_name, r2_folder) do
-            {:ok, _result} ->
-              size
-
-            _ ->
-              nil
-          end
-        end)
-        |> Enum.reject(&is_nil/1)
-
+         {:video, {:ok, image}} <-
+           {:video,
+            Video.with_video(path, fn video ->
+              Video.image_from_video(video, frame: 0)
+            end)},
+         _ <- remove_file(path),
+         thumbnails when thumbnails != [] <- image |> Resizer.resize(url, ".jpg"),
+         {:thumbnails, {:ok, _result}} <- {:thumbnails, Uploader.upload_images(thumbnails, r2_folder)} do
       file_path = Path.join(r2_folder, Resizer.generate_file_name(url, ".jpg", "{}"))
-      {[file_path, uploaded_thumbnails_sizes, false], media_type}
+      uploaded_thumbnails_sizes = thumbnails |> Enum.map(&elem(&1, 0))
+      original_uploaded? = true
+
+      {:ok, {[file_path, uploaded_thumbnails_sizes, original_uploaded?], media_type}}
     else
       {:file, reason} ->
         Logger.error("Error while writing video to file: #{inspect(reason)}, url: #{url}")
-        :error
+        {:error, reason}
 
-      {:error, reason} ->
+      {:video, {:error, reason}} ->
         Logger.error("Error while taking zero frame from video: #{inspect(reason)}, url: #{url}")
-        File.rm(path)
-        :error
+        remove_file(path)
+        {:error, reason}
+
+      [] ->
+        Logger.error("Error while resizing video: No thumbnails generated, url: #{url}")
+        {:error, :no_thumbnails}
+
+      {:thumbnails, {:error, reason}} ->
+        Logger.error("Error while uploading video thumbnails: #{inspect(reason)}, url: #{url}")
+        {:error, reason}
     end
   end
 

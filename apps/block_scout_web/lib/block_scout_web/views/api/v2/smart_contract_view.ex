@@ -231,11 +231,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_blueprint" => if(smart_contract.is_blueprint, do: smart_contract.is_blueprint, else: false)
     }
     |> Map.merge(bytecode_info(address))
-    |> chain_type_fields(%{
-      address_hash: verified_twin_address_hash,
-      field_prefix: "verified_twin",
-      target_contract: target_contract
-    })
+    |> chain_type_fields(
+      %{
+        address_hash: verified_twin_address_hash,
+        field_prefix: "verified_twin",
+        target_contract: target_contract
+      },
+      true
+    )
   end
 
   def prepare_smart_contract(%Address{proxy_implementations: implementations} = address, conn) do
@@ -358,9 +361,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       }
 
     smart_contract_info
-    |> chain_type_fields(%{
-      target_contract: smart_contract
-    })
+    |> chain_type_fields(
+      %{target_contract: smart_contract},
+      false
+    )
   end
 
   defp smart_contract_language(smart_contract) do
@@ -444,26 +448,29 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
 
   case @chain_type do
     :filecoin ->
-      defp chain_type_fields(result, params) do
+      defp chain_type_fields(result, params, true) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address(result, params)
       end
 
+      defp chain_type_fields(result, _params, false),
+        do: result
+
     :arbitrum ->
-      defp chain_type_fields(result, %{target_contract: target_contract}) do
+      defp chain_type_fields(result, %{target_contract: target_contract}, _single?) do
         result
         |> Map.put("package_name", target_contract.package_name)
         |> Map.put("github_repository_metadata", target_contract.github_repository_metadata)
       end
 
     :zksync ->
-      defp chain_type_fields(result, %{target_contract: target_contract}) do
+      defp chain_type_fields(result, %{target_contract: target_contract}, _single?) do
         result
         |> Map.put("zk_compiler_version", target_contract.zk_compiler_version)
       end
 
     _ ->
-      defp chain_type_fields(result, _address) do
+      defp chain_type_fields(result, _params, _single?) do
         result
       end
   end

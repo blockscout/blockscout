@@ -375,7 +375,8 @@ defmodule ConfigHelper do
          "" <- safe_get_env(url_var, default_url) do
       case urls_type do
         :http ->
-          raise "ETHEREUM_JSONRPC_HTTP_URL (or ETHEREUM_JSONRPC_HTTP_URLS) env variable is required"
+          Logger.warning("ETHEREUM_JSONRPC_HTTP_URL (or ETHEREUM_JSONRPC_HTTP_URLS) env variable is required")
+          []
 
         :fallback_http ->
           parse_urls_list(:http)

@@ -62,7 +62,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
-        field(:language, Ecto.Enum, values: [solidity: 1, vyper: 2, yul: 3, stylus_rust: 4], default: :solidity)
+        field(:language, Ecto.Enum, values: @languages_enum, default: :solidity)
 
         has_many(
           :decompiled_smart_contracts,
@@ -136,7 +136,12 @@ defmodule Explorer.Chain.SmartContract do
   @burn_address_hash_string "0x0000000000000000000000000000000000000000"
   @dead_address_hash_string "0x000000000000000000000000000000000000dEaD"
 
-  @required_attrs ~w(compiler_version optimization address_hash contract_code_md5 language)a
+  @default_required_attrs ~w(optimization address_hash contract_code_md5 language)a
+  @chain_type_required_attrs (case @chain_type do
+                                :zilliqa -> ~w()a
+                                _ -> ~w(compiler_version)a
+                              end)
+  @required_attrs @default_required_attrs ++ @chain_type_required_attrs
 
   @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a
 
@@ -150,9 +155,18 @@ defmodule Explorer.Chain.SmartContract do
                                 :arbitrum ->
                                   ~w(package_name github_repository_metadata)a
 
+                                :zilliqa ->
+                                  ~w(compiler_version)a
+
                                 _ ->
                                   ~w()a
                               end)
+
+  @chain_type_attrs_for_validation ~w(contract_source_code)a ++
+                                     (case @chain_type do
+                                        :zilliqa -> ~w()a
+                                        _ -> ~w(name)a
+                                      end)
 
   @create_zksync_abi [
     %{
@@ -178,6 +192,27 @@ defmodule Explorer.Chain.SmartContract do
       "type" => "function"
     }
   ]
+
+  @default_languages ~w(solidity vyper yul stylys_rust)a
+  @chain_type_languages (case @chain_type do
+                           :zilliqa ->
+                             ~w(scilla)a
+
+                           _ ->
+                             ~w()a
+                         end)
+
+  @languages @default_languages ++ @chain_type_languages
+  @languages_enum @languages |> Enum.with_index(1)
+  @language_string_to_atom @languages |> Map.new(&{to_string(&1), &1})
+
+  @doc """
+    Returns list of languages supported by the database schema.
+  """
+  @spec language_string_to_atom() :: %{String.t() => atom()}
+  def language_string_to_atom do
+    @language_string_to_atom
+  end
 
   @doc """
     Returns burn address hash
@@ -343,9 +378,9 @@ defmodule Explorer.Chain.SmartContract do
   * `"outputs" - `t:list/0` of `t:output/0`.
   * `"stateMutability"` - `t:state_mutability/0`
   * `"payable"` - `t:payable/0`.
-    **WARNING:** Deprecated and will be removed in the future.  Use `"stateMutability"` instead.
+    **WARNING:** Deprecated and will be removed in the future. Use `"stateMutability"` instead.
   * `"constant"` - `t:constant/0`.
-    **WARNING:** Deprecated and will be removed in the future.  Use `"stateMutability"` instead.
+    **WARNING:** Deprecated and will be removed in the future. Use `"stateMutability"` instead.
   """
   @type function_description :: %{
           String.t() =>
@@ -445,7 +480,9 @@ defmodule Explorer.Chain.SmartContract do
         @optional_changeset_attrs ++
         @chain_type_optional_attrs
 
-    required_for_validation = [:name, :contract_source_code] ++ @required_attrs
+    required_for_validation =
+      @required_attrs ++
+        @chain_type_attrs_for_validation
 
     smart_contract
     |> cast(attrs, attrs_to_cast)
@@ -1322,6 +1359,8 @@ defmodule Explorer.Chain.SmartContract do
     )
   end
 
+  defp filter_contracts(basic_query, nil), do: basic_query
+
   defp filter_contracts(basic_query, :solidity) do
     basic_query
     |> where(is_vyper_contract: ^false)
@@ -1336,7 +1375,11 @@ defmodule Explorer.Chain.SmartContract do
     from(query in basic_query, where: is_nil(query.abi))
   end
 
-  defp filter_contracts(basic_query, _), do: basic_query
+  defp filter_contracts(basic_query, language) do
+    from(query in basic_query,
+      where: query.language == ^language
+    )
+  end
 
   @doc """
   Retrieves the constructor arguments for a zkSync smart contract.
