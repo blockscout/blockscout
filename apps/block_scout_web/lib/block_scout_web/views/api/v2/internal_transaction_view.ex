@@ -48,8 +48,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
           false
         ),
       "value" => internal_transaction.value,
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `block_number` property
-      "block" => internal_transaction.block_number,
       "block_number" => internal_transaction.block_number,
       "timestamp" => (block && block.timestamp) || internal_transaction.block.timestamp,
       "index" => internal_transaction.index,

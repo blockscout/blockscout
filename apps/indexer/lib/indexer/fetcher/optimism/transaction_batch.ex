@@ -28,11 +28,13 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
   import Explorer.Helper, only: [parse_integer: 1]
 
+  alias Ecto.Multi
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.{Blocks, Contract}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Beacon.Blob, as: BeaconBlob
   alias Explorer.Chain.{Block, Hash, RollupReorgMonitorQueue}
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias HTTPoison.Response
@@ -42,10 +44,18 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias Indexer.Helper
   alias Varint.LEB128
 
-  @fetcher_name :optimism_transaction_batches
+  @beacon_blob_fetcher_reference_slot_eth 8_500_000
+  @beacon_blob_fetcher_reference_timestamp_eth 1_708_824_023
+  @beacon_blob_fetcher_reference_slot_sepolia 4_400_000
+  @beacon_blob_fetcher_reference_timestamp_sepolia 1_708_533_600
+  @beacon_blob_fetcher_reference_slot_holesky 1_000_000
+  @beacon_blob_fetcher_reference_timestamp_holesky 1_707_902_400
+  @beacon_blob_fetcher_slot_duration 12
+  @chain_id_eth 1
+  @chain_id_sepolia 11_155_111
+  @chain_id_holesky 17000
 
-  # Optimism chain block time is a constant (2 seconds)
-  @op_chain_block_time 2
+  @fetcher_name :optimism_transaction_batches
 
   @compressor_brotli 1
 
@@ -92,8 +102,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
            {:system_config_valid, Helper.address_correct?(system_config)},
          {:genesis_block_l2_invalid, false} <-
            {:genesis_block_l2_invalid, is_nil(env[:genesis_block_l2]) or env[:genesis_block_l2] < 0},
-         {:reorg_monitor_started, true} <-
-           {:reorg_monitor_started, !is_nil(Process.whereis(RollupL1ReorgMonitor))},
+         _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          json_rpc_named_arguments = Optimism.json_rpc_named_arguments(optimism_l1_rpc),
          {:system_config_read, {start_block_l1, batch_inbox, batch_submitter}} <-
@@ -101,7 +110,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.address_correct?(batch_inbox)},
          {:batch_submitter_valid, true} <-
            {:batch_submitter_valid, Helper.address_correct?(batch_submitter)},
-         false <- is_nil(start_block_l1),
          true <- start_block_l1 > 0,
          chunk_size = parse_integer(env[:blocks_chunk_size]),
          {:chunk_size_valid, true} <- {:chunk_size_valid, !is_nil(chunk_size) && chunk_size > 0},
@@ -114,6 +122,14 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          {:ok, block_check_interval, last_safe_block} <-
            Optimism.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
+
+      chain_id_l1 = fetch_chain_id(json_rpc_named_arguments)
+
+      if is_nil(chain_id_l1) do
+        Logger.warning(
+          "Cannot get Chain ID from the L1 RPC. The module will use fallback values from INDEXER_BEACON_BLOB_FETCHER_* env variables."
+        )
+      end
 
       Process.send(self(), :continue, [])
 
@@ -129,8 +145,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          chunk_size: chunk_size,
          incomplete_channels: %{},
          genesis_block_l2: env[:genesis_block_l2],
+         block_duration: optimism_env[:block_duration],
          json_rpc_named_arguments: json_rpc_named_arguments,
-         json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
+         json_rpc_named_arguments_l2: json_rpc_named_arguments_l2,
+         chain_id_l1: chain_id_l1
        }}
     else
       {:system_config_valid, false} ->
@@ -139,13 +157,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
       {:genesis_block_l2_invalid, true} ->
         Logger.error("L2 genesis block number is undefined or invalid.")
-        {:stop, :normal, state}
-
-      {:reorg_monitor_started, false} ->
-        Logger.error(
-          "Cannot start this process as reorg monitor in Indexer.Fetcher.RollupL1ReorgMonitor is not started."
-        )
-
         {:stop, :normal, state}
 
       {:rpc_l1_undefined, true} ->
@@ -182,7 +193,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         {:stop, :normal, state}
 
       {:system_config_read, nil} ->
-        Logger.error("Cannot read SystemConfig contract.")
+        Logger.error("Cannot read SystemConfig contract and fallback envs are not correctly defined.")
         {:stop, :normal, state}
 
       _ ->
@@ -213,8 +224,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # - `chunk_size`: max number of L1 blocks in one chunk
   # - `incomplete_channels`: intermediate map of channels (incomplete frame sequences) in memory
   # - `genesis_block_l2`: Optimism BedRock upgrade L2 block number (used when parsing span batches)
+  # - `block_duration`: L2 block duration in seconds (used when parsing span batches)
   # - `json_rpc_named_arguments`: data to connect to L1 RPC server
   # - `json_rpc_named_arguments_l2`: data to connect to L2 RPC server
+  # - `chain_id_l1`: chain ID of L1 layer.
   @impl GenServer
   def handle_info(
         :continue,
@@ -229,8 +242,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           chunk_size: chunk_size,
           incomplete_channels: incomplete_channels,
           genesis_block_l2: genesis_block_l2,
+          block_duration: block_duration,
           json_rpc_named_arguments: json_rpc_named_arguments,
-          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2
+          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2,
+          chain_id_l1: chain_id_l1
         } = state
       ) do
     time_before = Timex.now()
@@ -260,10 +275,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                 Range.new(chunk_start, chunk_end),
                 batch_inbox,
                 batch_submitter,
-                genesis_block_l2,
+                {genesis_block_l2, block_duration},
                 incomplete_channels_acc,
                 {json_rpc_named_arguments, json_rpc_named_arguments_l2},
-                {eip4844_blobs_api_url, celestia_blobs_api_url},
+                {eip4844_blobs_api_url, celestia_blobs_api_url, chain_id_l1},
                 Helper.infinite_retries_number()
               )
 
@@ -284,6 +299,14 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
             remove_prev_frame_sequences(inserted)
             set_frame_sequences_view_ready(sequences)
+
+            Publisher.broadcast(
+              %{
+                new_optimism_batches:
+                  Enum.map(sequences, &FrameSequence.batch_by_internal_id(&1.id, include_blobs?: false))
+              },
+              :realtime
+            )
 
             Helper.log_blocks_chunk_handling(
               chunk_start,
@@ -402,28 +425,62 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     block.timestamp
   end
 
+  # Determines the last saved L1 block number, the last saved transaction hash, and the transaction info for batches.
+  #
+  # Utilized to start fetching from a correct block number after reorg has occurred.
+  #
+  # ## Parameters
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #                               Used to get transaction info by its hash from the RPC node.
+  #
+  # ## Returns
+  # - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
+  #   `last_block_number` is the last block number found in the corresponding table (0 if not found),
+  #   `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
+  #   `last_transaction` is the transaction info got from the RPC (nil if not found).
+  @spec get_last_l1_item(EthereumJSONRPC.json_rpc_named_arguments()) :: {non_neg_integer(), binary() | nil, map() | nil}
   defp get_last_l1_item(json_rpc_named_arguments) do
-    l1_transaction_hashes =
+    result =
       Repo.one(
         from(
           tb in OptimismTransactionBatch,
           inner_join: fs in FrameSequence,
           on: fs.id == tb.frame_sequence_id,
-          select: fs.l1_transaction_hashes,
+          select: {fs.id, fs.l1_transaction_hashes},
           order_by: [desc: tb.l2_block_number],
           limit: 1
         )
       )
 
-    if is_nil(l1_transaction_hashes) do
-      {0, nil, nil}
-    else
-      last_l1_transaction_hash = List.last(l1_transaction_hashes)
-
-      {:ok, last_l1_transaction} = Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments)
-
-      last_l1_block_number = quantity_to_integer(Map.get(last_l1_transaction || %{}, "blockNumber", 0))
+    with {:empty_hashes, false} <- {:empty_hashes, is_nil(result)},
+         l1_transaction_hashes = elem(result, 1),
+         last_l1_transaction_hash = List.last(l1_transaction_hashes),
+         {:ok, last_l1_transaction} =
+           Optimism.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
+         {:empty_transaction, false, last_l1_transaction_hash} <-
+           {:empty_transaction, is_nil(last_l1_transaction), last_l1_transaction_hash} do
+      last_l1_block_number = quantity_to_integer(Map.get(last_l1_transaction, "blockNumber", 0))
       {last_l1_block_number, last_l1_transaction_hash, last_l1_transaction}
+    else
+      {:empty_hashes, true} ->
+        {0, nil, nil}
+
+      {:empty_transaction, true, last_l1_transaction_hash} ->
+        Logger.error(
+          "Cannot find last L1 transaction from RPC by its hash (#{last_l1_transaction_hash}). Probably, there was a reorg on L1 chain. Trying to check preceding frame sequence..."
+        )
+
+        id = elem(result, 0)
+
+        Multi.new()
+        |> Multi.delete_all(
+          :delete_transaction_batches,
+          from(tb in OptimismTransactionBatch, where: tb.frame_sequence_id == ^id)
+        )
+        |> Multi.delete_all(:delete_frame_sequence, from(fs in FrameSequence, where: fs.id == ^id))
+        |> Repo.transaction()
+
+        get_last_l1_item(json_rpc_named_arguments)
     end
   end
 
@@ -431,7 +488,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          block_range,
          batch_inbox,
          batch_submitter,
-         genesis_block_l2,
+         {genesis_block_l2, block_duration},
          incomplete_channels,
          {json_rpc_named_arguments, json_rpc_named_arguments_l2},
          blobs_api_url,
@@ -443,7 +500,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         |> transactions_filter(batch_submitter, batch_inbox)
         |> get_transaction_batches_inner(
           blocks_params,
-          genesis_block_l2,
+          {genesis_block_l2, block_duration},
           incomplete_channels,
           json_rpc_named_arguments_l2,
           blobs_api_url
@@ -471,7 +528,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
             block_range,
             batch_inbox,
             batch_submitter,
-            genesis_block_l2,
+            {genesis_block_l2, block_duration},
             incomplete_channels,
             {json_rpc_named_arguments, json_rpc_named_arguments_l2},
             blobs_api_url,
@@ -481,7 +538,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end
   end
 
-  defp eip4844_blobs_to_inputs(_transaction_hash, _blob_versioned_hashes, _block_timestamp, "") do
+  defp eip4844_blobs_to_inputs(_transaction_hash, _blob_versioned_hashes, _block_timestamp, "", _chain_id_l1) do
     Logger.error(
       "Cannot read EIP-4844 blobs from the Blockscout Blobs API as the API URL is not defined. Please, check INDEXER_OPTIMISM_L1_BATCH_BLOCKSCOUT_BLOBS_API_URL env variable."
     )
@@ -493,7 +550,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          transaction_hash,
          blob_versioned_hashes,
          block_timestamp,
-         blobs_api_url
+         blobs_api_url,
+         chain_id_l1
        ) do
     blob_versioned_hashes
     |> Enum.reduce([], fn blob_hash, inputs_acc ->
@@ -530,7 +588,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
             transaction_hash,
             blob_hash,
             block_timestamp,
-            inputs_acc
+            inputs_acc,
+            chain_id_l1
           )
       end
     end)
@@ -541,13 +600,38 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          transaction_hash,
          blob_hash,
          block_timestamp,
-         inputs_acc
+         inputs_acc,
+         chain_id_l1
        ) do
     beacon_config =
-      :indexer
-      |> Application.get_env(Blob)
-      |> Keyword.take([:reference_slot, :reference_timestamp, :slot_duration])
-      |> Enum.into(%{})
+      case chain_id_l1 do
+        @chain_id_eth ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_eth,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_eth,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        @chain_id_sepolia ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_sepolia,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_sepolia,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        @chain_id_holesky ->
+          %{
+            reference_slot: @beacon_blob_fetcher_reference_slot_holesky,
+            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_holesky,
+            slot_duration: @beacon_blob_fetcher_slot_duration
+          }
+
+        _ ->
+          :indexer
+          |> Application.get_env(Blob)
+          |> Keyword.take([:reference_slot, :reference_timestamp, :slot_duration])
+          |> Enum.into(%{})
+      end
 
     {:ok, fetched_blobs} =
       block_timestamp
@@ -665,10 +749,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   defp get_transaction_batches_inner(
          transactions_filtered,
          blocks_params,
-         genesis_block_l2,
+         {genesis_block_l2, block_duration},
          incomplete_channels,
          json_rpc_named_arguments_l2,
-         {eip4844_blobs_api_url, celestia_blobs_api_url}
+         {eip4844_blobs_api_url, celestia_blobs_api_url, chain_id_l1}
        ) do
     transactions_filtered
     |> Enum.reduce({:ok, incomplete_channels, [], [], []}, fn transaction,
@@ -684,7 +768,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
               transaction.hash,
               transaction.blob_versioned_hashes,
               block_timestamp,
-              eip4844_blobs_api_url
+              eip4844_blobs_api_url,
+              chain_id_l1
             )
 
           first_byte(transaction.input) == 0xCE ->
@@ -706,7 +791,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
             blocks_params,
             new_incomplete_channels_acc,
             {new_batches_acc, new_sequences_acc, new_blobs_acc},
-            genesis_block_l2,
+            {genesis_block_l2, block_duration},
             json_rpc_named_arguments_l2
           )
         end
@@ -720,7 +805,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          blocks_params,
          incomplete_channels_acc,
          {batches_acc, sequences_acc, blobs_acc},
-         genesis_block_l2,
+         {genesis_block_l2, block_duration},
          json_rpc_named_arguments_l2
        ) do
     frame = input_to_frame(input.bytes)
@@ -766,7 +851,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         batches_acc,
         sequences_acc,
         blobs_acc,
-        genesis_block_l2,
+        {genesis_block_l2, block_duration},
         json_rpc_named_arguments_l2
       )
     else
@@ -782,7 +867,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          batches_acc,
          sequences_acc,
          blobs_acc,
-         genesis_block_l2,
+         {genesis_block_l2, block_duration},
          json_rpc_named_arguments_l2
        ) do
     frame_sequence_last = List.first(sequences_acc)
@@ -849,7 +934,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         bytes,
         frame_sequence_id,
         channel.l1_timestamp,
-        genesis_block_l2,
+        {genesis_block_l2, block_duration},
         json_rpc_named_arguments_l2
       )
 
@@ -1119,7 +1204,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          bytes,
          id,
          l1_timestamp,
-         genesis_block_l2,
+         {genesis_block_l2, block_duration},
          json_rpc_named_arguments_l2
        ) do
     uncompressed_bytes =
@@ -1144,7 +1229,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
               version <= 2 ->
                 # parsing the span batch
-                handle_v1_batch(content, id, l1_timestamp, genesis_block_l2, batch_acc)
+                handle_v1_batch(content, id, l1_timestamp, genesis_block_l2, block_duration, batch_acc)
 
               true ->
                 Logger.error("Unsupported batch version ##{version}")
@@ -1188,7 +1273,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     [batch | batch_acc]
   end
 
-  defp handle_v1_batch(content, frame_sequence_id, l1_timestamp, genesis_block_l2, batch_acc) do
+  defp handle_v1_batch(content, frame_sequence_id, l1_timestamp, genesis_block_l2, block_duration, batch_acc) do
     {rel_timestamp, content_remainder} = LEB128.decode(content)
 
     # skip l1_origin_num
@@ -1202,12 +1287,12 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       |> LEB128.decode()
 
     # the first and last L2 blocks in the span
-    span_start = div(rel_timestamp, @op_chain_block_time) + genesis_block_l2
+    span_start = div(rel_timestamp, block_duration) + genesis_block_l2
     span_end = span_start + block_count - 1
 
     cond do
-      rem(rel_timestamp, @op_chain_block_time) != 0 ->
-        Logger.error("rel_timestamp is not divisible by #{@op_chain_block_time}. We ignore the span batch.")
+      rem(rel_timestamp, block_duration) != 0 ->
+        Logger.error("rel_timestamp is not divisible by #{block_duration}. We ignore the span batch.")
 
         batch_acc
 
@@ -1326,6 +1411,22 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     end)
   end
 
+  # Reads some public getters of SystemConfig contract and returns retrieved values.
+  # Gets the number of a start block (from which this fetcher should start),
+  # the inbox address, and the batcher (batch submitter) address.
+  #
+  # If SystemConfig has obsolete implementation, the values are fallen back from the corresponding
+  # env variables (INDEXER_OPTIMISM_L1_START_BLOCK, INDEXER_OPTIMISM_L1_BATCH_INBOX, INDEXER_OPTIMISM_L1_BATCH_SUBMITTER).
+  #
+  # ## Parameters
+  # - `contract_address`: An address of SystemConfig contract.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - A tuple: {start_block, inbox, submitter}.
+  # - `nil` in case of error.
+  @spec read_system_config(String.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {non_neg_integer(), String.t(), String.t()} | nil
   defp read_system_config(contract_address, json_rpc_named_arguments) do
     requests = [
       # startBlock() public getter
@@ -1338,17 +1439,76 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
 
+    env = Application.get_all_env(:indexer)[__MODULE__]
+    fallback_start_block = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:start_block_l1]
+
+    {start_block, batch_inbox, batch_submitter} =
+      case Helper.repeated_call(
+             &json_rpc/2,
+             [requests, json_rpc_named_arguments],
+             error_message,
+             Helper.finite_retries_number()
+           ) do
+        {:ok, responses} ->
+          start_block =
+            responses
+            |> Enum.at(0)
+            |> Map.get(:result, fallback_start_block)
+            |> quantity_to_integer()
+
+          inbox_result = Map.get(Enum.at(responses, 1), :result)
+          submitter_result = Map.get(Enum.at(responses, 2), :result)
+
+          {batch_inbox, batch_submitter} =
+            with {:nil_result, true, _, _} <-
+                   {:nil_result, is_nil(inbox_result) or is_nil(submitter_result), inbox_result, submitter_result},
+                 {:fallback_defined, true} <-
+                   {:fallback_defined,
+                    Helper.address_correct?(env[:inbox]) and Helper.address_correct?(env[:submitter])} do
+              {env[:inbox], env[:submitter]}
+            else
+              {:nil_result, false, inbox, submitter} ->
+                "0x000000000000000000000000" <> batch_inbox = inbox
+                "0x000000000000000000000000" <> batch_submitter = submitter
+                {"0x" <> batch_inbox, "0x" <> batch_submitter}
+
+              {:fallback_defined, false} ->
+                {nil, nil}
+            end
+
+          {start_block, batch_inbox, batch_submitter}
+
+        _ ->
+          {fallback_start_block, env[:inbox], env[:submitter]}
+      end
+
+    if !is_nil(start_block) and Helper.address_correct?(batch_inbox) and Helper.address_correct?(batch_submitter) do
+      {start_block, String.downcase(batch_inbox), String.downcase(batch_submitter)}
+    end
+  end
+
+  # Fetches the chain id from the RPC.
+  #
+  # ## Parameters
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - The chain id as unsigned integer.
+  # - `nil` if the request failed.
+  @spec fetch_chain_id(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer() | nil
+  defp fetch_chain_id(json_rpc_named_arguments) do
+    error_message = &"Cannot read `eth_chainId`. Error: #{inspect(&1)}"
+
+    request = EthereumJSONRPC.request(%{id: 0, method: "eth_chainId", params: []})
+
     case Helper.repeated_call(
            &json_rpc/2,
-           [requests, json_rpc_named_arguments],
+           [request, json_rpc_named_arguments],
            error_message,
            Helper.infinite_retries_number()
          ) do
-      {:ok, responses} ->
-        start_block = quantity_to_integer(Enum.at(responses, 0).result)
-        "0x000000000000000000000000" <> batch_inbox = Enum.at(responses, 1).result
-        "0x000000000000000000000000" <> batch_submitter = Enum.at(responses, 2).result
-        {start_block, String.downcase("0x" <> batch_inbox), String.downcase("0x" <> batch_submitter)}
+      {:ok, response} ->
+        quantity_to_integer(response)
 
       _ ->
         nil

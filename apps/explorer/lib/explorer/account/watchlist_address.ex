@@ -15,6 +15,8 @@ defmodule Explorer.Account.WatchlistAddress do
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
 
+  @watchlist_not_found "Watchlist not found"
+
   typed_schema "account_watchlist_addresses" do
     field(:address_hash_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:name, Explorer.Encrypted.Binary, null: false)
@@ -59,6 +61,7 @@ defmodule Explorer.Account.WatchlistAddress do
     |> cast(attrs, @attrs)
     |> validate_length(:name, min: 1, max: 35)
     |> validate_required([:name, :address_hash, :watchlist_id], message: "Required")
+    |> foreign_key_constraint(:watchlist_id, message: @watchlist_not_found)
     |> put_hashed_fields()
     |> unique_constraint([:watchlist_id, :address_hash_hash],
       name: "unique_watchlist_id_address_hash_hash_index",
@@ -74,10 +77,55 @@ defmodule Explorer.Account.WatchlistAddress do
     |> force_change(:address_hash_hash, hash_to_lower_case_string(get_field(changeset, :address_hash)))
   end
 
+  @doc """
+  Creates a new watchlist address record in a transactional context.
+
+  Ensures data consistency by acquiring a lock on the associated watchlist record
+  before creating the watchlist address. The operation either succeeds completely
+  or fails without side effects.
+
+  ## Parameters
+  - `attrs`: A map of attributes that must include:
+    - `:watchlist_id`: The ID of the associated watchlist
+
+  ## Returns
+  - `{:ok, watchlist_address}` - Successfully created watchlist address record
+  - `{:error, changeset}` - A changeset with errors if:
+    - The watchlist doesn't exist
+    - The watchlist ID is missing from the attributes
+    - The changeset validation fails
+  """
+  @spec create(map()) :: {:ok, t()} | {:error, Changeset.t()}
+  def create(%{watchlist_id: watchlist_id} = attrs) do
+    Multi.new()
+    |> Watchlist.acquire_with_lock(watchlist_id)
+    |> Multi.insert(:watchlist_address, fn _ ->
+      %__MODULE__{}
+      |> changeset(attrs)
+    end)
+    |> Repo.account_repo().transaction()
+    |> case do
+      {:ok, %{watchlist_address: watchlist_address}} ->
+        {:ok, watchlist_address}
+
+      {:error, :acquire_watchlist, :not_found, _changes} ->
+        {:error,
+         %__MODULE__{}
+         |> changeset(attrs)
+         |> add_error(:watchlist_id, @watchlist_not_found,
+           constraint: :foreign,
+           constraint_name: "account_watchlist_addresses_identity_id_fkey"
+         )}
+
+      {:error, _failed_operation, changeset, _changes} ->
+        {:error, changeset}
+    end
+  end
+
   def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> Repo.account_repo().insert()
+    {:error,
+     %__MODULE__{}
+     |> changeset(attrs)}
   end
 
   def watchlist_address_count_constraint(%Changeset{changes: %{watchlist_id: watchlist_id}} = watchlist_address) do

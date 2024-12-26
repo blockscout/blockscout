@@ -1,11 +1,13 @@
-if Application.compile_env(:explorer, :chain_type) == :filecoin do
-  defmodule BlockScoutWeb.API.V2.FilecoinView do
-    @moduledoc """
-    View functions for rendering Filecoin-related data in JSON format.
-    """
+defmodule BlockScoutWeb.API.V2.FilecoinView do
+  @moduledoc """
+  View functions for rendering Filecoin-related data in JSON format.
+  """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-    alias Explorer.Chain
-    alias Explorer.Chain.Address
+  if @chain_type == :filecoin do
+    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
+    alias Explorer.Chain, warn: false
+    alias Explorer.Chain.Address, warn: false
 
     @api_true [api?: true]
 
@@ -26,14 +28,19 @@ if Application.compile_env(:explorer, :chain_type) == :filecoin do
     end
 
     @spec preload_and_put_filecoin_robust_address(map(), %{
-            address_hash: String.t() | nil,
-            field_prefix: String.t() | nil
+            optional(:address_hash) => String.t() | nil,
+            optional(:field_prefix) => String.t() | nil,
+            optional(any) => any
           }) ::
             map()
     def preload_and_put_filecoin_robust_address(result, %{address_hash: address_hash} = params) do
       address = address_hash && Address.get(address_hash, @api_true)
 
       put_filecoin_robust_address(result, Map.put(params, :address, address))
+    end
+
+    def preload_and_put_filecoin_robust_address(result, _params) do
+      result
     end
 
     @doc """
@@ -103,3 +110,5 @@ if Application.compile_env(:explorer, :chain_type) == :filecoin do
     end
   end
 end
+
+# end

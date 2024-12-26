@@ -73,7 +73,7 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
       )
 
     query
-    |> repo.all()
+    |> repo.all(timeout: :infinity)
     |> filter_blobs_by_type()
   end
 

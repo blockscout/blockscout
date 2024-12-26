@@ -4,6 +4,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   """
 
   use GenServer
+  use Utils.CompileTimeEnvHelper, future_check_interval: [:indexer, [__MODULE__, :future_check_interval]]
 
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.{Chain, Helper, Repo}
@@ -11,7 +12,6 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   alias Explorer.Utility.{MissingBlockRange, MissingRangesManipulator}
 
   @default_missing_ranges_batch_size 100_000
-  @future_check_interval Application.compile_env(:indexer, __MODULE__)[:future_check_interval]
   @past_check_interval 10
   @increased_past_check_interval :timer.minutes(1)
 

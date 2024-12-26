@@ -45,7 +45,7 @@ The repo contains built-in configs for different JSON RPC clients without need t
 | Erigon  | `docker-compose -f erigon.yml up -d`    |
 | Geth (suitable for Reth as well) | `docker-compose -f geth.yml up -d`     |
 | Geth Clique    | `docker-compose -f geth-clique-consensus.yml up -d`    |
-| Nethermind, OpenEthereum    | `docker-compose -f nethermind up -d`    |
+| Nethermind, OpenEthereum    | `docker-compose -f nethermind.yml up -d`    |
 | Ganache    | `docker-compose -f ganache.yml up -d`    |
 | HardHat network    | `docker-compose -f hardhat-network.yml up -d`    |
 
@@ -57,7 +57,7 @@ The repo contains built-in configs for different JSON RPC clients without need t
 
 All of the configs assume the Ethereum JSON RPC is running at http://localhost:8545.
 
-In order to stop launched containers, run `docker-compose -d -f config_file.yml down`, replacing `config_file.yml` with the file name of the config which was previously launched.
+In order to stop launched containers, run `docker-compose -f config_file.yml down`, replacing `config_file.yml` with the file name of the config which was previously launched.
 
 You can adjust BlockScout environment variables:
 
@@ -69,7 +69,7 @@ You can adjust BlockScout environment variables:
 
 Descriptions of the ENVs are available
 
-- for [backend](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
+- for [backend](https://docs.blockscout.com/setup/env-variables)
 - for [frontend](https://github.com/blockscout/frontend/blob/main/docs/ENVS.md).
 
 ## Running Docker containers via Makefile

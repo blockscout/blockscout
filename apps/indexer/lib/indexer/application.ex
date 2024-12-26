@@ -61,7 +61,11 @@ defmodule Indexer.Application do
       name: Indexer.Application
     ]
 
-    Supervisor.start_link(children, opts)
+    if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
+      Supervisor.start_link([], opts)
+    else
+      Supervisor.start_link(children, opts)
+    end
   end
 
   defp token_instance_fetcher_pool_size(fetcher, nil) do

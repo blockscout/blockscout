@@ -5,7 +5,7 @@ on:
 env:
   OTP_VERSION: ${{ vars.OTP_VERSION }}
   ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
-  RELEASE_VERSION: 6.9.0
+  RELEASE_VERSION: 6.10.0
 
 jobs:
   push_to_registry:
@@ -37,19 +37,12 @@ jobs:
             linux/amd64
             linux/arm64/v8
           build-args: |
-            DISABLE_WEBAPP=false
-            API_V1_READ_METHODS_DISABLED=false
-            API_V1_WRITE_METHODS_DISABLED=false
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
             AMPLITUDE_URL=
             AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
       - name: Build and push Docker image (indexer)
@@ -65,17 +58,12 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_API=true
-            DISABLE_WEBAPP=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
             AMPLITUDE_URL=
             AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
       - name: Build and push Docker image (API)
@@ -91,15 +79,10 @@ jobs:
             linux/arm64/v8
           build-args: |
             DISABLE_INDEXER=true
-            DISABLE_WEBAPP=true
-            CACHE_EXCHANGE_RATES_PERIOD=
-            CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED=
-            CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL=
-            ADMIN_PANEL_ENABLED=false
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
             MIXPANEL_TOKEN=
             AMPLITUDE_URL=
             AMPLITUDE_API_KEY=
-            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}-beta.+commit.${{ env.SHORT_SHA }}
+            BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}

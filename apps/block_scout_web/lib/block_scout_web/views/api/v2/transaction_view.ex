@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TransactionView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.API.V2.{ApiView, Helper, InternalTransactionView, TokenTransferView, TokenView}
 
@@ -257,8 +258,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     %{
       "transaction_hash" => get_transaction_hash(transaction_or_hash),
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_hash` property
-      "tx_hash" => get_transaction_hash(transaction_or_hash),
       "address" => Helper.address_with_info(nil, log.address, log.address_hash, tags_for_address_needed?),
       "topics" => [
         log.first_topic,
@@ -373,8 +372,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "result" => status,
       "status" => transaction.status,
       "block_number" => transaction.block_number,
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `block_number` property
-      "block" => transaction.block_number,
       "timestamp" => block_timestamp(transaction),
       "from" =>
         Helper.address_with_info(
@@ -424,14 +421,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "exchange_rate" => Market.get_coin_exchange_rate().usd_value,
       "method" => Transaction.method_name(transaction, decoded_input),
       "transaction_types" => transaction_types(transaction),
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_types` property
-      "tx_types" => transaction_types(transaction),
       "transaction_tag" =>
         GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_transaction? && conn)),
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_tag` property
-      "tx_tag" => GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_transaction? && conn)),
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `has_error_in_internal_transactions` property
-      "has_error_in_internal_txs" => transaction.has_error_in_internal_transactions,
       "has_error_in_internal_transactions" => transaction.has_error_in_internal_transactions,
       "authorization_list" => authorization_list(transaction.signed_authorizations)
     }
@@ -777,7 +768,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     Map.merge(map, %{"change" => change})
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :polygon_edge ->
       defp chain_type_transformations(transactions) do
         transactions
@@ -911,6 +902,16 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       defp chain_type_fields(result, transaction, _single_transaction?, _conn, _watchlist_names) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.CeloView.extend_transaction_json_response(result, transaction)
+      end
+
+    :zilliqa ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
+
+      defp chain_type_fields(result, transaction, _single_tx?, _conn, _watchlist_names) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.ZilliqaView.extend_transaction_json_response(result, transaction)
       end
 
     _ ->

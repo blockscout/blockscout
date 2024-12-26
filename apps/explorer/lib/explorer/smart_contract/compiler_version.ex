@@ -4,7 +4,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
   """
 
   alias Explorer.Helper
-  alias Explorer.SmartContract.RustVerifierInterface
+  alias Explorer.SmartContract.{RustVerifierInterface, StylusVerifierInterface}
 
   @unsupported_solc_versions ~w(0.1.1 0.1.2)
   @unsupported_vyper_versions ~w(v0.2.9 v0.2.10)
@@ -12,15 +12,38 @@ defmodule Explorer.SmartContract.CompilerVersion do
   @doc """
   Fetches a list of compilers from the Ethereum Solidity API.
   """
-  @spec fetch_versions(:solc | :vyper | :zk) :: {atom, [map]}
-  def fetch_versions(compiler) do
-    case compiler do
-      :solc -> fetch_solc_versions()
-      :vyper -> fetch_vyper_versions()
-      :zk -> fetch_zk_versions()
-    end
+  @spec fetch_versions(:solc | :vyper | :zk | :stylus) :: {atom, [binary()]}
+  def fetch_versions(compiler)
+
+  def fetch_versions(:solc) do
+    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :solc)
   end
 
+  def fetch_versions(:vyper) do
+    fetch_compiler_versions(&RustVerifierInterface.vyper_get_versions_list/0, :vyper)
+  end
+
+  def fetch_versions(:zk) do
+    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :zk)
+  end
+
+  def fetch_versions(:stylus) do
+    fetch_compiler_versions(&StylusVerifierInterface.get_versions_list/0, :stylus)
+  end
+
+  @doc """
+  Fetches the list of compiler versions for the given compiler.
+
+  ## Parameters
+
+    - compiler: The name of the compiler for which to fetch the version list.
+
+  ## Returns
+
+    - A list of available compiler versions.
+
+  """
+  @spec fetch_version_list(:solc | :vyper | :zk | :stylus) :: [binary()]
   def fetch_version_list(compiler) do
     case fetch_versions(compiler) do
       {:ok, compiler_versions} ->
@@ -31,38 +54,38 @@ defmodule Explorer.SmartContract.CompilerVersion do
     end
   end
 
-  defp fetch_solc_versions do
-    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :solc)
+  defp fetch_compiler_versions(compiler_list_fn, :stylus = compiler_type) do
+    if StylusVerifierInterface.enabled?() do
+      fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type)
+    else
+      {:ok, []}
+    end
   end
 
-  defp fetch_zk_versions do
-    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :zk)
-  end
-
-  defp fetch_vyper_versions do
-    fetch_compiler_versions(&RustVerifierInterface.vyper_get_versions_list/0, :vyper)
+  defp fetch_compiler_versions(compiler_list_fn, :zk = compiler_type) do
+    if RustVerifierInterface.enabled?() do
+      fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type)
+    else
+      {:ok, []}
+    end
   end
 
   defp fetch_compiler_versions(compiler_list_fn, compiler_type) do
     if RustVerifierInterface.enabled?() do
       fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type)
     else
-      if compiler_type == :zk do
-        {:ok, []}
-      else
-        headers = [{"Content-Type", "application/json"}]
+      headers = [{"Content-Type", "application/json"}]
 
-        # credo:disable-for-next-line
-        case HTTPoison.get(source_url(compiler_type), headers) do
-          {:ok, %{status_code: 200, body: body}} ->
-            {:ok, format_data(body, compiler_type)}
+      # credo:disable-for-next-line
+      case HTTPoison.get(source_url(compiler_type), headers) do
+        {:ok, %{status_code: 200, body: body}} ->
+          {:ok, format_data(body, compiler_type)}
 
-          {:ok, %{status_code: _status_code, body: body}} ->
-            {:error, Helper.decode_json(body)["error"]}
+        {:ok, %{status_code: _status_code, body: body}} ->
+          {:error, Helper.decode_json(body)["error"]}
 
-          {:error, %{reason: reason}} ->
-            {:error, reason}
-        end
+        {:error, %{reason: reason}} ->
+          {:error, reason}
       end
     end
   end

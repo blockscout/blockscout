@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper, Controller, TransactionView}
-  alias BlockScoutWeb.API.V2.CSVExportController
+  alias BlockScoutWeb.API.V2.{ApiView, CSVExportController}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
 
@@ -21,6 +21,9 @@ defmodule BlockScoutWeb.AddressTransactionController do
     AddressTokenTransferCsvExporter,
     AddressTransactionCsvExporter
   }
+
+  alias Explorer.Chain.CSVExport.Celo.AddressElectionRewardsCsvExporter,
+    as: CeloAddressElectionRewardsCsvExporter
 
   alias Explorer.Chain.{DenormalizationHelper, Transaction, Wei}
 
@@ -202,7 +205,10 @@ defmodule BlockScoutWeb.AddressTransactionController do
         not_found(conn)
 
       {:recaptcha, false} ->
-        not_found(conn)
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ApiView)
+        |> render(:message, %{message: "Invalid reCAPTCHA response"})
     end
   end
 
@@ -222,5 +228,10 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   def logs_csv(conn, params) do
     items_csv(conn, params, AddressLogCsvExporter)
+  end
+
+  @spec celo_election_rewards_csv(Conn.t(), map()) :: Conn.t()
+  def celo_election_rewards_csv(conn, params) do
+    items_csv(conn, params, CeloAddressElectionRewardsCsvExporter)
   end
 end

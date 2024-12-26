@@ -3,6 +3,7 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
   Caches Address transactions gas usage counter.
   """
   use GenServer
+  use Utils.CompileTimeEnvHelper, enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
   alias Ecto.Changeset
   alias Explorer.Chain.Address.Counters
@@ -11,9 +12,6 @@ defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
 
   @cache_name :address_transactions_gas_usage_counter
   @last_update_key "last_update"
-
-  config = Application.compile_env(:explorer, __MODULE__)
-  @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do

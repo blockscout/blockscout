@@ -5,6 +5,7 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.TokenTransfers
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{
     Address,
@@ -17,7 +18,7 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
 
   # Remove `transaction_hash` from primary key for `:celo` chain type. See
   # `Explorer.Chain.Log.Schema` for more details.
-  @transaction_field (case Application.compile_env(:explorer, :chain_type) do
+  @transaction_field (case @chain_type do
                         :celo ->
                           quote do
                             [
@@ -132,14 +133,15 @@ defmodule Explorer.Chain.TokenTransfer do
   """
 
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Explorer.Chain.TokenTransfer.Schema
 
   import Ecto.Changeset
-  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Helper}
   alias Explorer.Chain.{DenormalizationHelper, Hash, Log, TokenTransfer}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -180,7 +182,7 @@ defmodule Explorer.Chain.TokenTransfer do
   Explorer.Chain.TokenTransfer.Schema.generate()
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash block_hash token_type)a
-                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                  |> (&(case @chain_type do
                           :celo ->
                             &1
 
@@ -188,7 +190,7 @@ defmodule Explorer.Chain.TokenTransfer do
                             [:transaction_hash | &1]
                         end)).()
   @optional_attrs ~w(amount amounts token_ids block_consensus)a
-                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                  |> (&(case @chain_type do
                           :celo ->
                             [:transaction_hash | &1]
 
@@ -240,8 +242,8 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
-            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
+            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
 
         only_consensus_transfers_query()
@@ -267,8 +269,8 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
-            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
+            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
 
         only_consensus_transfers_query()
@@ -300,8 +302,8 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
-            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
+            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
 
         only_consensus_transfers_query()
@@ -648,20 +650,11 @@ defmodule Explorer.Chain.TokenTransfer do
     encoded_values =
       ids
       |> Enum.reduce("", fn {t_hash, b_hash, log_index}, acc ->
-        acc <> "('#{hash_to_query_string(t_hash)}', '#{hash_to_query_string(b_hash)}', #{log_index}),"
+        acc <> "('#{Helper.hash_to_query_string(t_hash)}', '#{Helper.hash_to_query_string(b_hash)}', #{log_index}),"
       end)
       |> String.trim_trailing(",")
 
     "(#{encoded_values})"
-  end
-
-  defp hash_to_query_string(hash) do
-    s_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0")
-
-    "\\#{s_hash}"
   end
 
   @doc """

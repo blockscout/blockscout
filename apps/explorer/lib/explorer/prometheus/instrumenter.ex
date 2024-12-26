@@ -13,6 +13,13 @@ defmodule Explorer.Prometheus.Instrumenter do
     help: "Block import stage, runner and step in runner processing time"
   ]
 
+  @histogram [
+    name: :media_processing_time,
+    buckets: :default,
+    duration_unit: :seconds,
+    help: "Time in seconds taken for media resizing and uploading"
+  ]
+
   @gauge [
     name: :success_transactions_number,
     help: "Number of successful transactions in the period (default is 1 day)",
@@ -56,6 +63,18 @@ defmodule Explorer.Prometheus.Instrumenter do
     registry: :public
   ]
 
+  @counter [
+    name: :successfully_uploaded_media_number,
+    help: "Number of successfully uploaded media to CDN",
+    registry: :public
+  ]
+
+  @counter [
+    name: :failed_uploading_media_number,
+    help: "Number of failed uploading media to CDN",
+    registry: :public
+  ]
+
   def block_import_stage_runner(function, stage, runner, step) do
     {time, result} = :timer.tc(function)
 
@@ -66,6 +85,14 @@ defmodule Explorer.Prometheus.Instrumenter do
 
   def success_transactions_number(number) do
     Gauge.set([name: :success_transactions_number, registry: :public], number)
+  end
+
+  def media_processing_time(seconds) do
+    Histogram.observe([name: :media_processing_time], seconds)
+  end
+
+  def weekly_success_transactions_number(number) do
+    Gauge.set([name: :weekly_success_transactions_number, registry: :public], number)
   end
 
   def deployed_smart_contracts_number(number) do
@@ -90,5 +117,13 @@ defmodule Explorer.Prometheus.Instrumenter do
 
   def simplified_active_addresses_number(number) do
     Gauge.set([name: :active_addresses_number, registry: :public], number)
+  end
+
+  def increment_successfully_uploaded_media_number do
+    Counter.inc(name: :successfully_uploaded_media_number, registry: :public)
+  end
+
+  def increment_failed_uploading_media_number do
+    Counter.inc(name: :failed_uploading_media_number, registry: :public)
   end
 end
