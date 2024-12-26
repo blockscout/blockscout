@@ -8,14 +8,14 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   ## State Structure
 
   The GenServer maintains state with the following structure:
-  ```elixir
-  %{
-    unavailable_endpoints_arguments: [
-      {json_rpc_named_arguments, url_type},
-      ...
-    ]
-  }
-  ```
+
+      %{
+        unavailable_endpoints_arguments: [
+          {json_rpc_named_arguments, url_type},
+          ...
+        ]
+      }
+
   where:
   - `unavailable_endpoints_arguments`: List of tuples containing endpoint configurations
     and their types that are currently marked as unavailable
@@ -27,16 +27,14 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   This module is designed to work in conjunction with `EthereumJSONRPC.Utility.EndpointAvailabilityObserver`.
   When an endpoint exceeds its error threshold in the observer, it is automatically added here for monitoring:
 
-  ```elixir
-  # In EndpointAvailabilityObserver, when errors exceed threshold:
-  json_rpc_config = [
-    transport: EthereumJSONRPC.HTTP,
-    transport_options: [
-      urls: ["http://localhost:8545"]
-    ]
-  ]
-  EndpointAvailabilityChecker.add_endpoint(json_rpc_config, :http)
-  ```
+      # In EndpointAvailabilityObserver, when errors exceed threshold:
+      json_rpc_config = [
+        transport: EthereumJSONRPC.HTTP,
+        transport_options: [
+          urls: ["http://localhost:8545"]
+        ]
+      ]
+      EndpointAvailabilityChecker.add_endpoint(json_rpc_config, :http)
 
   ## State Changes
 
