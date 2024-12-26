@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.AddressChannel do
   Establishes pub/sub channel for address page live updates.
   """
   use BlockScoutWeb, :channel
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
@@ -38,8 +39,41 @@ defmodule BlockScoutWeb.AddressChannel do
   @burn_address_hash burn_address_hash
   @current_token_balances_limit 50
 
-  def join("addresses:" <> address_hash, _params, socket) do
-    {:ok, %{}, assign(socket, :address_hash, address_hash)}
+  case @chain_type do
+    :celo ->
+      @chain_type_transaction_associations [
+        :gas_token
+      ]
+
+    _ ->
+      @chain_type_transaction_associations []
+  end
+
+  @transaction_associations [
+                              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+                              to_address: [
+                                :scam_badge,
+                                :names,
+                                :smart_contract,
+                                proxy_implementations_association()
+                              ],
+                              created_contract_address: [
+                                :scam_badge,
+                                :names,
+                                :smart_contract,
+                                proxy_implementations_association()
+                              ]
+                            ] ++
+                              @chain_type_transaction_associations
+
+  def join("addresses:" <> address_hash_string, _params, socket) do
+    case valid_address_hash_and_not_restricted_access?(address_hash_string) do
+      :ok ->
+        {:ok, %{}, assign(socket, :address_hash, address_hash_string)}
+
+      reason ->
+        {:error, %{reason: reason}}
+    end
   end
 
   def handle_in("get_balance", _, socket) do
@@ -146,6 +180,7 @@ defmodule BlockScoutWeb.AddressChannel do
     {:noreply, socket}
   end
 
+  # TODO: fix or remove, "internal_transaction.json" clause does not exist
   def handle_out(
         "internal_transaction",
         %{address: _address, internal_transaction: internal_transaction},
@@ -330,7 +365,13 @@ defmodule BlockScoutWeb.AddressChannel do
         event
       )
       when is_list(transactions) do
-    transaction_json = TransactionViewAPI.render("transactions.json", %{transactions: transactions, conn: nil})
+    transaction_json =
+      TransactionViewAPI.render("transactions.json", %{
+        transactions:
+          transactions
+          |> Repo.preload(@transaction_associations),
+        conn: nil
+      })
 
     push(socket, event, %{transactions: transaction_json})
 
@@ -375,7 +416,17 @@ defmodule BlockScoutWeb.AddressChannel do
       )
       when is_list(token_transfers) do
     token_transfer_json =
-      TransactionViewAPI.render("token_transfers.json", %{token_transfers: token_transfers, conn: nil})
+      TransactionViewAPI.render("token_transfers.json", %{
+        token_transfers:
+          token_transfers
+          |> Repo.preload([
+            [
+              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+              to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+            ]
+          ]),
+        conn: nil
+      })
 
     push(socket, event, %{token_transfers: token_transfer_json})
 

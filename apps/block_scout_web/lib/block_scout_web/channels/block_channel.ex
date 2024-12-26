@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.BlockChannel do
 
   alias BlockScoutWeb.API.V2.BlockView, as: BlockViewAPI
   alias BlockScoutWeb.{BlockView, ChainView}
+  alias Explorer.Repo
   alias Phoenix.View
   alias Timex.Duration
 
@@ -24,7 +25,11 @@ defmodule BlockScoutWeb.BlockChannel do
         %{block: block, average_block_time: average_block_time},
         %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
       ) do
-    rendered_block = BlockViewAPI.render("block.json", %{block: block, socket: nil})
+    rendered_block =
+      BlockViewAPI.render("block.json", %{
+        block: block |> Repo.preload(miner: [:names, :smart_contract, proxy_implementations_association()]),
+        socket: nil
+      })
 
     push(socket, "new_block", %{
       average_block_time: to_string(Duration.to_milliseconds(average_block_time)),

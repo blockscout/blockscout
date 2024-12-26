@@ -11,8 +11,9 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2, limit: 2, offset: 2, order_by: 3, preload: 2, dynamic: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.{Chain, Helper, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
   alias Explorer.Chain.Address.TokenBalance
 
@@ -85,7 +86,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   def token_holders_ordered_by_value(token_contract_address_hash, options \\ []) do
     token_contract_address_hash
     |> token_holders_ordered_by_value_query_without_address_preload(options)
-    |> preload(:address)
+    |> preload(address: [:names, :smart_contract, ^proxy_implementations_association()])
   end
 
   @doc """
@@ -131,7 +132,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       _ ->
         token_contract_address_hash
         |> token_holders_by_token_id_query(token_id)
-        |> preload(:address)
+        |> preload(address: [:names, :smart_contract, ^proxy_implementations_association()])
         |> order_by([tb], desc: :value, desc: :address_hash)
         |> Chain.page_token_balances(paging_options)
         |> limit(^paging_options.page_size)
@@ -347,10 +348,31 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       |> Stream.map(fn ctb ->
         [
           Address.checksum(ctb.address_hash),
-          CurrencyHelper.divide_decimals(ctb.value, token.decimals)
+          ctb.value |> CurrencyHelper.divide_decimals(token.decimals) |> Decimal.to_string(:xsd)
         ]
       end)
 
     Stream.concat([row_names], holders_list)
+  end
+
+  @doc """
+  Encode `address_hash`, `token_contract_address_hash` and `token_id` into a string that can be used in
+  `(address_hash, token_contract_address_hash, token_id) IN (...)` WHERE clause
+  """
+  @spec encode_ids([{Hash.t(), Hash.t(), non_neg_integer()}] | [{Hash.t(), Hash.t()}]) :: binary()
+  def encode_ids(ids) do
+    encoded_values =
+      ids
+      |> Enum.reduce("", fn
+        {address_hash, token_hash, token_id}, acc ->
+          acc <>
+            "('#{Helper.hash_to_query_string(address_hash)}', '#{Helper.hash_to_query_string(token_hash)}', #{token_id}),"
+
+        {address_hash, token_hash}, acc ->
+          acc <> "('#{Helper.hash_to_query_string(address_hash)}', '#{Helper.hash_to_query_string(token_hash)}'),"
+      end)
+      |> String.trim_trailing(",")
+
+    "(#{encoded_values})"
   end
 end

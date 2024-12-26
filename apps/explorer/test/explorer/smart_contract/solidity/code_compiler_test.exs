@@ -14,6 +14,13 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
   describe "run/2" do
     setup do
+      configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
+      end)
+
       {:ok,
        contract_code_info: Factory.contract_code_info(),
        contract_code_info_modern_compiler: Factory.contract_code_info_modern_compiler()}

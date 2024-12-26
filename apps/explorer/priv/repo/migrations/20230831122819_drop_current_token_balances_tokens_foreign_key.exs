@@ -1,4 +1,3 @@
-# cspell:ignore fkey
 defmodule Explorer.Repo.Migrations.DropCurrentTokenBalancesTokensForeignKey do
   use Ecto.Migration
 

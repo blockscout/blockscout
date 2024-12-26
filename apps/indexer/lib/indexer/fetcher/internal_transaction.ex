@@ -10,15 +10,21 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   require Logger
 
-  import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
+  import Indexer.Block.Fetcher,
+    only: [
+      async_import_coin_balances: 2,
+      async_import_token_balances: 2,
+      token_transfers_merge_token: 2
+    ]
 
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
-  alias Indexer.Transform.Addresses
+  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
+  alias Indexer.Transform.{AddressCoinBalances, Addresses, AddressTokenBalances}
 
   @behaviour BufferedTask
 
@@ -41,12 +47,12 @@ defmodule Indexer.Fetcher.InternalTransaction do
   *Note*: The internal transactions for individual transactions cannot be paginated,
   so the total number of internal transactions that could be produced is unknown.
   """
-  @spec async_fetch([Block.block_number()]) :: :ok
-  def async_fetch(block_numbers, timeout \\ 5000) when is_list(block_numbers) do
+  @spec async_fetch([Block.block_number()], boolean()) :: :ok
+  def async_fetch(block_numbers, realtime?, timeout \\ 5000) when is_list(block_numbers) do
     if InternalTransactionSupervisor.disabled?() do
       :ok
     else
-      BufferedTask.buffer(__MODULE__, block_numbers, timeout)
+      BufferedTask.buffer(__MODULE__, block_numbers, realtime?, timeout)
     end
   end
 
@@ -70,13 +76,23 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @impl BufferedTask
   def init(initial, reducer, _json_rpc_named_arguments) do
-    {:ok, final} =
-      Chain.stream_blocks_with_unfetched_internal_transactions(
-        initial,
+    stream_reducer =
+      if RangesHelper.trace_ranges_present?() do
+        trace_block_ranges = RangesHelper.get_trace_block_ranges()
+
+        fn block_number, acc ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if RangesHelper.number_in_ranges?(block_number, trace_block_ranges),
+            do: reducer.(block_number, acc),
+            else: acc
+        end
+      else
         fn block_number, acc ->
           reducer.(block_number, acc)
         end
-      )
+      end
+
+    {:ok, final} = Chain.stream_blocks_with_unfetched_internal_transactions(initial, stream_reducer)
 
     final
   end
@@ -205,7 +221,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Logger.error(
           fn ->
             [
-              "failed to import first trace for tx: ",
+              "failed to import first trace for transaction: ",
               inspect(reason)
             ]
           end,
@@ -272,6 +288,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
         {String.downcase(hash), block_number}
       end)
 
+    address_coin_balances_params_set =
+      AddressCoinBalances.params_set(%{internal_transactions_params: internal_transactions_params_marked})
+
     empty_block_numbers =
       unique_numbers
       |> MapSet.new()
@@ -280,9 +299,31 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     internal_transactions_and_empty_block_numbers = internal_transactions_params_marked ++ empty_block_numbers
 
+    celo_token_transfers_params =
+      %{token_transfers: celo_token_transfers, tokens: celo_tokens} =
+      if Application.get_env(:explorer, :chain_type) == :celo do
+        block_number_to_block_hash =
+          unique_numbers
+          |> Chain.block_hash_by_number()
+          |> Map.new(fn
+            {block_number, block_hash} ->
+              {block_number, Hash.to_string(block_hash)}
+          end)
+
+        CeloTransactionTokenTransfers.parse_internal_transactions(
+          internal_transactions_params_marked,
+          block_number_to_block_hash
+        )
+      else
+        %{token_transfers: [], tokens: []}
+      end
+
     imports =
       Chain.import(%{
+        token_transfers: %{params: celo_token_transfers},
+        tokens: %{params: celo_tokens},
         addresses: %{params: addresses_params},
+        address_coin_balances: %{params: address_coin_balances_params_set},
         internal_transactions: %{params: internal_transactions_and_empty_block_numbers, with: :blockless_changeset},
         timeout: :infinity
       })
@@ -295,6 +336,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
         async_import_coin_balances(imported, %{
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number
         })
+
+        async_import_celo_token_balances(celo_token_transfers_params)
 
       {:error, step, reason, _changes_so_far} ->
         Logger.error(
@@ -410,5 +453,29 @@ defmodule Indexer.Fetcher.InternalTransaction do
       task_supervisor: Indexer.Fetcher.InternalTransaction.TaskSupervisor,
       metadata: [fetcher: :internal_transaction]
     ]
+  end
+
+  defp async_import_celo_token_balances(%{token_transfers: token_transfers, tokens: tokens}) do
+    if Application.get_env(:explorer, :chain_type) == :celo do
+      token_transfers_with_token = token_transfers_merge_token(token_transfers, tokens)
+
+      address_token_balances =
+        %{token_transfers_params: token_transfers_with_token}
+        |> AddressTokenBalances.params_set()
+        |> Enum.map(fn %{address_hash: address_hash, token_contract_address_hash: token_contract_address_hash} = entry ->
+          with {:ok, address_hash} <- Hash.Address.cast(address_hash),
+               {:ok, token_contract_address_hash} <- Hash.Address.cast(token_contract_address_hash) do
+            entry
+            |> Map.put(:address_hash, address_hash)
+            |> Map.put(:token_contract_address_hash, token_contract_address_hash)
+          else
+            error -> Logger.error("Failed to cast string to hash: #{inspect(error)}")
+          end
+        end)
+
+      async_import_token_balances(%{address_token_balances: address_token_balances}, false)
+    else
+      :ok
+    end
   end
 end

@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Explorer.ExchangeRates.Token
   alias Timex.Duration
 
-  import BlockScoutWeb.Gettext
+  use Gettext, backend: BlockScoutWeb.Gettext
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1, short_token_id: 2, tag_name_to_label: 1]
   import BlockScoutWeb.Tokens.Helper
 
@@ -395,8 +395,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def decoded_input_data(transaction) do
-    {result, _, _} = Transaction.decoded_input_data(transaction, [])
-    result
+    Transaction.decoded_input_data(transaction, [])
   end
 
   def decoded_revert_reason(revert_reason, transaction, options) do
@@ -449,7 +448,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def involves_contract?(%Transaction{from_address: from_address, to_address: to_address}) do
-    AddressView.contract?(from_address) || AddressView.contract?(to_address)
+    Address.smart_contract?(from_address) || Address.smart_contract?(to_address)
   end
 
   def involves_token_transfers?(%Transaction{token_transfers: []}), do: false
@@ -597,40 +596,30 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def trim(length, string) do
-    %{show: String.slice(string, 0..length), hide: String.slice(string, (length + 1)..String.length(string))}
-  end
-
-  defp template_to_string(template) when is_list(template) do
-    template_to_string(Enum.at(template, 1))
-  end
-
-  defp template_to_string(template) when is_tuple(template) do
-    safe_to_string(template)
+    %{show: String.slice(string, 0..length), hide: String.slice(string, (length + 1)..-1//1)}
   end
 
   # Function decodes revert reason of the transaction
-  @spec decoded_revert_reason(Transaction.t() | nil) :: binary() | nil
-  def decoded_revert_reason(transaction) do
-    revert_reason = get_pure_transaction_revert_reason(transaction)
-
+  @spec decode_revert_reason_as_utf8(binary() | nil) :: binary() | nil
+  def decode_revert_reason_as_utf8(revert_reason) do
     case revert_reason do
+      nil ->
+        nil
+
       "0x" <> hex_part ->
-        process_hex_revert_reason(hex_part)
+        decode_hex_revert_reason_as_utf8(hex_part)
 
       hex_part ->
-        process_hex_revert_reason(hex_part)
+        decode_hex_revert_reason_as_utf8(hex_part)
     end
   end
 
-  # Function converts hex revert reason to the binary
-  @spec process_hex_revert_reason(nil) :: nil
-  defp process_hex_revert_reason(nil), do: nil
-
-  @spec process_hex_revert_reason(binary()) :: binary()
-  defp process_hex_revert_reason(hex_revert_reason) do
-    case Integer.parse(hex_revert_reason, 16) do
-      {number, ""} ->
-        :binary.encode_unsigned(number)
+  # Function converts hex revert reason to the utf8 binary
+  @spec decode_hex_revert_reason_as_utf8(binary()) :: binary()
+  def decode_hex_revert_reason_as_utf8(hex_revert_reason) do
+    case Base.decode16(hex_revert_reason, case: :mixed) do
+      {:ok, revert_reason} ->
+        revert_reason
 
       _ ->
         hex_revert_reason

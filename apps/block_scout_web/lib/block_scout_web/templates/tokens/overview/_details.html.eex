@@ -1,5 +1,5 @@
 <% circles_addresses_list = CustomContractsHelper.get_custom_addresses_list(:circles_addresses) %>
-<% address_hash_str = "0x" <> Base.encode16(@token.contract_address_hash.bytes, case: :lower) %>
+<% address_hash_string = "0x" <> Base.encode16(@token.contract_address_hash.bytes, case: :lower) %>
 <% {:ok, created_from_address} = if @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
 <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
@@ -11,7 +11,7 @@
           <h1 class="card-title d-flex" style="justify-content: space-between; margin-bottom: 0.75rem">
             <div style="line-height: 30px;">
               <%= cond do %>
-                <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
+                <% Enum.member?(circles_addresses_list, address_hash_string) -> %>
                   <div class="custom-dapp-header-container">
                     <img class="custom-address-icon"/>
                   </div>

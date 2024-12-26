@@ -9,26 +9,38 @@ defmodule ConfigHelper do
   def repos do
     base_repos = [Explorer.Repo, Explorer.Repo.Account]
 
-    repos =
-      case chain_type() do
-        :ethereum -> base_repos ++ [Explorer.Repo.Beacon]
-        :optimism -> base_repos ++ [Explorer.Repo.Optimism]
-        :polygon_edge -> base_repos ++ [Explorer.Repo.PolygonEdge]
-        :polygon_zkevm -> base_repos ++ [Explorer.Repo.PolygonZkevm]
-        :rsk -> base_repos ++ [Explorer.Repo.RSK]
-        :shibarium -> base_repos ++ [Explorer.Repo.Shibarium]
-        :suave -> base_repos ++ [Explorer.Repo.Suave]
-        :filecoin -> base_repos ++ [Explorer.Repo.Filecoin]
-        :stability -> base_repos ++ [Explorer.Repo.Stability]
-        :zksync -> base_repos ++ [Explorer.Repo.ZkSync]
-        _ -> base_repos
-      end
+    chain_type_repo =
+      %{
+        arbitrum: Explorer.Repo.Arbitrum,
+        blackfort: Explorer.Repo.Blackfort,
+        celo: Explorer.Repo.Celo,
+        ethereum: Explorer.Repo.Beacon,
+        filecoin: Explorer.Repo.Filecoin,
+        optimism: Explorer.Repo.Optimism,
+        polygon_edge: Explorer.Repo.PolygonEdge,
+        polygon_zkevm: Explorer.Repo.PolygonZkevm,
+        rsk: Explorer.Repo.RSK,
+        scroll: Explorer.Repo.Scroll,
+        shibarium: Explorer.Repo.Shibarium,
+        stability: Explorer.Repo.Stability,
+        suave: Explorer.Repo.Suave,
+        zilliqa: Explorer.Repo.Zilliqa,
+        zksync: Explorer.Repo.ZkSync
+      }
+      |> Map.get(chain_type())
 
-    if System.get_env("BRIDGED_TOKENS_ENABLED") do
-      repos ++ [Explorer.Repo.BridgedTokens]
-    else
-      repos
-    end
+    chain_type_repos = (chain_type_repo && [chain_type_repo]) || []
+
+    ext_repos =
+      [
+        {parse_bool_env_var("BRIDGED_TOKENS_ENABLED"), Explorer.Repo.BridgedTokens},
+        {parse_bool_env_var("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud},
+        {parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"), Explorer.Repo.ShrunkInternalTransactions}
+      ]
+      |> Enum.filter(&elem(&1, 0))
+      |> Enum.map(&elem(&1, 1))
+
+    base_repos ++ chain_type_repos ++ ext_repos
   end
 
   @spec hackney_options() :: any()
@@ -152,33 +164,44 @@ defmodule ConfigHelper do
 
   @spec indexer_memory_limit() :: integer()
   def indexer_memory_limit do
-    indexer_memory_limit_default = 1
-
     "INDEXER_MEMORY_LIMIT"
-    |> safe_get_env(to_string(indexer_memory_limit_default))
+    |> safe_get_env(nil)
     |> String.downcase()
     |> Integer.parse()
     |> case do
       {integer, g} when g in ["g", "gb", ""] -> integer <<< 30
       {integer, m} when m in ["m", "mb"] -> integer <<< 20
-      _ -> indexer_memory_limit_default <<< 30
+      _ -> nil
     end
   end
 
-  @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap
+  @spec exchange_rates_source() :: Source.CoinGecko | Source.CoinMarketCap | Source.Mobula
   def exchange_rates_source do
-    case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
+    case System.get_env("EXCHANGE_RATES_SOURCE") do
       "coin_gecko" -> Source.CoinGecko
       "coin_market_cap" -> Source.CoinMarketCap
+      "mobula" -> Source.Mobula
       _ -> Source.CoinGecko
     end
   end
 
-  @spec exchange_rates_market_cap_source() :: MarketCap.CoinGecko | MarketCap.CoinMarketCap
+  @spec exchange_rates_secondary_coin_source() :: Source.CoinGecko | Source.CoinMarketCap | Source.Mobula
+  def exchange_rates_secondary_coin_source do
+    case System.get_env("EXCHANGE_RATES_SECONDARY_COIN_SOURCE") do
+      "coin_gecko" -> Source.CoinGecko
+      "coin_market_cap" -> Source.CoinMarketCap
+      "mobula" -> Source.Mobula
+      "cryptorank" -> Source.Cryptorank
+      _ -> Source.CoinGecko
+    end
+  end
+
+  @spec exchange_rates_market_cap_source() :: MarketCap.CoinGecko | MarketCap.CoinMarketCap | MarketCap.Mobula
   def exchange_rates_market_cap_source do
     case System.get_env("EXCHANGE_RATES_MARKET_CAP_SOURCE") do
       "coin_gecko" -> MarketCap.CoinGecko
       "coin_market_cap" -> MarketCap.CoinMarketCap
+      "mobula" -> MarketCap.Mobula
       _ -> MarketCap.CoinGecko
     end
   end
@@ -191,27 +214,41 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec exchange_rates_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare
+  @spec exchange_rates_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare | Price.Mobula
   def exchange_rates_price_source do
     case System.get_env("EXCHANGE_RATES_PRICE_SOURCE") do
       "coin_gecko" -> Price.CoinGecko
       "coin_market_cap" -> Price.CoinMarketCap
       "crypto_compare" -> Price.CryptoCompare
+      "mobula" -> Price.Mobula
+      "cryptorank" -> Source.Cryptorank
       _ -> Price.CryptoCompare
     end
   end
 
-  @spec exchange_rates_secondary_coin_price_source() :: Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare
+  @spec exchange_rates_secondary_coin_price_source() ::
+          Price.CoinGecko | Price.CoinMarketCap | Price.CryptoCompare | Price.Mobula
   def exchange_rates_secondary_coin_price_source do
     cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
     cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_ID")
     cc_secondary_coin_symbol = System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL")
+    mobula_secondary_coin_id = System.get_env("EXCHANGE_RATES_MOBULA_SECONDARY_COIN_ID")
+    cryptorank_secondary_coin_id = System.get_env("EXCHANGE_RATES_CRYPTORANK_SECONDARY_COIN_ID")
 
     cond do
       cg_secondary_coin_id && cg_secondary_coin_id !== "" -> Price.CoinGecko
       cmc_secondary_coin_id && cmc_secondary_coin_id !== "" -> Price.CoinMarketCap
       cc_secondary_coin_symbol && cc_secondary_coin_symbol !== "" -> Price.CryptoCompare
+      mobula_secondary_coin_id && mobula_secondary_coin_id !== "" -> Price.Mobula
+      cryptorank_secondary_coin_id && cryptorank_secondary_coin_id !== "" -> Source.Cryptorank
       true -> Price.CryptoCompare
+    end
+  end
+
+  def token_exchange_rates_source do
+    case System.get_env("TOKEN_EXCHANGE_RATES_SOURCE") do
+      "cryptorank" -> Source.Cryptorank
+      _ -> Source.CoinGecko
     end
   end
 
@@ -241,12 +278,25 @@ defmodule ConfigHelper do
   end
 
   @spec parse_json_env_var(String.t(), String.t()) :: any()
-  def parse_json_env_var(env_var, default_value) do
+  def parse_json_env_var(env_var, default_value \\ "{}") do
     env_var
     |> safe_get_env(default_value)
     |> Jason.decode!()
   rescue
     err -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(err)}"
+  end
+
+  def parse_json_with_atom_keys_env_var(env_var, default_value \\ "{}") do
+    with {:ok, map} <-
+           env_var
+           |> safe_get_env(default_value)
+           |> Jason.decode() do
+      for {key, value} <- map, into: %{}, do: {String.to_atom(key), value}
+    else
+      {:error, error} -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(error)}"
+    end
+  rescue
+    error -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(error)}"
   end
 
   @spec parse_list_env_var(String.t(), String.t() | nil) :: list()
@@ -268,27 +318,127 @@ defmodule ConfigHelper do
     end
   end
 
+  @spec parse_url_env_var(String.t(), boolean()) :: String.t() | nil
+  def parse_url_env_var(env_var, default_value \\ nil, trailing_slash_needed? \\ false) do
+    with url when not is_nil(url) <- safe_get_env(env_var, default_value),
+         url <- String.trim_trailing(url, "/"),
+         {url, true} <- {url, trailing_slash_needed?} do
+      url <> "/"
+    else
+      {url, false} ->
+        url
+
+      nil ->
+        nil
+    end
+  end
+
   @supported_chain_types [
     "default",
     "arbitrum",
+    "blackfort",
+    "celo",
     "ethereum",
     "filecoin",
     "optimism",
     "polygon_edge",
     "polygon_zkevm",
     "rsk",
+    "scroll",
     "shibarium",
     "stability",
     "suave",
     "zetachain",
+    "zilliqa",
     "zksync"
   ]
 
   @spec chain_type() :: atom() | nil
   def chain_type, do: parse_catalog_value("CHAIN_TYPE", @supported_chain_types, true, "default")
 
-  @spec eth_call_url(String.t() | nil) :: String.t() | nil
-  def eth_call_url(default \\ nil) do
-    System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URL") || System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || default
+  @supported_modes ["all", "indexer", "api"]
+
+  @spec mode :: atom()
+  def mode, do: parse_catalog_value("APPLICATION_MODE", @supported_modes, true, "all")
+
+  @doc """
+  Retrieves json rpc urls list based on `urls_type`
+  """
+  @spec parse_urls_list(
+          :http | :trace | :eth_call | :fallback_http | :fallback_trace | :fallback_eth_call,
+          String.t() | nil
+        ) :: [String.t()]
+  def parse_urls_list(urls_type, default_url \\ nil) do
+    {urls_var, url_var} = define_urls_vars(urls_type)
+
+    with [] <- parse_list_env_var(urls_var),
+         "" <- safe_get_env(url_var, default_url) do
+      case urls_type do
+        :http ->
+          Logger.warning("ETHEREUM_JSONRPC_HTTP_URL (or ETHEREUM_JSONRPC_HTTP_URLS) env variable is required")
+          []
+
+        :fallback_http ->
+          parse_urls_list(:http)
+
+        _other ->
+          new_urls_type = if String.contains?(to_string(urls_type), "fallback"), do: :fallback_http, else: :http
+          parse_urls_list(new_urls_type)
+      end
+    else
+      urls when is_list(urls) -> urls
+      url -> [url]
+    end
   end
+
+  @doc """
+    Parses and validates a microservice URL from an environment variable, removing any trailing slash.
+
+    ## Parameters
+    - `env_name`: The name of the environment variable containing the URL
+
+    ## Returns
+    - The validated URL string with any trailing slash removed
+    - `nil` if the URL is invalid or missing required components
+  """
+  @spec parse_microservice_url(String.t()) :: String.t() | nil
+  def parse_microservice_url(env_name) do
+    url = System.get_env(env_name)
+
+    cond do
+      not valid_url?(url) ->
+        nil
+
+      String.ends_with?(url, "/") ->
+        url
+        |> String.slice(0..(String.length(url) - 2))
+
+      true ->
+        url
+    end
+  end
+
+  # Validates if the given string is a valid URL by checking if it has both scheme (like http,
+  # https, ftp) and host components.
+  @spec valid_url?(String.t()) :: boolean()
+  defp valid_url?(string) when is_binary(string) do
+    uri = URI.parse(string)
+
+    !is_nil(uri.scheme) && !is_nil(uri.host)
+  end
+
+  defp valid_url?(_), do: false
+
+  defp define_urls_vars(:http), do: {"ETHEREUM_JSONRPC_HTTP_URLS", "ETHEREUM_JSONRPC_HTTP_URL"}
+  defp define_urls_vars(:trace), do: {"ETHEREUM_JSONRPC_TRACE_URLS", "ETHEREUM_JSONRPC_TRACE_URL"}
+  defp define_urls_vars(:eth_call), do: {"ETHEREUM_JSONRPC_ETH_CALL_URLS", "ETHEREUM_JSONRPC_ETH_CALL_URL"}
+
+  defp define_urls_vars(:fallback_http),
+    do: {"ETHEREUM_JSONRPC_FALLBACK_HTTP_URLS", "ETHEREUM_JSONRPC_FALLBACK_HTTP_URL"}
+
+  defp define_urls_vars(:fallback_trace),
+    do: {"ETHEREUM_JSONRPC_FALLBACK_TRACE_URLS", "ETHEREUM_JSONRPC_FALLBACK_TRACE_URL"}
+
+  defp define_urls_vars(:fallback_eth_call),
+    do: {"ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URLS", "ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URL"}
 end

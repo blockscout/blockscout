@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - master
+      - production-arbitrum
       - production-core
-      - production-eth-experimental
-      - production-eth-goerli
       - production-eth-sepolia
+      - production-filecoin
       - production-fuse
       - production-optimism
       - production-immutable
@@ -21,21 +21,19 @@ on:
       - production-zksync
       - staging-l2
     paths-ignore:
-      - 'CHANGELOG.md'
-      - '**/README.md'
-      - 'docker/*'
-      - 'docker-compose/*'
+      - "CHANGELOG.md"
+      - "**/README.md"
+      - "docker/*"
+      - "docker-compose/*"
   pull_request:
     types: [opened, synchronize, reopened, labeled]
     branches:
       - master
-      - production-optimism
-      - production-zksync
 
 env:
   MIX_ENV: test
-  OTP_VERSION: ${{ vars.OTP_VERSION || '25.3.2.8' }}
-  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION || '1.14.5' }}
+  OTP_VERSION: ${{ github.ref_name == '10284/merge' && '27.1' || vars.OTP_VERSION }}
+  ELIXIR_VERSION: ${{ github.ref_name == '10284/merge' && '1.17.3' || vars.ELIXIR_VERSION }}
   ACCOUNT_AUTH0_DOMAIN: "blockscoutcom.us.auth0.com"
 
 jobs:
@@ -51,7 +49,24 @@ jobs:
 
             // Add/remove CI matrix chain types here
             const defaultChainTypes = ["default"];
-            const chainTypes = ["ethereum", "polygon_zkevm", "rsk", "stability", "filecoin", "optimism", "arbitrum"];
+
+            const chainTypes = [
+              "arbitrum",
+              "blackfort",
+              "celo",
+              "ethereum",
+              "filecoin",
+              "optimism",
+              "polygon_zkevm",
+              "rsk",
+              "scroll",
+              "shibarium",
+              "stability",
+              "zetachain",
+              "zilliqa",
+              "zksync"
+            ];
+
             const extraChainTypes = ["suave", "polygon_edge"];
 
             // Chain type matrix we use in master branch
@@ -349,12 +364,10 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-blockscoutweb-npm-
 
       - name: Run cspell
-        uses: streetsidesoftware/cspell-action@v2
+        uses: streetsidesoftware/cspell-action@v6
         with:
-          files: |
-            **/*.ex*
-            **/*.eex
-            **/*.js"
+          use_cspell_files: true
+          incremental_files_only: false
 
   eslint:
     name: ESLint
@@ -446,6 +459,34 @@ jobs:
       - run: ./node_modules/.bin/jest
         working-directory: apps/block_scout_web/assets
 
+  test_utils:
+    name: Utils Tests
+    runs-on: ubuntu-latest
+    needs: build-and-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          hexpm-mirrors: |
+            https://builds.hex.pm
+            https://cdn.jsdelivr.net/hex
+
+      - name: Restore Mix Deps Cache
+        uses: actions/cache/restore@v4
+        id: deps-cache
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
+
+      - working-directory: apps/utils
+        run: mix test
+
   test_nethermind_mox_ethereum_jsonrpc:
     strategy:
       fail-fast: false
@@ -457,7 +498,7 @@ jobs:
       - matrix-builder
     services:
       postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -520,7 +561,7 @@ jobs:
       - matrix-builder
     services:
       postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -583,6 +624,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
   test_nethermind_mox_indexer:
     strategy:
       fail-fast: false
@@ -594,7 +636,7 @@ jobs:
       - matrix-builder
     services:
       postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -649,6 +691,7 @@ jobs:
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Nethermind.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
   test_nethermind_mox_block_scout_web:
     strategy:
       fail-fast: false
@@ -665,7 +708,7 @@ jobs:
           - 6379:6379
 
       postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -749,3 +792,4 @@ jobs:
           ACCOUNT_REDIS_URL: "redis://localhost:6379"
           SOURCIFY_INTEGRATION_ENABLED: "true"
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"

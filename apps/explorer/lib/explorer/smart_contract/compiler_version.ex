@@ -4,7 +4,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
   """
 
   alias Explorer.Helper
-  alias Explorer.SmartContract.RustVerifierInterface
+  alias Explorer.SmartContract.{RustVerifierInterface, StylusVerifierInterface}
 
   @unsupported_solc_versions ~w(0.1.1 0.1.2)
   @unsupported_vyper_versions ~w(v0.2.9 v0.2.10)
@@ -12,14 +12,38 @@ defmodule Explorer.SmartContract.CompilerVersion do
   @doc """
   Fetches a list of compilers from the Ethereum Solidity API.
   """
-  @spec fetch_versions(:solc | :vyper) :: {atom, [map]}
-  def fetch_versions(compiler) do
-    case compiler do
-      :solc -> fetch_solc_versions()
-      :vyper -> fetch_vyper_versions()
-    end
+  @spec fetch_versions(:solc | :vyper | :zk | :stylus) :: {atom, [binary()]}
+  def fetch_versions(compiler)
+
+  def fetch_versions(:solc) do
+    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :solc)
   end
 
+  def fetch_versions(:vyper) do
+    fetch_compiler_versions(&RustVerifierInterface.vyper_get_versions_list/0, :vyper)
+  end
+
+  def fetch_versions(:zk) do
+    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :zk)
+  end
+
+  def fetch_versions(:stylus) do
+    fetch_compiler_versions(&StylusVerifierInterface.get_versions_list/0, :stylus)
+  end
+
+  @doc """
+  Fetches the list of compiler versions for the given compiler.
+
+  ## Parameters
+
+    - compiler: The name of the compiler for which to fetch the version list.
+
+  ## Returns
+
+    - A list of available compiler versions.
+
+  """
+  @spec fetch_version_list(:solc | :vyper | :zk | :stylus) :: [binary()]
   def fetch_version_list(compiler) do
     case fetch_versions(compiler) do
       {:ok, compiler_versions} ->
@@ -30,20 +54,29 @@ defmodule Explorer.SmartContract.CompilerVersion do
     end
   end
 
-  defp fetch_solc_versions do
-    fetch_compiler_versions(&RustVerifierInterface.get_versions_list/0, :solc)
+  defp fetch_compiler_versions(compiler_list_fn, :stylus = compiler_type) do
+    if StylusVerifierInterface.enabled?() do
+      fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type)
+    else
+      {:ok, []}
+    end
   end
 
-  defp fetch_vyper_versions do
-    fetch_compiler_versions(&RustVerifierInterface.vyper_get_versions_list/0, :vyper)
+  defp fetch_compiler_versions(compiler_list_fn, :zk = compiler_type) do
+    if RustVerifierInterface.enabled?() do
+      fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type)
+    else
+      {:ok, []}
+    end
   end
 
   defp fetch_compiler_versions(compiler_list_fn, compiler_type) do
     if RustVerifierInterface.enabled?() do
-      compiler_list_fn.()
+      fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type)
     else
       headers = [{"Content-Type", "application/json"}]
 
+      # credo:disable-for-next-line
       case HTTPoison.get(source_url(compiler_type), headers) do
         {:ok, %{status_code: 200, body: body}} ->
           {:ok, format_data(body, compiler_type)}
@@ -57,9 +90,32 @@ defmodule Explorer.SmartContract.CompilerVersion do
     end
   end
 
+  defp fetch_compiler_versions_sc_verified_enabled(compiler_list_fn, compiler_type) do
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      # todo: refactor opportunity, currently, Blockscout 2 identical requests to microservice in order to get
+      # Solc and Zk compiler versions
+      case compiler_list_fn.() do
+        {:ok, {solc_compilers, zk_compilers}} ->
+          choose_compiler(compiler_type, %{:solc_compilers => solc_compilers, :zk_compilers => zk_compilers})
+
+        _ ->
+          {:error, "Verifier microservice is unavailable"}
+      end
+    else
+      compiler_list_fn.()
+    end
+  end
+
+  defp choose_compiler(compiler_type, compilers) do
+    case compiler_type do
+      :solc -> {:ok, compilers.solc_compilers}
+      :zk -> {:ok, compilers.zk_compilers}
+    end
+  end
+
   @spec vyper_releases_url :: String.t()
   def vyper_releases_url do
-    "https://api.github.com/repos/vyperlang/vyper/releases"
+    "https://api.github.com/repos/vyperlang/vyper/releases?per_page=100"
   end
 
   defp format_data(json, compiler) do

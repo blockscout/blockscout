@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
       associate_and_import_or_prepare_for_recovery: 4
     ]
 
-  import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_info: 1]
+  import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_error: 1, log_info: 1]
 
   @doc """
     Checks if the oldest unproven batch in the database has the associated L1 proving transaction
@@ -50,8 +50,8 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
       expected_batch_number ->
         log_info("Checking if the batch #{expected_batch_number} was proven")
 
-        {next_action, tx_hash, l1_txs} =
-          check_if_batch_status_changed(expected_batch_number, :prove_tx, json_l2_rpc_named_arguments)
+        {next_action, transaction_hash, l1_transactions} =
+          check_if_batch_status_changed(expected_batch_number, :prove_transaction, json_l2_rpc_named_arguments)
 
         case next_action do
           :skip ->
@@ -59,17 +59,20 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
 
           :look_for_batches ->
             log_info("The batch #{expected_batch_number} looks like proven")
-            prove_tx = Rpc.fetch_tx_by_hash(tx_hash, json_l1_rpc_named_arguments)
-            batches_numbers_from_rpc = get_proven_batches_from_calldata(prove_tx["input"])
+            prove_transaction = Rpc.fetch_transaction_by_hash(transaction_hash, json_l1_rpc_named_arguments)
+            batches_numbers_from_rpc = get_proven_batches_from_calldata(prove_transaction["input"])
 
-            associate_and_import_or_prepare_for_recovery(batches_numbers_from_rpc, l1_txs, tx_hash, :prove_id)
+            associate_and_import_or_prepare_for_recovery(
+              batches_numbers_from_rpc,
+              l1_transactions,
+              transaction_hash,
+              :prove_id
+            )
         end
     end
   end
 
   defp get_proven_batches_from_calldata(calldata) do
-    "0x7f61885c" <> encoded_params = calldata
-
     # /// @param batchNumber Rollup batch number
     # /// @param batchHash Hash of L2 batch
     # /// @param indexRepeatedStorageChanges The serial number of the shortcut index that's used as a unique identifier for storage keys that were used twice or more
@@ -93,43 +96,92 @@ defmodule Indexer.Fetcher.ZkSync.StatusTracking.Proven do
     #     uint256[] recursiveAggregationInput;
     #     uint256[] serializedProof;
     # }
-    # proveBatches(StoredBatchInfo calldata _prevBatch, StoredBatchInfo[] calldata _committedBatches, ProofInput calldata _proof)
+    proven_batches =
+      case calldata do
+        "0x7f61885c" <> encoded_params ->
+          # proveBatches(StoredBatchInfo calldata _prevBatch, StoredBatchInfo[] calldata _committedBatches, ProofInput calldata _proof)
+          # IO.inspect(FunctionSelector.decode("proveBatches((uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32),(uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32)[],(uint256[],uint256[]))"))
+          [_prev_batch, proven_batches, _proof] =
+            TypeDecoder.decode(
+              Base.decode16!(encoded_params, case: :lower),
+              %FunctionSelector{
+                function: "proveBatches",
+                types: [
+                  tuple: [
+                    uint: 64,
+                    bytes: 32,
+                    uint: 64,
+                    uint: 256,
+                    bytes: 32,
+                    bytes: 32,
+                    uint: 256,
+                    bytes: 32
+                  ],
+                  array:
+                    {:tuple,
+                     [
+                       uint: 64,
+                       bytes: 32,
+                       uint: 64,
+                       uint: 256,
+                       bytes: 32,
+                       bytes: 32,
+                       uint: 256,
+                       bytes: 32
+                     ]},
+                  tuple: [array: {:uint, 256}, array: {:uint, 256}]
+                ]
+              }
+            )
 
-    # IO.inspect(FunctionSelector.decode("proveBatches((uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32),(uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32)[],(uint256[],uint256[]))"))
-    [_prev_batch, proven_batches, _proof] =
-      TypeDecoder.decode(
-        Base.decode16!(encoded_params, case: :lower),
-        %FunctionSelector{
-          function: "proveBatches",
-          types: [
-            tuple: [
-              uint: 64,
-              bytes: 32,
-              uint: 64,
-              uint: 256,
-              bytes: 32,
-              bytes: 32,
-              uint: 256,
-              bytes: 32
-            ],
-            array:
-              {:tuple,
-               [
-                 uint: 64,
-                 bytes: 32,
-                 uint: 64,
-                 uint: 256,
-                 bytes: 32,
-                 bytes: 32,
-                 uint: 256,
-                 bytes: 32
-               ]},
-            tuple: [array: {:uint, 256}, array: {:uint, 256}]
-          ]
-        }
-      )
+          proven_batches
 
-    log_info("Discovered #{length(proven_batches)} proven batches in the prove tx")
+        "0xc37533bb" <> encoded_params ->
+          # proveBatchesSharedBridge(uint256 _chainId, StoredBatchInfo calldata _prevBatch, StoredBatchInfo[] calldata _committedBatches, ProofInput calldata _proof)
+          # IO.inspect(FunctionSelector.decode("proveBatchesSharedBridge(uint256,(uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32),(uint64,bytes32,uint64,uint256,bytes32,bytes32,uint256,bytes32)[],(uint256[],uint256[]))"))
+          [_chainid, _prev_batch, proven_batches, _proof] =
+            TypeDecoder.decode(
+              Base.decode16!(encoded_params, case: :lower),
+              %FunctionSelector{
+                function: "proveBatchesSharedBridge",
+                types: [
+                  {:uint, 256},
+                  tuple: [
+                    uint: 64,
+                    bytes: 32,
+                    uint: 64,
+                    uint: 256,
+                    bytes: 32,
+                    bytes: 32,
+                    uint: 256,
+                    bytes: 32
+                  ],
+                  array:
+                    {:tuple,
+                     [
+                       uint: 64,
+                       bytes: 32,
+                       uint: 64,
+                       uint: 256,
+                       bytes: 32,
+                       bytes: 32,
+                       uint: 256,
+                       bytes: 32
+                     ]},
+                  tuple: [array: {:uint, 256}, array: {:uint, 256}]
+                ]
+              }
+            )
+
+          proven_batches
+
+        _ ->
+          log_error("Unknown calldata format: #{calldata}")
+
+          []
+      end
+
+    log_info("Discovered #{length(proven_batches)} proven batches in the prove transaction")
 
     proven_batches
     |> Enum.map(fn batch_info -> elem(batch_info, 0) end)

@@ -3,25 +3,23 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
   Exports transactions to a csv file.
   """
 
-  import Ecto.Query,
-    only: [
-      from: 2
-    ]
-
-  alias Explorer.{Market, PagingOptions, Repo}
+  alias Explorer.Market
   alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
-
-  @paging_options %PagingOptions{page_size: Helper.limit()}
 
   @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
   def export(address_hash, from_period, to_period, filter_type \\ nil, filter_value \\ nil) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
     exchange_rate = Market.get_coin_exchange_rate()
 
-    address_hash
-    |> fetch_transactions(from_block, to_block, filter_type, filter_value, @paging_options)
+    transactions =
+      address_hash
+      |> fetch_transactions(from_block, to_block, filter_type, filter_value, Helper.paging_options())
+
+    transactions
+    |> Transaction.decode_transactions(true, api?: true)
+    |> Enum.zip(transactions)
     |> to_csv_format(address_hash, exchange_rate)
     |> Helper.dump_to_stream()
   end
@@ -29,7 +27,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
   # sobelow_skip ["DOS.StringToAtom"]
   def fetch_transactions(address_hash, from_block, to_block, filter_type, filter_value, paging_options) do
     options =
-      []
+      [necessity_by_association: %{[to_address: :smart_contract] => :optional}]
       |> DenormalizationHelper.extend_block_necessity(:required)
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
@@ -42,7 +40,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
     Transaction.address_to_transactions_without_rewards(address_hash, options)
   end
 
-  defp to_csv_format(transactions, address_hash, exchange_rate) do
+  defp to_csv_format(transactions_with_decoded_data, address_hash, exchange_rate) do
     row_names = [
       "TxHash",
       "BlockNumber",
@@ -57,23 +55,30 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
       "ErrCode",
       "CurrentPrice",
       "TxDateOpeningPrice",
-      "TxDateClosingPrice"
+      "TxDateClosingPrice",
+      "MethodName"
     ]
 
     date_to_prices =
-      Enum.reduce(transactions, %{}, fn tx, acc ->
-        date = tx |> Transaction.block_timestamp() |> DateTime.to_date()
+      Enum.reduce(transactions_with_decoded_data, %{}, fn {_decoded_data, transaction}, acc ->
+        date = transaction |> Transaction.block_timestamp() |> DateTime.to_date()
 
         if Map.has_key?(acc, date) do
           acc
         else
-          Map.put(acc, date, price_at_date(date))
+          market_history = MarketHistory.price_at_date(date)
+
+          Map.put(
+            acc,
+            date,
+            {market_history && market_history.opening_price, market_history && market_history.closing_price}
+          )
         end
       end)
 
     transaction_lists =
-      transactions
-      |> Stream.map(fn transaction ->
+      transactions_with_decoded_data
+      |> Stream.map(fn {decoded_data, transaction} ->
         {opening_price, closing_price} = date_to_prices[DateTime.to_date(Transaction.block_timestamp(transaction))]
 
         [
@@ -90,7 +95,8 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
           transaction.error,
           exchange_rate.usd_value,
           opening_price,
-          closing_price
+          closing_price,
+          Transaction.method_name(transaction, decoded_data)
         ]
       end)
 
@@ -109,19 +115,6 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
     |> case do
       {:actual, value} -> value
       {:maximum, value} -> "Max of #{value}"
-    end
-  end
-
-  defp price_at_date(date) do
-    query =
-      from(
-        mh in MarketHistory,
-        where: mh.date == ^date
-      )
-
-    case Repo.one(query) do
-      nil -> {nil, nil}
-      price -> {price.opening_price, price.closing_price}
     end
   end
 end

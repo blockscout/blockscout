@@ -28,10 +28,15 @@ defmodule Indexer.Fetcher.TokenInstance.SanitizeERC721 do
 
   @impl true
   def init(opts) do
+    {:ok, %{}, {:continue, opts}}
+  end
+
+  @impl true
+  def handle_continue(opts, _state) do
     last_token_address_hash = Constants.get_last_processed_token_address_hash()
     GenServer.cast(__MODULE__, :fetch_tokens_queue)
 
-    {:ok, Map.put(opts, :last_token_address_hash, last_token_address_hash)}
+    {:noreply, Map.put(opts, :last_token_address_hash, last_token_address_hash)}
   end
 
   @impl true

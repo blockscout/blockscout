@@ -1,24 +1,38 @@
 defmodule Explorer.Chain.ZkSync.BatchTransaction do
-  @moduledoc "Models a list of transactions related to a batch for ZkSync."
+  @moduledoc """
+  Models a list of transactions related to a batch for ZkSync.
+
+  Changes in the schema should be reflected in the bulk import module:
+  - Explorer.Chain.Import.Runner.ZkSync.BatchTransactions
+
+  Migrations:
+  - Explorer.Repo.ZkSync.Migrations.CreateZkSyncTables
+  - Explorer.Repo.ZkSync.Migrations.RenameFieldInBatchTransactions
+  """
 
   use Explorer.Schema
 
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.ZkSync.TransactionBatch
 
-  @required_attrs ~w(batch_number hash)a
+  @required_attrs ~w(batch_number transaction_hash)a
 
-  @type t :: %__MODULE__{
-          batch_number: non_neg_integer(),
-          batch: %Ecto.Association.NotLoaded{} | TransactionBatch.t() | nil,
-          hash: Hash.t(),
-          l2_transaction: %Ecto.Association.NotLoaded{} | Transaction.t() | nil
-        }
-
+  @typedoc """
+    * `transaction_hash` - The hash of the rollup transaction.
+    * `l2_transaction` - An instance of `Explorer.Chain.Transaction` referenced by `transaction_hash`.
+    * `batch_number` - The number of the ZkSync batch.
+    * `batch` - An instance of `Explorer.Chain.ZkSync.TransactionBatch` referenced by `batch_number`.
+  """
   @primary_key false
-  schema "zksync_batch_l2_transactions" do
+  typed_schema "zksync_batch_l2_transactions" do
     belongs_to(:batch, TransactionBatch, foreign_key: :batch_number, references: :number, type: :integer)
-    belongs_to(:l2_transaction, Transaction, foreign_key: :hash, primary_key: true, references: :hash, type: Hash.Full)
+
+    belongs_to(:l2_transaction, Transaction,
+      foreign_key: :transaction_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full
+    )
 
     timestamps()
   end
@@ -32,6 +46,6 @@ defmodule Explorer.Chain.ZkSync.BatchTransaction do
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:batch_number)
-    |> unique_constraint(:hash)
+    |> unique_constraint(:transaction_hash)
   end
 end

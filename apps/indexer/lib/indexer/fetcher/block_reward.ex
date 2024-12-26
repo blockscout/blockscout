@@ -31,12 +31,12 @@ defmodule Indexer.Fetcher.BlockReward do
   @doc """
   Asynchronously fetches block rewards for each `t:Explorer.Chain.Explorer.block_number/0`` in `block_numbers`.
   """
-  @spec async_fetch([Block.block_number()]) :: :ok
-  def async_fetch(block_numbers) when is_list(block_numbers) do
+  @spec async_fetch([Block.block_number()], boolean()) :: :ok
+  def async_fetch(block_numbers, realtime?) when is_list(block_numbers) do
     if BlockRewardSupervisor.disabled?() do
       :ok
     else
-      BufferedTask.buffer(__MODULE__, block_numbers)
+      BufferedTask.buffer(__MODULE__, block_numbers, realtime?)
     end
   end
 

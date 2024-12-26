@@ -3,6 +3,8 @@ defmodule Explorer.TestHelper do
 
   import Mox
 
+  alias ABI.TypeEncoder
+
   def mock_logic_storage_pointer_request(
         mox,
         error?,
@@ -87,6 +89,43 @@ defmodule Explorer.TestHelper do
     end)
   end
 
+  def mock_eip_2535_storage_pointer_request(
+        mox,
+        error?,
+        resp \\ "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+      ) do
+    response =
+      if error?,
+        do: {:error, "error"},
+        else:
+          {:ok,
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result: resp
+             }
+           ]}
+
+    expect(mox, :json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data: "0x52ef6b2c",
+                                      to: _
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+      response
+    end)
+  end
+
   def get_eip1967_implementation_non_zero_address(address_hash_string) do
     EthereumJSONRPC.Mox
     |> mock_logic_storage_pointer_request(false)
@@ -100,6 +139,7 @@ defmodule Explorer.TestHelper do
     |> mock_beacon_storage_pointer_request(false)
     |> mock_oz_storage_pointer_request(false)
     |> mock_eip_1822_storage_pointer_request(false)
+    |> mock_eip_2535_storage_pointer_request(false)
   end
 
   def get_eip1967_implementation_error_response do
@@ -108,5 +148,45 @@ defmodule Explorer.TestHelper do
     |> mock_beacon_storage_pointer_request(true)
     |> mock_oz_storage_pointer_request(true)
     |> mock_eip_1822_storage_pointer_request(true)
+    |> mock_eip_2535_storage_pointer_request(true)
+  end
+
+  def fetch_token_uri_mock(url, token_contract_address_hash_string) do
+    encoded_url =
+      "0x" <>
+        ([url]
+         |> TypeEncoder.encode(%ABI.FunctionSelector{
+           function: nil,
+           types: [
+             :string
+           ]
+         })
+         |> Base.encode16(case: :lower))
+
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn [
+                              %{
+                                id: 0,
+                                jsonrpc: "2.0",
+                                method: "eth_call",
+                                params: [
+                                  %{
+                                    data: "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000001",
+                                    to: ^token_contract_address_hash_string
+                                  },
+                                  "latest"
+                                ]
+                              }
+                            ],
+                            _options ->
+      {:ok,
+       [
+         %{
+           id: 0,
+           jsonrpc: "2.0",
+           result: encoded_url
+         }
+       ]}
+    end)
   end
 end

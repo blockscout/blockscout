@@ -6,20 +6,18 @@ defmodule Explorer.Chain.Cache.ContractsCounter do
   """
 
   use GenServer
-
-  alias Explorer.Chain
-
-  @counter_type "contracts_counter"
-
   # It is undesirable to automatically start the consolidation in all environments.
   # Consider the test environment: if the consolidation initiates but does not
   # finish before a test ends, that test will fail. This way, hundreds of
   # tests were failing before disabling the consolidation and the scheduler in
   # the test env.
-  config = Application.compile_env(:explorer, Explorer.Chain.Cache.ContractsCounter)
-  @enable_consolidation Keyword.get(config, :enable_consolidation)
+  use Utils.CompileTimeEnvHelper,
+    enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]],
+    update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
-  @update_interval_in_milliseconds Keyword.get(config, :update_interval_in_milliseconds)
+  alias Explorer.Chain
+
+  @counter_type "contracts_counter"
 
   @doc """
   Starts a process to periodically update the counter of all the contracts.

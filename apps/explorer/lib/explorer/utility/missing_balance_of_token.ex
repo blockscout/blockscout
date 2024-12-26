@@ -12,6 +12,7 @@ defmodule Explorer.Utility.MissingBalanceOfToken do
   @primary_key false
   typed_schema "missing_balance_of_tokens" do
     field(:block_number, :integer)
+    field(:currently_implemented, :boolean)
 
     belongs_to(
       :token,
@@ -28,7 +29,7 @@ defmodule Explorer.Utility.MissingBalanceOfToken do
 
   @doc false
   def changeset(missing_balance_of_token \\ %__MODULE__{}, params) do
-    cast(missing_balance_of_token, params, [:token_contract_address_hash, :block_number])
+    cast(missing_balance_of_token, params, [:token_contract_address_hash, :block_number, :currently_implemented])
   end
 
   @doc """
@@ -42,22 +43,39 @@ defmodule Explorer.Utility.MissingBalanceOfToken do
   end
 
   @doc """
+  Set currently_implemented: true for all provided token contract address hashes
+  """
+  @spec mark_as_implemented([Hash.Address.t()]) :: {non_neg_integer(), nil | [term()]}
+  def mark_as_implemented([]), do: :ok
+
+  def mark_as_implemented(token_contract_address_hashes) do
+    __MODULE__
+    |> where([mbot], mbot.token_contract_address_hash in ^token_contract_address_hashes)
+    |> Repo.update_all(set: [currently_implemented: true])
+  end
+
+  @doc """
   Filters provided token balances params by presence of record with the same `token_contract_address_hash`
   and above or equal `block_number` in `missing_balance_of_tokens`.
   """
-  @spec filter_token_balances_params([map()]) :: [map()]
-  def filter_token_balances_params(params) do
+  @spec filter_token_balances_params([map()], boolean(), [__MODULE__.t()] | nil) :: [map()]
+  def filter_token_balances_params(params, use_window?, missing_balance_of_tokens \\ nil) do
+    existing_missing_balance_of_tokens = missing_balance_of_tokens || fetch_from_params(params)
+
     missing_balance_of_tokens_map =
-      params
-      |> Enum.map(& &1.token_contract_address_hash)
-      |> get_by_hashes()
-      |> Enum.map(&{to_string(&1.token_contract_address_hash), &1.block_number})
+      existing_missing_balance_of_tokens
+      |> Enum.map(
+        &{to_string(&1.token_contract_address_hash),
+         %{block_number: &1.block_number, currently_implemented: &1.currently_implemented}}
+      )
       |> Map.new()
 
     Enum.filter(params, fn %{token_contract_address_hash: token_contract_address_hash, block_number: block_number} ->
       case missing_balance_of_tokens_map[to_string(token_contract_address_hash)] do
         nil -> true
-        missing_balance_of_block_number -> block_number > missing_balance_of_block_number
+        %{block_number: bn, currently_implemented: true} -> block_number > bn
+        %{block_number: bn} when not use_window? -> block_number > bn
+        %{block_number: bn} -> block_number > bn + missing_balance_of_window()
       end
     end)
   end
@@ -86,6 +104,14 @@ defmodule Explorer.Utility.MissingBalanceOfToken do
 
     Repo.insert_all(__MODULE__, params, on_conflict: on_conflict(), conflict_target: :token_contract_address_hash)
   end
+
+  defp fetch_from_params(params) do
+    params
+    |> Enum.map(& &1.token_contract_address_hash)
+    |> get_by_hashes()
+  end
+
+  defp missing_balance_of_window, do: Application.get_env(:explorer, __MODULE__)[:window_size]
 
   defp on_conflict do
     from(

@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Cache.Block do
     name: :block_count,
     key: :count,
     key: :async_task,
-    global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
+    global_ttl: :infinity,
     ttl_check_interval: :timer.seconds(1),
     callback: &async_task_on_deletion(&1)
 
@@ -56,9 +56,10 @@ defmodule Explorer.Chain.Cache.Block do
   end
 
   defp handle_fallback(:count) do
-    # This will get the task PID if one exists and launch a new task if not
+    # This will get the task PID if one exists, check if it's running and launch
+    # a new task if task doesn't exist or it's not running.
     # See next `handle_fallback` definition
-    get_async_task()
+    safe_get_async_task()
 
     {:return, nil}
   end
@@ -67,7 +68,7 @@ defmodule Explorer.Chain.Cache.Block do
     # If this gets called it means an async task was requested, but none exists
     # so a new one needs to be launched
     {:ok, task} =
-      Task.start(fn ->
+      Task.start_link(fn ->
         try do
           result = fetch_count_consensus_block()
 
@@ -78,7 +79,7 @@ defmodule Explorer.Chain.Cache.Block do
 
           Chain.upsert_last_fetched_counter(params)
 
-          set_count(result)
+          set_count(%ConCache.Item{ttl: Helper.ttl(__MODULE__, "CACHE_BLOCK_COUNT_PERIOD"), value: result})
         rescue
           e ->
             Logger.debug([
@@ -95,7 +96,7 @@ defmodule Explorer.Chain.Cache.Block do
 
   # By setting this as a `callback` an async task will be started each time the
   # `count` expires (unless there is one already running)
-  defp async_task_on_deletion({:delete, _, :count}), do: get_async_task()
+  defp async_task_on_deletion({:delete, _, :count}), do: safe_get_async_task()
 
   defp async_task_on_deletion(_data), do: nil
 

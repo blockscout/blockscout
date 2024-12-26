@@ -77,8 +77,6 @@ defmodule BlockScoutWeb.AddressReadProxyControllerTest do
         block_index: 0
       )
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
-
       conn = get(conn, address_read_proxy_path(BlockScoutWeb.Endpoint, :index, Address.checksum(contract_address.hash)))
 
       assert html_response(conn, 404)

@@ -5,7 +5,7 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [from: 2, limit: 2, where: 3, subquery: 1, order_by: 3, union: 2]
+  import Ecto.Query, only: [dynamic: 2, from: 2, limit: 2, where: 3, subquery: 1, order_by: 3, union: 2]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, DenormalizationHelper, InternalTransaction, Log, Transaction}
@@ -83,13 +83,13 @@ defmodule Explorer.Etherscan.Logs do
         |> where([log], log.block_number >= ^prepared_filter.from_block)
         |> where([log], log.block_number <= ^prepared_filter.to_block)
         |> limit(1000)
-        |> order_by([log], asc: log.block_number, asc: log.index)
         |> page_logs(paging_options)
 
       all_transaction_logs_query =
         from(log in subquery(logs_query),
           join: transaction in Transaction,
-          on: log.transaction_hash == transaction.hash,
+          on: log.transaction_hash == transaction.hash and log.block_hash == transaction.block_hash,
+          where: transaction.block_consensus == true,
           select: map(log, ^@log_fields),
           select_merge: %{
             gas_price: transaction.gas_price,
@@ -102,25 +102,9 @@ defmodule Explorer.Etherscan.Logs do
           }
         )
 
-      query_with_blocks =
-        from(log_transaction_data in subquery(all_transaction_logs_query),
-          where: log_transaction_data.address_hash == ^address_hash,
-          order_by: log_transaction_data.block_number,
-          select_merge: %{
-            block_consensus: log_transaction_data.block_consensus
-          }
-        )
-
-      query_with_consensus =
-        if Map.get(filter, :allow_non_consensus) do
-          query_with_blocks
-        else
-          from([transaction] in query_with_blocks,
-            where: transaction.block_consensus == true
-          )
-        end
-
-      query_with_consensus
+      all_transaction_logs_query
+      |> Chain.wrapped_union_subquery()
+      |> order_by([log], asc: log.block_number, asc: log.index)
       |> Repo.replica().all()
     else
       logs_query = where_topic_match(Log, prepared_filter)
@@ -145,16 +129,12 @@ defmodule Explorer.Etherscan.Logs do
         |> union(^query_from_address_hash_wrapped)
         |> union(^query_created_contract_address_hash_wrapped)
 
-      all_transaction_logs_query =
+      all_transaction_logs_query_base =
         from(transaction in Transaction,
           join: log in ^logs_query,
           on: log.transaction_hash == transaction.hash,
           where: transaction.block_number >= ^prepared_filter.from_block,
           where: transaction.block_number <= ^prepared_filter.to_block,
-          where:
-            transaction.to_address_hash == ^address_hash or
-              transaction.from_address_hash == ^address_hash or
-              transaction.created_contract_address_hash == ^address_hash,
           select: map(log, ^@log_fields),
           select_merge: %{
             gas_price: transaction.gas_price,
@@ -165,11 +145,23 @@ defmodule Explorer.Etherscan.Logs do
           union: ^internal_transaction_log_query
         )
 
+      dynamic =
+        dynamic(
+          [transaction],
+          ^Transaction.where_transactions_to_from(address_hash) or
+            transaction.created_contract_address_hash == ^address_hash
+        )
+
+      all_transaction_logs_query =
+        all_transaction_logs_query_base
+        |> where([transaction], ^dynamic)
+
       query_with_blocks =
         from(log_transaction_data in subquery(all_transaction_logs_query),
           join: block in Block,
           on: block.number == log_transaction_data.block_number,
           where: log_transaction_data.address_hash == ^address_hash,
+          where: block.consensus == true,
           order_by: block.number,
           limit: 1000,
           select_merge: %{
@@ -181,16 +173,7 @@ defmodule Explorer.Etherscan.Logs do
           }
         )
 
-      query_with_consensus =
-        if Map.get(filter, :allow_non_consensus) do
-          query_with_blocks
-        else
-          from([_, block] in query_with_blocks,
-            where: block.consensus == true
-          )
-        end
-
-      query_with_consensus
+      query_with_blocks
       |> order_by([log], asc: log.index)
       |> page_logs(paging_options)
       |> Repo.replica().all()
@@ -211,6 +194,7 @@ defmodule Explorer.Etherscan.Logs do
         from(transaction in Transaction,
           where: transaction.block_number >= ^prepared_filter.from_block,
           where: transaction.block_number <= ^prepared_filter.to_block,
+          where: transaction.block_consensus == true,
           select: %{
             transaction_hash: transaction.hash,
             gas_price: transaction.gas_price,
@@ -223,19 +207,12 @@ defmodule Explorer.Etherscan.Logs do
           }
         )
 
-      query_with_consensus =
-        if Map.get(filter, :allow_non_consensus) do
-          block_transaction_query
-        else
-          from([transaction] in block_transaction_query,
-            where: transaction.block_consensus == true
-          )
-        end
-
       query_with_block_transaction_data =
         from(log in logs_query,
-          join: block_transaction_data in subquery(query_with_consensus),
-          on: block_transaction_data.transaction_hash == log.transaction_hash,
+          join: block_transaction_data in subquery(block_transaction_query),
+          on:
+            block_transaction_data.transaction_hash == log.transaction_hash and
+              block_transaction_data.block_hash == log.block_hash,
           order_by: block_transaction_data.block_number,
           limit: 1000,
           select: block_transaction_data,
@@ -252,6 +229,7 @@ defmodule Explorer.Etherscan.Logs do
           join: block in assoc(transaction, :block),
           where: block.number >= ^prepared_filter.from_block,
           where: block.number <= ^prepared_filter.to_block,
+          where: block.consensus == true,
           select: %{
             transaction_hash: transaction.hash,
             gas_price: transaction.gas_price,
@@ -264,18 +242,9 @@ defmodule Explorer.Etherscan.Logs do
           }
         )
 
-      query_with_consensus =
-        if Map.get(filter, :allow_non_consensus) do
-          block_transaction_query
-        else
-          from([_, block] in block_transaction_query,
-            where: block.consensus == true
-          )
-        end
-
       query_with_block_transaction_data =
         from(log in logs_query,
-          join: block_transaction_data in subquery(query_with_consensus),
+          join: block_transaction_data in subquery(block_transaction_query),
           on: block_transaction_data.transaction_hash == log.transaction_hash,
           order_by: block_transaction_data.block_number,
           limit: 1000,
@@ -307,6 +276,8 @@ defmodule Explorer.Etherscan.Logs do
   }
 
   defp where_topic_match(query, filter) do
+    filter = sanitize_filter_topics(filter)
+
     case Enum.filter(@topics, &filter[&1]) do
       [] ->
         query
@@ -316,6 +287,46 @@ defmodule Explorer.Etherscan.Logs do
 
       _ ->
         where_multiple_topics_match(query, filter)
+    end
+  end
+
+  defp sanitize_filter_topics(filter) do
+    @topics
+    |> Enum.reduce(filter, fn topic, acc ->
+      topic_value = filter[topic]
+
+      sanitized_value =
+        topic_value
+        |> List.wrap()
+        |> Enum.map(&sanitize_topic_value/1)
+        |> Enum.reject(&is_nil/1)
+        |> case do
+          [] -> nil
+          [topic] -> topic
+          topics -> topics
+        end
+
+      Map.put(acc, topic, sanitized_value)
+    end)
+  end
+
+  defp sanitize_topic_value(topic_value) do
+    case topic_value do
+      %Explorer.Chain.Hash{} ->
+        topic_value
+
+      _ ->
+        sanitize_string_topic_value(topic_value)
+    end
+  end
+
+  defp sanitize_string_topic_value(topic_value) do
+    case Chain.string_to_block_hash(topic_value) do
+      {:ok, _} ->
+        topic_value
+
+      _ ->
+        nil
     end
   end
 
@@ -344,7 +355,7 @@ defmodule Explorer.Etherscan.Logs do
   defp page_logs(query, %{block_number: block_number, log_index: log_index}) do
     from(
       data in query,
-      where: data.index > ^log_index and data.block_number >= ^block_number
+      where: {data.block_number, data.index} > {^block_number, ^log_index}
     )
   end
 

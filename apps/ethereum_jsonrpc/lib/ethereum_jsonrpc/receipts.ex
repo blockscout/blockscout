@@ -4,6 +4,7 @@ defmodule EthereumJSONRPC.Receipts do
   [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionreceipt) from batch
   requests.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import EthereumJSONRPC, only: [json_rpc: 2, request: 1]
 
@@ -100,7 +101,7 @@ defmodule EthereumJSONRPC.Receipts do
           status: :ok,
           transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
           transaction_index: 0,\
-  #{case Application.compile_env(:explorer, :chain_type) do
+  #{case @chain_type do
     :ethereum -> """
             blob_gas_price: 0,\
             blob_gas_used: 0\
@@ -110,6 +111,12 @@ defmodule EthereumJSONRPC.Receipts do
         l1_fee_scalar: 0,\
         l1_gas_price: 0,\
         l1_gas_used: 0\
+      """
+    :scroll -> """
+        l1_fee: 0\
+      """
+    :arbitrum -> """
+        gas_used_for_l1: nil\
       """
     _ -> ""
   end}

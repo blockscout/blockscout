@@ -6,6 +6,7 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Helper, only: [truncate_address_hash: 1]
 
   alias Explorer.{Helper, Repo}
   alias Explorer.Chain.{Hash, Token, TokenTransfer}
@@ -25,10 +26,12 @@ defmodule Indexer.Transform.TokenTransfers do
     weth_transfers =
       logs
       |> Enum.filter(fn log ->
-        log.first_topic == TokenTransfer.weth_deposit_signature() ||
-          log.first_topic == TokenTransfer.weth_withdrawal_signature()
+        (log.first_topic == TokenTransfer.weth_deposit_signature() ||
+           log.first_topic == TokenTransfer.weth_withdrawal_signature()) &&
+          TokenTransfer.whitelisted_weth_contract?(log.address_hash)
       end)
       |> Enum.reduce(initial_acc, &do_parse/2)
+      |> drop_repeated_token_transfers(erc20_and_erc721_token_transfers.token_transfers)
 
     erc1155_token_transfers =
       logs
@@ -60,14 +63,7 @@ defmodule Indexer.Transform.TokenTransfers do
     token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
 
     token_transfers
-    |> Enum.filter(fn token_transfer ->
-      token_transfer.to_address_hash == burn_address_hash_string() ||
-        token_transfer.from_address_hash == burn_address_hash_string()
-    end)
-    |> Enum.map(fn token_transfer ->
-      token_transfer.token_contract_address_hash
-    end)
-    |> Enum.uniq()
+    |> filter_tokens_for_supply_update()
     |> TokenTotalSupplyUpdater.add_tokens()
 
     tokens_uniq = tokens |> Enum.uniq()
@@ -78,6 +74,33 @@ defmodule Indexer.Transform.TokenTransfers do
     }
 
     token_transfers_from_logs_uniq
+  end
+
+  defp drop_repeated_token_transfers(weth_acc, erc_20_721_token_transfers) do
+    key_from_tt = fn tt ->
+      {tt.block_hash, tt.transaction_hash, tt.token_contract_address_hash, tt.to_address_hash, tt.from_address_hash,
+       tt.amount}
+    end
+
+    deposit_withdrawal_like_transfers =
+      Enum.reduce(erc_20_721_token_transfers, %{}, fn token_transfer, acc ->
+        if token_transfer.token_type == "ERC-20" and
+             (token_transfer.from_address_hash == burn_address_hash_string() or
+                token_transfer.to_address_hash == burn_address_hash_string()) do
+          Map.put(acc, key_from_tt.(token_transfer), true)
+        else
+          acc
+        end
+      end)
+
+    %{token_transfers: weth_token_transfer} = weth_acc
+
+    weth_token_transfer_updated =
+      Enum.reject(weth_token_transfer, fn weth_tt ->
+        deposit_withdrawal_like_transfers[key_from_tt.(weth_tt)]
+      end)
+
+    Map.put(weth_acc, :token_transfers, weth_token_transfer_updated)
   end
 
   defp sanitize_weth_transfers(total_tokens, total_transfers, weth_transfers) do
@@ -454,10 +477,14 @@ defmodule Indexer.Transform.TokenTransfers do
     end
   end
 
-  defp truncate_address_hash(nil), do: burn_address_hash_string()
-
-  defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
-    "0x#{truncated_hash}"
+  def filter_tokens_for_supply_update(token_transfers) do
+    token_transfers
+    |> Enum.filter(fn token_transfer ->
+      token_transfer.to_address_hash == burn_address_hash_string() ||
+        token_transfer.from_address_hash == burn_address_hash_string()
+    end)
+    |> Enum.map(& &1.token_contract_address_hash)
+    |> Enum.uniq()
   end
 
   defp encode_address_hash(binary) do

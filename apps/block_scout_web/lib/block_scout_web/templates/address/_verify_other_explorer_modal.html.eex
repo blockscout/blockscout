@@ -13,8 +13,8 @@
         ) %>
       <% else %>
         <%= link(
-          address_link_to_other_explorer(@tx_link, @hash, false),
-          to: address_link_to_other_explorer(@tx_link, @hash ,true)
+          address_link_to_other_explorer(@transaction_link, @hash, false),
+          to: address_link_to_other_explorer(@transaction_link, @hash ,true)
         ) %>
       <% end %>
     </span>

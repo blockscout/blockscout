@@ -3,15 +3,13 @@ defmodule Explorer.Counters.TokenTransfersCounter do
   Caches Token transfers counter.
   """
   use GenServer
+  use Utils.CompileTimeEnvHelper, enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
   alias Explorer.Chain
   alias Explorer.Counters.Helper
 
   @cache_name :token_transfers_counter
   @last_update_key "last_update"
-
-  config = Application.compile_env(:explorer, Explorer.Counters.TokenTransfersCounter)
-  @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do

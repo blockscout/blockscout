@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.VerifiedContractsControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.WebRouter.Helpers, only: [verified_contracts_path: 2, verified_contracts_path: 3]
+  import BlockScoutWeb.Routers.WebRouter.Helpers, only: [verified_contracts_path: 2, verified_contracts_path: 3]
 
   alias Explorer.Chain.SmartContract
 
@@ -63,12 +63,12 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
       conn = get(conn, verified_contracts_path(conn, :index), %{"type" => "JSON"})
 
       expected_path =
-        verified_contracts_path(conn, :index, %{
-          smart_contract_id: id,
-          items_count: "50",
+        verified_contracts_path(conn, :index,
           coin_balance: nil,
-          tx_count: nil
-        })
+          items_count: "50",
+          smart_contract_id: id,
+          transaction_count: nil
+        )
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path
     end

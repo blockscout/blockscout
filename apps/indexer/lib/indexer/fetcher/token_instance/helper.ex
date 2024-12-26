@@ -4,7 +4,8 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   """
   alias Explorer.Chain
   alias Explorer.SmartContract.Reader
-  alias Indexer.Fetcher.TokenInstance.MetadataRetriever
+  alias Explorer.Token.MetadataRetriever
+  alias Indexer.NFTMediaHandler.Queue
 
   require Logger
 
@@ -218,11 +219,15 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     |> Enum.zip(contract_results)
   end
 
-  defp prepare_token_id(%Decimal{} = token_id), do: Decimal.to_integer(token_id)
-  defp prepare_token_id(token_id), do: token_id
+  @doc """
+  Prepares token id for request.
+  """
+  @spec prepare_token_id(any) :: any
+  def prepare_token_id(%Decimal{} = token_id), do: Decimal.to_integer(token_id)
+  def prepare_token_id(token_id), do: token_id
 
-  defp prepare_request(erc_721_404, contract_address_hash_string, token_id, from_base_uri?)
-       when erc_721_404 in ["ERC-404", "ERC-721"] do
+  def prepare_request(erc_721_404, contract_address_hash_string, token_id, from_base_uri?)
+      when erc_721_404 in ["ERC-404", "ERC-721"] do
     request = %{
       contract_address: contract_address_hash_string,
       block_number: nil
@@ -235,26 +240,32 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     end
   end
 
-  defp prepare_request(_token_type, contract_address_hash_string, token_id, _retry) do
-    %{
+  def prepare_request(_token_type, contract_address_hash_string, token_id, from_base_uri?) do
+    request = %{
       contract_address: contract_address_hash_string,
-      method_id: @uri,
-      args: [token_id],
       block_number: nil
     }
+
+    if from_base_uri? do
+      request |> Map.put(:method_id, @base_uri) |> Map.put(:args, [])
+    else
+      request |> Map.put(:method_id, @uri) |> Map.put(:args, [token_id])
+    end
   end
 
-  defp normalize_token_id("ERC-721", _token_id), do: nil
-
-  defp normalize_token_id(_token_type, token_id),
+  @spec normalize_token_id(binary(), integer()) :: nil | binary()
+  defp normalize_token_id("ERC-1155", token_id),
     do: token_id |> Integer.to_string(16) |> String.downcase() |> String.pad_leading(64, "0")
+
+  defp normalize_token_id(_token_type, _token_id), do: nil
 
   defp result_to_insert_params({:ok, %{metadata: metadata}}, token_contract_address_hash, token_id) do
     %{
       token_id: token_id,
       token_contract_address_hash: token_contract_address_hash,
       metadata: metadata,
-      error: nil
+      error: nil,
+      refetch_after: nil
     }
   end
 
@@ -265,19 +276,33 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     do: token_instance_map_with_error(token_id, token_contract_address_hash, reason)
 
   defp token_instance_map_with_error(token_id, token_contract_address_hash, error) do
+    config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
+
+    coef = config[:exp_timeout_coeff]
+    max_refetch_interval = config[:max_refetch_interval]
+
+    timeout = min(coef * 1000, max_refetch_interval)
+
     %{
       token_id: token_id,
       token_contract_address_hash: token_contract_address_hash,
-      error: error
+      error: error,
+      refetch_after: DateTime.add(DateTime.utc_now(), timeout, :millisecond)
     }
   end
 
   defp upsert_with_rescue(insert_params, token_id, token_contract_address_hash, retrying? \\ false) do
-    Chain.upsert_token_instance(insert_params)
+    insert_params |> Chain.upsert_token_instance() |> Queue.process_new_instance()
   rescue
     error in Postgrex.Error ->
       if retrying? do
-        Logger.warn(["Failed to upsert token instance: #{inspect(error)}"], fetcher: :token_instances)
+        Logger.warning(
+          [
+            "Failed to upsert token instance: {#{to_string(token_contract_address_hash)}, #{token_id}}, error: #{inspect(error)}"
+          ],
+          fetcher: :token_instances
+        )
+
         nil
       else
         token_id
@@ -287,5 +312,19 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
         )
         |> upsert_with_rescue(token_id, token_contract_address_hash, true)
       end
+  end
+
+  @doc """
+  Returns the ABI of uri, tokenURI, baseURI getters for ERC721 and ERC1155 tokens.
+  """
+  def erc_721_1155_abi do
+    @erc_721_1155_abi
+  end
+
+  @doc """
+  Returns tokenURI method signature.
+  """
+  def token_uri do
+    @token_uri
   end
 end

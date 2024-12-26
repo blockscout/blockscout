@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.TokenView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelper
@@ -42,6 +43,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "circulating_market_cap" => token.circulating_market_cap
     }
     |> maybe_append_bridged_info(token)
+    |> chain_type_fields(%{address: token.contract_address, field_prefix: nil})
   end
 
   def render("token_balances.json", %{
@@ -112,7 +114,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "external_app_url" => NFTHelper.external_url(instance),
       "animation_url" => instance.metadata && NFTHelper.retrieve_image(instance.metadata["animation_url"]),
       "image_url" => instance.metadata && NFTHelper.get_media_src(instance.metadata, false),
-      "is_unique" => instance.is_unique
+      "is_unique" => instance.is_unique,
+      "thumbnails" => instance.thumbnails,
+      "media_type" => instance.media_type,
+      "media_url" => Instance.get_media_url_from_metadata_for_nft_media_handler(instance.metadata)
     }
   end
 
@@ -138,5 +143,18 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     else
       map
     end
+  end
+
+  case @chain_type do
+    :filecoin ->
+      defp chain_type_fields(result, params) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.put_filecoin_robust_address(result, params)
+      end
+
+    _ ->
+      defp chain_type_fields(result, _params) do
+        result
+      end
   end
 end

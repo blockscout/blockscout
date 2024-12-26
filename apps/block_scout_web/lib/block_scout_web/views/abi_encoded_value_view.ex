@@ -7,8 +7,12 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   """
   use BlockScoutWeb, :view
 
+  import Phoenix.LiveView.Helpers, only: [sigil_H: 2]
+
   alias ABI.FunctionSelector
+  alias Explorer.Chain.{Address, Hash}
   alias Phoenix.HTML
+  alias Phoenix.HTML.Safe
 
   require Logger
 
@@ -20,7 +24,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     do_value_html(decoded_type, value, no_links)
   rescue
     exception ->
-      Logger.warn(fn ->
+      Logger.warning(fn ->
         ["Error determining value html for #{inspect(type)}: ", Exception.format(:error, exception, __STACKTRACE__)]
       end)
 
@@ -33,7 +37,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     do_value_json(decoded_type, value)
   rescue
     exception ->
-      Logger.warn(fn ->
+      Logger.warning(fn ->
         ["Error determining value json for #{inspect(type)}: ", Exception.format(:error, exception, __STACKTRACE__)]
       end)
 
@@ -46,7 +50,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     do_copy_text(decoded_type, value)
   rescue
     exception ->
-      Logger.warn(fn ->
+      Logger.warning(fn ->
         ["Error determining copy text for #{inspect(type)}: ", Exception.format(:error, exception, __STACKTRACE__)]
       end)
 
@@ -67,7 +71,11 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       |> Enum.map(&do_copy_text(type, &1))
       |> Enum.intersperse(", ")
 
-    ~E|[<%= values %>]|
+    assigns = %{values: values}
+
+    ~H|[<%= @values %>]|
+    |> Safe.to_iodata()
+    |> List.to_string()
   end
 
   defp do_copy_text(_, {:dynamic, value}) do
@@ -86,7 +94,11 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       |> Enum.map(fn {val, ind} -> do_copy_text(Enum.at(types, ind), val) end)
       |> Enum.intersperse(", ")
 
-    ~E|(<%= values %>)|
+    assigns = %{values: values}
+
+    ~H|(<%= @values %>)|
+    |> Safe.to_iodata()
+    |> List.to_string()
   end
 
   defp do_copy_text(_type, value) do
@@ -112,7 +124,23 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     spacing = String.duplicate(" ", depth * 2)
     delimited = Enum.intersperse(values, ",\n")
 
-    ~E|<%= spacing %>[<%= "\n" %><%= delimited %><%= "\n" %><%= spacing %>]|
+    assigns = %{spacing: spacing, delimited: delimited}
+
+    elements =
+      Enum.reduce(delimited, "", fn value, acc ->
+        assigns = %{value: value}
+
+        html = ~H|<%= raw(@value) %>| |> Safe.to_iodata() |> List.to_string()
+        acc <> html
+      end)
+
+    (~H|<%= @spacing %>[<%= "\n" %>|
+     |> Safe.to_iodata()
+     |> List.to_string()) <>
+      elements <>
+      (~H|<%= "\n" %><%= @spacing %>]|
+       |> Safe.to_iodata()
+       |> List.to_string())
   end
 
   defp do_value_html({:tuple, types}, values, no_links, _) do
@@ -125,17 +153,28 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       end)
 
     delimited = Enum.intersperse(values_list, ",")
-    ~E|(<%= delimited %>)|
+    assigns = %{delimited: delimited}
+
+    ~H|(<%= for value <- @delimited, do: raw(value) %>)|
+    |> Safe.to_iodata()
+    |> List.to_string()
   end
 
   defp do_value_html(type, value, no_links, depth) do
     spacing = String.duplicate(" ", depth * 2)
-    ~E|<%= spacing %><%=base_value_html(type, value, no_links)%>|
-    [spacing, base_value_html(type, value, no_links)]
+    html = base_value_html(type, value, no_links)
+
+    assigns = %{html: html, spacing: spacing}
+
+    ~H|<%= @spacing %><%= @html %>|
+    |> Safe.to_iodata()
+    |> List.to_string()
   end
 
   defp base_value_html(_, {:dynamic, value}, _no_links) do
-    ~E|<%= hex(value) %>|
+    assigns = %{value: value}
+
+    ~H|<%= hex(@value) %>|
   end
 
   defp base_value_html(:address, value, no_links) do
@@ -143,17 +182,24 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       base_value_html(:address_text, value, no_links)
     else
       address = hex(value)
+      path = address_path(BlockScoutWeb.Endpoint, :show, address)
 
-      ~E|<a href="<%= address_path(BlockScoutWeb.Endpoint, :show, address) %>" target="_blank"><%= address %></a>|
+      assigns = %{address: address, path: path}
+
+      ~H|<a href={@path} target="_blank"><%= @address %></a>|
     end
   end
 
   defp base_value_html(:address_text, value, _no_links) do
-    ~E|<%= hex(value) %>|
+    assigns = %{value: value}
+
+    ~H|<%= hex(@value) %>|
   end
 
   defp base_value_html(:bytes, value, _no_links) do
-    ~E|<%= hex(value) %>|
+    assigns = %{value: value}
+
+    ~H|<%= hex(@value) %>|
   end
 
   defp base_value_html(_, value, _no_links), do: HTML.html_escape(value)
@@ -196,7 +242,10 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   end
 
   defp base_value_json(:address, value) do
-    hex_for_json(value)
+    case Hash.Address.cast(value) do
+      {:ok, address} -> Address.checksum(address)
+      :error -> "0x"
+    end
   end
 
   defp base_value_json(:bytes, value) do

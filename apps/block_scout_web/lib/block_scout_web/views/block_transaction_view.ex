@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.BlockTransactionView do
   use BlockScoutWeb, :view
 
-  import BlockScoutWeb.Gettext, only: [gettext: 1]
+  use Gettext, backend: BlockScoutWeb.Gettext
 
   def block_not_found_message({:ok, true}) do
     gettext("Easy Cowboy! This block does not exist yet!")

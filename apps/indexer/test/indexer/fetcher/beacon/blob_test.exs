@@ -148,7 +148,7 @@ defmodule Indexer.Fetcher.Beacon.BlobTest do
 
         BlobSupervisor.Case.start_supervised!()
 
-        assert :ok = Indexer.Fetcher.Beacon.Blob.async_fetch([block_a.timestamp])
+        assert :ok = Indexer.Fetcher.Beacon.Blob.async_fetch([block_a.timestamp], false)
 
         wait_for_results(fn ->
           Repo.one!(from(blob in Blob, where: blob.hash == ^blob_hash_a))

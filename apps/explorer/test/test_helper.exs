@@ -22,6 +22,8 @@ Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Beacon, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.BridgedTokens, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Filecoin, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Stability, :auto)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Mud, :auto)
+Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.ShrunkInternalTransactions, :auto)
 
 Mox.defmock(Explorer.ExchangeRates.Source.TestSource, for: Explorer.ExchangeRates.Source)
 Mox.defmock(Explorer.Market.History.Source.Price.TestSource, for: Explorer.Market.History.Source.Price)

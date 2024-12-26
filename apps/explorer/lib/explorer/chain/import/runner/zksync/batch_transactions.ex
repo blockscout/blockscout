@@ -60,7 +60,7 @@ defmodule Explorer.Chain.Import.Runner.ZkSync.BatchTransactions do
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = _options) when is_list(changes_list) do
     # Enforce ZkSync.BatchTransaction ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.transaction_hash)
 
     {:ok, inserted} =
       Import.insert_changes_list(
@@ -70,7 +70,7 @@ defmodule Explorer.Chain.Import.Runner.ZkSync.BatchTransactions do
         returning: true,
         timeout: timeout,
         timestamps: timestamps,
-        conflict_target: :hash,
+        conflict_target: :transaction_hash,
         on_conflict: :nothing
       )
 

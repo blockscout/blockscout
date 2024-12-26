@@ -31,14 +31,15 @@ defmodule Explorer.Chain.Address.Counters do
 
   alias Explorer.Chain.Cache.AddressesTabsCounters
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
+  alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
 
   require Logger
 
   @typep counter :: non_neg_integer() | nil
 
   @counters_limit 51
-  @types [:validations, :txs, :token_transfers, :token_balances, :logs, :withdrawals, :internal_txs]
-  @txs_types [:txs_from, :txs_to, :txs_contract]
+  @types [:validations, :transactions, :token_transfers, :token_balances, :logs, :withdrawals, :internal_transactions]
+  @transactions_types [:transactions_from, :transactions_to, :transactions_contract]
 
   defp address_hash_to_logs_query(address_hash) do
     from(l in Log, where: l.address_hash == ^address_hash)
@@ -128,10 +129,10 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def address_hash_to_transaction_count_query(address_hash) do
-    from(
-      transaction in Transaction,
-      where: transaction.to_address_hash == ^address_hash or transaction.from_address_hash == ^address_hash
-    )
+    dynamic = Transaction.where_transactions_to_from(address_hash)
+
+    Transaction
+    |> where([transaction], ^dynamic)
   end
 
   @spec address_hash_to_transaction_count(Hash.Address.t()) :: non_neg_integer()
@@ -180,6 +181,20 @@ defmodule Explorer.Chain.Address.Counters do
     Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
   end
 
+  @doc """
+    Calculates the total gas used by incoming transactions to a given address.
+
+    This function queries the database for all transactions where the
+    `to_address_hash` matches the provided `address_hash`, and sums up the
+    `gas_used` for these transactions.
+
+    ## Parameters
+    - `address_hash`: The address hash to query for incoming transactions.
+
+    ## Returns
+    - The total gas used by incoming transactions, or `nil` if no transactions
+      are found or if the sum is null.
+  """
   @spec address_to_incoming_transaction_gas_usage(Hash.Address.t()) :: Decimal.t() | nil
   def address_to_incoming_transaction_gas_usage(address_hash) do
     to_address_query =
@@ -191,6 +206,19 @@ defmodule Explorer.Chain.Address.Counters do
     Repo.aggregate(to_address_query, :sum, :gas_used, timeout: :infinity)
   end
 
+  @doc """
+    Calculates the total gas used by outgoing transactions from a given address.
+
+    This function queries the database for all transactions where the
+    `from_address_hash` matches the provided `address_hash`, and sums up the
+    `gas_used` for these transactions.
+
+    ## Parameters
+    - `address_hash`: the address to query.
+
+    ## Returns
+    - The total gas used, or `nil` if no transactions are found or if the sum is null.
+  """
   @spec address_to_outcoming_transaction_gas_usage(Hash.Address.t()) :: Decimal.t() | nil
   def address_to_outcoming_transaction_gas_usage(address_hash) do
     to_address_query =
@@ -225,9 +253,29 @@ defmodule Explorer.Chain.Address.Counters do
     )
   end
 
+  @doc """
+    Calculates the total gas usage for a given address.
+
+    This function determines the appropriate gas usage calculation based on the
+    address type:
+
+    - For smart contracts (excluding EOAs with code), it first checks the gas
+      usage of incoming transactions. If there are no incoming transactions or
+      their gas usage is zero, it falls back to the gas usage of outgoing
+      transactions.
+    - For regular addresses and EOAs with code, it calculates the gas usage of
+      outgoing transactions.
+
+    ## Parameters
+    - `address`: The address to calculate gas usage for.
+
+    ## Returns
+    - The total gas usage for the address.
+    - `nil` if no relevant transactions are found or if the sum is null.
+  """
   @spec address_to_gas_usage_count(Address.t()) :: Decimal.t() | nil
   def address_to_gas_usage_count(address) do
-    if Chain.contract?(address) do
+    if Address.smart_contract?(address) and not Address.eoa_with_code?(address) do
       incoming_transaction_gas_usage = address_to_incoming_transaction_gas_usage(address.hash)
 
       cond do
@@ -245,7 +293,7 @@ defmodule Explorer.Chain.Address.Counters do
     end
   end
 
-  defp address_hash_to_internal_txs_limited_count_query(address_hash) do
+  defp address_hash_to_internal_transactions_limited_count_query(address_hash) do
     query_to_address_hash_wrapped =
       InternalTransaction
       |> InternalTransaction.where_nonpending_block()
@@ -327,8 +375,7 @@ defmodule Explorer.Chain.Address.Counters do
     AddressTransactionsGasUsageCounter.fetch(address)
   end
 
-  @spec address_limited_counters(Hash.t(), Keyword.t()) ::
-          {counter(), counter(), counter(), counter(), counter(), counter(), counter()}
+  @spec address_limited_counters(Hash.t(), Keyword.t()) :: %{atom() => counter}
   def address_limited_counters(address_hash, options) do
     cached_counters =
       Enum.reduce(@types, %{}, fn type, acc ->
@@ -353,7 +400,7 @@ defmodule Explorer.Chain.Address.Counters do
       )
 
     transactions_from_count_task =
-      run_or_ignore(cached_counters[:txs], :txs_from, address_hash, fn ->
+      run_or_ignore(cached_counters[:transactions], :transactions_from, address_hash, fn ->
         result =
           Transaction
           |> where([t], t.from_address_hash == ^address_hash)
@@ -367,14 +414,18 @@ defmodule Explorer.Chain.Address.Counters do
 
         Logger.info("Time consumed for transactions_from_count_task for #{address_hash} is #{diff}ms")
 
-        AddressesTabsCounters.save_txs_counter_progress(address_hash, %{txs_types: [:txs_from], txs_from: result})
-        AddressesTabsCounters.drop_task(:txs_from, address_hash)
+        AddressesTabsCounters.save_transactions_counter_progress(address_hash, %{
+          transactions_types: [:transactions_from],
+          transactions_from: result
+        })
 
-        {:txs_from, result}
+        AddressesTabsCounters.drop_task(:transactions_from, address_hash)
+
+        {:transactions_from, result}
       end)
 
     transactions_to_count_task =
-      run_or_ignore(cached_counters[:txs], :txs_to, address_hash, fn ->
+      run_or_ignore(cached_counters[:transactions], :transactions_to, address_hash, fn ->
         result =
           Transaction
           |> where([t], t.to_address_hash == ^address_hash)
@@ -388,14 +439,18 @@ defmodule Explorer.Chain.Address.Counters do
 
         Logger.info("Time consumed for transactions_to_count_task for #{address_hash} is #{diff}ms")
 
-        AddressesTabsCounters.save_txs_counter_progress(address_hash, %{txs_types: [:txs_to], txs_to: result})
-        AddressesTabsCounters.drop_task(:txs_to, address_hash)
+        AddressesTabsCounters.save_transactions_counter_progress(address_hash, %{
+          transactions_types: [:transactions_to],
+          transactions_to: result
+        })
 
-        {:txs_to, result}
+        AddressesTabsCounters.drop_task(:transactions_to, address_hash)
+
+        {:transactions_to, result}
       end)
 
     transactions_created_contract_count_task =
-      run_or_ignore(cached_counters[:txs], :txs_contract, address_hash, fn ->
+      run_or_ignore(cached_counters[:transactions], :transactions_contract, address_hash, fn ->
         result =
           Transaction
           |> where([t], t.created_contract_address_hash == ^address_hash)
@@ -409,14 +464,14 @@ defmodule Explorer.Chain.Address.Counters do
 
         Logger.info("Time consumed for transactions_created_contract_count_task for #{address_hash} is #{diff}ms")
 
-        AddressesTabsCounters.save_txs_counter_progress(address_hash, %{
-          txs_types: [:txs_contract],
-          txs_contract: result
+        AddressesTabsCounters.save_transactions_counter_progress(address_hash, %{
+          transactions_types: [:transactions_contract],
+          transactions_contract: result
         })
 
-        AddressesTabsCounters.drop_task(:txs_contract, address_hash)
+        AddressesTabsCounters.drop_task(:transactions_contract, address_hash)
 
-        {:txs_contract, result}
+        {:transactions_contract, result}
       end)
 
     token_transfers_count_task =
@@ -455,14 +510,27 @@ defmodule Explorer.Chain.Address.Counters do
         options
       )
 
-    internal_txs_count_task =
+    internal_transactions_count_task =
       configure_task(
-        :internal_txs,
+        :internal_transactions,
         cached_counters,
-        address_hash_to_internal_txs_limited_count_query(address_hash),
+        address_hash_to_internal_transactions_limited_count_query(address_hash),
         address_hash,
         options
       )
+
+    celo_election_rewards_count_task =
+      if Application.get_env(:explorer, :chain_type) == :celo do
+        configure_task(
+          :celo_election_rewards,
+          cached_counters,
+          CeloElectionReward.address_hash_to_rewards_query(address_hash),
+          address_hash,
+          options
+        )
+      else
+        nil
+      end
 
     map =
       [
@@ -474,46 +542,48 @@ defmodule Explorer.Chain.Address.Counters do
         token_balances_count_task,
         logs_count_task,
         withdrawals_count_task,
-        internal_txs_count_task
+        internal_transactions_count_task,
+        celo_election_rewards_count_task
       ]
       |> Enum.reject(&is_nil/1)
       |> Task.yield_many(:timer.seconds(1))
-      |> Enum.reduce(Map.merge(prepare_cache_values(cached_counters), %{txs_types: [], txs_hashes: []}), fn {task, res},
-                                                                                                            acc ->
-        case res do
-          {:ok, {txs_type, txs_hashes}} when txs_type in @txs_types ->
-            acc
-            |> (&Map.put(&1, :txs_types, [txs_type | &1[:txs_types]])).()
-            |> (&Map.put(&1, :txs_hashes, &1[:txs_hashes] ++ txs_hashes)).()
+      |> Enum.reduce(
+        Map.merge(prepare_cache_values(cached_counters), %{transactions_types: [], transactions_hashes: []}),
+        fn {task, res}, acc ->
+          case res do
+            {:ok, {transactions_type, transactions_hashes}} when transactions_type in @transactions_types ->
+              acc
+              |> (&Map.put(&1, :transactions_types, [transactions_type | &1[:transactions_types]])).()
+              |> (&Map.put(&1, :transactions_hashes, &1[:transactions_hashes] ++ transactions_hashes)).()
 
-          {:ok, {type, counter}} ->
-            Map.put(acc, type, counter)
+            {:ok, {type, counter}} ->
+              Map.put(acc, type, counter)
 
-          {:exit, reason} ->
-            Logger.warn(fn ->
-              [
-                "Query fetching address counters for #{address_hash} terminated: #{inspect(reason)}"
-              ]
-            end)
+            {:exit, reason} ->
+              Logger.warning(fn ->
+                [
+                  "Query fetching address counters for #{address_hash} terminated: #{inspect(reason)}"
+                ]
+              end)
 
-            acc
+              acc
 
-          nil ->
-            Logger.warn(fn ->
-              [
-                "Query fetching address counters for #{address_hash} timed out."
-              ]
-            end)
+            nil ->
+              Logger.warning(fn ->
+                [
+                  "Query fetching address counters for #{address_hash} timed out."
+                ]
+              end)
 
-            Task.ignore(task)
+              Task.ignore(task)
 
-            acc
+              acc
+          end
         end
-      end)
-      |> process_txs_counter()
+      )
+      |> process_transactions_counter()
 
-    {map[:validations], map[:txs], map[:token_transfers], map[:token_balances], map[:logs], map[:withdrawals],
-     map[:internal_txs]}
+    map
   end
 
   defp run_or_ignore({ok, _counter}, _type, _address_hash, _fun) when ok in [:up_to_date, :limit_value], do: nil
@@ -548,17 +618,19 @@ defmodule Explorer.Chain.Address.Counters do
     end)
   end
 
-  defp process_txs_counter(%{txs_types: [_ | _] = txs_types, txs_hashes: hashes} = map) do
+  defp process_transactions_counter(
+         %{transactions_types: [_ | _] = transactions_types, transactions_hashes: hashes} = map
+       ) do
     counter = hashes |> Enum.uniq() |> Enum.count() |> min(@counters_limit)
 
-    if Enum.count(txs_types) == 3 || counter == @counters_limit do
-      map |> Map.put(:txs, counter)
+    if Enum.count(transactions_types) == 3 || counter == @counters_limit do
+      map |> Map.put(:transactions, counter)
     else
       map
     end
   end
 
-  defp process_txs_counter(map), do: map
+  defp process_transactions_counter(map), do: map
 
   defp prepare_cache_values(cached_counters) do
     Enum.reduce(cached_counters, %{}, fn
@@ -573,8 +645,8 @@ defmodule Explorer.Chain.Address.Counters do
   @doc """
     Returns all possible transactions type
   """
-  @spec txs_types :: list(atom)
-  def txs_types, do: @txs_types
+  @spec transactions_types :: list(atom)
+  def transactions_types, do: @transactions_types
 
   @doc """
     Returns max counter value

@@ -43,7 +43,7 @@
               :token_search,
               :name,
               class: "w-100 dropdown-search-field",
-              'data-filter-dropdown-tokens': true,
+              "data-filter-dropdown-tokens": true,
               placeholder: gettext("Search tokens")
             ) %>
       </div>

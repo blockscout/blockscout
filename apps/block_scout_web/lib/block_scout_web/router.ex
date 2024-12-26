@@ -1,14 +1,31 @@
 defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
-  alias BlockScoutWeb.Plug.{GraphQL, RateLimit}
-  alias BlockScoutWeb.{ApiRouter, WebRouter}
+  use Utils.CompileTimeEnvHelper,
+    admin_panel_enabled: [:block_scout_web, :admin_panel_enabled],
+    graphql_enabled: [:block_scout_web, [Api.GraphQL, :enabled]],
+    api_router_reading_enabled: [:block_scout_web, [BlockScoutWeb.Routers.ApiRouter, :reading_enabled]],
+    web_router_enabled: [:block_scout_web, [BlockScoutWeb.Routers.WebRouter, :enabled]]
 
-  if Application.compile_env(:block_scout_web, :admin_panel_enabled) do
-    forward("/admin", BlockScoutWeb.AdminRouter)
+  alias BlockScoutWeb.Plug.{GraphQL, RateLimit}
+  alias BlockScoutWeb.Routers.{AccountRouter, ApiRouter}
+
+  @max_query_string_length 5_000
+
+  if @admin_panel_enabled do
+    forward("/admin", BlockScoutWeb.Routers.AdminRouter)
   end
 
   pipeline :browser do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 100_000,
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -18,23 +35,40 @@ defmodule BlockScoutWeb.Router do
   end
 
   pipeline :api do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      length: 20_000_000,
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: Poison
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
   end
 
   pipeline :api_v1_graphql do
+    plug(
+      Plug.Parsers,
+      parsers: [:json, Absinthe.Plug.Parser],
+      json_decoder: Poison,
+      body_reader: {BlockScoutWeb.GraphQL.BodyReader, :read_body, []}
+    )
+
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
     plug(RateLimit, graphql?: true)
   end
+
+  match(:*, "/auth/*path", AccountRouter, [])
 
   forward("/api", ApiRouter)
 
   scope "/graphiql" do
     pipe_through(:api_v1_graphql)
 
-    if Application.compile_env(:block_scout_web, Api.GraphQL)[:enabled] &&
-         Application.compile_env(:block_scout_web, ApiRouter)[:reading_enabled] do
+    if @graphql_enabled && @api_router_reading_enabled do
       forward("/", Absinthe.Plug.GraphiQL,
         schema: BlockScoutWeb.GraphQL.Schema,
         interface: :advanced,
@@ -50,7 +84,7 @@ defmodule BlockScoutWeb.Router do
     get("/robots.txt", RobotsController, :robots)
     get("/sitemap.xml", RobotsController, :sitemap)
 
-    if Application.compile_env(:block_scout_web, ApiRouter)[:reading_enabled] do
+    if @api_router_reading_enabled do
       get("/api-docs", APIDocsController, :index)
       get("/eth-rpc-api-docs", APIDocsController, :eth_rpc)
     else
@@ -65,13 +99,7 @@ defmodule BlockScoutWeb.Router do
     post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
   end
 
-  if Application.compile_env(:block_scout_web, WebRouter)[:enabled] do
-    forward("/", BlockScoutWeb.WebRouter)
-  else
-    scope "/", BlockScoutWeb do
-      pipe_through(:browser)
-
-      forward("/", APIDocsController, :index)
-    end
+  if @web_router_enabled do
+    forward("/", BlockScoutWeb.Routers.WebRouter)
   end
 end

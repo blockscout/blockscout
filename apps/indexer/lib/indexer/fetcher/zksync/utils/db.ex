@@ -8,11 +8,11 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
   import Indexer.Fetcher.ZkSync.Utils.Logging, only: [log_warning: 1, log_info: 1]
 
   @json_batch_fields_absent_in_db_batch [
-    :commit_tx_hash,
+    :commit_transaction_hash,
     :commit_timestamp,
-    :prove_tx_hash,
+    :prove_transaction_hash,
     :prove_timestamp,
-    :executed_tx_hash,
+    :executed_transaction_hash,
     :executed_timestamp
   ]
 
@@ -126,55 +126,57 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
     the next available indices are assigned.
 
     ## Parameters
-    - `new_l1_txs`: A map of L1 transaction descriptions. The keys of the map are
+    - `new_l1_transactions`: A map of L1 transaction descriptions. The keys of the map are
       transaction hashes.
 
     ## Returns
-    - `l1_txs`: A map of L1 transaction descriptions. Each element is extended with
+    - `l1_transactions`: A map of L1 transaction descriptions. Each element is extended with
       the key `:id`, representing the index of the L1 transaction in the
       `zksync_lifecycle_l1_transactions` table.
   """
   @spec get_indices_for_l1_transactions(map()) :: any()
-  def get_indices_for_l1_transactions(new_l1_txs)
-      when is_map(new_l1_txs) do
+  # TODO: consider a way to remove duplicate with Arbitrum.Utils.Db
+  # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
+  def get_indices_for_l1_transactions(new_l1_transactions)
+      when is_map(new_l1_transactions) do
     # Get indices for l1 transactions previously handled
-    l1_txs =
-      new_l1_txs
+    l1_transactions =
+      new_l1_transactions
       |> Map.keys()
       |> Reader.lifecycle_transactions()
-      |> Enum.reduce(new_l1_txs, fn {hash, id}, txs ->
-        {_, txs} =
-          Map.get_and_update!(txs, hash.bytes, fn l1_tx ->
-            {l1_tx, Map.put(l1_tx, :id, id)}
+      |> Enum.reduce(new_l1_transactions, fn {hash, id}, transactions ->
+        {_, transactions} =
+          Map.get_and_update!(transactions, hash.bytes, fn l1_transaction ->
+            {l1_transaction, Map.put(l1_transaction, :id, id)}
           end)
 
-        txs
+        transactions
       end)
 
     # Get the next index for the first new transaction based
     # on the indices existing in DB
-    l1_tx_next_id = Reader.next_id()
+    l1_transaction_next_id = Reader.next_id()
 
     # Assign new indices for the transactions which are not in
     # the l1 transactions table yet
-    {updated_l1_txs, _} =
-      l1_txs
+    {updated_l1_transactions, _} =
+      l1_transactions
       |> Map.keys()
       |> Enum.reduce(
-        {l1_txs, l1_tx_next_id},
-        fn hash, {txs, next_id} ->
-          tx = txs[hash]
-          id = Map.get(tx, :id)
+        {l1_transactions, l1_transaction_next_id},
+        fn hash, {transactions, next_id} ->
+          transaction = transactions[hash]
+          id = Map.get(transaction, :id)
 
           if is_nil(id) do
-            {Map.put(txs, hash, Map.put(tx, :id, next_id)), next_id + 1}
+            {Map.put(transactions, hash, Map.put(transaction, :id, next_id)), next_id + 1}
           else
-            {txs, next_id}
+            {transactions, next_id}
           end
         end
       )
 
-    updated_l1_txs
+    updated_l1_transactions
   end
 
   @doc """
@@ -183,20 +185,20 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Db do
 
     ## Parameters
     - `batches`: A list of maps with batch descriptions.
-    - `l1_txs`: A list of maps with L1 transaction descriptions. Optional.
-    - `l2_txs`: A list of maps with rollup transaction associations. Optional.
+    - `l1_transactions`: A list of maps with L1 transaction descriptions. Optional.
+    - `l2_transactions`: A list of maps with rollup transaction associations. Optional.
     - `l2_blocks`: A list of maps with rollup block associations. Optional.
 
     ## Returns
     n/a
   """
-  def import_to_db(batches, l1_txs \\ [], l2_txs \\ [], l2_blocks \\ [])
-      when is_list(batches) and is_list(l1_txs) and is_list(l2_txs) and is_list(l2_blocks) do
+  def import_to_db(batches, l1_transactions \\ [], l2_transactions \\ [], l2_blocks \\ [])
+      when is_list(batches) and is_list(l1_transactions) and is_list(l2_transactions) and is_list(l2_blocks) do
     {:ok, _} =
       Chain.import(%{
-        zksync_lifecycle_transactions: %{params: l1_txs},
+        zksync_lifecycle_transactions: %{params: l1_transactions},
         zksync_transaction_batches: %{params: batches},
-        zksync_batch_transactions: %{params: l2_txs},
+        zksync_batch_transactions: %{params: l2_transactions},
         zksync_batch_blocks: %{params: l2_blocks},
         timeout: :infinity
       })

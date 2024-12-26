@@ -83,6 +83,68 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(tokensupply_schema(), response)
     end
+
+    test "with valid contract address and cmc format", %{conn: conn} do
+      token = insert(:token, total_supply: 110_052_089_716_627_912_057_222_572)
+
+      params = %{
+        "module" => "stats",
+        "action" => "tokensupply",
+        "contractaddress" => to_string(token.contract_address_hash),
+        "cmc" => "true"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> text_response(200)
+
+      assert response == "110052089.716627912"
+    end
+
+    test "with custom decimals and cmc format", %{conn: conn} do
+      token =
+        insert(:token,
+          total_supply: 1_234_567_890,
+          decimals: 6
+        )
+
+      params = %{
+        "module" => "stats",
+        "action" => "tokensupply",
+        "contractaddress" => to_string(token.contract_address_hash),
+        "cmc" => "true"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> text_response(200)
+
+      assert response == "1234.567890000"
+    end
+  end
+
+  test "with null decimals and cmc format", %{conn: conn} do
+    token =
+      insert(:token,
+        total_supply: 1_234_567_890,
+        decimals: nil
+      )
+
+    params = %{
+      "module" => "stats",
+      "action" => "tokensupply",
+      "contractaddress" => to_string(token.contract_address_hash),
+      "cmc" => "true"
+    }
+
+    assert response =
+             conn
+             |> get("/api", params)
+             |> text_response(200)
+
+    assert response == "1234567890.000000000"
   end
 
   describe "ethsupplyexchange" do
@@ -177,7 +239,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
         image_url: nil
       }
 
-      ExchangeRates.handle_info({nil, {:ok, [eth]}}, %{})
+      ExchangeRates.handle_info({nil, {:ok, false, [eth]}}, %{})
 
       params = %{
         "module" => "stats",

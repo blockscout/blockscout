@@ -1,11 +1,20 @@
 defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   use BlockScoutWeb.ConnCase
-  alias Explorer.Chain.SmartContract
-  alias Explorer.TestHelper
 
   import Mox
+  import Ecto.Query
+
+  alias Explorer.{Repo, TestHelper}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Chain.{Address, SmartContract}
 
   setup :verify_on_exit!
+
+  if Application.compile_env(:explorer, :chain_type) == :zksync do
+    @optimization_runs "0"
+  else
+    @optimization_runs 200
+  end
 
   def prepare_contracts do
     insert(:contract_address)
@@ -108,7 +117,11 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [result(contract)]
+      result_props = result(contract) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == result(contract)[prop]
+      end
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
@@ -179,7 +192,11 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [result(contract)]
+      result_props = result(contract) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == result(contract)[prop]
+      end
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
@@ -204,7 +221,11 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [result(contract_2)]
+      result_props = result(contract_2) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == result(contract_2)[prop]
+      end
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
@@ -229,7 +250,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [result(contract_2), result(contract_3)]
+      result_props = result(contract_2) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == result(contract_2)[prop]
+        assert Enum.at(response["result"], 1)[prop] == result(contract_3)[prop]
+      end
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
@@ -254,7 +280,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [result(contract_1), result(contract_2)]
+      result_props = result(contract_1) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == result(contract_1)[prop]
+        assert Enum.at(response["result"], 1)[prop] == result(contract_2)[prop]
+      end
 
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
@@ -497,7 +528,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       contract =
         insert(:smart_contract,
           optimization: true,
-          optimization_runs: 200,
+          optimization_runs: @optimization_runs,
           evm_version: "default",
           contract_code_md5: "123"
         )
@@ -519,7 +550,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           # for `OptimizationUsed` is "1". If it was false, the expected value
           # would be "0".
           "OptimizationUsed" => "true",
-          "OptimizationRuns" => 200,
+          "OptimizationRuns" => @optimization_runs,
           "EVMVersion" => "default",
           "FileName" => "",
           "IsProxy" => "false"
@@ -533,7 +564,225 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == expected_result
+      result_props = Enum.at(expected_result, 0) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == Enum.at(expected_result, 0)[prop]
+      end
+
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
+    end
+
+    test "with a verified proxy contract address", %{conn: conn} do
+      implementation_contract =
+        insert(:smart_contract,
+          name: "Implementation",
+          external_libraries: [],
+          constructor_arguments: "",
+          abi: [
+            %{
+              "type" => "constructor",
+              "inputs" => [
+                %{"type" => "address", "name" => "_proxyStorage"},
+                %{"type" => "address", "name" => "_implementationAddress"}
+              ]
+            },
+            %{
+              "constant" => false,
+              "inputs" => [%{"name" => "x", "type" => "uint256"}],
+              "name" => "set",
+              "outputs" => [],
+              "payable" => false,
+              "stateMutability" => "nonpayable",
+              "type" => "function"
+            },
+            %{
+              "constant" => true,
+              "inputs" => [],
+              "name" => "get",
+              "outputs" => [%{"name" => "", "type" => "uint256"}],
+              "payable" => false,
+              "stateMutability" => "view",
+              "type" => "function"
+            }
+          ],
+          license_type: 9
+        )
+
+      implementation_contract_address_hash_string =
+        Base.encode16(implementation_contract.address_hash.bytes, case: :lower)
+
+      proxy_transaction_input =
+        "0x11b804ab000000000000000000000000" <>
+          implementation_contract_address_hash_string <>
+          "000000000000000000000000000000000000000000000000000000000000006035323031313537360000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000284e159163400000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd30000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d61100000000000000000000000000ff5ae9b0a7522736299d797d80b8fc6f31d6110000000000000000000000000000000000000000000000000000000000000003e8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000034420c13696f4ac650b9fafe915553a1abcd7dd300000000000000000000000000000000000000000000000000000000000000184f7074696d69736d2053756273637269626572204e465473000000000000000000000000000000000000000000000000000000000000000000000000000000054f504e46540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000037697066733a2f2f516d66544e504839765651334b5952346d6b52325a6b757756424266456f5a5554545064395538666931503332752f300000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c82bbe41f2cf04e3a8efa18f7032bdd7f6d98a81000000000000000000000000efba8a2a82ec1fb1273806174f5e28fbb917cf9500000000000000000000000000000000000000000000000000000000"
+
+      proxy_deployed_bytecode =
+        "0x363d3d373d3d3d363d73" <> implementation_contract_address_hash_string <> "5af43d82803e903d91602b57fd5bf3"
+
+      proxy_address =
+        insert(:contract_address,
+          contract_code: proxy_deployed_bytecode,
+          verified: true
+        )
+
+      proxy_abi = [
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "payable" => false,
+          "outputs" => [%{"type" => "bool", "name" => ""}],
+          "name" => "upgradeTo",
+          "inputs" => [%{"type" => "address", "name" => "newImplementation"}],
+          "constant" => false
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "payable" => false,
+          "outputs" => [%{"type" => "uint256", "name" => ""}],
+          "name" => "version",
+          "inputs" => [],
+          "constant" => true
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "payable" => false,
+          "outputs" => [%{"type" => "address", "name" => ""}],
+          "name" => "implementation",
+          "inputs" => [],
+          "constant" => true
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "payable" => false,
+          "outputs" => [],
+          "name" => "renounceOwnership",
+          "inputs" => [],
+          "constant" => false
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "payable" => false,
+          "outputs" => [%{"type" => "address", "name" => ""}],
+          "name" => "getOwner",
+          "inputs" => [],
+          "constant" => true
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "view",
+          "payable" => false,
+          "outputs" => [%{"type" => "address", "name" => ""}],
+          "name" => "getProxyStorage",
+          "inputs" => [],
+          "constant" => true
+        },
+        %{
+          "type" => "function",
+          "stateMutability" => "nonpayable",
+          "payable" => false,
+          "outputs" => [],
+          "name" => "transferOwnership",
+          "inputs" => [%{"type" => "address", "name" => "_newOwner"}],
+          "constant" => false
+        },
+        %{
+          "type" => "constructor",
+          "stateMutability" => "nonpayable",
+          "payable" => false,
+          "inputs" => [
+            %{"type" => "address", "name" => "_proxyStorage"},
+            %{"type" => "address", "name" => "_implementationAddress"}
+          ]
+        },
+        %{"type" => "fallback", "stateMutability" => "nonpayable", "payable" => false},
+        %{
+          "type" => "event",
+          "name" => "Upgraded",
+          "inputs" => [
+            %{"type" => "uint256", "name" => "version", "indexed" => false},
+            %{"type" => "address", "name" => "implementation", "indexed" => true}
+          ],
+          "anonymous" => false
+        },
+        %{
+          "type" => "event",
+          "name" => "OwnershipRenounced",
+          "inputs" => [%{"type" => "address", "name" => "previousOwner", "indexed" => true}],
+          "anonymous" => false
+        },
+        %{
+          "type" => "event",
+          "name" => "OwnershipTransferred",
+          "inputs" => [
+            %{"type" => "address", "name" => "previousOwner", "indexed" => true},
+            %{"type" => "address", "name" => "newOwner", "indexed" => true}
+          ],
+          "anonymous" => false
+        }
+      ]
+
+      proxy_contract =
+        insert(:smart_contract,
+          address_hash: proxy_address.hash,
+          name: "Proxy",
+          abi: proxy_abi
+        )
+
+      insert(:transaction,
+        created_contract_address_hash: proxy_address.hash,
+        input: proxy_transaction_input
+      )
+      |> with_block(status: :ok)
+
+      name = implementation_contract.name
+
+      insert(:proxy_implementation,
+        proxy_address_hash: proxy_address.hash,
+        proxy_type: "eip1167",
+        address_hashes: [implementation_contract.address_hash],
+        names: [name]
+      )
+
+      params = %{
+        "module" => "contract",
+        "action" => "getsourcecode",
+        "address" => Address.checksum(proxy_address.hash)
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      expected_result = [
+        %{
+          "Address" => to_string(proxy_contract.address_hash),
+          "SourceCode" => proxy_contract.contract_source_code,
+          "ABI" => Jason.encode!(proxy_contract.abi),
+          "ContractName" => proxy_contract.name,
+          "CompilerVersion" => proxy_contract.compiler_version,
+          "FileName" => "",
+          "IsProxy" => "true",
+          "ImplementationAddress" => to_string(implementation_contract.address_hash),
+          "ImplementationAddresses" => [to_string(implementation_contract.address_hash)],
+          "EVMVersion" => nil,
+          "OptimizationUsed" => "false"
+        }
+      ]
+
+      result_props = Enum.at(expected_result, 0) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == Enum.at(expected_result, 0)[prop]
+      end
+
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
@@ -543,7 +792,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       contract =
         insert(:smart_contract,
           optimization: true,
-          optimization_runs: 200,
+          optimization_runs: @optimization_runs,
           evm_version: "default",
           constructor_arguments:
             "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
@@ -564,7 +813,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
           "OptimizationUsed" => "true",
-          "OptimizationRuns" => 200,
+          "OptimizationRuns" => @optimization_runs,
           "EVMVersion" => "default",
           "ConstructorArguments" =>
             "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
@@ -580,7 +829,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == expected_result
+      result_props = Enum.at(expected_result, 0) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == Enum.at(expected_result, 0)[prop]
+      end
+
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
@@ -641,7 +895,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           }
         ],
         optimization: true,
-        optimization_runs: 200,
+        optimization_runs: @optimization_runs,
         evm_version: "default"
       }
 
@@ -666,7 +920,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
           "OptimizationUsed" => "true",
-          "OptimizationRuns" => 200,
+          "OptimizationRuns" => @optimization_runs,
           "EVMVersion" => "default",
           "ExternalLibraries" => [
             %{"name" => "Test", "address_hash" => "0xb18aed9518d735482badb4e8b7fd8d2ba425ce95"},
@@ -684,7 +938,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == expected_result
+      result_props = Enum.at(expected_result, 0) |> Map.keys()
+
+      for prop <- result_props do
+        assert Enum.at(response["result"], 0)[prop] == Enum.at(expected_result, 0)[prop]
+      end
+
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
@@ -904,7 +1163,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           %{
             "contractAddress" => contract_address,
             "contractCreator" => contract_creator,
-            "txHash" => tx_hash
+            "txHash" => transaction_hash
           }
         ]
       } =
@@ -914,7 +1173,199 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
       assert contract_address == to_string(address.hash)
       assert contract_creator == to_string(transaction.from_address_hash)
-      assert tx_hash == to_string(transaction.hash)
+      assert transaction_hash == to_string(transaction.hash)
+    end
+  end
+
+  describe "verifyproxycontract & checkproxyverification" do
+    setup do
+      %{params: %{"module" => "contract"}}
+    end
+
+    @proxy_abi [
+      %{
+        "type" => "function",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "outputs" => [%{"type" => "bool", "name" => ""}],
+        "name" => "upgradeTo",
+        "inputs" => [%{"type" => "address", "name" => "newImplementation"}],
+        "constant" => false
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [%{"type" => "uint256", "name" => ""}],
+        "name" => "version",
+        "inputs" => [],
+        "constant" => true
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [%{"type" => "address", "name" => ""}],
+        "name" => "implementation",
+        "inputs" => [],
+        "constant" => true
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "outputs" => [],
+        "name" => "renounceOwnership",
+        "inputs" => [],
+        "constant" => false
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [%{"type" => "address", "name" => ""}],
+        "name" => "getOwner",
+        "inputs" => [],
+        "constant" => true
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [%{"type" => "address", "name" => ""}],
+        "name" => "getProxyStorage",
+        "inputs" => [],
+        "constant" => true
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "outputs" => [],
+        "name" => "transferOwnership",
+        "inputs" => [%{"type" => "address", "name" => "_newOwner"}],
+        "constant" => false
+      },
+      %{
+        "type" => "constructor",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "inputs" => [
+          %{"type" => "address", "name" => "_proxyStorage"},
+          %{"type" => "address", "name" => "_implementationAddress"}
+        ]
+      },
+      %{"type" => "fallback", "stateMutability" => "nonpayable", "payable" => false},
+      %{
+        "type" => "event",
+        "name" => "Upgraded",
+        "inputs" => [
+          %{"type" => "uint256", "name" => "version", "indexed" => false},
+          %{"type" => "address", "name" => "implementation", "indexed" => true}
+        ],
+        "anonymous" => false
+      },
+      %{
+        "type" => "event",
+        "name" => "OwnershipRenounced",
+        "inputs" => [%{"type" => "address", "name" => "previousOwner", "indexed" => true}],
+        "anonymous" => false
+      },
+      %{
+        "type" => "event",
+        "name" => "OwnershipTransferred",
+        "inputs" => [
+          %{"type" => "address", "name" => "previousOwner", "indexed" => true},
+          %{"type" => "address", "name" => "newOwner", "indexed" => true}
+        ],
+        "anonymous" => false
+      }
+    ]
+    @implementation_abi [
+      %{
+        "constant" => false,
+        "inputs" => [%{"name" => "x", "type" => "uint256"}],
+        "name" => "set",
+        "outputs" => [],
+        "payable" => false,
+        "stateMutability" => "nonpayable",
+        "type" => "function"
+      },
+      %{
+        "constant" => true,
+        "inputs" => [],
+        "name" => "get",
+        "outputs" => [%{"name" => "", "type" => "uint256"}],
+        "payable" => false,
+        "stateMutability" => "view",
+        "type" => "function"
+      }
+    ]
+    test "verify", %{conn: conn, params: params} do
+      proxy_contract_address = insert(:contract_address)
+
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
+
+      implementation_contract_address = insert(:contract_address)
+
+      insert(:smart_contract,
+        address_hash: implementation_contract_address.hash,
+        abi: @implementation_abi,
+        contract_code_md5: "123"
+      )
+
+      implementation_contract_address_hash_string =
+        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
+
+      TestHelper.get_eip1967_implementation_zero_addresses()
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
+             }
+           ]}
+        end
+      )
+
+      %{
+        "message" => "OK",
+        "result" => uid,
+        "status" => "1"
+      } =
+        conn
+        |> get(
+          "/api",
+          Map.merge(params, %{"action" => "verifyproxycontract", "address" => to_string(proxy_contract_address.hash)})
+        )
+        |> json_response(200)
+
+      :timer.sleep(333)
+
+      result =
+        "The proxy's (#{to_string(proxy_contract_address.hash)}) implementation contract is found at #{to_string(implementation_contract_address.hash)} and is successfully updated."
+
+      %{
+        "message" => "OK",
+        "result" => ^result,
+        "status" => "1"
+      } =
+        conn
+        |> get("/api", Map.merge(params, %{"action" => "checkproxyverification", "guid" => uid}))
+        |> json_response(200)
+
+      assert %Implementation{address_hashes: implementations} =
+               Implementation
+               |> where([i], i.proxy_address_hash == ^proxy_contract_address.hash)
+               |> Repo.one()
+
+      assert implementations == [implementation_contract_address.hash]
     end
   end
 

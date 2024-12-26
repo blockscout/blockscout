@@ -3,20 +3,29 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     Module to interact with Transaction Interpretation Service
   """
 
-  alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
+  alias BlockScoutWeb.API.V2.{Helper, InternalTransactionView, TokenTransferView, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
-  alias Explorer.Chain.{Data, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
   alias HTTPoison.Response
 
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Utility.Microservice, only: [base_url: 2, check_enabled: 2]
-
   require Logger
 
   @post_timeout :timer.minutes(5)
   @request_error_msg "Error while sending request to Transaction Interpretation Service"
   @api_true api?: true
   @items_limit 50
+  @internal_transaction_necessity_by_association [
+    necessity_by_association: %{
+      [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
+        :optional,
+      [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+      [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
+    }
+  ]
 
   @doc """
   Interpret transaction or user operation
@@ -26,14 +35,17 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
           | {:error, Jason.DecodeError.t()}
           | {:ok, any()}
   def interpret(transaction_or_map, request_builder \\ &prepare_request_body/1) do
-    if enabled?() do
+    with {:enabled, true} <- {:enabled, enabled?()},
+         {:cache, :no_cached_data} <-
+           {:cache, try_get_cached_value(get_hash(transaction_or_map))} do
       url = interpret_url()
 
       body = request_builder.(transaction_or_map)
 
       http_post_request(url, body)
     else
-      {{:error, :disabled}, 403}
+      {:cache, {:ok, _response} = result} -> result
+      {:enabled, false} -> {{:error, :disabled}, 403}
     end
   end
 
@@ -49,7 +61,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   end
 
   @doc """
-  Build the request body as for the tx interpreter POST request.
+  Build the request body as for the transaction interpreter POST request.
   """
   @spec get_request_body(Transaction.t()) :: map()
   def get_request_body(transaction) do
@@ -57,7 +69,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   end
 
   @doc """
-  Build the request body as for the tx interpreter POST request.
+  Build the request body as for the transaction interpreter POST request.
   """
   @spec get_user_op_request_body(map()) :: map()
   def get_user_op_request_body(user_op) do
@@ -87,6 +99,16 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     end
   end
 
+  defp try_get_cached_value(hash) do
+    with {:ok, %Response{body: body, status_code: 200}} <- HTTPoison.get(cache_url(hash)),
+         {:ok, json} <- body |> Jason.decode() do
+      {:ok, json} |> preload_template_variables()
+    else
+      _ ->
+        :no_cached_data
+    end
+  end
+
   defp http_response_code({:ok, %Response{status_code: status_code}}), do: status_code
   defp http_response_code(_), do: 500
 
@@ -96,53 +118,82 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     base_url(:block_scout_web, __MODULE__) <> "/transactions/summary"
   end
 
+  defp cache_url(hash) do
+    base_url(:block_scout_web, __MODULE__) <> "/cache/#{hash}"
+  end
+
   defp prepare_request_body(transaction) do
     transaction =
       Chain.select_repo(@api_true).preload(transaction, [
-        :transaction_actions,
-        to_address: [:names, :smart_contract],
-        from_address: [:names, :smart_contract],
-        created_contract_address: [:names, :token, :smart_contract]
+        :block,
+        to_address: [:scam_badge, :names, :smart_contract],
+        from_address: [:scam_badge, :names, :smart_contract],
+        created_contract_address: [:scam_badge, :names, :token, :smart_contract]
       ])
 
-    skip_sig_provider? = false
-    {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true)
+    token_transfers = transaction |> fetch_token_transfers() |> Enum.reverse()
+    internal_transactions = transaction |> fetch_internal_transactions() |> Enum.reverse()
+    logs = transaction |> fetch_logs() |> Enum.reverse()
 
-    decoded_input_data = decoded_input |> TransactionView.format_decoded_input() |> TransactionView.decoded_input()
+    [transaction_with_meta | other_elements] =
+      ([transaction | token_transfers] ++ internal_transactions ++ logs)
+      |> maybe_preload_metadata()
+
+    %{
+      logs: logs_with_meta,
+      token_transfers: token_transfers_with_meta,
+      internal_transactions: internal_transactions_with_meta
+    } =
+      Enum.reduce(other_elements, %{logs: [], token_transfers: [], internal_transactions: []}, fn element, acc ->
+        case element do
+          %InternalTransaction{} ->
+            Map.put(acc, :internal_transactions, [element | acc.internal_transactions])
+
+          %TokenTransfer{} ->
+            Map.put(acc, :token_transfers, [element | acc.token_transfers])
+
+          %Log{} ->
+            Map.put(acc, :logs, [element | acc.logs])
+        end
+      end)
+
+    skip_sig_provider? = false
+    decoded_input = Transaction.decoded_input_data(transaction, skip_sig_provider?, @api_true)
+
+    decoded_input_data = decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()
 
     %{
       data: %{
-        to: Helper.address_with_info(nil, transaction.to_address, transaction.to_address_hash, true),
+        to:
+          Helper.address_with_info(nil, transaction_with_meta.to_address, transaction_with_meta.to_address_hash, true),
         from:
           Helper.address_with_info(
             nil,
-            transaction.from_address,
-            transaction.from_address_hash,
+            transaction_with_meta.from_address,
+            transaction_with_meta.from_address_hash,
             true
           ),
-        hash: transaction.hash,
-        type: transaction.type,
-        value: transaction.value,
-        method: TransactionView.method_name(transaction, TransactionView.format_decoded_input(decoded_input)),
-        status: transaction.status,
-        actions: TransactionView.transaction_actions(transaction.transaction_actions),
-        tx_types: TransactionView.tx_types(transaction),
-        raw_input: transaction.input,
+        hash: transaction_with_meta.hash,
+        type: transaction_with_meta.type,
+        value: transaction_with_meta.value,
+        method: Transaction.method_name(transaction_with_meta, Transaction.format_decoded_input(decoded_input)),
+        status: transaction_with_meta.status,
+        transaction_types: TransactionView.transaction_types(transaction_with_meta),
+        raw_input: transaction_with_meta.input,
         decoded_input: decoded_input_data,
-        token_transfers: prepare_token_transfers(transaction, decoded_input)
+        token_transfers: prepare_token_transfers(token_transfers_with_meta, decoded_input),
+        internal_transactions: prepare_internal_transactions(internal_transactions_with_meta, transaction_with_meta)
       },
-      logs_data: %{items: prepare_logs(transaction)}
+      logs_data: %{items: prepare_logs(logs_with_meta, transaction_with_meta)}
     }
   end
 
-  defp prepare_token_transfers(transaction, decoded_input) do
+  defp fetch_token_transfers(transaction) do
     full_options =
       [
         necessity_by_association: %{
-          [from_address: :smart_contract] => :optional,
-          [to_address: :smart_contract] => :optional,
-          [from_address: :names] => :optional,
-          [to_address: :names] => :optional
+          [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+          [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
         }
       ]
       |> Keyword.merge(@api_true)
@@ -151,16 +202,55 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     |> Chain.transaction_to_token_transfers(full_options)
     |> Chain.flat_1155_batch_token_transfers()
     |> Enum.take(@items_limit)
-    |> Enum.map(&TransactionView.prepare_token_transfer(&1, nil, decoded_input))
+  end
+
+  defp prepare_token_transfers(token_transfers, decoded_input) do
+    token_transfers
+    |> Enum.map(&TokenTransferView.prepare_token_transfer(&1, nil, decoded_input))
+  end
+
+  defp fetch_internal_transactions(transaction) do
+    full_options =
+      @internal_transaction_necessity_by_association
+      |> Keyword.merge(@api_true)
+
+    transaction.hash
+    |> InternalTransaction.transaction_to_internal_transactions(full_options)
+    |> Enum.take(@items_limit)
+  end
+
+  defp prepare_internal_transactions(internal_transactions, transaction) do
+    internal_transactions
+    |> Enum.map(&InternalTransactionView.prepare_internal_transaction(&1, transaction.block))
+  end
+
+  defp fetch_logs(transaction) do
+    full_options =
+      [
+        necessity_by_association: %{
+          [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
+        }
+      ]
+      |> Keyword.merge(@api_true)
+
+    transaction.hash
+    |> Chain.transaction_to_logs(full_options)
+    |> Enum.take(@items_limit)
+  end
+
+  defp prepare_logs(logs, transaction) do
+    decoded_logs = TransactionView.decode_logs(logs, false)
+
+    logs
+    |> Enum.zip(decoded_logs)
+    |> Enum.map(fn {log, decoded_log} -> TransactionView.prepare_log(log, transaction.hash, decoded_log, true) end)
   end
 
   defp user_op_to_logs_and_token_transfers(user_op, decoded_input) do
     log_options =
       [
         necessity_by_association: %{
-          [address: :names] => :optional,
-          [address: :smart_contract] => :optional,
-          address: :optional
+          [address: [:names, :smart_contract, proxy_implementations_association()]] => :optional
         },
         limit: @items_limit
       ]
@@ -180,10 +270,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     token_transfer_options =
       [
         necessity_by_association: %{
-          [from_address: :smart_contract] => :optional,
-          [to_address: :smart_contract] => :optional,
-          [from_address: :names] => :optional,
-          [to_address: :names] => :optional,
+          [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+          [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
           :token => :optional
         }
       ]
@@ -194,32 +282,9 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       |> TokenTransfer.logs_to_token_transfers(token_transfer_options)
       |> Chain.flat_1155_batch_token_transfers()
       |> Enum.take(@items_limit)
-      |> Enum.map(&TransactionView.prepare_token_transfer(&1, nil, decoded_input))
+      |> Enum.map(&TokenTransferView.prepare_token_transfer(&1, nil, decoded_input))
 
     {prepared_logs, prepared_token_transfers}
-  end
-
-  defp prepare_logs(transaction) do
-    full_options =
-      [
-        necessity_by_association: %{
-          [address: :names] => :optional,
-          [address: :smart_contract] => :optional,
-          address: :optional
-        }
-      ]
-      |> Keyword.merge(@api_true)
-
-    logs =
-      transaction.hash
-      |> Chain.transaction_to_logs(full_options)
-      |> Enum.take(@items_limit)
-
-    decoded_logs = TransactionView.decode_logs(logs, false)
-
-    logs
-    |> Enum.zip(decoded_logs)
-    |> Enum.map(fn {log, decoded_log} -> TransactionView.prepare_log(log, transaction.hash, decoded_log, true) end)
   end
 
   defp preload_template_variables({:ok, %{"success" => true, "data" => %{"summaries" => summaries} = data}}) do
@@ -253,7 +318,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
           [
             necessity_by_association: %{
               :names => :optional,
-              :smart_contract => :optional
+              :smart_contract => :optional,
+              proxy_implementations_association() => :optional
             },
             api?: true
           ],
@@ -285,7 +351,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     user_op_from = user_op["sender"]
     user_op_to = user_op["execute_target"] || user_op["sender"]
 
-    {mock_tx, decoded_input, decoded_input_json} = decode_user_op_calldata(user_op_hash, user_op_call_data)
+    {mock_transaction, decoded_input, decoded_input_json} = decode_user_op_calldata(user_op_hash, user_op_call_data)
 
     {prepared_logs, prepared_token_transfers} = user_op_to_logs_and_token_transfers(user_op, decoded_input)
 
@@ -304,10 +370,10 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         hash: user_op_hash,
         type: 0,
         value: "0",
-        method: TransactionView.method_name(mock_tx, TransactionView.format_decoded_input(decoded_input), true),
+        method: Transaction.method_name(mock_transaction, Transaction.format_decoded_input(decoded_input), true),
         status: user_op["status"],
         actions: [],
-        tx_types: [],
+        transaction_types: [],
         raw_input: user_op_call_data,
         decoded_input: decoded_input_json,
         token_transfers: prepared_token_transfers
@@ -317,7 +383,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   end
 
   @doc """
-  Decodes user_op["call_data"] and return {mock_tx, decoded_input, decoded_input_json}
+  Decodes user_op["call_data"] and return {mock_transaction, decoded_input, decoded_input_json}
   """
   @spec decode_user_op_calldata(binary(), binary() | nil) :: {Transaction.t(), tuple(), map()} | {nil, nil, nil}
   def decode_user_op_calldata(_user_op_hash, nil), do: {nil, nil, nil}
@@ -327,7 +393,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     {:ok, op_hash} = Chain.string_to_transaction_hash(user_op_hash)
 
-    mock_tx = %Transaction{
+    mock_transaction = %Transaction{
       to_address: %NotLoaded{},
       input: input,
       hash: op_hash
@@ -335,8 +401,12 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     skip_sig_provider? = false
 
-    {decoded_input, _abi_acc, _methods_acc} = Transaction.decoded_input_data(mock_tx, skip_sig_provider?, @api_true)
+    decoded_input = Transaction.decoded_input_data(mock_transaction, skip_sig_provider?, @api_true)
 
-    {mock_tx, decoded_input, decoded_input |> TransactionView.format_decoded_input() |> TransactionView.decoded_input()}
+    {mock_transaction, decoded_input,
+     decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()}
   end
+
+  defp get_hash(%{hash: hash}), do: hash
+  defp get_hash(%{"hash" => hash}), do: hash
 end

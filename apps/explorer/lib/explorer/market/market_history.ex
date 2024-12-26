@@ -5,6 +5,8 @@ defmodule Explorer.Market.MarketHistory do
 
   use Explorer.Schema
 
+  alias Explorer.Chain
+
   @typedoc """
   The recorded values of the configured coin to USD for a single day.
 
@@ -20,6 +22,20 @@ defmodule Explorer.Market.MarketHistory do
     field(:opening_price, :decimal)
     field(:market_cap, :decimal)
     field(:tvl, :decimal)
-    field(:secondary_coin, :boolean)
+    field(:secondary_coin, :boolean, default: false)
+  end
+
+  @doc """
+  Returns the market history (for the secondary coin if specified) for the given date.
+  """
+  @spec price_at_date(Date.t(), boolean(), [Chain.api?()]) :: t() | nil
+  def price_at_date(date, secondary_coin? \\ false, options \\ []) do
+    query =
+      from(
+        mh in __MODULE__,
+        where: mh.date == ^date and mh.secondary_coin == ^secondary_coin?
+      )
+
+    Chain.select_repo(options).one(query)
   end
 end

@@ -33,7 +33,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   # Callback for errored fetch
   @impl GenServer
   def handle_info({_ref, {:error, reason}}, state) do
-    Logger.warn(fn -> "Failed to fetch and import genesis data or precompiled contracts: '#{reason}'." end)
+    Logger.warning(fn -> "Failed to fetch and import genesis data or precompiled contracts: '#{reason}'." end)
 
     fetch_genesis_data()
 
@@ -87,9 +87,12 @@ defmodule Explorer.ChainSpec.GenesisData do
   def fetch_genesis_data do
     chain_spec_path = get_path(:chain_spec_path)
     precompiled_config_path = get_path(:precompiled_config_path)
+    Logger.info(fn -> "Fetching precompiled config path: #{inspect(precompiled_config_path)}." end)
 
     if is_nil(chain_spec_path) and is_nil(precompiled_config_path) do
-      Logger.warn(fn -> "Genesis data is not fetched. Neither chain spec path or precompiles config path are set." end)
+      Logger.warning(fn ->
+        "Genesis data is not fetched. Neither chain spec path or precompiles config path are set."
+      end)
     else
       json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
       variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
@@ -142,7 +145,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
         {:error, reason} ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          Logger.warn(fn -> "#{warn_message_prefix} #{inspect(reason)}" end)
+          Logger.warning(fn -> "#{warn_message_prefix} #{inspect(reason)}" end)
           nil
       end
     else
@@ -293,6 +296,7 @@ defmodule Explorer.ChainSpec.GenesisData do
         address_hash: contract["address"],
         name: contract["name"],
         file_path: nil,
+        # todo: process zksync zk_compiler
         compiler_version: contract["compiler"],
         evm_version: nil,
         optimization_runs: nil,

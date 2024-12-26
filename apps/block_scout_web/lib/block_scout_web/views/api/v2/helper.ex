@@ -2,10 +2,11 @@ defmodule BlockScoutWeb.API.V2.Helper do
   @moduledoc """
     API V2 helper
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain.Address
-  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.Transaction.History.TransactionStats
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -52,28 +53,42 @@ defmodule BlockScoutWeb.API.V2.Helper do
   @doc """
   Gets address with the additional info for api v2
   """
-  @spec address_with_info(any(), any()) :: nil | %{optional(<<_::32, _::_*8>>) => any()}
-  def address_with_info(%Address{} = address, _address_hash) do
-    implementation_names = Implementation.names(address)
+  @spec address_with_info(any(), any()) :: nil | %{optional(String.t()) => any()}
+  def address_with_info(
+        %Address{proxy_implementations: %NotLoaded{}, contract_code: contract_code} = _address,
+        _address_hash
+      )
+      when not is_nil(contract_code) do
+    raise "proxy_implementations is not loaded for address"
+  end
 
-    implementation_name =
-      if Enum.empty?(implementation_names) do
-        nil
-      else
-        implementation_names |> Enum.at(0)
+  def address_with_info(%Address{} = address, _address_hash) do
+    smart_contract? = Address.smart_contract?(address)
+
+    proxy_implementations =
+      case address.proxy_implementations do
+        %NotLoaded{} ->
+          nil
+
+        nil ->
+          nil
+
+        proxy_implementations ->
+          proxy_implementations
       end
 
     %{
       "hash" => Address.checksum(address),
-      "is_contract" => Address.smart_contract?(address),
+      "is_contract" => smart_contract?,
       "name" => address_name(address),
-      # todo: added for backward compatibility, remove when frontend unbound from these props
-      "implementation_name" => implementation_name,
-      "implementation_names" => implementation_names,
-      "is_verified" => verified?(address),
+      "is_scam" => address_marked_as_scam?(address),
+      "proxy_type" => proxy_implementations && proxy_implementations.proxy_type,
+      "implementations" => Proxy.proxy_object_info(proxy_implementations),
+      "is_verified" => verified?(address) || verified_minimal_proxy?(proxy_implementations),
       "ens_domain_name" => address.ens_domain_name,
       "metadata" => address.metadata
     }
+    |> address_chain_type_fields(address)
   end
 
   def address_with_info(%NotLoaded{}, address_hash) do
@@ -96,13 +111,36 @@ defmodule BlockScoutWeb.API.V2.Helper do
       "hash" => Address.checksum(address_hash),
       "is_contract" => false,
       "name" => nil,
-      # todo: added for backward compatibility, remove when frontend unbound from these props
-      "implementation_name" => nil,
-      "implementation_names" => [],
+      "proxy_type" => nil,
+      "implementations" => [],
       "is_verified" => nil,
       "ens_domain_name" => nil,
       "metadata" => nil
     }
+  end
+
+  case @chain_type do
+    :filecoin ->
+      defp address_chain_type_fields(result, address) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.FilecoinView.extend_address_json_response(result, address)
+      end
+
+    _ ->
+      defp address_chain_type_fields(result, _address) do
+        result
+      end
+  end
+
+  defp minimal_proxy_pattern?(proxy_implementations) do
+    proxy_implementations.proxy_type == :eip1167
+  end
+
+  defp verified_minimal_proxy?(nil), do: false
+
+  defp verified_minimal_proxy?(proxy_implementations) do
+    (minimal_proxy_pattern?(proxy_implementations) &&
+       Enum.any?(proxy_implementations.names, fn name -> !is_nil(name) end)) || false
   end
 
   def address_name(%Address{names: [_ | _] = address_names}) do
@@ -117,6 +155,16 @@ defmodule BlockScoutWeb.API.V2.Helper do
   end
 
   def address_name(_), do: nil
+
+  def address_marked_as_scam?(%Address{scam_badge: %Ecto.Association.NotLoaded{}}) do
+    false
+  end
+
+  def address_marked_as_scam?(%Address{scam_badge: scam_badge}) when not is_nil(scam_badge) do
+    true
+  end
+
+  def address_marked_as_scam?(_), do: false
 
   def verified?(%Address{smart_contract: nil}), do: false
   def verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
@@ -153,5 +201,45 @@ defmodule BlockScoutWeb.API.V2.Helper do
     latest = Date.add(today, -1)
     x_days_back = Date.add(latest, -1 * (num_days - 1))
     %{earliest: x_days_back, latest: latest}
+  end
+
+  @doc """
+    Checks if an item associated with a DB entity has actual value
+
+    ## Parameters
+    - `associated_item`: an item associated with a DB entity
+
+    ## Returns
+    - `false`: if the item is nil or not loaded
+    - `true`: if the item has actual value
+  """
+  @spec specified?(any()) :: boolean()
+  def specified?(associated_item) do
+    case associated_item do
+      nil -> false
+      %Ecto.Association.NotLoaded{} -> false
+      _ -> true
+    end
+  end
+
+  @doc """
+    Gets the value of an element nested in a map using two keys.
+
+    Clarification: Returns `map[key1][key2]`
+
+    ## Parameters
+    - `map`: The high-level map.
+    - `key1`: The key of the element in `map`.
+    - `key2`: The key of the element in the map accessible by `map[key1]`.
+
+    ## Returns
+    The value of the element, or `nil` if the map accessible by `key1` does not exist.
+  """
+  @spec get_2map_data(map(), any(), any()) :: any()
+  def get_2map_data(map, key1, key2) do
+    case Map.get(map, key1) do
+      nil -> nil
+      inner_map -> Map.get(inner_map, key2)
+    end
   end
 end

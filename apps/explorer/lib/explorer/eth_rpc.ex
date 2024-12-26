@@ -19,7 +19,7 @@ defmodule Explorer.EthRPC do
   }
 
   alias Explorer.Chain.Cache.{BlockNumber, GasPriceOracle}
-  alias Explorer.Etherscan.{Blocks, Logs, RPC}
+  alias Explorer.Etherscan.{Blocks, Logs}
 
   @nil_gas_price_message "Gas price is not estimated yet"
 
@@ -902,7 +902,7 @@ defmodule Explorer.EthRPC do
        "from" => transaction.from_address_hash,
        "gasUsed" => encode_quantity(transaction.gas_used),
        "logs" => Enum.map(transaction.logs, &render_log(&1, transaction)),
-       'logsBloom' => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
+       "logsBloom" => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
        "status" => encode_quantity(status),
        "to" => transaction.to_address_hash,
        "transactionHash" => transaction.hash,
@@ -935,7 +935,6 @@ defmodule Explorer.EthRPC do
         address_or_topic_params
         |> Map.put(:from_block, from_block)
         |> Map.put(:to_block, to_block)
-        |> Map.put(:allow_non_consensus, true)
 
       logs =
         filter
@@ -1092,20 +1091,16 @@ defmodule Explorer.EthRPC do
         from_block = Map.get(filters, "fromBlock", "latest")
         to_block = Map.get(filters, "toBlock", "latest")
 
-        max_block_number =
-          if from_block == "latest" || to_block == "latest" do
-            max_consensus_block_number()
-          end
+        if from_block == "latest" || to_block == "latest" || from_block == "pending" || to_block == "pending" do
+          max_block_number = max_consensus_block_number()
 
-        pending_block_number =
-          if from_block == "pending" || to_block == "pending" do
-            max_non_consensus_block_number(max_block_number)
+          if is_nil(max_block_number) do
+            {:error, :empty}
+          else
+            to_block_numbers(from_block, to_block, max_block_number)
           end
-
-        if is_nil(pending_block_number) && from_block == "pending" && to_block == "pending" do
-          {:error, :empty}
         else
-          to_block_numbers(from_block, to_block, max_block_number, pending_block_number)
+          to_block_numbers(from_block, to_block, nil)
         end
 
       {:block, _} ->
@@ -1134,37 +1129,33 @@ defmodule Explorer.EthRPC do
 
   defp paging_options(_), do: {:ok, nil}
 
-  defp to_block_numbers(from_block, to_block, max_block_number, pending_block_number) do
-    actual_pending_block_number = pending_block_number || max_block_number
-
-    with {:ok, from} <-
-           to_block_number(from_block, max_block_number, actual_pending_block_number),
-         {:ok, to} <- to_block_number(to_block, max_block_number, actual_pending_block_number) do
+  defp to_block_numbers(from_block, to_block, max_block_number) do
+    with {:ok, from} <- to_block_number(from_block, max_block_number),
+         {:ok, to} <- to_block_number(to_block, max_block_number) do
       {:ok, from, to}
     end
   end
 
-  defp to_block_number(integer, _, _) when is_integer(integer), do: {:ok, integer}
-  defp to_block_number("latest", max_block_number, _), do: {:ok, max_block_number || 0}
-  defp to_block_number("earliest", _, _), do: {:ok, 0}
-  defp to_block_number("pending", max_block_number, nil), do: {:ok, max_block_number || 0}
-  defp to_block_number("pending", _, pending), do: {:ok, pending}
+  defp to_block_number(integer, _) when is_integer(integer), do: {:ok, integer}
+  defp to_block_number("latest", max_block_number), do: {:ok, max_block_number || 0}
+  defp to_block_number("pending", max_block_number), do: {:ok, max_block_number || 0}
+  defp to_block_number("earliest", _), do: {:ok, 0}
 
-  defp to_block_number("0x" <> number, _, _) do
+  defp to_block_number("0x" <> number, _) do
     case Integer.parse(number, 16) do
       {integer, ""} -> {:ok, integer}
       _ -> {:error, "invalid block number"}
     end
   end
 
-  defp to_block_number(number, _, _) when is_bitstring(number) do
+  defp to_block_number(number, _) when is_bitstring(number) do
     case Integer.parse(number, 16) do
       {integer, ""} -> {:ok, integer}
       _ -> {:error, "invalid block number"}
     end
   end
 
-  defp to_block_number(_, _, _), do: {:error, "invalid block number"}
+  defp to_block_number(_, _), do: {:error, "invalid block number"}
 
   defp to_number(number, error_message) when is_bitstring(number) do
     case Integer.parse(number, 16) do
@@ -1174,13 +1165,6 @@ defmodule Explorer.EthRPC do
   end
 
   defp to_number(_, error_message), do: {:error, error_message}
-
-  defp max_non_consensus_block_number(max) do
-    case RPC.max_non_consensus_block_number(max) do
-      {:ok, number} -> number
-      _ -> nil
-    end
-  end
 
   defp max_consensus_block_number do
     case Chain.max_consensus_block_number() do
@@ -1220,8 +1204,12 @@ defmodule Explorer.EthRPC do
     {:error, "Invalid params. Params must be a list."}
   end
 
+  defp do_eth_request(%{"jsonrpc" => jsonrpc, "method" => method}) do
+    do_eth_request(%{"jsonrpc" => jsonrpc, "method" => method, "params" => []})
+  end
+
   defp do_eth_request(_) do
-    {:error, "Method, params, and jsonrpc, are all required parameters."}
+    {:error, "Method, and jsonrpc are required parameters."}
   end
 
   defp get_action(action) do

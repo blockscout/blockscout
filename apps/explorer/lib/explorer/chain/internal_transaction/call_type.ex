@@ -4,9 +4,10 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   """
 
   use Ecto.Type
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   @base_call_types ~w(call callcode delegatecall staticcall)a
-  if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+  if @chain_type == :arbitrum do
     @call_types @base_call_types ++ ~w(invalid)a
   else
     @call_types @base_call_types
@@ -19,7 +20,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
      the current contract's context with the delegated contract's code.  There's some good chances for finding bugs
      when fuzzing these if the memory layout differs between the current contract and the delegated contract.
    * `:staticcall`
-   #{if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+   #{if @chain_type == :arbitrum do
     """
       * `:invalid`
     """
@@ -27,7 +28,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
     ""
   end}
   """
-  if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+  if @chain_type == :arbitrum do
     @type t :: :call | :callcode | :delegatecall | :staticcall | :invalid
   else
     @type t :: :call | :callcode | :delegatecall | :staticcall
@@ -71,7 +72,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   def cast(call_type) when call_type in ["call", "callcode", "delegatecall", "staticcall"],
     do: {:ok, String.to_existing_atom(call_type)}
 
-  if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+  if @chain_type == :arbitrum do
     def cast("invalid"), do: {:ok, :invalid}
   end
 
@@ -123,7 +124,7 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   def load(call_type) when call_type in ["call", "callcode", "delegatecall", "staticcall"],
     do: {:ok, String.to_existing_atom(call_type)}
 
-  if Application.compile_env(:explorer, :chain_type) == :arbitrum do
+  if @chain_type == :arbitrum do
     def load("invalid"), do: {:ok, :invalid}
   end
 

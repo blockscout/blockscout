@@ -21,11 +21,11 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
                 and `json_rpc_named_arguments` defining parameters for the RPC connection.
 
     ## Returns
-    - `{batches_to_import, l2_blocks_to_import, l2_txs_to_import}`
+    - `{batches_to_import, l2_blocks_to_import, l2_transactions_to_import}`
       where
       - `batches_to_import` is a map of batches data
       - `l2_blocks_to_import` is a list of blocks associated with batches by batch numbers
-      - `l2_txs_to_import` is a list of transactions associated with batches by batch numbers
+      - `l2_transactions_to_import` is a list of transactions associated with batches by batch numbers
   """
   @spec extract_data_from_batches([integer()] | {integer(), integer()}, %{
           :chunk_size => pos_integer(),
@@ -55,10 +55,10 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
 
     batches_to_import = get_block_ranges(initial_batches_to_import, config)
 
-    {l2_blocks_to_import, l2_txs_to_import} = get_l2_blocks_and_transactions(batches_to_import, config)
-    log_info("Linked #{length(l2_blocks_to_import)} L2 blocks and #{length(l2_txs_to_import)} L2 transactions")
+    {l2_blocks_to_import, l2_transactions_to_import} = get_l2_blocks_and_transactions(batches_to_import, config)
+    log_info("Linked #{length(l2_blocks_to_import)} L2 blocks and #{length(l2_transactions_to_import)} L2 transactions")
 
-    {batches_to_import, l2_blocks_to_import, l2_txs_to_import}
+    {batches_to_import, l2_blocks_to_import, l2_transactions_to_import}
   end
 
   @doc """
@@ -70,40 +70,40 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
 
     ## Parameters
     - `batches`: A list of maps describing batches. Each map is expected to define the following
-                 elements: `commit_tx_hash`, `commit_timestamp`, `prove_tx_hash`, `prove_timestamp`,
-                 `executed_tx_hash`, `executed_timestamp`.
+                 elements: `commit_transaction_hash`, `commit_timestamp`, `prove_transaction_hash`, `prove_timestamp`,
+                 `executed_transaction_hash`, `executed_timestamp`.
 
     ## Returns
-    - `l1_txs`: A map where keys are L1 transaction hashes, and values are maps containing
+    - `l1_transactions`: A map where keys are L1 transaction hashes, and values are maps containing
       transaction hashes and timestamps.
   """
   @spec collect_l1_transactions(list()) :: map()
   def collect_l1_transactions(batches)
       when is_list(batches) do
-    l1_txs =
+    l1_transactions =
       batches
-      |> Enum.reduce(%{}, fn batch, l1_txs ->
+      |> Enum.reduce(%{}, fn batch, l1_transactions ->
         [
-          %{hash: batch.commit_tx_hash, timestamp: batch.commit_timestamp},
-          %{hash: batch.prove_tx_hash, timestamp: batch.prove_timestamp},
-          %{hash: batch.executed_tx_hash, timestamp: batch.executed_timestamp}
+          %{hash: batch.commit_transaction_hash, timestamp: batch.commit_timestamp},
+          %{hash: batch.prove_transaction_hash, timestamp: batch.prove_timestamp},
+          %{hash: batch.executed_transaction_hash, timestamp: batch.executed_timestamp}
         ]
-        |> Enum.reduce(l1_txs, fn l1_tx, acc ->
-          # checks if l1_tx is not empty and adds to acc
-          add_l1_tx_to_list(acc, l1_tx)
+        |> Enum.reduce(l1_transactions, fn l1_transaction, acc ->
+          # checks if l1_transaction is not empty and adds to acc
+          add_l1_transaction_to_list(acc, l1_transaction)
         end)
       end)
 
-    log_info("Collected #{length(Map.keys(l1_txs))} L1 hashes")
+    log_info("Collected #{length(Map.keys(l1_transactions))} L1 hashes")
 
-    l1_txs
+    l1_transactions
   end
 
-  defp add_l1_tx_to_list(l1_txs, l1_tx) do
-    if l1_tx.hash != Rpc.get_binary_zero_hash() do
-      Map.put(l1_txs, l1_tx.hash, l1_tx)
+  defp add_l1_transaction_to_list(l1_transactions, l1_transaction) do
+    if l1_transaction.hash != Rpc.get_binary_zero_hash() do
+      Map.put(l1_transactions, l1_transaction.hash, l1_transaction)
     else
-      l1_txs
+      l1_transactions
     end
   end
 
@@ -260,10 +260,10 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
   #             RPC connection.
   #
   # ## Returns
-  # - {l2_blocks_to_import, l2_txs_to_import}, where
+  # - {l2_blocks_to_import, l2_transactions_to_import}, where
   #   - `l2_blocks_to_import` contains a list of all rollup blocks with their associations with
   #      the provided batches. The association is a map with the block hash and the batch number.
-  #   - `l2_txs_to_import` contains a list of all rollup transactions with their associations
+  #   - `l2_transactions_to_import` contains a list of all rollup transactions with their associations
   #     with the provided batches. The association is a map with the transaction hash and
   #     the batch number.
   defp get_l2_blocks_and_transactions(
@@ -297,12 +297,12 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
 
     # The chunks requests are sent to the RPC node and parsed to
     # extract rollup block hashes and rollup transactions.
-    {blocks_associations, l2_txs_to_import} =
+    {blocks_associations, l2_transactions_to_import} =
       finalized_chunked_requests
-      |> Enum.reduce({blocks_to_batches, []}, fn requests, {blocks, l2_txs} ->
+      |> Enum.reduce({blocks_to_batches, []}, fn requests, {blocks, l2_transactions} ->
         requests
         |> Rpc.fetch_blocks_details(json_rpc_named_arguments)
-        |> extract_block_hash_and_transactions_list(blocks, l2_txs)
+        |> extract_block_hash_and_transactions_list(blocks, l2_transactions)
       end)
 
     # Check that amount of received transactions for a batch is correct
@@ -310,15 +310,15 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
     |> Map.keys()
     |> Enum.each(fn batch_number ->
       batch = Map.get(batches, batch_number)
-      txs_in_batch = batch.l1_tx_count + batch.l2_tx_count
+      transactions_in_batch = batch.l1_transaction_count + batch.l2_transaction_count
 
-      ^txs_in_batch =
-        Enum.count(l2_txs_to_import, fn tx ->
-          tx.batch_number == batch_number
+      ^transactions_in_batch =
+        Enum.count(l2_transactions_to_import, fn transaction ->
+          transaction.batch_number == batch_number
         end)
     end)
 
-    {Map.values(blocks_associations), l2_txs_to_import}
+    {Map.values(blocks_associations), l2_transactions_to_import}
   end
 
   # For a given list of rollup block numbers, this function extends:
@@ -376,38 +376,38 @@ defmodule Indexer.Fetcher.ZkSync.Discovery.BatchesData do
   # ## Parameters
   # - `json_responses`: A list of responses to `eth_getBlockByNumber` calls.
   # - `l2_blocks`: A map of accumulated associations between rollup blocks and batches.
-  # - `l2_txs`: A list of accumulated associations between rollup transactions and batches.
+  # - `l2_transactions`: A list of accumulated associations between rollup transactions and batches.
   #
   # ## Returns
-  # - {l2_blocks, l2_txs}, where
+  # - {l2_blocks, l2_transactions}, where
   #   - `l2_blocks`: Updated map of accumulated associations between rollup blocks and batches.
-  #   - `l2_txs`: Updated list of accumulated associations between rollup transactions and batches.
-  defp extract_block_hash_and_transactions_list(json_responses, l2_blocks, l2_txs) do
+  #   - `l2_transactions`: Updated list of accumulated associations between rollup transactions and batches.
+  defp extract_block_hash_and_transactions_list(json_responses, l2_blocks, l2_transactions) do
     json_responses
-    |> Enum.reduce({l2_blocks, l2_txs}, fn resp, {l2_blocks, l2_txs} ->
+    |> Enum.reduce({l2_blocks, l2_transactions}, fn resp, {l2_blocks, l2_transactions} ->
       {block, l2_blocks} =
         Map.get_and_update(l2_blocks, resp.id, fn block ->
           {block, Map.put(block, :hash, Map.get(resp.result, "hash"))}
         end)
 
-      l2_txs =
+      l2_transactions =
         case Map.get(resp.result, "transactions") do
           nil ->
-            l2_txs
+            l2_transactions
 
-          new_txs ->
-            Enum.reduce(new_txs, l2_txs, fn l2_tx_hash, l2_txs ->
+          new_transactions ->
+            Enum.reduce(new_transactions, l2_transactions, fn l2_transaction_hash, l2_transactions ->
               [
                 %{
                   batch_number: block.batch_number,
-                  hash: l2_tx_hash
+                  transaction_hash: l2_transaction_hash
                 }
-                | l2_txs
+                | l2_transactions
               ]
             end)
         end
 
-      {l2_blocks, l2_txs}
+      {l2_blocks, l2_transactions}
     end)
   end
 end
