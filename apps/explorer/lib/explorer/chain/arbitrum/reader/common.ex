@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
     This module serves as a central location for core query functionality that needs to
     be accessed from different logical parts of the application, such as:
 
-    * Web API handlers (`Explorer.Chain.Arbitrum.Reader.API`)
+    * Web API handlers (e.g. `Explorer.Chain.Arbitrum.Reader.API.Settlement`)
     * Chain indexer components (e.g. `Explorer.Chain.Arbitrum.Reader.Indexer.Settlement`)
     * Other potential consumers
 

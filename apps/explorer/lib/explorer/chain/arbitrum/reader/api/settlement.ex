@@ -1,17 +1,18 @@
-defmodule Explorer.Chain.Arbitrum.Reader.API do
+defmodule Explorer.Chain.Arbitrum.Reader.API.Settlement do
   @moduledoc """
-    Provides API-specific functions for querying Arbitrum-related data from the database.
+    Provides API-specific functions for querying Arbitrum settlement data from the database.
 
     This module contains functions specifically designed for Blockscout's API endpoints
-    that handle Arbitrum-specific functionality. All functions in this module enforce
+    that handle Arbitrum settlement functionality. All functions in this module enforce
     the use of replica databases for read operations by automatically passing the
     `api?: true` option to database queries.
 
     The module includes functions for retrieving:
-    - Cross-chain messages (L1<->L2)
     - L1 batches and their associated transactions
-    - Data Availability (DA) records
+    - Data Availability (DA) records and blobs
     - Batch-related block information
+    - Block confirmations on the parent chain
+    - AnyTrust keysets
 
     Note: If any function from this module needs to be used outside of API handlers,
     it should be moved to `Explorer.Chain.Arbitrum.Reader.Common` with configurable
@@ -23,176 +24,19 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
   import Explorer.Chain, only: [select_repo: 1]
 
   alias Explorer.Chain.Arbitrum.{
+    BatchBlock,
     BatchToDaBlob,
     BatchTransaction,
     DaMultiPurposeRecord,
-    L1Batch,
-    Message
+    L1Batch
   }
 
   alias Explorer.Chain.Arbitrum.Reader.Common
   alias Explorer.Chain.Block, as: FullBlock
-  alias Explorer.Chain.{Hash, Log}
-
-  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Cache.BackgroundMigrations, as: MigrationStatuses
+  alias Explorer.{Chain, PagingOptions}
 
   @api_true [api?: true]
-
-  @doc """
-    Retrieves L2-to-L1 messages initiated by specified transaction.
-
-    The messages are filtered by the originating transaction hash (with any status).
-    In the common case a transaction can initiate several messages.
-
-    ## Parameters
-    - `transaction_hash`: The transaction hash which initiated the messages.
-
-    ## Returns
-    - Instances of `Explorer.Chain.Arbitrum.Message` initiated by the transaction
-      with the given hash, or `[]` if no messages with the given status are found.
-  """
-  @spec l2_to_l1_messages_by_transaction_hash(Hash.Full.t()) :: [Message.t()]
-  def l2_to_l1_messages_by_transaction_hash(transaction_hash) do
-    query =
-      from(msg in Message,
-        where: msg.direction == :from_l2 and msg.originating_transaction_hash == ^transaction_hash,
-        order_by: [desc: msg.message_id]
-      )
-
-    query
-    |> select_repo(@api_true).all()
-  end
-
-  @doc """
-    Retrieves L2-to-L1 message by message id.
-
-    ## Parameters
-    - `message_id`: message ID
-
-    ## Returns
-    - Instance of `Explorer.Chain.Arbitrum.Message` with the provided message id,
-      or nil if message with the given id doesn't exist.
-  """
-  @spec l2_to_l1_message_by_id(non_neg_integer()) :: Message.t() | nil
-  def l2_to_l1_message_by_id(message_id) do
-    query =
-      from(message in Message,
-        where: message.direction == :from_l2 and message.message_id == ^message_id
-      )
-
-    select_repo(@api_true).one(query)
-  end
-
-  @doc """
-    Retrieves the count of cross-chain messages either sent to or from the rollup.
-
-    ## Parameters
-    - `direction`: A string that specifies the message direction; can be "from-rollup" or "to-rollup".
-
-    ## Returns
-    - The total count of cross-chain messages.
-  """
-  @spec messages_count(binary()) :: non_neg_integer()
-  def messages_count(direction) when direction == "from-rollup" do
-    do_messages_count(:from_l2)
-  end
-
-  def messages_count(direction) when direction == "to-rollup" do
-    do_messages_count(:to_l2)
-  end
-
-  # Counts the number of cross-chain messages based on the specified direction.
-  @spec do_messages_count(:from_l2 | :to_l2) :: non_neg_integer()
-  defp do_messages_count(direction) do
-    Message
-    |> where([msg], msg.direction == ^direction)
-    |> select_repo(@api_true).aggregate(:count)
-  end
-
-  @doc """
-    Retrieves cross-chain messages based on the specified direction.
-
-    This function constructs and executes a query to retrieve messages either sent
-    to or from the rollup layer, applying pagination options. These options dictate
-    not only the number of items to retrieve but also how many items to skip from
-    the top.
-
-    ## Parameters
-    - `direction`: A string that can be "from-rollup" or "to-rollup", translated internally to `:from_l2` or `:to_l2`.
-    - `options`: A keyword list which may contain `paging_options` specifying pagination details
-
-    ## Returns
-    - A list of `Explorer.Chain.Arbitrum.Message` entries.
-  """
-  @spec messages(binary(), paging_options: PagingOptions.t()) :: [Message.t()]
-  def messages(direction, options) when direction == "from-rollup" do
-    do_messages(:from_l2, options)
-  end
-
-  def messages(direction, options) when direction == "to-rollup" do
-    do_messages(:to_l2, options)
-  end
-
-  # Executes the query to fetch cross-chain messages based on the specified direction.
-  #
-  # This function constructs and executes a query to retrieve messages either sent
-  # to or from the rollup layer, applying pagination options. These options dictate
-  # not only the number of items to retrieve but also how many items to skip from
-  # the top.
-  #
-  # ## Parameters
-  # - `direction`: Can be either `:from_l2` or `:to_l2`, indicating the direction of the messages.
-  # - `options`: A keyword list which may contain `paging_options` specifying pagination details
-  #
-  # ## Returns
-  # - A list of `Explorer.Chain.Arbitrum.Message` entries matching the specified direction.
-  @spec do_messages(:from_l2 | :to_l2, paging_options: PagingOptions.t()) :: [Message.t()]
-  defp do_messages(direction, options) do
-    base_query =
-      from(msg in Message,
-        where: msg.direction == ^direction,
-        order_by: [desc: msg.message_id]
-      )
-
-    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
-
-    query =
-      base_query
-      |> page_messages(paging_options)
-      |> limit(^paging_options.page_size)
-
-    select_repo(@api_true).all(query)
-  end
-
-  defp page_messages(query, %PagingOptions{key: nil}), do: query
-
-  defp page_messages(query, %PagingOptions{key: {id}}) do
-    from(msg in query, where: msg.message_id < ^id)
-  end
-
-  @doc """
-    Retrieves a list of relayed L1 to L2 messages that have been completed.
-
-    ## Parameters
-    - `options`: A keyword list which may contain `paging_options` specifying pagination details
-
-    ## Returns
-    - A list of `Explorer.Chain.Arbitrum.Message` representing relayed messages from L1 to L2 that have been completed.
-  """
-  @spec relayed_l1_to_l2_messages(paging_options: PagingOptions.t()) :: [Message.t()]
-  def relayed_l1_to_l2_messages(options) do
-    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
-
-    query =
-      from(msg in Message,
-        where: msg.direction == :to_l2 and not is_nil(msg.completion_transaction_hash),
-        order_by: [desc: msg.message_id],
-        limit: ^paging_options.page_size
-      )
-
-    select_repo(@api_true).all(query)
-  end
 
   @doc """
     Retrieves the total count of rollup batches indexed up to the current moment.
@@ -261,13 +105,20 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
     Retrieves a list of batches from the database.
 
     This function constructs and executes a query to retrieve batches based on provided
-    pagination options. These options dictate not only the number of items to retrieve
-    but also how many items to skip from the top. If the `committed?` option is set to true,
+    options. These options dictate not only the number of items to retrieve but also
+    how many items to skip from the top. If the `committed?` option is set to true,
     it returns the ten most recent committed batches; otherwise, it fetches batches as
     dictated by other pagination parameters.
 
+    If `batch_numbers` option is provided and not empty, the function returns only
+    batches with the specified numbers, while still applying pagination.
+
     ## Parameters
-    - `options`: A keyword list of options specifying pagination, necessity for joining associations
+    - `options`: A keyword list of options:
+      * `necessity_by_association` - Specifies the necessity for joining associations
+      * `committed?` - When true, returns only committed batches
+      * `paging_options` - Specifies pagination details
+      * `batch_numbers` - Optional list of specific batch numbers to retrieve
 
     ## Returns
     - A list of `Explorer.Chain.Arbitrum.L1Batch` entries, filtered and ordered according to the provided options.
@@ -275,15 +126,24 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
   @spec batches(
           necessity_by_association: %{atom() => :optional | :required},
           committed?: boolean(),
-          paging_options: PagingOptions.t()
+          paging_options: PagingOptions.t(),
+          batch_numbers: [non_neg_integer()] | nil
         ) :: [L1Batch.t()]
   def batches(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    batch_numbers = Keyword.get(options, :batch_numbers)
 
     base_query =
-      from(batch in L1Batch,
-        order_by: [desc: batch.number]
-      )
+      if is_list(batch_numbers) and batch_numbers != [] do
+        from(batch in L1Batch,
+          where: batch.number in ^batch_numbers,
+          order_by: [desc: batch.number]
+        )
+      else
+        from(batch in L1Batch,
+          order_by: [desc: batch.number]
+        )
+      end
 
     query =
       if Keyword.get(options, :committed?, false) do
@@ -400,7 +260,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
   end
 
   def get_da_record_by_data_key(data_key) do
-    # TODO: implement the functionality to return all batch numbers that the data blob is associated with as soon as such functionality is implemented on UI side.
     case MigrationStatuses.get_arbitrum_da_records_normalization_finished() do
       true ->
         # Migration is complete, use new schema
@@ -415,7 +274,25 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
     end
   end
 
-  # Retrieves DA record using the pre-migration database schema where batch numbers
+  # Builds a query to fetch DA records by data key.
+  #
+  # This function constructs an Ecto query to retrieve Data Availability blob
+  # description (type 0) that match a specific data key.
+  #
+  # ## Parameters
+  # - `data_key`: The key of the data to be retrieved.
+  #
+  # ## Returns
+  # - An Ecto query that can be executed to fetch matching DA records.
+  @spec build_da_records_by_data_key_query(binary()) :: Ecto.Query.t()
+  defp build_da_records_by_data_key_query(data_key) do
+    from(
+      da_records in DaMultiPurposeRecord,
+      where: da_records.data_key == ^data_key and da_records.data_type == 0
+    )
+  end
+
+  # Gets DA record using the pre-migration database schema where batch numbers
   # were stored directly in the arbitrum_da_multi_purpose table.
   #
   # ## Parameters
@@ -426,11 +303,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
   # - `{:error, :not_found}` if no record is found
   @spec get_da_record_by_data_key_old_schema(binary()) :: {:ok, {non_neg_integer(), map()}} | {:error, :not_found}
   defp get_da_record_by_data_key_old_schema(data_key) do
-    query =
-      from(
-        da_records in DaMultiPurposeRecord,
-        where: da_records.data_key == ^data_key and da_records.data_type == 0
-      )
+    query = build_da_records_by_data_key_query(data_key)
 
     case select_repo(@api_true).one(query) do
       nil -> {:error, :not_found}
@@ -438,11 +311,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
     end
   end
 
-  # Gets DA record using the post-migration database schema where DA records and their
-  # associations with batches are stored in separate tables:
+  # Gets DA blob description using the post-migration database schema where DA blob
+  # descriptions and their associations with batches are stored in separate tables:
   #
   # - `arbitrum_da_multi_purpose` (`DaMultiPurposeRecord`): Stores the actual DA
-  #   records with their data and type
+  #   blob descriptions
   # - `arbitrum_batches_to_da_blobs` (`BatchToDaBlob`): Maps batch numbers to DA
   #   blob IDs.
   #
@@ -450,22 +323,23 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
   # - `data_key`: The key of the data to be retrieved.
   #
   # ## Returns
-  # - `{:ok, {batch_number, da_info}}` if the record is found
+  # - `{:ok, {batch_number, da_info}}` if the pair of batch number and DA blob description is found, where:
+  #   * `batch_number` is the highest batch number associated with the DA blob description
+  #   * `da_info` is the data from the DA blob description
   # - `{:error, :not_found}` if no record is found
   @spec get_da_record_by_data_key_new_schema(binary()) :: {:ok, {non_neg_integer(), map()}} | {:error, :not_found}
   defp get_da_record_by_data_key_new_schema(data_key) do
-    query =
-      from(
-        da_records in DaMultiPurposeRecord,
-        join: link in BatchToDaBlob,
-        on: da_records.data_key == link.data_blob_id,
-        where: da_records.data_key == ^data_key and da_records.data_type == 0,
-        select: {link.batch_number, da_records.data}
-      )
+    repo = select_repo(@api_true)
 
-    case select_repo(@api_true).one(query) do
+    with da_record when not is_nil(da_record) <- repo.one(build_da_records_by_data_key_query(data_key)),
+         batch_number when not is_nil(batch_number) <-
+           data_key
+           |> build_batch_numbers_by_data_key_query()
+           |> limit(1)
+           |> repo.one() do
+      {:ok, {batch_number, da_record.data}}
+    else
       nil -> {:error, :not_found}
-      {batch_number, data} -> {:ok, {batch_number, data}}
     end
   end
 
@@ -597,30 +471,66 @@ defmodule Explorer.Chain.Arbitrum.Reader.API do
     Common.get_anytrust_keyset(keyset_hash, api?: true)
   end
 
-  #################################################################################
-  ### Below are functions that implement functionality not specific to Arbitrum ###
-  ### They are candidates for moving to a chain-agnostic module as soon as such ###
-  ### need arises.                                                              ###
-  #################################################################################
-
   @doc """
-    Retrieves logs from a transaction that match a specific topic.
+    Retrieves all batch numbers associated with a Data Availability (DA) blob hash
+    and the corresponding DA blob description.
 
-    Fetches all logs emitted by the specified transaction that have the given topic
-    as their first topic, ordered by log index.
+    The function handles both pre- and post-migration database schemas:
+    - In the pre-migration schema, only one batch can be associated with a DA blob,
+      so the function returns a single-element list with that batch number.
+    - In the post-migration schema, multiple batches can share the same DA blob,
+      so the function returns all associated batch numbers.
 
     ## Parameters
-    - `transaction_hash`: The hash of the transaction to fetch logs from
-    - `topic0`: The first topic to filter logs by
+    - `data_key`: The hash of the DA blob to find associated batch numbers for.
 
     ## Returns
-    - A list of matching logs ordered by index, or empty list if none found
+    - `{:ok, {batch_numbers, da_info}}` if the record is found, where:
+      * `batch_numbers` is a list of batch numbers associated with the DA blob,
+         sorted from highest to lowest
+      * `da_info` is the data from the DA blob description
+    - `{:error, :not_found}` if no record is found
   """
-  @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary()) :: [Log.t()]
-  def transaction_to_logs_by_topic0(transaction_hash, topic0) do
-    Chain.log_with_transactions_query()
-    |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
-    |> order_by(asc: :index)
-    |> select_repo(@api_true).all()
+  @spec get_all_da_records_by_data_key(binary()) :: {:ok, {[non_neg_integer()], map()}} | {:error, :not_found}
+  def get_all_da_records_by_data_key(data_key) do
+    case MigrationStatuses.get_arbitrum_da_records_normalization_finished() do
+      true ->
+        repo = select_repo(@api_true)
+
+        with da_record when not is_nil(da_record) <- repo.one(build_da_records_by_data_key_query(data_key)),
+             batch_numbers when batch_numbers != [] <- repo.all(build_batch_numbers_by_data_key_query(data_key)) do
+          {:ok, {batch_numbers, da_record.data}}
+        else
+          _ -> {:error, :not_found}
+        end
+
+      _ ->
+        # During migration, fall back to getting a single batch
+        case get_da_record_by_data_key(data_key) do
+          {:ok, {batch_number, da_info}} -> {:ok, {[batch_number], da_info}}
+          {:error, :not_found} = error -> error
+        end
+    end
+  end
+
+  # Builds a query to fetch batch numbers associated with a DA blob hash.
+  #
+  # This function constructs an Ecto query to retrieve batch numbers from the
+  # arbitrum_batches_to_da_blobs table that match a specific data blob ID (hash).
+  # The batch numbers are sorted in descending order.
+  #
+  # ## Parameters
+  # - `data_key`: The hash of the data blob to find associated batch numbers for.
+  #
+  # ## Returns
+  # - An Ecto query that can be executed to fetch matching batch numbers.
+  @spec build_batch_numbers_by_data_key_query(binary()) :: Ecto.Query.t()
+  defp build_batch_numbers_by_data_key_query(data_key) do
+    from(
+      link in BatchToDaBlob,
+      where: link.data_blob_id == ^data_key,
+      select: link.batch_number,
+      order_by: [desc: link.batch_number]
+    )
   end
 end

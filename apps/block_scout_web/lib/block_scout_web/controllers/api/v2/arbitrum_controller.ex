@@ -16,7 +16,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   alias Explorer.Chain.Hash
   alias Explorer.PagingOptions
 
-  alias Explorer.Chain.Arbitrum.Reader.API, as: Reader
+  alias Explorer.Chain.Arbitrum.Reader.API.Messages, as: MessagesReader
+  alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: SettlementReader
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -33,7 +34,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
     {messages, next_page} =
       direction
-      |> Reader.messages(options)
+      |> MessagesReader.messages(options)
       |> split_list_by_page()
 
     next_page_params =
@@ -59,7 +60,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   def messages_count(conn, %{"direction" => direction} = _params) do
     conn
     |> put_status(200)
-    |> render(:arbitrum_messages_count, %{count: Reader.messages_count(direction)})
+    |> render(:arbitrum_messages_count, %{count: MessagesReader.messages_count(direction)})
   end
 
   @doc """
@@ -125,7 +126,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   """
   @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batch(conn, %{"batch_number" => batch_number} = _params) do
-    case Reader.batch(batch_number, necessity_by_association: @batch_necessity_by_association) do
+    case SettlementReader.batch(batch_number, necessity_by_association: @batch_necessity_by_association) do
       {:ok, batch} ->
         conn
         |> put_status(200)
@@ -139,16 +140,24 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/batches/da/:data_hash` or
     `/api/v2/arbitrum/batches/da/:transaction_commitment/:height` endpoints.
+
+    For AnyTrust data hash, the function can be called in two ways:
+    1. Without type parameter - returns the most recent batch for the data hash
+    2. With type=all parameter - returns all batches for the data hash
+
+    ## Parameters
+    - `conn`: The connection struct
+    - `params`: A map that may contain:
+      * `data_hash` - The AnyTrust data hash
+      * `transaction_commitment` and `height` - For Celestia data
+      * `type` - Optional parameter to specify return type ("all" for all batches)
   """
   @spec batch_by_data_availability_info(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def batch_by_data_availability_info(conn, %{"data_hash" => data_hash} = _params) do
+  def batch_by_data_availability_info(conn, %{"data_hash" => data_hash} = params) do
     # In case of AnyTrust, `data_key` is the hash of the data itself
-    case Reader.get_da_record_by_data_key(data_hash) do
-      {:ok, {batch_number, _}} ->
-        batch(conn, %{"batch_number" => batch_number})
-
-      {:error, :not_found} = res ->
-        res
+    case Map.get(params, "type") do
+      "all" -> all_batches_by_data_availability_info(conn, data_hash, params)
+      _ -> one_batch_by_data_availability_info(conn, data_hash, params)
     end
   end
 
@@ -159,7 +168,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     # In case of Celestia, `data_key` is the hash of the height and the commitment hash
     with {:ok, :hash, transaction_commitment_hash} <- parse_block_hash_or_number_param(transaction_commitment),
          key <- calculate_celestia_data_key(height, transaction_commitment_hash) do
-      case Reader.get_da_record_by_data_key(key) do
+      case SettlementReader.get_da_record_by_data_key(key) do
         {:ok, {batch_number, _}} ->
           batch(conn, %{"batch_number" => batch_number})
 
@@ -172,6 +181,47 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     end
   end
 
+  # Gets the most recent batch associated with the given DA blob hash.
+  #
+  # ## Parameters
+  # - `conn`: The connection struct
+  # - `data_hash`: The AnyTrust data hash
+  # - `params`: The original request parameters
+  #
+  # ## Returns
+  # - The connection struct with rendered response
+  @spec one_batch_by_data_availability_info(Plug.Conn.t(), binary(), map()) :: Plug.Conn.t()
+  defp one_batch_by_data_availability_info(conn, data_hash, _params) do
+    case SettlementReader.get_da_record_by_data_key(data_hash) do
+      {:ok, {batch_number, _}} ->
+        batch(conn, %{"batch_number" => batch_number})
+
+      {:error, :not_found} = res ->
+        res
+    end
+  end
+
+  # Gets all batches associated with the given DA blob hash.
+  #
+  # ## Parameters
+  # - `conn`: The connection struct
+  # - `data_hash`: The AnyTrust data hash
+  # - `params`: The original request parameters (for pagination)
+  #
+  # ## Returns
+  # - The connection struct with rendered response
+  @spec all_batches_by_data_availability_info(Plug.Conn.t(), binary(), map()) :: Plug.Conn.t()
+  defp all_batches_by_data_availability_info(conn, data_hash, params) do
+    case SettlementReader.get_all_da_records_by_data_key(data_hash) do
+      {:ok, {batch_numbers, _}} ->
+        params = Map.put(params, "batch_numbers", batch_numbers)
+        batches(conn, params)
+
+      {:error, :not_found} = res ->
+        res
+    end
+  end
+
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/batches/count` endpoint.
   """
@@ -179,19 +229,30 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   def batches_count(conn, _params) do
     conn
     |> put_status(200)
-    |> render(:arbitrum_batches_count, %{count: Reader.batches_count()})
+    |> render(:arbitrum_batches_count, %{count: SettlementReader.batches_count()})
   end
 
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/batches` endpoint.
+
+    The function can be called in two ways:
+    1. Without batch_numbers parameter - returns batches according to pagination parameters
+    2. With batch_numbers parameter - returns only batches with specified numbers, still applying pagination
+
+    ## Parameters
+    - `conn`: The connection struct
+    - `params`: A map that may contain:
+      * `batch_numbers` - Optional list of specific batch numbers to retrieve
+      * Standard pagination parameters
   """
   @spec batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches(conn, params) do
     {batches, next_page} =
       params
       |> paging_options()
+      |> maybe_add_batch_numbers(params)
       |> Keyword.put(:necessity_by_association, @batch_necessity_by_association)
-      |> Reader.batches()
+      |> SettlementReader.batches()
       |> split_list_by_page()
 
     next_page_params =
@@ -210,6 +271,21 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     })
   end
 
+  # Adds batch_numbers to options if they are present in params.
+  #
+  # ## Parameters
+  # - `options`: The keyword list of options to potentially extend
+  # - `params`: The params map that may contain batch_numbers
+  #
+  # ## Returns
+  # - The options keyword list, potentially extended with batch_numbers
+  @spec maybe_add_batch_numbers(Keyword.t(), map()) :: Keyword.t()
+  defp maybe_add_batch_numbers(options, %{"batch_numbers" => batch_numbers}) when is_list(batch_numbers) do
+    Keyword.put(options, :batch_numbers, batch_numbers)
+  end
+
+  defp maybe_add_batch_numbers(options, _params), do: options
+
   @doc """
     Function to handle GET requests to `/api/v2/main-page/arbitrum/batches/committed` endpoint.
   """
@@ -219,7 +295,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       []
       |> Keyword.put(:necessity_by_association, @batch_necessity_by_association)
       |> Keyword.put(:committed?, true)
-      |> Reader.batches()
+      |> SettlementReader.batches()
 
     conn
     |> put_status(200)
@@ -237,7 +313,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   defp batch_latest_number do
-    case Reader.batch(:latest) do
+    case SettlementReader.batch(:latest) do
       {:ok, batch} -> batch.number
       {:error, :not_found} -> 0
     end
@@ -248,7 +324,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   """
   @spec recent_messages_to_l2(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def recent_messages_to_l2(conn, _params) do
-    messages = Reader.relayed_l1_to_l2_messages(paging_options: %PagingOptions{page_size: 6})
+    messages = MessagesReader.relayed_l1_to_l2_messages(paging_options: %PagingOptions{page_size: 6})
 
     conn
     |> put_status(200)
