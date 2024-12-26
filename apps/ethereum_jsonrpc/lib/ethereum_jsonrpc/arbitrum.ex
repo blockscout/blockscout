@@ -203,6 +203,54 @@ defmodule EthereumJSONRPC.Arbitrum do
     }
   ]
 
+  # decimals()
+  @selector_decimals "313ce567"
+  # name()
+  @selector_name "06fdde03"
+  # symbol()
+  @selector_symbol "95d89b41"
+  @erc20_contract_abi [
+    %{
+      "inputs" => [],
+      "name" => "decimals",
+      "outputs" => [
+        %{
+          "internalType" => "uint8",
+          "name" => "",
+          "type" => "uint8"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [],
+      "name" => "name",
+      "outputs" => [
+        %{
+          "internalType" => "string",
+          "name" => "",
+          "type" => "string"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [],
+      "name" => "symbol",
+      "outputs" => [
+        %{
+          "internalType" => "string",
+          "name" => "",
+          "type" => "string"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
+
   @doc """
     Retrieves specific contract addresses associated with Arbitrum rollup contract.
 
@@ -275,6 +323,9 @@ defmodule EthereumJSONRPC.Arbitrum do
   defp atomized_key(@selector_outbox), do: :outbox
   defp atomized_key(@selector_sequencer_inbox), do: :sequencer_inbox
   defp atomized_key(@selector_bridge), do: :bridge
+  defp atomized_key(@selector_decimals), do: :decimals
+  defp atomized_key(@selector_name), do: :name
+  defp atomized_key(@selector_symbol), do: :symbol
 
   @doc """
     Retrieves the latest confirmed node index for withdrawals Merkle tree.
@@ -516,6 +567,43 @@ defmodule EthereumJSONRPC.Arbitrum do
         Logger.error("outbox_contract.isSpent(position) error occurred: #{inspect(err)}")
         {:error, err}
     end
+  end
+
+  # Retrieve ERC20 token information (name, symbol, decimals) from the contract
+  #
+  # ## Parameters
+  # - `token_address`: The address of the token's smart contract
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - A map with the fields `decimals`, `name` and `symbol` containing associated values
+  #   or nil in case of error
+  @spec fetch_token_info(EthereumJSONRPC.address(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          %{
+            :decimals => non_neg_integer() | nil,
+            :name => binary() | nil,
+            :symbol => binary() | nil
+          }
+  def fetch_token_info(token_address, json_rpc_named_arguments) do
+    method_ids = [@selector_decimals, @selector_name, @selector_symbol]
+
+    method_ids
+    |> Enum.map(fn method_id ->
+      %{
+        contract_address: token_address,
+        method_id: method_id,
+        args: []
+      }
+    end)
+    |> EthereumJSONRPC.execute_contract_functions(@erc20_contract_abi, json_rpc_named_arguments)
+    |> Enum.zip(method_ids)
+    |> Enum.reduce(%{}, fn
+      {{:ok, [response]}, method_id}, retval ->
+        Map.put(retval, atomized_key(method_id), response)
+
+      {{:error, _reason}, method_id}, retval ->
+        Map.put(retval, atomized_key(method_id), nil)
+    end)
   end
 
   # Read a specified contract by provided selector and parameters from the RPC node

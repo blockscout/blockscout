@@ -286,7 +286,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
     if fields.message_id == message.message_id do
       # extract token withdrawal info from the associated event's data
-      token = decode_token_withdrawal_data(fields.data)
+      token = obtain_token_withdrawal_data(fields.data)
 
       data_hex =
         fields.data
@@ -356,7 +356,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
     status = get_actual_message_status(fields.message_id)
 
-    token = decode_token_withdrawal_data(fields.data)
+    token = obtain_token_withdrawal_data(fields.data)
 
     data_hex =
       fields.data
@@ -453,19 +453,22 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # - `data`: Binary data containing the finalizeInboundTransfer calldata
   #
   # ## Returns
-  # - Map containing token `address`, `destination` address and token `amount` if the
-  #   data corresponds to finalizeInboundTransfer
+  # - Map containing token contract `address`, `destination` address, token `amount`,
+  #   token `name`, `symbol` and `decimals` if the data corresponds to finalizeInboundTransfer
   # - `nil` if data is void or doesn't match finalizeInboundTransfer method (which
   #   happens when the L2->L1 message is for arbitrary data transfer, such as a remote
   #   call of a smart contract on L1)
-  @spec decode_token_withdrawal_data(binary()) ::
+  @spec obtain_token_withdrawal_data(binary()) ::
           %{
             address: Explorer.Chain.Hash.Address.t(),
             destination: Explorer.Chain.Hash.Address.t(),
-            amount: non_neg_integer()
+            amount: non_neg_integer(),
+            decimals: non_neg_integer(),
+            name: binary(),
+            symbol: binary()
           }
           | nil
-  defp decode_token_withdrawal_data(<<0x2E567B36::32, rest_data::binary>>) do
+  defp obtain_token_withdrawal_data(<<0x2E567B36::32, rest_data::binary>>) do
     [token, _, to, amount, _] = ABI.decode(@finalize_inbound_transfer_selector, rest_data)
 
     token_bin =
@@ -480,14 +483,24 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         _ -> nil
       end
 
+    # getting needed L1\L2 properties: RPC URL and Main Rollup contract address
+    config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
+    json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
+
+    token_info = ArbitrumRpc.fetch_token_info(token, json_l1_rpc_named_arguments)
+    Logger.warning("Token: #{inspect(token_info, pretty: true)}")
+
     %{
       address: token_bin,
       destination: to_bin,
-      amount: amount
+      amount: amount,
+      decimals: token_info.decimals,
+      name: token_info.name,
+      symbol: token_info.symbol
     }
   end
 
-  defp decode_token_withdrawal_data(_binary) do
+  defp obtain_token_withdrawal_data(_binary) do
     nil
   end
 
