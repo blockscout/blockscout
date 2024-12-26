@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V1.HealthControllerTest do
+defmodule BlockScoutWeb.API.HealthControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.{Chain, PagingOptions}
@@ -110,6 +110,6 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
   end
 
   defp api_health_path(conn, action) do
-    "/api" <> ApiRoutes.health_path(conn, action)
+    ApiRoutes.health_path(conn, action)
   end
 end
