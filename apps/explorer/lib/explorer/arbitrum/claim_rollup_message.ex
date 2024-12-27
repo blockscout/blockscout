@@ -32,47 +32,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # Address of precompile NodeInterface precompile [L2]
   @node_interface_address "0x00000000000000000000000000000000000000c8"
 
-  @node_created_data_abi [
-    {:bytes, 32},
-    # Assertion assertion
-    {:tuple,
-     [
-       # ExecutionState beforeState
-       {:tuple,
-        [
-          # GlobalState globalState
-          {:tuple,
-           [
-             # bytes32[2] bytes32Values
-             {:array, {:bytes, 32}, 2},
-             # uint64[2] u64Values
-             {:array, {:uint, 64}, 2}
-           ]},
-          # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
-          {:uint, 256}
-        ]},
-       # ExecutionState afterState
-       {:tuple,
-        [
-          # GlobalState globalState
-          {:tuple,
-           [
-             # bytes32[2] bytes32Values
-             {:array, {:bytes, 32}, 2},
-             # uint64[2] u64Values
-             {:array, {:uint, 64}, 2}
-           ]},
-          # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
-          {:uint, 256}
-        ]},
-       # uint64 numBlocks
-       {:uint, 64}
-     ]},
-    {:bytes, 32},
-    {:bytes, 32},
-    {:uint, 256}
-  ]
-
   @finalize_inbound_transfer_selector %ABI.FunctionSelector{
     function: "finalizeInboundTransfer",
     returns: [],
@@ -765,7 +724,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       |> Map.get("data")
       |> String.trim_leading("0x")
       |> Base.decode16!(case: :mixed)
-      |> TypeDecoder.decode_raw(@node_created_data_abi)
+      |> TypeDecoder.decode_raw(ArbitrumEvents.node_created_unindexed_params())
 
     l2_block_hash
   end

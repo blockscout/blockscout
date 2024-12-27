@@ -39,12 +39,55 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Events do
 
   # keccak256("NodeCreated(uint64,bytes32,bytes32,bytes32,(((bytes32[2],uint64[2]),uint8),((bytes32[2],uint64[2]),uint8),uint64),bytes32,bytes32,uint256)")
   @node_created "0x4f4caa9e67fb994e349dd35d1ad0ce23053d4323f83ce11dc817b5435031d096"
+  @node_created_unindexed_params [
+    {:bytes, 32},
+    # Assertion assertion
+    {:tuple,
+     [
+       # ExecutionState beforeState
+       {:tuple,
+        [
+          # GlobalState globalState
+          {:tuple,
+           [
+             # bytes32[2] bytes32Values
+             {:array, {:bytes, 32}, 2},
+             # uint64[2] u64Values
+             {:array, {:uint, 64}, 2}
+           ]},
+          # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
+          {:uint, 256}
+        ]},
+       # ExecutionState afterState
+       {:tuple,
+        [
+          # GlobalState globalState
+          {:tuple,
+           [
+             # bytes32[2] bytes32Values
+             {:array, {:bytes, 32}, 2},
+             # uint64[2] u64Values
+             {:array, {:uint, 64}, 2}
+           ]},
+          # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
+          {:uint, 256}
+        ]},
+       # uint64 numBlocks
+       {:uint, 64}
+     ]},
+    {:bytes, 32},
+    {:bytes, 32},
+    {:uint, 256}
+  ]
 
   @doc """
     Returns 32-byte signature of the event `NodeCreated`
   """
   @spec node_created() :: <<_::528>>
   def node_created, do: @node_created
+
+  @spec node_created_unindexed_params() :: [atom() | {atom(), non_neg_integer()}]
+  def node_created_unindexed_params, do: @node_created_unindexed_params
 
   # keccak256("SetValidKeyset(bytes32,bytes)")
   @set_valid_keyset "0xabca9b7986bc22ad0160eb0cb88ae75411eacfba4052af0b457a9335ef655722"
