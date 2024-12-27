@@ -15,7 +15,7 @@ config :ethereum_jsonrpc,
 ```
 
 Note: the tracing node URL is provided separately from `:url`,
-via `:trace_url`. The trace URL and is used for
+via `:trace_url`. The trace URL is used for
 `fetch_internal_transactions`, which is only a supported method on
 tracing nodes. The `:http` option is passed directly to the HTTP
 library (`HTTPoison`), which forwards the options down to `:hackney`.
