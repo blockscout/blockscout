@@ -25,6 +25,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   alias ABI.{FunctionSelector, TypeDecoder}
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
@@ -45,9 +46,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   alias Explorer.Chain.Events.Publisher
 
   require Logger
-
-  # keccak256("SequencerBatchDelivered(uint256,bytes32,bytes32,bytes32,uint256,(uint64,uint64,uint64,uint64),uint8)")
-  @event_sequencer_batch_delivered "0x7394f4a19a13c7b92b5bb71033245305946ef78452f7b4986ac1390b5df4ebd7"
 
   @doc """
     Discovers and imports new batches of rollup transactions within the current L1 block range.
@@ -665,7 +663,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         start_block,
         end_block,
         sequencer_inbox_address,
-        [@event_sequencer_batch_delivered],
+        [ArbitrumEvents.sequencer_batch_delivered()],
         json_rpc_named_arguments
       )
 

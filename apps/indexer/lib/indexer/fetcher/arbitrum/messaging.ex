@@ -10,6 +10,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
@@ -117,7 +118,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     filtered_logs =
       logs
       |> Enum.filter(fn event ->
-        event.address_hash == arbsys_contract and event.first_topic == DbMessages.l2_to_l1_event()
+        event.address_hash == arbsys_contract and event.first_topic == ArbitrumEvents.l2_to_l1()
       end)
 
     handle_filtered_l2_to_l1_messages(filtered_logs)

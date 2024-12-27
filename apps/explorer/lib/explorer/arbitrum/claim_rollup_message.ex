@@ -17,6 +17,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias ABI.TypeDecoder
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
   alias EthereumJSONRPC.Encoder
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.API.General, as: GeneralReader
@@ -27,12 +28,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias Indexer.Helper, as: IndexerHelper
 
   require Logger
-
-  # 32-byte signature of the event L2ToL1Tx(address caller, address indexed destination, uint256 indexed hash, uint256 indexed position, uint256 arbBlockNum, uint256 ethBlockNum, uint256 timestamp, uint256 callvalue, bytes data)
-  @l2_to_l1_event "0x3e7aafa77dbf186b7fd488006beff893744caa3c4f6f299e8a709fa2087374fc"
-
-  # 32-byte signature of the event NodeCreated(...)
-  @node_created_event "0x4f4caa9e67fb994e349dd35d1ad0ce23053d4323f83ce11dc817b5435031d096"
 
   # Address of precompile NodeInterface precompile [L2]
   @node_interface_address "0x00000000000000000000000000000000000000c8"
@@ -146,7 +141,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     messages = MessagesReader.l2_to_l1_messages_by_transaction_hash(transaction_hash)
 
     # request associated logs from the database
-    logs = GeneralReader.transaction_to_logs_by_topic0(transaction_hash, @l2_to_l1_event)
+    logs = GeneralReader.transaction_to_logs_by_topic0(transaction_hash, ArbitrumEvents.l2_to_l1())
 
     logs
     |> Enum.map(fn log ->
@@ -221,7 +216,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   defp claim_message(message) do
     # request associated log from the database
     case message.originating_transaction_hash
-         |> GeneralReader.transaction_to_logs_by_topic0(@l2_to_l1_event)
+         |> GeneralReader.transaction_to_logs_by_topic0(ArbitrumEvents.l2_to_l1())
          |> Enum.find(fn log -> Hash.to_integer(log.fourth_topic) == message.message_id end) do
       nil ->
         Logger.error("Unable to find log with message_id #{message.message_id}")
@@ -697,7 +692,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
            node_creation_l1_block_number,
            node_creation_l1_block_number,
            l1_rollup_address,
-           [@node_created_event],
+           [ArbitrumEvents.node_created()],
            json_l1_rpc_named_arguments
          ) do
       {:ok, events} when is_list(events) and length(events) > 0 ->

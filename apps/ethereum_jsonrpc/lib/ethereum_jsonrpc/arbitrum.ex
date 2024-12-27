@@ -6,6 +6,8 @@ defmodule EthereumJSONRPC.Arbitrum do
 
   import EthereumJSONRPC
 
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
+
   require Logger
   alias ABI.TypeDecoder
 
@@ -32,15 +34,6 @@ defmodule EthereumJSONRPC.Arbitrum do
           :callvalue => non_neg_integer(),
           :data => binary()
         }
-
-  @l2_to_l1_event_unindexed_params [
-    :address,
-    {:uint, 256},
-    {:uint, 256},
-    {:uint, 256},
-    {:uint, 256},
-    :bytes
-  ]
 
   # outbox()
   @selector_outbox "ce11e6ab"
@@ -375,7 +368,7 @@ defmodule EthereumJSONRPC.Arbitrum do
       data
     ] =
       event.data
-      |> decode_data(@l2_to_l1_event_unindexed_params)
+      |> decode_data(ArbitrumEvents.l2_to_l1_unindexed_params())
 
     position =
       case quantity_to_integer(event.fourth_topic) do

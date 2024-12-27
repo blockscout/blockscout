@@ -55,6 +55,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1, log_debug: 1]
 
@@ -81,9 +82,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   @logs_per_report 10
   @zero_counters %{pairs_counter: 1, capped_logs_counter: 0, report?: false}
-
-  # keccak256("SendRootUpdated(bytes32,bytes32)")
-  @send_root_updated_event "0xb4df3847300f076a369cd76d2314b470a1194d9e8a6bb97f1860aee88a5f6748"
 
   @doc """
     Discovers and processes new confirmations of rollup blocks within a calculated block range.
@@ -1310,7 +1308,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
               start_block,
               end_block,
               outbox_address,
-              [@send_root_updated_event],
+              [ArbitrumEvents.send_root_updated()],
               json_rpc_named_arguments
             )
 

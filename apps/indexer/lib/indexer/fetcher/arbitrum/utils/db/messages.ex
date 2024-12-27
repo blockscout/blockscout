@@ -7,6 +7,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
     transformation and error handling capabilities.
   """
 
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
+
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
 
   alias Explorer.Chain.Arbitrum.Reader.Indexer.Messages, as: Reader
@@ -22,15 +24,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Tools, as: DbTools
 
   require Logger
-
-  # 32-byte signature of the event L2ToL1Tx(address caller, address indexed destination, uint256 indexed hash, uint256 indexed position, uint256 arbBlockNum, uint256 ethBlockNum, uint256 timestamp, uint256 callvalue, bytes data)
-  @l2_to_l1_event "0x3e7aafa77dbf186b7fd488006beff893744caa3c4f6f299e8a709fa2087374fc"
-
-  @doc """
-    Returns 32-byte signature of the event `L2ToL1Tx`
-  """
-  @spec l2_to_l1_event() :: <<_::528>>
-  def l2_to_l1_event, do: @l2_to_l1_event
 
   @doc """
     Calculates the next L1 block number to search for the latest message sent to L2.
@@ -268,7 +261,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
     arbsys_contract = Application.get_env(:indexer, Indexer.Fetcher.Arbitrum.Messaging)[:arbsys_contract]
 
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.logs_for_missed_messages_from_l2(start_block, end_block, arbsys_contract, @l2_to_l1_event)
+    Reader.logs_for_missed_messages_from_l2(start_block, end_block, arbsys_contract, ArbitrumEvents.l2_to_l1())
     |> Enum.map(&logs_to_map/1)
   end
 
