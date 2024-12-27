@@ -1,6 +1,8 @@
 defmodule EthereumJSONRPC.Block.ByNumber do
   @moduledoc """
     Provides functionality to compose JSON-RPC requests for fetching Ethereum blocks by their number.
+
+    Block format as returned by [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_getblockbyhash)
   """
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
