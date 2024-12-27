@@ -488,7 +488,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
 
     token_info = ArbitrumRpc.fetch_token_info(token, json_l1_rpc_named_arguments)
-    Logger.warning("Token: #{inspect(token_info, pretty: true)}")
 
     %{
       address: token_bin,

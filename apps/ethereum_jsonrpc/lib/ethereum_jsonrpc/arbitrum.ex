@@ -590,7 +590,7 @@ defmodule EthereumJSONRPC.Arbitrum do
     method_ids
     |> Enum.map(fn method_id ->
       %{
-        contract_address: token_address,
+        contract_address: value_to_address(token_address),
         method_id: method_id,
         args: []
       }
