@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.API.V2.TokenController do
-  alias Explorer.PagingOptions
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, bridged_token_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
-  alias Explorer.{Chain, Helper}
+  alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  if Application.compile_env(:explorer, Explorer.Chain.BridgedToken)[:enabled] do
+  if @bridged_token_enabled do
     defp token_response(conn, token, address_hash) do
       if token.bridged do
         bridged_token =
@@ -195,8 +195,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
-         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)} do
-      token_instance = token_instance_from_token_id_and_token_address(token_id, address_hash, token)
+         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
+         {:ok, token_instance} <- Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
+      token_instance =
+        token_instance
+        |> Chain.select_repo(@api_true).preload(owner: [:names, :smart_contract, proxy_implementations_association()])
+        |> Chain.put_owner_to_token_instance(token, @api_true)
 
       conn
       |> put_status(200)
@@ -361,31 +365,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   defp put_owner(token_instances, holder_address),
     do: Enum.map(token_instances, fn token_instance -> %Instance{token_instance | owner: holder_address} end)
 
-  defp token_instance_from_token_id_and_token_address(token_id, address_hash, token) do
-    case Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
-      {:ok, token_instance} ->
-        token_instance
-        |> Chain.select_repo(@api_true).preload(owner: [:names, :smart_contract, proxy_implementations_association()])
-        |> Chain.put_owner_to_token_instance(token, @api_true)
-
-      {:error, :not_found} ->
-        %Instance{
-          token_id: Decimal.new(token_id),
-          metadata: nil,
-          owner: nil,
-          token: nil,
-          token_contract_address_hash: address_hash
-        }
-        |> Instance.put_is_unique(token, @api_true)
-        |> Chain.put_owner_to_token_instance(token, @api_true)
-    end
-  end
-
   @spec put_token_to_instance(Instance.t(), Token.t()) :: Instance.t()
   defp put_token_to_instance(
          token_instance,
          token
        ) do
-    %{token_instance | token: token}
+    %Instance{token_instance | token: token}
   end
 end

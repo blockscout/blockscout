@@ -481,6 +481,16 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
        }} ->
         {:error, "Wrong verification code."}
 
+      {:error,
+       %OAuth2.Response{
+         status_code: 403,
+         body: %{
+           "error" => "invalid_grant",
+           "error_description" => "You've reached the maximum number of attempts. Please try to login again."
+         }
+       }} ->
+        {:error, "Max attempts reached. Please resend code."}
+
       other ->
         Logger.error("Error while confirming otp: #{inspect(other)}")
 

@@ -355,7 +355,7 @@ defmodule Explorer.Etherscan.Logs do
   defp page_logs(query, %{block_number: block_number, log_index: log_index}) do
     from(
       data in query,
-      where: data.index > ^log_index and data.block_number >= ^block_number
+      where: {data.block_number, data.index} > {^block_number, ^log_index}
     )
   end
 

@@ -2,18 +2,20 @@ defmodule BlockScoutWeb.PagingHelper do
   @moduledoc """
     Helper for fetching filters and other url query parameters
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   import Explorer.Chain, only: [string_to_transaction_hash: 1]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{SmartContract, Transaction}
   alias Explorer.{Helper, PagingOptions, SortingHelper}
 
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :ethereum ->
       @allowed_type_labels [
         "coin_transfer",
@@ -224,16 +226,13 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def delete_parameters_from_next_page_params(_), do: nil
 
-  def current_filter(%{"filter" => "solidity"}) do
-    [filter: :solidity]
-  end
-
-  def current_filter(%{"filter" => "vyper"}) do
-    [filter: :vyper]
-  end
-
-  def current_filter(%{"filter" => "yul"}) do
-    [filter: :yul]
+  def current_filter(%{"filter" => language_string}) do
+    SmartContract.language_string_to_atom()
+    |> Map.fetch(language_string)
+    |> case do
+      {:ok, language} -> [filter: language]
+      :error -> []
+    end
   end
 
   def current_filter(_), do: []

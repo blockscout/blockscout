@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Block, Transaction}
-  alias Explorer.Chain.Optimism.{FrameSequenceBlob, Withdrawal}
+  alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob, Withdrawal}
 
   @doc """
     Function to render GET requests to `/api/v2/optimism/txn-batches` endpoint.
@@ -36,11 +36,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           %{
             "l2_block_number" => batch.l2_block_number,
             "transaction_count" => transaction_count,
-            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-            "tx_count" => transaction_count,
             "l1_transaction_hashes" => batch.frame_sequence.l1_transaction_hashes,
-            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hashes` property
-            "l1_tx_hashes" => batch.frame_sequence.l1_transaction_hashes,
             "l1_timestamp" => batch.frame_sequence.l1_timestamp
           }
         end)
@@ -66,19 +62,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       |> Enum.map(fn batch ->
         from..to//_ = batch.l2_block_range
 
-        %{
-          "internal_id" => batch.id,
-          "l1_timestamp" => batch.l1_timestamp,
-          "l2_block_start" => from,
-          "l2_block_end" => to,
-          "transaction_count" => batch.transaction_count,
-          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-          "tx_count" => batch.transaction_count,
-          "l1_transaction_hashes" => batch.l1_transaction_hashes,
-          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hashes` property
-          "l1_tx_hashes" => batch.l1_transaction_hashes,
-          "batch_data_container" => batch.batch_data_container
-        }
+        render_base_info_for_batch(batch.id, from, to, batch.transaction_count, batch)
       end)
 
     %{
@@ -109,8 +93,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "l2_output_index" => r.l2_output_index,
             "l2_block_number" => r.l2_block_number,
             "l1_transaction_hash" => r.l1_transaction_hash,
-            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hash` property
-            "l1_tx_hash" => r.l1_transaction_hash,
             "l1_timestamp" => r.l1_timestamp,
             "l1_block_number" => r.l1_block_number,
             "output_root" => r.output_root
@@ -166,16 +148,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           %{
             "l1_block_number" => deposit.l1_block_number,
             "l2_transaction_hash" => deposit.l2_transaction_hash,
-            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_hash` property
-            "l2_tx_hash" => deposit.l2_transaction_hash,
             "l1_block_timestamp" => deposit.l1_block_timestamp,
             "l1_transaction_hash" => deposit.l1_transaction_hash,
-            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hash` property
-            "l1_tx_hash" => deposit.l1_transaction_hash,
-            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_origin` property
-            "l1_tx_origin" => deposit.l1_transaction_origin,
-            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_gas_limit` property
-            "l2_tx_gas_limit" => deposit.l2_transaction.gas,
             "l1_transaction_origin" => deposit.l1_transaction_origin,
             "l2_transaction_gas_limit" => deposit.l2_transaction.gas
           }
@@ -192,10 +166,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
       %{
         "l1_block_number" => deposit.l1_block_number,
         "l1_block_timestamp" => deposit.l1_block_timestamp,
-        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hash` property
-        "l1_tx_hash" => deposit.l1_transaction_hash,
-        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_hash` property
-        "l2_tx_hash" => deposit.l2_transaction_hash,
         "l1_transaction_hash" => deposit.l1_transaction_hash,
         "l2_transaction_hash" => deposit.l2_transaction_hash
       }
@@ -251,13 +221,9 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
             "msg_nonce_version" => msg_nonce_version,
             "from" => Helper.address_with_info(conn, from_address, from_address_hash, w.from),
             "l2_transaction_hash" => w.l2_transaction_hash,
-            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l2_transaction_hash` property
-            "l2_tx_hash" => w.l2_transaction_hash,
             "l2_timestamp" => w.l2_timestamp,
             "status" => status,
             "l1_transaction_hash" => w.l1_transaction_hash,
-            # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hash` property
-            "l1_tx_hash" => w.l1_transaction_hash,
             "challenge_period_end" => challenge_period_end
           }
         end),
@@ -270,6 +236,48 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   """
   def render("optimism_items_count.json", %{count: count}) do
     count
+  end
+
+  # Transforms an L1 batch into a map format for HTTP response.
+  #
+  # This function processes an Optimism L1 batch and converts it into a map that
+  # includes basic batch information.
+  #
+  # ## Parameters
+  # - `internal_id`: The internal ID of the batch.
+  # - `l2_block_number_from`: Start L2 block number of the batch block range.
+  # - `l2_block_number_to`: End L2 block number of the batch block range.
+  # - `transaction_count`: The L2 transaction count included into the blocks of the range.
+  # - `batch`: Either an `Explorer.Chain.Optimism.FrameSequence` entry or a map with
+  #            the corresponding fields.
+  #
+  # ## Returns
+  # - A map with detailed information about the batch formatted for use in JSON HTTP responses.
+  @spec render_base_info_for_batch(
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          FrameSequence.t()
+          | %{:l1_timestamp => DateTime.t(), :l1_transaction_hashes => list(), optional(any()) => any()}
+        ) :: %{
+          :internal_id => non_neg_integer(),
+          :l1_timestamp => DateTime.t(),
+          :l2_block_start => non_neg_integer(),
+          :l2_block_end => non_neg_integer(),
+          :transaction_count => non_neg_integer(),
+          :l1_transaction_hashes => list(),
+          :batch_data_container => :in_blob4844 | :in_celestia | :in_calldata | nil
+        }
+  defp render_base_info_for_batch(internal_id, l2_block_number_from, l2_block_number_to, transaction_count, batch) do
+    FrameSequence.prepare_base_info_for_batch(
+      internal_id,
+      l2_block_number_from,
+      l2_block_number_to,
+      transaction_count,
+      batch.batch_data_container,
+      batch
+    )
   end
 
   @doc """
@@ -302,8 +310,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           "internal_id" => frame_sequence.id,
           "l1_timestamp" => frame_sequence.l1_timestamp,
           "l1_transaction_hashes" => frame_sequence.l1_transaction_hashes,
-          # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `l1_transaction_hashes` property
-          "l1_tx_hashes" => frame_sequence.l1_transaction_hashes,
           "batch_data_container" => batch_data_container
         }
         |> extend_batch_info_by_blobs(blobs, "blobs")

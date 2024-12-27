@@ -405,7 +405,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         is_yul: params["is_yul"] || false,
         compiler_settings: clean_compiler_settings,
         license_type: prepare_license_type(params["license_type"]) || :none,
-        is_blueprint: params["is_blueprint"] || false
+        is_blueprint: params["is_blueprint"] || false,
+        language: (is_nil(abi) && :yul) || :solidity
       }
 
     base_attributes

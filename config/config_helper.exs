@@ -286,6 +286,19 @@ defmodule ConfigHelper do
     err -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(err)}"
   end
 
+  def parse_json_with_atom_keys_env_var(env_var, default_value \\ "{}") do
+    with {:ok, map} <-
+           env_var
+           |> safe_get_env(default_value)
+           |> Jason.decode() do
+      for {key, value} <- map, into: %{}, do: {String.to_atom(key), value}
+    else
+      {:error, error} -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(error)}"
+    end
+  rescue
+    error -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(error)}"
+  end
+
   @spec parse_list_env_var(String.t(), String.t() | nil) :: list()
   def parse_list_env_var(env_var, default_value \\ nil) do
     addresses_var = safe_get_env(env_var, default_value)
@@ -302,6 +315,21 @@ defmodule ConfigHelper do
       formatted_addresses_list
     else
       []
+    end
+  end
+
+  @spec parse_url_env_var(String.t(), boolean()) :: String.t() | nil
+  def parse_url_env_var(env_var, default_value \\ nil, trailing_slash_needed? \\ false) do
+    with url when not is_nil(url) <- safe_get_env(env_var, default_value),
+         url <- String.trim_trailing(url, "/"),
+         {url, true} <- {url, trailing_slash_needed?} do
+      url <> "/"
+    else
+      {url, false} ->
+        url
+
+      nil ->
+        nil
     end
   end
 
@@ -333,8 +361,84 @@ defmodule ConfigHelper do
   @spec mode :: atom()
   def mode, do: parse_catalog_value("APPLICATION_MODE", @supported_modes, true, "all")
 
-  @spec eth_call_url(String.t() | nil) :: String.t() | nil
-  def eth_call_url(default \\ nil) do
-    System.get_env("ETHEREUM_JSONRPC_ETH_CALL_URL") || System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || default
+  @doc """
+  Retrieves json rpc urls list based on `urls_type`
+  """
+  @spec parse_urls_list(
+          :http | :trace | :eth_call | :fallback_http | :fallback_trace | :fallback_eth_call,
+          String.t() | nil
+        ) :: [String.t()]
+  def parse_urls_list(urls_type, default_url \\ nil) do
+    {urls_var, url_var} = define_urls_vars(urls_type)
+
+    with [] <- parse_list_env_var(urls_var),
+         "" <- safe_get_env(url_var, default_url) do
+      case urls_type do
+        :http ->
+          Logger.warning("ETHEREUM_JSONRPC_HTTP_URL (or ETHEREUM_JSONRPC_HTTP_URLS) env variable is required")
+          []
+
+        :fallback_http ->
+          parse_urls_list(:http)
+
+        _other ->
+          new_urls_type = if String.contains?(to_string(urls_type), "fallback"), do: :fallback_http, else: :http
+          parse_urls_list(new_urls_type)
+      end
+    else
+      urls when is_list(urls) -> urls
+      url -> [url]
+    end
   end
+
+  @doc """
+    Parses and validates a microservice URL from an environment variable, removing any trailing slash.
+
+    ## Parameters
+    - `env_name`: The name of the environment variable containing the URL
+
+    ## Returns
+    - The validated URL string with any trailing slash removed
+    - `nil` if the URL is invalid or missing required components
+  """
+  @spec parse_microservice_url(String.t()) :: String.t() | nil
+  def parse_microservice_url(env_name) do
+    url = System.get_env(env_name)
+
+    cond do
+      not valid_url?(url) ->
+        nil
+
+      String.ends_with?(url, "/") ->
+        url
+        |> String.slice(0..(String.length(url) - 2))
+
+      true ->
+        url
+    end
+  end
+
+  # Validates if the given string is a valid URL by checking if it has both scheme (like http,
+  # https, ftp) and host components.
+  @spec valid_url?(String.t()) :: boolean()
+  defp valid_url?(string) when is_binary(string) do
+    uri = URI.parse(string)
+
+    !is_nil(uri.scheme) && !is_nil(uri.host)
+  end
+
+  defp valid_url?(_), do: false
+
+  defp define_urls_vars(:http), do: {"ETHEREUM_JSONRPC_HTTP_URLS", "ETHEREUM_JSONRPC_HTTP_URL"}
+  defp define_urls_vars(:trace), do: {"ETHEREUM_JSONRPC_TRACE_URLS", "ETHEREUM_JSONRPC_TRACE_URL"}
+  defp define_urls_vars(:eth_call), do: {"ETHEREUM_JSONRPC_ETH_CALL_URLS", "ETHEREUM_JSONRPC_ETH_CALL_URL"}
+
+  defp define_urls_vars(:fallback_http),
+    do: {"ETHEREUM_JSONRPC_FALLBACK_HTTP_URLS", "ETHEREUM_JSONRPC_FALLBACK_HTTP_URL"}
+
+  defp define_urls_vars(:fallback_trace),
+    do: {"ETHEREUM_JSONRPC_FALLBACK_TRACE_URLS", "ETHEREUM_JSONRPC_FALLBACK_TRACE_URL"}
+
+  defp define_urls_vars(:fallback_eth_call),
+    do: {"ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URLS", "ETHEREUM_JSONRPC_FALLBACK_ETH_CALL_URL"}
 end

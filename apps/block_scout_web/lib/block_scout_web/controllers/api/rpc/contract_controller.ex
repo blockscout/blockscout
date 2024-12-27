@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.RPC.ContractController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
@@ -17,7 +18,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.ThirdPartyIntegrations.Sourcify
   import BlockScoutWeb.API.V2.AddressController, only: [validate_address: 2, validate_address: 3]
 
-  if Application.compile_env(:explorer, :chain_type) == :zksync do
+  if @chain_type == :zksync do
     @optimization_runs "0"
   else
     @optimization_runs 200

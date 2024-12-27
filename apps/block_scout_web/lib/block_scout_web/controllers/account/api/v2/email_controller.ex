@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.Account.API.V2.EmailController do
   use BlockScoutWeb, :controller
+  use Utils.CompileTimeEnvHelper, invalid_session_key: [:block_scout_web, :invalid_session_key]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
@@ -10,8 +11,6 @@ defmodule BlockScoutWeb.Account.API.V2.EmailController do
   alias Explorer.ThirdPartyIntegrations.Auth0
 
   require Logger
-
-  @invalid_session_key Application.compile_env(:block_scout_web, :invalid_session_key)
 
   action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
 

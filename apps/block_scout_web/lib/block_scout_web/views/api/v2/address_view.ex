@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.AddressView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
@@ -81,8 +82,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   def prepare_address({address, transaction_count}) do
     nil
     |> Helper.address_with_info(address, address.hash, true)
-    # todo: keep `tx_count` for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-    |> Map.put(:tx_count, to_string(transaction_count))
     |> Map.put(:transaction_count, to_string(transaction_count))
     |> Map.put(:coin_balance, if(address.fetched_coin_balance, do: address.fetched_coin_balance.value))
   end
@@ -106,8 +105,6 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       Map.merge(base_info, %{
         "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
         "creation_transaction_hash" => creation_transaction_hash,
-        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `creation_transaction_hash` property
-        "creation_tx_hash" => creation_transaction_hash,
         "token" => token,
         "coin_balance" => balance,
         "exchange_rate" => exchange_rate,
@@ -122,7 +119,10 @@ defmodule BlockScoutWeb.API.V2.AddressView do
       })
 
     extended_info
-    |> chain_type_fields(%{address: creation_transaction && creation_transaction.from_address, field_prefix: "creator"})
+    |> chain_type_fields(%{
+      address: address,
+      creation_transaction_from_address: creation_transaction && creation_transaction.from_address
+    })
   end
 
   @spec prepare_token_balance(Chain.Address.TokenBalance.t(), boolean()) :: map()
@@ -242,11 +242,24 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     })
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  @spec chain_type_fields(
+          map(),
+          %{address: Address.t(), creation_transaction_from_address: Address.t()}
+        ) :: map()
+  case @chain_type do
     :filecoin ->
-      defp chain_type_fields(result, params) do
+      defp chain_type_fields(result, %{creation_transaction_from_address: creation_transaction_from_address}) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        BlockScoutWeb.API.V2.FilecoinView.put_filecoin_robust_address(result, params)
+        BlockScoutWeb.API.V2.FilecoinView.put_filecoin_robust_address(result, %{
+          address: creation_transaction_from_address,
+          field_prefix: "creator"
+        })
+      end
+
+    :zilliqa ->
+      defp chain_type_fields(result, %{address: address}) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.ZilliqaView.extend_address_json_response(result, address)
       end
 
     _ ->

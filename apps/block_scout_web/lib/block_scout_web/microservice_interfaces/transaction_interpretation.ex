@@ -35,14 +35,17 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
           | {:error, Jason.DecodeError.t()}
           | {:ok, any()}
   def interpret(transaction_or_map, request_builder \\ &prepare_request_body/1) do
-    if enabled?() do
+    with {:enabled, true} <- {:enabled, enabled?()},
+         {:cache, :no_cached_data} <-
+           {:cache, try_get_cached_value(get_hash(transaction_or_map))} do
       url = interpret_url()
 
       body = request_builder.(transaction_or_map)
 
       http_post_request(url, body)
     else
-      {{:error, :disabled}, 403}
+      {:cache, {:ok, _response} = result} -> result
+      {:enabled, false} -> {{:error, :disabled}, 403}
     end
   end
 
@@ -96,6 +99,16 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     end
   end
 
+  defp try_get_cached_value(hash) do
+    with {:ok, %Response{body: body, status_code: 200}} <- HTTPoison.get(cache_url(hash)),
+         {:ok, json} <- body |> Jason.decode() do
+      {:ok, json} |> preload_template_variables()
+    else
+      _ ->
+        :no_cached_data
+    end
+  end
+
   defp http_response_code({:ok, %Response{status_code: status_code}}), do: status_code
   defp http_response_code(_), do: 500
 
@@ -103,6 +116,10 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   defp interpret_url do
     base_url(:block_scout_web, __MODULE__) <> "/transactions/summary"
+  end
+
+  defp cache_url(hash) do
+    base_url(:block_scout_web, __MODULE__) <> "/cache/#{hash}"
   end
 
   defp prepare_request_body(transaction) do
@@ -161,8 +178,6 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         value: transaction_with_meta.value,
         method: Transaction.method_name(transaction_with_meta, Transaction.format_decoded_input(decoded_input)),
         status: transaction_with_meta.status,
-        # todo: keep `tx_types` for compatibility with interpreter and remove when new interpreter is bound to `transaction_types` property
-        tx_types: TransactionView.transaction_types(transaction_with_meta),
         transaction_types: TransactionView.transaction_types(transaction_with_meta),
         raw_input: transaction_with_meta.input,
         decoded_input: decoded_input_data,
@@ -391,4 +406,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     {mock_transaction, decoded_input,
      decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()}
   end
+
+  defp get_hash(%{hash: hash}), do: hash
+  defp get_hash(%{"hash" => hash}), do: hash
 end

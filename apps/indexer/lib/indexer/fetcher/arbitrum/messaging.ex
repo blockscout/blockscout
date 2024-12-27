@@ -9,8 +9,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
-
-  import Explorer.Helper, only: [decode_data: 2]
+  alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
@@ -21,15 +20,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   require Logger
 
   @zero_hex_prefix "0x" <> String.duplicate("0", 56)
-
-  @l2_to_l1_event_unindexed_params [
-    :address,
-    {:uint, 256},
-    {:uint, 256},
-    {:uint, 256},
-    {:uint, 256},
-    :bytes
-  ]
 
   @typep min_transaction :: %{
            :hash => binary(),
@@ -201,23 +191,25 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
       |> Enum.reduce(%{}, fn event, messages_acc ->
         log_debug("L2 to L1 message #{event.transaction_hash} found")
 
-        {message_id, caller, blocknum, timestamp} = l2_to_l1_event_parse(event)
+        fields =
+          event
+          |> ArbitrumRpc.l2_to_l1_event_parse()
 
         message =
           %{
             direction: :from_l2,
-            message_id: message_id,
-            originator_address: caller,
+            message_id: fields.message_id,
+            originator_address: fields.caller,
             originating_transaction_hash: event.transaction_hash,
-            origination_timestamp: timestamp,
-            originating_transaction_block_number: blocknum,
-            status: status_l2_to_l1_message(blocknum, highest_committed_block, highest_confirmed_block)
+            origination_timestamp: Timex.from_unix(fields.timestamp),
+            originating_transaction_block_number: fields.arb_block_number,
+            status: status_l2_to_l1_message(fields.arb_block_number, highest_committed_block, highest_confirmed_block)
           }
           |> complete_to_params()
 
         Map.put(
           messages_acc,
-          message_id,
+          fields.message_id,
           message
         )
       end)
@@ -274,23 +266,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     |> Enum.reduce(%{}, fn key, out ->
       Map.put(out, key, Map.get(incomplete, key))
     end)
-  end
-
-  # Parses an L2-to-L1 event, extracting relevant information from the event's data.
-  @spec l2_to_l1_event_parse(min_log()) :: {non_neg_integer(), binary(), non_neg_integer(), DateTime.t()}
-  defp l2_to_l1_event_parse(event) do
-    [
-      caller,
-      arb_block_num,
-      _eth_block_num,
-      timestamp,
-      _callvalue,
-      _data
-    ] = decode_data(event.data, @l2_to_l1_event_unindexed_params)
-
-    position = quantity_to_integer(event.fourth_topic)
-
-    {position, caller, arb_block_num, Timex.from_unix(timestamp)}
   end
 
   # Determines the status of an L2-to-L1 message based on its block number and the highest

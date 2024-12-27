@@ -828,13 +828,18 @@ defmodule Explorer.Chain.BridgedToken do
   end
 
   defp update_transport_options_set_foreign_json_rpc(transport_options, foreign_json_rpc) do
-    Keyword.get_and_update(transport_options, :method_to_url, fn method_to_url ->
-      {_, updated_method_to_url} =
-        Keyword.get_and_update(method_to_url, :eth_call, fn eth_call ->
-          {eth_call, foreign_json_rpc}
-        end)
+    {_, updated_transport_options} =
+      Keyword.get_and_update(transport_options, :method_to_url, fn method_to_url ->
+        {_, updated_method_to_url} =
+          Keyword.get_and_update(method_to_url, :eth_call, fn eth_call ->
+            {eth_call, :eth_call}
+          end)
 
-      {method_to_url, updated_method_to_url}
+        {method_to_url, updated_method_to_url}
+      end)
+
+    Keyword.get_and_update(updated_transport_options, :eth_call_urls, fn eth_call_urls ->
+      {eth_call_urls, [foreign_json_rpc]}
     end)
   end
 

@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.SmartContractView do
   use BlockScoutWeb, :view
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.Helper, only: [decode_data: 2]
   import Explorer.SmartContract.Reader, only: [zip_tuple_values_with_types: 2]
@@ -230,8 +231,14 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       "is_blueprint" => if(smart_contract.is_blueprint, do: smart_contract.is_blueprint, else: false)
     }
     |> Map.merge(bytecode_info(address))
-    |> add_zksync_info(target_contract)
-    |> chain_type_fields(%{address_hash: verified_twin_address_hash, field_prefix: "verified_twin"})
+    |> chain_type_fields(
+      %{
+        address_hash: verified_twin_address_hash,
+        field_prefix: "verified_twin",
+        target_contract: target_contract
+      },
+      true
+    )
   end
 
   def prepare_smart_contract(%Address{proxy_implementations: implementations} = address, conn) do
@@ -281,16 +288,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           "deployed_bytecode" => contract_code,
           "creation_bytecode" => AddressContractView.creation_code(address)
         }
-    end
-  end
-
-  defp add_zksync_info(smart_contract_info, target_contract) do
-    if Application.get_env(:explorer, :chain_type) == :zksync do
-      Map.merge(smart_contract_info, %{
-        "zk_compiler_version" => target_contract.zk_compiler_version
-      })
-    else
-      smart_contract_info
     end
   end
 
@@ -353,8 +350,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         "compiler_version" => smart_contract.compiler_version,
         "optimization_enabled" => smart_contract.optimization,
         "transaction_count" => smart_contract.address.transactions_count,
-        # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-        "tx_count" => smart_contract.address.transactions_count,
         "language" => smart_contract_language(smart_contract),
         "verified_at" => smart_contract.inserted_at,
         "market_cap" => token && token.circulating_market_cap,
@@ -366,13 +361,19 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
       }
 
     smart_contract_info
-    |> add_zksync_info(smart_contract)
+    |> chain_type_fields(
+      %{target_contract: smart_contract},
+      false
+    )
   end
 
   defp smart_contract_language(smart_contract) do
     cond do
       smart_contract.is_vyper_contract ->
         "vyper"
+
+      not is_nil(smart_contract.language) ->
+        smart_contract.language
 
       is_nil(smart_contract.abi) ->
         "yul"
@@ -445,15 +446,31 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     to_string(value)
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :filecoin ->
-      defp chain_type_fields(result, params) do
+      defp chain_type_fields(result, params, true) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.FilecoinView.preload_and_put_filecoin_robust_address(result, params)
       end
 
+      defp chain_type_fields(result, _params, false),
+        do: result
+
+    :arbitrum ->
+      defp chain_type_fields(result, %{target_contract: target_contract}, _single?) do
+        result
+        |> Map.put("package_name", target_contract.package_name)
+        |> Map.put("github_repository_metadata", target_contract.github_repository_metadata)
+      end
+
+    :zksync ->
+      defp chain_type_fields(result, %{target_contract: target_contract}, _single?) do
+        result
+        |> Map.put("zk_compiler_version", target_contract.zk_compiler_version)
+      end
+
     _ ->
-      defp chain_type_fields(result, _address) do
+      defp chain_type_fields(result, _params, _single?) do
         result
       end
   end

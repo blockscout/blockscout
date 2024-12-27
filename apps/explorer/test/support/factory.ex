@@ -1,5 +1,6 @@
 defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Ecto.Query
 
@@ -63,7 +64,7 @@ defmodule Explorer.Factory do
   alias Ueberauth.Auth.{Extra, Info}
   alias Ueberauth.Auth
 
-  if Application.compile_env(:explorer, :chain_type) == :zksync do
+  if @chain_type == :zksync do
     @optimization_runs "1"
   else
     @optimization_runs 1
@@ -268,7 +269,7 @@ defmodule Explorer.Factory do
     |> Map.merge(address_factory_chain_type_fields())
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :zksync ->
       defp address_factory_chain_type_fields() do
         %{
@@ -581,7 +582,7 @@ defmodule Explorer.Factory do
     |> Map.merge(block_factory_chain_type_fields())
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       defp block_factory_chain_type_fields() do
         %{
@@ -946,7 +947,7 @@ defmodule Explorer.Factory do
     |> Map.merge(transaction_factory_chain_type_fields())
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :arbitrum ->
       defp transaction_factory_chain_type_fields() do
         %{

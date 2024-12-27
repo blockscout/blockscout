@@ -178,6 +178,21 @@ defmodule Indexer.Helper do
     repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries)
   end
 
+  @doc """
+    Returns a number of attempts for RPC requests sending by indexer modules.
+    The number is defined by @finite_retries_number attribute.
+  """
+  @spec finite_retries_number() :: non_neg_integer()
+  def finite_retries_number do
+    @finite_retries_number
+  end
+
+  @doc """
+    Returns a big number of attempts for RPC requests sending by indexer modules
+    (simulating an infinite number of attempts). The number is defined by
+    @infinite_retries_number attribute.
+  """
+  @spec infinite_retries_number() :: non_neg_integer()
   def infinite_retries_number do
     @infinite_retries_number
   end
@@ -191,7 +206,7 @@ defmodule Indexer.Helper do
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,
-        url: rpc_url,
+        urls: [rpc_url],
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
