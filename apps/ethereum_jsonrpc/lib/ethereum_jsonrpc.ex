@@ -330,8 +330,6 @@ defmodule EthereumJSONRPC do
   """
   @spec fetch_blocks_by_numbers([block_number()], json_rpc_named_arguments(), boolean()) ::
           {:ok, Blocks.t()} | {:error, reason :: term}
-  @spec fetch_blocks_by_numbers([block_number()], json_rpc_named_arguments()) ::
-          {:ok, Blocks.t()} | {:error, reason :: term}
   def fetch_blocks_by_numbers(block_numbers, json_rpc_named_arguments, with_transactions? \\ true) do
     block_numbers
     |> Enum.map(fn number -> %{number: number} end)

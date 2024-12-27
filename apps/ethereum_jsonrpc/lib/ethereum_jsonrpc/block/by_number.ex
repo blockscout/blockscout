@@ -24,8 +24,6 @@ defmodule EthereumJSONRPC.Block.ByNumber do
   """
   @spec request(%{id: non_neg_integer(), number: non_neg_integer() | binary()}, boolean(), boolean()) ::
           Transport.request()
-  @spec request(%{id: non_neg_integer(), number: non_neg_integer() | binary()}, boolean()) :: Transport.request()
-  @spec request(%{id: non_neg_integer(), number: non_neg_integer() | binary()}) :: Transport.request()
   def request(%{id: id, number: number}, hydrated \\ true, int_to_qty \\ true) do
     block_number =
       if int_to_qty do
