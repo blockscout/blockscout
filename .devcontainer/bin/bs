@@ -189,7 +189,7 @@ initialize_db() {
 
 # Define the recompile subroutine
 recompile() {
-    FALLBACK_APPS="block_scout_web ethereum_jsonrpc explorer indexer"
+    FALLBACK_APPS="block_scout_web ethereum_jsonrpc explorer indexer utils nft_media_handler"
     APPS=$($(dirname $0)/extract_apps.exs) || APPS="$FALLBACK_APPS"
     [ -z "$APPS" ] && APPS="$FALLBACK_APPS"
     mix deps.clean $APPS
