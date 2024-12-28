@@ -22,9 +22,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     for the necessary information not available in the logs.
   """
 
-  alias ABI.{FunctionSelector, TypeDecoder}
+  alias ABI.TypeDecoder
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  alias EthereumJSONRPC.Arbitrum.Constants.Contracts, as: ArbitrumContracts
   alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
@@ -1156,17 +1157,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         [sequence_number, data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
           TypeDecoder.decode(
             Base.decode16!(encoded_params, case: :lower),
-            %FunctionSelector{
-              function: "addSequencerL2BatchFromOrigin",
-              types: [
-                {:uint, 256},
-                :bytes,
-                {:uint, 256},
-                :address,
-                {:uint, 256},
-                {:uint, 256}
-              ]
-            }
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_8f111f3c_selector_with_abi()
           )
 
         {sequence_number, prev_message_count, new_message_count, data}
@@ -1176,16 +1167,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         [sequence_number, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
           TypeDecoder.decode(
             Base.decode16!(encoded_params, case: :lower),
-            %FunctionSelector{
-              function: "addSequencerL2BatchFromBlobs",
-              types: [
-                {:uint, 256},
-                {:uint, 256},
-                :address,
-                {:uint, 256},
-                {:uint, 256}
-              ]
-            }
+            ArbitrumContracts.add_sequencer_l2_batch_from_blobs_selector_with_abi()
           )
 
         {sequence_number, prev_message_count, new_message_count, nil}
@@ -1195,15 +1177,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         [sequence_number, data, _after_delayed_messages_read, _gas_refunder] =
           TypeDecoder.decode(
             Base.decode16!(encoded_params, case: :lower),
-            %FunctionSelector{
-              function: "addSequencerL2BatchFromOrigin",
-              types: [
-                {:uint, 256},
-                :bytes,
-                {:uint, 256},
-                :address
-              ]
-            }
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_6f12b0c9_selector_with_abi()
           )
 
         {sequence_number, nil, nil, data}

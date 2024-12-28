@@ -17,6 +17,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias ABI.TypeDecoder
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
+  alias EthereumJSONRPC.Arbitrum.Constants.Contracts, as: ArbitrumContracts
   alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
   alias EthereumJSONRPC.Encoder
   alias Explorer.Chain
@@ -28,53 +29,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias Indexer.Helper, as: IndexerHelper
 
   require Logger
-
-  # Address of precompile NodeInterface precompile [L2]
-  @node_interface_address "0x00000000000000000000000000000000000000c8"
-
-  @finalize_inbound_transfer_selector %ABI.FunctionSelector{
-    function: "finalizeInboundTransfer",
-    returns: [],
-    types: [
-      # _token
-      :address,
-      # _from
-      :address,
-      # _to
-      :address,
-      # _amount
-      {:uint, 256},
-      # data
-      :bytes
-    ]
-  }
-
-  @execute_transaction_selector %ABI.FunctionSelector{
-    function: "executeTransaction",
-    returns: [],
-    types: [
-      # proof
-      {:array, {:bytes, 32}},
-      # index
-      {:uint, 256},
-      # l2Sender
-      :address,
-      # to
-      :address,
-      # l2Block
-      {:uint, 256},
-      # l1Block
-      {:uint, 256},
-      # l2Timestamp
-      {:uint, 256},
-      # value
-      {:uint, 256},
-      # data
-      :bytes
-    ],
-    type: :function,
-    inputs_indexed: []
-  }
 
   @doc """
     Retrieves all L2->L1 messages initiated by a transaction.
@@ -417,7 +371,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           }
           | nil
   defp decode_token_withdrawal_data(<<0x2E567B36::32, rest_data::binary>>) do
-    [token, _, to, amount, _] = ABI.decode(@finalize_inbound_transfer_selector, rest_data)
+    [token, _, to, amount, _] = ABI.decode(ArbitrumContracts.finalize_inbound_transfer_selector_with_abi(), rest_data)
 
     token_bin =
       case Address.cast(token) do
@@ -480,7 +434,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       size ->
         # now we are ready to construct outbox proof
         case ArbitrumRpc.construct_outbox_proof(
-               @node_interface_address,
+               ArbitrumContracts.node_interface_contract_address(),
                size,
                withdrawal.message_id,
                json_l2_rpc_named_arguments
@@ -501,7 +455,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
               withdrawal.data
             ]
 
-            calldata = Encoder.encode_function_call(@execute_transaction_selector, args)
+            calldata = Encoder.encode_function_call(ArbitrumContracts.execute_transaction_selector_with_abi(), args)
 
             {:ok, [contract_address: outbox_contract, calldata: calldata]}
 
