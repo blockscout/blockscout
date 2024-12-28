@@ -12,6 +12,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
     * Data availability records - Additional batch-related data (e.g., AnyTrust keysets)
   """
 
+  @no_committed_batches_warning "No committed batches found in DB"
+
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
 
   alias Explorer.Chain.Arbitrum
@@ -36,7 +38,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_committed_batch() do
       nil ->
-        log_warning("No committed batches found in DB")
+        log_warning(@no_committed_batches_warning)
         value_if_nil
 
       value ->
@@ -69,7 +71,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_earliest_committed_batch() do
       nil ->
-        log_warning("No committed batches found in DB")
+        log_warning(@no_committed_batches_warning)
         value_if_nil
 
       value ->
@@ -175,15 +177,21 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
       batch ->
         case batch.commitment_transaction do
           nil ->
-            raise "Incorrect state of the DB: commitment_transaction is not loaded for the batch with number #{num}"
+            raise commitment_transaction_not_loaded_error(num)
 
           %Ecto.Association.NotLoaded{} ->
-            raise "Incorrect state of the DB: commitment_transaction is not loaded for the batch with number #{num}"
+            raise commitment_transaction_not_loaded_error(num)
 
           _ ->
             batch
         end
     end
+  end
+
+  # Constructs an error message for when a commitment transaction is not loaded
+  @spec commitment_transaction_not_loaded_error(FullBlock.block_number()) :: String.t()
+  defp commitment_transaction_not_loaded_error(batch_number) do
+    "Incorrect state of the DB: commitment_transaction is not loaded for the batch with number #{batch_number}"
   end
 
   @doc """

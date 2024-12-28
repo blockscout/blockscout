@@ -25,6 +25,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
 
   require Logger
 
+  @no_messages_warning "No messages to L2 found in DB"
+  @no_executions_warning "No L1 executions found in DB"
+
   @doc """
     Calculates the next L1 block number to search for the latest message sent to L2.
 
@@ -40,7 +43,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_discovered_message_to_l2() do
       nil ->
-        log_warning("No messages to L2 found in DB")
+        log_warning(@no_messages_warning)
         value_if_nil
 
       value ->
@@ -64,7 +67,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_earliest_discovered_message_to_l2() do
       nil ->
-        log_warning("No messages to L2 found in DB")
+        log_warning(@no_messages_warning)
         value_if_nil
 
       value ->
@@ -88,7 +91,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_latest_execution() do
       nil ->
-        log_warning("No L1 executions found in DB")
+        log_warning(@no_executions_warning)
         value_if_nil
 
       value ->
@@ -113,7 +116,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
     case Reader.l1_block_of_earliest_execution() do
       nil ->
-        log_warning("No L1 executions found in DB")
+        log_warning(@no_executions_warning)
         value_if_nil
 
       value ->
