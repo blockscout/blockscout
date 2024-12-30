@@ -674,6 +674,11 @@ config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
   concurrency: 1,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_BATCH_SIZE", 10)
 
+config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
+  enabled: ConfigHelper.chain_type() == :arbitrum,
+  batch_size: ConfigHelper.parse_integer_env_var("ARBITRUM_DA_RECORDS_NORMALIZATION_MIGRATION_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("ARBITRUM_DA_RECORDS_NORMALIZATION_MIGRATION_CONCURRENCY", 1)
+
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),

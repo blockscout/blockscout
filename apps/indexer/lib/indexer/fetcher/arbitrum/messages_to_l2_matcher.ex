@@ -29,7 +29,7 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher.Supervisor, as: MessagesToL2MatcherSupervisor
   alias Indexer.Fetcher.Arbitrum.Messaging, as: MessagingUtils
-  alias Indexer.Fetcher.Arbitrum.Utils.Db
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
 
   @behaviour BufferedTask
@@ -242,7 +242,7 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
   # - Values are original message IDs as 256-bit hexadecimal strings.
   @spec get_hashed_ids_for_uncompleted_messages() :: %{binary() => binary()}
   defp get_hashed_ids_for_uncompleted_messages do
-    Db.get_uncompleted_l1_to_l2_messages_ids()
+    DbMessages.get_uncompleted_l1_to_l2_messages_ids()
     |> Enum.reduce(%{}, fn id, acc ->
       Map.put(
         acc,

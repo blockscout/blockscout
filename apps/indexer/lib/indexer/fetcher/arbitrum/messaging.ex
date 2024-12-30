@@ -10,13 +10,14 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Message
-  alias Indexer.Fetcher.Arbitrum.Utils.Db
-
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   require Logger
 
   @zero_hex_prefix "0x" <> String.duplicate("0", 56)
@@ -117,7 +118,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
     filtered_logs =
       logs
       |> Enum.filter(fn event ->
-        event.address_hash == arbsys_contract and event.first_topic == Db.l2_to_l1_event()
+        event.address_hash == arbsys_contract and event.first_topic == ArbitrumEvents.l2_to_l1()
       end)
 
     handle_filtered_l2_to_l1_messages(filtered_logs)
@@ -183,8 +184,8 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
 
   def handle_filtered_l2_to_l1_messages(filtered_logs, caller) when is_list(filtered_logs) do
     # Get values before the loop parsing the events to reduce number of DB requests
-    highest_committed_block = Db.highest_committed_block(-1)
-    highest_confirmed_block = Db.highest_confirmed_block(-1)
+    highest_committed_block = DbSettlement.highest_committed_block(-1)
+    highest_confirmed_block = DbSettlement.highest_confirmed_block(-1)
 
     messages_map =
       filtered_logs
@@ -296,7 +297,7 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   defp find_and_update_executed_messages(messages) do
     messages
     |> Map.keys()
-    |> Db.l1_executions()
+    |> DbMessages.l1_executions()
     |> Enum.reduce(messages, fn execution, messages_acc ->
       message =
         messages_acc

@@ -10,8 +10,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
 
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: Db
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
   alias Explorer.Chain
 

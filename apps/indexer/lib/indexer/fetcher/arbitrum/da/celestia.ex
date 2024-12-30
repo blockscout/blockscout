@@ -87,28 +87,45 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
     Prepares Celestia Blob data for import.
 
     ## Parameters
-    - `source`: The initial list of data to be imported.
+    - A tuple containing:
+      - A list of DA records.
+      - A list of Batch-to-DA-record associations.
     - `da_info`: The Celestia blob descriptor struct containing details about the data blob.
 
     ## Returns
-    - An updated list of data structures ready for import, including the Celestia blob descriptor.
+    - A tuple containing:
+      - An updated list of `DaMultiPurposeRecord` structures ready for import in the DB.
+      - An updated list of `BatchToDaBlob` structures ready for import in the DB.
   """
-  @spec prepare_for_import(list(), __MODULE__.t()) :: [Arbitrum.DaMultiPurposeRecord.to_import()]
-  def prepare_for_import(source, %__MODULE__{} = da_info) do
+  @spec prepare_for_import(
+          {[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]},
+          __MODULE__.t()
+        ) ::
+          {[Arbitrum.DaMultiPurposeRecord.to_import()], [Arbitrum.BatchToDaBlob.to_import()]}
+  def prepare_for_import({da_records_acc, batch_to_blob_acc}, %__MODULE__{} = da_info) do
     data = %{
       height: da_info.height,
       transaction_commitment: ArbitrumHelper.bytes_to_hex_str(da_info.transaction_commitment),
       raw: ArbitrumHelper.bytes_to_hex_str(da_info.raw)
     }
 
-    [
-      %{
-        data_type: 0,
-        data_key: calculate_celestia_data_key(da_info.height, da_info.transaction_commitment),
-        data: data,
-        batch_number: da_info.batch_number
-      }
-      | source
-    ]
+    data_key = calculate_celestia_data_key(da_info.height, da_info.transaction_commitment)
+
+    # Create record for arbitrum_da_multi_purpose table with batch_number set to nil
+    da_record = %{
+      data_type: 0,
+      data_key: data_key,
+      data: data,
+      # This field must be removed as soon as migration to a separate table for Batch-to-DA-record associations is completed.
+      batch_number: nil
+    }
+
+    # Create record for arbitrum_batches_to_da_blobs table
+    batch_to_blob_record = %{
+      batch_number: da_info.batch_number,
+      data_blob_id: data_key
+    }
+
+    {[da_record | da_records_acc], [batch_to_blob_record | batch_to_blob_acc]}
   end
 end

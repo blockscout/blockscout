@@ -38,7 +38,7 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
   require Logger
 
   alias Indexer.BufferedTask
-  alias Indexer.Fetcher.Arbitrum.Utils.Db, as: ArbitrumDbUtils
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: ArbitrumDbUtils
   alias Indexer.Fetcher.Arbitrum.Workers.Backfill
 
   @behaviour BufferedTask

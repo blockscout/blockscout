@@ -50,7 +50,8 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Arbitrum.L1Batches,
       Runner.Arbitrum.BatchBlocks,
       Runner.Arbitrum.BatchTransactions,
-      Runner.Arbitrum.DaMultiPurposeRecords
+      Runner.Arbitrum.DaMultiPurposeRecords,
+      Runner.Arbitrum.BatchToDaBlobs
     ],
     scroll: [
       Runner.Scroll.BatchBundles,

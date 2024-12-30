@@ -24,7 +24,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
   alias Explorer.Chain.Transaction, as: RollupTransaction
   alias Explorer.Repo
 
-  alias Indexer.Fetcher.Arbitrum.Utils.Db, as: ArbitrumDbUtils
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: ArbitrumDbUtils
 
   alias Ecto.Multi
 
