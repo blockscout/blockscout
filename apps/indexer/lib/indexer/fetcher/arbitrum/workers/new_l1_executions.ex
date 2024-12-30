@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
@@ -24,18 +25,16 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
   import Explorer.Helper, only: [decode_data: 2]
 
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
 
   require Logger
-
-  # keccak256("OutBoxTransactionExecuted(address,address,uint256,uint256)")
-  @outbox_transaction_executed_event "0x20af7f3bbfe38132b8900ae295cd9c8d1914be7052d061a511f3f728dab18964"
-  @outbox_transaction_executed_unindexed_params [{:uint, 256}]
 
   @doc """
     Discovers and processes new executions of L2-to-L1 messages within the current L1 block range.
@@ -238,7 +237,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
         start_block,
         end_block,
         outbox_address,
-        [@outbox_transaction_executed_event],
+        [ArbitrumEvents.outbox_transaction_executed()],
         json_rpc_named_arguments
       )
 
@@ -298,7 +297,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     lifecycle_transactions =
       basic_lifecycle_transactions
       |> ArbitrumHelper.extend_lifecycle_transactions_with_ts_and_status(blocks_to_ts, track_finalization?)
-      |> Db.get_indices_for_l1_transactions()
+      |> DbParentChainTransactions.get_indices_for_l1_transactions()
 
     executions =
       basics_executions
@@ -376,7 +375,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
   # Parses `OutBoxTransactionExecuted` event data to extract the transaction index parameter
   defp outbox_transaction_executed_event_parse(event) do
-    [transaction_index] = decode_data(event["data"], @outbox_transaction_executed_unindexed_params)
+    [transaction_index] = decode_data(event["data"], ArbitrumEvents.outbox_transaction_executed_unindexed_params())
 
     transaction_index
   end
@@ -396,7 +395,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     # will check all discovered historical messages to be marked as executed it is not
     # needed to handle :initiated and :sent of historical messages here, only for
     # new messages discovered and changed their status from `:sent` to `:confirmed`
-    confirmed_messages = Db.confirmed_l2_to_l1_messages()
+    confirmed_messages = DbMessages.confirmed_l2_to_l1_messages()
 
     if Enum.empty?(confirmed_messages) do
       []
@@ -411,7 +410,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
       messages_map
       |> Map.keys()
-      |> Db.l1_executions()
+      |> DbMessages.l1_executions()
       |> Enum.map(fn execution ->
         messages_map
         |> Map.get(execution.message_id)
