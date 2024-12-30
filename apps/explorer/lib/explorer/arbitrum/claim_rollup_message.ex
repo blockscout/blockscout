@@ -17,108 +17,18 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias ABI.TypeDecoder
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
+  alias EthereumJSONRPC.Arbitrum.Constants.Contracts, as: ArbitrumContracts
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
   alias EthereumJSONRPC.Encoder
   alias Explorer.Chain
-  alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
+  alias Explorer.Chain.Arbitrum.Reader.API.General, as: GeneralReader
+  alias Explorer.Chain.Arbitrum.Reader.API.Messages, as: MessagesReader
+  alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: SettlementReader
   alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Hash.Address
   alias Indexer.Helper, as: IndexerHelper
 
   require Logger
-
-  # 32-byte signature of the event L2ToL1Tx(address caller, address indexed destination, uint256 indexed hash, uint256 indexed position, uint256 arbBlockNum, uint256 ethBlockNum, uint256 timestamp, uint256 callvalue, bytes data)
-  @l2_to_l1_event "0x3e7aafa77dbf186b7fd488006beff893744caa3c4f6f299e8a709fa2087374fc"
-
-  # 32-byte signature of the event NodeCreated(...)
-  @node_created_event "0x4f4caa9e67fb994e349dd35d1ad0ce23053d4323f83ce11dc817b5435031d096"
-
-  # Address of precompile NodeInterface precompile [L2]
-  @node_interface_address "0x00000000000000000000000000000000000000c8"
-
-  @node_created_data_abi [
-    {:bytes, 32},
-    # Assertion assertion
-    {:tuple,
-     [
-       # ExecutionState beforeState
-       {:tuple,
-        [
-          # GlobalState globalState
-          {:tuple,
-           [
-             # bytes32[2] bytes32Values
-             {:array, {:bytes, 32}, 2},
-             # uint64[2] u64Values
-             {:array, {:uint, 64}, 2}
-           ]},
-          # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
-          {:uint, 256}
-        ]},
-       # ExecutionState afterState
-       {:tuple,
-        [
-          # GlobalState globalState
-          {:tuple,
-           [
-             # bytes32[2] bytes32Values
-             {:array, {:bytes, 32}, 2},
-             # uint64[2] u64Values
-             {:array, {:uint, 64}, 2}
-           ]},
-          # MachineStatus machineStatus: enum MachineStatus {RUNNING, FINISHED, ERRORED, TOO_FAR}
-          {:uint, 256}
-        ]},
-       # uint64 numBlocks
-       {:uint, 64}
-     ]},
-    {:bytes, 32},
-    {:bytes, 32},
-    {:uint, 256}
-  ]
-
-  @finalize_inbound_transfer_selector %ABI.FunctionSelector{
-    function: "finalizeInboundTransfer",
-    returns: [],
-    types: [
-      # _token
-      :address,
-      # _from
-      :address,
-      # _to
-      :address,
-      # _amount
-      {:uint, 256},
-      # data
-      :bytes
-    ]
-  }
-
-  @execute_transaction_selector %ABI.FunctionSelector{
-    function: "executeTransaction",
-    returns: [],
-    types: [
-      # proof
-      {:array, {:bytes, 32}},
-      # index
-      {:uint, 256},
-      # l2Sender
-      :address,
-      # to
-      :address,
-      # l2Block
-      {:uint, 256},
-      # l1Block
-      {:uint, 256},
-      # l2Timestamp
-      {:uint, 256},
-      # value
-      {:uint, 256},
-      # data
-      :bytes
-    ],
-    type: :function,
-    inputs_indexed: []
-  }
 
   @doc """
     Retrieves all L2->L1 messages initiated by a transaction.
@@ -141,10 +51,10 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   @spec transaction_to_withdrawals(Hash.Full.t()) :: [Explorer.Arbitrum.Withdraw.t()]
   def transaction_to_withdrawals(transaction_hash) do
     # request messages initiated by the provided transaction from the database
-    messages = ArbitrumReader.l2_to_l1_messages_by_transaction_hash(transaction_hash, api?: true)
+    messages = MessagesReader.l2_to_l1_messages_by_transaction_hash(transaction_hash)
 
     # request associated logs from the database
-    logs = ArbitrumReader.transaction_to_logs_by_topic0(transaction_hash, @l2_to_l1_event)
+    logs = GeneralReader.transaction_to_logs_by_topic0(transaction_hash, ArbitrumEvents.l2_to_l1())
 
     logs
     |> Enum.map(fn log ->
@@ -182,7 +92,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   """
   @spec claim(non_neg_integer()) :: {:ok, [contract_address: String.t(), calldata: String.t()]} | {:error, term()}
   def claim(message_id) do
-    case ArbitrumReader.l2_to_l1_message_by_id(message_id, api?: true) do
+    case MessagesReader.l2_to_l1_message_by_id(message_id) do
       nil ->
         Logger.error("Unable to find withdrawal with id #{message_id}")
         {:error, :not_found}
@@ -219,7 +129,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   defp claim_message(message) do
     # request associated log from the database
     case message.originating_transaction_hash
-         |> ArbitrumReader.transaction_to_logs_by_topic0(@l2_to_l1_event)
+         |> GeneralReader.transaction_to_logs_by_topic0(ArbitrumEvents.l2_to_l1())
          |> Enum.find(fn log -> Hash.to_integer(log.fourth_topic) == message.message_id end) do
       nil ->
         Logger.error("Unable to find log with message_id #{message.message_id}")
@@ -461,7 +371,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           }
           | nil
   defp decode_token_withdrawal_data(<<0x2E567B36::32, rest_data::binary>>) do
-    [token, _, to, amount, _] = ABI.decode(@finalize_inbound_transfer_selector, rest_data)
+    [token, _, to, amount, _] = ABI.decode(ArbitrumContracts.finalize_inbound_transfer_selector_with_abi(), rest_data)
 
     token_bin =
       case Address.cast(token) do
@@ -524,7 +434,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       size ->
         # now we are ready to construct outbox proof
         case ArbitrumRpc.construct_outbox_proof(
-               @node_interface_address,
+               ArbitrumContracts.node_interface_contract_address(),
                size,
                withdrawal.message_id,
                json_l2_rpc_named_arguments
@@ -545,7 +455,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
               withdrawal.data
             ]
 
-            calldata = Encoder.encode_function_call(@execute_transaction_selector, args)
+            calldata = Encoder.encode_function_call(ArbitrumContracts.execute_transaction_selector_with_abi(), args)
 
             {:ok, [contract_address: outbox_contract, calldata: calldata]}
 
@@ -596,7 +506,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # - `nil` if the required data is not found in the database
   @spec get_size_for_proof_from_database() :: non_neg_integer() | nil
   defp get_size_for_proof_from_database do
-    case ArbitrumReader.highest_confirmed_block() do
+    case SettlementReader.highest_confirmed_block() do
       nil ->
         nil
 
@@ -695,7 +605,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
            node_creation_l1_block_number,
            node_creation_l1_block_number,
            l1_rollup_address,
-           [@node_created_event],
+           [ArbitrumEvents.node_created()],
            json_l1_rpc_named_arguments
          ) do
       {:ok, events} when is_list(events) and length(events) > 0 ->
@@ -768,7 +678,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       |> Map.get("data")
       |> String.trim_leading("0x")
       |> Base.decode16!(case: :mixed)
-      |> TypeDecoder.decode_raw(@node_created_data_abi)
+      |> TypeDecoder.decode_raw(ArbitrumEvents.node_created_unindexed_params())
 
     l2_block_hash
   end

@@ -4,12 +4,15 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     within the Arbitrum rollup context.
   """
 
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
+
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_error: 1, log_info: 1, log_debug: 1]
 
   import Explorer.Helper, only: [decode_data: 2]
 
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: Db
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain.Arbitrum
@@ -82,10 +85,6 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
           :threshold => non_neg_integer(),
           :pubkeys => [signer()]
         }
-
-  # keccak256("SetValidKeyset(bytes32,bytes)")
-  @set_valid_keyset_event "0xabca9b7986bc22ad0160eb0cb88ae75411eacfba4052af0b457a9335ef655722"
-  @set_valid_keyset_event_unindexed_params [:bytes]
 
   @doc """
     Parses batch accompanying data to extract AnyTrust data availability information.
@@ -333,7 +332,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
         block_number,
         block_number,
         sequencer_inbox_address,
-        [@set_valid_keyset_event, ArbitrumHelper.bytes_to_hex_str(keyset_hash)],
+        [ArbitrumEvents.set_valid_keyset(), ArbitrumHelper.bytes_to_hex_str(keyset_hash)],
         json_rpc_named_arguments
       )
 
@@ -348,7 +347,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
   end
 
   defp set_valid_keyset_event_parse(event) do
-    [keyset_data] = decode_data(event["data"], @set_valid_keyset_event_unindexed_params)
+    [keyset_data] = decode_data(event["data"], ArbitrumEvents.set_valid_keyset_unindexed_params())
 
     keyset_data
   end
