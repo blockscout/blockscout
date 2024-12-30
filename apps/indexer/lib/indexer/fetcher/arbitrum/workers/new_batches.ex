@@ -22,9 +22,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     for the necessary information not available in the logs.
   """
 
-  alias ABI.{FunctionSelector, TypeDecoder}
+  alias ABI.TypeDecoder
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  alias EthereumJSONRPC.Arbitrum.Constants.Contracts, as: ArbitrumContracts
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
@@ -32,8 +34,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
   alias Indexer.Fetcher.Arbitrum.DA.Common, as: DataAvailabilityInfo
   alias Indexer.Fetcher.Arbitrum.DA.{Anytrust, Celestia}
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Logging, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: DbCommon
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
+  alias Indexer.Fetcher.Arbitrum.Utils.{Logging, Rpc}
   alias Indexer.Helper, as: IndexerHelper
 
   alias Explorer.Chain
@@ -41,9 +47,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   alias Explorer.Chain.Events.Publisher
 
   require Logger
-
-  # keccak256("SequencerBatchDelivered(uint256,bytes32,bytes32,bytes32,uint256,(uint64,uint64,uint64,uint64),uint8)")
-  @event_sequencer_batch_delivered "0x7394f4a19a13c7b92b5bb71033245305946ef78452f7b4986ac1390b5df4ebd7"
 
   @doc """
     Discovers and imports new batches of rollup transactions within the current L1 block range.
@@ -330,7 +333,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       log_info("Batch range for missing batches inspection: #{start_batch}..#{end_batch}")
 
       l1_block_ranges_for_missing_batches =
-        Db.get_l1_block_ranges_for_missing_batches(start_batch, end_batch, l1_rollup_init_block - 1)
+        DbSettlement.get_l1_block_ranges_for_missing_batches(start_batch, end_batch, l1_rollup_init_block - 1)
 
       unless l1_block_ranges_for_missing_batches == [] do
         discover_missing_batches(
@@ -607,7 +610,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     logs
     |> Enum.chunk_every(new_batches_limit)
     |> Enum.each(fn chunked_logs ->
-      {batches, lifecycle_transactions, rollup_blocks, rollup_transactions, committed_transactions, da_records} =
+      {batches, lifecycle_transactions, rollup_blocks, rollup_transactions, committed_transactions, da_records,
+       batch_to_data_blobs} =
         handle_batches_from_logs(
           chunked_logs,
           messages_to_blocks_shift,
@@ -625,6 +629,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           arbitrum_batch_transactions: %{params: rollup_transactions},
           arbitrum_messages: %{params: committed_transactions},
           arbitrum_da_multi_purpose_records: %{params: da_records},
+          arbitrum_batches_to_da_blobs: %{params: batch_to_data_blobs},
           timeout: :infinity
         })
 
@@ -659,7 +664,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         start_block,
         end_block,
         sequencer_inbox_address,
-        [@event_sequencer_batch_delivered],
+        [ArbitrumEvents.sequencer_batch_delivered()],
         json_rpc_named_arguments
       )
 
@@ -694,8 +699,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #
   # ## Returns
   # - A tuple containing lists of batches, lifecycle transactions, rollup blocks,
-  #   rollup transactions, committed messages (with the status `:sent`), and records
-  #   with DA-related information if applicable, all ready for database import.
+  #   rollup transactions, committed messages (with the status `:sent`), records
+  #   with DA-related information if applicable, and batch-to-DA-blob associations,
+  #   all ready for database import.
   @spec handle_batches_from_logs(
           [%{String.t() => any()}],
           non_neg_integer(),
@@ -717,7 +723,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           [Arbitrum.BatchBlock.to_import()],
           [Arbitrum.BatchTransaction.to_import()],
           [Arbitrum.Message.to_import()],
-          [Arbitrum.DaMultiPurposeRecord.to_import()]
+          [Arbitrum.DaMultiPurposeRecord.to_import()],
+          [Arbitrum.BatchToDaBlob.to_import()]
         }
   defp handle_batches_from_logs(
          logs,
@@ -728,7 +735,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
          rollup_rpc_config
        )
 
-  defp handle_batches_from_logs([], _, _, _, _, _), do: {[], [], [], [], [], []}
+  defp handle_batches_from_logs([], _, _, _, _, _), do: {[], [], [], [], [], [], []}
 
   defp handle_batches_from_logs(
          logs,
@@ -744,7 +751,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     existing_batches =
       logs
       |> parse_logs_to_get_batch_numbers()
-      |> Db.batches_exist()
+      |> DbSettlement.batches_exist()
 
     {batches, transactions_requests, blocks_requests, existing_commitment_transactions} =
       parse_logs_for_new_batches(logs, existing_batches)
@@ -775,7 +782,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
 
     lifecycle_transactions =
       lifecycle_transactions_wo_indices
-      |> Db.get_indices_for_l1_transactions()
+      |> DbParentChainTransactions.get_indices_for_l1_transactions()
 
     transaction_counts_per_batch = batches_to_rollup_transactions_amounts(rollup_transactions_to_import)
 
@@ -798,7 +805,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         ]
       end)
 
-    da_records =
+    {da_records, batch_to_data_blobs} =
       DataAvailabilityInfo.prepare_for_import(da_info, %{
         sequencer_inbox_address: sequencer_inbox_address,
         json_rpc_named_arguments: l1_rpc_config.json_rpc_named_arguments
@@ -817,7 +824,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
       end
 
     {batches_list_to_import, Map.values(lifecycle_transactions), Map.values(blocks_to_import),
-     rollup_transactions_to_import, committed_messages, da_records}
+     rollup_transactions_to_import, committed_messages, da_records, batch_to_data_blobs}
   end
 
   # Extracts batch numbers from logs of SequencerBatchDelivered events.
@@ -1150,17 +1157,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         [sequence_number, data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
           TypeDecoder.decode(
             Base.decode16!(encoded_params, case: :lower),
-            %FunctionSelector{
-              function: "addSequencerL2BatchFromOrigin",
-              types: [
-                {:uint, 256},
-                :bytes,
-                {:uint, 256},
-                :address,
-                {:uint, 256},
-                {:uint, 256}
-              ]
-            }
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_8f111f3c_selector_with_abi()
           )
 
         {sequence_number, prev_message_count, new_message_count, data}
@@ -1170,16 +1167,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         [sequence_number, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
           TypeDecoder.decode(
             Base.decode16!(encoded_params, case: :lower),
-            %FunctionSelector{
-              function: "addSequencerL2BatchFromBlobs",
-              types: [
-                {:uint, 256},
-                {:uint, 256},
-                :address,
-                {:uint, 256},
-                {:uint, 256}
-              ]
-            }
+            ArbitrumContracts.add_sequencer_l2_batch_from_blobs_selector_with_abi()
           )
 
         {sequence_number, prev_message_count, new_message_count, nil}
@@ -1189,15 +1177,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         [sequence_number, data, _after_delayed_messages_read, _gas_refunder] =
           TypeDecoder.decode(
             Base.decode16!(encoded_params, case: :lower),
-            %FunctionSelector{
-              function: "addSequencerL2BatchFromOrigin",
-              types: [
-                {:uint, 256},
-                :bytes,
-                {:uint, 256},
-                :address
-              ]
-            }
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_6f12b0c9_selector_with_abi()
           )
 
         {sequence_number, nil, nil, data}
@@ -1272,7 +1252,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp get_expected_highest_block_and_step(batch_number) do
     # since the default direction for the block range exploration is chosen to be from the highest to lowest
     # the step is calculated to be positive
-    case Db.get_batch_by_number(batch_number) do
+    case DbSettlement.get_batch_by_number(batch_number) do
       nil ->
         {nil, nil}
 
@@ -1286,7 +1266,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp get_expected_lowest_block_and_step(batch_number) do
     # since the default direction for the block range exploration is chosen to be from the highest to lowest
     # the step is calculated to be negative
-    case Db.get_batch_by_number(batch_number) do
+    case DbSettlement.get_batch_by_number(batch_number) do
       nil ->
         {nil, nil}
 
@@ -1337,7 +1317,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   defp update_lifecycle_transactions_for_new_blocks(existing_commitment_transactions, block_to_ts) do
     existing_commitment_transactions
     |> Map.keys()
-    |> Db.lifecycle_transactions()
+    |> DbParentChainTransactions.lifecycle_transactions()
     |> Enum.reduce(%{}, fn transaction, transactions ->
       block_number = existing_commitment_transactions[transaction.hash]
       ts = block_to_ts[block_number]
@@ -1470,7 +1450,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   #     and batch number, ready for database import.
   defp get_rollup_blocks_and_transactions_from_db(rollup_blocks_numbers, blocks_to_batches) do
     rollup_blocks_numbers
-    |> Db.rollup_blocks()
+    |> DbCommon.rollup_blocks()
     |> Enum.reduce({%{}, []}, fn block, {blocks_map, transactions_list} ->
       batch_num = blocks_to_batches[block.number]
 
@@ -1576,8 +1556,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   # - A tuple containing:
   #   - A map of rollup blocks associated with the batch numbers, ready for
   #     database import.
-  #   - A list of transactions, each associated with its respective rollup block
-  #     and batch number, ready for database import.
+  #   - A list of transactions, each associated with its respective rollup
+  #     block and batch number, ready for database import.
   #   - The updated counter of processed chunks (usually ignored).
   @spec recover_rollup_blocks_and_transactions_from_rpc(
           [non_neg_integer()],
@@ -1711,7 +1691,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
   @spec get_committed_l2_to_l1_messages(non_neg_integer()) :: [Arbitrum.Message.to_import()]
   defp get_committed_l2_to_l1_messages(block_number) do
     block_number
-    |> Db.initiated_l2_to_l1_messages()
+    |> DbMessages.initiated_l2_to_l1_messages()
     |> Enum.map(fn transaction ->
       Map.put(transaction, :status, :sent)
     end)

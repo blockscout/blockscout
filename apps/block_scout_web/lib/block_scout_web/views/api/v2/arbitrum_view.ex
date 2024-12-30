@@ -4,7 +4,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   alias BlockScoutWeb.API.V2.ApiView
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
-  alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction, Reader}
+  alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction}
+  alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: SettlementReader
 
   @doc """
     Function to render error\\text responses for GET requests
@@ -402,7 +403,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     out = %{"batch_data_container" => "in_anytrust"}
 
     da_info =
-      with raw_info <- Reader.get_da_info_by_batch_number(batch_number),
+      with raw_info <- SettlementReader.get_da_info_by_batch_number(batch_number),
            false <- Enum.empty?(raw_info) do
         prepare_anytrust_certificate(raw_info)
       else
@@ -429,7 +430,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   #   members who guaranteed availability of data for the specified timeout.
   @spec prepare_anytrust_certificate(map()) :: map()
   defp prepare_anytrust_certificate(da_info) do
-    keyset = Reader.get_anytrust_keyset(da_info["keyset_hash"])
+    keyset = SettlementReader.get_anytrust_keyset(da_info["keyset_hash"])
 
     signers =
       if Enum.empty?(keyset) do
@@ -457,7 +458,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   defp generate_celestia_da_info(batch_number) do
     out = %{"batch_data_container" => "in_celestia"}
 
-    da_info = Reader.get_da_info_by_batch_number(batch_number)
+    da_info = SettlementReader.get_da_info_by_batch_number(batch_number)
 
     out
     |> Map.merge(%{
