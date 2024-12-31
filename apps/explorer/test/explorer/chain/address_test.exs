@@ -48,14 +48,15 @@ defmodule Explorer.Chain.AddressTest do
 
     if Application.compile_env(:explorer, :chain_type) == :rsk do
       test "returns the checksum rsk formatted address" do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, "30"}
-        end)
+        old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+        Application.put_env(:block_scout_web, :chain_id, 30)
 
         assert str("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed") == "0x5aaEB6053f3e94c9b9a09f33669435E7ef1bEAeD"
         assert str("0xfb6916095ca1df60bb79ce92ce3ea74c37c5d359") == "0xFb6916095cA1Df60bb79ce92cE3EA74c37c5d359"
         assert str("0xdbf03b407c01e7cd3cbea99509d93f8dddc8c6fb") == "0xDBF03B407c01E7CD3cBea99509D93F8Dddc8C6FB"
         assert str("0xd1220a0cf47c7b9be7a2e6ba89f429762e7b9adb") == "0xD1220A0Cf47c7B9BE7a2e6ba89F429762E7B9adB"
+
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
       end
     end
   end
