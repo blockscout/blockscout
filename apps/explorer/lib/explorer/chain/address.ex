@@ -451,7 +451,7 @@ defmodule Explorer.Chain.Address do
         ...>              165, 101, 32, 167, 106, 179, 223, 65, 91>>
         ...>   }
         ...> }
-        iex> to_string((address)
+        iex> to_string(address)
         "0x8Bf38d4764929064f2d4d3a56520A76AB3df415b"
         iex> to_string(address.hash)
         "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
