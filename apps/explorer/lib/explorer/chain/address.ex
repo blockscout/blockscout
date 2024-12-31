@@ -323,16 +323,14 @@ defmodule Explorer.Chain.Address do
   end
 
   if @chain_type == :rsk do
-    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
-    alias Explorer.Chain.Cache.NetVersion, warn: false
     # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
     def address_checksum(hash) do
-      chain_id = NetVersion.get_version()
-
       string_hash =
         hash
         |> to_string()
         |> String.trim_leading("0x")
+
+      chain_id = Application.get_env(:block_scout_web, :chain_id)
 
       prefix = "#{chain_id}0x"
 
