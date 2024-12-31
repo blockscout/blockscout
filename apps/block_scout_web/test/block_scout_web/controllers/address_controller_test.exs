@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
     test "redirects to address/:address_id/transactions", %{conn: conn} do
       insert(:address, hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
 
-      conn = get(conn, "/address/0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
+      conn = get(conn, "/address/#{Address.checksum("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")}")
 
       assert html_response(conn, 200)
     end

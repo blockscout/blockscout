@@ -434,13 +434,16 @@ defmodule Explorer.Chain.Address do
   end
 
   defimpl String.Chars do
+    use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
     @doc """
     Uses `hash` as string representation, formatting it according to the eip-55 specification
 
     For more information: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md#specification
 
     To bypass the checksum formatting, use `to_string/1` on the hash itself.
-
+    #{unless @chain_type == :rsk do
+      """
         iex> address = %Explorer.Chain.Address{
         ...>   hash: %Explorer.Chain.Hash{
         ...>     byte_count: 20,
@@ -448,10 +451,12 @@ defmodule Explorer.Chain.Address do
         ...>              165, 101, 32, 167, 106, 179, 223, 65, 91>>
         ...>   }
         ...> }
-        iex> to_string(address)
+        iex> to_string((address)
         "0x8Bf38d4764929064f2d4d3a56520A76AB3df415b"
         iex> to_string(address.hash)
         "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+      """
+    end}
     """
     def to_string(%@for{} = address) do
       @for.checksum(address)
