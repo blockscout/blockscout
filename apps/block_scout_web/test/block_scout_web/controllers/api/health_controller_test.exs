@@ -110,6 +110,6 @@ defmodule BlockScoutWeb.API.HealthControllerTest do
   end
 
   defp api_health_path(conn, action) do
-    ApiRoutes.health_path(conn, action)
+    "/api" <> ApiRoutes.health_path(conn, action)
   end
 end
