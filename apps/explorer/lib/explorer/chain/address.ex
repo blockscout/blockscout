@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Address.Schema do
     Withdrawal
   }
 
-  alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @chain_type_fields (case @chain_type do
@@ -138,11 +138,11 @@ defmodule Explorer.Chain.Address do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
-  alias Explorer.Helper, as: ExplorerHelper
-  alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, Transaction}
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Helper, as: ExplorerHelper
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -322,7 +322,9 @@ defmodule Explorer.Chain.Address do
     end
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :rsk do
+  if @chain_type == :rsk do
+    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
+    alias Explorer.Chain.Cache.NetVersion, warn: false
     # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
     def address_checksum(hash) do
       chain_id = NetVersion.get_version()
