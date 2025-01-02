@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V1.HealthControllerTest do
+defmodule BlockScoutWeb.API.HealthControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.{Chain, PagingOptions}
