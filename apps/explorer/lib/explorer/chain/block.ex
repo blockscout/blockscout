@@ -531,7 +531,7 @@ defmodule Explorer.Chain.Block do
     {_count, updated_numbers} =
       Repo.update_all(
         from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
-        set: [refetch_needed: true]
+        set: [refetch_needed: true, updated_at: Timex.now()]
       )
 
     MissingRangesManipulator.add_ranges_by_block_numbers(updated_numbers)

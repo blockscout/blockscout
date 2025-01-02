@@ -10,12 +10,15 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   require Logger
 
   import Ecto.Query, only: [from: 2, subquery: 1, where: 3]
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, request: 1]
+  import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
-  alias Ecto.Changeset
-  alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, PendingBlockOperation, Transaction}
+  alias EthereumJSONRPC.Block.ByNumber
+  alias EthereumJSONRPC.Blocks
+  alias Explorer.Repo
+  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
+
+  @update_timeout 60_000
 
   @interval :timer.seconds(10)
 
@@ -80,53 +83,97 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       set: [is_empty: false, updated_at: Timex.now()]
     )
 
-    unprocessed_empty_blocks_from_db = unprocessed_empty_blocks_query_list(limit())
+    unprocessed_empty_blocks_list =
+      limit()
+      |> unprocessed_empty_blocks_list_query
 
-    unprocessed_empty_blocks_from_db
-    |> Enum.with_index()
-    |> Enum.each(fn {{block_number, block_hash}, ind} ->
-      with {:ok, %{"transactions" => transactions}} <-
-             %{id: ind, method: "eth_getBlockByNumber", params: [integer_to_quantity(block_number), false]}
-             |> request()
-             |> json_rpc(json_rpc_named_arguments) do
-        transactions_count =
-          transactions
-          |> Enum.count()
+    unless Enum.empty?(unprocessed_empty_blocks_list) do
+      blocks_response =
+        unprocessed_empty_blocks_list
+        |> Enum.map(fn {block_number, _} -> %{number: block_number} end)
+        |> Enum.with_index()
+        |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+        |> Blocks.requests(&ByNumber.request(&1, false, false))
+        |> json_rpc(json_rpc_named_arguments)
 
-        if transactions_count > 0 do
-          Logger.info(
-            "Block with number #{block_number} and hash #{to_string(block_hash)} is full of transactions. We should set consensus = false for it in order to refetch.",
+      case blocks_response do
+        {:ok, result} ->
+          non_empty_blocks = filter_non_empty_blocks_from_result(result)
+
+          process_non_empty_blocks(non_empty_blocks)
+
+          Logger.info("Batch of empty blocks is sanitized",
             fetcher: :empty_blocks_to_refetch
           )
-
-          Block.set_refetch_needed(block_number)
-        else
-          Logger.debug(
-            "Block with number #{block_number} and hash #{to_string(block_hash)} is empty. We should set is_empty=true for it.",
-            fetcher: :empty_blocks_to_refetch
-          )
-
-          set_is_empty_for_block(block_hash, true)
-        end
       end
-    end)
+    end
+  end
 
-    Logger.info("Batch of empty blocks is sanitized",
-      fetcher: :empty_blocks_to_refetch
+  defp filter_non_empty_blocks_from_result(result) do
+    result
+    |> Enum.filter(fn %{id: _id, result: block} ->
+      not Enum.empty?(block["transactions"])
+    end)
+    |> Enum.map(
+      &%{
+        number: quantity_to_integer(&1.result["number"]),
+        hash: &1.result["hash"],
+        transactions_count: Enum.count(&1.result["transactions"])
+      }
     )
   end
 
-  defp set_is_empty_for_block(block_hash, is_empty) do
-    block = Chain.fetch_block_by_hash(block_hash)
+  defp process_non_empty_blocks(non_empty_blocks) do
+    if Enum.count(non_empty_blocks) > 0 do
+      log_message =
+        Enum.reduce(non_empty_blocks, "Blocks \n", fn block, acc ->
+          acc <>
+            " with number #{block.number} and hash #{to_string(block.hash)} contains #{inspect(block.transactions_count)} transactions \n"
+        end)
 
-    block_with_is_empty =
-      block
-      |> Changeset.change(%{is_empty: is_empty})
+      log_message =
+        log_message <>
+          ", but those blocks are empty in Blockscout DB. We're setting consensus = false for it to refetch."
 
-    Repo.update(block_with_is_empty)
+      Logger.info(
+        log_message,
+        fetcher: :empty_blocks_to_refetch
+      )
+
+      Block.set_refetch_needed(non_empty_blocks |> Enum.map(& &1.number))
+    else
+      log_message =
+        "Block with numbers #{inspect(non_empty_blocks |> Enum.map(& &1.number))} are empty. We're setting is_empty=true for them."
+
+      Logger.debug(
+        log_message,
+        fetcher: :empty_blocks_to_refetch
+      )
+
+      mark_blocks_as_empty(non_empty_blocks |> Enum.map(& &1.hash))
+    end
+  end
+
+  @spec mark_blocks_as_empty([Hash.Full.t()]) ::
+          {non_neg_integer(), nil | [term()]} | {:error, %{exception: Postgrex.Error.t()}}
+  defp mark_blocks_as_empty(block_hashes) do
+    query =
+      from(
+        block in Block,
+        where: block.hash in ^block_hashes,
+        # Enforce Block ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: block.hash],
+        lock: "FOR NO KEY UPDATE"
+      )
+
+    Repo.update_all(
+      from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
+      [set: [is_empty: true, updated_at: Timex.now()]],
+      timeout: @update_timeout
+    )
 
     PendingBlockOperation
-    |> where([po], po.block_hash == ^block_hash)
+    |> where([po], po.block_hash in ^block_hashes)
     |> Repo.delete_all()
   rescue
     postgrex_error in Postgrex.Error ->
@@ -158,7 +205,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
     )
   end
 
-  defp unprocessed_empty_blocks_query_list(limit) do
+  defp unprocessed_empty_blocks_list_query(limit) do
     blocks_query = consensus_blocks_with_nil_is_empty_query(limit)
 
     query =
@@ -167,6 +214,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
         on: q.number == transaction.block_number,
         where: is_nil(transaction.block_number),
         select: {q.number, q.hash},
+        distinct: q.number,
         order_by: [asc: q.hash]
       )
 
