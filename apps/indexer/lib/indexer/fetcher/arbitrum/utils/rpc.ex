@@ -6,6 +6,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   import EthereumJSONRPC,
     only: [json_rpc: 2, quantity_to_integer: 1, timestamp_to_datetime: 1]
 
+  alias EthereumJSONRPC.Arbitrum.Constants.Contracts, as: ArbitrumContracts
+
   alias EthereumJSONRPC.Transport
   alias Indexer.Helper, as: IndexerHelper
 
@@ -13,42 +15,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   @rpc_resend_attempts 20
 
   @default_binary_search_threshold 1000
-
-  # getKeysetCreationBlock(bytes32 ksHash)
-  @selector_get_keyset_creation_block "258f0495"
-  @selector_sequencer_inbox_contract_abi [
-    %{
-      "inputs" => [%{"internalType" => "bytes32", "name" => "ksHash", "type" => "bytes32"}],
-      "name" => "getKeysetCreationBlock",
-      "outputs" => [%{"internalType" => "uint256", "name" => "", "type" => "uint256"}],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
-  # findBatchContainingBlock(uint64 blockNum)
-  @selector_find_batch_containing_block "81f1adaf"
-  @node_interface_contract_abi [
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "blockNum",
-          "type" => "uint64"
-        }
-      ],
-      "name" => "findBatchContainingBlock",
-      "outputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "batch",
-          "type" => "uint64"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
 
   @doc """
     Constructs a JSON RPC request to retrieve a transaction by its hash.
@@ -90,9 +56,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   def get_block_number_for_keyset(sequencer_inbox_address, keyset_hash, json_rpc_named_arguments) do
     read_contract_and_handle_result_as_integer(
       sequencer_inbox_address,
-      @selector_get_keyset_creation_block,
+      ArbitrumContracts.get_keyset_creation_block_selector(),
       [keyset_hash],
-      @selector_sequencer_inbox_contract_abi,
+      ArbitrumContracts.sequencer_inbox_contract_abi(),
       json_rpc_named_arguments
     )
   end
@@ -591,9 +557,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     batch_number =
       read_contract_and_handle_result_as_integer(
         node_interface_address,
-        @selector_find_batch_containing_block,
+        ArbitrumContracts.find_batch_containing_block_selector(),
         [block_number],
-        @node_interface_contract_abi,
+        ArbitrumContracts.node_interface_contract_abi(),
         json_rpc_named_arguments
       )
 
