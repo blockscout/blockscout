@@ -56,6 +56,21 @@ defmodule EthereumJSONRPC.Blocks do
 
   defstruct @default_struct_fields ++ @chain_type_struct_fields
 
+  @doc """
+    Generates a list of JSON-RPC requests for fetching block data.
+
+    Takes a map of request IDs to parameters and a request function, and generates
+    a list of JSON-RPC requests by applying the request function to each parameter
+    set after adding the ID.
+
+    ## Parameters
+    - `id_to_params`: Map of request IDs to their corresponding request parameters
+    - `request`: Function that takes a parameter map and returns a JSON-RPC request
+
+    ## Returns
+    - List of JSON-RPC request maps ready to be sent to the Ethereum node
+  """
+  @spec requests(%{EthereumJSONRPC.request_id() => map()}, function()) :: [EthereumJSONRPC.Transport.request()]
   def requests(id_to_params, request) when is_map(id_to_params) and is_function(request, 1) do
     Enum.map(id_to_params, fn {id, params} ->
       params
@@ -64,7 +79,28 @@ defmodule EthereumJSONRPC.Blocks do
     end)
   end
 
-  @spec from_responses(list(), map()) :: t()
+  @doc """
+    Processes batch responses from JSON-RPC block requests into structured block data.
+
+    Converts raw JSON-RPC responses into a structured format containing block data,
+    transactions, uncles, withdrawals and any errors encountered during processing.
+    Sanitizes responses by handling missing IDs and adjusts errors to maintain
+    request-response correlation.
+
+    ## Parameters
+    - `responses`: List of JSON-RPC responses from block requests.
+    - `id_to_params`: Map of request IDs to their corresponding requests parameters.
+
+    ## Returns
+    A `t:t/0` struct containing:
+    - `blocks_params`: List of processed block parameters
+    - `block_second_degree_relations_params`: List of uncle block relations
+    - `transactions_params`: List of transaction parameters
+    - `withdrawals_params`: List of withdrawal parameters
+    - `errors`: List of errors encountered during processing, with adjusted IDs to
+      match original requests
+  """
+  @spec from_responses(EthereumJSONRPC.Transport.batch_response(), %{EthereumJSONRPC.request_id() => map()}) :: t()
   def from_responses(responses, id_to_params) when is_list(responses) and is_map(id_to_params) do
     %{errors: errors, blocks: blocks} =
       responses

@@ -143,6 +143,20 @@ defmodule EthereumJSONRPC.Block do
   """
   @type t :: %{String.t() => EthereumJSONRPC.data() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | nil}
 
+  @doc """
+    Processes a JSON-RPC response for a block request.
+
+    ## Parameters
+    - `response`: The JSON-RPC response containing either a block, nil result, or error
+    - `id_to_params`: Map of request IDs to their original parameters
+
+    ## Returns
+    - `{:ok, block}` if response contains a block
+    - `{:error, %{code: 404, message: "Not Found", data: params}}` if block not found
+    - `{:error, annotated_error}` if response contains an error
+  """
+  @spec from_response(EthereumJSONRPC.Transport.response(), %{EthereumJSONRPC.request_id() => any()}) ::
+          {:error, %{:data => any(), optional(any()) => any()}} | {:ok, any()}
   def from_response(%{id: id, result: nil}, id_to_params) when is_map(id_to_params) do
     params = Map.fetch!(id_to_params, id)
 
