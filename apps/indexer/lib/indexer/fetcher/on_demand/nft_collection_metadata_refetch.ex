@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.OnDemand.TokenMetadataRefetch do
+defmodule Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch do
   @moduledoc """
   Re-fetches token metadata.
   """
@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenMetadataRefetch do
   end
 
   defp fetch_metadata(token, _state) do
-    TokenInstance.drop_metadata(token.contract_address_hash)
+    TokenInstance.mark_nft_collection_to_refetch(token.contract_address_hash)
   end
 
   def start_link([init_opts, server_opts]) do

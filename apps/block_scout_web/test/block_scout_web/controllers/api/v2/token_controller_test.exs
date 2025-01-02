@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   alias Explorer.Chain.Events.Subscriber
 
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
-  alias Indexer.Fetcher.OnDemand.TokenMetadataRefetch, as: TokenMetadataRefetchOnDemand
+  alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
 
   describe "/tokens/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -1714,7 +1714,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
 
       start_supervised!(
-        {TokenMetadataRefetchOnDemand, [mocked_json_rpc_named_arguments, [name: TokenMetadataRefetchOnDemand]]}
+        {NFTCollectionMetadataRefetchOnDemand,
+         [mocked_json_rpc_named_arguments, [name: NFTCollectionMetadataRefetchOnDemand]]}
       )
 
       %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
@@ -1756,6 +1757,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       for token_instance_from_db <- token_instances_from_db do
         assert token_instance_from_db.metadata == nil
+        assert token_instance_from_db.error == ":marked_to_refetch"
       end
     end
 
