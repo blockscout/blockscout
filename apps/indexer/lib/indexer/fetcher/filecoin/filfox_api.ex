@@ -1,6 +1,6 @@
-defmodule Indexer.Fetcher.Filecoin.BeryxAPI do
+defmodule Indexer.Fetcher.Filecoin.FilfoxAPI do
   @moduledoc """
-  Interacts with the Beryx API to fetch account information based on an Ethereum
+  Interacts with the Filfox API to fetch account information based on an Ethereum
   address hash
   """
 
@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.Filecoin.BeryxAPI do
   alias HTTPoison.Response
 
   @doc """
-  Fetches account information for a given Ethereum address hash from the Beryx API.
+  Fetches account information for a given Ethereum address hash from the Filfox API.
 
   ## Parameters
   - `eth_address_hash` - The Ethereum address hash to fetch information for.
@@ -25,12 +25,10 @@ defmodule Indexer.Fetcher.Filecoin.BeryxAPI do
   def fetch_address_info(eth_address_hash) do
     config = Application.get_env(:indexer, __MODULE__)
     base_url = config |> Keyword.get(:base_url) |> String.trim_trailing("/")
-    api_token = config[:api_token]
 
-    url = "#{base_url}/account/info/#{eth_address_hash}"
+    url = "#{base_url}/address/#{eth_address_hash}"
 
     headers = [
-      {"Authorization", "Bearer #{api_token}"},
       {"Content-Type", "application/json"}
     ]
 
