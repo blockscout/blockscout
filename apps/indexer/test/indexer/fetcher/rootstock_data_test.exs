@@ -1,16 +1,16 @@
-defmodule Indexer.Fetcher.RootstockDataTest do
-  use EthereumJSONRPC.Case
-  use Explorer.DataCase
+if Application.compile_env(:explorer, :chain_type) == :rsk do
+  defmodule Indexer.Fetcher.RootstockDataTest do
+    use EthereumJSONRPC.Case
+    use Explorer.DataCase
 
-  import Mox
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+    import Mox
+    import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
-  alias Indexer.Fetcher.RootstockData
+    alias Indexer.Fetcher.RootstockData
 
-  setup :verify_on_exit!
-  setup :set_mox_global
+    setup :verify_on_exit!
+    setup :set_mox_global
 
-  if Application.compile_env(:explorer, :chain_type) == :rsk do
     test "do not start when all old blocks are fetched", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       RootstockData.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
