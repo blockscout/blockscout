@@ -844,6 +844,9 @@ config :indexer, Indexer.Fetcher.TokenInstance.Retry.Supervisor,
 config :indexer, Indexer.Fetcher.TokenInstance.Sanitize.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_SANITIZE_FETCHER")
 
+config :indexer, Indexer.Fetcher.TokenInstance.Refetch.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_REFETCH_FETCHER")
+
 config :indexer, Indexer.Fetcher.TokenInstance.LegacySanitize,
   enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_LEGACY_SANITIZE_FETCHER", "true")
 
@@ -890,6 +893,10 @@ config :indexer, Indexer.Fetcher.TokenInstance.Realtime,
 config :indexer, Indexer.Fetcher.TokenInstance.Sanitize,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_CONCURRENCY", 10),
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_BATCH_SIZE", 10)
+
+config :indexer, Indexer.Fetcher.TokenInstance.Refetch,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_REFETCH_CONCURRENCY", 10),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_REFETCH_BATCH_SIZE", 10)
 
 config :indexer, Indexer.Fetcher.TokenInstance.LegacySanitize,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_CONCURRENCY", 2),
