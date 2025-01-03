@@ -6,6 +6,9 @@ defmodule EthereumJSONRPC.Arbitrum do
 
   import EthereumJSONRPC
 
+  alias EthereumJSONRPC.Arbitrum.Constants.Contracts, as: ArbitrumContracts
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
+
   require Logger
   alias ABI.TypeDecoder
 
@@ -32,224 +35,6 @@ defmodule EthereumJSONRPC.Arbitrum do
           :callvalue => non_neg_integer(),
           :data => binary()
         }
-
-  @l2_to_l1_event_unindexed_params [
-    :address,
-    {:uint, 256},
-    {:uint, 256},
-    {:uint, 256},
-    {:uint, 256},
-    :bytes
-  ]
-
-  # outbox()
-  @selector_outbox "ce11e6ab"
-  # sequencerInbox()
-  @selector_sequencer_inbox "ee35f327"
-  # bridge()
-  @selector_bridge "e78cea92"
-  # latestConfirmed()
-  @selector_latest_confirmed "65f7f80d"
-  # getNode(uint64 nodeNum)
-  @selector_get_node "92c8134c"
-  @rollup_contract_abi [
-    %{
-      "inputs" => [],
-      "name" => "outbox",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "sequencerInbox",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "bridge",
-      "outputs" => [
-        %{
-          "internalType" => "address",
-          "name" => "",
-          "type" => "address"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "latestConfirmed",
-      "outputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "",
-          "type" => "uint64"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "",
-          "type" => "uint64"
-        }
-      ],
-      "name" => "getNode",
-      "outputs" => [
-        %{
-          "type" => "tuple",
-          "name" => "",
-          "internalType" => "struct Node",
-          "components" => [
-            %{"type" => "bytes32", "name" => "stateHash", "internalType" => "bytes32"},
-            %{"type" => "bytes32", "name" => "challengeHash", "internalType" => "bytes32"},
-            %{"type" => "bytes32", "name" => "confirmData", "internalType" => "bytes32"},
-            %{"type" => "uint64", "name" => "prevNum", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "deadlineBlock", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "noChildConfirmedBeforeBlock", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "stakerCount", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "childStakerCount", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "firstChildBlock", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "latestChildNumber", "internalType" => "uint64"},
-            %{"type" => "uint64", "name" => "createdAtBlock", "internalType" => "uint64"},
-            %{"type" => "bytes32", "name" => "nodeHash", "internalType" => "bytes32"}
-          ]
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
-  # constructOutboxProof(uint64 size, uint64 leaf)
-  @selector_construct_outbox_proof "42696350"
-  @node_interface_contract_abi [
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "uint64",
-          "name" => "size",
-          "type" => "uint64"
-        },
-        %{
-          "internalType" => "uint64",
-          "name" => "leaf",
-          "type" => "uint64"
-        }
-      ],
-      "name" => "constructOutboxProof",
-      "outputs" => [
-        %{
-          "internalType" => "bytes32",
-          "name" => "send",
-          "type" => "bytes32"
-        },
-        %{
-          "internalType" => "bytes32",
-          "name" => "root",
-          "type" => "bytes32"
-        },
-        %{
-          "internalType" => "bytes32[]",
-          "name" => "proof",
-          "type" => "bytes32[]"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
-  # isSpent(uint256 index)
-  @selector_is_spent "5a129efe"
-  @outbox_contract_abi [
-    %{
-      "inputs" => [
-        %{
-          "internalType" => "uint256",
-          "name" => "index",
-          "type" => "uint256"
-        }
-      ],
-      "name" => "isSpent",
-      "outputs" => [
-        %{
-          "internalType" => "bool",
-          "name" => "",
-          "type" => "bool"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
-
-  # decimals()
-  @selector_decimals "313ce567"
-  # name()
-  @selector_name "06fdde03"
-  # symbol()
-  @selector_symbol "95d89b41"
-  @erc20_contract_abi [
-    %{
-      "inputs" => [],
-      "name" => "decimals",
-      "outputs" => [
-        %{
-          "internalType" => "uint8",
-          "name" => "",
-          "type" => "uint8"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "name",
-      "outputs" => [
-        %{
-          "internalType" => "string",
-          "name" => "",
-          "type" => "string"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    },
-    %{
-      "inputs" => [],
-      "name" => "symbol",
-      "outputs" => [
-        %{
-          "internalType" => "string",
-          "name" => "",
-          "type" => "string"
-        }
-      ],
-      "stateMutability" => "view",
-      "type" => "function"
-    }
-  ]
 
   @doc """
     Retrieves specific contract addresses associated with Arbitrum rollup contract.
@@ -279,13 +64,17 @@ defmodule EthereumJSONRPC.Arbitrum do
   def get_contracts_for_rollup(rollup_address, contracts_set, json_rpc_named_arguments)
 
   def get_contracts_for_rollup(rollup_address, :bridge, json_rpc_named_arguments) do
-    call_simple_getters_in_rollup_contract(rollup_address, [@selector_bridge], json_rpc_named_arguments)
+    call_simple_getters_in_rollup_contract(
+      rollup_address,
+      [ArbitrumContracts.bridge_selector()],
+      json_rpc_named_arguments
+    )
   end
 
   def get_contracts_for_rollup(rollup_address, :inbox_outbox, json_rpc_named_arguments) do
     call_simple_getters_in_rollup_contract(
       rollup_address,
-      [@selector_sequencer_inbox, @selector_outbox],
+      [ArbitrumContracts.sequencer_inbox_selector(), ArbitrumContracts.outbox_selector()],
       json_rpc_named_arguments
     )
   end
@@ -313,19 +102,12 @@ defmodule EthereumJSONRPC.Arbitrum do
         args: []
       }
     end)
-    |> EthereumJSONRPC.execute_contract_functions(@rollup_contract_abi, json_rpc_named_arguments)
+    |> EthereumJSONRPC.execute_contract_functions(ArbitrumContracts.rollup_contract_abi(), json_rpc_named_arguments)
     |> Enum.zip(method_ids)
     |> Enum.reduce(%{}, fn {{:ok, [response]}, method_id}, retval ->
-      Map.put(retval, atomized_key(method_id), response)
+      Map.put(retval, ArbitrumContracts.atomized_rollup_contract_selector(method_id), response)
     end)
   end
-
-  defp atomized_key(@selector_outbox), do: :outbox
-  defp atomized_key(@selector_sequencer_inbox), do: :sequencer_inbox
-  defp atomized_key(@selector_bridge), do: :bridge
-  defp atomized_key(@selector_decimals), do: :decimals
-  defp atomized_key(@selector_name), do: :name
-  defp atomized_key(@selector_symbol), do: :symbol
 
   @doc """
     Retrieves the latest confirmed node index for withdrawals Merkle tree.
@@ -349,9 +131,9 @@ defmodule EthereumJSONRPC.Arbitrum do
   def get_latest_confirmed_node_index(rollup_address, json_rpc_l1_named_arguments) do
     case read_contract(
            rollup_address,
-           @selector_latest_confirmed,
+           ArbitrumContracts.latest_confirmed_selector(),
            [],
-           @rollup_contract_abi,
+           ArbitrumContracts.rollup_contract_abi(),
            json_rpc_l1_named_arguments
          ) do
       {:ok, [value]} ->
@@ -387,9 +169,9 @@ defmodule EthereumJSONRPC.Arbitrum do
   def get_node_creation_block_number(rollup_address, node_index, json_rpc_l1_named_arguments) do
     case read_contract(
            rollup_address,
-           @selector_get_node,
+           ArbitrumContracts.get_node_selector(),
            [node_index],
-           @rollup_contract_abi,
+           ArbitrumContracts.rollup_contract_abi(),
            json_rpc_l1_named_arguments
          ) do
       # `createdAtBlock` property of node tuple
@@ -426,7 +208,7 @@ defmodule EthereumJSONRPC.Arbitrum do
       data
     ] =
       event.data
-      |> decode_data(@l2_to_l1_event_unindexed_params)
+      |> decode_data(ArbitrumEvents.l2_to_l1_unindexed_params())
 
     position =
       case quantity_to_integer(event.fourth_topic) do
@@ -517,9 +299,9 @@ defmodule EthereumJSONRPC.Arbitrum do
   def construct_outbox_proof(node_interface_address, size, leaf, json_rpc_named_arguments) do
     case read_contract(
            node_interface_address,
-           @selector_construct_outbox_proof,
+           ArbitrumContracts.construct_outbox_proof_selector(),
            [size, leaf],
-           @node_interface_contract_abi,
+           ArbitrumContracts.node_interface_contract_abi(),
            json_rpc_named_arguments
          ) do
       {:ok, proof} ->
@@ -555,9 +337,9 @@ defmodule EthereumJSONRPC.Arbitrum do
   def withdrawal_spent?(outbox_contract, position, json_l1_rpc_named_arguments) do
     case read_contract(
            outbox_contract,
-           @selector_is_spent,
+           ArbitrumContracts.is_spent_selector(),
            [position],
-           @outbox_contract_abi,
+           ArbitrumContracts.outbox_contract_abi(),
            json_l1_rpc_named_arguments
          ) do
       {:ok, [value]} ->
@@ -567,43 +349,6 @@ defmodule EthereumJSONRPC.Arbitrum do
         Logger.error("outbox_contract.isSpent(position) error occurred: #{inspect(err)}")
         {:error, err}
     end
-  end
-
-  # Retrieve ERC20 token information (name, symbol, decimals) from the contract
-  #
-  # ## Parameters
-  # - `token_address`: The address of the token's smart contract
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #
-  # ## Returns
-  # - A map with the fields `decimals`, `name` and `symbol` containing associated values
-  #   or nil in case of error
-  @spec fetch_token_info(EthereumJSONRPC.address(), EthereumJSONRPC.json_rpc_named_arguments()) ::
-          %{
-            :decimals => non_neg_integer() | nil,
-            :name => binary() | nil,
-            :symbol => binary() | nil
-          }
-  def fetch_token_info(token_address, json_rpc_named_arguments) do
-    method_ids = [@selector_decimals, @selector_name, @selector_symbol]
-
-    method_ids
-    |> Enum.map(fn method_id ->
-      %{
-        contract_address: value_to_address(token_address),
-        method_id: method_id,
-        args: []
-      }
-    end)
-    |> EthereumJSONRPC.execute_contract_functions(@erc20_contract_abi, json_rpc_named_arguments)
-    |> Enum.zip(method_ids)
-    |> Enum.reduce(%{}, fn
-      {{:ok, [response]}, method_id}, retval ->
-        Map.put(retval, atomized_key(method_id), response)
-
-      {{:error, _reason}, method_id}, retval ->
-        Map.put(retval, atomized_key(method_id), nil)
-    end)
   end
 
   # Read a specified contract by provided selector and parameters from the RPC node

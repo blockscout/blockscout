@@ -55,14 +55,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1, log_debug: 1]
 
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
   alias Indexer.Helper, as: IndexerHelper
 
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions, as: DbParentChainTransactions
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
@@ -78,9 +82,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   @logs_per_report 10
   @zero_counters %{pairs_counter: 1, capped_logs_counter: 0, report?: false}
-
-  # keccak256("SendRootUpdated(bytes32,bytes32)")
-  @send_root_updated_event "0xb4df3847300f076a369cd76d2314b470a1194d9e8a6bb97f1860aee88a5f6748"
 
   @doc """
     Discovers and processes new confirmations of rollup blocks within a calculated block range.
@@ -354,7 +355,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           #                to the rollup genesis and the L1 block _value_.
           # {lower, higher} - there are no confirmations between L1 block _lower_
           #                   and the L1 block _higher_.
-          Db.l1_blocks_to_expect_rollup_blocks_confirmation(nil)
+          DbSettlement.l1_blocks_to_expect_rollup_blocks_confirmation(nil)
 
         _ ->
           {expected_confirmation_start_block, expected_confirmation_end_block}
@@ -682,7 +683,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     existing_lifecycle_transactions =
       transaction_hashes
       |> Map.values()
-      |> Db.lifecycle_transactions()
+      |> DbParentChainTransactions.lifecycle_transactions()
       |> Enum.reduce(%{}, fn transaction, acc ->
         Map.put(acc, transaction.hash, transaction)
       end)
@@ -764,7 +765,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       rollup_blocks_to_l1_transactions
       |> Map.keys()
       |> Enum.reduce(%{}, fn block_hash, transformed ->
-        rollup_block_num = Db.rollup_block_hash_to_num(block_hash)
+        rollup_block_num = DbSettlement.rollup_block_hash_to_num(block_hash)
 
         # nil is applicable for the case when the block is not indexed yet by
         # the block fetcher, it makes sense to skip this block so far
@@ -943,7 +944,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     #   because the method can be called for guessed block number rather than received from
     #   the batch description or from blocks list received after a batch handling. In this case
     #   the confirmation must be postponed until the corresponding batch is handled.
-    batch = Db.get_batch_by_rollup_block_number(rollup_block_num)
+    batch = DbSettlement.get_batch_by_rollup_block_number(rollup_block_num)
 
     if batch != nil do
       log_info(
@@ -967,13 +968,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           non_neg_integer()
         ) :: {:ok, [Arbitrum.BatchBlock.to_import()]} | {:error, []}
   defp discover_rollup_blocks__get_unconfirmed_rollup_blocks(batch, rollup_block_num) do
-    unconfirmed_rollup_blocks = Db.unconfirmed_rollup_blocks(batch.start_block, rollup_block_num)
+    unconfirmed_rollup_blocks = DbSettlement.unconfirmed_rollup_blocks(batch.start_block, rollup_block_num)
 
     if Enum.empty?(unconfirmed_rollup_blocks) do
       # Blocks are not found only in case when all blocks in the batch confirmed
       # or in case when Chain.Block for block in the batch are not received yet
 
-      if Db.count_confirmed_rollup_blocks_in_batch(batch.number) == batch.end_block - batch.start_block + 1 do
+      if DbSettlement.count_confirmed_rollup_blocks_in_batch(batch.number) == batch.end_block - batch.start_block + 1 do
         log_info("No unconfirmed blocks in the batch #{batch.number}")
         {:ok, []}
       else
@@ -1230,7 +1231,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         log_debug("Examining the transaction #{event["transactionHash"]}")
 
         rollup_block_hash = send_root_updated_event_parse(event)
-        rollup_block_num = Db.rollup_block_hash_to_num(rollup_block_hash)
+        rollup_block_num = DbSettlement.rollup_block_hash_to_num(rollup_block_hash)
 
         case rollup_block_num do
           nil ->
@@ -1307,7 +1308,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
               start_block,
               end_block,
               outbox_address,
-              [@send_root_updated_event],
+              [ArbitrumEvents.send_root_updated()],
               json_rpc_named_arguments
             )
 
@@ -1503,7 +1504,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     lifecycle_transactions =
       basic_lifecycle_transactions
       |> ArbitrumHelper.extend_lifecycle_transactions_with_ts_and_status(l1_blocks_to_ts, track_finalization?)
-      |> Db.get_indices_for_l1_transactions()
+      |> DbParentChainTransactions.get_indices_for_l1_transactions()
 
     {updated_rollup_blocks, highest_confirmed_block_number} =
       confirmed_rollup_blocks
@@ -1565,7 +1566,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
 
   defp get_confirmed_l2_to_l1_messages(block_number) do
     block_number
-    |> Db.sent_l2_to_l1_messages()
+    |> DbMessages.sent_l2_to_l1_messages()
     |> Enum.map(fn transaction ->
       Map.put(transaction, :status, :confirmed)
     end)

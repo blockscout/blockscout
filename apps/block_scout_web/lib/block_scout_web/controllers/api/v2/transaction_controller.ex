@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.Arbitrum.Reader, as: ArbitrumReader
+  alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
@@ -252,7 +252,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   """
   @spec arbitrum_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def arbitrum_batch(conn, params) do
-    handle_batch_transactions(conn, params, &ArbitrumReader.batch_transactions/2)
+    handle_batch_transactions(conn, params, &ArbitrumSettlementReader.batch_transactions/2)
   end
 
   @doc """
