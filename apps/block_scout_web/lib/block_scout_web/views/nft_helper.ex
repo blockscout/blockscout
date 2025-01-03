@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.NFTHelper do
   @moduledoc """
     Module with functions for NFT view
   """
-  @ipfs_protocol "ipfs://"
+  alias Explorer.Token.MetadataRetriever
 
   def get_media_src(nil, _), do: nil
 
@@ -69,27 +69,22 @@ defmodule BlockScoutWeb.NFTHelper do
 
     cond do
       image_url_downcase =~ ~r/^ipfs:\/\/ipfs/ ->
-        prefix = @ipfs_protocol <> "ipfs/"
-        ipfs_link(image_url, prefix)
+        # take resource id after "ipfs://ipfs/" prefix
+        resource_id = image_url |> String.slice(12..-1//1)
+        MetadataRetriever.ipfs_link(resource_id)
 
       image_url_downcase =~ ~r/^ipfs:\/\// ->
-        prefix = @ipfs_protocol
-        ipfs_link(image_url, prefix)
+        # take resource id after "ipfs://" prefix
+        resource_id = image_url |> String.slice(7..-1//1)
+        MetadataRetriever.ipfs_link(resource_id)
+
+      image_url_downcase =~ ~r/^ar:\/\// ->
+        # take resource id after "ar://" prefix
+        resource_id = image_url |> String.slice(5..-1//1)
+        MetadataRetriever.arweave_link(resource_id)
 
       true ->
         image_url
     end
-  end
-
-  defp ipfs_link(image_url, prefix) do
-    ipfs_uid = String.slice(image_url, String.length(prefix)..-1//1)
-
-    public_ipfs_gateway_url =
-      :indexer
-      |> Application.get_env(:ipfs)
-      |> Keyword.get(:public_gateway_url)
-      |> String.trim_trailing("/")
-
-    public_ipfs_gateway_url <> "/" <> ipfs_uid
   end
 end
