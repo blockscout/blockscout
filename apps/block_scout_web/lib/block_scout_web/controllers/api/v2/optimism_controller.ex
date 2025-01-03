@@ -82,13 +82,24 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
         Task.async(fn ->
           l2_block_number_from = TransactionBatch.edge_l2_block_number(fs.id, :min)
           l2_block_number_to = TransactionBatch.edge_l2_block_number(fs.id, :max)
-          transaction_count = Transaction.transaction_count_for_block_range(l2_block_number_from..l2_block_number_to)
+
           {batch_data_container, _} = FrameSequenceBlob.list(fs.id, api?: true)
 
-          fs
-          |> Map.put(:l2_block_range, l2_block_number_from..l2_block_number_to)
-          |> Map.put(:transaction_count, transaction_count)
-          |> Map.put(:batch_data_container, batch_data_container)
+          # `op_transaction_batches` might not have batches related to frame_sequence_id which exists in `frame_sequences` table with view_ready=true
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if l2_block_number_from && l2_block_number_to do
+            transaction_count = Transaction.transaction_count_for_block_range(l2_block_number_from..l2_block_number_to)
+
+            fs
+            |> Map.put(:l2_block_range, l2_block_number_from..l2_block_number_to)
+            |> Map.put(:transaction_count, transaction_count)
+            |> Map.put(:batch_data_container, batch_data_container)
+          else
+            fs
+            |> Map.put(:l2_block_range, 0..0)
+            |> Map.put(:transaction_count, 0)
+            |> Map.put(:batch_data_container, batch_data_container)
+          end
         end)
       end)
       |> Task.yield_many(:infinity)
