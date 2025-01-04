@@ -459,6 +459,11 @@ defmodule EthereumJSONRPC.Receipt do
     :ignore
   end
 
+  # elder specific transaction receipt fields
+  defp entry_to_elixir({key, value}) when key in ~w(elderOuterTx) do
+    :ignore
+  end
+
   defp entry_to_elixir({key, value}) do
     {:error, {:unknown_key, %{key: key, value: value}}}
   end
