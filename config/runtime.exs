@@ -784,6 +784,9 @@ config :indexer, Indexer.Fetcher.TransactionAction,
       "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
     )
 
+config :indexer, Indexer.PendingTransactionsSanitizer,
+  interval: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_SANITIZER_INTERVAL", "1h")
+
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER")
 
