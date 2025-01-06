@@ -244,8 +244,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
           # If chunk fails, try again with half the chunk size
           next_chunk_size = div(current_chunk_size, 2)
 
-        # credo:disable-for-lines:4 Credo.Check.Refactor.Nesting
-        case fetch_receipts_with_fallback(chunk, json_rpc_named_arguments, next_chunk_size, original_chunk_size) do
+          # credo:disable-for-lines:4 Credo.Check.Refactor.Nesting
+          case fetch_receipts_with_fallback(chunk, json_rpc_named_arguments, next_chunk_size, original_chunk_size) do
             {:ok, chunk_receipts} -> {:cont, {:ok, acc ++ chunk_receipts}}
             {:error, chunk_reason} -> {:halt, {:error, {:chunk_failed, chunk_reason, reason}}}
           end
