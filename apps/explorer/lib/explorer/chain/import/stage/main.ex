@@ -10,7 +10,6 @@ defmodule Explorer.Chain.Import.Stage.Main do
   @addresses_runner Runner.Addresses
 
   @rest_runners [
-    Runner.Tokens,
     Runner.Blocks,
     Runner.Address.CoinBalances,
     Runner.Address.CoinBalancesDaily,
