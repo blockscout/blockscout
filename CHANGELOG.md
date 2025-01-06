@@ -14,7 +14,7 @@
 - Add request to /cache/{tx_hash} of transaction interpreter ([#11279](https://github.com/blockscout/blockscout/issues/11279))
 - Switch DB requests from replica to master in case of replica inaccessibility ([#11020](https://github.com/blockscout/blockscout/issues/11020))
 - Add gzip encoding option ([#11292](https://github.com/blockscout/blockscout/issues/11292))
-- Add Stylus verificaiton support ([#11183](https://github.com/blockscout/blockscout/issues/11183))
+- Add Stylus verification support ([#11183](https://github.com/blockscout/blockscout/issues/11183))
 - Multiple json rpc urls ([#10934](https://github.com/blockscout/blockscout/issues/10934))
 - Gas prices with base fee if no transactions ([#11132](https://github.com/blockscout/blockscout/issues/11132))
 - Zilliqa consensus data related to block  ([#10699](https://github.com/blockscout/blockscout/issues/10699))
