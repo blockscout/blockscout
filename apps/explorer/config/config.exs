@@ -134,6 +134,8 @@ config :explorer, Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleS
 config :explorer, Explorer.Migrator.SanitizeDuplicatedLogIndexLogs, enabled: true
 config :explorer, Explorer.Migrator.RefetchContractCodes, enabled: true
 config :explorer, Explorer.Migrator.BackfillMultichainSearchDB, enabled: true
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex, enabled: true
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 

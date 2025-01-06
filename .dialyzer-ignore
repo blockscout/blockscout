@@ -1,4 +1,5 @@
 lib/ethereum_jsonrpc/rolling_window.ex:171
+lib/explorer/migrator/heavy_db_index_operation/drop_logs_block_number_asc_index_asc_index.ex:6
 lib/explorer/smart_contract/solidity/publisher_worker.ex:1
 lib/explorer/smart_contract/vyper/publisher_worker.ex:1
 lib/explorer/smart_contract/stylus/publisher_worker.ex:1

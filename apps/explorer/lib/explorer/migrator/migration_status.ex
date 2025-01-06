@@ -6,6 +6,8 @@ defmodule Explorer.Migrator.MigrationStatus do
 
   alias Explorer.Repo
 
+  @migration_name_atom :migration_name
+
   @typedoc """
     The structure of status of a migration:
     * `migration_name` - The name of the migration.
@@ -14,7 +16,7 @@ defmodule Explorer.Migrator.MigrationStatus do
   """
   @primary_key false
   typed_schema "migrations_status" do
-    field(:migration_name, :string, primary_key: true)
+    field(@migration_name_atom, :string, primary_key: true)
     # ["started", "completed"]
     field(:status, :string)
     field(:meta, :map)
@@ -24,7 +26,7 @@ defmodule Explorer.Migrator.MigrationStatus do
 
   @doc false
   def changeset(migration_status \\ %__MODULE__{}, params) do
-    cast(migration_status, params, [:migration_name, :status, :meta])
+    cast(migration_status, params, [@migration_name_atom, :status, :meta])
   end
 
   @doc """
@@ -55,7 +57,7 @@ defmodule Explorer.Migrator.MigrationStatus do
   def set_status(migration_name, status) do
     %{migration_name: migration_name, status: status}
     |> changeset()
-    |> Repo.insert(on_conflict: {:replace_all_except, [:inserted_at, :meta]}, conflict_target: :migration_name)
+    |> Repo.insert(on_conflict: {:replace_all_except, [:inserted_at, :meta]}, conflict_target: @migration_name_atom)
   end
 
   @doc """

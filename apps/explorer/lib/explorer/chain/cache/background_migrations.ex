@@ -29,6 +29,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :tt_denormalization_finished,
     key: :sanitize_duplicated_log_index_logs_finished,
     key: :backfill_multichain_search_db_finished,
+    key: :heavy_indexes_add_logs_block_hash_index_finished,
+    key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
     key: :arbitrum_da_records_normalization_finished
 
   @dialyzer :no_match
@@ -41,6 +43,11 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
     TransactionsDenormalization
+  }
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.{
+    AddLogsBlockHashIndex,
+    DropLogsBlockNumberAscIndexAscIndex
   }
 
   defp handle_fallback(:transactions_denormalization_finished) do
@@ -86,6 +93,24 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   defp handle_fallback(:backfill_multichain_search_db_finished) do
     Task.start_link(fn ->
       set_backfill_multichain_search_db_finished(BackfillMultichainSearchDB.migration_finished?())
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_add_logs_block_hash_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_add_logs_block_hash_index_finished(AddLogsBlockHashIndex.migration_finished?())
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished(
+        DropLogsBlockNumberAscIndexAscIndex.migration_finished?()
+      )
     end)
 
     {:return, false}
