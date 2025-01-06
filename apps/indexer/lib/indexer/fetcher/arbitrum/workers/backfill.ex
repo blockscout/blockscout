@@ -14,6 +14,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
     The module operates within a specified block range and ensures all blocks are properly
     indexed before attempting to backfill the missing Arbitrum-specific information. All
     database updates are performed in a single transaction to maintain data consistency.
+
+    ## Receipt Collection Strategy
+
+    When fetching transaction receipts, the module first attempts to collect receipts for
+    multiple blocks in batches using `eth_getBlockReceipts`. If this fails, it falls back
+    to fetching individual transaction receipts using `eth_getTransactionReceipt`.
   """
 
   import Ecto.Query
@@ -148,13 +154,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
           EthereumJSONRPC.json_rpc_named_arguments(),
           non_neg_integer()
         ) :: :ok | :error
-  defp backfill_for_blocks(block_numbers, json_rpc_named_arguments, chunk_size)
-
-  defp backfill_for_blocks([], _json_rpc_named_arguments, _chunk_size), do: :ok
-
   defp backfill_for_blocks(block_numbers, json_rpc_named_arguments, chunk_size) do
     with {:ok, blocks} <- fetch_blocks(block_numbers, json_rpc_named_arguments, chunk_size),
-         {:ok, receipts} <- fetch_receipts(block_numbers, json_rpc_named_arguments, chunk_size) do
+         {:ok, receipts} <-
+           fetch_receipts_with_fallback(block_numbers, json_rpc_named_arguments, chunk_size, chunk_size) do
       update_db(blocks, receipts)
     else
       {:error, _} -> :error
@@ -188,31 +191,115 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
     end)
   end
 
-  # Makes JSON RPC requests in chunks to retrieve transaction receipts for a list
-  # of block numbers.
+  # Recursively fetches transaction receipts with fallback mechanisms for large blocks.
+  #
+  # This function implements a fallback strategy for fetching transaction receipts:
+  # 1. First attempts to fetch receipts for blocks in chunks using eth_getBlockReceipts
+  # 2. If a chunk fails, retries with half the chunk size
+  # 3. For single blocks that fail, falls back to fetching individual transaction receipts
   #
   # ## Parameters
   # - `block_numbers`: List of block numbers to fetch receipts for
   # - `json_rpc_named_arguments`: Configuration for JSON-RPC connection
-  # - `chunk_size`: Maximum number of blocks to fetch in a single request
+  # - `current_chunk_size`: Current maximum number of blocks to fetch in a single request
+  # - `original_chunk_size`: Original chunk size from fetch_blocks (used for transaction batching)
   #
   # ## Returns
-  # - `{:ok, [map()]}` - List of successfully retrieved receipts
-  # - `{:error, any()}` - Error from failed receipt fetch
-  @spec fetch_receipts(
+  # - `{:ok, receipts}` with list of successfully fetched receipts
+  # - `{:error, reason}` if fetching fails even with fallback mechanisms
+  @spec fetch_receipts_with_fallback(
           [non_neg_integer()],
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          non_neg_integer(),
+          non_neg_integer()
+        ) :: {:ok, [map()]} | {:error, any()}
+  defp fetch_receipts_with_fallback([], _json_rpc_named_arguments, _current_chunk_size, _original_chunk_size),
+    do: {:ok, []}
+
+  defp fetch_receipts_with_fallback([block_number], json_rpc_named_arguments, _current_chunk_size, original_chunk_size) do
+    # For a single block, try eth_getBlockReceipts first
+    case Receipts.fetch_by_block_numbers([block_number], json_rpc_named_arguments) do
+      {:ok, %{receipts: receipts}} ->
+        {:ok, receipts}
+
+      {:error, _} ->
+        # If that fails, try fetching individual transaction receipts
+        fetch_individual_receipts(block_number, json_rpc_named_arguments, original_chunk_size)
+    end
+  end
+
+  defp fetch_receipts_with_fallback(block_numbers, json_rpc_named_arguments, current_chunk_size, original_chunk_size) do
+    block_numbers
+    |> Enum.chunk_every(current_chunk_size)
+    |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, acc} ->
+      case Receipts.fetch_by_block_numbers(chunk, json_rpc_named_arguments) do
+        {:ok, %{receipts: receipts}} ->
+          {:cont, {:ok, acc ++ receipts}}
+
+        {:error, reason} ->
+          log_warning(
+            "Block receipts request failed for blocks #{Enum.min(chunk)}..#{Enum.max(chunk)}, retrying with smaller chunks"
+          )
+
+          # If chunk fails, try again with half the chunk size
+          next_chunk_size = div(current_chunk_size, 2)
+
+        # credo:disable-for-lines:4 Credo.Check.Refactor.Nesting
+        case fetch_receipts_with_fallback(chunk, json_rpc_named_arguments, next_chunk_size, original_chunk_size) do
+            {:ok, chunk_receipts} -> {:cont, {:ok, acc ++ chunk_receipts}}
+            {:error, chunk_reason} -> {:halt, {:error, {:chunk_failed, chunk_reason, reason}}}
+          end
+      end
+    end)
+  end
+
+  # Fetches transaction receipts individually for a single block using eth_getTransactionReceipt.
+  #
+  # This function is used as a fallback when eth_getBlockReceipts fails for a block. It:
+  # 1. Retrieves the block with its transactions from the database
+  # 2. Extracts transaction hashes from the block
+  # 3. Splits transactions into chunks based on the chunk size
+  # 4. Fetches receipts for each chunk of transactions using eth_getTransactionReceipt
+  #
+  # ## Parameters
+  # - `block_number`: The number of the block to fetch receipts for
+  # - `json_rpc_named_arguments`: Configuration for JSON-RPC connection
+  # - `chunk_size`: Maximum number of transactions to fetch receipts for in a single batch
+  #
+  # ## Returns
+  # - `{:ok, receipts}` with list of successfully fetched receipts
+  # - `{:error, reason}` if fetching any receipt fails
+  @spec fetch_individual_receipts(
+          non_neg_integer(),
           EthereumJSONRPC.json_rpc_named_arguments(),
           non_neg_integer()
         ) :: {:ok, [map()]} | {:error, any()}
-  defp fetch_receipts(block_numbers, json_rpc_named_arguments, chunk_size) do
-    block_numbers
-    |> Enum.chunk_every(chunk_size)
-    |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, acc} ->
-      case Receipts.fetch_by_block_numbers(chunk, json_rpc_named_arguments) do
-        {:ok, %{receipts: receipts}} -> {:cont, {:ok, acc ++ receipts}}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
+  defp fetch_individual_receipts(block_number, json_rpc_named_arguments, chunk_size) do
+    log_warning("Falling back to individual receipt fetching for block #{block_number}")
+
+    with [block] <- ArbitrumDbUtils.rollup_blocks([block_number]),
+         transaction_params when is_list(transaction_params) <-
+           Enum.map(block.transactions, fn tx ->
+             %{
+               # defining the gas is required for the receipt to be fetched
+               # but actually not used
+               gas: tx.gas,
+               hash: tx.hash
+             }
+           end) do
+      transaction_params
+      |> Enum.chunk_every(chunk_size)
+      |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, acc} ->
+        case Receipts.fetch(chunk, json_rpc_named_arguments) do
+          {:ok, %{receipts: receipts}} -> {:cont, {:ok, acc ++ receipts}}
+          {:error, reason} -> {:halt, {:error, reason}}
+        end
+      end)
+    else
+      # It is assumed that this branch is unreachable, as there is a check for
+      # `indexed_blocks?` above in the stack
+      [] -> {:error, :block_not_found}
+    end
   end
 
   # Updates `Explorer.Chain.Block` and `Explorer.Chain.Transaction` records in the
