@@ -33,7 +33,7 @@ You can also run IEx (Interactive Elixir): `$ iex -S mix phx.server` (This can b
 * Lint the Elixir code: `mix credo --strict`
 * Run the dialyzer: `mix dialyzer --halt-exit-status`
 * Check the Elixir code for vulnerabilities: `mix sobelow --config`
-* Update translations templates and translations and check there are no uncommitted changes: `mix gettext.extract --merge`
+* Update translation templates and translations and check there are no uncommitted changes: `mix gettext.extract --merge`
 * Lint the JavaScript code: `cd assets && npm run eslint`
 
 ## Internationalization
