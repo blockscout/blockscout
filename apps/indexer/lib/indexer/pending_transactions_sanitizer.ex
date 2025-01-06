@@ -127,7 +127,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
     case transaction
          |> Changeset.change()
-         |> Repo.delete() do
+         |> Repo.delete(timeout: :infinity) do
       {:ok, _transaction} ->
         Logger.debug(
           "Transaction with hash #{pending_transaction_hash_string} successfully deleted from Blockscout DB because it doesn't exist in the archive node anymore",
