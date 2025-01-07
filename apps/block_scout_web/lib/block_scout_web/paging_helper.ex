@@ -351,4 +351,21 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_validators_blackfort_sorting("address_hash", "desc"), do: [desc_nulls_last: :address_hash]
 
   defp do_validators_blackfort_sorting(_, _), do: []
+
+  @doc """
+  Extracts the sorting parameters for Zilliqa validators from the request query
+  parameters
+  """
+  @spec validators_zilliqa_sorting(%{required(String.t()) => String.t()}) :: [
+          {:sorting, SortingHelper.sorting_params()}
+        ]
+  def validators_zilliqa_sorting(%{"sort" => sort_field, "order" => order}) do
+    [sorting: do_validators_zilliqa_sorting(sort_field, order)]
+  end
+
+  def validators_zilliqa_sorting(_), do: []
+
+  defp do_validators_zilliqa_sorting("index", "asc"), do: [asc_nulls_first: :index]
+  defp do_validators_zilliqa_sorting("index", "desc"), do: [desc_nulls_last: :index]
+  defp do_validators_zilliqa_sorting(_, _), do: []
 end
