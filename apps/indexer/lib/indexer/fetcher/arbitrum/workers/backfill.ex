@@ -27,6 +27,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
 
   alias EthereumJSONRPC.{Blocks, Receipts}
   alias Explorer.Chain.Block, as: RollupBlock
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.Transaction, as: RollupTransaction
   alias Explorer.Repo
 
@@ -284,7 +285,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
                # defining the gas is required for the receipt to be fetched
                # but actually not used
                gas: tx.gas,
-               hash: tx.hash
+               hash: Hash.to_string(tx.hash)
              }
            end) do
       transaction_params
