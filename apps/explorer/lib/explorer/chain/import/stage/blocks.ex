@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Import.Stage.Tokens do
+defmodule Explorer.Chain.Import.Stage.Blocks do
   @moduledoc """
-  Imports tokens.
+  Import blocks.
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Stage.Tokens do
   @behaviour Stage
 
   @runners [
-    Runner.Tokens
+    Runner.Blocks
   ]
 
   @impl Stage

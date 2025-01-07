@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Stage.Main do
   @moduledoc """
-  Imports main data (addresses, address_coin_balances, address_coin_balances_daily, tokens, blocks, transactions).
+  Imports main data (addresses, address_coin_balances, address_coin_balances_daily, tokens, transactions).
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
@@ -10,7 +10,7 @@ defmodule Explorer.Chain.Import.Stage.Main do
   @addresses_runner Runner.Addresses
 
   @rest_runners [
-    Runner.Blocks,
+    Runner.Tokens,
     Runner.Address.CoinBalances,
     Runner.Address.CoinBalancesDaily,
     Runner.Transactions
