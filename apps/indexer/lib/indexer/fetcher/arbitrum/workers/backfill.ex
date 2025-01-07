@@ -242,8 +242,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
             "Block receipts request failed for blocks #{Enum.min(chunk)}..#{Enum.max(chunk)}, retrying with smaller chunks"
           )
 
-          # If chunk fails, try again with half the chunk size
-          next_chunk_size = div(current_chunk_size, 2)
+          # If chunk fails, try again with half the actual chunk size
+          next_chunk_size = div(min(current_chunk_size, length(chunk)), 2)
 
           # credo:disable-for-lines:4 Credo.Check.Refactor.Nesting
           case fetch_receipts_with_fallback(chunk, json_rpc_named_arguments, next_chunk_size, original_chunk_size) do
