@@ -64,7 +64,7 @@ bump_version() {
         sed -i '' "s/version: \"$current_version\"/version: \"$new_version\"/" "$MIX_FILE"
     done
 
-    sed -i '' "s/version: \"$current_version/version: \"$new_version/" "$CONFIG_FILE"
+    sed -i '' "s/version: \"$current_version\"/version: \"$new_version\"/" "$CONFIG_FILE"
     sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_FILE"
     sed -i '' "s/RELEASE_VERSION: $current_version/RELEASE_VERSION: $new_version/" "$DOCKER_COMPOSE_NO_SERVICES_FILE"
     sed -i '' "s/RELEASE_VERSION ?= '$current_version'/RELEASE_VERSION ?= '$new_version'/" "$MAKE_FILE"
