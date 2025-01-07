@@ -88,7 +88,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
     test "coin balances are deleted and new balances are derived if some blocks lost consensus",
          %{consensus_block: %{number: block_number} = block, options: options} do
-      %{hash: address_hash} = address = insert(:address)
+      %{hash: address_hash} = address = insert(:address, fetched_coin_balance_block_number: block_number)
 
       prev_block_number = block_number - 1
 
@@ -101,7 +101,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       assert {:ok,
               %{
-                delete_address_coin_balances: [^address_hash],
+                delete_address_coin_balances: [{^address_hash, ^block_number}],
                 derive_address_fetched_coin_balances: [
                   %{
                     hash: ^address_hash,
@@ -112,6 +112,33 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
               }} = run_block_consensus_change(block, true, options)
 
       assert %{value: ^prev_value, block_number: ^prev_block_number} = Repo.one(Address.CoinBalance)
+    end
+
+    test "derive_address_fetched_coin_balances only updates addresses if its fetched_coin_balance_block_number lost consensus",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      %{hash: address_hash} = address = insert(:address, fetched_coin_balance_block_number: block_number)
+      address_1 = insert(:address, fetched_coin_balance_block_number: block_number + 2)
+
+      prev_block_number = block_number - 1
+
+      insert(:address_coin_balance, address: address, block_number: block_number)
+      %{value: prev_value} = insert(:address_coin_balance, address: address, block_number: prev_block_number)
+
+      insert(:address_coin_balance, address: address_1, block_number: block_number + 2)
+
+      insert(:block, number: block_number, consensus: true)
+
+      assert {:ok,
+              %{
+                delete_address_coin_balances: [{^address_hash, ^block_number}],
+                derive_address_fetched_coin_balances: [
+                  %{
+                    hash: ^address_hash,
+                    fetched_coin_balance: ^prev_value,
+                    fetched_coin_balance_block_number: ^prev_block_number
+                  }
+                ]
+              }} = run_block_consensus_change(block, true, options)
     end
 
     test "delete_address_current_token_balances deletes rows with matching block number when consensus is true",
