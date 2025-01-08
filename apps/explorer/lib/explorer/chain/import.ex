@@ -13,8 +13,10 @@ defmodule Explorer.Chain.Import do
 
   @stages [
     [
-      Import.Stage.Main,
-      Import.Stage.Tokens
+      Import.Stage.Blocks
+    ],
+    [
+      Import.Stage.Main
     ],
     [
       Import.Stage.BlockTransactionReferencing,
