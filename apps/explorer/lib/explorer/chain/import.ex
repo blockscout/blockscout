@@ -21,6 +21,7 @@ defmodule Explorer.Chain.Import do
     [
       Import.Stage.BlockTransactionReferencing,
       Import.Stage.TokenReferencing,
+      Import.Stage.TokenInstances,
       Import.Stage.InternalTransactions,
       Import.Stage.ChainTypeSpecific
     ]

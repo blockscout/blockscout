@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Import.Stage.TokenReferencing do
+defmodule Explorer.Chain.Import.Stage.TokenInstances do
   @moduledoc """
-  Imports any data that is related to tokens.
+  Import token instances.
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
@@ -8,8 +8,7 @@ defmodule Explorer.Chain.Import.Stage.TokenReferencing do
   @behaviour Stage
 
   @runners [
-    Runner.Address.TokenBalances,
-    Runner.Address.CurrentTokenBalances
+    Runner.TokenInstances
   ]
 
   @impl Stage
