@@ -64,11 +64,12 @@ defmodule Explorer.Chain.Import.Runner.SignedAuthorizations do
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
     conflict_target = [:transaction_hash, :index]
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
 
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        changes_list,
+        ordered_changes_list,
         for: SignedAuthorization,
         on_conflict: on_conflict,
         conflict_target: conflict_target,
