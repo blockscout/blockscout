@@ -8,9 +8,10 @@ defmodule Indexer.Helper do
   import EthereumJSONRPC,
     only: [
       fetch_block_number_by_tag: 2,
+      id_to_params: 1,
+      integer_to_quantity: 1,
       json_rpc: 2,
       quantity_to_integer: 1,
-      integer_to_quantity: 1,
       request: 1
     ]
 
@@ -589,8 +590,7 @@ defmodule Indexer.Helper do
       Map.put(acc, block_number, 0)
     end)
     |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-    |> Stream.with_index()
-    |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+    |> id_to_params()
     |> Blocks.requests(&ByNumber.request(&1, transaction_details, false))
     |> Enum.chunk_every(@block_by_number_chunk_size)
     |> Enum.reduce([], fn current_requests, results_acc ->

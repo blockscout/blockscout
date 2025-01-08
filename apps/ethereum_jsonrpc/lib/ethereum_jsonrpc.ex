@@ -460,6 +460,11 @@ defmodule EthereumJSONRPC do
       iex> id_to_params([%{block: 1}, %{block: 2}])
       %{0 => %{block: 1}, 1 => %{block: 2}}
   """
+  @spec id_to_params([]) :: %{}
+  def id_to_params([]) do
+    %{}
+  end
+
   @spec id_to_params([params]) :: %{id => params} when id: non_neg_integer(), params: any()
   def id_to_params(params_list) do
     params_list
