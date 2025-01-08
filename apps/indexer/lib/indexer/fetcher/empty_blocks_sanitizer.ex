@@ -83,9 +83,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       set: [is_empty: false, updated_at: Timex.now()]
     )
 
-    unprocessed_empty_blocks_list =
-      limit()
-      |> unprocessed_empty_blocks_list_query
+    unprocessed_empty_blocks_list = unprocessed_empty_blocks_list_query(limit())
 
     unless Enum.empty?(unprocessed_empty_blocks_list) do
       blocks_response =
