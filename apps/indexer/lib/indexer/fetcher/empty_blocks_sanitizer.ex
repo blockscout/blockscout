@@ -95,9 +95,9 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
 
       case blocks_response do
         {:ok, result} ->
-          non_empty_blocks = filter_non_empty_blocks_from_result(result)
-
+          {non_empty_blocks, empty_blocks} = classify_blocks_from_result(result)
           process_non_empty_blocks(non_empty_blocks)
+          process_empty_blocks(empty_blocks)
 
           Logger.info("Batch of empty blocks is sanitized",
             fetcher: :empty_blocks_to_refetch
@@ -112,49 +112,68 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
     end
   end
 
-  defp filter_non_empty_blocks_from_result(result) do
+  defp classify_blocks_from_result(result) do
     result
-    |> Enum.filter(fn %{id: _id, result: block} ->
-      not Enum.empty?(block["transactions"])
+    |> Enum.reduce({[], []}, fn %{id: _id, result: block}, {non_empty_blocks, empty_blocks} ->
+      if Enum.empty?(block["transactions"]) do
+        {non_empty_blocks, [block_fields(block) | empty_blocks]}
+      else
+        {[block_fields(block) | non_empty_blocks], empty_blocks}
+      end
     end)
-    |> Enum.map(
-      &%{
-        number: quantity_to_integer(&1.result["number"]),
-        hash: &1.result["hash"],
-        transactions_count: Enum.count(&1.result["transactions"])
-      }
-    )
   end
 
-  defp process_non_empty_blocks(non_empty_blocks) do
-    if Enum.count(non_empty_blocks) > 0 do
-      log_message =
-        Enum.reduce(non_empty_blocks, "Blocks \n", fn block, acc ->
-          acc <>
-            " with number #{block.number} and hash #{to_string(block.hash)} contains #{inspect(block.transactions_count)} transactions \n"
-        end)
+  defp block_fields(block) do
+    %{
+      number: quantity_to_integer(block["number"]),
+      hash: block["hash"],
+      transactions_count: Enum.count(block["transactions"])
+    }
+  end
 
-      log_message =
-        log_message <>
-          ", but those blocks are empty in Blockscout DB. We're setting consensus = false for it to refetch."
-
-      Logger.info(
-        log_message,
-        fetcher: :empty_blocks_to_refetch
-      )
-
-      Block.set_refetch_needed(non_empty_blocks |> Enum.map(& &1.number))
-    else
-      log_message =
-        "Block with numbers #{inspect(non_empty_blocks |> Enum.map(& &1.number))} are empty. We're setting is_empty=true for them."
-
+  defp process_non_empty_blocks([]),
+    do:
       Logger.debug(
-        log_message,
+        "No non empty blocks found",
         fetcher: :empty_blocks_to_refetch
       )
 
-      mark_blocks_as_empty(non_empty_blocks |> Enum.map(& &1.hash))
-    end
+  defp process_non_empty_blocks(non_empty_blocks) do
+    log_message_base =
+      Enum.reduce(non_empty_blocks, "Blocks \n", fn block, acc ->
+        acc <>
+          " with number #{block.number} and hash #{to_string(block.hash)} contains #{inspect(block.transactions_count)} transactions \n"
+      end)
+
+    log_message =
+      log_message_base <>
+        ", but those blocks are empty in Blockscout DB. Setting consensus = false for it to re-fetch."
+
+    Logger.info(
+      log_message,
+      fetcher: :empty_blocks_to_refetch
+    )
+
+    Block.set_refetch_needed(non_empty_blocks |> Enum.map(& &1.number))
+  end
+
+  defp process_empty_blocks([]),
+    do:
+      Logger.debug(
+        "No empty blocks found",
+        fetcher: :empty_blocks_to_refetch
+      )
+
+  defp process_empty_blocks(empty_blocks) do
+    log_message =
+      "Block with numbers #{inspect(empty_blocks |> Enum.map(& &1.number))} are empty. We're setting is_empty=true for them."
+
+    Logger.debug(
+      log_message,
+      fetcher: :empty_blocks_to_refetch
+    )
+
+    mark_blocks_as_empty(empty_blocks |> Enum.map(& &1.hash))
   end
 
   @spec mark_blocks_as_empty([Hash.Full.t()]) ::
