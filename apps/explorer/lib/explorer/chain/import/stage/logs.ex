@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Import.Stage.BlockTransactionReferencing do
+defmodule Explorer.Chain.Import.Stage.Logs do
   @moduledoc """
-  Imports any data that is related to blocks and transactions.
+  Import logs.
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
@@ -8,13 +8,7 @@ defmodule Explorer.Chain.Import.Stage.BlockTransactionReferencing do
   @behaviour Stage
 
   @runners [
-    Runner.TokenTransfers,
-    Runner.Transaction.Forks,
-    Runner.Block.Rewards,
-    Runner.Block.SecondDegreeRelations,
-    Runner.TransactionActions,
-    Runner.Withdrawals,
-    Runner.SignedAuthorizations
+    Runner.Logs
   ]
 
   @impl Stage
