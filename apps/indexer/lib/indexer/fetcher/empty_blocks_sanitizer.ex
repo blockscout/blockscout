@@ -102,6 +102,12 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
           Logger.info("Batch of empty blocks is sanitized",
             fetcher: :empty_blocks_to_refetch
           )
+
+        {:error, reason} ->
+          Logger.error(
+            "Failed to fetch blocks batch: #{inspect(reason)}",
+            fetcher: :empty_blocks_to_refetch
+          )
       end
     end
   end
