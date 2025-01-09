@@ -1,4 +1,6 @@
 defmodule EthereumJSONRPC.ERC20 do
+  require Logger
+
   @moduledoc """
     Provides ability to interact with ERC20 token contracts directly.
     Currently supports single method to fetch token properties like
@@ -96,7 +98,9 @@ defmodule EthereumJSONRPC.ERC20 do
       {{:ok, [response]}, method_id}, retval ->
         Map.put(retval, atomized_erc20_selector(method_id), response)
 
-      {{:error, _reason}, method_id}, retval ->
+      {{:error, reason}, method_id}, retval ->
+        Logger.error("Failed to fetch token #{inspect(token_address)} property (selector #{inspect(method_id)}): #{inspect(reason)}")
+
         Map.put(retval, atomized_erc20_selector(method_id), nil)
     end)
   end
