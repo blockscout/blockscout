@@ -1,5 +1,4 @@
 defmodule EthereumJSONRPC.ERC20 do
-
   @moduledoc """
     Provides ability to interact with ERC20 token contracts directly.
     Currently supports single method to fetch token properties like
@@ -79,8 +78,9 @@ defmodule EthereumJSONRPC.ERC20 do
         properties \\ [:decimals, :name, :symbol],
         json_rpc_named_arguments
       ) do
-    method_ids = properties
-    |> map_properties_to_methods()
+    method_ids =
+      properties
+      |> map_properties_to_methods()
 
     method_ids
     |> Enum.map(fn method_id ->
