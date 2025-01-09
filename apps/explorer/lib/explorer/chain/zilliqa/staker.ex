@@ -9,8 +9,8 @@ defmodule Explorer.Chain.Zilliqa.Staker do
   use Explorer.Schema
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.Chain.Zilliqa.Hash.PeerID
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Zilliqa.Hash.PeerID
 
   @default_sorting [
     asc: :index
