@@ -9,6 +9,8 @@ defmodule Explorer.Chain.Zilliqa.Staker do
   use Explorer.Schema
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.Zilliqa.Hash.PeerID
+  alias Explorer.Chain.Cache.BlockNumber
 
   @default_sorting [
     asc: :index
@@ -28,7 +30,6 @@ defmodule Explorer.Chain.Zilliqa.Staker do
   * `added_at_block_number` - Block number at which the staker was added.
   * `stake_updated_at_block_number` - Block number at which the staker's stake
     was last updated.
-  * `is_removed` - Whether the staker has been removed from the committee.
   """
   @primary_key false
   typed_schema "zilliqa_stakers" do
@@ -38,43 +39,43 @@ defmodule Explorer.Chain.Zilliqa.Staker do
     )
 
     field(:index, :integer)
-    field(:balance, :decimal)
-    field(:peer_id, :binary)
+    field(:balance, :decimal, null: false)
+    field(:peer_id, PeerID)
 
     belongs_to(:control_address, Address,
       foreign_key: :control_address_hash,
       references: :hash,
-      type: Hash.Address,
-      null: false
+      type: Hash.Address
     )
 
     belongs_to(:reward_address, Address,
       foreign_key: :reward_address_hash,
       references: :hash,
-      type: Hash.Address,
-      null: false
+      type: Hash.Address
     )
 
     belongs_to(:signing_address, Address,
       foreign_key: :signing_address_hash,
       references: :hash,
-      type: Hash.Address,
-      null: false
+      type: Hash.Address
     )
 
-    field(:added_at_block_number, :integer)
-    field(:stake_updated_at_block_number, :integer)
-    field(:is_removed, :boolean)
+    field(:added_at_block_number, :integer, null: false)
+    field(:stake_updated_at_block_number, :integer, null: false)
     timestamps()
   end
 
   @doc """
-  Query returning stakers that are active (i.e not removed).
+  Query returning stakers that are currently present in the committee.
   """
   @spec active_stakers_query() :: Ecto.Query.t()
   def active_stakers_query do
+    max_block_number = BlockNumber.get_max()
+
     from(s in __MODULE__,
-      where: is_nil(s.is_removed) or s.is_removed == false
+      where:
+        s.balance > 0 and
+          s.added_at_block_number <= ^max_block_number
     )
   end
 
@@ -92,17 +93,6 @@ defmodule Explorer.Chain.Zilliqa.Staker do
     |> SortingHelper.apply_sorting(sorting, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
     |> Chain.select_repo(options).all()
-  end
-
-  @spec stakers_at_block_number_query(integer()) :: Ecto.Query.t()
-  def stakers_at_block_number_query(block_number) do
-    from(
-      s in __MODULE__,
-      where: s.added_at_block_number <= ^block_number,
-      where:
-        is_nil(s.removed_at_block_numbers) or
-          s.removed_at_block_number > ^block_number
-    )
   end
 
   @doc """

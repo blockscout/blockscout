@@ -41,9 +41,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorView do
     %{
       "bls_public_key" => validator.bls_public_key,
       "index" => validator.index,
-      "balance" => validator.balance,
-      # todo: add peer_id to API response
-      # "peer_id" => validator.peer_id,
+      "balance" => to_string(validator.balance),
+      "peer_id" => validator.peer_id,
       "control_address" =>
         Helper.address_with_info(nil, validator.control_address, validator.control_address_hash, true),
       "reward_address" => Helper.address_with_info(nil, validator.reward_address, validator.reward_address_hash, true),
