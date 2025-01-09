@@ -1,5 +1,57 @@
 # Changelog
 
+## 6.10.1
+
+### 🚀 Features
+
+- Add active DB connections metric ([#11321](https://github.com/blockscout/blockscout/issues/11321))
+- Add protocol icon to the search result ([#11478](https://github.com/blockscout/blockscout/issues/11478))
+
+### 🐛 Bug Fixes
+
+- Fix transactions deadlock ([#11623](https://github.com/blockscout/blockscout/issues/11623))
+- Fix tokens and transactions deadlocks ([#11620](https://github.com/blockscout/blockscout/issues/11620))
+- Order address names to return the latest non-primary ([#11612](https://github.com/blockscout/blockscout/issues/11612))
+- Rename tx_burnt_fee prop in API v2 endpoint ([#11563](https://github.com/blockscout/blockscout/issues/11563))
+- Celo fee handler ([#11387](https://github.com/blockscout/blockscout/issues/11387))
+- Fix addresses deadlock ([#11616](https://github.com/blockscout/blockscout/issues/11616))
+- Besu raw trace ([#11413](https://github.com/blockscout/blockscout/issues/11413))
+- Fix tokens deadlock ([#11603](https://github.com/blockscout/blockscout/issues/11603))
+- Set timeout: :infinity for PendingTransactionsSanitizer delete ([#11600](https://github.com/blockscout/blockscout/issues/11600))
+- Fixed Missing Closing Quotation Marks in sed Expressions Update version_bump.sh ([#11574](https://github.com/blockscout/blockscout/issues/11574))
+- The same DA blobs for different Arbitrum batches ([#11485](https://github.com/blockscout/blockscout/issues/11485))
+- Extended list of apps in the devcontainer helper script ([#11396](https://github.com/blockscout/blockscout/issues/11396))
+- Fix MarketHistory test ([#11547](https://github.com/blockscout/blockscout/issues/11547))
+- Advanced-filters csv format ([#11494](https://github.com/blockscout/blockscout/issues/11494))
+- Fix verifyproxycontract endpoint ([#11523](https://github.com/blockscout/blockscout/issues/11523))
+- Fix minor grammatical issue Update README.md ([#11544](https://github.com/blockscout/blockscout/issues/11544))
+
+### 📚 Documentation
+
+- Typo fix Update README.md ([#11595](https://github.com/blockscout/blockscout/issues/11595))
+- Typo fix Update CODE_OF_CONDUCT.md ([#11572](https://github.com/blockscout/blockscout/issues/11572))
+- Fix minor grammar and phrasing inconsistencies Update README.md ([#11548](https://github.com/blockscout/blockscout/issues/11548))
+- Fixed incorrect usage of -d flag in stop containers command Update README.md ([#11522](https://github.com/blockscout/blockscout/issues/11522))
+
+### ⚡ Performance
+
+- Implement batched requests and DB upsert operations Indexer.Fetcher.EmptyBlocksSanitizer module ([#11555](https://github.com/blockscout/blockscout/issues/11555))
+
+### ⚙️ Miscellaneous Tasks
+
+- Remove unused Explorer.Token.InstanceOwnerReader module ([#11570](https://github.com/blockscout/blockscout/issues/11570))
+- Optimize coin balances deriving ([#11613](https://github.com/blockscout/blockscout/issues/11613))
+- Fix typo Update CHANGELOG.md ([#11607](https://github.com/blockscout/blockscout/issues/11607))
+- Add env variable for PendingTransactionsSanitizer interval ([#11601](https://github.com/blockscout/blockscout/issues/11601))
+- Documentation for Explorer.Chain.Transaction.History.Historian ([#11397](https://github.com/blockscout/blockscout/issues/11397))
+- Extend error message on updating token balance with token id ([#11524](https://github.com/blockscout/blockscout/issues/11524))
+
+### New ENV Variables
+
+| Variable                                    | Description                                                                                                                                                                                                                                            | Parameters                                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `INDEXER_PENDING_TRANSACTIONS_SANITIZER_INTERVAL`             | Interval between pending transactions sanitizing. Implemented in [#11601](https://github.com/blockscout/blockscout/pull/11601).                                                                                                                                                                                                                                                                                                                                                                                                  | <p>Version: v6.10.1<br>Default: <code>1h</code><br>Applications: Indexer</p>                                          |
+
 ## 6.10.0
 
 ### 🚀 Features

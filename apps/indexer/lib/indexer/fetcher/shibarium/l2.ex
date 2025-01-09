@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
 
   import EthereumJSONRPC,
     only: [
+      id_to_params: 1,
       json_rpc: 2,
       quantity_to_integer: 1,
       request: 1
@@ -291,8 +292,7 @@ defmodule Indexer.Fetcher.Shibarium.L2 do
     request =
       range
       |> Stream.map(fn block_number -> %{number: block_number} end)
-      |> Stream.with_index()
-      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+      |> id_to_params()
       |> Blocks.requests(&ByNumber.request(&1))
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"

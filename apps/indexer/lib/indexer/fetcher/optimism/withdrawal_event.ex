@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [id_to_params: 1, quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
@@ -301,8 +301,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
         Map.put(acc, event["blockNumber"], 0)
       end)
       |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-      |> Stream.with_index()
-      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+      |> id_to_params()
       |> Blocks.requests(&ByNumber.request(&1, true, false))
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"

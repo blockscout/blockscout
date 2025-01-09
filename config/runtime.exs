@@ -857,7 +857,7 @@ config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC721,
   enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_ERC_721_SANITIZE_FETCHER", "false")
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 100),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 10),
   interval: ConfigHelper.parse_time_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_INTERVAL", "10s")
 
 config :indexer, Indexer.Block.Realtime.Fetcher,
