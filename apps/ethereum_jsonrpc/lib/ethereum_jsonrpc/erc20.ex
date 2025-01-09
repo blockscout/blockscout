@@ -99,7 +99,9 @@ defmodule EthereumJSONRPC.ERC20 do
         Map.put(retval, atomized_erc20_selector(method_id), response)
 
       {{:error, reason}, method_id}, retval ->
-        Logger.error("Failed to fetch token #{inspect(token_address)} property (selector #{inspect(method_id)}): #{inspect(reason)}")
+        Logger.error(
+          "Failed to fetch token #{inspect(token_address)} property (selector #{inspect(method_id)}): #{inspect(reason)}"
+        )
 
         Map.put(retval, atomized_erc20_selector(method_id), nil)
     end)
