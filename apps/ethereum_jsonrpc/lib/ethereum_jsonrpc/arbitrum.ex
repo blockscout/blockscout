@@ -249,7 +249,7 @@ defmodule EthereumJSONRPC.Arbitrum do
 
   # Casting value into the Ethereum address (hex-string, 0x-prefixed)
   @spec value_to_address(binary()) :: String.t()
-  defp value_to_address(value) do
+  def value_to_address(value) do
     hex =
       cond do
         is_binary(value) and String.starts_with?(value, "0x") -> String.trim_leading(value, "0x")
