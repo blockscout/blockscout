@@ -1,11 +1,29 @@
 defmodule EthereumJSONRPC.ERC20 do
-  require Logger
-
   @moduledoc """
     Provides ability to interact with ERC20 token contracts directly.
-    Currently supports single method to fetch token properties like
-    name, symbol and decimals.
+    This module is primarily used in the Arbitrum claiming process to fetch
+    L1 token information for withdrawal transactions.
+
+    Currently supports fetching token properties like name, symbol and decimals
+    through direct contract calls.
+
+    ## Examples
+
+        iex> EthereumJSONRPC.ERC20.fetch_token_properties(
+        ...>   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        ...>   [:name, :symbol],
+        ...>   json_rpc_named_arguments
+        ...> )
+        %{
+          name: "Tether USD",
+          symbol: "USDT"
+        }
+
+    For more information about the ERC20 standard, see:
+    https://eips.ethereum.org/EIPS/eip-20
   """
+
+  require Logger
 
   # decimals()
   @selector_decimals "313ce567"
@@ -55,16 +73,18 @@ defmodule EthereumJSONRPC.ERC20 do
     }
   ]
 
-  # Retrieve minimal ERC20 token properties (name, symbol, decimals) from the contract
-  # needed to display purposes
-  #
-  # ## Parameters
-  # - `token_address`: The address of the token's smart contract.
-  # - `properties`: A list of token properties to be requested.
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #
-  # ## Returns
-  # - A map with the requested fields containing associated values or nil in case of error
+  @doc """
+    Retrieve minimal ERC20 token properties (name, symbol, decimals) from the contract needed
+    for display purposes.
+
+    ## Parameters
+    - `token_address`: The address of the token's smart contract.
+    - `properties`: A list of token properties to be requested.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+    ## Returns
+    A map with the requested fields containing associated values or nil in case of error.
+  """
   @spec fetch_token_properties(
           EthereumJSONRPC.address(),
           [:decimals | :name | :symbol],
@@ -100,7 +120,10 @@ defmodule EthereumJSONRPC.ERC20 do
 
       {{:error, reason}, method_id}, retval ->
         Logger.error(
-          "Failed to fetch token #{inspect(token_address)} property (selector #{inspect(method_id)}): #{inspect(reason)}"
+          "[EthereumJSONRPC.ERC20] Failed to fetch token property",
+          token_address: token_address,
+          method_id: method_id,
+          error: inspect(reason)
         )
 
         Map.put(retval, atomized_erc20_selector(method_id), nil)
