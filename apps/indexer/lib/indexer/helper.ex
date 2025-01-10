@@ -15,7 +15,7 @@ defmodule Indexer.Helper do
       request: 1
     ]
 
-  alias EthereumJSONRPC.Block.ByNumber
+  alias EthereumJSONRPC.Block.{ByNumber, ByTag}
   alias EthereumJSONRPC.{Blocks, Transport}
   alias Explorer.Chain.Hash
   alias Explorer.SmartContract.Reader, as: ContractReader
@@ -109,9 +109,9 @@ defmodule Indexer.Helper do
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
     with {:ok, first_block_timestamp} <-
-           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, @infinite_retries_number),
+           get_block_timestamp_by_number_or_tag(first_block, json_rpc_named_arguments, @infinite_retries_number),
          {:ok, last_safe_block_timestamp} <-
-           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, @infinite_retries_number) do
+           get_block_timestamp_by_number_or_tag(last_safe_block, json_rpc_named_arguments, @infinite_retries_number) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
@@ -610,22 +610,36 @@ defmodule Indexer.Helper do
 
   @doc """
   Fetches block timestamp by its number using RPC request.
+  The number can be `:latest`.
   Performs a specified number of retries (up to) if the first attempt returns error.
+
+  ## Parameters
+  - `number`: Block number or `:latest` to fetch the latest block.
+  - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  - `retries`: Number of retry attempts if the request fails.
+
+  ## Returns
+  - `{:ok, timestamp}` where `timestamp` is the block timestamp as a Unix timestamp.
+  - `{:error, reason}` if the request fails after all retries.
   """
-  @spec get_block_timestamp_by_number(non_neg_integer(), list(), non_neg_integer()) ::
+  @spec get_block_timestamp_by_number_or_tag(non_neg_integer() | :latest, list(), non_neg_integer()) ::
           {:ok, non_neg_integer()} | {:error, any()}
-  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
-    func = &get_block_timestamp_by_number_inner/2
+  def get_block_timestamp_by_number_or_tag(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
+    func = &get_block_timestamp_inner/2
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
     repeated_call(func, args, error_message, retries)
   end
 
-  defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
-    result =
-      %{id: 0, number: number}
-      |> ByNumber.request(false)
-      |> json_rpc(json_rpc_named_arguments)
+  defp get_block_timestamp_inner(number, json_rpc_named_arguments) do
+    request =
+      if number == :latest do
+        ByTag.request(%{id: 0, tag: "latest"})
+      else
+        ByNumber.request(%{id: 0, number: number}, false)
+      end
+
+    result = json_rpc(request, json_rpc_named_arguments)
 
     with {:ok, block} <- result,
          false <- is_nil(block),

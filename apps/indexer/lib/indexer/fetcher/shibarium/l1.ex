@@ -346,9 +346,10 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
   defp get_block_check_interval(json_rpc_named_arguments) do
     with {:ok, latest_block} <- Helper.get_block_number_by_tag("latest", json_rpc_named_arguments),
          first_block = max(latest_block - @block_check_interval_range_size, 1),
-         {:ok, first_block_timestamp} <- Helper.get_block_timestamp_by_number(first_block, json_rpc_named_arguments),
+         {:ok, first_block_timestamp} <-
+           Helper.get_block_timestamp_by_number_or_tag(first_block, json_rpc_named_arguments),
          {:ok, last_safe_block_timestamp} <-
-           Helper.get_block_timestamp_by_number(latest_block, json_rpc_named_arguments) do
+           Helper.get_block_timestamp_by_number_or_tag(latest_block, json_rpc_named_arguments) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (latest_block - first_block) * 1000 / 2)
 

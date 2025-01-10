@@ -336,7 +336,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     new_start_block = last_written_block + 1
 
     {:ok, new_end_block} =
-      Optimism.get_block_number_by_tag(
+      Helper.get_block_number_by_tag(
         "latest",
         json_rpc_named_arguments,
         Helper.infinite_retries_number()
