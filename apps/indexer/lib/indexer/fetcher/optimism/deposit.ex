@@ -130,7 +130,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
     new_start_block = last_written_block + 1
 
     {:ok, new_end_block} =
-      Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+      Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     delay =
       if new_end_block == last_written_block do

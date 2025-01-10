@@ -10,14 +10,12 @@ defmodule Indexer.Fetcher.Optimism do
 
   import EthereumJSONRPC,
     only: [
-      fetch_block_number_by_tag_op_version: 2,
       json_rpc: 2,
       integer_to_quantity: 1,
       quantity_to_integer: 1,
       request: 1
     ]
 
-  alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Contract
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
@@ -62,9 +60,17 @@ defmodule Indexer.Fetcher.Optimism do
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
     with {:ok, first_block_timestamp} <-
-           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, Helper.infinite_retries_number()),
+           Helper.get_block_timestamp_by_number_or_tag(
+             first_block,
+             json_rpc_named_arguments,
+             Helper.infinite_retries_number()
+           ),
          {:ok, last_safe_block_timestamp} <-
-           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, Helper.infinite_retries_number()) do
+           Helper.get_block_timestamp_by_number_or_tag(
+             last_safe_block,
+             json_rpc_named_arguments,
+             Helper.infinite_retries_number()
+           ) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
@@ -74,55 +80,6 @@ defmodule Indexer.Fetcher.Optimism do
       {:error, error} ->
         {:error, "Failed to calculate block check interval due to #{inspect(error)}"}
     end
-  end
-
-  @doc """
-  Fetches block number by its tag (e.g. `latest` or `safe`) using RPC request.
-  Performs a specified number of retries (up to) if the first attempt returns error.
-  """
-  @spec get_block_number_by_tag(binary(), list(), non_neg_integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
-  def get_block_number_by_tag(tag, json_rpc_named_arguments, retries \\ @finite_retries_number) do
-    error_message = &"Cannot fetch #{tag} block number. Error: #{inspect(&1)}"
-
-    Helper.repeated_call(
-      &fetch_block_number_by_tag_op_version/2,
-      [tag, json_rpc_named_arguments],
-      error_message,
-      retries
-    )
-  end
-
-  defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
-    result =
-      %{id: 0, number: number}
-      |> ByNumber.request(false)
-      |> json_rpc(json_rpc_named_arguments)
-
-    with {:ok, block} <- result,
-         false <- is_nil(block),
-         timestamp <- Map.get(block, "timestamp"),
-         false <- is_nil(timestamp) do
-      {:ok, quantity_to_integer(timestamp)}
-    else
-      {:error, message} ->
-        {:error, message}
-
-      true ->
-        {:error, "RPC returned nil."}
-    end
-  end
-
-  @doc """
-  Fetches block timestamp by its number using RPC request.
-  Performs a specified number of retries (up to) if the first attempt returns error.
-  """
-  @spec get_block_timestamp_by_number(non_neg_integer(), list(), non_neg_integer()) ::
-          {:ok, non_neg_integer()} | {:error, any()}
-  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
-    func = &get_block_timestamp_by_number_inner/2
-    args = [number, json_rpc_named_arguments]
-    error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
-    Helper.repeated_call(func, args, error_message, retries)
   end
 
   @doc """
@@ -222,6 +179,9 @@ defmodule Indexer.Fetcher.Optimism do
              Indexer.Fetcher.Optimism.WithdrawalEvent,
              Indexer.Fetcher.Optimism.OutputRoot
            ] do
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    :timer.sleep(2000)
+
     {contract_name, table_name, start_block_note} =
       case caller do
         Indexer.Fetcher.Optimism.Deposit ->

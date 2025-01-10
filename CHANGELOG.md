@@ -4,11 +4,14 @@
 
 ### 🚀 Features
 
+- Support OP Holocene upgrade ([#11355](https://github.com/blockscout/blockscout/issues/11355))
 - Add active DB connections metric ([#11321](https://github.com/blockscout/blockscout/issues/11321))
 - Add protocol icon to the search result ([#11478](https://github.com/blockscout/blockscout/issues/11478))
 
 ### 🐛 Bug Fixes
 
+- Fix bug in Indexer.Fetcher.EmptyBlocksSanitizer module ([#11636](https://github.com/blockscout/blockscout/pull/11636))
+- Multichain search: process address in chunks ([#11632](https://github.com/blockscout/blockscout/issues/11632))
 - Fix transactions deadlock ([#11623](https://github.com/blockscout/blockscout/issues/11623))
 - Fix tokens and transactions deadlocks ([#11620](https://github.com/blockscout/blockscout/issues/11620))
 - Order address names to return the latest non-primary ([#11612](https://github.com/blockscout/blockscout/issues/11612))
