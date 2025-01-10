@@ -92,14 +92,15 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
   @spec remove_invalid_updates(non_neg_integer(), integer()) :: non_neg_integer()
 
   def remove_invalid_updates(0, latest_block_number) do
-    {deleted_count, _} = Repo.delete_all(from(u in __MODULE__, where: u.l2_block_number > ^latest_block_number))
+    {deleted_count, _} = Repo.delete_all(from(u in __MODULE__, where: u.l2_block_number > ^latest_block_number), timeout: :infinity)
     deleted_count
   end
 
   def remove_invalid_updates(block_number, latest_block_number) do
     {deleted_count, _} =
       Repo.delete_all(
-        from(u in __MODULE__, where: u.l2_block_number < ^block_number or u.l2_block_number > ^latest_block_number)
+        from(u in __MODULE__, where: u.l2_block_number < ^block_number or u.l2_block_number > ^latest_block_number),
+        timeout: :infinity
       )
 
     deleted_count
