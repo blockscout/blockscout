@@ -109,9 +109,9 @@ defmodule Indexer.Helper do
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
     with {:ok, first_block_timestamp} <-
-           get_block_timestamp_by_number(first_block, json_rpc_named_arguments, @infinite_retries_number),
+           get_block_timestamp_by_number_or_tag(first_block, json_rpc_named_arguments, @infinite_retries_number),
          {:ok, last_safe_block_timestamp} <-
-           get_block_timestamp_by_number(last_safe_block, json_rpc_named_arguments, @infinite_retries_number) do
+           get_block_timestamp_by_number_or_tag(last_safe_block, json_rpc_named_arguments, @infinite_retries_number) do
       block_check_interval =
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
@@ -613,16 +613,16 @@ defmodule Indexer.Helper do
   The number can be `:latest`.
   Performs a specified number of retries (up to) if the first attempt returns error.
   """
-  @spec get_block_timestamp_by_number(non_neg_integer() | :latest, list(), non_neg_integer()) ::
+  @spec get_block_timestamp_by_number_or_tag(non_neg_integer() | :latest, list(), non_neg_integer()) ::
           {:ok, non_neg_integer()} | {:error, any()}
-  def get_block_timestamp_by_number(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
-    func = &get_block_timestamp_by_number_inner/2
+  def get_block_timestamp_by_number_or_tag(number, json_rpc_named_arguments, retries \\ @finite_retries_number) do
+    func = &get_block_timestamp_inner/2
     args = [number, json_rpc_named_arguments]
     error_message = &"Cannot fetch block ##{number} or its timestamp. Error: #{inspect(&1)}"
     repeated_call(func, args, error_message, retries)
   end
 
-  defp get_block_timestamp_by_number_inner(number, json_rpc_named_arguments) do
+  defp get_block_timestamp_inner(number, json_rpc_named_arguments) do
     request =
       if number == :latest do
         ByTag.request(%{id: 0, tag: "latest"})

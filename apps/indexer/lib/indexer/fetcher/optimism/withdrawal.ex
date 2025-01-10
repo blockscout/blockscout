@@ -141,7 +141,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
 
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
-      {:ok, latest_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments)
+      {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments)
       fill_block_range(safe_block + 1, latest_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size)
     end
 

@@ -9,22 +9,23 @@
 # Main usage scenarios:
 # 1. Project Setup
 #    - Initialize project directory: bs --init
-#    - Setup/reset database:        bs --db-init
+#    - Setup/reset database:         bs --db-init
 #
 # 2. Development Tasks
-#    - Run backend server:          bs
-#    - Run server (API only):       bs --no-sync
-#    - Recompile dependencies:      bs --recompile
+#    - Run backend server:           bs
+#    - Run server (API only):        bs --no-sync
+#    - Compile/recompile changes:    bs --compile
+#    - Recompile dependencies:       bs --recompile
 #
 # 3. Code Quality
-#    - Run formatter:               bs --format
-#    - Run static analysis:         bs --dialyzer
-#    - Run code style checks:       bs --credo
-#    - Run spell checker:           bs --spellcheck
+#    - Run formatter:                bs --format
+#    - Run static analysis:          bs --dialyzer
+#    - Run code style checks:        bs --credo
+#    - Run spell checker:            bs --spellcheck
 #
 # 4. Documentation
-#    - Generate project docs:       bs --docs
-#    - Show usage help:            bs --help
+#    - Generate project docs:        bs --docs
+#    - Show usage help:              bs --help
 #
 # Environment:
 # - Loads configuration from .devcontainer/.blockscout_config if present
@@ -33,7 +34,7 @@
 
 source $(dirname $0)/utils
 
-# Source and exaport environment variables related to the backend configuration
+# Source and export environment variables related to the backend configuration
 BLOCKSCOUT_CONFIG_FILE=".devcontainer/.blockscout_config"
 if [ -f "./${BLOCKSCOUT_CONFIG_FILE}" ]; then
     set -a  # Automatically export all variables
@@ -44,13 +45,14 @@ else
 fi
 
 if [ "${DATABASE_URL}" == "" ]; then
-    export DATABASE_URL="postgresql://postgres:postgres@db:5432/blockscout"
+    export DATABASE_URL="postgresql://postgres:postgres@db:5432/app"
 fi
 
 # Initialize variables
 INIT=false
 NO_SYNC=false
 DB_INIT=false
+COMPILE=false
 RECOMPILE=false
 SPELLCHECK=false
 DIALYZER=false
@@ -72,6 +74,7 @@ show_help() {
     echo "  --dialyzer    Run dialyzer"
     echo "  --credo       Run credo"
     echo "  --docs        Generate documentation"
+    echo "  --compile     Compile/recompile changes"
     echo "  --recompile   Re-fetch dependencies and recompile"
     echo "  --db-init     (Re)initialize the database"
     echo "  --no-sync     Run the server with disabled indexer, so only the API is available"
@@ -85,6 +88,7 @@ VALID_ARGS=(
     "--init"
     "--no-sync"
     "--db-init"
+    "--compile"
     "--recompile"
     "--spellcheck"
     "--dialyzer"
@@ -124,6 +128,10 @@ do
         DB_INIT=true
         shift # Remove --db-init from processing
         ;;
+        --compile)
+        COMPILE=true
+        shift # Remove --compile from processing
+        ;;
         --recompile)
         RECOMPILE=true
         shift # Remove --recompile from processing
@@ -141,7 +149,7 @@ do
         shift # Remove --credo from processing
         ;;
         --format)
-                FORMAT=true
+        FORMAT=true
         shift # Remove --format from processing
         ;;
         --docs)
@@ -185,6 +193,11 @@ initialize_db() {
     mix ecto.drop > /dev/null 2>&1
     echo "Initializing database. Step 2 of 2: Creating database"
     mix do ecto.create, ecto.migrate | grep Runn
+}
+
+# Define the compile subroutine
+compile() {
+    mix compile
 }
 
 # Define the recompile subroutine
@@ -236,6 +249,12 @@ fi
 # If --db-init argument is passed, run the database initialization subroutine and exit
 if [ "$DB_INIT" = true ]; then
     initialize_db
+    exit 0
+fi
+
+# If --compile argument is passed, run the compile subroutine and exit
+if [ "$COMPILE" = true ]; then
+    compile
     exit 0
 fi
 

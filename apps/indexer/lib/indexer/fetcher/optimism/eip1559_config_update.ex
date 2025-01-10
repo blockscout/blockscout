@@ -26,17 +26,14 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   require Logger
 
-  import Ecto.Query
-
   import EthereumJSONRPC, only: [fetch_blocks_by_numbers: 3, json_rpc: 2, quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Block.ByHash
   alias EthereumJSONRPC.Blocks
-  alias Explorer.Chain.{Block, RollupReorgMonitorQueue}
+  alias Explorer.Chain
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
-  alias Explorer.{Chain, Repo}
-  alias Indexer.Fetcher.Optimism
+  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Helper
 
   @fetcher_name :optimism_eip1559_config_updates
@@ -100,7 +97,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
          wait_for_holocene(timestamp, json_rpc_named_arguments),
          Subscriber.to(:blocks, :realtime),
          {:ok, latest_block_number} =
-           Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
+           Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
          l2_block_number =
            block_number_by_timestamp(timestamp, optimism_env[:block_duration], json_rpc_named_arguments),
          EIP1559ConfigUpdate.remove_invalid_updates(l2_block_number, latest_block_number),
@@ -224,7 +221,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
         Process.send_after(self(), :handle_realtime, 3_000)
         {:noreply, state}
 
-      start_block..end_block ->
+      start_block..end_block//_ ->
         Process.send(self(), :continue, [])
         {:noreply, %{state | start_block: start_block, end_block: end_block, mode: :realtime, realtime_range: nil}}
     end
@@ -254,7 +251,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       if !is_nil(new_min) and !is_nil(new_max) do
         case Map.get(state, :realtime_range) do
           nil -> Range.new(new_min, new_max)
-          prev_min..prev_max -> Range.new(min(prev_min, new_min), max(prev_max, new_max))
+          prev_min..prev_max//_ -> Range.new(min(prev_min, new_min), max(prev_max, new_max))
         end
       end
 
@@ -340,7 +337,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   defp handle_updates(block_numbers, json_rpc_named_arguments) do
     case fetch_blocks_by_numbers(block_numbers, json_rpc_named_arguments, false) do
       {:ok, %Blocks{blocks_params: blocks_params, errors: []}} ->
-        block_numbers =
+        block_numbers_filtered =
           block_numbers
           |> Enum.filter(fn block_number ->
             Enum.any?(blocks_params, fn b ->
@@ -348,9 +345,9 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
             end)
           end)
 
-        last_block_number = List.last(block_numbers)
+        last_block_number = List.last(block_numbers_filtered)
 
-        Enum.reduce(block_numbers, 0, fn block_number, acc ->
+        Enum.reduce(block_numbers_filtered, 0, fn block_number, acc ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           block = Enum.find(blocks_params, %{extra_data: "0x"}, fn b -> b.number == block_number end)
 
@@ -375,11 +372,11 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
               acc + 1
             else
               {:valid_format, false} ->
-                Logger.warn("extraData of the block ##{block_number} has invalid format. Ignoring it.")
+                Logger.warning("extraData of the block ##{block_number} has invalid format. Ignoring it.")
                 acc
 
               {:valid_version, version, false} ->
-                Logger.warn("extraData of the block ##{block_number} has invalid version #{version}. Ignoring it.")
+                Logger.warning("extraData of the block ##{block_number} has invalid version #{version}. Ignoring it.")
                 acc
 
               {:updated_config, false} ->
@@ -459,15 +456,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
     Logger.info("Trying to detect Holocene block number by its timestamp using indexed L2 blocks...")
 
-    query =
-      from(b in Block,
-        select: b.number,
-        where: b.timestamp >= ^timestamp_dt and b.consensus == true,
-        order_by: [asc: b.number],
-        limit: 1
-      )
-
-    block_number = Repo.one(query)
+    block_number = EIP1559ConfigUpdate.nearest_block_number_to_timestamp(timestamp_dt)
 
     if is_nil(block_number) do
       Logger.info(
@@ -578,8 +567,8 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   # - `timestamp`: The timestamp for which the block number is being determined.
   # - `block_duration`: The average block duration, seconds.
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  # - `ref_block_number`: The reference block number for the calculation. The latest block is used by default.
-  # - `ref_block_timestamp`: The timestamp of the reference block number. The latest block timestamp is used by default.
+  # - `ref_block_number`: The reference block number for the calculation. If nil, the latest block is used.
+  # - `ref_block_timestamp`: The timestamp of the reference block number. If nil, the latest block timestamp is used.
   #
   # ## Returns
   # - The block number corresponding to the given timestamp.
@@ -597,7 +586,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
          ref_block_number \\ nil,
          ref_block_timestamp \\ nil
        ) do
-    ref_block_number =
+    ref_number =
       if is_nil(ref_block_number) do
         {:ok, latest_block_number} =
           Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
@@ -607,31 +596,35 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
         ref_block_number
       end
 
-    ref_block_timestamp =
+    ref_timestamp =
       if is_nil(ref_block_timestamp) do
-        {:ok, ref_block_timestamp} =
-          Helper.get_block_timestamp_by_number(
-            ref_block_number,
+        {:ok, block_timestamp} =
+          Helper.get_block_timestamp_by_number_or_tag(
+            ref_number,
             json_rpc_named_arguments,
             Helper.infinite_retries_number()
           )
 
-        ref_block_timestamp
+        block_timestamp
       else
         ref_block_timestamp
       end
 
-    gap = div(abs(ref_block_timestamp - timestamp), block_duration)
+    gap = div(abs(ref_timestamp - timestamp), block_duration)
 
     block_number =
-      if ref_block_timestamp > timestamp do
-        ref_block_number - gap
+      if ref_timestamp > timestamp do
+        ref_number - gap
       else
-        ref_block_number + gap
+        ref_number + gap
       end
 
     {:ok, block_timestamp} =
-      Helper.get_block_timestamp_by_number(block_number, json_rpc_named_arguments, Helper.infinite_retries_number())
+      Helper.get_block_timestamp_by_number_or_tag(
+        block_number,
+        json_rpc_named_arguments,
+        Helper.infinite_retries_number()
+      )
 
     if block_timestamp == timestamp do
       Logger.info("Holocene block number was successfully calculated using RPC. The block number is #{block_number}")
@@ -640,7 +633,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       next_block_number = block_number + 1
 
       {:ok, next_block_timestamp} =
-        Helper.get_block_timestamp_by_number(
+        Helper.get_block_timestamp_by_number_or_tag(
           next_block_number,
           json_rpc_named_arguments,
           Helper.infinite_retries_number()
@@ -679,7 +672,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   @spec wait_for_holocene(non_neg_integer(), EthereumJSONRPC.json_rpc_named_arguments()) :: any()
   defp wait_for_holocene(timestamp, json_rpc_named_arguments) do
     {:ok, latest_timestamp} =
-      Helper.get_block_timestamp_by_number(:latest, json_rpc_named_arguments, Helper.infinite_retries_number())
+      Helper.get_block_timestamp_by_number_or_tag(:latest, json_rpc_named_arguments, Helper.infinite_retries_number())
 
     if latest_timestamp < timestamp do
       Logger.info("Holocene is not activated yet. Waiting for the timestamp #{timestamp} to be reached...")
