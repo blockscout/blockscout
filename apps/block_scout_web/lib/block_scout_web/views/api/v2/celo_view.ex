@@ -248,15 +248,6 @@ defmodule BlockScoutWeb.API.V2.CeloView do
     }
   end
 
-  # Convert the burn fraction from FixidityLib value to decimal.
-  @spec burn_fraction_decimal(integer()) :: Decimal.t()
-  defp burn_fraction_decimal(burn_fraction_fixidity_lib)
-       when is_integer(burn_fraction_fixidity_lib) do
-    base = Decimal.new(1, 10, 24)
-    fraction = Decimal.new(1, burn_fraction_fixidity_lib, 0)
-    Decimal.div(fraction, base)
-  end
-
   # Get the breakdown of the base fee for the case when FeeHandler is a contract
   # that receives the base fee.
   @spec fee_handler_base_fee_breakdown(Wei.t(), Block.block_number()) ::
@@ -280,7 +271,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
          {:ok, %{"value" => burn_fraction_fixidity_lib}} <-
            CeloCoreContracts.get_event(:fee_handler, :burn_fraction_set, block_number),
          {:ok, celo_token_address_hash} <- CeloCoreContracts.get_address(:celo_token, block_number) do
-      burn_fraction = burn_fraction_decimal(burn_fraction_fixidity_lib)
+      burn_fraction = CeloHelper.burn_fraction_decimal(burn_fraction_fixidity_lib)
 
       burnt_amount = Wei.mult(base_fee, burn_fraction)
       burnt_percentage = Decimal.mult(burn_fraction, 100)

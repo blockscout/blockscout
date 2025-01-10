@@ -366,16 +366,6 @@ defmodule EthereumJSONRPC do
    * `{:error, reason}` - other JSONRPC error.
 
   """
-  @spec fetch_block_number_by_tag_op_version(tag(), json_rpc_named_arguments) ::
-          {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
-  def fetch_block_number_by_tag_op_version(tag, json_rpc_named_arguments)
-      when tag in ~w(earliest latest pending safe) do
-    %{id: 0, tag: tag}
-    |> Block.ByTag.request()
-    |> json_rpc(json_rpc_named_arguments)
-    |> Block.ByTag.number_from_result()
-  end
-
   @spec fetch_block_number_by_tag(tag(), json_rpc_named_arguments) ::
           {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
   def fetch_block_number_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending safe) do
@@ -460,6 +450,11 @@ defmodule EthereumJSONRPC do
       iex> id_to_params([%{block: 1}, %{block: 2}])
       %{0 => %{block: 1}, 1 => %{block: 2}}
   """
+  @spec id_to_params([]) :: %{}
+  def id_to_params([]) do
+    %{}
+  end
+
   @spec id_to_params([params]) :: %{id => params} when id: non_neg_integer(), params: any()
   def id_to_params(params_list) do
     params_list

@@ -19,8 +19,8 @@
     "eslint": "eslint js/**"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.7.1",
-    "@amplitude/analytics-browser": "^2.11.9",
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@amplitude/analytics-browser": "^2.11.11",
     "@tarekraafat/autocomplete.js": "^10.2.9",
     "@walletconnect/web3-provider": "^1.8.0",
     "assert": "^2.1.0",
@@ -33,7 +33,7 @@
     "crypto-browserify": "^3.12.1",
     "dropzone": "^5.9.3",
     "eth-net-props": "^1.0.41",
-    "highlight.js": "^11.10.0",
+    "highlight.js": "^11.11.1",
     "https-browserify": "^1.0.0",
     "humps": "^2.0.1",
     "jquery": "^3.7.1",
@@ -58,7 +58,7 @@
     "lodash.reduce": "^4.6.0",
     "luxon": "^3.5.0",
     "malihu-custom-scrollbar-plugin": "3.1.5",
-    "mixpanel-browser": "^2.56.0",
+    "mixpanel-browser": "^2.58.0",
     "moment": "^2.30.1",
     "nanomorph": "^5.4.0",
     "numeral": "^2.0.6",
@@ -73,11 +73,11 @@
     "redux": "^5.0.1",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.1.1",
-    "sweetalert2": "^11.14.1",
+    "sweetalert2": "^11.15.3",
     "urijs": "^1.19.11",
     "url": "^0.11.4",
     "util": "^0.12.5",
-    "viewerjs": "^1.11.6",
+    "viewerjs": "^1.11.7",
     "web3": "^4.12.1",
     "web3modal": "^1.9.12",
     "xss": "^1.0.15"
@@ -101,11 +101,11 @@
     "mini-css-extract-plugin": "^2.9.2",
     "postcss": "^8.4.49",
     "postcss-loader": "^8.1.1",
-    "sass": "^1.81.0",
+    "sass": "^1.83.0",
     "sass-loader": "^14.2.1",
     "style-loader": "^4.0.0",
-    "webpack": "^5.96.1",
-    "webpack-cli": "^5.1.4"
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
   },
   "jest": {
     "moduleNameMapper": {

@@ -49,6 +49,9 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
   def handle_continue(json_rpc_named_arguments, state) do
     Logger.metadata(fetcher: @fetcher_name)
 
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    :timer.sleep(2000)
+
     env = Application.get_all_env(:indexer)[__MODULE__]
 
     with {:start_block_l2_undefined, false} <- {:start_block_l2_undefined, is_nil(env[:start_block_l2])},
@@ -141,7 +144,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
 
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
-      {:ok, latest_block} = Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments)
+      {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments)
       fill_block_range(safe_block + 1, latest_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size)
     end
 

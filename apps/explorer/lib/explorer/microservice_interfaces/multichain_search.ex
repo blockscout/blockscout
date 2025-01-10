@@ -12,6 +12,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   require Logger
 
+  @addresses_chunk_size 7_000
+  @max_concurrency 5
   @post_timeout :timer.minutes(5)
   @request_error_msg "Error while sending request to Multichain Search Service"
 
@@ -36,9 +38,19 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         }) :: {:error, :disabled | String.t() | Jason.DecodeError.t()} | {:ok, any()}
   def batch_import(params) do
     if enabled?() do
-      body = format_batch_import_params(params)
+      params_chunks = extract_batch_import_params_into_chunks(params)
 
-      http_post_request(batch_import_url(), body)
+      params_chunks
+      |> Task.async_stream(
+        fn body -> http_post_request(batch_import_url(), body) end,
+        max_concurrency: @max_concurrency,
+        timeout: @post_timeout
+      )
+      |> Enum.reduce_while({:ok, :chunks_processed}, fn
+        {:ok, _result}, acc -> {:cont, acc}
+        {:exit, _reason}, _acc -> {:halt, {:error, @request_error_msg}}
+        {:error, _reason}, _acc -> {:halt, {:error, @request_error_msg}}
+      end)
     else
       {:ok, :service_disabled}
     end
@@ -83,7 +95,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
-  defp format_batch_import_params(%{
+  defp extract_batch_import_params_into_chunks(%{
          addresses: raw_addresses,
          blocks: blocks,
          transactions: transactions
@@ -128,13 +140,22 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     block_transaction_hashes = block_hashes ++ transaction_hashes
 
-    %{
-      api_key: api_key(),
-      chain_id: to_string(chain_id),
-      addresses: addresses,
-      block_ranges: block_ranges,
-      hashes: block_transaction_hashes
-    }
+    indexed_addresses_chunks =
+      addresses
+      |> Enum.chunk_every(@addresses_chunk_size)
+      |> Enum.with_index()
+
+    Enum.map(indexed_addresses_chunks, fn {addresses_chunk, index} ->
+      hashes = if index == 0, do: block_transaction_hashes, else: []
+
+      %{
+        api_key: api_key(),
+        chain_id: to_string(chain_id),
+        addresses: addresses_chunk,
+        block_ranges: block_ranges,
+        hashes: hashes
+      }
+    end)
   end
 
   defp token?(nil), do: false
