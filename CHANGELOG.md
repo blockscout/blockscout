@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Support OP Holocene upgrade ([#11355](https://github.com/blockscout/blockscout/issues/11355))
 - Add active DB connections metric ([#11321](https://github.com/blockscout/blockscout/issues/11321))
 - Add protocol icon to the search result ([#11478](https://github.com/blockscout/blockscout/issues/11478))
 
