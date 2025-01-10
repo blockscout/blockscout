@@ -9,6 +9,7 @@
 
 ### 🐛 Bug Fixes
 
+- Multichain search: process address in chunks ([#11632](https://github.com/blockscout/blockscout/issues/11632))
 - Fix transactions deadlock ([#11623](https://github.com/blockscout/blockscout/issues/11623))
 - Fix tokens and transactions deadlocks ([#11620](https://github.com/blockscout/blockscout/issues/11620))
 - Order address names to return the latest non-primary ([#11612](https://github.com/blockscout/blockscout/issues/11612))
