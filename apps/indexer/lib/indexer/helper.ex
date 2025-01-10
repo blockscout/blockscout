@@ -612,6 +612,15 @@ defmodule Indexer.Helper do
   Fetches block timestamp by its number using RPC request.
   The number can be `:latest`.
   Performs a specified number of retries (up to) if the first attempt returns error.
+
+  ## Parameters
+  - `number`: Block number or `:latest` to fetch the latest block.
+  - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  - `retries`: Number of retry attempts if the request fails.
+
+  ## Returns
+  - `{:ok, timestamp}` where `timestamp` is the block timestamp as a Unix timestamp.
+  - `{:error, reason}` if the request fails after all retries.
   """
   @spec get_block_timestamp_by_number_or_tag(non_neg_integer() | :latest, list(), non_neg_integer()) ::
           {:ok, non_neg_integer()} | {:error, any()}

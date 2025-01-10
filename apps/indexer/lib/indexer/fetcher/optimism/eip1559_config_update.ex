@@ -89,6 +89,9 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   def handle_continue(json_rpc_named_arguments, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    :timer.sleep(2000)
+
     env = Application.get_all_env(:indexer)[__MODULE__]
     optimism_env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
     timestamp = env[:holocene_timestamp_l2]
