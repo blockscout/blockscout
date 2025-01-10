@@ -28,6 +28,7 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
@@ -4353,9 +4354,9 @@ defmodule Explorer.ChainTest do
       block = insert(:block, timestamp: timestamp)
       expected = {:ok, block.number}
 
-      assert ^expected = Chain.timestamp_to_block_number(timestamp, :after, true)
+      assert ^expected = BlockGeneralReader.timestamp_to_block_number(timestamp, :after, true)
 
-      assert ^expected = Chain.timestamp_to_block_number(timestamp, :before, true)
+      assert ^expected = BlockGeneralReader.timestamp_to_block_number(timestamp, :before, true)
     end
   end
 end
