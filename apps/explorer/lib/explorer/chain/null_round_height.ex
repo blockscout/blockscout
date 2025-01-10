@@ -124,11 +124,7 @@ defmodule Explorer.Chain.NullRoundHeight do
   """
   @spec neighbor_block_number(non_neg_integer(), :previous | :next) :: non_neg_integer()
   def neighbor_block_number(number, direction) do
-    number
-    |> neighboring_null_rounds_query(direction)
-    |> select([nrh], nrh.height)
-    |> Repo.all()
-    |> case do
+    case fetch_neighboring_null_rounds(number, direction) do
       [] ->
         move_by_one(number, direction)
 

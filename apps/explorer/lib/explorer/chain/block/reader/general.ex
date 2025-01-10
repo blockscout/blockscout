@@ -10,18 +10,21 @@ defmodule Explorer.Chain.Block.Reader.General do
       union: 2
     ]
 
+  import Explorer.Chain, only: [select_repo: 1]
+
   alias Explorer.Chain.{
     Block,
     BlockNumberHelper
   }
 
-  alias Explorer.Repo
-
   require Logger
 
   @doc """
-    Finds the block number closest to a given timestamp, optionally adjusting
-    based on whether the block should be before or after the timestamp.
+    Converts a timestamp to its nearest block number.
+
+    Locates the block number closest to a given timestamp, with options to adjust the
+    search to find blocks either before or after the timestamp, and to handle null
+    rounds in the blockchain.
 
     ## Parameters
     - `given_timestamp`: The timestamp for which the closest block number is
@@ -49,9 +52,8 @@ defmodule Explorer.Chain.Block.Reader.General do
 
   def timestamp_to_block_number(given_timestamp, closest, from_api, true) do
     query = build_directional_query(given_timestamp, closest)
-    repo = if from_api, do: Repo.replica(), else: Repo
 
-    case repo.one(query, timeout: :infinity) do
+    case select_repo(api?: from_api).one(query, timeout: :infinity) do
       nil ->
         {:error, :not_found}
 
@@ -80,9 +82,7 @@ defmodule Explorer.Chain.Block.Reader.General do
         limit: 1
       )
 
-    repo = if from_api, do: Repo.replica(), else: Repo
-
-    case repo.one(query, timeout: :infinity) do
+    case select_repo(api?: from_api).one(query, timeout: :infinity) do
       nil ->
         {:error, :not_found}
 
