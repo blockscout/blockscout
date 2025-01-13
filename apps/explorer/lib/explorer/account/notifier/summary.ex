@@ -228,13 +228,11 @@ defmodule Explorer.Account.Notifier.Summary do
     fee
   end
 
-  def preload(%Chain.Transaction{} = transaction) do
-    Repo.preload(transaction, [:internal_transactions, token_transfers: :token])
+  defp preload(%Chain.Transaction{} = transaction) do
+    Repo.preload(transaction, token_transfers: :token)
   end
 
-  def preload(%Chain.TokenTransfer{} = transfer) do
+  defp preload(%Chain.TokenTransfer{} = transfer) do
     Repo.preload(transfer, [:transaction, :token])
   end
-
-  def preload(_), do: nil
 end
