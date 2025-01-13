@@ -1,0 +1,13 @@
+import { GlobalWalletExtension } from "@dynamic-labs/global-wallet";
+
+return (
+  <DynamicContextProvider
+    settings={{
+      environmentId: "XXXXX",
+      walletConnectorExtensions: [GlobalWalletExtension],
+    }}
+  >
+    <App />
+  </DynamicContextProvider>
+);
+
