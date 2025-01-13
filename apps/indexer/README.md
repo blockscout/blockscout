@@ -4,14 +4,14 @@
 
 ## Structure
 
-The indexer is split into multiple fetchers. Each fetcher has its own supervising tree with a separate `TaskSupervisor` for better detecting of memory, message or blocking problems.
+The indexer is split into multiple fetchers. Each fetcher has its own supervising tree with a separate `TaskSupervisor` for better detection of memory, message or blocking problems.
 
 Most fetchers have their `Supervisor` module generated automatically using `use Indexer.Fetcher` macro.
 
 There are different fetchers described below, but the final step of almost all of them is importing data into database.
 A map of lists of different entities is constructed and fed to `Explorer.Chain.import` method.
 This method assigns different runners from `Explorer.Chain.Import.Runner` namespace, matching key in map to `option_key` attribute of a runner.
-The runners are then performing according to the order specified in stages in `Explorer.Chain.Import.Stage`.
+The runners then performing according to the order specified in stages in `Explorer.Chain.Import.Stage`.
 
 ### Transformers
 
