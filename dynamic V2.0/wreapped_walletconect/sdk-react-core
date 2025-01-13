@@ -1,0 +1,7 @@
+     dyn_account_exists: {
+        connect: 'Connect with {{socialOauth}}',
+        description: 'It looks like an account already exists using',
+        title: 'Account already exists',
+        trail_message_email: '. Please log in with your email.',
+        trail_message_social: 'through {{socialOauth}}',
+    },
