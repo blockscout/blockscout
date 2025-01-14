@@ -159,6 +159,14 @@ defmodule Explorer.Chain.Search do
     |> limit(^paging_options.page_size)
   end
 
+  @spec prepare_search_query(binary(), {:some, binary()} | :none) ::
+          {:address_hash, Hash.Address.t()}
+          | {:filecoin, any()}
+          | {:full_hash, Hash.t()}
+          | {:number, non_neg_integer()}
+          | [{:number, non_neg_integer()}, {:text, binary()}]
+          | {:text, binary()}
+          | nil
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp prepare_search_query(query, {:some, prepared_term}) do
     address_hash_result = Chain.string_to_address_hash(query)
@@ -995,7 +1003,10 @@ defmodule Explorer.Chain.Search do
   defp parse_possible_nil(other), do: other
 
   @spec maybe_parse_filecoin_address(binary()) ::
-          :ignore | {:ok, Explorer.Chain.Filecoin.IDAddress.t()} | {:ok, Explorer.Chain.Filecoin.NativeAddress.t()}
+          :ignore
+          | {:ok, Explorer.Chain.Filecoin.IDAddress.t()}
+          | {:ok, Explorer.Chain.Filecoin.NativeAddress.t()}
+          | :error
   def maybe_parse_filecoin_address(string)
 
   if @chain_type == :filecoin do
