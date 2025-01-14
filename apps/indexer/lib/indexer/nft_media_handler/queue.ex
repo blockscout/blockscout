@@ -62,6 +62,7 @@ defmodule Indexer.NFTMediaHandler.Queue do
   end
 
   def init(_) do
+    File.mkdir("./dets")
     {:ok, queue} = :dets.open_file(@queue_storage, file: ~c"./dets/#{@queue_storage}", type: :bag)
     {:ok, in_progress} = :dets.open_file(@tasks_in_progress, type: :set, file: ~c"./dets/#{@tasks_in_progress}")
 
