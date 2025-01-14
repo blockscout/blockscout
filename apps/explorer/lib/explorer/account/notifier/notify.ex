@@ -5,7 +5,7 @@ defmodule Explorer.Account.Notifier.Notify do
 
   alias Explorer.Account.Notifier.{Email, ForbiddenAddress, Summary}
   alias Explorer.Account.{WatchlistAddress, WatchlistNotification}
-  alias Explorer.Chain.{TokenTransfer, Transaction}
+  alias Explorer.Chain.Transaction
   alias Explorer.{Mailer, Repo}
 
   require Logger
@@ -20,20 +20,16 @@ defmodule Explorer.Account.Notifier.Notify do
     Enum.map(transactions, fn transaction -> process(transaction) end)
   end
 
-  defp process(%TokenTransfer{} = transfer) do
-    Logger.debug(transfer, fetcher: :account)
-
-    transfer
-    |> Summary.process()
-    |> Enum.map(fn summary -> notify_watchlists(summary) end)
-  end
-
   defp process(%Transaction{} = transaction) do
-    Logger.debug(transaction, fetcher: :account)
+    if DateTime.after?(transaction.block_timestamp, DateTime.add(DateTime.utc_now(), -1, :day)) do
+      Logger.debug(transaction, fetcher: :account)
 
-    transaction
-    |> Summary.process()
-    |> Enum.map(fn summary -> notify_watchlists(summary) end)
+      transaction
+      |> Summary.process()
+      |> Enum.map(fn summary -> notify_watchlists(summary) end)
+    else
+      nil
+    end
   end
 
   defp process(_), do: nil
