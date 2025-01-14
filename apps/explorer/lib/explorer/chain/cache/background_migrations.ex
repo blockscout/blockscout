@@ -31,6 +31,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :backfill_multichain_search_db_finished,
     key: :heavy_indexes_add_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
+    key: :heavy_indexes_add_logs_address_hash_block_number_index_index_finished,
+    key: :heavy_indexes_drop_logs_address_hash_index_finished,
+    key: :heavy_indexes_drop_logs_address_hash_transaction_hash_index_finished,
+    key: :heavy_indexes_drop_logs_index_index_finished,
     key: :heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index_finished,
     key: :heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_token_transfers_to_address_hash_transaction_hash_index_finished,
@@ -54,9 +58,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
     AddInternalTransactionsBlockNumberDescBlockIndexDescIndex,
+    AddLogsAddressHashBlockNumberIndexIndex,
     AddLogsBlockHashIndex,
     DropInternalTransactionsFromAddressHashIndex,
+    DropLogsAddressHashIndex,
+    DropLogsAddressHashTransactionHashIndex,
     DropLogsBlockNumberAscIndexAscIndex,
+    DropLogsIndexIndex,
     DropTokenTransfersBlockNumberAscLogIndexAscIndex,
     DropTokenTransfersBlockNumberIndex,
     DropTokenTransfersFromAddressHashTransactionHashIndex,
@@ -125,6 +133,42 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
       set_heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished(
         DropLogsBlockNumberAscIndexAscIndex.migration_finished?()
       )
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_add_logs_address_hash_block_number_index_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_add_logs_address_hash_block_number_index_index_finished(
+        AddLogsAddressHashBlockNumberIndexIndex.migration_finished?()
+      )
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_drop_logs_address_hash_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_drop_logs_address_hash_index_finished(DropLogsAddressHashIndex.migration_finished?())
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_drop_logs_address_hash_transaction_hash_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_drop_logs_address_hash_transaction_hash_index_finished(
+        DropLogsAddressHashTransactionHashIndex.migration_finished?()
+      )
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_drop_logs_index_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_drop_logs_index_index_finished(DropLogsIndexIndex.migration_finished?())
     end)
 
     {:return, false}
