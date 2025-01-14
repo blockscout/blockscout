@@ -41,7 +41,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_token_transfers_block_number_index_finished,
     key: :heavy_indexes_drop_internal_transactions_from_address_hash_index_finished,
-    key: :heavy_indexes_add_internal_transactions_block_number_desc_block_index_desc_index_finished,
+    key: :heavy_indexes_add_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished,
     key: :arbitrum_da_records_normalization_finished
 
   @dialyzer :no_match
@@ -57,7 +57,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   }
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
-    AddInternalTransactionsBlockNumberDescBlockIndexDescIndex,
+    AddInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
     AddLogsAddressHashBlockNumberIndexIndex,
     AddLogsBlockHashIndex,
     DropInternalTransactionsFromAddressHashIndex,
@@ -234,10 +234,12 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     {:return, false}
   end
 
-  defp handle_fallback(:heavy_indexes_add_internal_transactions_block_number_desc_block_index_desc_index_finished) do
+  defp handle_fallback(
+         :heavy_indexes_add_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished
+       ) do
     Task.start_link(fn ->
-      set_heavy_indexes_add_internal_transactions_block_number_desc_block_index_desc_index_finished(
-        AddInternalTransactionsBlockNumberDescBlockIndexDescIndex.migration_finished?()
+      set_heavy_indexes_add_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(
+        AddInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex.migration_finished?()
       )
     end)
 

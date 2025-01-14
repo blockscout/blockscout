@@ -1,6 +1,6 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNumberDescBlockIndexDescIndex do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex do
   @moduledoc """
-  Add B-tree index `internal_transactions_block_number_DESC_block_index_DESC_index` on `internal_transactions` table for (`block_number` DESC, `block_index` DESC) columns.
+  Add B-tree index `internal_transactions_block_number_DESC_transaction_index_DESC_index_DESC_index` on `internal_transactions` table for (`block_number` DESC, `transaction_index` DESC, `index` DESC) columns.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -11,10 +11,10 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNu
   alias Explorer.Migrator.HeavyDbIndexOperation
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
-  @migration_name "heavy_indexes_add_internal_transactions_block_number_desc_block_index_desc_index"
-  @index_name "internal_transactions_block_number_DESC_block_index_DESC_index"
+  @migration_name "heavy_indexes_add_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index"
+  @index_name "internal_transactions_block_number_DESC_transaction_index_DESC_index_DESC_index"
   @table_name "internal_transactions"
-  @table_columns ["block_number DESC", "block_index DESC"]
+  @table_columns ["block_number DESC", "transaction_index DESC", "index DESC"]
   @dependent_from_migrations ["heavy_indexes_drop_internal_transactions_from_address_hash_index"]
 
   @impl HeavyDbIndexOperation
@@ -47,7 +47,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNu
 
   @impl HeavyDbIndexOperation
   def update_cache do
-    BackgroundMigrations.set_heavy_indexes_add_internal_transactions_block_number_desc_block_index_desc_index_finished(
+    BackgroundMigrations.set_heavy_indexes_add_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(
       true
     )
   end

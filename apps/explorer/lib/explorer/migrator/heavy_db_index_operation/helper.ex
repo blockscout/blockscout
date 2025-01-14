@@ -13,7 +13,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   """
   @spec check_db_index_creation_progress(String.t()) ::
           :finished_or_not_started | :unknown | {:in_progress, String.t() | nil}
-  def check_db_index_creation_progress(index_name) do
+  def check_db_index_creation_progress(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
     case SQL.query(
            Repo,
            """
@@ -59,7 +61,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   """
   @spec check_db_index_dropping_progress(String.t()) ::
           :finished_or_not_started | :unknown | {:in_progress, String.t() | nil}
-  def check_db_index_dropping_progress(index_name) do
+  def check_db_index_dropping_progress(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
     case SQL.query(
            Repo,
            """
@@ -86,7 +90,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
             :valid? => boolean() | nil
           }
           | :unknown
-  defp db_index_exists_and_valid?(index_name) do
+  defp db_index_exists_and_valid?(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
     case SQL.query(
            Repo,
            """
@@ -115,7 +121,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   @doc """
   Returns status of DB index creation with the given name.
   """
-  def db_index_creation_status(index_name) do
+  def db_index_creation_status(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
     case db_index_exists_and_valid?(index_name) do
       %{exists?: false, valid?: nil} -> :not_initialized
       %{exists?: true, valid?: false} -> :not_completed
@@ -126,7 +134,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   @doc """
   Returns status of DB index dropping with the given name.
   """
-  def db_index_dropping_status(index_name) do
+  def db_index_dropping_status(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
     case db_index_exists_and_valid?(index_name) do
       %{exists?: true, valid?: true} -> :not_initialized
       %{exists?: true, valid?: false} -> :not_completed
@@ -139,7 +149,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   """
   @spec create_db_index(String.t(), String.t(), list()) :: :ok | :error
   # sobelow_skip ["SQL"]
-  def create_db_index(index_name, table_name, table_columns) do
+  def create_db_index(raw_index_name, table_name, table_columns) do
+    index_name = sanitize_index_name(raw_index_name)
+
     query =
       "CREATE INDEX CONCURRENTLY IF NOT EXISTS \"#{index_name}\" on #{table_name} (#{Enum.join(table_columns, ", ")});"
 
@@ -161,7 +173,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   """
   @spec safely_drop_db_index(String.t()) :: :ok | :error
   # sobelow_skip ["SQL"]
-  def safely_drop_db_index(index_name) do
+  def safely_drop_db_index(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
     case SQL.query(Repo, drop_index_query_string(index_name), []) do
       {:ok, _} ->
         :ok
@@ -172,7 +186,18 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     end
   end
 
-  defp drop_index_query_string(index_name) do
+  defp drop_index_query_string(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
     "DROP INDEX IF EXISTS \"#{index_name}\";"
+  end
+
+  defp sanitize_index_name(raw_index_name) do
+    # Postgres allow index names less than 64 bytes
+    if byte_size(raw_index_name) < 64 do
+      raw_index_name
+    else
+      <<index_name::binary-size(63), _::binary>> = raw_index_name
+      index_name
+    end
   end
 end
