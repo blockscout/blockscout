@@ -3146,6 +3146,19 @@ defmodule Explorer.Chain do
     Wei.to(value, unit)
   end
 
+  @doc """
+  Retrieves the bytecode of a smart contract.
+
+  ## Parameters
+
+    - `address_or_hash` (binary() | Hash.Address.t()): The address hash of the smart contract.
+    - `options` (api?()): keyword to determine target DB (read replica or primary).
+
+  ## Returns
+
+  - `binary()`: The bytecode of the smart contract.
+  """
+  @spec smart_contract_bytecode(binary() | Hash.Address.t()) :: binary()
   def smart_contract_bytecode(address_hash, options \\ []) do
     query =
       from(
