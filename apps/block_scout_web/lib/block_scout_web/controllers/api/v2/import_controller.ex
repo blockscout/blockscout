@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
     Needed to import token info via admin panel.
     Protected by `x-api-key` header.
   """
-  @spec import_token_info(any(), map()) ::
+  @spec import_token_info(Plug.Conn.t(), map()) ::
           {:api_key, any()}
           | {:format_address, :error}
           | {:not_found, {:error, :not_found}}
