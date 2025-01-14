@@ -191,6 +191,14 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex,
           :indexer
         ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNumberDescBlockIndexDescIndex,
+          :indexer
+        ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),
         configure(Explorer.Chain.Fetcher.AddressesBlacklist)
       ]

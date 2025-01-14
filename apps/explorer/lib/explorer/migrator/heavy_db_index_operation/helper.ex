@@ -140,7 +140,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   @spec create_db_index(String.t(), String.t(), list()) :: :ok | :error
   # sobelow_skip ["SQL"]
   def create_db_index(index_name, table_name, table_columns) do
-    query = "CREATE INDEX CONCURRENTLY IF NOT EXISTS #{index_name} on #{table_name} (#{Enum.join(table_columns)});"
+    query =
+      "CREATE INDEX CONCURRENTLY IF NOT EXISTS \"#{index_name}\" on #{table_name} (#{Enum.join(table_columns, ", ")});"
 
     case SQL.query(Repo, query, []) do
       {:ok, _} ->
