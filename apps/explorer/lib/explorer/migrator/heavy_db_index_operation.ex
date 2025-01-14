@@ -11,6 +11,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @callback migration_name :: String.t()
 
   @doc """
+  Returns a list of migration names that the current migration depends on.
+  """
+  @callback dependent_from_migrations :: list(String.t())
+
+  @doc """
   Defines a callback for performing a database index operation.
 
   ## Returns
@@ -110,6 +115,30 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
       end
 
       @impl true
+      def handle_info(:initiate_index_operation, state) do
+        case MigrationStatus.fetch(migration_name()) do
+          %{status: "completed"} ->
+            update_cache()
+            {:stop, :normal, state}
+
+          migration_status ->
+            Process.send(self(), :check_if_db_operation_need_to_be_started, [])
+            {:noreply, state}
+        end
+      end
+
+      @impl true
+      def handle_info(:check_if_db_operation_need_to_be_started, state) do
+        if db_operation_is_ready_to_start?() do
+          Process.send(self(), :check_db_index_operation_progress, [])
+        else
+          schedule_next_db_operation_readiness_check()
+        end
+
+        {:noreply, state}
+      end
+
+      @impl true
       def handle_info(:check_db_index_operation_progress, state) do
         with {:index_operation_progress, status} when status in [:finished_or_not_started, :finished] <-
                {:index_operation_progress, check_db_index_operation_progress()},
@@ -135,19 +164,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
       end
 
       @impl true
-      def handle_info(:initiate_index_operation, state) do
-        case MigrationStatus.fetch(migration_name()) do
-          %{status: "completed"} ->
-            update_cache()
-            {:stop, :normal, state}
-
-          migration_status ->
-            Process.send(self(), :check_db_index_operation_progress, [])
-            {:noreply, state}
-        end
-      end
-
-      @impl true
       def handle_info(:complete_db_index_operation, state) do
         case complete_db_index_operation() do
           :ok ->
@@ -159,10 +175,38 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
         end
       end
 
+      defp db_operation_is_ready_to_start? do
+        if Enum.empty?(dependent_from_migrations()) do
+          true
+        else
+          all_statuses =
+            MigrationStatus.get_migrations_status(dependent_from_migrations())
+
+          all_statuses_completed? =
+            all_statuses
+            |> Enum.all?(&(&1 == "completed"))
+
+          if all_statuses_completed? && Enum.count(all_statuses) == Enum.count(dependent_from_migrations()) do
+            true
+          else
+            false
+          end
+        end
+      end
+
       defp schedule_next_db_operation_status_check(timeout \\ nil) do
         Process.send_after(
           self(),
           :check_db_index_operation_progress,
+          timeout || Application.get_env(:explorer, Explorer.Migrator.HeavyDbIndexOperation)[:check_interval] ||
+            :timer.minutes(10)
+        )
+      end
+
+      defp schedule_next_db_operation_readiness_check(timeout \\ nil) do
+        Process.send_after(
+          self(),
+          :check_if_db_operation_need_to_be_started,
           timeout || Application.get_env(:explorer, Explorer.Migrator.HeavyDbIndexOperation)[:check_interval] ||
             :timer.minutes(10)
         )

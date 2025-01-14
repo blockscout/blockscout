@@ -11,9 +11,15 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAsc
 
   @migration_name "heavy_indexes_drop_logs_block_number_asc_index_asc_index"
   @index_name "logs_block_number_ASC__index_ASC_index"
+  @dependent_from_migrations ["heavy_indexes_add_logs_block_hash_index"]
 
   @impl HeavyDbIndexOperation
   def migration_name, do: @migration_name
+
+  @impl HeavyDbIndexOperation
+  def dependent_from_migrations do
+    @dependent_from_migrations
+  end
 
   @impl HeavyDbIndexOperation
   def db_index_operation do

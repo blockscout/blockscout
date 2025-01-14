@@ -20,6 +20,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex do
   def migration_name, do: @migration_name
 
   @impl HeavyDbIndexOperation
+  def dependent_from_migrations do
+    []
+  end
+
+  @impl HeavyDbIndexOperation
   def db_index_operation do
     HeavyDbIndexOperationHelper.create_db_index(@index_name, @table_name, @table_columns)
   end

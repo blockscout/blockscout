@@ -63,7 +63,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     case SQL.query(
            Repo,
            """
-           SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE query = $1);
+           SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE state='active' AND query = $1);
            """,
            [drop_index_query_string(index_name)]
          ) do

@@ -35,7 +35,7 @@ defmodule Explorer.Migrator.MigrationStatus do
   @spec fetch(String.t()) :: __MODULE__.t() | nil
   def fetch(migration_name) do
     migration_name
-    |> get_by_migration_name_query()
+    |> get_migration_by_name_query()
     |> Repo.one()
   end
 
@@ -45,7 +45,7 @@ defmodule Explorer.Migrator.MigrationStatus do
   @spec get_status(String.t()) :: String.t() | nil
   def get_status(migration_name) do
     migration_name
-    |> get_by_migration_name_query()
+    |> get_migration_by_name_query()
     |> select([ms], ms.status)
     |> Repo.one()
   end
@@ -66,7 +66,7 @@ defmodule Explorer.Migrator.MigrationStatus do
   @spec update_meta(String.t(), map()) :: :ok | {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
   def update_meta(migration_name, new_meta) do
     migration_name
-    |> get_by_migration_name_query()
+    |> get_migration_by_name_query()
     |> Repo.one()
     |> case do
       nil ->
@@ -89,8 +89,35 @@ defmodule Explorer.Migrator.MigrationStatus do
   #
   # ## Returns
   # - An `Ecto.Query` that filters records where migration_name matches the provided value
-  @spec get_by_migration_name_query(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  defp get_by_migration_name_query(query \\ __MODULE__, migration_name) do
+  @spec get_migration_by_name_query(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  defp get_migration_by_name_query(query \\ __MODULE__, migration_name) do
     from(ms in query, where: ms.migration_name == ^migration_name)
+  end
+
+  @spec get_migrations_status_query(Ecto.Queryable.t(), [String.t()]) :: Ecto.Query.t()
+  defp get_migrations_status_query(query \\ __MODULE__, migration_names) do
+    from(ms in query,
+      where: ms.migration_name in ^migration_names,
+      select: ms.status
+    )
+  end
+
+  @doc """
+  Fetches the status of the given migrations.
+
+  ## Parameters
+
+    - migration_names: A list of migration names to check the status for.
+
+  ## Returns
+
+    - A list of migration statuses fetched from the database.
+
+  """
+  @spec get_migrations_status([String.t()]) :: list(String.t())
+  def get_migrations_status(migration_names) do
+    migration_names
+    |> get_migrations_status_query()
+    |> Repo.all()
   end
 end
