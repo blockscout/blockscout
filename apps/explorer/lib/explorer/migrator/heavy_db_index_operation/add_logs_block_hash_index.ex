@@ -15,13 +15,14 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex do
   @index_name "logs_block_hash_index"
   @table_name "logs"
   @table_columns ["block_hash"]
+  @dependent_from_migrations ["heavy_indexes_drop_logs_block_number_asc_index_asc_index"]
 
   @impl HeavyDbIndexOperation
   def migration_name, do: @migration_name
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations do
-    []
+    @dependent_from_migrations
   end
 
   @impl HeavyDbIndexOperation

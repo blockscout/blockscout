@@ -137,6 +137,21 @@ config :explorer, Explorer.Migrator.BackfillMultichainSearchDB, enabled: true
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex, enabled: true
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex, enabled: true
 
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberAscLogIndexAscIndex,
+  enabled: true
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
+  enabled: true
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
+  enabled: true
+
+config :explorer,
+       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
+       enabled: true
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex, enabled: true
+
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: true

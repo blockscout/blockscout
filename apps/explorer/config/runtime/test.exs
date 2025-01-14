@@ -58,6 +58,21 @@ config :explorer, Explorer.Migrator.BackfillMultichainSearchDB, enabled: false
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex, enabled: false
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex, enabled: false
 
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberAscLogIndexAscIndex,
+  enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
+  enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
+  enabled: false
+
+config :explorer,
+       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
+       enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex, enabled: false
+
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender
 

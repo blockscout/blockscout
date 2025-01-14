@@ -31,6 +31,11 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :backfill_multichain_search_db_finished,
     key: :heavy_indexes_add_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
+    key: :heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index_finished,
+    key: :heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index_finished,
+    key: :heavy_indexes_drop_token_transfers_to_address_hash_transaction_hash_index_finished,
+    key: :heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index_finished,
+    key: :heavy_indexes_drop_token_transfers_block_number_index_finished,
     key: :arbitrum_da_records_normalization_finished
 
   @dialyzer :no_match
@@ -47,7 +52,12 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
     AddLogsBlockHashIndex,
-    DropLogsBlockNumberAscIndexAscIndex
+    DropLogsBlockNumberAscIndexAscIndex,
+    DropTokenTransfersBlockNumberAscLogIndexAscIndex,
+    DropTokenTransfersBlockNumberIndex,
+    DropTokenTransfersFromAddressHashTransactionHashIndex,
+    DropTokenTransfersToAddressHashTransactionHashIndex,
+    DropTokenTransfersTokenContractAddressHashTransactionHashIndex
   }
 
   defp handle_fallback(:transactions_denormalization_finished) do
@@ -110,6 +120,56 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     Task.start_link(fn ->
       set_heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished(
         DropLogsBlockNumberAscIndexAscIndex.migration_finished?()
+      )
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index_finished(
+        DropTokenTransfersBlockNumberAscLogIndexAscIndex.migration_finished?()
+      )
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index_finished(
+        DropTokenTransfersFromAddressHashTransactionHashIndex.migration_finished?()
+      )
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_drop_token_transfers_to_address_hash_transaction_hash_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_drop_token_transfers_to_address_hash_transaction_hash_index_finished(
+        DropTokenTransfersToAddressHashTransactionHashIndex.migration_finished?()
+      )
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index_finished(
+        DropTokenTransfersTokenContractAddressHashTransactionHashIndex.migration_finished?()
+      )
+    end)
+
+    {:return, false}
+  end
+
+  defp handle_fallback(:heavy_indexes_drop_token_transfers_block_number_index_finished) do
+    Task.start_link(fn ->
+      set_heavy_indexes_drop_token_transfers_block_number_index_finished(
+        DropTokenTransfersBlockNumberIndex.migration_finished?()
       )
     end)
 
