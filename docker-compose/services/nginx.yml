@@ -13,7 +13,7 @@ services:
       FRONT_PROXY_PASS: ${FRONT_PROXY_PASS:-http://frontend:3000}
     ports:
       - target: 5000
-        published: 5001
+        published: 5000
       - target: 8080
         published: 8080
       - target: 8081
