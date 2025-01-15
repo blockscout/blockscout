@@ -61,6 +61,10 @@ config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBloc
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex, enabled: false
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex, enabled: false
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex, enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashFirstTopicBlockNumberIndexIndex,
+  enabled: false
+
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashIndex, enabled: false
 
 config :explorer,
