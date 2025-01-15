@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :backfill_multichain_search_db_finished,
     key: :heavy_indexes_add_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
-    key: :heavy_indexes_add_logs_address_hash_block_number_index_index_finished,
+    key: :heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index_finished,
     key: :heavy_indexes_drop_logs_address_hash_index_finished,
     key: :heavy_indexes_drop_logs_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_logs_index_index_finished,
@@ -140,9 +140,9 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     {:return, false}
   end
 
-  defp handle_fallback(:heavy_indexes_add_logs_address_hash_block_number_index_index_finished) do
+  defp handle_fallback(:heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index_finished) do
     Task.start_link(fn ->
-      set_heavy_indexes_add_logs_address_hash_block_number_index_index_finished(
+      set_heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index_finished(
         AddLogsAddressHashBlockNumberIndexIndex.migration_finished?()
       )
     end)

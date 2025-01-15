@@ -14,7 +14,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransaction
   @dependent_from_migrations [
     "heavy_indexes_drop_logs_block_number_asc_index_asc_index",
     "heavy_indexes_add_logs_block_hash_index",
-    "heavy_indexes_add_logs_address_hash_block_number_index_index",
+    "heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index",
     "heavy_indexes_drop_logs_address_hash_index"
   ]
 
