@@ -324,7 +324,7 @@ defmodule Explorer.Chain.Address do
 
   if @chain_type == :rsk do
     # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
-    def address_checksum(hash) do
+    defp address_checksum(hash) do
       string_hash =
         hash
         |> to_string()
@@ -351,7 +351,7 @@ defmodule Explorer.Chain.Address do
       end)
     end
   else
-    def address_checksum(hash) do
+    defp address_checksum(hash) do
       string_hash =
         hash
         |> to_string()
