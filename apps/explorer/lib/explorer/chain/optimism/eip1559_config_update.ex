@@ -161,10 +161,14 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
   """
   @spec nearest_block_number_to_timestamp(DateTime.t()) :: non_neg_integer() | nil
   def nearest_block_number_to_timestamp(timestamp) do
+    # here we limit the time range to 30 minutes to avoid creating [:timestamp, :number] index
+    # 30 minutes is a reasonable time to exceed block time on any chain
+    timestamp_plus_30_minutes = DateTime.add(timestamp, 30, :minute)
+
     query =
       from(b in Block,
         select: b.number,
-        where: b.timestamp >= ^timestamp and b.consensus == true,
+        where: b.timestamp >= ^timestamp and b.timestamp < ^timestamp_plus_30_minutes and b.consensus == true,
         order_by: [asc: b.number],
         limit: 1
       )
