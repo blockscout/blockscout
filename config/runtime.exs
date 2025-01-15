@@ -551,7 +551,8 @@ config :explorer, Explorer.MicroserviceInterfaces.AccountAbstraction,
 
 config :explorer, Explorer.MicroserviceInterfaces.Metadata,
   service_url: System.get_env("MICROSERVICE_METADATA_URL"),
-  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_METADATA_ENABLED")
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_METADATA_ENABLED"),
+  proxy_requests_timeout: ConfigHelper.parse_time_env_var("MICROSERVICE_METADATA_PROXY_REQUESTS_TIMEOUT", "30s")
 
 config :explorer, Explorer.SmartContract.StylusVerifierInterface,
   service_url: ConfigHelper.parse_microservice_url("MICROSERVICE_STYLUS_VERIFIER_URL")

@@ -89,7 +89,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   end
 
   defp http_get_request_for_proxy_method(url, params, parsing_function) do
-    case HTTPoison.get(url, [], params: params) do
+    case HTTPoison.get(url, [], params: params, recv_timeout: config()[:proxy_requests_timeout]) do
       {:ok, %Response{body: body, status_code: 200}} ->
         {200, body |> Jason.decode() |> parsing_function.()}
 
@@ -123,6 +123,10 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
   defp base_url do
     "#{Microservice.base_url(__MODULE__)}/api/v1"
+  end
+
+  defp config do
+    Application.get_env(:explorer, __MODULE__)
   end
 
   @spec enabled?() :: boolean()
