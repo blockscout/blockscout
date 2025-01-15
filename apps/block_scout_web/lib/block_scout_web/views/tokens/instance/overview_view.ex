@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, CurrencyHelper, SmartContract, Token}
   alias Explorer.SmartContract.Helper
+  alias Utils.TokenInstanceHelper
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
   import BlockScoutWeb.NFTHelper, only: [external_url: 1]
@@ -28,54 +29,13 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     NFTHelper.get_media_src(instance.metadata, high_quality_media?) || media_src(nil)
   end
 
-  def media_type("data:image/" <> _data) do
-    "image"
-  end
+  def media_type(media_src) do
+    case TokenInstanceHelper.media_type(media_src) do
+      {type, _} ->
+        type
 
-  def media_type("data:video/" <> _data) do
-    "video"
-  end
-
-  def media_type("data:" <> _data) do
-    nil
-  end
-
-  def media_type(media_src) when not is_nil(media_src) do
-    ext = media_src |> Path.extname() |> String.trim()
-
-    mime_type =
-      if ext == "" do
-        process_missing_extension(media_src)
-      else
-        ext_with_dot =
-          media_src
-          |> Path.extname()
-
-        "." <> ext = ext_with_dot
-
-        ext
-        |> MIME.type()
-      end
-
-    if mime_type do
-      basic_mime_type = mime_type |> String.split("/") |> Enum.at(0)
-
-      basic_mime_type
-    else
-      nil
-    end
-  end
-
-  def media_type(nil), do: nil
-
-  defp process_missing_extension(media_src) do
-    case HTTPoison.head(media_src, [], follow_redirect: true) do
-      {:ok, %HTTPoison.Response{status_code: 200, headers: headers}} ->
-        headers_map = Map.new(headers, fn {key, value} -> {String.downcase(key), value} end)
-        headers_map["content-type"]
-
-      _ ->
-        nil
+      other ->
+        other
     end
   end
 

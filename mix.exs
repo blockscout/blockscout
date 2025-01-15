@@ -7,11 +7,11 @@ defmodule BlockScout.Mixfile do
     [
       # app: :block_scout,
       # aliases: aliases(config_env()),
-      version: "6.9.2",
+      version: "6.10.1",
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
-      elixir: "~> 1.13",
+      elixir: "~> 1.17",
       preferred_cli_env: [
         credo: :test,
         dialyzer: :test
@@ -24,7 +24,8 @@ defmodule BlockScout.Mixfile do
             ethereum_jsonrpc: :permanent,
             explorer: :permanent,
             indexer: :permanent,
-            utils: :permanent
+            utils: :permanent,
+            nft_media_handler: :permanent
           ],
           steps: [:assemble, &copy_prod_runtime_config/1],
           validate_compile_env: false
@@ -97,7 +98,7 @@ defmodule BlockScout.Mixfile do
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.8", override: true},
       {:tesla, "~> 1.13.0"},
       # Documentation
-      {:ex_doc, "~> 0.35.1", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.36.1", only: :dev, runtime: false},
       {:number, "~> 1.0.3"}
     ]
   end

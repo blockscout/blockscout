@@ -8,7 +8,6 @@ defmodule Explorer.Chain.Import.Stage.TokenReferencing do
   @behaviour Stage
 
   @runners [
-    Runner.TokenInstances,
     Runner.Address.TokenBalances,
     Runner.Address.CurrentTokenBalances
   ]

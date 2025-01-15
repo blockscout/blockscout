@@ -28,7 +28,8 @@ defmodule EthereumJSONRPC.HTTP do
     http_options = Keyword.fetch!(options, :http_options)
 
     with {:ok, %{body: body, status_code: code}} <- http.json_rpc(url, json, headers(), http_options),
-         {:ok, json} <- decode_json(request: [url: url, body: json], response: [status_code: code, body: body]),
+         {:ok, json} <-
+           decode_json(request: [url: url, body: json, headers: headers()], response: [status_code: code, body: body]),
          {:ok, response} <- handle_response(json, code) do
       {:ok, response}
     else
@@ -77,7 +78,10 @@ defmodule EthereumJSONRPC.HTTP do
 
       {:ok, %{body: body, status_code: status_code}} ->
         with {:ok, decoded_body} <-
-               decode_json(request: [url: url, body: json], response: [status_code: status_code, body: body]) do
+               decode_json(
+                 request: [url: url, body: json, headers: headers()],
+                 response: [status_code: status_code, body: body]
+               ) do
           chunked_json_rpc(tail, options, [decoded_body | decoded_response_bodies])
         end
 

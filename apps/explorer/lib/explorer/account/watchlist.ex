@@ -60,4 +60,34 @@ defmodule Explorer.Account.Watchlist do
       {:ok, repo.all(from(watchlist in __MODULE__, where: watchlist.identity_id in ^ids_to_merge))}
     end)
   end
+
+  @doc """
+  Adds an operation to acquire and lock a watchlist record in a database transaction.
+
+  Performs a SELECT FOR UPDATE on the watchlist record to prevent concurrent
+  modifications until the transaction is committed or rolled back.
+
+  ## Parameters
+  - `multi`: An Ecto.Multi struct containing a series of database operations
+  - `watchlist_id`: The ID of the watchlist to lock
+
+  ## Returns
+  An updated Ecto.Multi struct with the `:acquire_watchlist` operation that will:
+  - Return `{:ok, watchlist}` if the watchlist is found and locked
+  - Return `{:error, :not_found}` if no watchlist exists with the given ID
+  """
+  @spec acquire_with_lock(Multi.t(), integer()) :: Multi.t()
+  def acquire_with_lock(multi, watchlist_id) do
+    Multi.run(multi, :acquire_watchlist, fn repo, _ ->
+      watchlist_query = from(watchlist in __MODULE__, where: watchlist.id == ^watchlist_id, lock: "FOR UPDATE")
+
+      case repo.one(watchlist_query) do
+        nil ->
+          {:error, :not_found}
+
+        watchlist ->
+          {:ok, watchlist}
+      end
+    end)
+  end
 end

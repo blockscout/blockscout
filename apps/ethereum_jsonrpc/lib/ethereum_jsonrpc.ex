@@ -292,13 +292,15 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches blocks by block hashes.
 
-  Transaction data is included for each block.
+  Transaction data is included for each block by default.
+  Set `with_transactions` parameter to false to exclude tx data.
   """
-  @spec fetch_blocks_by_hash([hash()], json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
-  def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments) do
+  @spec fetch_blocks_by_hash([hash()], json_rpc_named_arguments, boolean()) ::
+          {:ok, Blocks.t()} | {:error, reason :: term}
+  def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments, with_transactions? \\ true) do
     block_hashes
     |> Enum.map(fn block_hash -> %{hash: block_hash} end)
-    |> fetch_blocks_by_params(&Block.ByHash.request/1, json_rpc_named_arguments)
+    |> fetch_blocks_by_params(&Block.ByHash.request(&1, with_transactions?), json_rpc_named_arguments)
   end
 
   @doc """
@@ -364,16 +366,6 @@ defmodule EthereumJSONRPC do
    * `{:error, reason}` - other JSONRPC error.
 
   """
-  @spec fetch_block_number_by_tag_op_version(tag(), json_rpc_named_arguments) ::
-          {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
-  def fetch_block_number_by_tag_op_version(tag, json_rpc_named_arguments)
-      when tag in ~w(earliest latest pending safe) do
-    %{id: 0, tag: tag}
-    |> Block.ByTag.request()
-    |> json_rpc(json_rpc_named_arguments)
-    |> Block.ByTag.number_from_result()
-  end
-
   @spec fetch_block_number_by_tag(tag(), json_rpc_named_arguments) ::
           {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
   def fetch_block_number_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending safe) do
@@ -458,6 +450,11 @@ defmodule EthereumJSONRPC do
       iex> id_to_params([%{block: 1}, %{block: 2}])
       %{0 => %{block: 1}, 1 => %{block: 2}}
   """
+  @spec id_to_params([]) :: %{}
+  def id_to_params([]) do
+    %{}
+  end
+
   @spec id_to_params([params]) :: %{id => params} when id: non_neg_integer(), params: any()
   def id_to_params(params_list) do
     params_list

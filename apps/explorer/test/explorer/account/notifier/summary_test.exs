@@ -86,22 +86,24 @@ defmodule Explorer.Account.Notifier.SummaryTest do
     test "ERC-20 Token transfer" do
       transaction =
         %Transaction{
-          from_address: _from_address,
-          to_address: _to_address,
-          block_number: _block_number,
-          hash: _transaction_hash
+          from_address: transaction_from_address,
+          to_address: transaction_to_address,
+          block_number: block_number,
+          hash: transaction_hash
         } = with_block(insert(:transaction))
+
+      transaction_amount = Wei.to(transaction.value, :ether)
 
       transfer =
         %TokenTransfer{
           amount: _amount,
-          block_number: block_number,
+          block_number: _block_number,
           from_address: from_address,
           to_address: to_address,
           token: token
         } =
         :token_transfer
-        |> insert(transaction: transaction)
+        |> insert(transaction: transaction, block: transaction.block, block_number: transaction.block_number)
         |> Repo.preload([
           :token
         ])
@@ -114,7 +116,19 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
       amount = Decimal.div(transfer.amount, decimals)
 
-      assert Summary.process(transfer) == [
+      assert Summary.process(transaction) == [
+               %Summary{
+                 amount: transaction_amount,
+                 block_number: block_number,
+                 from_address_hash: transaction_from_address.hash,
+                 method: "transfer",
+                 name: "ETH",
+                 subject: "Coin transaction",
+                 to_address_hash: transaction_to_address.hash,
+                 transaction_hash: transaction_hash,
+                 transaction_fee: fee,
+                 type: "COIN"
+               },
                %Summary{
                  amount: amount,
                  block_number: block_number,
@@ -135,32 +149,44 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
       transaction =
         %Transaction{
-          from_address: _from_address,
-          to_address: _to_address,
-          block_number: _block_number,
-          hash: _transaction_hash
+          from_address: transaction_from_address,
+          to_address: transaction_to_address,
+          block_number: block_number,
+          hash: transaction_hash
         } = with_block(insert(:transaction))
 
-      transfer =
-        %TokenTransfer{
-          amount: _amount,
-          block_number: block_number,
-          from_address: from_address,
-          to_address: to_address
-        } =
+      transaction_amount = Wei.to(transaction.value, :ether)
+
+      %TokenTransfer{
+        amount: _amount,
+        block_number: _block_number,
+        from_address: from_address,
+        to_address: to_address
+      } =
         :token_transfer
         |> insert(
           transaction: transaction,
           token_ids: [42],
-          token_contract_address: token.contract_address
+          token_contract_address: token.contract_address,
+          block: transaction.block,
+          block_number: transaction.block_number
         )
-        |> Repo.preload([
-          :token
-        ])
 
       {_, fee} = Transaction.fee(transaction, :gwei)
 
-      assert Summary.process(transfer) == [
+      assert Summary.process(transaction) == [
+               %Summary{
+                 amount: transaction_amount,
+                 block_number: block_number,
+                 from_address_hash: transaction_from_address.hash,
+                 method: "transfer",
+                 name: "ETH",
+                 subject: "Coin transaction",
+                 to_address_hash: transaction_to_address.hash,
+                 transaction_hash: transaction_hash,
+                 transaction_fee: fee,
+                 type: "COIN"
+               },
                %Summary{
                  amount: 0,
                  block_number: block_number,
@@ -181,32 +207,44 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
       transaction =
         %Transaction{
-          from_address: _from_address,
-          to_address: _to_address,
-          block_number: _block_number,
-          hash: _transaction_hash
+          from_address: transaction_from_address,
+          to_address: transaction_to_address,
+          block_number: block_number,
+          hash: transaction_hash
         } = with_block(insert(:transaction))
 
-      transfer =
-        %TokenTransfer{
-          amount: _amount,
-          block_number: block_number,
-          from_address: from_address,
-          to_address: to_address
-        } =
+      transaction_amount = Wei.to(transaction.value, :ether)
+
+      %TokenTransfer{
+        amount: _amount,
+        block_number: _block_number,
+        from_address: from_address,
+        to_address: to_address
+      } =
         :token_transfer
         |> insert(
           transaction: transaction,
           token_ids: [42],
-          token_contract_address: token.contract_address
+          token_contract_address: token.contract_address,
+          block: transaction.block,
+          block_number: transaction.block_number
         )
-        |> Repo.preload([
-          :token
-        ])
 
       {_, fee} = Transaction.fee(transaction, :gwei)
 
-      assert Summary.process(transfer) == [
+      assert Summary.process(transaction) == [
+               %Summary{
+                 amount: transaction_amount,
+                 block_number: block_number,
+                 from_address_hash: transaction_from_address.hash,
+                 method: "transfer",
+                 name: "ETH",
+                 subject: "Coin transaction",
+                 to_address_hash: transaction_to_address.hash,
+                 transaction_hash: transaction_hash,
+                 transaction_fee: fee,
+                 type: "COIN"
+               },
                %Summary{
                  amount: 0,
                  block_number: block_number,
@@ -227,32 +265,44 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
       transaction =
         %Transaction{
-          from_address: _from_address,
-          to_address: _to_address,
-          block_number: _block_number,
-          hash: _transaction_hash
+          from_address: transaction_from_address,
+          to_address: transaction_to_address,
+          block_number: block_number,
+          hash: transaction_hash
         } = with_block(insert(:transaction))
 
-      transfer =
-        %TokenTransfer{
-          amount: _amount,
-          block_number: block_number,
-          from_address: from_address,
-          to_address: to_address
-        } =
+      transaction_amount = Wei.to(transaction.value, :ether)
+
+      %TokenTransfer{
+        amount: _amount,
+        block_number: _block_number,
+        from_address: from_address,
+        to_address: to_address
+      } =
         :token_transfer
         |> insert(
           transaction: transaction,
           token_ids: [23, 42],
-          token_contract_address: token.contract_address
+          token_contract_address: token.contract_address,
+          block: transaction.block,
+          block_number: transaction.block_number
         )
-        |> Repo.preload([
-          :token
-        ])
 
       {_, fee} = Transaction.fee(transaction, :gwei)
 
-      assert Summary.process(transfer) == [
+      assert Summary.process(transaction) == [
+               %Summary{
+                 amount: transaction_amount,
+                 block_number: block_number,
+                 from_address_hash: transaction_from_address.hash,
+                 method: "transfer",
+                 name: "ETH",
+                 subject: "Coin transaction",
+                 to_address_hash: transaction_to_address.hash,
+                 transaction_hash: transaction_hash,
+                 transaction_fee: fee,
+                 type: "COIN"
+               },
                %Summary{
                  amount: 0,
                  block_number: block_number,
@@ -273,16 +323,18 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
       transaction =
         %Transaction{
-          from_address: _from_address,
-          to_address: _to_address,
-          block_number: _block_number,
-          hash: _transaction_hash
+          from_address: transaction_from_address,
+          to_address: transaction_to_address,
+          block_number: block_number,
+          hash: transaction_hash
         } = with_block(insert(:transaction))
+
+      transaction_amount = Wei.to(transaction.value, :ether)
 
       transfer =
         %TokenTransfer{
           amount: _amount,
-          block_number: block_number,
+          block_number: _block_number,
           from_address: from_address,
           to_address: to_address
         } =
@@ -290,11 +342,10 @@ defmodule Explorer.Account.Notifier.SummaryTest do
         |> insert(
           transaction: transaction,
           token_ids: [42],
-          token_contract_address: token.contract_address
+          token_contract_address: token.contract_address,
+          block: transaction.block,
+          block_number: transaction.block_number
         )
-        |> Repo.preload([
-          :token
-        ])
 
       {_, fee} = Transaction.fee(transaction, :gwei)
 
@@ -304,7 +355,19 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
       amount = Decimal.div(transfer.amount, decimals)
 
-      assert Summary.process(transfer) == [
+      assert Summary.process(transaction) == [
+               %Summary{
+                 amount: transaction_amount,
+                 block_number: block_number,
+                 from_address_hash: transaction_from_address.hash,
+                 method: "transfer",
+                 name: "ETH",
+                 subject: "Coin transaction",
+                 to_address_hash: transaction_to_address.hash,
+                 transaction_hash: transaction_hash,
+                 transaction_fee: fee,
+                 type: "COIN"
+               },
                %Summary{
                  amount: amount,
                  block_number: block_number,
@@ -313,7 +376,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  name: "Infinite Token",
                  subject: "42",
                  to_address_hash: to_address.hash,
-                 transaction_hash: transaction.hash,
+                 transaction_hash: transaction_hash,
                  transaction_fee: fee,
                  type: "ERC-404"
                }
@@ -325,16 +388,18 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
       transaction =
         %Transaction{
-          from_address: _from_address,
-          to_address: _to_address,
-          block_number: _block_number,
-          hash: _transaction_hash
+          from_address: transaction_from_address,
+          to_address: transaction_to_address,
+          block_number: block_number,
+          hash: transaction_hash
         } = with_block(insert(:transaction))
+
+      transaction_amount = Wei.to(transaction.value, :ether)
 
       transfer =
         %TokenTransfer{
           amount: _amount,
-          block_number: block_number,
+          block_number: _block_number,
           from_address: from_address,
           to_address: to_address
         } =
@@ -342,11 +407,10 @@ defmodule Explorer.Account.Notifier.SummaryTest do
         |> insert(
           transaction: transaction,
           token_ids: [],
-          token_contract_address: token.contract_address
+          token_contract_address: token.contract_address,
+          block: transaction.block,
+          block_number: transaction.block_number
         )
-        |> Repo.preload([
-          :token
-        ])
 
       {_, fee} = Transaction.fee(transaction, :gwei)
 
@@ -356,7 +420,19 @@ defmodule Explorer.Account.Notifier.SummaryTest do
 
       amount = Decimal.div(transfer.amount, decimals)
 
-      assert Summary.process(transfer) == [
+      assert Summary.process(transaction) == [
+               %Summary{
+                 amount: transaction_amount,
+                 block_number: block_number,
+                 from_address_hash: transaction_from_address.hash,
+                 method: "transfer",
+                 name: "ETH",
+                 subject: "Coin transaction",
+                 to_address_hash: transaction_to_address.hash,
+                 transaction_hash: transaction_hash,
+                 transaction_fee: fee,
+                 type: "COIN"
+               },
                %Summary{
                  amount: amount,
                  block_number: block_number,

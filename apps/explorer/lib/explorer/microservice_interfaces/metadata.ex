@@ -17,6 +17,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   @tags_per_address_limit 5
   @page_size 50
   @request_error_msg "Error while sending request to Metadata microservice"
+  @service_disabled "Service is disabled"
 
   @doc """
   Retrieves tags for a list of addresses.
@@ -54,13 +55,17 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   """
   @spec get_addresses(map()) :: {:error | integer(), any()}
   def get_addresses(params) do
-    with :ok <- Microservice.check_enabled(__MODULE__) do
-      params =
-        params
-        |> Map.put("page_size", @page_size)
-        |> Map.put("chain_id", Application.get_env(:block_scout_web, :chain_id))
+    case Microservice.check_enabled(__MODULE__) do
+      :ok ->
+        params =
+          params
+          |> Map.put("page_size", @page_size)
+          |> Map.put("chain_id", Application.get_env(:block_scout_web, :chain_id))
 
-      http_get_request_for_proxy_method(addresses_url(), params, &prepare_addresses_response/1)
+        http_get_request_for_proxy_method(addresses_url(), params, &prepare_addresses_response/1)
+
+      _ ->
+        {501, %{error: @service_disabled}}
     end
   end
 
@@ -84,7 +89,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   end
 
   defp http_get_request_for_proxy_method(url, params, parsing_function) do
-    case HTTPoison.get(url, [], params: params) do
+    case HTTPoison.get(url, [], params: params, recv_timeout: config()[:proxy_requests_timeout]) do
       {:ok, %Response{body: body, status_code: 200}} ->
         {200, body |> Jason.decode() |> parsing_function.()}
 
@@ -118,6 +123,10 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
   defp base_url do
     "#{Microservice.base_url(__MODULE__)}/api/v1"
+  end
+
+  defp config do
+    Application.get_env(:explorer, __MODULE__)
   end
 
   @spec enabled?() :: boolean()

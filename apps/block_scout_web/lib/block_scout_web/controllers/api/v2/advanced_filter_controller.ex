@@ -194,8 +194,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   defp extract_filters(params) do
     [
-      # TODO: remove when frontend is adopted to new naming
-      transaction_types: prepare_transaction_types(params["transaction_types"] || params["tx_types"]),
+      transaction_types: prepare_transaction_types(params["transaction_types"]),
       methods: params["methods"] |> prepare_methods(),
       age: prepare_age(params["age_from"], params["age_to"]),
       from_address_hashes:
@@ -347,6 +346,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   defp paging_options(_), do: [paging_options: default_paging_options()]
 
   defp parse_nullable_integer_paging_parameter(""), do: {:ok, nil}
+  defp parse_nullable_integer_paging_parameter("null"), do: {:ok, nil}
 
   defp parse_nullable_integer_paging_parameter(string) when is_binary(string) do
     case Integer.parse(string) do
