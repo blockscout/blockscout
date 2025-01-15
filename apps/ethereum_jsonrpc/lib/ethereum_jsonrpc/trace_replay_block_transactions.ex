@@ -258,6 +258,26 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
     {:error, annotated_error}
   end
 
+  defp trace_replay_transaction_response_to_first_trace(%{id: id, result: error_result}, id_to_params)
+       when is_map(id_to_params) do
+    %{
+      block_hash: block_hash,
+      block_number: block_number,
+      hash_data: transaction_hash,
+      transaction_index: transaction_index
+    } = Map.fetch!(id_to_params, id)
+
+    annotated_error = %{
+      "blockHash" => block_hash,
+      "blockNumber" => block_number,
+      "transactionIndex" => transaction_index,
+      "transactionHash" => transaction_hash,
+      "result" => error_result
+    }
+
+    {:error, annotated_error}
+  end
+
   defp trace_replay_transaction_requests(id_to_params) when is_map(id_to_params) do
     Enum.map(id_to_params, fn {id, %{hash_data: hash_data}} ->
       trace_replay_transaction_request(%{id: id, hash_data: hash_data})
