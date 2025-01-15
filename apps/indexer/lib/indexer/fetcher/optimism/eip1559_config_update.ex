@@ -459,17 +459,17 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
     Logger.info("Trying to detect Holocene block number by its timestamp using indexed L2 blocks...")
 
-    block_number = EIP1559ConfigUpdate.nearest_block_number_to_timestamp(timestamp_dt)
+    case Chain.timestamp_to_block_number(timestamp_dt, :after, false) do
+      {:ok, block_number} ->
+        Logger.info("Holocene block number is detected using indexed L2 blocks. The block number is #{block_number}")
+        block_number
 
-    if is_nil(block_number) do
-      Logger.info(
-        "Cannot detect Holocene block number using indexed L2 blocks. Trying to calculate the number using RPC requests..."
-      )
+      _ ->
+        Logger.info(
+          "Cannot detect Holocene block number using indexed L2 blocks. Trying to calculate the number using RPC requests..."
+        )
 
-      block_number_by_timestamp_from_rpc(timestamp, block_duration, json_rpc_named_arguments)
-    else
-      Logger.info("Holocene block number is detected using indexed L2 blocks. The block number is #{block_number}")
-      block_number
+        block_number_by_timestamp_from_rpc(timestamp, block_duration, json_rpc_named_arguments)
     end
   end
 

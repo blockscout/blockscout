@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
 
   import Explorer.Chain, only: [get_last_fetched_counter: 1, upsert_last_fetched_counter: 1]
 
-  alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.Hash
   alias Explorer.Repo
 
   @counter_type "optimism_eip1559_config_updates_fetcher_last_l2_block_hash"
@@ -147,28 +147,5 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
       counter_type: @counter_type,
       value: block_hash_integer
     })
-  end
-
-  @doc """
-    Finds the closest block number which timestamp is greater or equal to the given timestamp.
-
-    ## Parameters
-    - `timestamp`: The given timestamp.
-
-    ## Returns
-    - The number of the found block.
-    - `nil` in case the block is not found.
-  """
-  @spec nearest_block_number_to_timestamp(DateTime.t()) :: non_neg_integer() | nil
-  def nearest_block_number_to_timestamp(timestamp) do
-    query =
-      from(b in Block,
-        select: b.number,
-        where: b.timestamp >= ^timestamp and b.consensus == true,
-        order_by: [asc: b.number],
-        limit: 1
-      )
-
-    Repo.one(query)
   end
 end
