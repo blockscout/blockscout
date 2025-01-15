@@ -45,18 +45,6 @@ defmodule Explorer.Account.Notifier.Summary do
     end)
   end
 
-  def process(%Chain.TokenTransfer{} = transfer) do
-    preloaded_transfer = preload(transfer)
-
-    summary = fetch_summary(preloaded_transfer.transaction, preloaded_transfer)
-
-    if summary != :nothing do
-      [summary]
-    else
-      []
-    end
-  end
-
   def process(_), do: nil
 
   def handle_collection(_transaction, []), do: []
@@ -230,9 +218,5 @@ defmodule Explorer.Account.Notifier.Summary do
 
   defp preload(%Chain.Transaction{} = transaction) do
     Repo.preload(transaction, token_transfers: :token)
-  end
-
-  defp preload(%Chain.TokenTransfer{} = transfer) do
-    Repo.preload(transfer, [:transaction, :token])
   end
 end
