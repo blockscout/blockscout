@@ -60,6 +60,24 @@ defmodule BlockScoutWeb.NFTHelper do
     |> compose_ipfs_url()
   end
 
+  @doc """
+  Composes a full IPFS URL from the given image URL.
+
+  ## Parameters
+
+    - image_url: The URL of the image to be composed into an IPFS URL. It can be nil.
+
+  ## Returns
+
+    - A string representing the full IPFS URL or nil.
+
+  ## Examples
+
+      iex> compose_ipfs_url("QmTzQ1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1")
+      "https://ipfs.io/ipfs/QmTzQ1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1"
+
+  """
+  @spec compose_ipfs_url(String.t() | nil) :: String.t() | nil
   def compose_ipfs_url(nil), do: nil
 
   def compose_ipfs_url(image_url) do

@@ -761,6 +761,7 @@ defmodule Explorer.Token.MetadataRetriever do
       {:error, "ignored host localhost"}
 
   """
+  @spec fetch_metadata_from_uri(String.t(), boolean(), String.t() | nil) :: {:ok, %{metadata: any}} | {:error, binary}
   def fetch_metadata_from_uri(uri, ipfs?, hex_token_id \\ nil) do
     case Mix.env() != :test && URI.parse(uri) do
       %URI{host: host} when host in @ignored_hosts ->
