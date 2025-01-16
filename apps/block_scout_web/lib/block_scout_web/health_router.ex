@@ -5,11 +5,9 @@ defmodule BlockScoutWeb.HealthRouter do
 
   use BlockScoutWeb, :router
 
-  alias BlockScoutWeb.API.HealthController
-
-  scope "/health" do
-    get("/", HealthController, :health)
-    get("/liveness", HealthController, :liveness)
-    get("/readiness", HealthController, :readiness)
+  scope "/api/health" do
+    get("/", BlockScoutWeb.API.V1.HealthController, :health)
+    get("/liveness", BlockScoutWeb.API.V1.HealthController, :liveness)
+    get("/readiness", BlockScoutWeb.API.V1.HealthController, :readiness)
   end
 end

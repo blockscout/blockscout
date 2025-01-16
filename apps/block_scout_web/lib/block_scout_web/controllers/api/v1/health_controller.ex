@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.HealthController do
+defmodule BlockScoutWeb.API.V1.HealthController do
   use Phoenix.Controller, namespace: BlockScoutWeb
 
   import Plug.Conn
