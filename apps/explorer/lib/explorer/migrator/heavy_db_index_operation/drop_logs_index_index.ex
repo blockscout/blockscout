@@ -43,7 +43,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex do
   end
 
   @impl HeavyDbIndexOperation
-  def complete_db_index_operation do
+  def restart_db_index_operation do
     :error
   end
 

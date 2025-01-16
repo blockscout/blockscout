@@ -60,9 +60,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @callback db_index_operation_status() :: :not_initialized | :not_completed | :completed | :unknown
 
   @doc """
-  This callback completes initial index operation.
+  This callback restarts initial index operation once its completion is failed, e.g. index is invalid after creation.
   """
-  @callback complete_db_index_operation() :: :ok | :error
+  @callback restart_db_index_operation() :: :ok | :error
 
   @doc """
     This callback updates the migration completion status in the cache.
@@ -98,6 +98,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
         GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
       end
 
+      @doc """
+       Checks if the migration has been completed.
+
+       ## Returns
+       - `true` if the migration status is `"completed"`.
+       - `false` otherwise.
+      """
       @spec migration_finished? :: boolean()
       def migration_finished? do
         MigrationStatus.get_status(migration_name()) == "completed"
@@ -154,7 +161,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
             {:noreply, state}
 
           {:db_index_operation_status, :not_completed} ->
-            Process.send(self(), :complete_db_index_operation, [])
+            Process.send(self(), :restart_db_index_operation, [])
             {:noreply, state}
 
           {:db_index_operation_status, :completed} ->
@@ -164,8 +171,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
       end
 
       @impl true
-      def handle_info(:complete_db_index_operation, state) do
-        case complete_db_index_operation() do
+      def handle_info(:restart_db_index_operation, state) do
+        case restart_db_index_operation() do
           :ok ->
             Process.send(self(), :initiate_index_operation, [])
             {:noreply, state}
@@ -211,7 +218,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
       defp schedule_next_db_index_operation_completion_check(timeout \\ nil) do
         Process.send_after(
           self(),
-          :complete_db_index_operation,
+          :restart_db_index_operation,
           timeout || :timer.seconds(10)
         )
       end

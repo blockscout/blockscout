@@ -41,7 +41,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNu
   end
 
   @impl HeavyDbIndexOperation
-  def complete_db_index_operation do
+  def restart_db_index_operation do
     HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name)
   end
 

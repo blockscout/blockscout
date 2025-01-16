@@ -1,6 +1,6 @@
 defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex do
   @moduledoc """
-  Drops index "token_transfers_token_contract_address_hash_transaction_hash_in" btree (token_contract_address_hash, transaction_hash).
+  Drops index "token_transfers_token_contract_address_hash_transaction_hash_index" btree (token_contract_address_hash, transaction_hash).
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -10,7 +10,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContrac
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @migration_name "heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index"
-  @index_name "token_transfers_token_contract_address_hash_transaction_hash_in"
+  @index_name "token_transfers_token_contract_address_hash_transaction_hash_index"
   @dependent_from_migrations [
     "heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index",
     "heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index",
@@ -41,7 +41,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContrac
   end
 
   @impl HeavyDbIndexOperation
-  def complete_db_index_operation do
+  def restart_db_index_operation do
     :error
   end
 
