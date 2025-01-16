@@ -35,6 +35,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
 
         {:new, session} ->
           conn
+          |> configure_session(renew: true)
           |> put_session(:current_user, session)
           |> put_status(200)
           |> render(:user_info, %{identity: identity |> Identity.put_session_info(session)})
