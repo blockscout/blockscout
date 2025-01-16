@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   user-ops-indexer:
     image: ghcr.io/blockscout/user-ops-indexer:${USER_OPS_INDEXER_DOCKER_TAG:-latest}

@@ -1,4 +1,12 @@
 explorer.testnet.hoku.sh {
-  reverse_proxy frontend:26657
+  reverse_proxy proxy:5000
+  tls infra@3box.io
+}
+explorer-stats.testnet.hoku.sh {
+  reverse_proxy stats:8080
+  tls infra@3box.io
+}
+explorer-visualize.testnet.hoku.sh {
+  reverse_proxy proxy:8081
   tls infra@3box.io
 }

@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   nft_media_handler:
     image: blockscout/${DOCKER_REPO:-blockscout}:${DOCKER_TAG:-latest}

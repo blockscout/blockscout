@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   backend:
     image: blockscout/${DOCKER_REPO:-blockscout}:${DOCKER_TAG:-latest}

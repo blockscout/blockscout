@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   visualizer:
     image: ghcr.io/blockscout/visualizer:${VISUALIZER_DOCKER_TAG:-latest}
