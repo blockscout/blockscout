@@ -177,7 +177,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
 
       defp db_operation_is_ready_to_start? do
         if Enum.empty?(dependent_from_migrations()) do
-          true
+          not MigrationStatus.running_heavy_migration_exists?()
         else
           all_statuses =
             MigrationStatus.get_migrations_status(dependent_from_migrations())
@@ -186,11 +186,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
             all_statuses
             |> Enum.all?(&(&1 == "completed"))
 
-          if all_statuses_completed? && Enum.count(all_statuses) == Enum.count(dependent_from_migrations()) do
-            true
-          else
-            false
-          end
+          all_statuses_completed? && Enum.count(all_statuses) == Enum.count(dependent_from_migrations())
         end
       end
 

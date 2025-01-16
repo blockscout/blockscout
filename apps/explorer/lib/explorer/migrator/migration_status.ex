@@ -103,6 +103,24 @@ defmodule Explorer.Migrator.MigrationStatus do
   end
 
   @doc """
+  Checks if there are any running heavy migrations.
+
+  A heavy migration is identified by its name starting with "heavy_indexes_" prefix.
+  """
+  @spec running_heavy_migration_exists?(Ecto.Queryable.t()) :: boolean()
+  def running_heavy_migration_exists?(query \\ __MODULE__) do
+    heavy_migrations_prefix = "heavy_indexes_%"
+
+    query =
+      from(ms in query,
+        where: like(ms.migration_name, ^heavy_migrations_prefix),
+        where: ms.status == ^"started"
+      )
+
+    Repo.exists?(query)
+  end
+
+  @doc """
   Fetches the status of the given migrations.
 
   ## Parameters
