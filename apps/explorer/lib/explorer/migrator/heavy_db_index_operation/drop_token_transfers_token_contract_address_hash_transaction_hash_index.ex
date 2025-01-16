@@ -42,7 +42,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContrac
 
   @impl HeavyDbIndexOperation
   def restart_db_index_operation do
-    :error
+    :not_applicable
   end
 
   @impl HeavyDbIndexOperation

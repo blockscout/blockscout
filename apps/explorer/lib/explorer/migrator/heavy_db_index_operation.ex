@@ -62,7 +62,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @doc """
   This callback restarts initial index operation once its completion is failed, e.g. index is invalid after creation.
   """
-  @callback restart_db_index_operation() :: :ok | :error
+  @callback restart_db_index_operation() :: :ok | :error | :not_applicable
 
   @doc """
     This callback updates the migration completion status in the cache.
@@ -177,7 +177,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
             Process.send(self(), :initiate_index_operation, [])
             {:noreply, state}
 
-          :error ->
+          status when status in [:error, :not_applicable] ->
             schedule_next_db_index_operation_completion_check()
         end
       end
