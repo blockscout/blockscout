@@ -1,0 +1,4 @@
+explorer.testnet.hoku.sh {
+  reverse_proxy frontend:26657
+  tls infra@3box.io
+}
