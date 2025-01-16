@@ -175,11 +175,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
         case restart_db_index_operation() do
           :ok ->
             Process.send(self(), :initiate_index_operation, [])
-            {:noreply, state}
 
           status when status in [:error, :not_applicable] ->
             schedule_next_db_index_operation_completion_check()
         end
+
+        {:noreply, state}
       end
 
       defp db_operation_is_ready_to_start? do
