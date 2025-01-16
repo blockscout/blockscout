@@ -1,4 +1,4 @@
-name: $project_name
+name: block-explorer
 
 services:
   redis-db:
@@ -107,15 +107,15 @@ services:
       service: proxy
 
   caddy:
-    image: $caddy_image
+    image: "caddy:2.8-alpine"
     restart: always
     volumes:
-      - $workdir/caddy/Caddyfile:/etc/caddy/Caddyfile
-      - $workdir/caddy/data:/data
+      - ./workdir/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./workdir/caddy/data:/data
     ports:
-      - $host_bind_ip:$caddy_http_port:80
-      - $host_bind_ip:$caddy_https_port:443
+      - 170.205.62.69:80:80
+      - 170.205.62.69:443:443
 
 networks:
   default:
-    name: $project_name
+    name: block-explorer
