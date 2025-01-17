@@ -4,7 +4,7 @@ services:
     pull_policy: always
     restart: always
     stop_grace_period: 5m
-    container_name: 'backend'
+    container_name: 'block-explorer-backend'
     command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
     extra_hosts:
       - 'host.docker.internal:host-gateway'

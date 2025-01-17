@@ -4,6 +4,6 @@ services:
     pull_policy: always
     platform: linux/amd64
     restart: always
-    container_name: 'visualizer'
+    container_name: 'block-explorer-visualizer'
     env_file:
       -  ../envs/common-visualizer.env

@@ -4,7 +4,7 @@ services:
     pull_policy: always
     restart: always
     stop_grace_period: 5m
-    container_name: 'nft_media_handler'
+    container_name: 'block-explorer-nft_media_handler'
     command: sh -c "bin/blockscout start"
     extra_hosts:
       - 'host.docker.internal:host-gateway'

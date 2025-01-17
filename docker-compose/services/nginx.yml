@@ -1,14 +1,14 @@
 services:
   proxy:
     image: nginx
-    container_name: proxy
+    container_name: 'block-explorer-proxy'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     volumes:
       - "../proxy:/etc/nginx/templates"
     environment:
-      BACK_PROXY_PASS: ${BACK_PROXY_PASS:-http://backend:4000}
-      FRONT_PROXY_PASS: ${FRONT_PROXY_PASS:-http://frontend:3000}
+      BACK_PROXY_PASS: ${BACK_PROXY_PASS:-http://block-explorer-backend:4000}
+      FRONT_PROXY_PASS: ${FRONT_PROXY_PASS:-http://block-explorer-frontend:3000}
     ports:
       - target: 5000
         published: 5000
