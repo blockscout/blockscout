@@ -93,7 +93,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
       Enum.reduce(other, %{}, fn {contract_address_hash, _token_id}, acc ->
         address_hash_string = to_string(contract_address_hash)
 
-        Map.put_new(acc, address_hash_string, Chain.get_token_type(contract_address_hash))
+        Map.put_new_lazy(acc, address_hash_string, fn -> Chain.get_token_type(contract_address_hash) end)
       end)
 
     {results, failed_results, instances_to_retry} =
