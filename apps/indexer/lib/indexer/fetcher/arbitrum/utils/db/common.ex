@@ -12,9 +12,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Common do
     namespace may be misleading.
   """
 
-  alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.Indexer.General, as: ArbitrumReader
   alias Explorer.Chain.Block, as: FullBlock
+  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Utility.MissingBlockRange
 
   @doc """
@@ -48,7 +48,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Common do
   """
   @spec closest_block_after_timestamp(DateTime.t()) :: {:error, :not_found} | {:ok, FullBlock.block_number()}
   def closest_block_after_timestamp(timestamp) do
-    Chain.timestamp_to_block_number(timestamp, :after, false)
+    BlockGeneralReader.timestamp_to_block_number(timestamp, :after, false, true)
   end
 
   @doc """

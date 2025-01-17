@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
 
   alias BlockScoutWeb.Chain, as: ChainWeb
   alias Explorer.Chain
+  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Counters.AverageBlockTime
   alias Timex.Duration
@@ -135,7 +136,7 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
          {:closest_param, {:ok, unsafe_closest}} <- {:closest_param, Map.fetch(params, "closest")},
          {:ok, timestamp} <- ChainWeb.param_to_block_timestamp(unsafe_timestamp),
          {:ok, closest} <- ChainWeb.param_to_block_closest(unsafe_closest),
-         {:ok, block_number} <- Chain.timestamp_to_block_number(timestamp, closest, from_api) do
+         {:ok, block_number} <- BlockGeneralReader.timestamp_to_block_number(timestamp, closest, from_api) do
       render(conn, block_number: block_number)
     else
       {:timestamp_param, :error} ->
