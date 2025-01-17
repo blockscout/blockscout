@@ -122,12 +122,12 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Common do
       0 ->
         {:ok, :in_calldata, nil}
 
-      12 ->
-        Celestia.parse_batch_accompanying_data(batch_number, rest)
-
       32 ->
         log_error("ZERO HEAVY messages are not supported.")
         {:error, nil, nil}
+
+      99 ->
+        Celestia.parse_batch_accompanying_data(batch_number, rest)
 
       128 ->
         Anytrust.parse_batch_accompanying_data(batch_number, rest)
