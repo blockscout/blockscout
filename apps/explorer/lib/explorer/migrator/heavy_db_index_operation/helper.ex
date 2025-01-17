@@ -20,10 +20,10 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
            Repo,
            """
            SELECT
-             now()::TIME(0),
+             NOW()::TIME(0),
              a.query,
              p.phase,
-             round(p.blocks_done / p.blocks_total::numeric * 100, 2) AS "% done",
+             ROUND(p.blocks_done / p.blocks_total::numeric * 100, 2) AS "% done",
              p.blocks_total,
              p.blocks_done,
              p.tuples_total,
@@ -33,7 +33,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
              ai.indexrelname
            FROM pg_stat_progress_create_index p
            JOIN pg_stat_activity a ON p.pid = a.pid
-           LEFT JOIN pg_stat_all_indexes ai on ai.relid = p.relid AND ai.indexrelid = p.index_relid
+           LEFT JOIN pg_stat_all_indexes ai ON ai.relid = p.relid AND ai.indexrelid = p.index_relid
            WHERE ai.relname = $1;
            """,
            [index_name]
@@ -83,14 +83,16 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     end
   end
 
-  # Checks DB index with the given name exists in the DB and it is valid.
+  @doc """
+  Checks DB index with the given name exists in the DB and it is valid.
+  """
   @spec db_index_exists_and_valid?(String.t()) ::
           %{
             :exists? => boolean(),
             :valid? => boolean() | nil
           }
           | :unknown
-  defp db_index_exists_and_valid?(raw_index_name) do
+  def db_index_exists_and_valid?(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
 
     case SQL.query(
@@ -99,7 +101,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
            SELECT pg_index.indisvalid
            FROM pg_class, pg_index
            WHERE pg_index.indexrelid = pg_class.oid
-           AND relname = $1;
+           AND pg_class.relname = $1;
            """,
            [index_name]
          ) do
@@ -153,7 +155,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     index_name = sanitize_index_name(raw_index_name)
 
     query =
-      "CREATE INDEX CONCURRENTLY IF NOT EXISTS \"#{index_name}\" on #{table_name} (#{Enum.join(table_columns, ", ")});"
+      "CREATE INDEX #{add_concurrently_flag?()} IF NOT EXISTS \"#{index_name}\" on #{table_name} (#{Enum.join(table_columns, ", ")});"
 
     case SQL.query(Repo, query, []) do
       {:ok, _} ->
@@ -188,7 +190,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
 
   defp drop_index_query_string(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
-    "DROP INDEX IF EXISTS \"#{index_name}\";"
+    "DROP INDEX #{add_concurrently_flag?()} IF EXISTS \"#{index_name}\";"
+  end
+
+  # As a workaround we have to remove `CONCURRENTLY` in tests since
+  # the error like "DROP INDEX CONCURRENTLY cannot run inside a transaction block" is returned with it.
+  defp add_concurrently_flag? do
+    if Mix.env() == :test, do: "", else: "CONCURRENTLY"
   end
 
   defp sanitize_index_name(raw_index_name) do

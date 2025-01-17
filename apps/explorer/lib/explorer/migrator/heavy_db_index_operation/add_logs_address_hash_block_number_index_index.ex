@@ -1,6 +1,6 @@
 defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberIndexIndex do
   @moduledoc """
-  Add B-tree index `logs_address_hash_block_number_desc_index_desc_index` on `logs` table for (`address_hash`, `block_number DESC`, `index DESC`) columns.
+  Add B-tree index `logs_address_hash_block_number_DESC_index_DESC_index` on `logs` table for (`address_hash`, `block_number DESC`, `index DESC`) columns.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation

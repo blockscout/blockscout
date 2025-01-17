@@ -53,6 +53,8 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Optimism.OutputRoot
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
+  alias Explorer.Migrator.MigrationStatus
+
   alias Explorer.SmartContract.Helper
   alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Market.MarketHistory
@@ -1282,6 +1284,14 @@ defmodule Explorer.Factory do
       l1_timestamp: DateTime.utc_now(),
       l1_block_number: op_output_root_l1_block_number(),
       output_root: op_output_root_hash()
+    }
+  end
+
+  def db_migration_status_factory do
+    %MigrationStatus{
+      migration_name: nil,
+      status: "started",
+      meta: nil
     }
   end
 

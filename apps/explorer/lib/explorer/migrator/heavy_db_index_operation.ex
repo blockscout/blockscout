@@ -166,6 +166,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
 
           {:db_index_operation_status, :completed} ->
             MigrationStatus.set_status(migration_name(), "completed")
+            update_cache()
             {:stop, :normal, state}
         end
       end
