@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: 6.10.1
-      DOCKER_CHAIN_NAME: mainnet
+      DOCKER_CHAIN_NAME: ethereum
     steps:
       - uses: actions/checkout@v4
       - name: Setup repo
