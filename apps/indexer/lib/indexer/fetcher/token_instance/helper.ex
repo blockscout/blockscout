@@ -165,10 +165,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
         results ++ failed_results
       end
 
-    total_results
-    |> Enum.map(fn %{token_id: token_id, token_contract_address_hash: contract_address_hash} = result ->
-      upsert_with_rescue(result, token_id, contract_address_hash)
-    end)
+    upsert_with_rescue(total_results)
   end
 
   defp add_failed_to_retry_result(results, failed_results, instances_to_retry, contract_address_hash, token_id, result) do
@@ -291,26 +288,31 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     }
   end
 
-  defp upsert_with_rescue(insert_params, token_id, token_contract_address_hash, retrying? \\ false) do
-    insert_params |> Chain.upsert_token_instance() |> Queue.process_new_instance()
+  defp upsert_with_rescue(insert_params, retrying? \\ false) do
+    insert_params
+    |> Chain.batch_upsert_token_instances()
+    |> Enum.map(&Queue.process_new_instance({:ok, &1}))
   rescue
     error in Postgrex.Error ->
       if retrying? do
         Logger.warning(
           [
-            "Failed to upsert token instance: {#{to_string(token_contract_address_hash)}, #{token_id}}, error: #{inspect(error)}"
+            "Failed to upsert token instance. Error: #{inspect(error)}, params: #{inspect(insert_params)}"
           ],
           fetcher: :token_instances
         )
 
         nil
       else
-        token_id
-        |> token_instance_map_with_error(
-          token_contract_address_hash,
-          MetadataRetriever.truncate_error(inspect(error.postgres.code))
-        )
-        |> upsert_with_rescue(token_id, token_contract_address_hash, true)
+        insert_params
+        |> Enum.map(fn params ->
+          token_instance_map_with_error(
+            params[:token_id],
+            params[:token_contract_address_hash],
+            MetadataRetriever.truncate_error(inspect(error.postgres.code))
+          )
+        end)
+        |> upsert_with_rescue(true)
       end
   end
 

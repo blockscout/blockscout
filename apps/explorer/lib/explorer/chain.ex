@@ -3945,29 +3945,24 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Expects map of change params. Inserts using on_conflict: `token_instance_metadata_on_conflict/0`
+    Expects a list of maps with change params. Inserts using on_conflict: `token_instance_metadata_on_conflict/0`
     !!! Supposed to be used ONLY for import of `metadata` or `error`.
   """
-  @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def upsert_token_instance(params) do
-    changeset = Instance.changeset(%Instance{}, params)
-    max_retries_count_before_ban = Instance.error_to_max_retries_count_before_ban(params[:error])
+  @spec batch_upsert_token_instances([map()]) :: [Instance.t()]
+  def batch_upsert_token_instances(params_list) do
+    params_to_insert = Instance.adjust_insert_params(params_list)
 
-    Repo.insert(changeset,
-      on_conflict: token_instance_metadata_on_conflict(max_retries_count_before_ban),
-      conflict_target: [:token_id, :token_contract_address_hash]
-    )
+    {_, result} =
+      Repo.insert_all(Instance, params_to_insert,
+        on_conflict: token_instance_metadata_on_conflict(),
+        conflict_target: [:token_id, :token_contract_address_hash],
+        returning: true
+      )
+
+    result
   end
 
-  defp token_instance_metadata_on_conflict(max_retries_count_before_ban) do
-    config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
-
-    coef = config[:exp_timeout_coeff]
-    base = config[:exp_timeout_base]
-    max_refetch_interval = config[:max_refetch_interval]
-
-    max_retry_count = :math.log(max_refetch_interval / 1000 / coef) / :math.log(base)
-
+  defp token_instance_metadata_on_conflict do
     from(
       token_instance in Instance,
       update: [
@@ -3980,33 +3975,8 @@ defmodule Explorer.Chain do
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_instance.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at),
           retries_count: token_instance.retries_count + 1,
-          refetch_after:
-            fragment(
-              """
-              CASE
-                WHEN ? > ? THEN
-                  NULL
-                WHEN EXCLUDED.metadata IS NULL THEN
-                  NOW() AT TIME ZONE 'UTC' + interval '1 seconds' * (? * ? ^ LEAST(? + 1.0, ?))
-              ELSE
-                NULL
-              END
-              """,
-              token_instance.retries_count + 1,
-              ^max_retries_count_before_ban,
-              ^coef,
-              ^base,
-              token_instance.retries_count,
-              ^max_retry_count
-            ),
-          is_banned:
-            fragment(
-              """
-              CASE WHEN ? > ? THEN TRUE ELSE FALSE END
-              """,
-              token_instance.retries_count + 1,
-              ^max_retries_count_before_ban
-            )
+          refetch_after: fragment("EXCLUDED.refetch_after"),
+          is_banned: fragment("EXCLUDED.is_banned")
         ]
       ],
       where: is_nil(token_instance.metadata)
