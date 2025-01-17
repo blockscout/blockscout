@@ -78,7 +78,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
         :finished_or_not_started
 
       {:error, error} ->
-        Logger.error("Failed to check DB index '#{index_name}' creation progress: #{inspect(error)}")
+        Logger.error("Failed to check DB index '#{index_name}' dropping progress: #{inspect(error)}")
         :unknown
     end
   end
@@ -123,6 +123,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   @doc """
   Returns status of DB index creation with the given name.
   """
+  @spec db_index_creation_status(String.t()) :: :not_initialized | :not_completed | :completed
   def db_index_creation_status(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
 
@@ -136,6 +137,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   @doc """
   Returns status of DB index dropping with the given name.
   """
+  @spec db_index_dropping_status(String.t()) :: :not_initialized | :not_completed | :completed
   def db_index_dropping_status(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
 
