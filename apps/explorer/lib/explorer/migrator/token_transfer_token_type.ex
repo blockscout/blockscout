@@ -37,39 +37,26 @@ defmodule Explorer.Migrator.TokenTransferTokenType do
 
   @impl FillingMigration
   def update_batch(token_transfer_ids) do
-    formatted_token_transfer_ids =
-      Enum.map(token_transfer_ids, fn {transaction_hash, block_hash, log_index} ->
-        {transaction_hash.bytes, block_hash.bytes, log_index}
-      end)
-
     query =
-      from(tt in TokenTransfer,
-        join: t in assoc(tt, :token),
-        join: b in assoc(tt, :block),
-        where:
-          fragment(
-            "(?, ?, ?) = ANY(?::token_transfer_id[])",
-            tt.transaction_hash,
-            tt.block_hash,
-            tt.log_index,
-            ^formatted_token_transfer_ids
-          ),
-        update: [
-          set: [
-            block_consensus: b.consensus,
-            token_type:
-              fragment(
-                """
-                CASE WHEN ? = 'ERC-1155' AND ? IS NULL
-                THEN 'ERC-20'
-                ELSE ?
-                END
-                """,
-                t.type,
-                tt.token_ids,
-                t.type
-              )
-          ]
+      token_transfer_ids
+      |> TokenTransfer.by_ids_query()
+      |> join(:inner, [tt], b in assoc(tt, :block))
+      |> join(:inner, [tt, b], t in assoc(tt, :token))
+      |> update([tt, b, t],
+        set: [
+          block_consensus: b.consensus,
+          token_type:
+            fragment(
+              """
+              CASE WHEN ? = 'ERC-1155' AND ? IS NULL
+              THEN 'ERC-20'
+              ELSE ?
+              END
+              """,
+              t.type,
+              tt.token_ids,
+              t.type
+            )
         ]
       )
 

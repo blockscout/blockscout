@@ -133,22 +133,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
   defp run_task(batch), do: Task.async(fn -> handle_batch(batch) end)
 
   defp handle_batch(token_transfer_ids) do
-    formatted_token_transfer_ids =
-      Enum.map(token_transfer_ids, fn {transaction_hash, block_hash, log_index} ->
-        {transaction_hash.bytes, block_hash.bytes, log_index}
-      end)
-
-    query =
-      from(tt in TokenTransfer,
-        where:
-          fragment(
-            "(?, ?, ?) = ANY(?::token_transfer_id[])",
-            tt.transaction_hash,
-            tt.block_hash,
-            tt.log_index,
-            ^formatted_token_transfer_ids
-          )
-      )
+    query = TokenTransfer.by_ids_query(token_transfer_ids)
 
     Repo.delete_all(query, timeout: :infinity)
   end

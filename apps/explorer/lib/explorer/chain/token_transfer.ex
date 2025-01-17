@@ -656,6 +656,36 @@ defmodule Explorer.Chain.TokenTransfer do
     |> Chain.select_repo(options).all()
   end
 
+  @doc """
+    Builds a query to fetch token transfers by their composite IDs.
+
+    ## Parameters
+    - `query`: The base query to build upon. Defaults to `__MODULE__`.
+    - `ids`: List of tuples containing {transaction_hash, block_hash, log_index}.
+
+    ## Returns
+    A query that filters token transfers by the given composite IDs.
+  """
+  @spec by_ids_query(Ecto.Queryable.t(), [{Hash.t(), Hash.t(), non_neg_integer()}]) :: Ecto.Query.t()
+  def by_ids_query(query \\ __MODULE__, ids) do
+    formatted_ids =
+      Enum.map(ids, fn {transaction_hash, block_hash, log_index} ->
+        {transaction_hash.bytes, block_hash.bytes, log_index}
+      end)
+
+    where(
+      query,
+      [tt],
+      fragment(
+        "(?, ?, ?) = ANY(?::token_transfer_id[])",
+        tt.transaction_hash,
+        tt.block_hash,
+        tt.log_index,
+        ^formatted_ids
+      )
+    )
+  end
+
   defp logs_to_token_transfers_query(query \\ __MODULE__, logs)
 
   defp logs_to_token_transfers_query(query, [log | tail]) do

@@ -40,24 +40,11 @@ defmodule Explorer.Migrator.TokenTransferBlockConsensus do
 
   @impl FillingMigration
   def update_batch(token_transfer_ids) do
-    formatted_token_transfer_ids =
-      Enum.map(token_transfer_ids, fn {transaction_hash, block_hash, log_index} ->
-        {transaction_hash.bytes, block_hash.bytes, log_index}
-      end)
-
     query =
-      from(tt in TokenTransfer,
-        join: b in assoc(tt, :block),
-        where:
-          fragment(
-            "(?, ?, ?) = ANY(?::token_transfer_id[])",
-            tt.transaction_hash,
-            tt.block_hash,
-            tt.log_index,
-            ^formatted_token_transfer_ids
-          ),
-        update: [set: [block_consensus: b.consensus]]
-      )
+      token_transfer_ids
+      |> TokenTransfer.by_ids_query()
+      |> join(:inner, [tt], b in assoc(tt, :block))
+      |> update([tt, b], set: [block_consensus: b.consensus])
 
     Repo.update_all(query, [], timeout: :infinity)
   end

@@ -252,6 +252,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
     from(
       ctb in CurrentTokenBalance,
+      where: is_nil(ctb.token_id),
       where:
         fragment(
           "(?, ?) = ANY(?::ft_current_token_balance_id[])",
