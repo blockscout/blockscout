@@ -4,13 +4,15 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
   alias Explorer.Chain.Blackfort.Validator, as: ValidatorBlackfort
   alias Explorer.Chain.Cache.{BlackfortValidatorsCounters, StabilityValidatorsCounters}
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
+  alias Explorer.Chain.Zilliqa.Staker, as: ValidatorZilliqa
 
   import BlockScoutWeb.PagingHelper,
     only: [
       delete_parameters_from_next_page_params: 1,
       stability_validators_state_options: 1,
       validators_blackfort_sorting: 1,
-      validators_stability_sorting: 1
+      validators_stability_sorting: 1,
+      validators_zilliqa_sorting: 1
     ]
 
   import BlockScoutWeb.Chain,
@@ -127,5 +129,44 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> Decimal.to_float()
       |> Float.floor(2)
     end
+  end
+
+  @doc """
+  Function to handle GET requests to `/api/v2/validators/zilliqa` endpoint.
+  """
+  @spec zilliqa_validators_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def zilliqa_validators_list(conn, params) do
+    options =
+      [
+        necessity_by_association: %{
+          [
+            control_address: [:names, :smart_contract, proxy_implementations_association()],
+            reward_address: [:names, :smart_contract, proxy_implementations_association()],
+            signing_address: [:names, :smart_contract, proxy_implementations_association()]
+          ] => :optional
+        }
+      ]
+      |> Keyword.merge(@api_true)
+      |> Keyword.merge(paging_options(params))
+      |> Keyword.merge(validators_zilliqa_sorting(params))
+
+    {validators, next_page} =
+      options
+      |> ValidatorZilliqa.paginated_active_stakers()
+      |> split_list_by_page()
+
+    next_page_params =
+      next_page
+      |> next_page_params(
+        validators,
+        delete_parameters_from_next_page_params(params),
+        &ValidatorZilliqa.next_page_params/1
+      )
+
+    conn
+    |> render(:zilliqa_validators, %{
+      validators: validators,
+      next_page_params: next_page_params
+    })
   end
 end

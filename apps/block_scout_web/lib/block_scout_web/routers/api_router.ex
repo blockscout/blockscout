@@ -392,6 +392,11 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
             get("/counters", V2.ValidatorController, :blackfort_validators_counters)
           end
 
+        :zilliqa ->
+          scope "/zilliqa" do
+            get("/", V2.ValidatorController, :zilliqa_validators_list)
+          end
+
         _ ->
           nil
       end
