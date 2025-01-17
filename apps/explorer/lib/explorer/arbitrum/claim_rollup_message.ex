@@ -19,7 +19,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
   alias EthereumJSONRPC.Arbitrum.Constants.Contracts, as: ArbitrumContracts
   alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
-  alias EthereumJSONRPC.Encoder
+  alias EthereumJSONRPC.{Encoder, ERC20}
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.API.General, as: GeneralReader
   alias Explorer.Chain.Arbitrum.Reader.API.Messages, as: MessagesReader
@@ -196,7 +196,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
     if fields.message_id == message.message_id do
       # extract token withdrawal info from the associated event's data
-      token = decode_token_withdrawal_data(fields.data)
+      token = obtain_token_withdrawal_data(fields.data)
 
       data_hex =
         fields.data
@@ -226,7 +226,8 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         l2_timestamp: fields.timestamp,
         callvalue: fields.callvalue,
         data: "0x" <> data_hex,
-        token: token
+        token: token,
+        completion_transaction_hash: message.completion_transaction_hash
       }
     else
       Logger.error(
@@ -247,6 +248,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # current status by comparing the message ID with the total count of messages sent
   # from L2.
   #
+  # This function will always set `completion_transaction_hash` as nil because it's difficult
+  # to determine the completion transaction hash directly from the contract.
+  #
   # ## Parameters
   # - `log`: The L2ToL1Tx event log containing withdrawal information
   #
@@ -262,7 +266,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
     status = get_actual_message_status(fields.message_id)
 
-    token = decode_token_withdrawal_data(fields.data)
+    token = obtain_token_withdrawal_data(fields.data)
 
     data_hex =
       fields.data
@@ -281,7 +285,8 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       l2_timestamp: fields.timestamp,
       callvalue: fields.callvalue,
       data: "0x" <> data_hex,
-      token: token
+      token: token,
+      completion_transaction_hash: nil
     }
   end
 
@@ -306,12 +311,12 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   @spec get_actual_message_status(non_neg_integer()) :: :unknown | :sent | :confirmed | :relayed
   defp get_actual_message_status(message_id) do
     # getting needed L1\L2 properties: RPC URL and Main Rollup contract address
-    config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
-    json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
+    l1_rollup_address = get_l1_rollup_address()
+    json_l1_rpc_named_arguments = get_json_rpc(:l1)
 
     outbox_contract =
       ArbitrumRpc.get_contracts_for_rollup(
-        config_common[:l1_rollup_address],
+        l1_rollup_address,
         :inbox_outbox,
         json_l1_rpc_named_arguments
       )[:outbox]
@@ -358,19 +363,22 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # - `data`: Binary data containing the finalizeInboundTransfer calldata
   #
   # ## Returns
-  # - Map containing token `address`, `destination` address and token `amount` if the
-  #   data corresponds to finalizeInboundTransfer
+  # - Map containing token contract `address`, `destination` address, token `amount`,
+  #   token `name`, `symbol` and `decimals` if the data corresponds to finalizeInboundTransfer selector
   # - `nil` if data is void or doesn't match finalizeInboundTransfer method (which
   #   happens when the L2->L1 message is for arbitrary data transfer, such as a remote
   #   call of a smart contract on L1)
-  @spec decode_token_withdrawal_data(binary()) ::
+  @spec obtain_token_withdrawal_data(binary()) ::
           %{
             address: Explorer.Chain.Hash.Address.t(),
             destination: Explorer.Chain.Hash.Address.t(),
-            amount: non_neg_integer()
+            amount: non_neg_integer(),
+            decimals: non_neg_integer() | nil,
+            name: binary() | nil,
+            symbol: binary() | nil
           }
           | nil
-  defp decode_token_withdrawal_data(<<0x2E567B36::32, rest_data::binary>>) do
+  defp obtain_token_withdrawal_data(<<0x2E567B36::32, rest_data::binary>>) do
     [token, _, to, amount, _] = ABI.decode(ArbitrumContracts.finalize_inbound_transfer_selector_with_abi(), rest_data)
 
     token_bin =
@@ -385,14 +393,23 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
         _ -> nil
       end
 
+    # getting L1 RPC
+    json_l1_rpc_named_arguments = get_json_rpc(:l1)
+
+    # getting additional token properties needed to display purposes
+    token_info = ERC20.fetch_token_properties(ArbitrumRpc.value_to_address(token), json_l1_rpc_named_arguments)
+
     %{
       address: token_bin,
       destination: to_bin,
-      amount: amount
+      amount: amount,
+      decimals: token_info.decimals,
+      name: token_info.name,
+      symbol: token_info.symbol
     }
   end
 
-  defp decode_token_withdrawal_data(_binary) do
+  defp obtain_token_withdrawal_data(_binary) do
     nil
   end
 
@@ -417,11 +434,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
           {:ok, [contract_address: binary(), calldata: binary()]} | {:error, :internal_error}
   defp construct_claim(withdrawal) do
     # getting needed L1 properties: RPC URL and Main Rollup contract address
-    config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
-    l1_rpc = config_common[:l1_rpc]
-    json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(l1_rpc)
-    json_l2_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-    l1_rollup_address = config_common[:l1_rollup_address]
+    json_l1_rpc_named_arguments = get_json_rpc(:l1)
+    json_l2_rpc_named_arguments = get_json_rpc(:l2)
+    l1_rollup_address = get_l1_rollup_address()
 
     outbox_contract =
       ArbitrumRpc.get_contracts_for_rollup(l1_rollup_address, :inbox_outbox, json_l1_rpc_named_arguments)[:outbox]
@@ -482,10 +497,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       nil ->
         Logger.warning("The database doesn't contain required data to construct proof. Fallback to direct RPC request")
 
-        config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
-        l1_rollup_address = config_common[:l1_rollup_address]
-        json_l1_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
-        json_l2_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+        l1_rollup_address = get_l1_rollup_address()
+        json_l1_rpc_named_arguments = get_json_rpc(:l1)
+        json_l2_rpc_named_arguments = get_json_rpc(:l2)
 
         get_size_for_proof_from_rpc(l1_rollup_address, json_l1_rpc_named_arguments, json_l2_rpc_named_arguments)
 
@@ -681,5 +695,22 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       |> TypeDecoder.decode_raw(ArbitrumEvents.node_created_unindexed_params())
 
     l2_block_hash
+  end
+
+  # Retrieve configuration options for the selected JSON-RPC connection (L1/L2)
+  @spec get_json_rpc(:l1 | :l2) :: EthereumJSONRPC.json_rpc_named_arguments()
+  defp get_json_rpc(:l1) do
+    config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
+    IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
+  end
+
+  defp get_json_rpc(:l2) do
+    Application.get_env(:explorer, :json_rpc_named_arguments)
+  end
+
+  # Getting L1 Main Rollup contract address
+  @spec get_l1_rollup_address() :: EthereumJSONRPC.address()
+  defp get_l1_rollup_address do
+    Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum][:l1_rollup_address]
   end
 end

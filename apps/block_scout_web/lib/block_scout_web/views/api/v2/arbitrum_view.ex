@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   end
 
   @doc """
-    Function to render GET requests to `/api/v2/arbitrum/messages/from-rollup/:msg_id/proof` endpoint.
+    Function to render GET requests to `/api/v2/arbitrum/messages/withdrawals/:transaction_hash` endpoint.
   """
   def render("arbitrum_withdrawals.json", %{withdrawals: withdrawals}) do
     withdrawals_out =
@@ -93,9 +93,14 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
           "arb_block_number" => withdraw.arb_block_number,
           "eth_block_number" => withdraw.eth_block_number,
           "l2_timestamp" => withdraw.l2_timestamp,
-          "callvalue" => withdraw.callvalue,
+          "callvalue" => Integer.to_string(withdraw.callvalue),
           "data" => withdraw.data,
-          "token" => withdraw.token
+          "token" =>
+            case withdraw.token do
+              %{} -> Map.update!(withdraw.token, :amount, &Integer.to_string/1)
+              _ -> nil
+            end,
+          "completion_transaction_hash" => withdraw.completion_transaction_hash
         }
       end)
 
