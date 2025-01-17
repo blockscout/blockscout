@@ -134,6 +134,36 @@ config :explorer, Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleS
 config :explorer, Explorer.Migrator.SanitizeDuplicatedLogIndexLogs, enabled: true
 config :explorer, Explorer.Migrator.RefetchContractCodes, enabled: true
 config :explorer, Explorer.Migrator.BackfillMultichainSearchDB, enabled: true
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex, enabled: true
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex, enabled: true
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberIndexIndex, enabled: true
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex, enabled: true
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex, enabled: true
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex, enabled: true
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashFirstTopicBlockNumberIndexIndex,
+  enabled: true
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashIndex, enabled: true
+
+config :explorer,
+       Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
+       enabled: true
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberAscLogIndexAscIndex,
+  enabled: true
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
+  enabled: true
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
+  enabled: true
+
+config :explorer,
+       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
+       enabled: true
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 

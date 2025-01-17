@@ -55,6 +55,36 @@ config :explorer, Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleS
 config :explorer, Explorer.Migrator.SanitizeDuplicatedLogIndexLogs, enabled: false
 config :explorer, Explorer.Migrator.RefetchContractCodes, enabled: false
 config :explorer, Explorer.Migrator.BackfillMultichainSearchDB, enabled: false
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex, enabled: false
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex, enabled: false
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberIndexIndex, enabled: false
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex, enabled: false
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex, enabled: false
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex, enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashFirstTopicBlockNumberIndexIndex,
+  enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashIndex, enabled: false
+
+config :explorer,
+       Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
+       enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberAscLogIndexAscIndex,
+  enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
+  enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
+  enabled: false
+
+config :explorer,
+       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
+       enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex, enabled: false
 
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender
