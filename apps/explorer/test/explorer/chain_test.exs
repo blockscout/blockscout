@@ -169,7 +169,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "upsert_token_instance/1" do
+  describe "batch_upsert_token_instances/1" do
     test "insert a new token instance with valid params" do
       token = insert(:token)
 
@@ -179,26 +179,11 @@ defmodule Explorer.ChainTest do
         metadata: %{uri: "http://example.com"}
       }
 
-      {:ok, result} = Chain.upsert_token_instance(params)
+      [result] = Chain.batch_upsert_token_instances([params])
 
       assert result.token_id == Decimal.new(1)
-      assert result.metadata == params.metadata
+      assert result.metadata == %{"uri" => "http://example.com"}
       assert result.token_contract_address_hash == token.contract_address_hash
-    end
-
-    test "fails to import with invalid params" do
-      params = %{
-        token_id: 1,
-        metadata: %{uri: "http://example.com"}
-      }
-
-      {:error,
-       %{
-         errors: [
-           token_contract_address_hash: {"can't be blank", [validation: :required]}
-         ],
-         valid?: false
-       }} = Chain.upsert_token_instance(params)
     end
 
     test "inserts just an error without metadata" do
@@ -211,7 +196,7 @@ defmodule Explorer.ChainTest do
         error: error
       }
 
-      {:ok, result} = Chain.upsert_token_instance(params)
+      [result] = Chain.batch_upsert_token_instances([params])
 
       assert result.error == error
     end
@@ -232,10 +217,10 @@ defmodule Explorer.ChainTest do
         metadata: %{uri: "http://example1.com"}
       }
 
-      {:ok, result} = Chain.upsert_token_instance(params)
+      [result] = Chain.batch_upsert_token_instances([params])
 
       assert is_nil(result.error)
-      assert result.metadata == params.metadata
+      assert result.metadata == %{"uri" => "http://example1.com"}
     end
   end
 
