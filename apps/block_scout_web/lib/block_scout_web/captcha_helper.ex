@@ -7,19 +7,33 @@ defmodule BlockScoutWeb.CaptchaHelper do
   alias Explorer.Helper
 
   @doc """
-  Verifies if the CAPTCHA challenge has been passed based on the provided parameters.
+    Verifies if the CAPTCHA challenge has been passed based on the provided parameters.
 
-  This function handles both reCAPTCHA v3 and v2 responses, as well as cases where
-  CAPTCHA is disabled.
+    This function first checks for a bypass token, then handles both reCAPTCHA v3 and v2
+    responses, as well as cases where CAPTCHA is disabled.
 
-  ## Parameters
-  - `params`: A map containing CAPTCHA response parameters or nil.
+    ## Parameters
+    - `params`: A map containing CAPTCHA response parameters or nil. Can include:
+      * `"recaptcha_bypass_token"` - A token to bypass CAPTCHA verification
+      * `"recaptcha_v3_response"` - A reCAPTCHA v3 response token
+      * `"recaptcha_response"` - A reCAPTCHA v2 response token
 
-  ## Returns
-  - `true` if the CAPTCHA challenge is passed or disabled.
-  - `false` if the CAPTCHA challenge fails or an error occurs during verification.
+    ## Returns
+    - `true` if the CAPTCHA challenge is passed or disabled, or if a valid bypass token is provided.
+    - `false` if the CAPTCHA challenge fails or an error occurs during verification.
   """
   @spec recaptcha_passed?(%{String.t() => String.t()} | nil) :: bool
+  def recaptcha_passed?(%{"recaptcha_bypass_token" => given_bypass_token}) do
+    bypass_token = Application.get_env(:block_scout_web, :recaptcha)[:bypass_token]
+
+    if bypass_token != "" && given_bypass_token == bypass_token do
+      Logger.warning("reCAPTCHA bypass token used")
+      true
+    else
+      false
+    end
+  end
+
   def recaptcha_passed?(%{"recaptcha_v3_response" => recaptcha_response}) do
     re_captcha_v3_secret_key = Application.get_env(:block_scout_web, :recaptcha)[:v3_secret_key]
     do_recaptcha_passed?(re_captcha_v3_secret_key, recaptcha_response)
