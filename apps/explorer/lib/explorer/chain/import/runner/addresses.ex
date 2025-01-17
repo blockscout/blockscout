@@ -282,7 +282,12 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   defp filecoin_pending_address_operations(repo, addresses, %{timeout: timeout, timestamps: timestamps}) do
     ordered_addresses =
       addresses
-      |> Enum.map(&%{address_hash: &1.hash})
+      |> Enum.map(
+        &%{
+          address_hash: &1.hash,
+          refetch_after: nil
+        }
+      )
       |> Enum.sort_by(& &1.address_hash)
       |> Enum.dedup_by(& &1.address_hash)
 
@@ -290,7 +295,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       repo,
       ordered_addresses,
       conflict_target: :address_hash,
-      on_conflict: :nothing,
+      on_conflict: :replace_all,
       for: FilecoinPendingAddressOperation,
       returning: true,
       timeout: timeout,
