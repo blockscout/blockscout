@@ -8,7 +8,7 @@ hackney_opts = ConfigHelper.hackney_options()
 timeout = ConfigHelper.timeout(10)
 
 config :indexer,
-  block_interval: ConfigHelper.parse_time_env_var("INDEXER_CATCHUP_BLOCK_INTERVAL", "5s"),
+  block_interval: ConfigHelper.parse_time_env_var("INDEXER_CATCHUP_BLOCK_INTERVAL", "0s"),
   json_rpc_named_arguments: [
     transport:
       if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http",
