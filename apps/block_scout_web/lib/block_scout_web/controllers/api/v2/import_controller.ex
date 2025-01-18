@@ -15,6 +15,52 @@ defmodule BlockScoutWeb.API.V2.ImportController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  @doc """
+    Function to handle POST request to `/api/v2/import/token-info`
+
+    Needed to import token info via admin panel.
+    Protected by `x-api-key` header.
+  """
+  @spec import_token_info(Plug.Conn.t(), map()) ::
+          {:api_key, any()}
+          | {:format_address, :error}
+          | {:not_found, {:error, :not_found}}
+          | {:sensitive_endpoints_api_key, any()}
+          | Plug.Conn.t()
+  def import_token_info(
+        conn,
+        %{
+          "icon_url" => icon_url,
+          "token_address" => token_address_hash_string,
+          "token_symbol" => token_symbol,
+          "token_name" => token_name
+        } = params
+      ) do
+    with {:ok, token} <- validate_api_key_address_hash_and_token(token_address_hash_string, params["api_key"]) do
+      changeset =
+        %{is_verified_via_admin_panel: true}
+        |> put_icon_url(icon_url)
+        |> put_token_string_field(token_symbol, :symbol)
+        |> put_token_string_field(token_name, :name)
+
+      case Chain.update_token(token, changeset, true) do
+        {:ok, _} ->
+          conn
+          |> put_view(ApiView)
+          |> render(:message, %{message: "Success"})
+
+        error ->
+          Logger.warning(fn -> ["Error on importing token info: ", inspect(error)] end)
+
+          conn
+          |> put_view(ApiView)
+          |> put_status(:bad_request)
+          |> render(:message, %{message: "Error"})
+      end
+    end
+  end
+
+  # TODO: delete after successful migration from the token info service
   def import_token_info(
         conn,
         %{
