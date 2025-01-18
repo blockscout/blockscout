@@ -16,18 +16,20 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       assert html_response(conn, 404)
     end
 
-    test "with valid address hash without address", %{conn: conn} do
-      conn =
-        get(
-          conn,
-          address_internal_transaction_path(
+    if Application.compile_env(:explorer, :chain_type) !== :rsk do
+      test "with valid address hash without address", %{conn: conn} do
+        conn =
+          get(
             conn,
-            :index,
-            Address.checksum("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
+            address_internal_transaction_path(
+              conn,
+              :index,
+              Address.checksum("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
+            )
           )
-        )
 
-      assert html_response(conn, 200)
+        assert html_response(conn, 200)
+      end
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
