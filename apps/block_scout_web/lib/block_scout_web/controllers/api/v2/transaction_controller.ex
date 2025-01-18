@@ -49,6 +49,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
+  alias Indexer.Fetcher.OnDemand.NeonSolanaTransactions, as: NeonSolanaTransactions
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -255,6 +256,25 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     handle_batch_transactions(conn, params, &ArbitrumSettlementReader.batch_transactions/2)
   end
 
+
+  @doc """
+    Function to handle GET requests to `/api/v2/transactions/:tx_hash/external_transactions` endpoint.
+    It renders the list of external transctions that are somehow linked (eg. preceeded or initiated by) to the selected one.
+    The most common use case is for sidechains and rollups. Currently implemented only for Neon chain but could also be extended for
+    similar cases.
+  """
+    @spec external_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
+    def external_transactions(conn, transaction_hash) do
+      case NeonSolanaTransactions.maybe_fetch(transaction_hash) do
+        {:ok,linked_transactions } -> json(conn,linked_transactions)
+        {:error, reason} ->
+        Logger.error("Fetching external linked transactions failed: #{inspect(reason)}")
+          conn
+        |>put_status(500)
+        |> json(%{error: "Unable to fetch external linked transactions"})
+      end
+
+    end
   @doc """
     Function to handle GET requests to `/api/v2/transactions/optimism-batch/:batch_number` endpoint.
     It renders the list of L2 transactions bound to the specified batch.

@@ -71,7 +71,8 @@ for repo <- [
       Explorer.Repo.Stability,
       Explorer.Repo.Suave,
       Explorer.Repo.Zilliqa,
-      Explorer.Repo.ZkSync
+      Explorer.Repo.ZkSync,
+      Explorer.Repo.Neon
     ] do
   config :explorer, repo,
     database: database,
