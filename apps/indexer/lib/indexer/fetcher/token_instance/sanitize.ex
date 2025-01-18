@@ -46,9 +46,18 @@ defmodule Indexer.Fetcher.TokenInstance.Sanitize do
     :ok
   end
 
+  def async_fetch(token_instances) do
+    token_instances =
+      Enum.map(token_instances, fn %{token_contract_address_hash: hash, token_id: token_id} ->
+        %{contract_address_hash: hash, token_id: token_id}
+      end)
+
+    BufferedTask.buffer(__MODULE__, token_instances, false, :infinity)
+  end
+
   defp defaults do
     [
-      flush_interval: :infinity,
+      flush_interval: :timer.seconds(5),
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
       poll: false,
