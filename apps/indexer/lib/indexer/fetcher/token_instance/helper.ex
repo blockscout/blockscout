@@ -3,6 +3,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     Common functions for Indexer.Fetcher.TokenInstance fetchers
   """
   alias Explorer.Chain
+  alias Explorer.Chain.Token.Instance
   alias Explorer.SmartContract.Reader
   alias Explorer.Token.MetadataRetriever
   alias Indexer.NFTMediaHandler.Queue
@@ -292,7 +293,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   end
 
   defp upsert_with_rescue(insert_params, token_id, token_contract_address_hash, retrying? \\ false) do
-    insert_params |> Chain.upsert_token_instance() |> Queue.process_new_instance()
+    insert_params |> Instance.upsert_token_instance() |> Queue.process_new_instance()
   rescue
     error in Postgrex.Error ->
       if retrying? do

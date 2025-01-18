@@ -26,6 +26,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
   alias Indexer.Fetcher.TokenInstance.LegacySanitize, as: TokenInstanceLegacySanitize
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
+  alias Indexer.Fetcher.TokenInstance.Refetch, as: TokenInstanceRefetch
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
   alias Indexer.Fetcher.TokenInstance.SanitizeERC1155, as: TokenInstanceSanitizeERC1155
@@ -135,6 +136,7 @@ defmodule Indexer.Supervisor do
         {TokenInstanceRealtime.Supervisor, [[memory_monitor: memory_monitor]]},
         {TokenInstanceRetry.Supervisor, [[memory_monitor: memory_monitor]]},
         {TokenInstanceSanitize.Supervisor, [[memory_monitor: memory_monitor]]},
+        {TokenInstanceRefetch.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(TokenInstanceLegacySanitize, [[memory_monitor: memory_monitor]]),
         configure(TokenInstanceSanitizeERC721, [[memory_monitor: memory_monitor]]),
         configure(TokenInstanceSanitizeERC1155, [[memory_monitor: memory_monitor]]),

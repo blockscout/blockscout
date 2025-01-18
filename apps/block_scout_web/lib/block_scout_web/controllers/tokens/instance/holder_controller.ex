@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Tokens.Instance.HolderController do
   alias BlockScoutWeb.Tokens.Instance.Helper
   alias Explorer.Chain
   alias Explorer.Chain.Address
+  alias Explorer.Chain.Token.Instance
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
@@ -60,7 +61,7 @@ defmodule BlockScoutWeb.Tokens.Instance.HolderController do
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
          false <- Chain.erc_20_token?(token),
          {token_id, ""} <- Integer.parse(token_id_string) do
-      case Chain.nft_instance_from_token_id_and_token_address(token_id, hash) do
+      case Instance.nft_instance_by_token_id_and_token_address(token_id, hash) do
         {:ok, token_instance} -> Helper.render(conn, token_instance, hash, token_id, token)
         {:error, :not_found} -> Helper.render(conn, nil, hash, token_id, token)
       end
