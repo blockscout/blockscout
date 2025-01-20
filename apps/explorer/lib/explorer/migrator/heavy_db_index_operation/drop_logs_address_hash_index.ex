@@ -42,7 +42,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex do
 
   @impl HeavyDbIndexOperation
   def restart_db_index_operation do
-    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name)
+    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name, false)
   end
 
   @impl HeavyDbIndexOperation
