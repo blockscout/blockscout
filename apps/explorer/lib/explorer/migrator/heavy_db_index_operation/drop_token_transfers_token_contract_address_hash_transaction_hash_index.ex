@@ -48,7 +48,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContrac
 
   @impl HeavyDbIndexOperation
   def restart_db_index_operation do
-    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name, false)
+    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name)
   end
 
   @impl HeavyDbIndexOperation

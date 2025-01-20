@@ -69,7 +69,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
            """
            SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE state='active' AND query = $1);
            """,
-           [drop_index_query_string(index_name, false)]
+           [drop_index_query_string(index_name)]
          ) do
       {:ok, %Postgrex.Result{command: :select, columns: ["exists"], rows: [[true]]}} ->
         {:in_progress, nil}
@@ -175,12 +175,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   @doc """
   Drops DB index by given name, if it exists.
   """
-  @spec safely_drop_db_index(String.t(), boolean()) :: :ok | :error
+  @spec safely_drop_db_index(String.t()) :: :ok | :error
   # sobelow_skip ["SQL"]
-  def safely_drop_db_index(raw_index_name, concurrently? \\ true) do
+  def safely_drop_db_index(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
 
-    case SQL.query(Repo, drop_index_query_string(index_name, concurrently?), [], timeout: :infinity) do
+    case SQL.query(Repo, drop_index_query_string(index_name), [], timeout: :infinity) do
       {:ok, _} ->
         :ok
 
@@ -190,20 +190,15 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     end
   end
 
-  defp drop_index_query_string(raw_index_name, concurrently?) do
+  defp drop_index_query_string(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
-    "DROP INDEX #{add_concurrently_flag?(concurrently?)} IF EXISTS \"#{index_name}\";"
+    "DROP INDEX #{add_concurrently_flag?()} IF EXISTS \"#{index_name}\";"
   end
 
   # As a workaround we have to remove `CONCURRENTLY` in tests since
   # the error like "DROP INDEX CONCURRENTLY cannot run inside a transaction block" is returned with it.
-  # If the second parameter `external_concurrently_flag?` is `false`, we also skip `CONCURRENTLY` option.
-  defp add_concurrently_flag?(external_concurrently_flag? \\ true) do
-    if external_concurrently_flag? do
-      if Mix.env() == :test, do: "", else: "CONCURRENTLY"
-    else
-      ""
-    end
+  defp add_concurrently_flag? do
+    if Mix.env() == :test, do: "", else: "CONCURRENTLY"
   end
 
   defp sanitize_index_name(raw_index_name) do
