@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.10.2
+
+### ⚙️ Miscellaneous Tasks
+
+- Add captcha to account wallet login as well ([#11682](https://github.com/blockscout/blockscout/issues/11682))
+
 ## 6.10.1
 
 ### 🚀 Features
