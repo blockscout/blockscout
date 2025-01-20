@@ -69,7 +69,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
            """
            SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE state='active' AND query = $1);
            """,
-           [drop_index_query_string(index_name)]
+           [drop_index_query_string(index_name, false)]
          ) do
       {:ok, %Postgrex.Result{command: :select, columns: ["exists"], rows: [[true]]}} ->
         {:in_progress, nil}
