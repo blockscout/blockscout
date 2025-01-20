@@ -190,7 +190,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     end
   end
 
-  defp drop_index_query_string(raw_index_name, concurrently? \\ true) do
+  defp drop_index_query_string(raw_index_name, concurrently?) do
     index_name = sanitize_index_name(raw_index_name)
     "DROP INDEX #{add_concurrently_flag?(concurrently?)} IF EXISTS \"#{index_name}\";"
   end
