@@ -159,7 +159,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     query =
       "CREATE INDEX #{add_concurrently_flag?()} IF NOT EXISTS \"#{index_name}\" on #{to_string(table_name_atom)} (#{Enum.join(table_columns, ", ")});"
 
-    case SQL.query(Repo, query, []) do
+    case SQL.query(Repo, query, [], timeout: :infinity) do
       {:ok, _} ->
         :ok
 
@@ -180,7 +180,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   def safely_drop_db_index(raw_index_name, concurrently? \\ true) do
     index_name = sanitize_index_name(raw_index_name)
 
-    case SQL.query(Repo, drop_index_query_string(index_name, concurrently?), []) do
+    case SQL.query(Repo, drop_index_query_string(index_name, concurrently?), [], timeout: :infinity) do
       {:ok, _} ->
         :ok
 
