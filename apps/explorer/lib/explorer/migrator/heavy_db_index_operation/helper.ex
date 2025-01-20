@@ -197,7 +197,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
 
   # As a workaround we have to remove `CONCURRENTLY` in tests since
   # the error like "DROP INDEX CONCURRENTLY cannot run inside a transaction block" is returned with it.
-  # If the second paramter `external_concurrently_flag?` is `false`, we also skkip `CONCURRENTLY` option.
+  # If the second parameter `external_concurrently_flag?` is `false`, we also skkip `CONCURRENTLY` option.
   defp add_concurrently_flag?(external_concurrently_flag? \\ true) do
     if external_concurrently_flag? do
       if Mix.env() == :test, do: "", else: "CONCURRENTLY"
