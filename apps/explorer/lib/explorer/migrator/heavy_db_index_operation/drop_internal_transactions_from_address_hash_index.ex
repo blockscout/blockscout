@@ -37,7 +37,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAd
 
   @impl HeavyDbIndexOperation
   def restart_db_index_operation do
-    :not_applicable
+    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name)
   end
 
   @impl HeavyDbIndexOperation
