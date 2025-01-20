@@ -31,6 +31,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     ]
 
   alias Ecto.Changeset
+  alias EthereumJSONRPC.Blocks
   alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher
@@ -52,7 +53,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defstruct block_fetcher: nil,
             subscription: nil,
             previous_number: nil,
-            timer: nil
+            timer: nil,
+            last_polled_hash: nil
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -64,7 +66,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
           },
           subscription: Subscription.t(),
           previous_number: pos_integer() | nil,
-          timer: reference()
+          timer: reference(),
+          last_polled_hash: binary() | nil
         }
 
   def start_link([arguments, gen_server_options]) do
@@ -88,12 +91,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @impl GenServer
   def handle_info(
-        {subscription, {:ok, %{"number" => quantity}}},
+        {subscription, {:ok, %{"number" => quantity, "hash" => hash}}},
         %__MODULE__{
           block_fetcher: %Block.Fetcher{} = block_fetcher,
           subscription: %Subscription{} = subscription,
           previous_number: previous_number,
-          timer: timer
+          timer: timer,
+          last_polled_hash: last_polled_hash
         } = state
       )
       when is_binary(quantity) do
@@ -103,19 +107,24 @@ defmodule Indexer.Block.Realtime.Fetcher do
       Publisher.broadcast([{:last_block_number, number}], :realtime)
     end
 
-    # Subscriptions don't support getting all the blocks and transactions data,
-    # so we need to go back and get the full block
-    start_fetch_and_import(number, block_fetcher, previous_number)
+    if hash != last_polled_hash do
+      Process.cancel_timer(timer)
 
-    Process.cancel_timer(timer)
-    new_timer = schedule_polling()
+      # Subscriptions don't support getting all the blocks and transactions data,
+      # so we need to go back and get the full block
+      start_fetch_and_import(number, block_fetcher, previous_number)
 
-    {:noreply,
-     %{
-       state
-       | previous_number: number,
-         timer: new_timer
-     }}
+      new_timer = schedule_polling()
+
+      {:noreply,
+      %{
+        state
+        | previous_number: number,
+          timer: new_timer
+      }}
+    else
+      {:noreply, state}
+    end
   end
 
   @impl GenServer
@@ -123,12 +132,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
         :poll_latest_block_number,
         %__MODULE__{
           block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
-          previous_number: previous_number
+          previous_number: previous_number,
+          last_polled_hash: last_polled_hash
         } = state
       ) do
-    new_previous_number =
-      case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
-        {:ok, number} when is_nil(previous_number) or number != previous_number ->
+    {new_previous_number, new_last_polled_hash} =
+      case EthereumJSONRPC.fetch_block_by_tag("latest", json_rpc_named_arguments) do
+        {:ok, %Blocks{blocks_params: [%{number: number, hash: hash}]}} when is_nil(previous_number) or number != previous_number ->
           number =
             if abnormal_gap?(number, previous_number) do
               new_number = max(number, previous_number)
@@ -140,10 +150,10 @@ defmodule Indexer.Block.Realtime.Fetcher do
             end
 
           fetch_validators_async()
-          number
+          {number, hash}
 
         _ ->
-          previous_number
+          {previous_number, last_polled_hash}
       end
 
     timer = schedule_polling()
@@ -152,7 +162,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
      %{
        state
        | previous_number: new_previous_number,
-         timer: timer
+         timer: timer,
+         last_polled_hash: new_last_polled_hash
      }}
   end
 

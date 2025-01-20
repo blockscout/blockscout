@@ -107,6 +107,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
          {:ok, last_l2_block_number} <- get_last_l2_block_number(json_rpc_named_arguments) do
       Logger.debug("l2_block_number = #{l2_block_number}")
       Logger.debug("last_l2_block_number = #{last_l2_block_number}")
+      Logger.debug("latest_block_number = #{latest_block_number}")
 
       Process.send(self(), :continue, [])
 
@@ -182,7 +183,9 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
             {:cont, {nil, nil}}
 
           reorg_block_number < start_block ->
-            {:halt, {nil, nil}}
+            new_start_block = reorg_block_number
+            new_end_block = reorg_block_number
+            {:halt, {new_start_block, new_end_block}}
 
           true ->
             new_start_block = min(chunk_end + 1, reorg_block_number)
@@ -192,41 +195,18 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
       end)
 
     if is_nil(new_start_block) or is_nil(new_end_block) do
-      Logger.info("The fetcher loop for the range #{inspect(start_block..end_block)} finished.")
-
+      # if there wasn't a reorg or the reorg didn't affect the current range, switch to realtime mode
       if mode == :catchup do
+        Logger.info("The fetcher catchup loop for the range #{inspect(start_block..end_block)} finished.")
         Logger.info("Switching to realtime mode...")
       end
 
-      Process.send(self(), :handle_realtime, [])
-      {:noreply, state}
+      {:noreply, %{state | mode: :realtime}}
     else
+      # if the reorg affected the current range, cut the range (see the code above)
+      # so that the last block of the range is the reorg block number, and handle the new range
       Process.send(self(), :continue, [])
       {:noreply, %{state | start_block: new_start_block, end_block: new_end_block}}
-    end
-  end
-
-  # Gets the updated block range, sends it to the main handling loop, and resets the range
-  # to collect the next range from the realtime block fetcher. If the range is not defined yet,
-  # the function waits for 3 seconds and repeats the range checking.
-  #
-  # ## Parameters
-  # - `:handle_realtime`: The GenServer message.
-  # - `state`: The current state of the fetcher.
-  #
-  # ## Returns
-  # - `{:noreply, state}` tuple where `state` is the new state of the fetcher containing the updated block range
-  #                       used by the main loop.
-  @impl GenServer
-  def handle_info(:handle_realtime, state) do
-    case Map.get(state, :realtime_range) do
-      nil ->
-        Process.send_after(self(), :handle_realtime, 3_000)
-        {:noreply, state}
-
-      start_block..end_block//_ ->
-        Process.send(self(), :continue, [])
-        {:noreply, %{state | start_block: start_block, end_block: end_block, mode: :realtime, realtime_range: nil}}
     end
   end
 
@@ -235,30 +215,38 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   # ## Parameters
   # - `{:chain_event, :blocks, :realtime, blocks}`: The GenServer message containing the list of blocks
   #                                                 taken by the realtime block fetcher.
-  # - `state`: The current fetcher state containing the end block of the current main loop range.
+  # - `state`: The current fetcher state containing the current block range for realtime handling.
   #
   # ## Returns
   # - `{:noreply, state}` tuple where `state` is the new state of the fetcher containing the updated block range
   #                       used by the `:handle_realtime` handler.
   @impl GenServer
-  def handle_info({:chain_event, :blocks, :realtime, blocks}, %{end_block: end_block} = state) do
+  def handle_info({:chain_event, :blocks, :realtime, []}, state) do
+    {:noreply, state}
+  end
+
+  def handle_info({:chain_event, :blocks, :realtime, blocks}, %{realtime_range: realtime_range, mode: mode} = state) do
     {new_min, new_max} =
       blocks
-      |> Enum.filter(fn block ->
-        block.number > end_block
-      end)
       |> Enum.map(fn block -> block.number end)
-      |> Enum.min_max(fn -> {nil, nil} end)
+      |> Enum.min_max()
 
     new_realtime_range =
-      if !is_nil(new_min) and !is_nil(new_max) do
-        case Map.get(state, :realtime_range) do
-          nil -> Range.new(new_min, new_max)
-          prev_min..prev_max//_ -> Range.new(min(prev_min, new_min), max(prev_max, new_max))
-        end
+      case realtime_range do
+        nil -> Range.new(new_min, new_max)
+        prev_min..prev_max//_ -> Range.new(min(prev_min, new_min), max(prev_max, new_max))
       end
 
-    {:noreply, %{state | realtime_range: new_realtime_range}}
+    if mode == :realtime do
+      Logger.info("The current realtime range is #{inspect(new_realtime_range)}. Starting to handle that...")
+
+      Process.send(self(), :continue, [])
+
+      start_block..end_block//_ = new_realtime_range
+      {:noreply, %{state | start_block: start_block, end_block: end_block, mode: :continue, realtime_range: nil}}
+    else
+      {:noreply, %{state | realtime_range: new_realtime_range}}
+    end
   end
 
   @impl GenServer
@@ -279,7 +267,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   """
   @spec handle_realtime_l2_reorg(non_neg_integer()) :: any()
   def handle_realtime_l2_reorg(reorg_block) do
-    Logger.warning("L2 reorg was detected at block #{reorg_block}.")
+    Logger.warning("L2 reorg was detected at block #{reorg_block}.", [fetcher: @fetcher_name])
     RollupReorgMonitorQueue.reorg_block_push(reorg_block, __MODULE__)
   end
 
@@ -291,35 +279,42 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   #
   # ## Returns
   # - nothing.
-  @spec handle_reorg(non_neg_integer()) :: any()
-  defp handle_reorg(reorg_block_number) do
+  @spec handle_reorg(non_neg_integer() | nil) :: any()
+  defp handle_reorg(reorg_block_number) when not is_nil(reorg_block_number) do
     deleted_count = EIP1559ConfigUpdate.remove_invalid_updates(0, reorg_block_number - 1)
 
-    Logger.warning(
-      "As L2 reorg was detected, all rows with l2_block_number >= #{reorg_block_number} were removed from the op_eip1559_config_updates table. Number of removed rows: #{deleted_count}."
-    )
+    if deleted_count > 0 do
+      Logger.warning(
+        "As L2 reorg was detected, all rows with l2_block_number >= #{reorg_block_number} were removed from the `op_eip1559_config_updates` table. Number of removed rows: #{deleted_count}."
+      )
+    end
 
     EIP1559ConfigUpdate.set_last_l2_block_hash(@empty_hash)
   end
 
-  # Reads reorg block numbers queue, pops the block numbers from that,
-  # and handles each reorg block from the queue.
+  defp handle_reorg(_reorg_block_number), do: :ok
+
+  # Reads reorg block numbers queue, pops the block numbers from that finding the earliest one.
   #
   # ## Returns
   # - The earliest reorg block number.
   # - `nil` if the queue is empty.
   @spec handle_reorgs_queue() :: non_neg_integer() | nil
   defp handle_reorgs_queue do
-    Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
-      reorg_block_number = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
+    reorg_block_number =
+      Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
+        number = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
 
-      if is_nil(reorg_block_number) do
-        {:halt, acc}
-      else
-        handle_reorg(reorg_block_number)
-        {:cont, min(reorg_block_number, acc)}
-      end
-    end)
+        if is_nil(number) do
+          {:halt, acc}
+        else
+          {:cont, min(number, acc)}
+        end
+      end)
+
+    handle_reorg(reorg_block_number)
+
+    reorg_block_number
   end
 
   # Retrieves updated config parameters from the specified blocks and saves them to the database.
@@ -339,8 +334,9 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   @spec handle_updates([non_neg_integer()], EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer()
   defp handle_updates(block_numbers, json_rpc_named_arguments) do
     case fetch_blocks_by_numbers(block_numbers, json_rpc_named_arguments, false) do
-      {:ok, %Blocks{blocks_params: blocks_params, errors: []}} ->
-        block_numbers_filtered =
+      {:ok, %Blocks{blocks_params: blocks_params}} ->
+        # we only keep block numbers for the existing blocks
+        block_numbers_existing =
           block_numbers
           |> Enum.filter(fn block_number ->
             Enum.any?(blocks_params, fn b ->
@@ -348,9 +344,9 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
             end)
           end)
 
-        last_block_number = List.last(block_numbers_filtered)
+        last_block_number = List.last(block_numbers_existing)
 
-        Enum.reduce(block_numbers_filtered, 0, fn block_number, acc ->
+        Enum.reduce(block_numbers_existing, 0, fn block_number, acc ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           block = Enum.find(blocks_params, %{extra_data: "0x"}, fn b -> b.number == block_number end)
 
@@ -460,9 +456,9 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     Logger.info("Trying to detect Holocene block number by its timestamp using indexed L2 blocks...")
 
     case Chain.timestamp_to_block_number(timestamp_dt, :after, false) do
-      {:ok, block_number} ->
-        Logger.info("Holocene block number is detected using indexed L2 blocks. The block number is #{block_number}")
-        block_number
+      # {:ok, block_number} ->
+      #  Logger.info("Holocene block number is detected using indexed L2 blocks. The block number is #{block_number}")
+      #  block_number
 
       _ ->
         Logger.info(
