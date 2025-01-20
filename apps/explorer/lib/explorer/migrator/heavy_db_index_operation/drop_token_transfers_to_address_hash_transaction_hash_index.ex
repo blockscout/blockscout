@@ -51,8 +51,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHas
   end
 
   @impl HeavyDbIndexOperation
-  def running_heavy_migration_exists? do
-    MigrationStatus.running_heavy_migration_for_table_exists?(@table_name)
+  def running_other_heavy_migration_exists? do
+    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, @migration_name)
   end
 
   @impl HeavyDbIndexOperation

@@ -75,14 +75,14 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @callback db_index_operation_status() :: :not_initialized | :not_completed | :completed | :unknown
 
   @doc """
-  Checks if there is any heavy migration currently running for the given table.
+  Checks if there is any heavy migration (except current migration) currently running for the given table.
 
   ## Returns
 
     - `true` if a heavy migration is running.
     - `false` otherwise.
   """
-  @callback running_heavy_migration_exists?() :: boolean()
+  @callback running_other_heavy_migration_exists?() :: boolean()
 
   @doc """
   This callback restarts initial index operation once its completion is failed, e.g. index is invalid after creation.
@@ -211,7 +211,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
 
       defp db_operation_is_ready_to_start? do
         if Enum.empty?(dependent_from_migrations()) do
-          not running_heavy_migration_exists?()
+          not running_other_heavy_migration_exists?()
         else
           all_statuses =
             MigrationStatus.get_migrations_status(dependent_from_migrations())

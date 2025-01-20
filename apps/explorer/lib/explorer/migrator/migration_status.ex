@@ -103,12 +103,12 @@ defmodule Explorer.Migrator.MigrationStatus do
   end
 
   @doc """
-  Checks if there are any running heavy migrations.
+  Checks if there are any running heavy migrations except the current.
 
   A heavy migration is identified by its name starting with "heavy_indexes_create_{table_name}" or "heavy_indexes_drop_{table_name}" prefixes.
   """
-  @spec running_heavy_migration_for_table_exists?(Ecto.Queryable.t(), atom()) :: boolean()
-  def running_heavy_migration_for_table_exists?(query \\ __MODULE__, table_name) do
+  @spec running_other_heavy_migration_for_table_exists?(Ecto.Queryable.t(), atom(), String.t()) :: boolean()
+  def running_other_heavy_migration_for_table_exists?(query \\ __MODULE__, table_name, migration_name) do
     heavy_migrations_create_prefix = "heavy_indexes_create_#{to_string(table_name)}%"
     heavy_migrations_drop_prefix = "heavy_indexes_drop_#{to_string(table_name)}%"
 
@@ -117,6 +117,7 @@ defmodule Explorer.Migrator.MigrationStatus do
         where:
           ilike(ms.migration_name, ^heavy_migrations_create_prefix) or
             ilike(ms.migration_name, ^heavy_migrations_drop_prefix),
+        where: ms.migration_name != ^migration_name,
         where: ms.status == ^"started"
       )
 
