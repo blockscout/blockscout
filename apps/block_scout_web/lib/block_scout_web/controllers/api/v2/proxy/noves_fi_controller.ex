@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.NovesFiController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/proxy/noves-fi/transactions` endpoint.
+    Function to handle GET requests to `/api/v2/proxy/noves-fi/transaction-descriptions` endpoint.
   """
   @spec describe_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def describe_transactions(conn, _) do

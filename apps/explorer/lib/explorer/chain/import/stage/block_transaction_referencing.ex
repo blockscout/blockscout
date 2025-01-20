@@ -10,7 +10,6 @@ defmodule Explorer.Chain.Import.Stage.BlockTransactionReferencing do
   @runners [
     Runner.TokenTransfers,
     Runner.Transaction.Forks,
-    Runner.Logs,
     Runner.Block.Rewards,
     Runner.Block.SecondDegreeRelations,
     Runner.TransactionActions,

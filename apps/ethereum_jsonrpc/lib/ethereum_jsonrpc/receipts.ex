@@ -6,9 +6,10 @@ defmodule EthereumJSONRPC.Receipts do
   """
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  import EthereumJSONRPC, only: [json_rpc: 2, request: 1]
+  import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Logs, Receipt}
+  alias EthereumJSONRPC.Receipts.{ByBlockNumber, ByTransactionHash}
 
   @type elixir :: [Receipt.elixir()]
   @type t :: [Receipt.t()]
@@ -129,6 +130,23 @@ defmodule EthereumJSONRPC.Receipts do
     Enum.map(elixir, &Receipt.elixir_to_params/1)
   end
 
+  @doc """
+    Fetches transaction receipts and logs, converting them to a format ready for
+    database import.
+
+    Makes batch JSON-RPC requests to retrieve receipts for multiple transactions
+    sequentially. Processes the raw receipt data into standardized format suitable
+    for database import.
+
+    ## Parameters
+    - `request_origins`: A list of transaction parameter maps
+    - `json_rpc_named_arguments`: Configuration for JSON-RPC connection
+
+    ## Returns
+    - `{:ok, %{logs: list(), receipts: list()}}` - Successfully processed receipts
+      and logs ready for database import
+    - `{:error, reason}` - Error occurred during fetch or processing
+  """
   @spec fetch(
           [
             %{
@@ -139,20 +157,83 @@ defmodule EthereumJSONRPC.Receipts do
           ],
           EthereumJSONRPC.json_rpc_named_arguments()
         ) :: {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term()}
+  def fetch(transactions_params, json_rpc_named_arguments)
+
+  def fetch([], _json_rpc_named_arguments), do: {:ok, %{logs: [], receipts: []}}
+
   def fetch(transactions_params, json_rpc_named_arguments) when is_list(transactions_params) do
     {requests, id_to_transaction_params} =
       transactions_params
       |> Stream.with_index()
       |> Enum.reduce({[], %{}}, fn {%{hash: transaction_hash} = transaction_params, id},
                                    {acc_requests, acc_id_to_transaction_params} ->
-        requests = [request(id, transaction_hash) | acc_requests]
+        requests = [ByTransactionHash.request(id, transaction_hash) | acc_requests]
         id_to_transaction_params = Map.put(acc_id_to_transaction_params, id, transaction_params)
         {requests, id_to_transaction_params}
       end)
 
-    with {:ok, responses} <- json_rpc(requests, json_rpc_named_arguments),
-         {:ok, receipts} <- reduce_responses(responses, id_to_transaction_params) do
-      elixir_receipts = to_elixir(receipts)
+    request_and_parse(requests, id_to_transaction_params, json_rpc_named_arguments)
+  end
+
+  @doc """
+    Fetches transaction receipts and logs, converting them to a format ready for
+    database import.
+
+    Makes batch JSON-RPC requests to retrieve receipts for multiple block numbers
+    sequentially. Processes the raw receipt data into standardized format suitable
+    for database import.
+
+    ## Parameters
+    - `block_numbers`: A list of block numbers
+    - `json_rpc_named_arguments`: Configuration for JSON-RPC connection
+
+    ## Returns
+    - `{:ok, %{logs: list(), receipts: list()}}` - Successfully processed receipts
+      and logs ready for database import
+    - `{:error, reason}` - Error occurred during fetch or processing
+  """
+  @spec fetch_by_block_numbers(
+          [EthereumJSONRPC.block_number() | EthereumJSONRPC.quantity()],
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) ::
+          {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term()}
+  def fetch_by_block_numbers(block_numbers, json_rpc_named_arguments)
+
+  def fetch_by_block_numbers([], _json_rpc_named_arguments), do: {:ok, %{logs: [], receipts: []}}
+
+  def fetch_by_block_numbers(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
+    requests =
+      block_numbers
+      |> Enum.map(&ByBlockNumber.request(%{id: &1, number: &1}))
+
+    request_and_parse(requests, block_numbers, json_rpc_named_arguments)
+  end
+
+  # Executes a batch JSON-RPC request to retrieve and process receipts.
+  #
+  # This function handles the request and response processing for both transaction
+  # and block number based receipt retrieval. It converts the raw responses into
+  # data structures suitable for database import.
+  #
+  # ## Parameters
+  # - `requests`: A list of JSON-RPC requests to be executed.
+  # - `elements_with_ids`: A map or a list enumerating elements with request IDs
+  # - `json_rpc_named_arguments`: Configuration for JSON-RPC connection.
+  #
+  # ## Returns
+  # - `{:ok, %{logs: list(), receipts: list()}}` - Successfully processed receipts
+  #   and logs ready for database import.
+  # - `{:error, reason}` - Error occurred during fetch or processing.
+  @spec request_and_parse(
+          [EthereumJSONRPC.Transport.request()],
+          %{EthereumJSONRPC.request_id() => %{required(:gas) => non_neg_integer(), optional(atom()) => any()}}
+          | [EthereumJSONRPC.request_id()],
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term()}
+  defp request_and_parse(requests, elements_with_ids, json_rpc_named_arguments) do
+    with {:ok, raw_responses} <- json_rpc(requests, json_rpc_named_arguments),
+         {:ok, fizzy_responses} <- process_responses(raw_responses, elements_with_ids) do
+      elixir_receipts = to_elixir(fizzy_responses)
 
       elixir_logs = elixir_to_logs(elixir_receipts)
       receipts = elixir_to_params(elixir_receipts)
@@ -226,44 +307,143 @@ defmodule EthereumJSONRPC.Receipts do
     Enum.map(receipts, &Receipt.to_elixir/1)
   end
 
-  defp request(id, transaction_hash) when is_integer(id) and is_binary(transaction_hash) do
-    request(%{
-      id: id,
-      method: "eth_getTransactionReceipt",
-      params: [transaction_hash]
-    })
-  end
+  # Modifies a JSON-RPC response.
+  #
+  # ## Parameters
+  # - `response`: The JSON-RPC response containing either a receipt, list of receipts,
+  #   nil result, or error
+  # - `elements_with_ids`: A map or a list enumerating elements with request IDs
+  #
+  # ## Returns
+  # - `{:ok, map_or_list}` a map or list of maps representing receipts with gas
+  #   information added for successful receipt responses
+  # - `{:error, %{code: -32602, data: data, message: "Not Found"}}` for nil results
+  # - `{:error, reason}` with transaction data added for error responses
+  @spec modify_response(
+          EthereumJSONRPC.Transport.response(),
+          %{
+            EthereumJSONRPC.request_id() => %{
+              :gas => non_neg_integer(),
+              optional(atom()) => any()
+            }
+          }
+          | [EthereumJSONRPC.request_id()]
+        ) :: {:ok, map() | [map()]} | {:error, %{:data => any(), optional(any()) => any()}}
+  defp modify_response(response, elements_with_ids)
 
-  defp response_to_receipt(%{id: id, result: nil}, id_to_transaction_params) do
+  defp modify_response(%{id: id, result: nil}, id_to_transaction_params) when is_map(id_to_transaction_params) do
     data = Map.fetch!(id_to_transaction_params, id)
     {:error, %{code: -32602, data: data, message: "Not Found"}}
   end
 
-  defp response_to_receipt(%{id: id, result: receipt}, id_to_transaction_params) do
+  defp modify_response(%{id: id, result: nil}, request_ids) when is_list(request_ids) do
+    {:error, %{code: -32602, data: id, message: "Not Found"}}
+  end
+
+  defp modify_response(%{id: id, result: receipt}, id_to_transaction_params) when is_map(id_to_transaction_params) do
     %{gas: gas} = Map.fetch!(id_to_transaction_params, id)
 
     # gas from the transaction is needed for pre-Byzantium derived status
     {:ok, Map.put(receipt, "gas", gas)}
   end
 
-  defp response_to_receipt(%{id: id, error: reason}, id_to_transaction_params) do
+  # The list of receipts is returned by `eth_getBlockReceipts`
+  defp modify_response(%{id: id, result: receipts}, request_ids) when is_list(receipts) and is_list(request_ids) do
+    receipts_with_gas =
+      Enum.map(receipts, fn receipt ->
+        check_equivalence(Map.fetch!(receipt, "blockNumber"), id)
+        Map.put(receipt, "gas", 0)
+      end)
+
+    {:ok, receipts_with_gas}
+  end
+
+  defp modify_response(%{id: id, error: reason}, id_to_transaction_params) when is_map(id_to_transaction_params) do
     data = Map.fetch!(id_to_transaction_params, id)
     annotated_reason = Map.put(reason, :data, data)
     {:error, annotated_reason}
   end
 
-  defp reduce_responses(responses, id_to_transaction_params)
-       when is_list(responses) and is_map(id_to_transaction_params) do
-    responses
-    |> EthereumJSONRPC.sanitize_responses(id_to_transaction_params)
-    |> Stream.map(&response_to_receipt(&1, id_to_transaction_params))
-    |> Enum.reduce({:ok, []}, &reduce_receipt(&1, &2))
+  defp modify_response(%{id: id, error: reason}, request_ids) when is_list(request_ids) do
+    annotated_reason = Map.put(reason, :data, id)
+    {:error, annotated_reason}
   end
 
-  defp reduce_receipt({:ok, receipt}, {:ok, receipts}) when is_list(receipts),
-    do: {:ok, [receipt | receipts]}
+  # Verifies that a block number matches the request ID
+  @spec check_equivalence(EthereumJSONRPC.block_number() | EthereumJSONRPC.quantity(), EthereumJSONRPC.request_id()) ::
+          true
+  defp check_equivalence(block_number, id) when is_integer(block_number) and is_integer(id) do
+    true = block_number == id
+  end
 
-  defp reduce_receipt({:ok, _}, {:error, _} = error), do: error
-  defp reduce_receipt({:error, reason}, {:ok, _}), do: {:error, [reason]}
-  defp reduce_receipt({:error, reason}, {:error, reasons}) when is_list(reasons), do: {:error, [reason | reasons]}
+  defp check_equivalence(block_number, id) when is_binary(block_number) and is_integer(id) do
+    true = quantity_to_integer(block_number) == id
+  end
+
+  # Processes a batch of JSON-RPC responses by performing a series of transformations
+  # to standardize their structure.
+  #
+  # Ensures that each response has a valid ID, assigning unmatched IDs to responses
+  # with missing IDs. Adjusts each response by extending error data with relevant
+  # request details or adding extra fields when needed. Combines individual
+  # responses into a unified format, returning either a successful or error tuple
+  # with a list of responses.
+  #
+  # ## Parameters
+  # - `responses`: List of JSON-RPC responses for transaction receipts
+  # - `id_to_transaction_params`: A map or a list enumerating elements with request IDs
+  #
+  # ## Returns
+  # - `{:ok, receipts}` with list of successfully processed receipts
+  # - `{:error, reasons}` with list of error reasons if any receipt failed
+  @spec process_responses(
+          EthereumJSONRPC.Transport.batch_response(),
+          %{
+            EthereumJSONRPC.request_id() => %{
+              :gas => non_neg_integer(),
+              optional(atom()) => any()
+            }
+          }
+          | [EthereumJSONRPC.request_id()]
+        ) :: {:ok, [map()]} | {:error, [map()]}
+  defp process_responses(responses, elements_with_ids) when is_list(responses) do
+    responses
+    |> EthereumJSONRPC.sanitize_responses(elements_with_ids)
+    |> Stream.map(&modify_response(&1, elements_with_ids))
+    |> Enum.reduce({:ok, []}, &harmonize_responses(&1, &2))
+  end
+
+  # Combines receipt responses while preserving error state. Successfully processed
+  # receipts are accumulated in a list. If any error occurs, switches to error mode and
+  # collects error reasons, discarding all successful receipts.
+  #
+  # ## Parameters
+  # - `response`: Current response tuple containing either:
+  #   - `{:ok, map_or_list}`: Successfully processed receipt or list of receipts
+  #   - `{:error, reason}`: Error with reason
+  # - `acc`: Accumulator tuple containing either:
+  #   - `{:ok, raw_receipts}`: List of successful receipts
+  #   - `{:error, reasons}`: List of error reasons
+  #
+  # ## Returns
+  # - `{:ok, receipts}`: List with new receipt prepended if no errors
+  # - `{:error, reasons}`: List of error reasons if any error occurred
+  @spec harmonize_responses(
+          {:ok, map() | [map()]} | {:error, map()},
+          {:ok, [map()]} | {:error, [map()]}
+        ) :: {:ok, [map()]} | {:error, [map()]}
+  defp harmonize_responses(response, acc)
+
+  defp harmonize_responses({:ok, raw_modified_receipt}, {:ok, raw_receipts})
+       when is_map(raw_modified_receipt) and is_list(raw_receipts),
+       do: {:ok, [raw_modified_receipt | raw_receipts]}
+
+  # The list of receipts is returned by `eth_getBlockReceipts`
+  defp harmonize_responses({:ok, raw_modified_receipts}, {:ok, raw_receipts})
+       when is_list(raw_modified_receipts) and is_list(raw_receipts),
+       do: {:ok, raw_modified_receipts ++ raw_receipts}
+
+  defp harmonize_responses({:ok, _}, {:error, _} = error), do: error
+  defp harmonize_responses({:error, reason}, {:ok, _}), do: {:error, [reason]}
+  defp harmonize_responses({:error, reason}, {:error, reasons}) when is_list(reasons), do: {:error, [reason | reasons]}
 end

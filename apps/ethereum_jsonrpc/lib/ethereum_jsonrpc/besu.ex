@@ -3,7 +3,9 @@ defmodule EthereumJSONRPC.Besu do
   @moduledoc """
   Ethereum JSONRPC methods that are only supported by [Besu](https://besu.hyperledger.org/en/stable/Reference/API-Methods).
   """
-  import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2]
+  require Logger
+
+  import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
   alias EthereumJSONRPC.Besu.Traces
   alias EthereumJSONRPC.{FetchedBeneficiaries, PendingTransaction, TraceReplayBlockTransactions, Transaction}
@@ -56,11 +58,24 @@ defmodule EthereumJSONRPC.Besu do
   end
 
   @impl EthereumJSONRPC.Variant
-  def fetch_transaction_raw_traces(transaction_params, json_rpc_named_arguments) do
-    TraceReplayBlockTransactions.fetch_transaction_raw_traces(transaction_params, json_rpc_named_arguments)
+  def fetch_transaction_raw_traces(%{hash: transaction_hash}, json_rpc_named_arguments) do
+    request = trace_transaction_request(%{id: 0, hash_data: to_string(transaction_hash)})
+
+    case json_rpc(request, json_rpc_named_arguments) do
+      {:ok, response} ->
+        {:ok, response}
+
+      {:error, error} ->
+        Logger.error(inspect(error))
+        {:error, error}
+    end
   end
 
   defp block_numbers_to_params_list(block_numbers) when is_list(block_numbers) do
     Enum.map(block_numbers, &%{block_quantity: integer_to_quantity(&1)})
+  end
+
+  defp trace_transaction_request(%{id: id, hash_data: hash_data}) do
+    request(%{id: id, method: "trace_transaction", params: [hash_data]})
   end
 end
