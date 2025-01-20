@@ -267,10 +267,10 @@ defmodule EthereumJSONRPC.Arbitrum do
       end
 
     hex
-      |> String.trim_leading("0")
-      |> String.pad_leading(40, "0")
-      |> (&("0x" <> &1)).()
-      |> Address.checksum()
+    |> String.trim_leading("0")
+    |> String.pad_leading(40, "0")
+    |> (&("0x" <> &1)).()
+    |> Address.checksum()
   end
 
   @doc """
