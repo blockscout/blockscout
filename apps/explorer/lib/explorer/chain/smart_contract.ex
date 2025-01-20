@@ -193,7 +193,7 @@ defmodule Explorer.Chain.SmartContract do
     }
   ]
 
-  @default_languages ~w(solidity vyper yul stylys_rust)a
+  @default_languages ~w(solidity vyper yul stylus_rust)a
   @chain_type_languages (case @chain_type do
                            :zilliqa ->
                              ~w(scilla)a

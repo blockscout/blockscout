@@ -146,7 +146,8 @@ defmodule BlockScoutWeb.API.V2.Helper do
   def address_name(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do
       nil ->
-        %Address.Name{name: name} = Enum.at(address_names, 0)
+        # take last created address name, if there is no `primary` one.
+        %Address.Name{name: name} = Enum.max_by(address_names, & &1.id)
         name
 
       %Address.Name{name: name} ->

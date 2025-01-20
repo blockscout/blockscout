@@ -216,8 +216,9 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     information.
   """
   @spec authenticate_via_wallet(Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
-  def authenticate_via_wallet(conn, %{"message" => message, "signature" => signature}) do
-    with {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
+  def authenticate_via_wallet(conn, %{"message" => message, "signature" => signature} = params) do
+    with {:recaptcha, true} <- {:recaptcha, CaptchaHelper.recaptcha_passed?(params)},
+         {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
       put_auth_to_session(conn, auth)
     end
   end
@@ -259,6 +260,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
          {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)} do
       conn
       |> Conn.fetch_session()
+      |> configure_session(renew: true)
       |> put_session(:current_user, session)
       |> delete_resp_cookie(Application.get_env(:block_scout_web, :invalid_session_key))
       |> put_status(200)

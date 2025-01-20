@@ -29,6 +29,8 @@ defmodule Explorer.Chain.Search do
     UserOperation
   }
 
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   @min_query_length 3
 
   @token_sorting [
@@ -73,6 +75,11 @@ defmodule Explorer.Chain.Search do
               |> search_address_by_address_hash_query()
               |> ExplorerHelper.maybe_hide_scam_addresses(:hash))
           )
+          |> select_repo(options).all()
+
+        {:filecoin, filecoin_address} ->
+          filecoin_address
+          |> address_by_filecoin_id_or_robust()
           |> select_repo(options).all()
 
         {:full_hash, full_hash} ->
@@ -152,8 +159,18 @@ defmodule Explorer.Chain.Search do
     |> limit(^paging_options.page_size)
   end
 
+  @spec prepare_search_query(binary(), {:some, binary()} | :none) ::
+          {:address_hash, Hash.Address.t()}
+          | {:filecoin, any()}
+          | {:full_hash, Hash.t()}
+          | {:number, non_neg_integer()}
+          | [{:number, non_neg_integer()}, {:text, binary()}]
+          | {:text, binary()}
+          | nil
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp prepare_search_query(query, {:some, prepared_term}) do
     address_hash_result = Chain.string_to_address_hash(query)
+    filecoin_address_result = maybe_parse_filecoin_address(query)
     full_hash_result = Chain.string_to_transaction_hash(query)
     non_negative_integer_result = ExplorerHelper.safe_parse_non_negative_integer(query)
     query_length = String.length(query)
@@ -162,6 +179,10 @@ defmodule Explorer.Chain.Search do
       match?({:ok, _hash}, address_hash_result) ->
         {:ok, hash} = address_hash_result
         {:address_hash, hash}
+
+      match?({:ok, _address}, filecoin_address_result) ->
+        {:ok, filecoin_address} = filecoin_address_result
+        {:filecoin, filecoin_address}
 
       match?({:ok, _hash}, full_hash_result) ->
         {:ok, hash} = full_hash_result
@@ -227,6 +248,7 @@ defmodule Explorer.Chain.Search do
     `balanced_unpaginated_search` function is used at api/v2/search/quick endpoint.
   """
   @spec balanced_unpaginated_search(PagingOptions.t(), binary(), [Chain.api?()] | []) :: list
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def balanced_unpaginated_search(paging_options, query_string, options \\ []) do
     query_string = String.trim(query_string)
     ens_task = Task.async(fn -> search_ens_name(query_string, options) end)
@@ -243,6 +265,13 @@ defmodule Explorer.Chain.Search do
             address_hash
             |> search_token_by_address_hash_query()
             |> union_all(^search_address_by_address_hash_query(address_hash))
+            |> select_repo(options).all()
+          ]
+
+        {:filecoin, filecoin_address} ->
+          [
+            filecoin_address
+            |> address_by_filecoin_id_or_robust()
             |> select_repo(options).all()
           ]
 
@@ -462,27 +491,34 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:address_hash, dynamic([address: address], address.hash))
       |> Map.put(:type, "address")
       |> Map.put(:name, dynamic([address_name: address_name], address_name.name))
-      |> Map.put(:inserted_at, dynamic([address_name: address_name], address_name.inserted_at))
+      |> Map.put(:inserted_at, dynamic([address: address], address.inserted_at))
       |> Map.put(:verified, dynamic([address: address], address.verified))
       |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
 
+    base_address_query()
+    |> where([address: address], address.hash == ^address_hash)
+    |> join(
+      :left,
+      [address: address],
+      address_name in subquery(
+        from(name in Address.Name,
+          where: name.address_hash == ^address_hash,
+          order_by: [desc: name.primary],
+          limit: 1
+        )
+      ),
+      on: address.hash == address_name.address_hash,
+      as: :address_name
+    )
+    |> select(^address_search_fields)
+  end
+
+  defp base_address_query do
     from(address in Address,
       as: :address,
-      left_join:
-        address_name in subquery(
-          from(name in Address.Name,
-            where: name.address_hash == ^address_hash,
-            order_by: [desc: name.primary],
-            limit: 1
-          )
-        ),
-      as: :address_name,
-      on: address.hash == address_name.address_hash,
       left_join: smart_contract in SmartContract,
       as: :smart_contract,
-      on: address.hash == smart_contract.address_hash,
-      where: address.hash == ^address_hash,
-      select: ^address_search_fields
+      on: address.hash == smart_contract.address_hash
     )
   end
 
@@ -970,4 +1006,73 @@ defmodule Explorer.Chain.Search do
   defp parse_possible_nil(""), do: nil
   defp parse_possible_nil("null"), do: nil
   defp parse_possible_nil(other), do: other
+
+  @spec maybe_parse_filecoin_address(binary()) ::
+          :ignore
+          | {:ok, Explorer.Chain.Filecoin.IDAddress.t()}
+          | {:ok, Explorer.Chain.Filecoin.NativeAddress.t()}
+          | :error
+  def maybe_parse_filecoin_address(string)
+
+  if @chain_type == :filecoin do
+    def maybe_parse_filecoin_address(string) do
+      # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
+      id_address_result = Explorer.Chain.Filecoin.IDAddress.cast(string)
+      native_address_result = Explorer.Chain.Filecoin.NativeAddress.cast(string)
+
+      cond do
+        match?({:ok, _id_address}, id_address_result) ->
+          id_address_result
+
+        match?({:ok, _native_address}, native_address_result) ->
+          native_address_result
+
+        true ->
+          :error
+      end
+    end
+  else
+    def maybe_parse_filecoin_address(_), do: :ignore
+  end
+
+  @spec address_by_filecoin_id_or_robust(
+          Explorer.Chain.Filecoin.IDAddress.t()
+          | Explorer.Chain.Filecoin.NativeAddress.t()
+        ) :: Ecto.Query.t() | nil
+  def address_by_filecoin_id_or_robust(address)
+
+  if @chain_type == :filecoin do
+    def address_by_filecoin_id_or_robust(%Explorer.Chain.Filecoin.IDAddress{} = id) do
+      base_filecoin_address_query()
+      |> where([address], address.filecoin_id == ^id)
+    end
+
+    def address_by_filecoin_id_or_robust(%Explorer.Chain.Filecoin.NativeAddress{} = robust) do
+      base_filecoin_address_query()
+      |> where([address], address.filecoin_robust == ^robust)
+    end
+
+    defp base_filecoin_address_query do
+      address_search_fields =
+        search_fields()
+        |> Map.put(:address_hash, dynamic([address: address], address.hash))
+        |> Map.put(:type, "address")
+        |> Map.put(:name, dynamic([address_name: address_name], address_name.name))
+        |> Map.put(:inserted_at, dynamic([address: address], address.inserted_at))
+        |> Map.put(:verified, dynamic([address: address], address.verified))
+        |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
+
+      base_address_query()
+      |> join(
+        :left,
+        [address: address],
+        address_name in Address.Name,
+        on: address.hash == address_name.address_hash,
+        as: :address_name
+      )
+      |> select(^address_search_fields)
+    end
+  else
+    def address_by_filecoin_id_or_robust(_), do: nil
+  end
 end

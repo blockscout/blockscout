@@ -135,7 +135,11 @@ defmodule Indexer.Fetcher.Optimism.OutputRoot do
       new_start_block = last_written_block + 1
 
       {:ok, new_end_block} =
-        Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, IndexerHelper.infinite_retries_number())
+        IndexerHelper.get_block_number_by_tag(
+          "latest",
+          json_rpc_named_arguments,
+          IndexerHelper.infinite_retries_number()
+        )
 
       delay =
         if new_end_block == last_written_block do

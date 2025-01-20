@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Chain do
   @moduledoc """
   Converts the `param` to the corresponding resource that uses that format of param.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.Chain,
     only: [
@@ -52,7 +53,6 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
-
   alias Explorer.PagingOptions
 
   defimpl Poison.Encoder, for: Decimal do
@@ -105,10 +105,37 @@ defmodule BlockScoutWeb.Chain do
   def from_param(param) when byte_size(param) == @full_hash_len,
     do: block_or_transaction_or_operation_or_blob_from_param("0x" <> param)
 
-  def from_param(string) when is_binary(string) do
-    case param_to_block_number(string) do
-      {:ok, number} -> number_to_block(number)
-      _ -> search_ens_domain(string)
+  if @chain_type == :filecoin do
+    def from_param(string) when is_binary(string) do
+      case param_to_block_number(string) do
+        {:ok, number} ->
+          number_to_block(number)
+
+        _ ->
+          case Search.maybe_parse_filecoin_address(string) do
+            {:ok, filecoin_address} ->
+              result =
+                filecoin_address
+                |> Search.address_by_filecoin_id_or_robust()
+                # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+                |> Explorer.Chain.select_repo(api?: true).one()
+
+              (result && {:ok, result}) || {:error, :not_found}
+
+            _ ->
+              search_ens_domain(string)
+          end
+      end
+    end
+  else
+    def from_param(string) when is_binary(string) do
+      case param_to_block_number(string) do
+        {:ok, number} ->
+          number_to_block(number)
+
+        _ ->
+          search_ens_domain(string)
+      end
     end
   end
 

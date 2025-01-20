@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
 
   import Ecto.Query
 
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [id_to_params: 1, quantity_to_integer: 1]
   import Explorer.Helper, only: [decode_data: 2]
 
   alias EthereumJSONRPC.Block.ByNumber
@@ -130,7 +130,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
     new_start_block = last_written_block + 1
 
     {:ok, new_end_block} =
-      Optimism.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
+      Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
     delay =
       if new_end_block == last_written_block do
@@ -303,8 +303,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
         Map.put(acc, event["blockNumber"], 0)
       end)
       |> Stream.map(fn {block_number, _} -> %{number: block_number} end)
-      |> Stream.with_index()
-      |> Enum.into(%{}, fn {params, id} -> {id, params} end)
+      |> id_to_params()
       |> Blocks.requests(&ByNumber.request(&1, false, false))
 
     error_message = &"Cannot fetch blocks with batch request. Error: #{inspect(&1)}. Request: #{inspect(request)}"

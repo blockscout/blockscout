@@ -82,17 +82,30 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
         Task.async(fn ->
           l2_block_number_from = TransactionBatch.edge_l2_block_number(fs.id, :min)
           l2_block_number_to = TransactionBatch.edge_l2_block_number(fs.id, :max)
-          transaction_count = Transaction.transaction_count_for_block_range(l2_block_number_from..l2_block_number_to)
+
+          l2_block_range =
+            if not is_nil(l2_block_number_from) and not is_nil(l2_block_number_to) do
+              l2_block_number_from..l2_block_number_to
+            end
+
+          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+          transaction_count =
+            case l2_block_range do
+              nil -> 0
+              range -> Transaction.transaction_count_for_block_range(range)
+            end
+
           {batch_data_container, _} = FrameSequenceBlob.list(fs.id, api?: true)
 
           fs
-          |> Map.put(:l2_block_range, l2_block_number_from..l2_block_number_to)
+          |> Map.put(:l2_block_range, l2_block_range)
           |> Map.put(:transaction_count, transaction_count)
           |> Map.put(:batch_data_container, batch_data_container)
         end)
       end)
       |> Task.yield_many(:infinity)
       |> Enum.map(fn {_task, {:ok, item}} -> item end)
+      |> Enum.reject(&is_nil(&1.l2_block_range))
 
     conn
     |> put_status(200)
