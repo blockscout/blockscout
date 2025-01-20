@@ -1,9 +1,11 @@
 defmodule BlockScoutWeb.API.V2.ValidatorController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain.Blackfort.Validator, as: ValidatorBlackfort
   alias Explorer.Chain.Cache.{BlackfortValidatorsCounters, StabilityValidatorsCounters}
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
+  alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ValidatorZilliqa
 
   import BlockScoutWeb.PagingHelper,
@@ -23,6 +25,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     ]
 
   @api_true api?: true
+
+  action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   @doc """
     Function to handle GET requests to `/api/v2/validators/stability` endpoint.
@@ -168,5 +172,25 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       validators: validators,
       next_page_params: next_page_params
     })
+  end
+
+  @doc """
+  Function to handle GET requests to `/api/v2/validators/zilliqa/:bls_public_key` endpoint.
+  """
+  @spec zilliqa_validator(Plug.Conn.t(), map()) :: Plug.Conn.t() | :error | {:error, :not_found}
+  def zilliqa_validator(conn, %{"bls_public_key" => bls_public_key_string}) do
+    with {:ok, _bls_public_key} <- BLSPublicKey.cast(bls_public_key_string),
+         {:ok, staker} <- ValidatorZilliqa.bls_public_key_to_staker(bls_public_key_string, api?: true) do
+      render(conn, :zilliqa_validator, %{validator: staker})
+    else
+      :error ->
+        conn
+        |> put_view(ApiView)
+        |> put_status(:bad_request)
+        |> render(:message, %{message: "Invalid bls public key"})
+
+      error ->
+        error
+    end
   end
 end

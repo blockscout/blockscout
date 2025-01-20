@@ -395,6 +395,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         :zilliqa ->
           scope "/zilliqa" do
             get("/", V2.ValidatorController, :zilliqa_validators_list)
+            get("/:bls_public_key", V2.ValidatorController, :zilliqa_validator)
           end
 
         _ ->

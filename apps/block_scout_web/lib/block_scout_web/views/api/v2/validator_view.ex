@@ -15,6 +15,10 @@ defmodule BlockScoutWeb.API.V2.ValidatorView do
     %{"items" => Enum.map(validators, &prepare_zilliqa_validator(&1)), "next_page_params" => next_page_params}
   end
 
+  def render("zilliqa_validator.json", %{validator: validator}) do
+    prepare_zilliqa_validator(validator)
+  end
+
   defp prepare_stability_validator(validator) do
     %{
       "address" => Helper.address_with_info(nil, validator.address, validator.address_hash, true),

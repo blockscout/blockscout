@@ -80,6 +80,19 @@ defmodule Explorer.Chain.Zilliqa.Staker do
   end
 
   @doc """
+  Get staker by BLS public key.
+  """
+  @spec bls_public_key_to_staker(binary(), keyword()) :: {:ok, t()} | {:error, :not_found}
+  def bls_public_key_to_staker(bls_public_key, options \\ []) do
+    staker = Chain.select_repo(options).get(__MODULE__, bls_public_key)
+
+    case staker do
+      nil -> {:error, :not_found}
+      staker -> {:ok, staker}
+    end
+  end
+
+  @doc """
   Get paginated list of active stakers.
   """
   @spec paginated_active_stakers(keyword()) :: [t()]
