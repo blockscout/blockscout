@@ -20,7 +20,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   Specifies the type of operation to be performed on the database index.
 
   ## Returns
-  - `:add` - Indicates that the operation is to add a new index.
+  - `:create` - Indicates that the operation is to add a new index.
   - `:drop` - Indicates that the operation is to drop an existing index.
   """
   @callback operation_type :: :create | :drop
