@@ -11,7 +11,6 @@ defmodule EthereumJSONRPC.Arbitrum do
 
   require Logger
   alias ABI.TypeDecoder
-  alias Explorer.Chain
   alias Explorer.Chain.Address
 
   @typedoc """
@@ -267,8 +266,7 @@ defmodule EthereumJSONRPC.Arbitrum do
         true -> raise ArgumentError, "Unsupported address format"
       end
 
-    padded_hex =
-      hex
+    hex
       |> String.trim_leading("0")
       |> String.pad_leading(40, "0")
       |> (&("0x" <> &1)).()
