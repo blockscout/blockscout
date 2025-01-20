@@ -24,6 +24,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   alias Explorer.Chain.Arbitrum.Reader.API.General, as: GeneralReader
   alias Explorer.Chain.Arbitrum.Reader.API.Messages, as: MessagesReader
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: SettlementReader
+  alias Explorer.Chain.Arbitrum.Reader.Indexer.Messages, as: MessagesIndexerReader
   alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Hash.Address
   alias Indexer.Helper, as: IndexerHelper
@@ -59,6 +60,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     logs
     |> Enum.map(fn log ->
       msg = Enum.find(messages, fn msg -> msg.message_id == Hash.to_integer(log.fourth_topic) end)
+
       # `msg` is needed to retrieve the message status
       # Regularly the message should be found, but in rare cases (database inconsistent, fetcher issues) it may omit.
       # In this case log_to_withdrawal/1 will be used to retrieve L2->L1 message status from the RPC node
@@ -187,6 +189,9 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     log_to_withdrawal(log)
   end
 
+  # TODO: Consider adding a caching mechanism here to reduce the number of DB operations.
+  # Keep in mind that caching Withdraw here may cause incorrect behavior due to
+  # the variable fields (status, completion_transaction_hash).
   defp log_to_withdrawal(log, message) do
     # getting needed fields from the L2ToL1Tx event
     fields =
@@ -248,8 +253,10 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # current status by comparing the message ID with the total count of messages sent
   # from L2.
   #
-  # This function will always set `completion_transaction_hash` as nil because it's difficult
-  # to determine the completion transaction hash directly from the contract.
+  # This function attempts to extract completion_transaction_hash from
+  # `Explorer.Chain.Arbitrum.Reader.Indexer.Messages` because extracting it directly
+  # from the contract is too complex. So keep in mind that there is a possibility of
+  # a nil value in this field for relayed withdrawals.
   #
   # ## Parameters
   # - `log`: The L2ToL1Tx event log containing withdrawal information
@@ -275,8 +282,17 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     {:ok, caller_address} = Hash.Address.cast(fields.caller)
     {:ok, destination_address} = Hash.Address.cast(fields.destination)
 
+    message_id = Hash.to_integer(log.fourth_topic)
+
+    # try to find indexed L1 execution for the message
+    execution_transaction_hash =
+      case MessagesIndexerReader.l1_executions([message_id]) do
+        [execution] -> execution.execution_transaction.hash
+        _ -> nil
+      end
+
     %Explorer.Arbitrum.Withdraw{
-      message_id: Hash.to_integer(log.fourth_topic),
+      message_id: message_id,
       status: status,
       caller: caller_address,
       destination: destination_address,
@@ -286,7 +302,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
       callvalue: fields.callvalue,
       data: "0x" <> data_hex,
       token: token,
-      completion_transaction_hash: nil
+      completion_transaction_hash: execution_transaction_hash
     }
   end
 
@@ -397,6 +413,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     json_l1_rpc_named_arguments = get_json_rpc(:l1)
 
     # getting additional token properties needed to display purposes
+    # TODO: it's need to cache token_info (e.g. with Explorer.Chain.OrderedCache) to reduce requests number
     token_info = ERC20.fetch_token_properties(ArbitrumRpc.value_to_address(token), json_l1_rpc_named_arguments)
 
     %{
