@@ -6,14 +6,22 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAsc
   use Explorer.Migrator.HeavyDbIndexOperation
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Migrator.HeavyDbIndexOperation
+  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @migration_name "heavy_indexes_drop_logs_block_number_asc_index_asc_index"
+  @table_name :logs
   @index_name "logs_block_number_ASC__index_ASC_index"
+  @operation_type :drop
 
   @impl HeavyDbIndexOperation
   def migration_name, do: @migration_name
+
+  @impl HeavyDbIndexOperation
+  def table_name, do: @table_name
+
+  @impl HeavyDbIndexOperation
+  def operation_type, do: @operation_type
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations do
@@ -38,6 +46,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAsc
   @impl HeavyDbIndexOperation
   def restart_db_index_operation do
     HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name, false)
+  end
+
+  @impl HeavyDbIndexOperation
+  def running_heavy_migration_exists? do
+    MigrationStatus.running_heavy_migration_for_table_exists?(@table_name)
   end
 
   @impl HeavyDbIndexOperation

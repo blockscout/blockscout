@@ -29,20 +29,20 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :tt_denormalization_finished,
     key: :sanitize_duplicated_log_index_logs_finished,
     key: :backfill_multichain_search_db_finished,
-    key: :heavy_indexes_add_logs_block_hash_index_finished,
+    key: :heavy_indexes_create_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
-    key: :heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index_finished,
+    key: :heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished,
     key: :heavy_indexes_drop_logs_address_hash_index_finished,
     key: :heavy_indexes_drop_logs_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_logs_index_index_finished,
-    key: :heavy_indexes_add_logs_address_hash_first_topic_block_number_index_index_finished,
+    key: :heavy_indexes_create_logs_address_hash_first_topic_block_number_index_index_finished,
     key: :heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index_finished,
     key: :heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_token_transfers_to_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_token_transfers_block_number_index_finished,
     key: :heavy_indexes_drop_internal_transactions_from_address_hash_index_finished,
-    key: :heavy_indexes_add_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished,
+    key: :heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished,
     key: :arbitrum_da_records_normalization_finished
 
   @dialyzer :no_match
@@ -58,10 +58,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   }
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
-    AddInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
-    AddLogsAddressHashBlockNumberIndexIndex,
-    AddLogsAddressHashFirstTopicBlockNumberIndexIndex,
-    AddLogsBlockHashIndex,
+    CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
+    CreateLogsAddressHashBlockNumberIndexIndex,
+    CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
+    CreateLogsBlockHashIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
     DropLogsAddressHashTransactionHashIndex,
@@ -122,9 +122,9 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     {:return, false}
   end
 
-  defp handle_fallback(:heavy_indexes_add_logs_block_hash_index_finished) do
+  defp handle_fallback(:heavy_indexes_create_logs_block_hash_index_finished) do
     Task.start_link(fn ->
-      set_heavy_indexes_add_logs_block_hash_index_finished(AddLogsBlockHashIndex.migration_finished?())
+      set_heavy_indexes_create_logs_block_hash_index_finished(CreateLogsBlockHashIndex.migration_finished?())
     end)
 
     {:return, false}
@@ -140,10 +140,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     {:return, false}
   end
 
-  defp handle_fallback(:heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index_finished) do
+  defp handle_fallback(:heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished) do
     Task.start_link(fn ->
-      set_heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index_finished(
-        AddLogsAddressHashBlockNumberIndexIndex.migration_finished?()
+      set_heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished(
+        CreateLogsAddressHashBlockNumberIndexIndex.migration_finished?()
       )
     end)
 
@@ -176,10 +176,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     {:return, false}
   end
 
-  defp handle_fallback(:heavy_indexes_add_logs_address_hash_first_topic_block_number_index_index_finished) do
+  defp handle_fallback(:heavy_indexes_create_logs_address_hash_first_topic_block_number_index_index_finished) do
     Task.start_link(fn ->
-      set_heavy_indexes_add_logs_address_hash_first_topic_block_number_index_index_finished(
-        AddLogsAddressHashFirstTopicBlockNumberIndexIndex.migration_finished?()
+      set_heavy_indexes_create_logs_address_hash_first_topic_block_number_index_index_finished(
+        CreateLogsAddressHashFirstTopicBlockNumberIndexIndex.migration_finished?()
       )
     end)
 
@@ -247,11 +247,11 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   end
 
   defp handle_fallback(
-         :heavy_indexes_add_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished
+         :heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished
        ) do
     Task.start_link(fn ->
-      set_heavy_indexes_add_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(
-        AddInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex.migration_finished?()
+      set_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(
+        CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex.migration_finished?()
       )
     end)
 

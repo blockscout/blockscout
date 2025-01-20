@@ -1,6 +1,6 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberIndexIndex do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberIndexIndex do
   @moduledoc """
-  Add B-tree index `logs_address_hash_block_number_DESC_index_DESC_index` on `logs` table for (`address_hash`, `block_number DESC`, `index DESC`) columns.
+  Create B-tree index `logs_address_hash_block_number_DESC_index_DESC_index` on `logs` table for (`address_hash`, `block_number DESC`, `index DESC`) columns.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -8,25 +8,30 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberI
   require Logger
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Migrator.HeavyDbIndexOperation
+  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
-  @migration_name "heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index"
+  @table_name :logs
   @index_name "logs_address_hash_block_number_DESC_index_DESC_index"
-  @table_name "logs"
+  @operation_type :create
+  @migration_name "heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index"
   @table_columns ["address_hash", "block_number DESC", "index DESC"]
   @dependent_from_migrations [
     "heavy_indexes_drop_logs_block_number_asc_index_asc_index",
-    "heavy_indexes_add_logs_block_hash_index"
+    "heavy_indexes_create_logs_block_hash_index"
   ]
 
   @impl HeavyDbIndexOperation
   def migration_name, do: @migration_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations do
-    @dependent_from_migrations
-  end
+  def table_name, do: @table_name
+
+  @impl HeavyDbIndexOperation
+  def operation_type, do: @operation_type
+
+  @impl HeavyDbIndexOperation
+  def dependent_from_migrations, do: @dependent_from_migrations
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
@@ -49,7 +54,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberI
   end
 
   @impl HeavyDbIndexOperation
+  def running_heavy_migration_exists? do
+    MigrationStatus.running_heavy_migration_for_table_exists?(@table_name)
+  end
+
+  @impl HeavyDbIndexOperation
   def update_cache do
-    BackgroundMigrations.set_heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index_finished(true)
+    BackgroundMigrations.set_heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished(true)
   end
 end

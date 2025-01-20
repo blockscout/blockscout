@@ -1,6 +1,6 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex do
   @moduledoc """
-  Add B-tree index on `logs` table for `block_hash` column.
+  Create B-tree index on `logs` table for `block_hash` column.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -8,12 +8,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex do
   require Logger
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Migrator.HeavyDbIndexOperation
+  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
-  @migration_name "heavy_indexes_add_logs_block_hash_index"
+  @table_name :logs
   @index_name "logs_block_hash_index"
-  @table_name "logs"
+  @operation_type :create
+  @migration_name "heavy_indexes_create_logs_block_hash_index"
   @table_columns ["block_hash"]
   @dependent_from_migrations ["heavy_indexes_drop_logs_block_number_asc_index_asc_index"]
 
@@ -21,9 +22,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex do
   def migration_name, do: @migration_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations do
-    @dependent_from_migrations
-  end
+  def table_name, do: @table_name
+
+  @impl HeavyDbIndexOperation
+  def operation_type, do: @operation_type
+
+  @impl HeavyDbIndexOperation
+  def dependent_from_migrations, do: @dependent_from_migrations
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
@@ -46,7 +51,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex do
   end
 
   @impl HeavyDbIndexOperation
+  def running_heavy_migration_exists? do
+    MigrationStatus.running_heavy_migration_for_table_exists?(@table_name)
+  end
+
+  @impl HeavyDbIndexOperation
   def update_cache do
-    BackgroundMigrations.set_heavy_indexes_add_logs_block_hash_index_finished(true)
+    BackgroundMigrations.set_heavy_indexes_create_logs_block_hash_index_finished(true)
   end
 end

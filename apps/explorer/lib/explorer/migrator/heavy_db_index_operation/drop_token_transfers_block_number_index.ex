@@ -6,11 +6,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberI
   use Explorer.Migrator.HeavyDbIndexOperation
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Migrator.HeavyDbIndexOperation
+  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @migration_name "heavy_indexes_drop_token_transfers_block_number_index"
+  @table_name :token_transfers
   @index_name "token_transfers_block_number_index"
+  @operation_type :drop
   @dependent_from_migrations [
     "heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index",
     "heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index",
@@ -22,9 +24,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberI
   def migration_name, do: @migration_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations do
-    @dependent_from_migrations
-  end
+  def table_name, do: @table_name
+
+  @impl HeavyDbIndexOperation
+  def operation_type, do: @operation_type
+
+  @impl HeavyDbIndexOperation
+  def dependent_from_migrations, do: @dependent_from_migrations
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
@@ -44,6 +50,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberI
   @impl HeavyDbIndexOperation
   def restart_db_index_operation do
     HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name, false)
+  end
+
+  @impl HeavyDbIndexOperation
+  def running_heavy_migration_exists? do
+    MigrationStatus.running_heavy_migration_for_table_exists?(@table_name)
   end
 
   @impl HeavyDbIndexOperation

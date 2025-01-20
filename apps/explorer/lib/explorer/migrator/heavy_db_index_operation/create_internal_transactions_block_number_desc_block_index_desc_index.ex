@@ -1,6 +1,6 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex do
   @moduledoc """
-  Add B-tree index `internal_transactions_block_number_DESC_transaction_index_DESC_index_DESC_index` on `internal_transactions` table for (`block_number` DESC, `transaction_index` DESC, `index` DESC) columns.
+  Create B-tree index `internal_transactions_block_number_DESC_transaction_index_DESC_index_DESC_index` on `internal_transactions` table for (`block_number` DESC, `transaction_index` DESC, `index` DESC) columns.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -8,12 +8,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNu
   require Logger
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Migrator.HeavyDbIndexOperation
+  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
-  @migration_name "heavy_indexes_add_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index"
+  @migration_name "heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index"
+  @table_name :internal_transactions
   @index_name "internal_transactions_block_number_DESC_transaction_index_DESC_index_DESC_index"
-  @table_name "internal_transactions"
+  @operation_type :create
   @table_columns ["block_number DESC", "transaction_index DESC", "index DESC"]
   @dependent_from_migrations ["heavy_indexes_drop_internal_transactions_from_address_hash_index"]
 
@@ -21,9 +22,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNu
   def migration_name, do: @migration_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations do
-    @dependent_from_migrations
-  end
+  def table_name, do: @table_name
+
+  @impl HeavyDbIndexOperation
+  def operation_type, do: @operation_type
+
+  @impl HeavyDbIndexOperation
+  def dependent_from_migrations, do: @dependent_from_migrations
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
@@ -46,8 +51,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNu
   end
 
   @impl HeavyDbIndexOperation
+  def running_heavy_migration_exists? do
+    MigrationStatus.running_heavy_migration_for_table_exists?(@table_name)
+  end
+
+  @impl HeavyDbIndexOperation
   def update_cache do
-    BackgroundMigrations.set_heavy_indexes_add_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(
+    BackgroundMigrations.set_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(
       true
     )
   end

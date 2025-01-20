@@ -1,10 +1,10 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberIndexIndexTest do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberIndexIndexTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper
-  alias Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberIndexIndex
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberIndexIndex
 
   describe "Creates heavy index `logs_address_hash_block_number_DESC_index_DESC_index`" do
     setup do
@@ -19,13 +19,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberI
     end
 
     test "Creates heavy DB index with dependencies" do
-      migration_name = "heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index"
+      migration_name = "heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index"
       index_name = "logs_address_hash_block_number_DESC_index_DESC_index"
 
       assert MigrationStatus.get_status(migration_name) == nil
       assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: false, valid?: nil}
 
-      AddLogsAddressHashBlockNumberIndexIndex.start_link([])
+      CreateLogsAddressHashBlockNumberIndexIndex.start_link([])
       Process.sleep(100)
 
       assert MigrationStatus.get_status(migration_name) == nil
@@ -35,7 +35,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberI
         status: "completed"
       )
 
-      insert(:db_migration_status, migration_name: "heavy_indexes_add_logs_block_hash_index", status: "completed")
+      insert(:db_migration_status, migration_name: "heavy_indexes_create_logs_block_hash_index", status: "completed")
 
       Process.sleep(150)
 
@@ -47,7 +47,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberI
 
       assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: true, valid?: true}
 
-      assert BackgroundMigrations.get_heavy_indexes_add_logs_address_hash_block_number_desc_index_desc_index_finished() ==
+      assert BackgroundMigrations.get_heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished() ==
                true
     end
   end

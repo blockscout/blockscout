@@ -166,13 +166,13 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.SanitizeMissingTokenBalances, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeReplacedTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, :indexer),
-        configure_mode_dependent_process(Explorer.Migrator.HeavyDbIndexOperation.AddLogsBlockHashIndex, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashBlockNumberIndexIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberIndexIndex,
           :indexer
         ),
         configure_mode_dependent_process(
@@ -188,7 +188,7 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.AddLogsAddressHashFirstTopicBlockNumberIndexIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
           :indexer
         ),
         configure_mode_dependent_process(
@@ -216,7 +216,7 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.AddInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),

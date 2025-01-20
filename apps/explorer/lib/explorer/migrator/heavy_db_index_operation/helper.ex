@@ -149,15 +149,15 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   end
 
   @doc """
-  Creates DB index with the given name, if it doesn't exist.
+  Creates DB index with the given name and table name atom, if it doesn't exist.
   """
-  @spec create_db_index(String.t(), String.t(), list()) :: :ok | :error
+  @spec create_db_index(String.t(), atom(), list()) :: :ok | :error
   # sobelow_skip ["SQL"]
-  def create_db_index(raw_index_name, table_name, table_columns) do
+  def create_db_index(raw_index_name, table_name_atom, table_columns) do
     index_name = sanitize_index_name(raw_index_name)
 
     query =
-      "CREATE INDEX #{add_concurrently_flag?()} IF NOT EXISTS \"#{index_name}\" on #{table_name} (#{Enum.join(table_columns, ", ")});"
+      "CREATE INDEX #{add_concurrently_flag?()} IF NOT EXISTS \"#{index_name}\" on #{to_string(table_name_atom)} (#{Enum.join(table_columns, ", ")});"
 
     case SQL.query(Repo, query, []) do
       {:ok, _} ->
@@ -165,7 +165,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
 
       {:error, error} ->
         Logger.error(
-          "Failed to create DB index '#{index_name}' on table '#{table_name}' for columns #{inspect(table_columns)}: #{inspect(error)}"
+          "Failed to create DB index '#{index_name}' on table '#{to_string(table_name_atom)}' for columns #{inspect(table_columns)}: #{inspect(error)}"
         )
 
         :error
