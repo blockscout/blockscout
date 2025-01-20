@@ -15,13 +15,13 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     end
   end
 
-  @spec filter_traceable_block_numbers([integer()]) :: [integer()]
-  def filter_traceable_block_numbers(block_numbers) do
+  @spec filter_traceable_block_numbers([integer() | map()]) :: [integer() | map()]
+  def filter_traceable_block_numbers(data) do
     if trace_ranges_present?() do
       trace_block_ranges = get_trace_block_ranges()
-      Enum.filter(block_numbers, &number_in_ranges?(&1, trace_block_ranges))
+      Enum.filter(data, &number_in_ranges?(extract_block_number(&1), trace_block_ranges))
     else
-      block_numbers
+      data
     end
   end
 
@@ -128,6 +128,30 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     end)
     |> Enum.reverse()
   end
+
+  @doc """
+  Defines a stream reducer that filters out data with non-traceable block number.
+  Applicable for fetchers' `init` function (for modules that implement `BufferedTask`).
+  """
+  @spec stream_reducer_traceable((any(), any() -> any())) :: (any(), any() -> any())
+  def stream_reducer_traceable(reducer) do
+    if trace_ranges_present?() do
+      trace_block_ranges = get_trace_block_ranges()
+
+      fn data, acc ->
+        if number_in_ranges?(extract_block_number(data), trace_block_ranges),
+          do: reducer.(data, acc),
+          else: acc
+      end
+    else
+      fn block_number, acc ->
+        reducer.(block_number, acc)
+      end
+    end
+  end
+
+  defp extract_block_number(%{block_number: block_number}), do: block_number
+  defp extract_block_number(block_number), do: block_number
 
   defp parse_integer(string) do
     case Integer.parse(string) do
