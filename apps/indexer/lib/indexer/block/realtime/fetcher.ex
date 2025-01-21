@@ -31,8 +31,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     ]
 
   alias Ecto.Changeset
-  alias EthereumJSONRPC.Blocks
-  alias EthereumJSONRPC.Subscription
+  alias EthereumJSONRPC.{Blocks, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.AverageBlockTime
@@ -89,6 +88,21 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {:noreply, %__MODULE__{state | timer: timer} |> subscribe_to_new_heads(subscribe_named_arguments)}
   end
 
+  # This handler catches blocks appeared in websocket (if WS is enabled).
+  #
+  # It takes into account the block hash which was lastly polled by the `:poll_latest_block_number` handler: if a block with
+  # the same hash is already polled, the handler ignores it. Otherwise, the handler starts fetching and importing the block, and
+  # schedules a new polling.
+  #
+  # ## Parameters
+  # - `{subscription, {:ok, block}}` where `subscription` is an instance of WS subscription.
+  # - `state` contains service parameters, also including:
+  #   `previous_number` - the block number reported by the previous call.
+  #   `timer` - the timer to call `:poll_latest_block_number` handler next time.
+  #   `last_polled_hash` - the block hash which was polled by the `:poll_latest_block_number` handler on its previous call.
+  #
+  # ## Returns
+  # - `{:noreply, state}` tuple where the `state` is the current or updated GenServer's state.
   @impl GenServer
   def handle_info(
         {subscription, {:ok, %{"number" => quantity, "hash" => hash}}},
@@ -117,16 +131,30 @@ defmodule Indexer.Block.Realtime.Fetcher do
       new_timer = schedule_polling()
 
       {:noreply,
-      %{
-        state
-        | previous_number: number,
-          timer: new_timer
-      }}
+       %{
+         state
+         | previous_number: number,
+           timer: new_timer
+       }}
     else
+      # The block from the websocket must be ignored if this block was already got by the `:poll_latest_block_number` handler
       {:noreply, state}
     end
   end
 
+  # This handler gets the latest block using RPC request to get the latest block number.
+  # It fetches the latest block number, starts its fetching and importing, and schedules the next polling iteration.
+  #
+  # ## Parameters
+  # - `:poll_latest_block_number`: The message that triggers the fetching process.
+  # - `state` contains service parameters, also including:
+  #   `previous_number` - the block number reported by the previous block number fetching.
+  #   `timer` - the timer to call this handler next time.
+  #   `last_polled_hash` - the block hash which was polled by this handler on its previous call.
+  #
+  # ## Returns
+  # - `{:noreply, state}` tuple where the `state` is the current or updated GenServer's state.
+  #   Contains updated `previous_number`, `timer`, and `last_polled_hash` values.
   @impl GenServer
   def handle_info(
         :poll_latest_block_number,
@@ -138,7 +166,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
       ) do
     {new_previous_number, new_last_polled_hash} =
       case EthereumJSONRPC.fetch_block_by_tag("latest", json_rpc_named_arguments) do
-        {:ok, %Blocks{blocks_params: [%{number: number, hash: hash}]}} when is_nil(previous_number) or number != previous_number ->
+        {:ok, %Blocks{blocks_params: [%{number: number, hash: hash}]}}
+        when is_nil(previous_number) or number != previous_number ->
           number =
             if abnormal_gap?(number, previous_number) do
               new_number = max(number, previous_number)
