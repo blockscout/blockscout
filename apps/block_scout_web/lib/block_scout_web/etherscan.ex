@@ -1491,16 +1491,15 @@ defmodule BlockScoutWeb.Etherscan do
     name: "txlistinternal",
     description:
       "Get internal transactions by transaction or address hash. Up to a maximum of 10,000 internal transactions. Also available through a GraphQL 'transaction' query.",
-    required_params: [
+    required_params: [],
+    optional_params: [
       %{
         key: "txhash",
         placeholder: "transactionHash",
         type: "string",
         description:
           "Transaction hash. Hash of contents of the transaction. A transaction hash or address hash is required."
-      }
-    ],
-    optional_params: [
+      },
       %{
         key: "address",
         placeholder: "addressHash",

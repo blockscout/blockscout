@@ -2483,11 +2483,7 @@ defmodule Explorer.Chain do
   @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
           {:ok, Block.block_number()} | {:error, :not_found}
   def timestamp_to_block_number(given_timestamp, closest, from_api) do
-    consensus_blocks_query =
-      from(
-        block in Block,
-        where: block.consensus == true
-      )
+    consensus_blocks_query = Block.consensus_blocks_query()
 
     gt_timestamp_query =
       from(

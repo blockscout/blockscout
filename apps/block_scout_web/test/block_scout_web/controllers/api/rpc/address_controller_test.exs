@@ -1789,22 +1789,91 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
   end
 
-  describe "txlistinternal" do
-    test "with missing txhash and address", %{conn: conn} do
+  describe "txlistinternal with no address or transaction hash" do
+    setup do
       params = %{
         "module" => "account",
         "action" => "txlistinternal"
       }
 
+      {:ok, %{params: params}}
+    end
+
+    test "returns empty result, if no internal transactions", %{conn: conn, params: params} do
       response =
         conn
         |> get("/api", params)
         |> json_response(200)
 
-      assert response["message"] =~ "txhash or address is required"
+      assert response["message"] =~ "No internal transactions found"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
-      refute response["result"]
+      assert response["result"] == []
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "returns internal transaction", %{conn: conn, params: params} do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: address_2)
+        |> with_block(block)
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 0,
+        from_address: address,
+        to_address: address_2,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        block_number: block.number
+      )
+
+      internal_transaction =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 1,
+          from_address: address,
+          to_address: address_2,
+          block_hash: transaction.block_hash,
+          block_index: 1,
+          block_number: block.number
+        )
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction.from_address_hash}",
+          "to" => "#{internal_transaction.to_address_hash}",
+          "value" => "#{internal_transaction.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction.input}",
+          "type" => "#{internal_transaction.type}",
+          "callType" => "#{internal_transaction.call_type}",
+          "gas" => "#{internal_transaction.gas}",
+          "gasUsed" => "#{internal_transaction.gas_used}",
+          "index" => "#{internal_transaction.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction.error}"
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
   end

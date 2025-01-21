@@ -128,23 +128,37 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def txlistinternal(conn, params) do
     case {Map.fetch(params, "txhash"), Map.fetch(params, "address")} do
       {:error, :error} ->
-        render(conn, :error, error: "Query parameter txhash or address is required")
+        txlistinternal(conn, params, :no_param)
 
-      {{:ok, txhash_param}, :error} ->
-        txlistinternal(conn, txhash_param, :txhash)
+      {{:ok, transaction_param}, :error} ->
+        txlistinternal(conn, transaction_param, :transaction)
 
       {:error, {:ok, address_param}} ->
         txlistinternal(conn, params, address_param, :address)
     end
   end
 
-  def txlistinternal(conn, txhash_param, :txhash) do
-    with {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
+  def txlistinternal(conn, transaction_param, :transaction) do
+    with {:format, {:ok, transaction_hash}} <- to_transaction_hash(transaction_param),
          {:ok, internal_transactions} <- list_internal_transactions(transaction_hash) do
       render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
     else
       {:format, :error} ->
         render(conn, :error, error: "Invalid txhash format")
+
+      {:error, :not_found} ->
+        render(conn, :error, error: "No internal transactions found", data: [])
+    end
+  end
+
+  def txlistinternal(conn, params, :no_param) do
+    options =
+      params
+      |> optional_params()
+
+    case list_internal_transactions(:all, options) do
+      {:ok, internal_transactions} ->
+        render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
 
       {:error, :not_found} ->
         render(conn, :error, error: "No internal transactions found", data: [])
@@ -512,6 +526,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
   defp list_internal_transactions(transaction_hash) do
     case Etherscan.list_internal_transactions(transaction_hash) do
+      [] -> {:error, :not_found}
+      internal_transactions -> {:ok, internal_transactions}
+    end
+  end
+
+  defp list_internal_transactions(:all, options) do
+    case Etherscan.list_internal_transactions(:all, options) do
       [] -> {:error, :not_found}
       internal_transactions -> {:ok, internal_transactions}
     end
