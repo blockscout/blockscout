@@ -18,6 +18,14 @@ defmodule Explorer.Chain.TokenTest do
       assert token_from_db.contract_address_hash == token.contract_address_hash
     end
 
+    test "filters cataloged tokens with nil metadata_updated_at" do
+      token = insert(:token, cataloged: true, metadata_updated_at: nil)
+
+      [token_from_db] = Repo.all(Token.cataloged_tokens())
+
+      assert token_from_db.contract_address_hash == token.contract_address_hash
+    end
+
     test "filter tokens by metadata_updated_at field" do
       {:ok, date} = DateTime.now("Etc/UTC")
       hours_ago_date = DateTime.add(date, -:timer.hours(60), :millisecond)
