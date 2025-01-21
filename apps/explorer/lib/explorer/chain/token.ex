@@ -203,7 +203,7 @@ defmodule Explorer.Chain.Token do
     some_time_ago_updated
     |> Token.cataloged_tokens()
     |> Chain.add_fetcher_limit(limited?)
-    |> order_by(asc: :updated_at)
+    |> order_by(asc_nulls_first: :metadata_updated_at)
     |> Repo.stream_reduce(initial, reducer)
   end
 
