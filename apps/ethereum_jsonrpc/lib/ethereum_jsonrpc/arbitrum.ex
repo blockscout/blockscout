@@ -11,7 +11,6 @@ defmodule EthereumJSONRPC.Arbitrum do
 
   require Logger
   alias ABI.TypeDecoder
-  alias Explorer.Chain.Address
 
   @typedoc """
   This type describes significant fields which can be extracted from
@@ -249,13 +248,13 @@ defmodule EthereumJSONRPC.Arbitrum do
   end
 
   @doc """
-    Casts a value into an checksummed Ethereum address (hex-string, 0x-prefixed).
+    Casts a value into an Ethereum address (hex-string, 0x-prefixed, not checksummed).
 
     ## Parameters
       - value: `0x` prefixed hex string or byte array to be cast into an Ethereum address.
 
     ## Returns
-      - A string representing the checksummed Ethereum address in hex format, prefixed with '0x'
+      - A string representing the Ethereum address in hex format, prefixed with '0x'
   """
   @spec value_to_address(binary()) :: String.t()
   def value_to_address(value) do
@@ -266,11 +265,12 @@ defmodule EthereumJSONRPC.Arbitrum do
         true -> raise ArgumentError, "Unsupported address format"
       end
 
-    hex
-    |> String.trim_leading("0")
-    |> String.pad_leading(40, "0")
-    |> (&("0x" <> &1)).()
-    |> Address.checksum()
+    padded_hex =
+      hex
+      |> String.trim_leading("0")
+      |> String.pad_leading(40, "0")
+
+    "0x" <> padded_hex
   end
 
   @doc """
