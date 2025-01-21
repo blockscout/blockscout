@@ -183,7 +183,7 @@ defmodule Explorer.Chain.Token do
     from(
       token in __MODULE__,
       where: token.cataloged == true,
-      where: token.metadata_updated_at <= ^some_time_ago_date,
+      where: is_nil(token.metadata_updated_at) or token.metadata_updated_at <= ^some_time_ago_date,
       where: is_nil(token.skip_metadata) or token.skip_metadata == false
     )
   end
