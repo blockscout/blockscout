@@ -213,8 +213,13 @@ defmodule Explorer.Chain.Token do
   As part of updating token, an additional record is inserted for
   naming the address for reference if a name is provided for a token.
   """
-  @spec update(Token.t(), map(), boolean()) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
-  def update(%Token{contract_address_hash: address_hash} = token, params \\ %{}, info_from_admin_panel? \\ false) do
+  @spec update(Token.t(), map(), boolean(), :base | :metadata_update) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
+  def update(
+        %Token{contract_address_hash: address_hash} = token,
+        params \\ %{},
+        info_from_admin_panel? \\ false,
+        operation_type \\ :base
+      ) do
     params =
       if Map.has_key?(params, :total_supply) do
         Map.put(params, :total_supply_updated_at_block, BlockNumber.get_max())
@@ -242,8 +247,15 @@ defmodule Explorer.Chain.Token do
     stale_error_field = :contract_address_hash
     stale_error_message = "is up to date"
 
+    on_conflict =
+      if operation_type == :metadata_update do
+        token_metadata_update_on_conflict()
+      else
+        Runner.Tokens.default_on_conflict()
+      end
+
     token_opts = [
-      on_conflict: Runner.Tokens.default_on_conflict(),
+      on_conflict: on_conflict,
       conflict_target: :contract_address_hash,
       stale_error_field: stale_error_field,
       stale_error_message: stale_error_message
@@ -276,6 +288,30 @@ defmodule Explorer.Chain.Token do
       {:error, :token, changeset, _} ->
         {:error, changeset}
     end
+  end
+
+  defp token_metadata_update_on_conflict do
+    from(
+      token in Token,
+      update: [
+        set: [
+          name: fragment("COALESCE(EXCLUDED.name, ?)", token.name),
+          symbol: fragment("COALESCE(EXCLUDED.symbol, ?)", token.symbol),
+          total_supply: fragment("COALESCE(EXCLUDED.total_supply, ?)", token.total_supply),
+          decimals: fragment("COALESCE(EXCLUDED.decimals, ?)", token.decimals),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at),
+          metadata_updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.metadata_updated_at)
+        ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals) IS DISTINCT FROM (?, ?, ?, ?)",
+          token.name,
+          token.symbol,
+          token.total_supply,
+          token.decimals
+        )
+    )
   end
 
   def tokens_by_contract_address_hashes(contract_address_hashes) do

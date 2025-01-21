@@ -88,6 +88,6 @@ defmodule Indexer.Fetcher.TokenUpdater do
   end
 
   def update_metadata(%Token{} = token, metadata) do
-    Token.update(token, metadata)
+    Token.update(token, metadata, false, :metadata_update)
   end
 end
