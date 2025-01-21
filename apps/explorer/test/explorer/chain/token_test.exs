@@ -31,7 +31,6 @@ defmodule Explorer.Chain.TokenTest do
       hours_ago_date = DateTime.add(date, -:timer.hours(60), :millisecond)
 
       token = insert(:token, cataloged: true, metadata_updated_at: hours_ago_date)
-      insert(:token, cataloged: true)
 
       [token_from_db] = Repo.all(Token.cataloged_tokens())
 
