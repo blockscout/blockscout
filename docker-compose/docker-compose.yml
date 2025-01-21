@@ -33,11 +33,7 @@ services:
         RELEASE_VERSION: 6.10.1
     links:
       - db:database
-    environment:
-        ETHEREUM_JSONRPC_HTTP_URL: https://evm-ignition-0.hoku.sh/
-        ETHEREUM_JSONRPC_TRACE_URL: https://evm-ignition-0.hoku.sh/
-        ETHEREUM_JSONRPC_WS_URL: wss://evm-ignition-0.hoku.sh/
-        CHAIN_ID: '2481632'
+    
 
   # nft_media_handler:
   #   depends_on:
