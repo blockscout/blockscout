@@ -60,7 +60,7 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
       token_params = MetadataRetriever.get_total_supply_of(address_hash_string)
 
       if token_params !== %{} do
-        {:ok, _} = Chain.update_token(token, token_params)
+        {:ok, _} = Token.update(token, token_params)
       end
     end
 

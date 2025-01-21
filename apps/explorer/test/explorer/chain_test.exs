@@ -3509,40 +3509,6 @@ defmodule Explorer.ChainTest do
     assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [uncatalog_address]}
   end
 
-  describe "stream_cataloged_tokens/2" do
-    test "reduces with given reducer and accumulator" do
-      today = DateTime.utc_now()
-      yesterday = Timex.shift(today, days: -1)
-      token = insert(:token, cataloged: true, updated_at: yesterday)
-      insert(:token, cataloged: false)
-      {:ok, [token_from_func]} = Chain.stream_cataloged_tokens([], &[&1 | &2], 1)
-      assert token_from_func.contract_address_hash == token.contract_address_hash
-    end
-
-    test "sorts the tokens by updated_at in ascending order" do
-      today = DateTime.utc_now()
-      yesterday = Timex.shift(today, days: -1)
-      two_days_ago = Timex.shift(today, days: -2)
-
-      token1 = insert(:token, %{cataloged: true, updated_at: yesterday})
-      token2 = insert(:token, %{cataloged: true, updated_at: two_days_ago})
-
-      expected_response =
-        [token1, token2]
-        |> Enum.sort(&(Timex.to_unix(&1.updated_at) < Timex.to_unix(&2.updated_at)))
-        |> Enum.map(& &1.contract_address_hash)
-
-      {:ok, response} = Chain.stream_cataloged_tokens([], &(&2 ++ [&1]), 12)
-
-      formatted_response =
-        response
-        |> Enum.sort(&(Timex.to_unix(&1.updated_at) < Timex.to_unix(&2.updated_at)))
-        |> Enum.map(& &1.contract_address_hash)
-
-      assert formatted_response == expected_response
-    end
-  end
-
   describe "transaction_has_token_transfers?/1" do
     test "returns true if transaction has token transfers" do
       transaction = insert(:transaction)
@@ -3555,83 +3521,6 @@ defmodule Explorer.ChainTest do
       transaction = insert(:transaction)
 
       assert Chain.transaction_has_token_transfers?(transaction.hash) == false
-    end
-  end
-
-  describe "update_token/2" do
-    test "updates a token's values" do
-      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
-
-      update_params = %{
-        name: "Hodl Token",
-        symbol: "HT",
-        total_supply: 10,
-        decimals: Decimal.new(1),
-        cataloged: true
-      }
-
-      assert {:ok, updated_token} = Chain.update_token(token, update_params)
-      assert updated_token.name == update_params.name
-      assert updated_token.symbol == update_params.symbol
-      assert updated_token.total_supply == Decimal.new(update_params.total_supply)
-      assert updated_token.decimals == update_params.decimals
-      assert updated_token.cataloged
-    end
-
-    test "trims names of whitespace" do
-      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
-
-      update_params = %{
-        name: "      Hodl Token     ",
-        symbol: "HT",
-        total_supply: 10,
-        decimals: 1,
-        cataloged: true
-      }
-
-      assert {:ok, updated_token} = Chain.update_token(token, update_params)
-      assert updated_token.name == "Hodl Token"
-      assert Repo.get_by(Address.Name, name: "Hodl Token")
-    end
-
-    test "inserts an address name record when token has a name in params" do
-      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
-
-      update_params = %{
-        name: "Hodl Token",
-        symbol: "HT",
-        total_supply: 10,
-        decimals: 1,
-        cataloged: true
-      }
-
-      Chain.update_token(token, update_params)
-      assert Repo.get_by(Address.Name, name: update_params.name, address_hash: token.contract_address_hash)
-    end
-
-    test "does not insert address name record when token doesn't have name in params" do
-      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
-
-      update_params = %{
-        cataloged: true
-      }
-
-      Chain.update_token(token, update_params)
-      refute Repo.get_by(Address.Name, address_hash: token.contract_address_hash)
-    end
-
-    test "stores token with big 'decimals' values" do
-      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
-
-      update_params = %{
-        name: "Hodl Token",
-        symbol: "HT",
-        total_supply: 10,
-        decimals: 1_000_000_000_000_000_000,
-        cataloged: true
-      }
-
-      assert {:ok, _updated_token} = Chain.update_token(token, update_params)
     end
   end
 
