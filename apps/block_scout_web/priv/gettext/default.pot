@@ -986,7 +986,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/account/api_key/index.html.eex:12
 #, elixir-autogen, elixir-format
-msgid "Create an API key to use with your RPC и EthRPC API requests."
+msgid "Create an API key to use with your RPC and EthRPC API requests."
 msgstr ""
 
 #: lib/block_scout_web/views/internal_transaction_view.ex:26
