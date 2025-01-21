@@ -27,6 +27,7 @@ defmodule Explorer.Chain.Token.Schema do
         field(:holder_count, :integer)
         field(:skip_metadata, :boolean)
         field(:total_supply_updated_at_block, :integer)
+        field(:metadata_updated_at, :utc_datetime_usec)
         field(:fiat_value, :decimal)
         field(:circulating_market_cap, :decimal)
         field(:icon_url, :string)
@@ -182,7 +183,7 @@ defmodule Explorer.Chain.Token do
     from(
       token in __MODULE__,
       where: token.cataloged == true,
-      where: token.updated_at <= ^some_time_ago_date,
+      where: token.metadata_updated_at <= ^some_time_ago_date,
       where: is_nil(token.skip_metadata) or token.skip_metadata == false
     )
   end
@@ -225,7 +226,11 @@ defmodule Explorer.Chain.Token do
 
     token_changeset =
       token
-      |> Token.changeset(Map.put(filtered_params, :updated_at, DateTime.utc_now()))
+      |> Token.changeset(
+        filtered_params
+        |> Map.put(:updated_at, DateTime.utc_now())
+        |> Map.put(:metadata_updated_at, DateTime.utc_now())
+      )
       |> (&if(token.is_verified_via_admin_panel && !info_from_admin_panel?,
             do: &1 |> Changeset.delete_change(:symbol) |> Changeset.delete_change(:name),
             else: &1

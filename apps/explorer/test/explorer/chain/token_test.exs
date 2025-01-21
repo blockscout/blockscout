@@ -10,7 +10,7 @@ defmodule Explorer.Chain.TokenTest do
     test "filters only cataloged tokens" do
       {:ok, date} = DateTime.now("Etc/UTC")
       hours_ago_date = DateTime.add(date, -:timer.hours(60), :millisecond)
-      token = insert(:token, cataloged: true, updated_at: hours_ago_date)
+      token = insert(:token, cataloged: true, metadata_updated_at: hours_ago_date)
       insert(:token, cataloged: false)
 
       [token_from_db] = Repo.all(Token.cataloged_tokens())
@@ -18,11 +18,11 @@ defmodule Explorer.Chain.TokenTest do
       assert token_from_db.contract_address_hash == token.contract_address_hash
     end
 
-    test "filter tokens by updated_at field" do
+    test "filter tokens by metadata_updated_at field" do
       {:ok, date} = DateTime.now("Etc/UTC")
       hours_ago_date = DateTime.add(date, -:timer.hours(60), :millisecond)
 
-      token = insert(:token, cataloged: true, updated_at: hours_ago_date)
+      token = insert(:token, cataloged: true, metadata_updated_at: hours_ago_date)
       insert(:token, cataloged: true)
 
       [token_from_db] = Repo.all(Token.cataloged_tokens())
@@ -35,30 +35,30 @@ defmodule Explorer.Chain.TokenTest do
     test "reduces with given reducer and accumulator" do
       today = DateTime.utc_now()
       yesterday = Timex.shift(today, days: -1)
-      token = insert(:token, cataloged: true, updated_at: yesterday)
+      token = insert(:token, cataloged: true, metadata_updated_at: yesterday)
       insert(:token, cataloged: false)
       {:ok, [token_from_func]} = Token.stream_cataloged_tokens([], &[&1 | &2], 1)
       assert token_from_func.contract_address_hash == token.contract_address_hash
     end
 
-    test "sorts the tokens by updated_at in ascending order" do
+    test "sorts the tokens by metadata_updated_at in ascending order" do
       today = DateTime.utc_now()
       yesterday = Timex.shift(today, days: -1)
       two_days_ago = Timex.shift(today, days: -2)
 
-      token1 = insert(:token, %{cataloged: true, updated_at: yesterday})
-      token2 = insert(:token, %{cataloged: true, updated_at: two_days_ago})
+      token1 = insert(:token, %{cataloged: true, metadata_updated_at: yesterday})
+      token2 = insert(:token, %{cataloged: true, metadata_updated_at: two_days_ago})
 
       expected_response =
         [token1, token2]
-        |> Enum.sort(&(Timex.to_unix(&1.updated_at) < Timex.to_unix(&2.updated_at)))
+        |> Enum.sort(&(Timex.to_unix(&1.metadata_updated_at) < Timex.to_unix(&2.metadata_updated_at)))
         |> Enum.map(& &1.contract_address_hash)
 
       {:ok, response} = Token.stream_cataloged_tokens([], &(&2 ++ [&1]), 12)
 
       formatted_response =
         response
-        |> Enum.sort(&(Timex.to_unix(&1.updated_at) < Timex.to_unix(&2.updated_at)))
+        |> Enum.sort(&(Timex.to_unix(&1.metadata_updated_at) < Timex.to_unix(&2.metadata_updated_at)))
         |> Enum.map(& &1.contract_address_hash)
 
       assert formatted_response == expected_response
