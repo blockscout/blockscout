@@ -46,7 +46,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
 
     - `:finished_or_not_started` - Indicates that the operation is either finished or has not started.
     - `:unknown` - Indicates that the status of the operation is unknown.
-    - `{:in_progress, String.t() | nil}` - Indicates that the operation is currently in progress. The optional string provides additional information about the progress.
+    - `:in_progress` - Indicates that the operation is currently in progress. The optional string provides additional information about the progress.
 
   ## Examples
 
@@ -55,12 +55,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
 
       iex> check_db_index_operation_progress()
       :unknown
-
-      iex> check_db_index_operation_progress()
-      {:in_progress, "50% completed"}
   """
   @callback check_db_index_operation_progress() ::
-              :finished_or_not_started | :unknown | {:in_progress, String.t() | nil}
+              :finished_or_not_started | :unknown | :in_progress
 
   @doc """
   Returns the current status of the database index operation.

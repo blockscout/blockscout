@@ -9,59 +9,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   alias Explorer.Repo
 
   @doc """
-  Checks the progress of DB index creation by its name.
-  """
-  @spec check_db_index_creation_progress(String.t()) ::
-          :finished_or_not_started | :unknown | {:in_progress, String.t() | nil}
-  def check_db_index_creation_progress(raw_index_name) do
-    index_name = sanitize_index_name(raw_index_name)
-
-    case SQL.query(
-           Repo,
-           """
-           SELECT
-             NOW()::TIME(0),
-             a.query,
-             p.phase,
-             ROUND(p.blocks_done / p.blocks_total::numeric * 100, 2) AS "% done",
-             p.blocks_total,
-             p.blocks_done,
-             p.tuples_total,
-             p.tuples_done,
-             ai.schemaname,
-             ai.relname,
-             ai.indexrelname
-           FROM pg_stat_progress_create_index p
-           JOIN pg_stat_activity a ON p.pid = a.pid
-           LEFT JOIN pg_stat_all_indexes ai ON ai.relid = p.relid AND ai.indexrelid = p.index_relid
-           WHERE ai.relname = $1;
-           """,
-           [index_name]
-         ) do
-      {:ok, %Postgrex.Result{rows: []}} ->
-        :finished_or_not_started
-
-      {:ok, %Postgrex.Result{command: :select, columns: ["% done"], rows: [[percentage]]}} ->
-        Logger.info("Heavy DB index '#{index_name}' creation progress #{percentage}%")
-
-        if percentage < 100 do
-          {:in_progress, "#{percentage} %"}
-        else
-          :finished_or_not_started
-        end
-
-      {:error, error} ->
-        Logger.error("Failed to check DB index '#{index_name}' creation progress: #{inspect(error)}")
-        :unknown
-    end
-  end
-
-  @doc """
   Checks the progress of DB index dropping by its name.
   """
-  @spec check_db_index_dropping_progress(String.t()) ::
-          :finished_or_not_started | :unknown | {:in_progress, String.t() | nil}
-  def check_db_index_dropping_progress(raw_index_name) do
+  @spec check_db_index_operation_progress(String.t()) ::
+          :finished_or_not_started | :unknown | :in_progress
+  def check_db_index_operation_progress(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
 
     case SQL.query(
@@ -72,7 +24,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
            [drop_index_query_string(index_name)]
          ) do
       {:ok, %Postgrex.Result{command: :select, columns: ["exists"], rows: [[true]]}} ->
-        {:in_progress, nil}
+        :in_progress
 
       {:ok, %Postgrex.Result{command: :select, columns: ["exists"], rows: [[false]]}} ->
         :finished_or_not_started

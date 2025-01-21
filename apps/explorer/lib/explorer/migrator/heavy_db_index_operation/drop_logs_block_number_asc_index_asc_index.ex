@@ -35,7 +35,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAsc
 
   @impl HeavyDbIndexOperation
   def check_db_index_operation_progress do
-    HeavyDbIndexOperationHelper.check_db_index_dropping_progress(@index_name)
+    HeavyDbIndexOperationHelper.check_db_index_operation_progress(@index_name)
   end
 
   @impl HeavyDbIndexOperation
