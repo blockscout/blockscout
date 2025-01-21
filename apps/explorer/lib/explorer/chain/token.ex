@@ -105,7 +105,8 @@ defmodule Explorer.Chain.Token do
              :__meta__,
              :contract_address,
              :inserted_at,
-             :updated_at
+             :updated_at,
+             :metadata_updated_at
            ]}
 
   @derive {Jason.Encoder,
@@ -113,7 +114,8 @@ defmodule Explorer.Chain.Token do
              :__meta__,
              :contract_address,
              :inserted_at,
-             :updated_at
+             :updated_at,
+             :metadata_updated_at
            ]}
 
   @typedoc """
@@ -135,7 +137,7 @@ defmodule Explorer.Chain.Token do
   Explorer.Chain.Token.Schema.generate()
 
   @required_attrs ~w(contract_address_hash type)a
-  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel volume_24h)a
+  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block metadata_updated_at updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel volume_24h)a
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
@@ -174,7 +176,7 @@ defmodule Explorer.Chain.Token do
   @doc """
   Builds an `Ecto.Query` to fetch the cataloged tokens.
 
-  These are tokens with cataloged field set to true, skip_metadata is not true and updated_at is earlier or equal than 48 hours ago.
+  These are tokens with cataloged field set to true, skip_metadata is not true and metadata_updated_at is earlier or equal than 48 hours ago.
   """
   def cataloged_tokens(minutes \\ 2880) do
     date_now = DateTime.utc_now()
@@ -300,7 +302,7 @@ defmodule Explorer.Chain.Token do
           total_supply: fragment("COALESCE(EXCLUDED.total_supply, ?)", token.total_supply),
           decimals: fragment("COALESCE(EXCLUDED.decimals, ?)", token.decimals),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at),
-          metadata_updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.metadata_updated_at)
+          metadata_updated_at: fragment("GREATEST(?, EXCLUDED.metadata_updated_at)", token.metadata_updated_at)
         ]
       ],
       where:
