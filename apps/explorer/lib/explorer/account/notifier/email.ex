@@ -6,6 +6,7 @@ defmodule Explorer.Account.Notifier.Email do
   require Logger
 
   alias Explorer.Account.{Identity, Watchlist, WatchlistAddress, WatchlistNotification}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Repo
 
   import Bamboo.{Email, SendGridHelper}
@@ -29,9 +30,9 @@ defmodule Explorer.Account.Notifier.Email do
     |> add_dynamic_field("username", username(notification))
     |> add_dynamic_field("address_hash", address_hash_string(notification))
     |> add_dynamic_field("address_name", notification.watchlist_address.name)
-    |> add_dynamic_field("transaction_hash", hash_string(notification.transaction_hash))
-    |> add_dynamic_field("from_address_hash", hash_string(notification.from_address_hash))
-    |> add_dynamic_field("to_address_hash", hash_string(notification.to_address_hash))
+    |> add_dynamic_field("transaction_hash", ExplorerHelper.adds_0x_prefix(notification.transaction_hash))
+    |> add_dynamic_field("from_address_hash", ExplorerHelper.adds_0x_prefix(notification.from_address_hash))
+    |> add_dynamic_field("to_address_hash", ExplorerHelper.adds_0x_prefix(notification.to_address_hash))
     |> add_dynamic_field("block_number", notification.block_number)
     |> add_dynamic_field("amount", amount(notification))
     |> add_dynamic_field("name", notification.name)
@@ -89,11 +90,7 @@ defmodule Explorer.Account.Notifier.Email do
   defp address_hash_string(%WatchlistNotification{
          watchlist_address: %WatchlistAddress{address_hash: address_hash}
        }),
-       do: hash_string(address_hash)
-
-  defp hash_string(hash) do
-    "0x" <> Base.encode16(hash.bytes, case: :lower)
-  end
+       do: ExplorerHelper.adds_0x_prefix(address_hash.bytes)
 
   defp direction(notification) do
     affect(notification) <> " " <> place(notification)

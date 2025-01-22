@@ -6,6 +6,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Helper, as: ExplorerHelper
 
   @doc """
     Retrieves the delegate address hash string for an EIP-7702 compatible EOA.
@@ -66,7 +67,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   def get_delegate_address(contract_code_bytes) do
     case contract_code_bytes do
       # 0xef0100 <> address
-      <<239, 1, 0>> <> <<address::binary-size(20)>> -> "0x" <> Base.encode16(address, case: :lower)
+      <<239, 1, 0>> <> <<address::binary-size(20)>> -> ExplorerHelper.adds_0x_prefix(address)
       _ -> nil
     end
   end

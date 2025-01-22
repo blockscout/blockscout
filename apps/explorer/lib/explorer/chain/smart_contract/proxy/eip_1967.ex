@@ -31,7 +31,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   @doc """
   Get implementation address hash string following EIP-1967
   """
-  @spec get_implementation_address_hash_string(Hash.Address.t()) :: nil | :error | binary
+  @spec get_implementation_address_hash_string(Hash.Address.t()) :: nil | :error | binary()
   def get_implementation_address_hash_string(proxy_address_hash) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 

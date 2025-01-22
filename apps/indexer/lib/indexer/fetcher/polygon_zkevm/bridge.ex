@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
-  import Explorer.Helper, only: [decode_data: 2]
+  import Explorer.Helper, only: [adds_0x_prefix: 1, decode_data: 2]
 
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
@@ -378,7 +378,7 @@ defmodule Indexer.Fetcher.PolygonZkevm.Bridge do
 
   defp token_address_by_origin_address(origin_address, origin_network, leaf_type, rollup_network_id_l2) do
     with true <- leaf_type != 1,
-         token_address = "0x" <> Base.encode16(origin_address, case: :lower),
+         token_address = adds_0x_prefix(origin_address),
          true <- token_address != burn_address_hash_string() do
       if origin_network != rollup_network_id_l2 do
         # this is L1 address

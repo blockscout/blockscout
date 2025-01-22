@@ -18,7 +18,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     EIP2535,
     EIP7702,
     EIP930,
-    MasterCopy
+    MasterCopy,
+    ResolvedDelegateProxy
   }
 
   import Explorer.Chain,
@@ -250,7 +251,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   Returns implementation address by following "Clone with immutable arguments" pattern or tries next proxy pattern
   """
   @spec get_implementation_address_hash_string_clones_with_immutable_arguments(Hash.Address.t(), any(), bool()) ::
-          %{implementation_address_hash_strings: [String.t()] | :error | nil, proxy_type: atom() | :unknown}
+          %{implementation_address_hash_strings: [String.t()] | :error | nil, proxy_type: atom()}
   def get_implementation_address_hash_string_clones_with_immutable_arguments(
         proxy_address_hash,
         proxy_abi,
@@ -272,7 +273,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   Returns EIP-7702 implementation address or tries next proxy pattern
   """
   @spec get_implementation_address_hash_string_eip7702(Hash.Address.t(), any(), bool()) ::
-          %{implementation_address_hash_strings: [String.t()] | :error | nil, proxy_type: atom() | :unknown}
+          %{implementation_address_hash_strings: [String.t()] | :error | nil, proxy_type: atom()}
   def get_implementation_address_hash_string_eip7702(proxy_address_hash, proxy_abi, go_to_fallback?) do
     get_implementation_address_hash_string_by_module(
       EIP7702,
@@ -330,7 +331,27 @@ defmodule Explorer.Chain.SmartContract.Proxy do
           proxy_type: atom()
         }
   def get_implementation_address_hash_string_eip2535(proxy_address_hash, proxy_abi, go_to_fallback?) do
-    get_implementation_address_hash_string_by_module(EIP2535, :eip2535, [proxy_address_hash, proxy_abi, go_to_fallback?])
+    get_implementation_address_hash_string_by_module(
+      EIP2535,
+      :eip2535,
+      [
+        proxy_address_hash,
+        proxy_abi,
+        go_to_fallback?
+      ],
+      :get_implementation_address_hash_string_resolved_delegate_proxy
+    )
+  end
+
+  @doc """
+  Returns ResolvedDelegateProxy implementation address or tries next proxy pattern
+  """
+  def get_implementation_address_hash_string_resolved_delegate_proxy(proxy_address_hash, proxy_abi, go_to_fallback?) do
+    get_implementation_address_hash_string_by_module(ResolvedDelegateProxy, :resolved_delegate_proxy, [
+      proxy_address_hash,
+      proxy_abi,
+      go_to_fallback?
+    ])
   end
 
   defp get_implementation_address_hash_string_by_module(
@@ -439,13 +460,21 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
       implementation_method_abi ->
         implementation_address_hash_string =
-          Basic.get_implementation_address_hash_string(@implementation_signature, proxy_address_hash, proxy_abi)
+          Basic.get_implementation_address_hash_string(
+            @implementation_signature,
+            to_string(proxy_address_hash),
+            proxy_abi
+          )
 
         %{implementation_address_hash_strings: [implementation_address_hash_string], proxy_type: :basic_implementation}
 
       get_implementation_method_abi ->
         implementation_address_hash_string =
-          Basic.get_implementation_address_hash_string(@get_implementation_signature, proxy_address_hash, proxy_abi)
+          Basic.get_implementation_address_hash_string(
+            @get_implementation_signature,
+            to_string(proxy_address_hash),
+            proxy_abi
+          )
 
         %{
           implementation_address_hash_strings: [implementation_address_hash_string],
@@ -519,7 +548,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @doc """
   Decodes 20 bytes address hex from smart-contract storage pointer value
   """
-  @spec extract_address_hex_from_storage_pointer(binary) :: binary
+  @spec extract_address_hex_from_storage_pointer(binary()) :: binary()
   def extract_address_hex_from_storage_pointer(storage_value) when is_binary(storage_value) do
     address_hex = storage_value |> String.slice(-40, 40) |> String.pad_leading(40, ["0"])
 
@@ -538,7 +567,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     }
 
     address_hash
-    |> SmartContract.get_smart_contract_query()
+    |> SmartContract.get_by_address_hash_query()
     |> join_associations(necessity_by_association)
     |> select_repo(options).one(timeout: 10_000)
   end

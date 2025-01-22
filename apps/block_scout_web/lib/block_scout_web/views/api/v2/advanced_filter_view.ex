@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
 
   alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView}
   alias Explorer.Chain.{Address, Data, Transaction}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
 
@@ -73,7 +74,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
       |> Stream.map(fn advanced_filter ->
         method_id =
           case advanced_filter.input do
-            %{bytes: <<method_id::binary-size(4), _::binary>>} -> "0x" <> Base.encode16(method_id, case: :lower)
+            %{bytes: <<method_id::binary-size(4), _::binary>>} -> ExplorerHelper.adds_0x_prefix(method_id)
             _ -> nil
           end
 

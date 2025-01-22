@@ -116,6 +116,7 @@ defmodule Explorer.Chain.SmartContract do
     Address,
     ContractMethod,
     Data,
+    DecodingHelper,
     Hash,
     InternalTransaction,
     SmartContract,
@@ -878,8 +879,7 @@ defmodule Explorer.Chain.SmartContract do
   def create_or_update_smart_contract(address_hash, attrs, verification_with_files?) do
     smart_contract =
       address_hash
-      |> get_smart_contract_query()
-      |> Chain.select_repo(api?: true).one()
+      |> address_hash_to_smart_contract(api?: true)
 
     cond do
       is_nil(smart_contract) ->
@@ -1025,8 +1025,7 @@ defmodule Explorer.Chain.SmartContract do
     _delete_sources = Repo.delete_all(query_sources)
 
     # Retrieve the existing smart contract
-    query = get_smart_contract_query(address_hash)
-    smart_contract = Repo.one(query)
+    smart_contract = address_hash_to_smart_contract(address_hash)
 
     # Updates existing changeset and extends it with external libraries.
     # As part of changeset preparation and verification, contract methods are
@@ -1091,8 +1090,8 @@ defmodule Explorer.Chain.SmartContract do
   Converts address hash to smart-contract object
   """
   @spec address_hash_to_smart_contract(Hash.Address.t(), [api?]) :: __MODULE__.t() | nil
-  def address_hash_to_smart_contract(address_hash, options) do
-    query = get_smart_contract_query(address_hash)
+  def address_hash_to_smart_contract(address_hash, options \\ []) do
+    query = get_by_address_hash_query(address_hash)
 
     Chain.select_repo(options).one(query)
   end
@@ -1247,8 +1246,8 @@ defmodule Explorer.Chain.SmartContract do
     ## Returns
     - An `Ecto.Query.t()` that represents the query to fetch the smart contract.
   """
-  @spec get_smart_contract_query(Hash.Address.t() | binary) :: Ecto.Query.t()
-  def get_smart_contract_query(address_hash) do
+  @spec get_by_address_hash_query(Hash.Address.t() | binary) :: Ecto.Query.t()
+  def get_by_address_hash_query(address_hash) do
     from(
       smart_contract in __MODULE__,
       where: smart_contract.address_hash == ^address_hash
@@ -1339,7 +1338,7 @@ defmodule Explorer.Chain.SmartContract do
   # address hash.
   @spec verified_smart_contract_exists?(Hash.Address.t()) :: boolean()
   defp verified_smart_contract_exists?(address_hash) do
-    query = get_smart_contract_query(address_hash)
+    query = get_by_address_hash_query(address_hash)
 
     Repo.exists?(query)
   end
@@ -1476,4 +1475,34 @@ defmodule Explorer.Chain.SmartContract do
         nil
     end
   end
+
+  @spec format_constructor_arguments(list() | nil, binary() | nil) :: list() | nil
+  def format_constructor_arguments(abi, constructor_arguments)
+      when not is_nil(abi) and not is_nil(constructor_arguments) do
+    constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
+
+    input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
+
+    result =
+      constructor_arguments
+      |> ExplorerHelper.decode_data(input_types)
+      |> Enum.zip(constructor_abi["inputs"])
+      |> Enum.map(fn {value, %{"type" => type} = input_arg} ->
+        [DecodingHelper.value_json(type, value), input_arg]
+      end)
+
+    result
+  rescue
+    exception ->
+      Logger.warning(fn ->
+        [
+          "Error formatting constructor arguments for abi: #{inspect(abi)}, args: #{inspect(constructor_arguments)}: ",
+          Exception.format(:error, exception)
+        ]
+      end)
+
+      nil
+  end
+
+  def format_constructor_arguments(_abi, _constructor_arguments), do: nil
 end

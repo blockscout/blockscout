@@ -40,9 +40,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
       Application.put_env(:explorer, :proxy, proxy)
 
-      string_implementation_address_hash = to_string(implementation_smart_contract.address_hash)
+      implementation_address_hash_string = to_string(implementation_smart_contract.address_hash)
 
-      expect_address_in_oz_slot_response(string_implementation_address_hash)
+      expect_address_in_oz_slot_response(implementation_address_hash_string)
       implementation_address_hash = implementation_smart_contract.address_hash
 
       assert %Implementation{

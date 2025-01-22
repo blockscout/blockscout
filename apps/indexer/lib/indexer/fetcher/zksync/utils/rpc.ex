@@ -5,6 +5,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
 
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
+  alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Helper, as: IndexerHelper
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
@@ -381,7 +382,7 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   defp prepare_transaction_hash(raw_hash) do
     case raw_hash do
       "0x" <> <<_::binary-size(64)>> -> raw_hash
-      _ -> "0x" <> Base.encode16(raw_hash, case: :lower)
+      _ -> ExplorerHelper.adds_0x_prefix(raw_hash)
     end
   end
 end

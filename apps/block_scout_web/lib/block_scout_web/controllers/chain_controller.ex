@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.ChainController do
   alias Explorer.Chain.Search
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Market
   alias Phoenix.View
 
@@ -102,7 +103,7 @@ defmodule BlockScoutWeb.ChainController do
         item =
           if transaction_hash_bytes do
             item
-            |> Map.replace(:transaction_hash, "0x" <> Base.encode16(transaction_hash_bytes, case: :lower))
+            |> Map.replace(:transaction_hash, ExplorerHelper.adds_0x_prefix(transaction_hash_bytes))
           else
             item
           end
@@ -110,7 +111,7 @@ defmodule BlockScoutWeb.ChainController do
         item =
           if block_hash_bytes do
             item
-            |> Map.replace(:block_hash, "0x" <> Base.encode16(block_hash_bytes, case: :lower))
+            |> Map.replace(:block_hash, ExplorerHelper.adds_0x_prefix(block_hash_bytes))
           else
             item
           end

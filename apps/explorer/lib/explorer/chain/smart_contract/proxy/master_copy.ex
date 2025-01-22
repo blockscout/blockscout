@@ -12,7 +12,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.MasterCopy do
   @doc """
   Gets implementation address hash string for proxy contract from master-copy pattern
   """
-  @spec get_implementation_address_hash_string(Hash.Address.t()) :: nil | binary
+  @spec get_implementation_address_hash_string(Hash.Address.t()) :: nil | binary()
   def get_implementation_address_hash_string(proxy_address_hash) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 

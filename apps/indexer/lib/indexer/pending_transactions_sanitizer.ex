@@ -14,6 +14,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
   alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Helper, as: ExplorerHelper
 
   defstruct interval: nil,
             json_rpc_named_arguments: []
@@ -121,7 +122,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
   end
 
   defp fetch_pending_transaction_and_delete(transaction) do
-    pending_transaction_hash_string = "0x" <> Base.encode16(transaction.hash.bytes, case: :lower)
+    pending_transaction_hash_string = ExplorerHelper.adds_0x_prefix(transaction.hash)
 
     case transaction
          |> Changeset.change()
@@ -181,7 +182,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
       Repo.update(changeset)
 
       Logger.debug(
-        "Pending transaction with hash #{"0x" <> Base.encode16(pending_transaction.hash.bytes, case: :lower)} assigned to block ##{block.number} with hash #{block.hash}"
+        "Pending transaction with hash #{ExplorerHelper.adds_0x_prefix(pending_transaction.hash.bytes)} assigned to block ##{block.number} with hash #{block.hash}"
       )
     end
   end
