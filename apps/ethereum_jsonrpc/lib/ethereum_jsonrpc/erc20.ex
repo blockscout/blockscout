@@ -65,6 +65,8 @@ defmodule EthereumJSONRPC.ERC20 do
         %{
           "internalType" => "string",
           "name" => "",
+          # TODO: Research the compatibility of this ABI
+          # with tokens that return bytes32 for the symbol method
           "type" => "string"
         }
       ],
