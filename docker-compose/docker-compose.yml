@@ -41,9 +41,9 @@ services:
     links:
       - db:database
     environment:
-        ETHEREUM_JSONRPC_HTTP_URL: https://finney2.uomi.ai/
-        ETHEREUM_JSONRPC_TRACE_URL: https://finney2.uomi.ai/
-        ETHEREUM_JSONRPC_WS_URL: wss://finney2.uomi.ai/
+        ETHEREUM_JSONRPC_HTTP_URL: https://rpc.uomi.ai/
+        ETHEREUM_JSONRPC_TRACE_URL: https://rpc.uomi.ai/
+        ETHEREUM_JSONRPC_WS_URL: wss://rpc.uomi.ai/
         CHAIN_ID: '4386'
 
   visualizer:
