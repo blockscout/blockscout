@@ -297,6 +297,13 @@ defmodule Explorer.Chain.Block do
     )
   end
 
+  @doc """
+    Returns a query that filters blocks where consensus is true.
+
+    ## Returns
+    - An `Ecto.Query.t()` that can be used to fetch consensus blocks.
+  """
+  @spec consensus_blocks_query() :: Ecto.Query.t()
   def consensus_blocks_query do
     from(
       block in __MODULE__,

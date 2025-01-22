@@ -1498,7 +1498,7 @@ defmodule BlockScoutWeb.Etherscan do
         placeholder: "transactionHash",
         type: "string",
         description:
-          "Transaction hash. Hash of contents of the transaction. A transaction hash or address hash is required."
+          "Transaction hash. Hash of contents of the transaction. Optional parameter to filter results by a specific transaction hash."
       },
       %{
         key: "address",
