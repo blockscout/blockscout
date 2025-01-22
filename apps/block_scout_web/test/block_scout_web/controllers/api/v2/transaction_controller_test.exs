@@ -1679,6 +1679,21 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
         request = get(conn, "/api/v2/transactions/#{transaction.hash}/external_transactions")
         assert response = json_response(request, 500)
+        assert response == %{
+          "error" => "Unable to fetch external linked transactions",
+          "reason" => "\"must fail\""
+        }
+
+        # Test with invalid JSON RPC response
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn _, _ -> {:ok, nil} end)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/external_transactions")
+        assert response = json_response(request, 500)
+        assert response == %{
+          "error" => "Unable to fetch external linked transactions",
+          "reason" => "Invalid response from node"
+        }
       end
 
       test "returns empty list when RPC returns empy list", %{conn: conn} do
