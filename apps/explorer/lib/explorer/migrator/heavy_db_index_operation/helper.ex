@@ -154,7 +154,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   end
 
   defp sanitize_index_name(raw_index_name) do
-    # Postgres allow index names less than 64 bytes
+    # Postgres allows index names with a maximum length of 63 bytes
     if byte_size(raw_index_name) < 64 do
       raw_index_name
     else
