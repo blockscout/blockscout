@@ -68,7 +68,7 @@ defmodule Explorer.Arbitrum.Withdraw do
   @typep token_decimals :: non_neg_integer() | nil
   @typep token_name :: binary() | nil
   @typep token_symbol :: binary() | nil
-  @typep completion_transaction_hash :: Hash.t()
+  @typep completion_transaction_hash :: Hash.t() | nil
 
   defstruct [
     :message_id,
