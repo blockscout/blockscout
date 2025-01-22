@@ -111,6 +111,7 @@ services:
     ports:
       - 170.205.62.69:80:80
       - 170.205.62.69:443:443
+    profiles: [publicnet]
 
 networks:
   default:

@@ -10,6 +10,11 @@ services:
       - 'host.docker.internal:host-gateway'
     env_file:
       -  ../envs/common-blockscout.env
+    environment:
+      - ETHEREUM_JSONRPC_HTTP_URL=${ETHEREUM_JSONRPC_HTTP_URL}
+      - ETHEREUM_JSONRPC_TRACE_URL=${ETHEREUM_JSONRPC_TRACE_URL}
+      - ETHEREUM_JSONRPC_WS_URL=${ETHEREUM_JSONRPC_WS_URL}
+      - ETHEREUM_JSONRPC_FALLBACK_HTTP_URL=${ETHEREUM_JSONRPC_FALLBACK_HTTP_URL}
     volumes:
       - ./logs/:/app/logs/
       - ./dets/:/app/dets/

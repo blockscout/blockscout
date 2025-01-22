@@ -9,3 +9,7 @@ services:
       - 'host.docker.internal:host-gateway'
     env_file:
       -  ../envs/common-user-ops-indexer.env
+    environment:
+      - USER_OPS_INDEXER__INDEXER__RPC_URL=${USER_OPS_INDEXER__INDEXER__RPC_URL}
+      - USER_OPS_INDEXER__DATABASE__CONNECT__URL=${USER_OPS_INDEXER__DATABASE__CONNECT__URL}
+      - USER_OPS_INDEXER__DATABASE__RUN_MIGRATIONS=${USER_OPS_INDEXER__DATABASE__RUN_MIGRATIONS}
