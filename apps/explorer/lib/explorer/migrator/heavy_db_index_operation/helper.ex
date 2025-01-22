@@ -9,7 +9,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   alias Explorer.Repo
 
   @doc """
-  Checks the progress of DB index dropping by its name.
+  Checks the progress of DB index operation by its name.
   """
   @spec check_db_index_operation_progress(String.t()) ::
           :finished_or_not_started | :unknown | :in_progress
@@ -30,7 +30,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
         :finished_or_not_started
 
       {:error, error} ->
-        Logger.error("Failed to check DB index '#{index_name}' dropping progress: #{inspect(error)}")
+        Logger.error("Failed to check DB index '#{index_name}' operation progress: #{inspect(error)}")
         :unknown
     end
   end
