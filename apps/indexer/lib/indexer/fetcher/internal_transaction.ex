@@ -24,7 +24,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
   alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
-  alias Indexer.Transform.{Addresses, AddressTokenBalances}
+  alias Indexer.Transform.{AddressCoinBalances, Addresses, AddressTokenBalances}
 
   @behaviour BufferedTask
 
@@ -76,13 +76,23 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @impl BufferedTask
   def init(initial, reducer, _json_rpc_named_arguments) do
-    {:ok, final} =
-      Chain.stream_blocks_with_unfetched_internal_transactions(
-        initial,
+    stream_reducer =
+      if RangesHelper.trace_ranges_present?() do
+        trace_block_ranges = RangesHelper.get_trace_block_ranges()
+
+        fn block_number, acc ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          if RangesHelper.number_in_ranges?(block_number, trace_block_ranges),
+            do: reducer.(block_number, acc),
+            else: acc
+        end
+      else
         fn block_number, acc ->
           reducer.(block_number, acc)
         end
-      )
+      end
+
+    {:ok, final} = Chain.stream_blocks_with_unfetched_internal_transactions(initial, stream_reducer)
 
     final
   end
@@ -211,7 +221,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         Logger.error(
           fn ->
             [
-              "failed to import first trace for tx: ",
+              "failed to import first trace for transaction: ",
               inspect(reason)
             ]
           end,
@@ -278,6 +288,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
         {String.downcase(hash), block_number}
       end)
 
+    address_coin_balances_params_set =
+      AddressCoinBalances.params_set(%{internal_transactions_params: internal_transactions_params_marked})
+
     empty_block_numbers =
       unique_numbers
       |> MapSet.new()
@@ -310,6 +323,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         token_transfers: %{params: celo_token_transfers},
         tokens: %{params: celo_tokens},
         addresses: %{params: addresses_params},
+        address_coin_balances: %{params: address_coin_balances_params_set},
         internal_transactions: %{params: internal_transactions_and_empty_block_numbers, with: :blockless_changeset},
         timeout: :infinity
       })

@@ -22,8 +22,8 @@ defmodule BlockScoutWeb.TransactionStateView do
     Decimal.abs(val)
   end
 
-  def has_state_changes?(tx) do
-    has_diff?(from_loss(tx)) or has_diff?(to_profit(tx))
+  def has_state_changes?(transaction) do
+    has_diff?(from_loss(transaction)) or has_diff?(to_profit(transaction))
   end
 
   def display_value(balance, :coin, _token_id) do

@@ -88,8 +88,8 @@ defmodule Explorer.Chain.Import.Runner.ZkSync.TransactionBatches do
         set: [
           # don't update `number` as it is a primary key and used for the conflict target
           timestamp: fragment("EXCLUDED.timestamp"),
-          l1_tx_count: fragment("EXCLUDED.l1_tx_count"),
-          l2_tx_count: fragment("EXCLUDED.l2_tx_count"),
+          l1_transaction_count: fragment("EXCLUDED.l1_transaction_count"),
+          l2_transaction_count: fragment("EXCLUDED.l2_transaction_count"),
           root_hash: fragment("EXCLUDED.root_hash"),
           l1_gas_price: fragment("EXCLUDED.l1_gas_price"),
           l2_fair_gas_price: fragment("EXCLUDED.l2_fair_gas_price"),
@@ -104,10 +104,10 @@ defmodule Explorer.Chain.Import.Runner.ZkSync.TransactionBatches do
       ],
       where:
         fragment(
-          "(EXCLUDED.timestamp, EXCLUDED.l1_tx_count, EXCLUDED.l2_tx_count, EXCLUDED.root_hash, EXCLUDED.l1_gas_price, EXCLUDED.l2_fair_gas_price, EXCLUDED.start_block, EXCLUDED.end_block, EXCLUDED.commit_id, EXCLUDED.prove_id, EXCLUDED.execute_id) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.timestamp, EXCLUDED.l1_transaction_count, EXCLUDED.l2_transaction_count, EXCLUDED.root_hash, EXCLUDED.l1_gas_price, EXCLUDED.l2_fair_gas_price, EXCLUDED.start_block, EXCLUDED.end_block, EXCLUDED.commit_id, EXCLUDED.prove_id, EXCLUDED.execute_id) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           tb.timestamp,
-          tb.l1_tx_count,
-          tb.l2_tx_count,
+          tb.l1_transaction_count,
+          tb.l2_transaction_count,
           tb.root_hash,
           tb.l1_gas_price,
           tb.l2_fair_gas_price,

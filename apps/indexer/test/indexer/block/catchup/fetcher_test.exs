@@ -52,6 +52,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!()
       MissingRangesCollector.start_link([])
       MissingRangesManipulator.start_link([])
 

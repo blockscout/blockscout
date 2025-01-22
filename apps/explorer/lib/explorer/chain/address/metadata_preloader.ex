@@ -86,9 +86,8 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   def preload_metadata_to_list(items) do
     address_hash_strings =
       items
-      |> Enum.reduce([], fn item, acc ->
-        item_to_address_hash_strings(item) ++ acc
-      end)
+      |> Enum.flat_map(&item_to_address_hash_strings/1)
+      |> Enum.filter(&(&1 != ""))
       |> Enum.uniq()
 
     case Metadata.get_addresses_tags(address_hash_strings) do
@@ -200,12 +199,12 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
            to_address_hash: to_address_hash,
            created_contract_address_hash: created_contract_address_hash,
            from_address_hash: from_address_hash
-         } = tx,
+         } = transaction,
          names,
          field_to_put_info
        ) do
     token_transfers =
-      case tx.token_transfers do
+      case transaction.token_transfers do
         token_transfers_list when is_list(token_transfers_list) ->
           Enum.map(token_transfers_list, &put_meta_to_item(&1, names, field_to_put_info))
 
@@ -214,11 +213,11 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
       end
 
     %Transaction{
-      tx
-      | to_address: alter_address(tx.to_address, to_address_hash, names, field_to_put_info),
+      transaction
+      | to_address: alter_address(transaction.to_address, to_address_hash, names, field_to_put_info),
         created_contract_address:
-          alter_address(tx.created_contract_address, created_contract_address_hash, names, field_to_put_info),
-        from_address: alter_address(tx.from_address, from_address_hash, names, field_to_put_info),
+          alter_address(transaction.created_contract_address, created_contract_address_hash, names, field_to_put_info),
+        from_address: alter_address(transaction.from_address, from_address_hash, names, field_to_put_info),
         token_transfers: token_transfers
     }
   end
@@ -243,16 +242,16 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
            to_address_hash: to_address_hash,
            created_contract_address_hash: created_contract_address_hash,
            from_address_hash: from_address_hash
-         } = tx,
+         } = transaction,
          names,
          field_to_put_info
        ) do
     %InternalTransaction{
-      tx
-      | to_address: alter_address(tx.to_address, to_address_hash, names, field_to_put_info),
+      transaction
+      | to_address: alter_address(transaction.to_address, to_address_hash, names, field_to_put_info),
         created_contract_address:
-          alter_address(tx.created_contract_address, created_contract_address_hash, names, field_to_put_info),
-        from_address: alter_address(tx.from_address, from_address_hash, names, field_to_put_info)
+          alter_address(transaction.created_contract_address, created_contract_address_hash, names, field_to_put_info),
+        from_address: alter_address(transaction.from_address, from_address_hash, names, field_to_put_info)
     }
   end
 

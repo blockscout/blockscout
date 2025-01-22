@@ -226,11 +226,14 @@ defmodule BlockScoutWeb.SmartContractView do
   def cut_rpc_url(error) do
     transport_options = Application.get_env(:explorer, :json_rpc_named_arguments)[:transport_options]
 
-    error
-    |> String.replace(transport_options[:url], "rpc_url")
-    |> (&if(transport_options[:fallback_url],
-          do: String.replace(&1, transport_options[:fallback_url], "rpc_url"),
-          else: &1
-        )).()
+    all_urls =
+      (transport_options[:urls] || []) ++
+        (transport_options[:trace_urls] || []) ++
+        (transport_options[:eth_call_urls] || []) ++
+        (transport_options[:fallback_urls] || []) ++
+        (transport_options[:fallback_trace_urls] || []) ++
+        (transport_options[:fallback_eth_call_urls] || [])
+
+    String.replace(error, Enum.reject(all_urls, &(&1 in [nil, ""])), "rpc_url")
   end
 end

@@ -5,10 +5,11 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{BlockNumberHelper, Transaction, Wei}
+  alias Explorer.Chain.{BlockNumberHelper, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Cache.StateChanges
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
@@ -55,7 +56,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   end
 
   defp do_state_changes(%Transaction{} = transaction, options) do
-    block_txs =
+    block_transactions =
       transaction.block_hash
       |> Chain.block_to_transactions(
         paging_options: %PagingOptions{key: nil, page_size: nil},
@@ -65,34 +66,35 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
       |> Repo.preload([:token_transfers, :internal_transactions])
 
     transaction =
-      block_txs
+      block_transactions
       |> Enum.find(&(&1.hash == transaction.hash))
       |> Repo.preload(
         token_transfers: [
-          from_address: [:names, :smart_contract, :proxy_implementations],
-          to_address: [:names, :smart_contract, :proxy_implementations]
+          from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+          to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
         ],
         internal_transactions: [
-          from_address: [:names, :smart_contract, :proxy_implementations],
-          to_address: [:names, :smart_contract, :proxy_implementations]
+          from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+          to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
         ],
-        block: [miner: [:names, :smart_contract, :proxy_implementations]],
-        from_address: [:names, :smart_contract, :proxy_implementations],
-        to_address: [:names, :smart_contract, :proxy_implementations]
+        block: [miner: [:names, :smart_contract, proxy_implementations_association()]],
+        from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+        to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
       )
 
     previous_block_number = BlockNumberHelper.previous_block_number(transaction.block_number)
 
     coin_balances_before_block = transaction_to_coin_balances(transaction, previous_block_number, options)
 
-    coin_balances_before_tx = StateChange.coin_balances_before(transaction, block_txs, coin_balances_before_block)
+    coin_balances_before_transaction =
+      StateChange.coin_balances_before(transaction, block_transactions, coin_balances_before_block)
 
-    native_coin_entries = StateChange.native_coin_entries(transaction, coin_balances_before_tx)
+    native_coin_entries = StateChange.native_coin_entries(transaction, coin_balances_before_transaction)
 
     token_balances_before =
       transaction.token_transfers
       |> Enum.reduce(%{}, &token_transfers_to_balances_reducer(&1, &2, previous_block_number, options))
-      |> StateChange.token_balances_before(transaction, block_txs)
+      |> StateChange.token_balances_before(transaction, block_transactions)
 
     tokens_entries = StateChange.token_entries(transaction.token_transfers, token_balances_before)
 
@@ -113,6 +115,8 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
       &internal_transaction_to_coin_balances(&1, previous_block_number, options, &2)
     )
   end
+
+  defp internal_transaction_to_coin_balances(%InternalTransaction{call_type: :delegatecall}, _, _, acc), do: acc
 
   defp internal_transaction_to_coin_balances(internal_transaction, previous_block_number, options, acc) do
     if internal_transaction.value |> Wei.to(:wei) |> Decimal.positive?() do

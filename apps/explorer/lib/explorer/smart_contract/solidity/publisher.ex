@@ -72,6 +72,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   def publish_with_standard_json_input(%{"address_hash" => address_hash} = params, json_input) do
     Logger.info(@sc_verification_via_standard_json_input_started)
+    params = maybe_add_zksync_specific_data(params)
 
     case Verifier.evaluate_authenticity_via_standard_json_input(address_hash, params, json_input) do
       {:ok,
@@ -381,31 +382,31 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     compiler_version = CompilerVersion.get_strict_compiler_version(:solc, params["compiler_version"])
 
-    base_attributes =
-      %{
-        address_hash: address_hash,
-        name: params["name"],
-        file_path: params["file_path"],
-        compiler_version: compiler_version,
-        evm_version: params["evm_version"],
-        optimization_runs: params["optimization_runs"],
-        optimization: params["optimization"],
-        contract_source_code: params["contract_source_code"],
-        constructor_arguments: clean_constructor_arguments,
-        external_libraries: prepared_external_libraries,
-        secondary_sources: params["secondary_sources"],
-        abi: abi,
-        verified_via_sourcify: params["verified_via_sourcify"] || false,
-        verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
-        verified_via_verifier_alliance: params["verified_via_verifier_alliance"] || false,
-        partially_verified: params["partially_verified"] || false,
-        is_vyper_contract: false,
-        autodetect_constructor_args: params["autodetect_constructor_args"],
-        is_yul: params["is_yul"] || false,
-        compiler_settings: clean_compiler_settings,
-        license_type: prepare_license_type(params["license_type"]) || :none,
-        is_blueprint: params["is_blueprint"] || false
-      }
+    base_attributes = %{
+      address_hash: address_hash,
+      name: params["name"],
+      file_path: params["file_path"],
+      compiler_version: compiler_version,
+      evm_version: params["evm_version"],
+      optimization_runs: params["optimization_runs"],
+      optimization: params["optimization"],
+      contract_source_code: params["contract_source_code"],
+      constructor_arguments: clean_constructor_arguments,
+      external_libraries: prepared_external_libraries,
+      secondary_sources: params["secondary_sources"],
+      abi: abi,
+      verified_via_sourcify: params["verified_via_sourcify"] || false,
+      verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
+      verified_via_verifier_alliance: params["verified_via_verifier_alliance"] || false,
+      partially_verified: params["partially_verified"] || false,
+      is_vyper_contract: false,
+      autodetect_constructor_args: params["autodetect_constructor_args"],
+      is_yul: params["is_yul"] || false,
+      compiler_settings: clean_compiler_settings,
+      license_type: prepare_license_type(params["license_type"]) || :none,
+      is_blueprint: params["is_blueprint"] || false,
+      language: (is_nil(abi) && :yul) || :solidity
+    }
 
     base_attributes
     |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
@@ -451,5 +452,13 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       end)
 
     Map.put(params, "external_libraries", clean_external_libraries)
+  end
+
+  defp maybe_add_zksync_specific_data(params) do
+    if Application.get_env(:explorer, :chain_type) == :zksync do
+      Map.put(params, "constructor_arguments", SmartContract.zksync_get_constructor_arguments(params["address_hash"]))
+    else
+      params
+    end
   end
 end

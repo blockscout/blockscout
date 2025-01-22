@@ -5,6 +5,7 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.TokenTransfers
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Chain.{
     Address,
@@ -17,7 +18,7 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
 
   # Remove `transaction_hash` from primary key for `:celo` chain type. See
   # `Explorer.Chain.Log.Schema` for more details.
-  @transaction_field (case Application.compile_env(:explorer, :chain_type) do
+  @transaction_field (case @chain_type do
                         :celo ->
                           quote do
                             [
@@ -132,13 +133,15 @@ defmodule Explorer.Chain.TokenTransfer do
   """
 
   use Explorer.Schema
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Explorer.Chain.TokenTransfer.Schema
 
   import Ecto.Changeset
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Helper}
   alias Explorer.Chain.{DenormalizationHelper, Hash, Log, TokenTransfer}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -179,7 +182,7 @@ defmodule Explorer.Chain.TokenTransfer do
   Explorer.Chain.TokenTransfer.Schema.generate()
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash block_hash token_type)a
-                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                  |> (&(case @chain_type do
                           :celo ->
                             &1
 
@@ -187,7 +190,7 @@ defmodule Explorer.Chain.TokenTransfer do
                             [:transaction_hash | &1]
                         end)).()
   @optional_attrs ~w(amount amounts token_ids block_consensus)a
-                  |> (&(case Application.compile_env(:explorer, :chain_type) do
+                  |> (&(case @chain_type do
                           :celo ->
                             [:transaction_hash | &1]
 
@@ -239,8 +242,8 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:names, :smart_contract, :proxy_implementations]],
-            [to_address: [:names, :smart_contract, :proxy_implementations]]
+            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
 
         only_consensus_transfers_query()
@@ -266,8 +269,8 @@ defmodule Explorer.Chain.TokenTransfer do
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
             :token,
-            [from_address: [:names, :smart_contract, :proxy_implementations]],
-            [to_address: [:names, :smart_contract, :proxy_implementations]]
+            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
 
         only_consensus_transfers_query()
@@ -279,6 +282,52 @@ defmodule Explorer.Chain.TokenTransfer do
         |> page_token_transfer(paging_options)
         |> limit(^paging_options.page_size)
         |> Chain.select_repo(options).all()
+    end
+  end
+
+  @doc """
+  Returns the ordered paginated list of consensus token transfers (consensus blocks only) from the DB with address, token, transaction preloads
+  """
+  @spec fetch([paging_options | api?]) :: []
+  def fetch(options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    token_type = Keyword.get(options, :token_type)
+
+    case paging_options do
+      %PagingOptions{key: {0, 0}} ->
+        []
+
+      _ ->
+        preloads =
+          DenormalizationHelper.extend_transaction_preload([
+            :transaction,
+            :token,
+            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
+            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
+          ])
+
+        only_consensus_transfers_query()
+        |> preload(^preloads)
+        |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
+        |> maybe_filter_by_token_type(token_type)
+        |> page_token_transfer(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Chain.select_repo(options).all()
+    end
+  end
+
+  defp maybe_filter_by_token_type(query, token_types) do
+    if Enum.empty?(token_types) do
+      query
+    else
+      if DenormalizationHelper.tt_denormalization_finished?() do
+        query
+        |> where([tt], tt.token_type in ^token_types)
+      else
+        query
+        |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+        |> where([tt, block, token], token.type in ^token_types)
+      end
     end
   end
 
@@ -442,7 +491,46 @@ defmodule Explorer.Chain.TokenTransfer do
     |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
   end
 
-  def token_transfers_by_address_hash(direction, address_hash, token_types, paging_options) do
+  @doc """
+  Retrieves token transfers associated with a given address, optionally filtered
+  by direction and token types.
+
+  ## Parameters
+
+  - `address_hash` (`Hash.Address.t()`): The address hash for which to retrieve
+    token transfers.
+  - `direction` (`nil | :to | :from`): The direction of the transfers to filter.
+    - `:to` - transfers where `to_address` matches `address_hash`.
+    - `:from` - transfers where `from_address` matches `address_hash`.
+    - `nil` - includes both incoming and outgoing transfers.
+  - `token_types` (`[binary()]`): The token types to filter, e.g `["ERC20", "ERC721"]`.
+  - `paging_options` (`nil | Explorer.PagingOptions.t()`): Pagination options to
+    limit the result set.
+
+  ## Returns
+
+  An `Ecto.Query` for `TokenTransfer.t()`.
+
+  ## Examples
+
+  Fetch all incoming ERC20 token transfers for a specific address:
+
+  # iex> query = token_transfers_by_address_hash(address_hash, :to, ["ERC20"], paging_options)
+  # iex> Repo.all(query)
+
+  Fetch both incoming and outgoing token transfers for a specific address
+  without pagination, token type filtering, and direction filtering:
+
+  # iex> query = token_transfers_by_address_hash(address_hash, nil, [], nil)
+  # iex> Repo.all(query)
+  """
+  @spec token_transfers_by_address_hash(
+          Hash.Address.t(),
+          nil | :to | :from,
+          [binary()],
+          nil | Explorer.PagingOptions.t()
+        ) :: Ecto.Query.t()
+  def token_transfers_by_address_hash(address_hash, direction, token_types, paging_options) do
     if direction == :to || direction == :from do
       only_consensus_transfers_query()
       |> filter_by_direction(direction, address_hash)
@@ -474,7 +562,7 @@ defmodule Explorer.Chain.TokenTransfer do
       |> union(^from_address_hash_query)
       |> Chain.wrapped_union_subquery()
       |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
-      |> limit(^paging_options.page_size)
+      |> handle_paging_options(paging_options)
     end
   end
 
@@ -562,20 +650,11 @@ defmodule Explorer.Chain.TokenTransfer do
     encoded_values =
       ids
       |> Enum.reduce("", fn {t_hash, b_hash, log_index}, acc ->
-        acc <> "('#{hash_to_query_string(t_hash)}', '#{hash_to_query_string(b_hash)}', #{log_index}),"
+        acc <> "('#{Helper.hash_to_query_string(t_hash)}', '#{Helper.hash_to_query_string(b_hash)}', #{log_index}),"
       end)
       |> String.trim_trailing(",")
 
     "(#{encoded_values})"
-  end
-
-  defp hash_to_query_string(hash) do
-    s_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0")
-
-    "\\#{s_hash}"
   end
 
   @doc """

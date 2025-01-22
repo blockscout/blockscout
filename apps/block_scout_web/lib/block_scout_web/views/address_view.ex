@@ -4,12 +4,12 @@ defmodule BlockScoutWeb.AddressView do
   require Logger
 
   alias BlockScoutWeb.{AccessHelper, LayoutView}
+  alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias Explorer.Account.CustomABI
   alias Explorer.{Chain, CustomContractsHelper, Repo}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Log, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.{Helper, Writer}
@@ -178,15 +178,8 @@ defmodule BlockScoutWeb.AddressView do
   @doc """
   Returns the primary name of an address if available. If there is no names on address function performs preload of names association.
   """
-  def primary_name(%Address{names: [_ | _] = address_names}) do
-    case Enum.find(address_names, &(&1.primary == true)) do
-      nil ->
-        %Address.Name{name: name} = Enum.at(address_names, 0)
-        name
-
-      %Address.Name{name: name} ->
-        name
-    end
+  def primary_name(%Address{names: [_ | _]} = address) do
+    APIV2Helper.address_name(address)
   end
 
   def primary_name(%Address{names: %Ecto.Association.NotLoaded{}} = address) do
@@ -437,13 +430,6 @@ defmodule BlockScoutWeb.AddressView do
       true -> "#{to_string(address)}"
     end
   end
-
-  def smart_contract_is_gnosis_safe_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    address.smart_contract.name == "GnosisSafeProxy" &&
-      Proxy.gnosis_safe_contract?(address.smart_contract.abi)
-  end
-
-  def smart_contract_is_gnosis_safe_proxy?(_address), do: false
 
   def tag_name_to_label(tag_name) do
     tag_name

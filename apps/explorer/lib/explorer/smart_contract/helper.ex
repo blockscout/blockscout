@@ -112,9 +112,23 @@ defmodule Explorer.SmartContract.Helper do
     end
   end
 
+  @doc """
+  Prepares the bytecode for a microservice by processing the given body, creation input, and deployed bytecode.
+
+  ## Parameters
+
+    - body: The body of the request or data to be processed.
+    - creation_input: The input data used during the creation of the smart contract.
+    - deployed_bytecode: The bytecode of the deployed smart contract.
+
+  ## Returns
+
+  The processed bytecode ready for the microservice.
+  """
+  @spec prepare_bytecode_for_microservice(map(), binary() | nil, binary() | nil) :: map()
   def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode)
 
-  def prepare_bytecode_for_microservice(body, empty, deployed_bytecode) when is_nil(empty) do
+  def prepare_bytecode_for_microservice(body, creation_input, deployed_bytecode) when is_nil(creation_input) do
     if Application.get_env(:explorer, :chain_type) == :zksync do
       body
       |> Map.put("code", deployed_bytecode)
@@ -144,7 +158,7 @@ defmodule Explorer.SmartContract.Helper do
   def cast_libraries(_value, map), do: map
 
   def contract_creation_input(address_hash) do
-    case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+    case Chain.smart_contract_creation_transaction_bytecode(address_hash) do
       %{init: init, created_contract_code: _created_contract_code} ->
         init
 
@@ -181,12 +195,13 @@ defmodule Explorer.SmartContract.Helper do
     if Application.get_env(:explorer, :chain_type) == :zksync do
       {nil, deployed_bytecode, metadata}
     else
-      case SmartContract.creation_tx_with_bytecode(address_hash) do
-        %{init: init, tx: tx} ->
-          {init, deployed_bytecode, tx |> tx_to_metadata(init) |> Map.merge(metadata)}
+      case SmartContract.creation_transaction_with_bytecode(address_hash) do
+        %{init: init, transaction: transaction} ->
+          {init, deployed_bytecode, transaction |> transaction_to_metadata(init) |> Map.merge(metadata)}
 
-        %{init: init, internal_tx: internal_tx} ->
-          {init, deployed_bytecode, internal_tx |> internal_tx_to_metadata(init) |> Map.merge(metadata)}
+        %{init: init, internal_transaction: internal_transaction} ->
+          {init, deployed_bytecode,
+           internal_transaction |> internal_transaction_to_metadata(init) |> Map.merge(metadata)}
 
         _ ->
           {nil, deployed_bytecode, metadata}
@@ -194,22 +209,22 @@ defmodule Explorer.SmartContract.Helper do
     end
   end
 
-  defp tx_to_metadata(tx, init) do
+  defp transaction_to_metadata(transaction, init) do
     %{
-      "blockNumber" => to_string(tx.block_number),
-      "transactionHash" => to_string(tx.hash),
-      "transactionIndex" => to_string(tx.index),
-      "deployer" => to_string(tx.from_address_hash),
+      "blockNumber" => to_string(transaction.block_number),
+      "transactionHash" => to_string(transaction.hash),
+      "transactionIndex" => to_string(transaction.index),
+      "deployer" => to_string(transaction.from_address_hash),
       "creationCode" => to_string(init)
     }
   end
 
-  defp internal_tx_to_metadata(internal_tx, init) do
+  defp internal_transaction_to_metadata(internal_transaction, init) do
     %{
-      "blockNumber" => to_string(internal_tx.block_number),
-      "transactionHash" => to_string(internal_tx.transaction_hash),
-      "transactionIndex" => to_string(internal_tx.transaction_index),
-      "deployer" => to_string(internal_tx.from_address_hash),
+      "blockNumber" => to_string(internal_transaction.block_number),
+      "transactionHash" => to_string(internal_transaction.transaction_hash),
+      "transactionIndex" => to_string(internal_transaction.transaction_index),
+      "deployer" => to_string(internal_transaction.from_address_hash),
       "creationCode" => to_string(init)
     }
   end
@@ -227,9 +242,9 @@ defmodule Explorer.SmartContract.Helper do
   @doc """
   Pre-fetches implementation for unverified smart contract or verified proxy smart-contract
   """
-  @spec pre_fetch_implementations(Address.t()) :: {any(), atom() | nil}
+  @spec pre_fetch_implementations(Address.t()) :: Implementation.t() | nil
   def pre_fetch_implementations(address) do
-    {implementation_address_hashes, implementation_names, proxy_type} =
+    implementation =
       with {:verified_smart_contract, %SmartContract{}} <- {:verified_smart_contract, address.smart_contract},
            {:proxy?, true} <- {:proxy?, address_is_proxy?(address, @api_true)} do
         Implementation.get_implementation(address.smart_contract, @api_true)
@@ -241,17 +256,14 @@ defmodule Explorer.SmartContract.Helper do
             }
 
             Implementation.get_implementation(smart_contract, @api_true)
-          else
-            {[], [], nil}
           end
 
         {:proxy?, false} ->
-          {[], [], nil}
+          nil
       end
 
-    implementations = Proxy.proxy_object_info(implementation_address_hashes, implementation_names)
-
-    {implementations, proxy_type}
+    implementation
+    |> Chain.select_repo(@api_true).preload(Implementation.proxy_implementations_addresses_association())
   end
 
   @doc """

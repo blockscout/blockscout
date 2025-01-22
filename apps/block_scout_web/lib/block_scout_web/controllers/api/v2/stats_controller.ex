@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.StatsController do
   use Phoenix.Controller
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.Chain.MarketHistoryChartController
@@ -109,7 +110,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     transaction_history_data =
       date_range
       |> Enum.map(fn row ->
-        %{date: row.date, tx_count: row.number_of_transactions}
+        %{date: row.date, transaction_count: row.number_of_transactions}
       end)
 
     json(conn, %{
@@ -176,7 +177,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     end
   end
 
-  case Application.compile_env(:explorer, :chain_type) do
+  case @chain_type do
     :rsk ->
       defp add_chain_type_fields(response) do
         alias Explorer.Chain.Cache.RootstockLockedBTC
@@ -190,10 +191,16 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         end
       end
 
-    "optimism" ->
+    :optimism ->
       defp add_chain_type_fields(response) do
         import Explorer.Counters.LastOutputRootSizeCounter, only: [fetch: 1]
         response |> Map.put("last_output_root_size", fetch(@api_true))
+      end
+
+    :celo ->
+      defp add_chain_type_fields(response) do
+        import Explorer.Chain.Celo.Reader, only: [last_block_epoch_number: 0]
+        response |> Map.put("celo", %{"epoch_number" => last_block_epoch_number()})
       end
 
     _ ->

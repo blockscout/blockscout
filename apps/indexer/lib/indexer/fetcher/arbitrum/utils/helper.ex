@@ -1,6 +1,7 @@
 defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   alias Explorer.Chain.Arbitrum.LifecycleTransaction
 
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
 
   @moduledoc """
@@ -44,32 +45,32 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
     and a status. The status is determined based on whether finalization tracking is enabled.
 
     ## Parameters
-    - `lifecycle_txs`: A map where each key is a transaction identifier, and the value is
+    - `lifecycle_transactions`: A map where each key is a transaction identifier, and the value is
       a map containing at least the block number (`:block`).
     - `blocks_to_ts`: A map linking block numbers to their corresponding timestamps.
     - `track_finalization?`: A boolean flag indicating whether to mark transactions
       as unfinalized or finalized.
 
     ## Returns
-    - An updated map of the same structure as `lifecycle_txs` but with each transaction extended to include:
+    - An updated map of the same structure as `lifecycle_transactions` but with each transaction extended to include:
       - `timestamp`: The timestamp of the block in which the transaction is included.
       - `status`: Either `:unfinalized` if `track_finalization?` is `true`, or `:finalized` otherwise.
   """
-  @spec extend_lifecycle_txs_with_ts_and_status(
+  @spec extend_lifecycle_transactions_with_ts_and_status(
           %{binary() => %{:block => non_neg_integer(), optional(any()) => any()}},
           %{non_neg_integer() => DateTime.t()},
           boolean()
         ) :: %{binary() => LifecycleTransaction.to_import()}
-  def extend_lifecycle_txs_with_ts_and_status(lifecycle_txs, blocks_to_ts, track_finalization?)
-      when is_map(lifecycle_txs) and is_map(blocks_to_ts) and is_boolean(track_finalization?) do
-    lifecycle_txs
+  def extend_lifecycle_transactions_with_ts_and_status(lifecycle_transactions, blocks_to_ts, track_finalization?)
+      when is_map(lifecycle_transactions) and is_map(blocks_to_ts) and is_boolean(track_finalization?) do
+    lifecycle_transactions
     |> Map.keys()
-    |> Enum.reduce(%{}, fn tx_key, updated_txs ->
+    |> Enum.reduce(%{}, fn transaction_key, updated_transactions ->
       Map.put(
-        updated_txs,
-        tx_key,
-        Map.merge(lifecycle_txs[tx_key], %{
-          timestamp: blocks_to_ts[lifecycle_txs[tx_key].block_number],
+        updated_transactions,
+        transaction_key,
+        Map.merge(lifecycle_transactions[transaction_key], %{
+          timestamp: blocks_to_ts[lifecycle_transactions[transaction_key].block_number],
           status:
             if track_finalization? do
               :unfinalized
@@ -87,32 +88,32 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
     This function checks if the given lifecycle transaction has the same block number
     and timestamp as the provided values. If they are the same, it returns `{:same, nil}`.
     If they differ, it updates the transaction with the new block number and timestamp,
-    logs the update, and returns `{:updated, updated_tx}`.
+    logs the update, and returns `{:updated, updated_transaction}`.
 
     ## Parameters
-    - `tx`: The lifecycle transaction to compare and potentially update.
+    - `transaction`: The lifecycle transaction to compare and potentially update.
     - `{new_block_num, new_ts}`: A tuple containing the new block number and timestamp.
-    - `tx_type_str`: A string describing the type of the transaction for logging purposes.
+    - `transaction_type_str`: A string describing the type of the transaction for logging purposes.
 
     ## Returns
     - `{:same, nil}` if the transaction block number and timestamp are the same as the provided values.
-    - `{:updated, updated_tx}` if the transaction was updated with the new block number and timestamp.
+    - `{:updated, updated_transaction}` if the transaction was updated with the new block number and timestamp.
   """
-  @spec compare_lifecycle_tx_and_update(
+  @spec compare_lifecycle_transaction_and_update(
           LifecycleTransaction.to_import(),
           {non_neg_integer(), DateTime.t()},
           String.t()
         ) :: {:same, nil} | {:updated, LifecycleTransaction.to_import()}
-  def compare_lifecycle_tx_and_update(tx, {new_block_num, new_ts}, tx_type_str) do
-    if tx.block_number == new_block_num and DateTime.compare(tx.timestamp, new_ts) == :eq do
+  def compare_lifecycle_transaction_and_update(transaction, {new_block_num, new_ts}, transaction_type_str) do
+    if transaction.block_number == new_block_num and DateTime.compare(transaction.timestamp, new_ts) == :eq do
       {:same, nil}
     else
       log_info(
-        "The #{tx_type_str} transaction 0x#{tx.hash |> Base.encode16(case: :lower)} will be updated with the new block number and timestamp"
+        "The #{transaction_type_str} transaction 0x#{transaction.hash |> Base.encode16(case: :lower)} will be updated with the new block number and timestamp"
       )
 
       {:updated,
-       Map.merge(tx, %{
+       Map.merge(transaction, %{
          block_number: new_block_num,
          timestamp: new_ts
        })}
@@ -204,5 +205,59 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
       end
     end)
     |> Enum.reverse()
+  end
+
+  @doc """
+    Converts a message ID to its hashed hexadecimal string representation.
+
+    This function takes a message ID (either as an integer or a hexadecimal string),
+    concatenates it with 256 zero bits, computes a hash of the concatenation, and
+    then converts the resulting hash to a hexadecimal string with a "0x" prefix.
+
+    ## Parameters
+    - `message_id`: The message ID to be hashed and converted. Can be either a
+      non-negative integer or a "0x"-prefixed hexadecimal string.
+
+    ## Returns
+    - A string representing the hashed message ID in hexadecimal format, prefixed
+      with "0x".
+
+    ## Examples
+
+        iex> get_hashed_message_id_as_hex_str(1490421)
+        "0x9d1614591a3e0ba8854206a716e49ffdffc679131820fa815b989fdef9e5554d"
+
+        iex> get_hashed_message_id_as_hex_str("0x000000000000000000000000000000000000000000000000000000000016bdf5")
+        "0x9d1614591a3e0ba8854206a716e49ffdffc679131820fa815b989fdef9e5554d"
+  """
+  @spec get_hashed_message_id_as_hex_str(non_neg_integer() | binary()) :: String.t()
+  def get_hashed_message_id_as_hex_str(message_id) do
+    message_id
+    |> hash_for_message_id()
+    |> bytes_to_hex_str()
+  end
+
+  # Calculates the hash for a given message ID.
+  #
+  # This function computes a 256-bit Keccak hash of the message ID. For integer
+  # inputs, it concatenates the 256-bit message ID with 256 zero bits before
+  # hashing. For hexadecimal string inputs, it first converts the string to an
+  # integer.
+  #
+  # ## Parameters
+  # - `message_id`: Either a non-negative integer or a "0x"-prefixed hexadecimal
+  #   string of 66 characters (including the "0x" prefix).
+  #
+  # ## Returns
+  # - A binary representing the 256-bit Keccak hash of the processed message ID.
+  @spec hash_for_message_id(non_neg_integer() | binary()) :: binary()
+  defp hash_for_message_id(message_id) when is_integer(message_id) do
+    # As per https://github.com/OffchainLabs/nitro/blob/849348e10cf1d9c023f4748dc1211bd363422485/arbos/parse_l2.go#L40
+    (<<message_id::size(256)>> <> <<0::size(256)>>)
+    |> ExKeccak.hash_256()
+  end
+
+  defp hash_for_message_id(message_id) when is_binary(message_id) and byte_size(message_id) == 66 do
+    hash_for_message_id(quantity_to_integer(message_id))
   end
 end

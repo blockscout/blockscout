@@ -395,8 +395,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def decoded_input_data(transaction) do
-    {result, _, _} = Transaction.decoded_input_data(transaction, [])
-    result
+    Transaction.decoded_input_data(transaction, [])
   end
 
   def decoded_revert_reason(revert_reason, transaction, options) do
@@ -598,14 +597,6 @@ defmodule BlockScoutWeb.TransactionView do
 
   def trim(length, string) do
     %{show: String.slice(string, 0..length), hide: String.slice(string, (length + 1)..-1//1)}
-  end
-
-  defp template_to_string(template) when is_list(template) do
-    template_to_string(Enum.at(template, 1))
-  end
-
-  defp template_to_string(template) when is_tuple(template) do
-    safe_to_string(template)
   end
 
   # Function decodes revert reason of the transaction

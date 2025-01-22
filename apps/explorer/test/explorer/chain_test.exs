@@ -26,7 +26,7 @@ defmodule Explorer.ChainTest do
     Wei
   }
 
-  alias Explorer.{Chain, Etherscan, TestHelper}
+  alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
@@ -127,10 +127,10 @@ defmodule Explorer.ChainTest do
       assert {:ok, _, _} = Chain.last_db_block_status()
     end
 
-    test "return {:ok, last_block_period} if block is not in healthy period" do
+    test "return {:stale, _, _} if block is not in healthy period" do
       insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
 
-      assert {:error, _, _} = Chain.last_db_block_status()
+      assert {:stale, _, _} = Chain.last_db_block_status()
     end
   end
 
@@ -141,10 +141,10 @@ defmodule Explorer.ChainTest do
       assert {:ok, _, _} = Chain.last_cache_block_status()
     end
 
-    test "return error if cache is stale" do
+    test "return {:stale, _, _} if cache is stale" do
       insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
 
-      assert {:error, _, _} = Chain.last_cache_block_status()
+      assert {:stale, _, _} = Chain.last_cache_block_status()
     end
   end
 
@@ -482,7 +482,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "block_to_gas_used_by_1559_txs/1" do
+  describe "block_to_gas_used_by_1559_transactions/1" do
     test "sum of gas_usd from all transactions including legacy" do
       block = insert(:block, base_fee_per_gas: 4)
 
@@ -504,12 +504,12 @@ defmodule Explorer.ChainTest do
         index: 2
       )
 
-      assert Decimal.new(10) == Chain.block_to_gas_used_by_1559_txs(block.hash)
+      assert Decimal.new(10) == Chain.block_to_gas_used_by_1559_transactions(block.hash)
     end
   end
 
-  describe "block_to_priority_fee_of_1559_txs/1" do
-    test "with transactions: tx.max_fee_per_gas = 0" do
+  describe "block_to_priority_fee_of_1559_transactions/1" do
+    test "with transactions: transaction.max_fee_per_gas = 0" do
       block = insert(:block, base_fee_per_gas: 4)
 
       insert(:transaction,
@@ -522,10 +522,10 @@ defmodule Explorer.ChainTest do
         max_priority_fee_per_gas: 3
       )
 
-      assert Decimal.new(0) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+      assert Decimal.new(0) == Chain.block_to_priority_fee_of_1559_transactions(block.hash)
     end
 
-    test "with transactions: tx.max_fee_per_gas - block.base_fee_per_gas >= tx.max_priority_fee_per_gas" do
+    test "with transactions: transaction.max_fee_per_gas - block.base_fee_per_gas >= transaction.max_priority_fee_per_gas" do
       block = insert(:block, base_fee_per_gas: 1)
 
       insert(:transaction,
@@ -538,10 +538,10 @@ defmodule Explorer.ChainTest do
         max_priority_fee_per_gas: 1
       )
 
-      assert Decimal.new(3) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+      assert Decimal.new(3) == Chain.block_to_priority_fee_of_1559_transactions(block.hash)
     end
 
-    test "with transactions: tx.max_fee_per_gas - block.base_fee_per_gas < tx.max_priority_fee_per_gas" do
+    test "with transactions: transaction.max_fee_per_gas - block.base_fee_per_gas < transaction.max_priority_fee_per_gas" do
       block = insert(:block, base_fee_per_gas: 4)
 
       insert(:transaction,
@@ -554,7 +554,7 @@ defmodule Explorer.ChainTest do
         max_priority_fee_per_gas: 3
       )
 
-      assert Decimal.new(4) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+      assert Decimal.new(4) == Chain.block_to_priority_fee_of_1559_transactions(block.hash)
     end
 
     test "with legacy transactions" do
@@ -569,7 +569,7 @@ defmodule Explorer.ChainTest do
         index: 1
       )
 
-      assert Decimal.new(24) == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+      assert Decimal.new(24) == Chain.block_to_priority_fee_of_1559_transactions(block.hash)
     end
 
     test "0 in blockchain with no EIP-1559 implemented" do
@@ -584,7 +584,7 @@ defmodule Explorer.ChainTest do
         index: 1
       )
 
-      assert 0 == Chain.block_to_priority_fee_of_1559_txs(block.hash)
+      assert 0 == Chain.block_to_priority_fee_of_1559_transactions(block.hash)
     end
   end
 
@@ -743,7 +743,7 @@ defmodule Explorer.ChainTest do
       assert Chain.finished_indexing_internal_transactions?()
     end
 
-    test "finished indexing (no txs)" do
+    test "finished indexing (no transactions)" do
       assert Chain.finished_indexing_internal_transactions?()
     end
 
@@ -755,6 +755,13 @@ defmodule Explorer.ChainTest do
       |> with_block(block)
 
       insert(:pending_block_operation, block: block, block_number: block.number)
+
+      configuration = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)
+      Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, configuration)
+      end)
 
       refute Chain.finished_indexing_internal_transactions?()
     end
@@ -1066,9 +1073,12 @@ defmodule Explorer.ChainTest do
     setup do
       Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
       Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
+      configuration = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)
+      Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false)
 
       on_exit(fn ->
         Application.put_env(:indexer, :trace_first_block, 0)
+        Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, configuration)
         Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
       end)
     end
@@ -2597,7 +2607,7 @@ defmodule Explorer.ChainTest do
           :contracts_creation_transaction,
           :token,
           [smart_contract: :smart_contract_additional_sources],
-          :proxy_implementations
+          Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
         ])
 
       options = [

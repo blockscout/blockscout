@@ -45,10 +45,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   defp evaluate_authenticity_inner(true, address_hash, params) do
-    {creation_tx_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
+    {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
     %{}
-    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
     |> Map.put("sourceFiles", %{
       "#{params["name"]}.#{smart_contract_source_file_extension(parse_boolean(params["is_yul"]))}" =>
         params["contract_source_code"]
@@ -127,20 +127,21 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   def evaluate_authenticity_via_standard_json_input_inner(true, address_hash, params, json_input) do
-    {creation_tx_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
+    {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
-    compiler_version_map =
+    verification_params =
       if Application.get_env(:explorer, :chain_type) == :zksync do
         %{
           "solcCompiler" => params["compiler_version"],
-          "zkCompiler" => params["zk_compiler_version"]
+          "zkCompiler" => params["zk_compiler_version"],
+          "constructorArguments" => params["constructor_arguments"]
         }
       else
         %{"compilerVersion" => params["compiler_version"]}
       end
 
-    compiler_version_map
-    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    verification_params
+    |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
     |> Map.put("input", json_input)
     |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
           do: RustVerifierInterface.zksync_verify_standard_json_input(&1, verifier_metadata),
@@ -153,10 +154,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   def evaluate_authenticity_via_multi_part_files(address_hash, params, files) do
-    {creation_tx_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
+    {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
 
     %{}
-    |> prepare_bytecode_for_microservice(creation_tx_input, deployed_bytecode)
+    |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
     |> Map.put("sourceFiles", files)
     |> Map.put("libraries", params["external_libraries"])
     |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
@@ -359,8 +360,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
     bc_deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
 
-    bc_creation_tx_input =
-      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+    bc_creation_transaction_input =
+      case Chain.smart_contract_creation_transaction_bytecode(address_hash) do
         %{init: init, created_contract_code: _created_contract_code} ->
           "0x" <> init_without_0x = init
           init_without_0x
@@ -371,12 +372,12 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
     %{
       "metadata_hash_with_length" => bc_meta,
-      "trimmed_bytecode" => bc_creation_tx_input_without_meta,
+      "trimmed_bytecode" => bc_creation_transaction_input_without_meta,
       "compiler_version" => solc_bc
-    } = extract_bytecode_and_metadata_hash(bc_creation_tx_input, bc_deployed_bytecode)
+    } = extract_bytecode_and_metadata_hash(bc_creation_transaction_input, bc_deployed_bytecode)
 
     bc_replaced_local =
-      String.replace(bc_creation_tx_input_without_meta, local_bytecode_without_meta, "", global: false)
+      String.replace(bc_creation_transaction_input_without_meta, local_bytecode_without_meta, "", global: false)
 
     has_constructor_with_params? = has_constructor_with_params?(abi)
 
@@ -386,16 +387,16 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
     cond do
-      bc_creation_tx_input == "" ->
+      bc_creation_transaction_input == "" ->
         {:error, :no_creation_data}
 
-      !String.contains?(bc_creation_tx_input, bc_meta) || bc_deployed_bytecode in ["", "0x"] ->
+      !String.contains?(bc_creation_transaction_input, bc_meta) || bc_deployed_bytecode in ["", "0x"] ->
         {:error, :deployed_bytecode}
 
       solc_local != solc_bc ->
         {:error, :compiler_version}
 
-      !String.contains?(bc_creation_tx_input_without_meta, local_bytecode_without_meta) ->
+      !String.contains?(bc_creation_transaction_input_without_meta, local_bytecode_without_meta) ->
         {:error, :generated_bytecode}
 
       bc_replaced_local == "" && !has_constructor_with_params? ->
@@ -410,15 +411,21 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         {:error, :autodetect_constructor_arguments_failed}
 
       has_constructor_with_params? &&
-          (empty_constructor_arguments || !String.contains?(bc_creation_tx_input, arguments_data)) ->
+          (empty_constructor_arguments || !String.contains?(bc_creation_transaction_input, arguments_data)) ->
         {:error, :constructor_arguments}
 
       has_constructor_with_params? && is_constructor_args_valid?.(arguments_data) &&
           (bc_replaced_local == arguments_data ||
-             check_users_constructor_args_validity(bc_creation_tx_input, bytecode, bc_meta, local_meta, arguments_data)) ->
+             check_users_constructor_args_validity(
+               bc_creation_transaction_input,
+               bytecode,
+               bc_meta,
+               local_meta,
+               arguments_data
+             )) ->
         {:ok, %{abi: abi, constructor_arguments: arguments_data}}
 
-      try_library_verification(local_bytecode_without_meta, bc_creation_tx_input_without_meta) ->
+      try_library_verification(local_bytecode_without_meta, bc_creation_transaction_input_without_meta) ->
         {:ok, %{abi: abi}}
 
       true ->
@@ -556,7 +563,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   @doc """
     Function tries to parse constructor args from smart contract creation input.
       1. using `extract_meta_from_deployed_bytecode/1` we derive CBOR metadata string
-      2. using metadata we split creation_tx_input and try to decode resulting constructor arguments
+      2. using metadata we split creation_transaction_input and try to decode resulting constructor arguments
        2.1. if we successfully decoded args using constructor's abi, then return constructor args
        2.2 otherwise return nil
   """
@@ -575,8 +582,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         ) :: nil | binary
   def parse_constructor_arguments_for_sourcify_contract(address_hash, abi, deployed_bytecode)
       when is_binary(deployed_bytecode) do
-    creation_tx_input =
-      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+    creation_transaction_input =
+      case Chain.smart_contract_creation_transaction_bytecode(address_hash) do
         %{init: init, created_contract_code: _created_contract_code} ->
           "0x" <> init_without_0x = init
           init_without_0x
@@ -587,9 +594,9 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
     with true <- has_constructor_with_params?(abi),
          check_function <- parse_constructor_and_return_check_function(abi),
-         false <- is_nil(creation_tx_input) || deployed_bytecode == "0x",
+         false <- is_nil(creation_transaction_input) || deployed_bytecode == "0x",
          {meta, meta_length} <- extract_meta_from_deployed_bytecode(deployed_bytecode),
-         [_bytecode, constructor_args] <- String.split(creation_tx_input, meta <> meta_length),
+         [_bytecode, constructor_args] <- String.split(creation_transaction_input, meta <> meta_length),
          ^constructor_args <- check_function.(constructor_args) do
       constructor_args
     else

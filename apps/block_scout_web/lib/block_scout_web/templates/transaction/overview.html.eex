@@ -48,11 +48,11 @@
           <h1 class="card-title">
             <div style="display: inline-block; vertical-align: bottom; line-height: 25px;">
               <%= gettext "Transaction Details" %>
-              <% personal_tx_tag = if assigns[:tx_tags], do: @tx_tags.personal_tx_tag, else: nil %>
-              <%= if personal_tx_tag && personal_tx_tag.name !== :error do %>
-                <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_tx_tag.name, additional_classes: [tag_name_to_label(personal_tx_tag.name), "ml-1"] %>
+              <% personal_transaction_tag = if assigns[:transaction_tags], do: @transaction_tags.personal_transaction_tag, else: nil %>
+              <%= if personal_transaction_tag && personal_transaction_tag.name !== :error do %>
+                <%= render BlockScoutWeb.FormView, "_tag.html", text: personal_transaction_tag.name, additional_classes: [tag_name_to_label(personal_transaction_tag.name), "ml-1"] %>
               <% end %>
-              <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @tx_tags %>
+              <%= render BlockScoutWeb.AddressView, "_labels.html", tags: @transaction_tags %>
             </div>
           </h1>
           <%= if status == :pending do %>

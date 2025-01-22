@@ -13,7 +13,7 @@ services:
     env_file:
       -  ../envs/common-blockscout.env
     volumes:
-      - ./logs/:/app/logs/
+      - ./dets/:/app/dets/
     ports:
       - target: 4000
         published: 4000

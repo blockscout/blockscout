@@ -24,12 +24,14 @@ defmodule Explorer.Chain.Celo.ValidatorGroupVote do
   typed_schema "celo_validator_group_votes" do
     belongs_to(:account_address, Address,
       foreign_key: :account_address_hash,
+      primary_key: true,
       references: :hash,
       type: Hash.Address
     )
 
     belongs_to(:group_address, Address,
       foreign_key: :group_address_hash,
+      primary_key: true,
       references: :hash,
       type: Hash.Address
     )
@@ -43,7 +45,6 @@ defmodule Explorer.Chain.Celo.ValidatorGroupVote do
 
     belongs_to(:block, Block,
       foreign_key: :block_hash,
-      primary_key: true,
       references: :hash,
       type: Hash.Full,
       null: false
@@ -70,7 +71,6 @@ defmodule Explorer.Chain.Celo.ValidatorGroupVote do
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:account_address_hash)
     |> foreign_key_constraint(:group_address_hash)
-    |> foreign_key_constraint(:block_hash)
     |> foreign_key_constraint(:transaction_hash)
   end
 end

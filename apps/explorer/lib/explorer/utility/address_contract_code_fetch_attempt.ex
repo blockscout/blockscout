@@ -23,9 +23,17 @@ defmodule Explorer.Utility.AddressContractCodeFetchAttempt do
   end
 
   @doc """
-  Gets retries number and updated_at for the Explorer.Chain.Address
+    Retrieves the number of retries and the last update timestamp for a given address.
+
+    ## Parameters
+    - `address_hash`: The address to query.
+
+    ## Returns
+    - `{retries_number, updated_at}`: A tuple containing the number of retries and
+      the last update timestamp.
+    - `nil`: If no record is found for the given address.
   """
-  @spec get_retries_number(Hash.Address.t()) :: {non_neg_integer(), DateTime.t()}
+  @spec get_retries_number(Hash.Address.t()) :: {non_neg_integer(), DateTime.t()} | nil
   def get_retries_number(address_hash) do
     __MODULE__
     |> where([address_contract_code_fetch_attempt], address_contract_code_fetch_attempt.address_hash == ^address_hash)
@@ -37,7 +45,15 @@ defmodule Explorer.Utility.AddressContractCodeFetchAttempt do
   end
 
   @doc """
-  Deletes row from address_contract_code_fetch_attempts table for the given address
+    Deletes the entry from the `address_contract_code_fetch_attempts` table that corresponds to the provided address hash.
+
+    ## Parameters
+    - `address_hash`: The `t:Explorer.Chain.Hash.Address.t/0` of the address
+      whose fetch attempt record should be deleted.
+
+    ## Returns
+    A tuple `{count, nil}`, where `count` is the number of records deleted
+    (typically 1 if the record existed, 0 otherwise).
   """
   @spec delete(Hash.Address.t()) :: {non_neg_integer(), nil}
   def delete(address_hash) do
@@ -47,14 +63,13 @@ defmodule Explorer.Utility.AddressContractCodeFetchAttempt do
   end
 
   @doc """
-  Inserts the number of retries for fetching contract code for a given address.
+    Inserts the number of retries for fetching contract code for a given address.
 
-  ## Parameters
+    ## Parameters
     - `address_hash` - The hash of the address for which the retries number is to be inserted.
 
-  ## Returns
+    ## Returns
     The result of the insertion operation.
-
   """
   @spec insert_retries_number(Hash.Address.t()) :: {non_neg_integer(), nil | [term()]}
   def insert_retries_number(address_hash) do

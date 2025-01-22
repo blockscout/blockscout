@@ -1,4 +1,4 @@
-defmodule EthereumJsonrpc.MixProject do
+defmodule EthereumJSONRPC.MixProject do
   use Mix.Project
 
   def project do
@@ -15,7 +15,7 @@ defmodule EthereumJsonrpc.MixProject do
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.13",
+      elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
@@ -23,7 +23,7 @@ defmodule EthereumJsonrpc.MixProject do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      version: "6.8.0"
+      version: "6.10.1"
     ]
   end
 
@@ -58,8 +58,6 @@ defmodule EthereumJsonrpc.MixProject do
       {:certifi, "~> 2.3"},
       # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
       {:cowboy, "~> 2.0", only: [:dev, :test]},
-      # Style Checking
-      {:credo, "~> 1.5", only: :test, runtime: false},
       # Static Type Checking
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_keccak, "~> 0.7.5"},
@@ -87,6 +85,7 @@ defmodule EthereumJsonrpc.MixProject do
       {:hackney, "~> 1.18"},
       {:poolboy, "~> 1.5.2"},
       {:logger_json, "~> 5.1"},
+      {:utils, in_umbrella: true},
       {:websockex, "~> 0.4.3"}
     ]
   end
