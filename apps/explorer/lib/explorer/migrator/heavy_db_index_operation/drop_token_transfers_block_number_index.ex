@@ -7,21 +7,19 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberI
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.{
+    DropTokenTransfersBlockNumberAscLogIndexAscIndex,
+    DropTokenTransfersFromAddressHashTransactionHashIndex,
+    DropTokenTransfersToAddressHashTransactionHashIndex,
+    DropTokenTransfersTokenContractAddressHashTransactionHashIndex
+  }
+
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
-  @migration_name "heavy_indexes_drop_token_transfers_block_number_index"
   @table_name :token_transfers
   @index_name "token_transfers_block_number_index"
   @operation_type :drop
-  @dependent_from_migrations [
-    "heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index",
-    "heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index",
-    "heavy_indexes_drop_token_transfers_to_address_hash_transaction_hash_index",
-    "heavy_indexes_drop_token_transfers_token_contract_address_hash_transaction_hash_index"
-  ]
-
-  @impl HeavyDbIndexOperation
-  def migration_name, do: @migration_name
 
   @impl HeavyDbIndexOperation
   def table_name, do: @table_name
@@ -30,7 +28,16 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberI
   def operation_type, do: @operation_type
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations, do: @dependent_from_migrations
+  def index_name, do: @index_name
+
+  @impl HeavyDbIndexOperation
+  def dependent_from_migrations,
+    do: [
+      DropTokenTransfersBlockNumberAscLogIndexAscIndex.migration_name(),
+      DropTokenTransfersFromAddressHashTransactionHashIndex.migration_name(),
+      DropTokenTransfersToAddressHashTransactionHashIndex.migration_name(),
+      DropTokenTransfersTokenContractAddressHashTransactionHashIndex.migration_name()
+    ]
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
@@ -53,8 +60,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberI
   end
 
   @impl HeavyDbIndexOperation
-  def running_other_heavy_migration_exists? do
-    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, @migration_name)
+  def running_other_heavy_migration_exists?(migration_name) do
+    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
   end
 
   @impl HeavyDbIndexOperation

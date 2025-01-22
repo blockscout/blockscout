@@ -144,6 +144,20 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     end
   end
 
+  @doc """
+  Returns the prefix used for naming heavy database operation migrations.
+
+  ## Examples
+
+      iex> Explorer.Migrator.HeavyDbIndexOperation.Helper.heavy_db_operation_migration_name_prefix()
+      "heavy_indexes_"
+
+  """
+  @spec heavy_db_operation_migration_name_prefix() :: String.t()
+  def heavy_db_operation_migration_name_prefix do
+    "heavy_indexes_"
+  end
+
   defp drop_index_query_string(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
     "DROP INDEX #{add_concurrently_flag?()} IF EXISTS \"#{index_name}\";"

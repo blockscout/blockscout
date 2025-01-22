@@ -1,10 +1,10 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberIndexIndexTest do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndexTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberIndexIndex
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex
 
   describe "Creates heavy index `logs_address_hash_block_number_DESC_index_DESC_index`" do
     setup do
@@ -25,7 +25,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumb
       assert MigrationStatus.get_status(migration_name) == nil
       assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: false, valid?: nil}
 
-      CreateLogsAddressHashBlockNumberIndexIndex.start_link([])
+      CreateLogsAddressHashBlockNumberDescIndexDescIndex.start_link([])
       Process.sleep(100)
 
       assert MigrationStatus.get_status(migration_name) == nil

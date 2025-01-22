@@ -9,24 +9,22 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopi
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateLogsAddressHashBlockNumberDescIndexDescIndex,
+    CreateLogsBlockHashIndex,
+    DropLogsAddressHashIndex,
+    DropLogsAddressHashTransactionHashIndex,
+    DropLogsBlockNumberAscIndexAscIndex,
+    DropLogsIndexIndex
+  }
+
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :logs
   @index_name "logs_address_hash_first_topic_block_number_index_index"
   @operation_type :create
-  @migration_name "heavy_indexes_create_logs_address_hash_first_topic_block_number_index_index"
   @table_columns ["address_hash", "first_topic", "block_number", "index"]
-  @dependent_from_migrations [
-    "heavy_indexes_drop_logs_block_number_asc_index_asc_index",
-    "heavy_indexes_create_logs_block_hash_index",
-    "heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index",
-    "heavy_indexes_drop_logs_address_hash_index",
-    "heavy_indexes_drop_logs_address_hash_transaction_hash_index",
-    "heavy_indexes_drop_logs_index_index"
-  ]
-
-  @impl HeavyDbIndexOperation
-  def migration_name, do: @migration_name
 
   @impl HeavyDbIndexOperation
   def table_name, do: @table_name
@@ -35,7 +33,18 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopi
   def operation_type, do: @operation_type
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations, do: @dependent_from_migrations
+  def index_name, do: @index_name
+
+  @impl HeavyDbIndexOperation
+  def dependent_from_migrations,
+    do: [
+      DropLogsBlockNumberAscIndexAscIndex.migration_name(),
+      CreateLogsBlockHashIndex.migration_name(),
+      CreateLogsAddressHashBlockNumberDescIndexDescIndex.migration_name(),
+      DropLogsAddressHashIndex.migration_name(),
+      DropLogsAddressHashTransactionHashIndex.migration_name(),
+      DropLogsIndexIndex.migration_name()
+    ]
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
@@ -58,8 +67,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopi
   end
 
   @impl HeavyDbIndexOperation
-  def running_other_heavy_migration_exists? do
-    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, @migration_name)
+  def running_other_heavy_migration_exists?(migration_name) do
+    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
   end
 
   @impl HeavyDbIndexOperation

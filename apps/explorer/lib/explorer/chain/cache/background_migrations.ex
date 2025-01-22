@@ -59,7 +59,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
     CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
-    CreateLogsAddressHashBlockNumberIndexIndex,
+    CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
     CreateLogsBlockHashIndex,
     DropInternalTransactionsFromAddressHashIndex,
@@ -132,7 +132,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
 
   defp handle_fallback(:heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished) do
     start_migration_status_task(
-      CreateLogsAddressHashBlockNumberIndexIndex,
+      CreateLogsAddressHashBlockNumberDescIndexDescIndex,
       &set_heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished/1
     )
   end

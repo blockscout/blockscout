@@ -57,7 +57,10 @@ config :explorer, Explorer.Migrator.RefetchContractCodes, enabled: false
 config :explorer, Explorer.Migrator.BackfillMultichainSearchDB, enabled: false
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex, enabled: false
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex, enabled: false
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberIndexIndex, enabled: false
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
+  enabled: false
+
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex, enabled: false
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex, enabled: false
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex, enabled: false

@@ -4,6 +4,7 @@ defmodule Explorer.Migrator.MigrationStatus do
   """
   use Explorer.Schema
 
+  alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
   alias Explorer.Repo
 
   @migration_name_atom :migration_name
@@ -109,8 +110,11 @@ defmodule Explorer.Migrator.MigrationStatus do
   """
   @spec running_other_heavy_migration_for_table_exists?(Ecto.Queryable.t(), atom(), String.t()) :: boolean()
   def running_other_heavy_migration_for_table_exists?(query \\ __MODULE__, table_name, migration_name) do
-    heavy_migrations_create_prefix = "heavy_indexes_create_#{to_string(table_name)}%"
-    heavy_migrations_drop_prefix = "heavy_indexes_drop_#{to_string(table_name)}%"
+    heavy_migrations_create_prefix =
+      "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}create_#{to_string(table_name)}%"
+
+    heavy_migrations_drop_prefix =
+      "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}drop_#{to_string(table_name)}%"
 
     query =
       from(ms in query,

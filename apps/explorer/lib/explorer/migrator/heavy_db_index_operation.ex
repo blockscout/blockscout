@@ -7,6 +7,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @doc """
   Returns the name of the migration. The name is used to track the operation's status in
   `Explorer.Migrator.MigrationStatus`.
+  Heavy DB migration is either `heavy_indexes_create_{lower_case_index_name}` or `heavy_indexes_drop_{lower_case_index_name}`
   """
   @callback migration_name :: String.t()
 
@@ -24,6 +25,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   - `:drop` - Indicates that the operation is to drop an existing index.
   """
   @callback operation_type :: :create | :drop
+
+  @doc """
+  Returns the name of the index as a string.
+  """
+  @callback index_name :: String.t()
 
   @doc """
   Returns a list of migration names that the current migration depends on.
@@ -79,7 +85,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
     - `true` if a heavy migration is running.
     - `false` otherwise.
   """
-  @callback running_other_heavy_migration_exists?() :: boolean()
+  @callback running_other_heavy_migration_exists?(String.t()) :: boolean()
 
   @doc """
   This callback restarts initial index operation once its completion is failed, e.g. index is invalid after creation.
@@ -105,6 +111,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @callback update_cache :: any()
 
   defmacro __using__(_opts) do
+    # credo:disable-for-next-line
     quote do
       @behaviour Explorer.Migrator.HeavyDbIndexOperation
 
@@ -113,6 +120,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
       import Ecto.Query
 
       alias Ecto.Adapters.SQL
+      alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
       alias Explorer.Migrator.MigrationStatus
       alias Explorer.Repo
 
@@ -212,7 +220,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
 
       defp db_operation_is_ready_to_start? do
         if Enum.empty?(dependent_from_migrations()) do
-          not running_other_heavy_migration_exists?()
+          not running_other_heavy_migration_exists?(migration_name())
         else
           all_statuses =
             MigrationStatus.fetch_migration_statuses(dependent_from_migrations())
@@ -249,6 +257,15 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
           :restart_db_index_operation,
           timeout || :timer.seconds(10)
         )
+      end
+
+      def migration_name do
+        index_name_lower_case = String.downcase(index_name())
+
+        db_operation_prefix =
+          "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}#{to_string(operation_type())}"
+
+        "#{db_operation_prefix}_#{index_name_lower_case}"
       end
     end
   end

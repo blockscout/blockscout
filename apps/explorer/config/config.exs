@@ -140,7 +140,7 @@ for migrator <- [
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex
