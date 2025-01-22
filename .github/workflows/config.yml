@@ -64,7 +64,8 @@ jobs:
               "stability",
               "zetachain",
               "zilliqa",
-              "zksync"
+              "zksync",
+              "neon"
             ];
 
             const extraChainTypes = ["suave", "polygon_edge"];
