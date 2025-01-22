@@ -186,6 +186,10 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
             Process.send(self(), :restart_db_index_operation, [])
             {:noreply, state}
 
+          {:db_index_operation_status, :unknown} ->
+            schedule_next_db_operation_status_check()
+            {:noreply, state}
+
           {:db_index_operation_status, :completed} ->
             MigrationStatus.set_status(migration_name(), "completed")
             update_cache()

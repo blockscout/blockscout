@@ -75,7 +75,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   @doc """
   Returns status of DB index creation with the given name.
   """
-  @spec db_index_creation_status(String.t()) :: :not_initialized | :not_completed | :completed
+  @spec db_index_creation_status(String.t()) :: :not_initialized | :not_completed | :completed | :unknown
   def db_index_creation_status(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
 
@@ -83,13 +83,14 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
       %{exists?: false, valid?: nil} -> :not_initialized
       %{exists?: true, valid?: false} -> :not_completed
       %{exists?: true, valid?: true} -> :completed
+      :unknown -> :unknown
     end
   end
 
   @doc """
   Returns status of DB index dropping with the given name.
   """
-  @spec db_index_dropping_status(String.t()) :: :not_initialized | :not_completed | :completed
+  @spec db_index_dropping_status(String.t()) :: :not_initialized | :not_completed | :completed | :unknown
   def db_index_dropping_status(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
 
@@ -97,6 +98,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
       %{exists?: true, valid?: true} -> :not_initialized
       %{exists?: true, valid?: false} -> :not_completed
       %{exists?: false, valid?: nil} -> :completed
+      :unknown -> :unknown
     end
   end
 
