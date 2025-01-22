@@ -94,8 +94,8 @@ defmodule Explorer.Migrator.MigrationStatus do
     from(ms in query, where: ms.migration_name == ^migration_name)
   end
 
-  @spec get_migrations_status_query(Ecto.Queryable.t(), [String.t()]) :: Ecto.Query.t()
-  defp get_migrations_status_query(query \\ __MODULE__, migration_names) do
+  @spec fetch_migration_statuses_query(Ecto.Queryable.t(), [String.t()]) :: Ecto.Query.t()
+  defp fetch_migration_statuses_query(query \\ __MODULE__, migration_names) do
     from(ms in query,
       where: ms.migration_name in ^migration_names,
       select: ms.status
@@ -136,10 +136,10 @@ defmodule Explorer.Migrator.MigrationStatus do
     - A list of migration statuses fetched from the database.
 
   """
-  @spec get_migrations_status([String.t()]) :: list(String.t())
-  def get_migrations_status(migration_names) do
+  @spec fetch_migration_statuses([String.t()]) :: list(String.t())
+  def fetch_migration_statuses(migration_names) do
     migration_names
-    |> get_migrations_status_query()
+    |> fetch_migration_statuses_query()
     |> Repo.all()
   end
 end

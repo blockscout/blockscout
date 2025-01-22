@@ -211,7 +211,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
           not running_other_heavy_migration_exists?()
         else
           all_statuses =
-            MigrationStatus.get_migrations_status(dependent_from_migrations())
+            MigrationStatus.fetch_migration_statuses(dependent_from_migrations())
 
           all_statuses_completed? =
             all_statuses
