@@ -23,6 +23,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
   @ignored_hosts ["localhost", "127.0.0.1", "0.0.0.0", "", nil]
 
+  # TODO: Consider using the `EthereumJSONRPC.ERC20` module to retrieve token metadata
   @contract_abi [
     %{
       "constant" => true,
