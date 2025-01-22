@@ -174,7 +174,7 @@ defmodule NFTMediaHandler do
         {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
 
       %URI{scheme: "ar", host: _host, path: resource_id} ->
-        {TokenMetadataRetriever.arweave_link(resource_id), []}
+        {TokenMetadataRetriever.arweave_link(resource_id), TokenMetadataRetriever.ar_headers()}
 
       %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
         {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}

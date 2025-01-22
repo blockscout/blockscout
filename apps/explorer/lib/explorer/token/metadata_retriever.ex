@@ -555,6 +555,22 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   @doc """
+  Returns the headers for making requests to Arweave.
+
+  ## Examples
+
+      iex> Explorer.Token.MetadataRetriever.ar_headers()
+      [
+        {"User-Agent", "blockscout-6.9.0"}
+      ]
+
+  """
+  @spec ar_headers() :: [{binary(), binary()}]
+  def ar_headers do
+    @default_headers
+  end
+
+  @doc """
     Fetch/parse metadata using smart-contract's response
   """
   @spec fetch_json(any, binary() | nil, binary() | nil, boolean) ::
