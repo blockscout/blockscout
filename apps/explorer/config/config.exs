@@ -118,28 +118,35 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
 
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: true
 
-config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: true
-config :explorer, Explorer.Migrator.AddressCurrentTokenBalanceTokenType, enabled: true
-config :explorer, Explorer.Migrator.AddressTokenBalanceTokenType, enabled: true
-config :explorer, Explorer.Migrator.SanitizeMissingBlockRanges, enabled: true
-config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, enabled: true
-config :explorer, Explorer.Migrator.TokenTransferTokenType, enabled: true
-config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, enabled: true
-config :explorer, Explorer.Migrator.TransactionBlockConsensus, enabled: true
-config :explorer, Explorer.Migrator.TokenTransferBlockConsensus, enabled: true
-config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers, enabled: true
-config :explorer, Explorer.Migrator.SanitizeMissingTokenBalances, enabled: true
-config :explorer, Explorer.Migrator.SanitizeReplacedTransactions, enabled: true
-config :explorer, Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, enabled: true
-config :explorer, Explorer.Migrator.SanitizeDuplicatedLogIndexLogs, enabled: true
-config :explorer, Explorer.Migrator.RefetchContractCodes, enabled: true
-config :explorer, Explorer.Migrator.BackfillMultichainSearchDB, enabled: true
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex, enabled: true
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex, enabled: true
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberIndexIndex, enabled: true
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex, enabled: true
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex, enabled: true
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex, enabled: true
+for migrator <- [
+      # Background migrations
+      Explorer.Migrator.TransactionsDenormalization,
+      Explorer.Migrator.AddressCurrentTokenBalanceTokenType,
+      Explorer.Migrator.AddressTokenBalanceTokenType,
+      Explorer.Migrator.SanitizeMissingBlockRanges,
+      Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
+      Explorer.Migrator.TokenTransferTokenType,
+      Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
+      Explorer.Migrator.TransactionBlockConsensus,
+      Explorer.Migrator.TokenTransferBlockConsensus,
+      Explorer.Migrator.RestoreOmittedWETHTransfers,
+      Explorer.Migrator.SanitizeMissingTokenBalances,
+      Explorer.Migrator.SanitizeReplacedTransactions,
+      Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus,
+      Explorer.Migrator.SanitizeDuplicatedLogIndexLogs,
+      Explorer.Migrator.RefetchContractCodes,
+      Explorer.Migrator.BackfillMultichainSearchDB,
+
+      # Heavy DB index operations
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex
+    ] do
+  config :explorer, migrator, enabled: true
+end
 
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
   enabled: true
