@@ -31,7 +31,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumb
       assert MigrationStatus.get_status(migration_name) == nil
 
       insert(:db_migration_status,
-        migration_name: "heavy_indexes_drop_logs_block_number_asc_index_asc_index",
+        migration_name: "heavy_indexes_drop_logs_block_number_asc__index_asc_index",
         status: "completed"
       )
 

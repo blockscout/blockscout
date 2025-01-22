@@ -19,7 +19,7 @@ defmodule Explorer.Migrator.DropLogsBlockNumberAscIndexAscIndexTest do
     end
 
     test "Drops heavy DB index with no dependencies" do
-      migration_name = "heavy_indexes_drop_logs_block_number_asc_index_asc_index"
+      migration_name = "heavy_indexes_drop_logs_block_number_asc__index_asc_index"
       index_name = "logs_block_number_ASC__index_ASC_index"
 
       assert MigrationStatus.get_status(migration_name) == nil
