@@ -11,9 +11,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   @doc """
   Checks the progress of DB index operation by its name.
   """
-  @spec check_db_index_operation_progress(String.t()) ::
+  @spec check_db_index_operation_progress(String.t(), String.t()) ::
           :finished_or_not_started | :unknown | :in_progress
-  def check_db_index_operation_progress(raw_index_name) do
+  def check_db_index_operation_progress(raw_index_name, operation) do
     index_name = sanitize_index_name(raw_index_name)
 
     case SQL.query(
@@ -21,7 +21,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
            """
            SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE state='active' AND query = $1);
            """,
-           [drop_index_query_string(index_name)]
+           [operation]
          ) do
       {:ok, %Postgrex.Result{command: :select, columns: ["exists"], rows: [[true]]}} ->
         :in_progress
@@ -110,8 +110,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   def create_db_index(raw_index_name, table_name_atom, table_columns) do
     index_name = sanitize_index_name(raw_index_name)
 
-    query =
-      "CREATE INDEX #{add_concurrently_flag?()} IF NOT EXISTS \"#{index_name}\" on #{to_string(table_name_atom)} (#{Enum.join(table_columns, ", ")});"
+    query = create_index_query_string(index_name, table_name_atom, table_columns)
 
     case SQL.query(Repo, query, [], timeout: :infinity) do
       {:ok, _} ->
@@ -124,6 +123,30 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
 
         :error
     end
+  end
+
+  @doc """
+  Generates a SQL query string to create an index on a specified table.
+
+  ## Parameters
+
+    - `index_name` (String): The name of the index to be created.
+    - `table_name_atom` (atom): The name of the table on which the index will be created, as an atom.
+    - `table_columns` (list of strings): A list of column names to be included in the index.
+
+  ## Returns
+
+    - (String): A SQL query string to create the index.
+
+  ## Examples
+
+      iex> create_index_query_string("my_index", :my_table, ["column1", "column2"])
+      "CREATE INDEX CONCURRENTLY IF NOT EXISTS \"my_index\" on my_table (column1, column2);"
+
+  """
+  @spec create_index_query_string(String.t(), atom(), list()) :: String.t()
+  def create_index_query_string(index_name, table_name_atom, table_columns) do
+    "CREATE INDEX #{add_concurrently_flag?()} IF NOT EXISTS \"#{index_name}\" on #{to_string(table_name_atom)} (#{Enum.join(table_columns, ", ")});"
   end
 
   @doc """
@@ -158,7 +181,26 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     "heavy_indexes_"
   end
 
-  defp drop_index_query_string(raw_index_name) do
+  @doc """
+  Generates a SQL query string to drop an index if it exists.
+
+  ## Parameters
+
+    - `raw_index_name`: The raw name of the index to be dropped.
+
+  ## Returns
+
+    - A string containing the SQL query to drop the index.
+
+  The query string includes the `CONCURRENTLY` flag if applicable and ensures the index is dropped only if it exists.
+
+  ## Examples
+
+      iex> drop_index_query_string("my_index")
+      "DROP INDEX CONCURRENTLY IF EXISTS \"my_index\";"
+  """
+  @spec drop_index_query_string(String.t()) :: String.t()
+  def drop_index_query_string(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
     "DROP INDEX #{add_concurrently_flag?()} IF EXISTS \"#{index_name}\";"
   end

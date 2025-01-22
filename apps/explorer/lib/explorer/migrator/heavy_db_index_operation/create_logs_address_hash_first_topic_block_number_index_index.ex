@@ -53,7 +53,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopi
 
   @impl HeavyDbIndexOperation
   def check_db_index_operation_progress do
-    HeavyDbIndexOperationHelper.check_db_index_operation_progress(@index_name)
+    operation = HeavyDbIndexOperationHelper.create_index_query_string(@index_name, @table_name, @table_columns)
+    HeavyDbIndexOperationHelper.check_db_index_operation_progress(@index_name, operation)
   end
 
   @impl HeavyDbIndexOperation
