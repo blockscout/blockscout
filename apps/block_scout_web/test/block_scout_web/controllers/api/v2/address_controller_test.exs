@@ -2963,7 +2963,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       {:ok, endpoint: &"/api/v2/addresses/#{&1}/nft"}
     end
 
-    test "get 404 on non existing address", %{conn: conn, endpoint: endpoint} do
+    test "get 200 on non existing address", %{conn: conn, endpoint: endpoint} do
       address = build(:address)
 
       request = get(conn, endpoint.(address.hash))
@@ -3211,7 +3211,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       {:ok, endpoint: &"/api/v2/addresses/#{&1}/nft/collections"}
     end
 
-    test "get 404 on non existing address", %{conn: conn, endpoint: endpoint} do
+    test "get 200 on non existing address", %{conn: conn, endpoint: endpoint} do
       address = build(:address)
 
       request = get(conn, endpoint.(address.hash))

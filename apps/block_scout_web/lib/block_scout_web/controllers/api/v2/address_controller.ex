@@ -131,7 +131,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
-  @spec address(any(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
+  @doc """
+  Function to handle GET requests to `/api/v2/addresses/:address_hash_param` endpoint.
+  Returns 200 on any valid address_hash, even if the address is not found in the database.
+  """
+  @spec address(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def address(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -171,6 +175,19 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/counters` endpoint.
+
+  ## Parameters
+  - conn: The connection struct (Plug.Conn.t()).
+  - params: A map of parameters.
+
+  ## Returns
+  - `{:format, :error}` if provided address_hash is invalid.
+  - `{:restricted_access, true}` if access is restricted.
+  - `Plug.Conn.t()` if the operation is successful.
+  """
+  @spec counters(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def counters(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -199,6 +216,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/token-balances` endpoint (retrieves the token balances for a given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the request parameters.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec token_balances(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def token_balances(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -223,6 +255,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/transactions` endpoint (retrieves transactions for a given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec transactions(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def transactions(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -264,6 +311,26 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/token-transfers` endpoint (retrieves token transfers for a given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `{:not_found, {:error, :not_found}}` if token with provided address hash is not found.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec token_transfers(Plug.Conn.t(), map()) ::
+          {:format, :error}
+          | {:not_found, {:error, :not_found}}
+          | {:restricted_access, true}
+          | Plug.Conn.t()
   def token_transfers(
         conn,
         %{"address_hash_param" => address_hash_string, "token" => token_address_hash_string} = params
@@ -368,6 +435,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/internal-transactions` endpoint (retrieves internal transactions for a given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec internal_transactions(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def internal_transactions(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -412,6 +494,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/logs` endpoint (retrieves logs for a given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec logs(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def logs(conn, %{"address_hash_param" => address_hash_string, "topic" => topic} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -490,6 +587,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/blocks-validated` endpoint (retrieves validated by a given address blocks)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec blocks_validated(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def blocks_validated(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -526,6 +638,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/coin-balance-history` endpoint (retrieves coin balance history for given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec coin_balance_history(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def coin_balance_history(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -551,6 +678,22 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/coin-balance-history-by-day` endpoint (retrieves coin balance history by day for given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec coin_balance_history_by_day(Plug.Conn.t(), map()) ::
+          {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def coin_balance_history_by_day(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -571,6 +714,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/tokens` endpoint (retrieves token balances for given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec tokens(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def tokens(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -610,6 +768,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/withdrawals` endpoint (retrieves withdrawals for given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec withdrawals(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def withdrawals(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -640,6 +813,19 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses` endpoint (retrieves addresses list)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec addresses_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def addresses_list(conn, params) do
     {addresses, next_page} =
       params
@@ -663,6 +849,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     })
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/tabs-counters` endpoint (retrieves counter for each entity (max counter value is 51) for given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec tabs_counters(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def tabs_counters(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       counter_name_to_json_field_name = %{
@@ -712,6 +913,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/nft-list` endpoint (retrieves NFTs for given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec nft_list(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def nft_list(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -748,6 +964,21 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  @doc """
+  Handles GET requests to `/api/v2/addresses/:address_hash_param/nft-collections` endpoint (retrieves NFTs grouped by collections for given address)
+
+  ## Parameters
+
+    - conn: The connection struct.
+    - params: A map containing the parameters for the request.
+
+  ## Returns
+
+    - `{:format, :error}` if provided address_hash is invalid.
+    - `{:restricted_access, true}` if access is restricted.
+    - `Plug.Conn.t()` if the request is successful.
+  """
+  @spec nft_collections(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def nft_collections(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -787,6 +1018,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @doc """
   Function to handle GET requests to `/api/v2/addresses/:address_hash_param/election-rewards` endpoint.
   """
+  @spec celo_election_rewards(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def celo_election_rewards(conn, %{"address_hash_param" => address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, @address_options, false) do
@@ -828,7 +1060,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   end
 
   # Checks if this valid address hash string, and this address is not prohibited address.
-  # Returns the `{:ok, address_hash, address}` if address hash passed all the checks.
+  # Returns the `{:ok, address_hash}` if address hash passed all the checks.
+  # Returns {:ok, _} response even if the address is not present in the database.
   @spec validate_address(String.t(), any()) ::
           {:format, :error}
           | {:restricted_access, true}
