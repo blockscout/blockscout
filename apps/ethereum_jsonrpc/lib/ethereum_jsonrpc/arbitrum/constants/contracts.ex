@@ -408,7 +408,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
         {:uint, 256},
         {:tuple,
          [
-           :bytes32,
+           {:bytes, 32},
            {:tuple,
             [
               {:uint, 8},
@@ -417,7 +417,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
               {:uint, 64},
               {:uint, 256},
               {:uint, 256},
-              :bytes32
+              {:bytes, 32}
             ]}
          ]}
       ]
@@ -438,7 +438,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
         {:uint, 256},
         {:tuple,
          [
-           :bytes32,
+           {:bytes, 32},
            {:tuple,
             [
               {:uint, 8},
@@ -447,7 +447,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
               {:uint, 64},
               {:uint, 256},
               {:uint, 256},
-              :bytes32
+              {:bytes, 32}
             ]}
          ]}
       ]
@@ -468,7 +468,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
         {:uint, 256},
         {:tuple,
          [
-           :bytes32,
+           {:bytes, 32},
            {:tuple,
             [
               {:uint, 8},
@@ -477,7 +477,7 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
               {:uint, 64},
               {:uint, 256},
               {:uint, 256},
-              :bytes32
+              {:bytes, 32}
             ]}
          ]}
       ]
