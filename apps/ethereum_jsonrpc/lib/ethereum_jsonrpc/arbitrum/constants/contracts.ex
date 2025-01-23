@@ -393,4 +393,93 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
         :address
       ]
     }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the `addSequencerL2BatchFromBlobsDelayProof` function
+  """
+  def add_sequencer_l2_batch_from_blobs_delay_proof_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "addSequencerL2BatchFromBlobsDelayProof",
+      types: [
+        {:uint, 256},
+        {:uint, 256},
+        :address,
+        {:uint, 256},
+        {:uint, 256},
+        {:tuple,
+         [
+           :bytes32,
+           {:tuple,
+            [
+              {:uint, 8},
+              :address,
+              {:uint, 64},
+              {:uint, 64},
+              {:uint, 256},
+              {:uint, 256},
+              :bytes32
+            ]}
+         ]}
+      ]
+    }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the `addSequencerL2BatchFromOriginDelayProof` function
+  """
+  def add_sequencer_l2_batch_from_origin_delay_proof_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "addSequencerL2BatchFromOriginDelayProof",
+      types: [
+        {:uint, 256},
+        :bytes,
+        {:uint, 256},
+        :address,
+        {:uint, 256},
+        {:uint, 256},
+        {:tuple,
+         [
+           :bytes32,
+           {:tuple,
+            [
+              {:uint, 8},
+              :address,
+              {:uint, 64},
+              {:uint, 64},
+              {:uint, 256},
+              {:uint, 256},
+              :bytes32
+            ]}
+         ]}
+      ]
+    }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the `addSequencerL2BatchDelayProof` function
+  """
+  def add_sequencer_l2_batch_delay_proof_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "addSequencerL2BatchDelayProof",
+      types: [
+        {:uint, 256},
+        :bytes,
+        {:uint, 256},
+        :address,
+        {:uint, 256},
+        {:uint, 256},
+        {:tuple,
+         [
+           :bytes32,
+           {:tuple,
+            [
+              {:uint, 8},
+              :address,
+              {:uint, 64},
+              {:uint, 64},
+              {:uint, 256},
+              {:uint, 256},
+              :bytes32
+            ]}
+         ]}
+      ]
+    }
 end

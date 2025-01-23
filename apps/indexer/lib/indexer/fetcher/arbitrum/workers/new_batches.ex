@@ -1146,8 +1146,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     end)
   end
 
-  # Parses calldata of `addSequencerL2BatchFromOrigin` or `addSequencerL2BatchFromBlobs`
-  # functions to extract batch information.
+  # Parses calldata of `addSequencerL2BatchFromOrigin`, `addSequencerL2BatchFromBlobs`,
+  # `addSequencerL2BatchFromBlobsDelayProof`, `addSequencerL2BatchFromOriginDelayProof`,
+  # or `addSequencerL2BatchDelayProof` functions to extract batch information.
   @spec add_sequencer_l2_batch_from_origin_calldata_parse(binary()) ::
           {non_neg_integer(), non_neg_integer() | nil, non_neg_integer() | nil, binary() | nil}
   defp add_sequencer_l2_batch_from_origin_calldata_parse(calldata) do
@@ -1181,6 +1182,36 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
           )
 
         {sequence_number, nil, nil, data}
+
+      "0x917cf8ac" <> encoded_params ->
+        # addSequencerL2BatchFromBlobsDelayProof(uint256 sequenceNumber, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, DelayProof calldata delayProof)
+        [sequence_number, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count, _delay_proof] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_blobs_delay_proof_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, nil}
+
+      "0x69cacded" <> encoded_params ->
+        # addSequencerL2BatchFromOriginDelayProof(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, DelayProof calldata delayProof)
+        [sequence_number, data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count, _delay_proof] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_delay_proof_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, data}
+
+      "0x6e620055" <> encoded_params ->
+        # addSequencerL2BatchDelayProof(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, DelayProof calldata delayProof)
+        [sequence_number, data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count, _delay_proof] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_delay_proof_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, data}
     end
   end
 
