@@ -3,6 +3,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     Common functions to simplify RPC routines for Indexer.Fetcher.Arbitrum fetchers
   """
 
+  # TODO: Move the module under EthereumJSONRPC.Arbitrum.
+
   alias ABI.TypeDecoder
 
   import EthereumJSONRPC,
