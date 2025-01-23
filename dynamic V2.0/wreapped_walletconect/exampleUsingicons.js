@@ -18,4 +18,6 @@
       ]
     }
   }}
-/>
+>
+  {/* Add your application components here */}
+</DynamicContextProvider>
