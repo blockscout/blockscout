@@ -5,7 +5,7 @@ sudo rm -rf services/*-data
 rm -rf services/dets
 rm -rf services/logs
 
-if [[ "$1" == "--restart" ]]; then
+if [[ "$1" == "--start" ]]; then
     if [[ "$2" == "localnet" ]]; then
         ./start.sh localnet
     elif [[ "$2" == "testnet" ]]; then
