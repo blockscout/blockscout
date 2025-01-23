@@ -290,15 +290,13 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   def extract_optimization(compiler_settings),
     do: (compiler_settings["optimizer"] && compiler_settings["optimizer"]["enabled"]) || false
 
-  def publish_smart_contract(address_hash, params, abi) do
-    attrs = address_hash |> attributes(params, abi)
-
-    Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
-    SmartContract.create_or_update_smart_contract(address_hash, attrs)
-  end
-
-  def publish_smart_contract(address_hash, params, abi, file_path) do
-    attrs = address_hash |> attributes(params, file_path, abi)
+  def publish_smart_contract(address_hash, params, abi, file_path \\ nil) do
+    attrs =
+      if file_path do
+        address_hash |> attributes(params, file_path, abi)
+      else
+        address_hash |> attributes(params, abi)
+      end
 
     Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
     SmartContract.create_or_update_smart_contract(address_hash, attrs)
