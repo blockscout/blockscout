@@ -143,34 +143,18 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberAscLogIndexAscIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex
     ] do
   config :explorer, migrator, enabled: true
 end
-
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
-  enabled: true
-
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashIndex, enabled: true
-
-config :explorer,
-       Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
-       enabled: true
-
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberAscLogIndexAscIndex,
-  enabled: true
-
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
-  enabled: true
-
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
-  enabled: true
-
-config :explorer,
-       Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
-       enabled: true
-
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex, enabled: true
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
 
