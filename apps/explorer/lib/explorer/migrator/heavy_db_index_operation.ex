@@ -211,17 +211,21 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
       end
 
       defp db_operation_is_ready_to_start? do
-        if Enum.empty?(dependent_from_migrations()) do
-          not running_other_heavy_migration_exists?(migration_name())
+        if running_other_heavy_migration_exists?(migration_name()) do
+          false
         else
-          all_statuses =
-            MigrationStatus.fetch_migration_statuses(dependent_from_migrations())
+          if Enum.empty?(dependent_from_migrations()) do
+            true
+          else
+            all_statuses =
+              MigrationStatus.fetch_migration_statuses(dependent_from_migrations())
 
-          all_statuses_completed? =
-            all_statuses
-            |> Enum.all?(&(&1 == "completed"))
+            all_statuses_completed? =
+              all_statuses
+              |> Enum.all?(&(&1 == "completed"))
 
-          all_statuses_completed? && Enum.count(all_statuses) == Enum.count(dependent_from_migrations())
+            all_statuses_completed? && Enum.count(all_statuses) == Enum.count(dependent_from_migrations())
+          end
         end
       end
 
