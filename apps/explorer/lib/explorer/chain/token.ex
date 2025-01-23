@@ -236,7 +236,6 @@ defmodule Explorer.Chain.Token do
       |> Token.changeset(
         filtered_params
         |> Map.put(:updated_at, DateTime.utc_now())
-        |> Map.put(:metadata_updated_at, DateTime.utc_now())
       )
       |> (&if(token.is_verified_via_admin_panel && !info_from_admin_panel?,
             do: &1 |> Changeset.delete_change(:symbol) |> Changeset.delete_change(:name),

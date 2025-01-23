@@ -88,6 +88,10 @@ defmodule Indexer.Fetcher.TokenUpdater do
   end
 
   def update_metadata(%Token{} = token, metadata) do
-    Token.update(token, metadata, false, :metadata_update)
+    metadata_with_metadata_updated_at =
+      metadata
+      |> Map.put(:metadata_updated_at, DateTime.utc_now())
+
+    Token.update(token, metadata_with_metadata_updated_at, false, :metadata_update)
   end
 end
