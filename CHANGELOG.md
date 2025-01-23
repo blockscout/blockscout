@@ -10,6 +10,7 @@
 
 ### 🐛 Bug Fixes
 
+- Remove unnecessary internal transactions preload ([#11643](https://github.com/blockscout/blockscout/issues/11643))
 - Fix bug in Indexer.Fetcher.EmptyBlocksSanitizer module ([#11636](https://github.com/blockscout/blockscout/pull/11636))
 - Multichain search: process address in chunks ([#11632](https://github.com/blockscout/blockscout/issues/11632))
 - Fix transactions deadlock ([#11623](https://github.com/blockscout/blockscout/issues/11623))

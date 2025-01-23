@@ -190,9 +190,15 @@ initialize_project() {
 # Define the initialization subroutine
 initialize_db() {
     echo "Initializing database. Step 1 of 2: Dropping database"
-    mix ecto.drop > /dev/null 2>&1
-    echo "Initializing database. Step 2 of 2: Creating database"
-    mix do ecto.create, ecto.migrate | grep Runn
+    if OUTPUT=$(mix ecto.drop 2>&1); then
+        echo "Initializing database. Step 2 of 2: Creating database"
+        mix do ecto.create, ecto.migrate | grep Runn
+    else
+        echo "Failed to drop database. Initialization aborted."
+        echo "Error output:"
+        echo "$OUTPUT"
+        return 1
+    fi
 }
 
 # Define the compile subroutine
