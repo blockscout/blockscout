@@ -144,22 +144,8 @@ defmodule Explorer.SmartContract.Stylus.Publisher do
   defp publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 
-    create_or_update_smart_contract(address_hash, attrs)
-  end
-
-  # This function first checks if a smart contract already exists in the database
-  # at the given address. If it exists, updates the contract with new attributes.
-  # Otherwise, creates a new smart contract record.
-  @spec create_or_update_smart_contract(binary() | Explorer.Chain.Hash.t(), map()) ::
-          {:error, Ecto.Changeset.t() | String.t()} | {:ok, Explorer.Chain.SmartContract.t()}
-  defp create_or_update_smart_contract(address_hash, attrs) do
     Logger.info("Publish successfully verified Stylus smart-contract #{address_hash} into the DB")
-
-    if SmartContract.verified?(address_hash) do
-      SmartContract.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
-    else
-      SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
-    end
+    SmartContract.create_or_update_smart_contract(address_hash, attrs)
   end
 
   # Creates an invalid changeset for a Stylus smart contract that failed verification.
