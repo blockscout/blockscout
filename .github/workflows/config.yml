@@ -286,7 +286,7 @@ jobs:
 
       - run: |
           mix gettext.extract --merge | tee stdout.txt
-          ! grep "Wrote " stdout.txt
+          grep "Wrote priv/gettext/en/LC_MESSAGES/default.po (0 new messages, 0 removed, " stdout.txt
         working-directory: "apps/block_scout_web"
   sobelow:
     name: Sobelow security analysis

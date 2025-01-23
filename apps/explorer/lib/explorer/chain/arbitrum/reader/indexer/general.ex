@@ -43,4 +43,30 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.General do
     |> Chain.join_associations(%{:transactions => :optional})
     |> Repo.all()
   end
+
+  @doc """
+    Retrieves block numbers within a range that are missing Arbitrum-specific fields.
+
+    Identifies rollup blocks that lack one or more of the following fields:
+    `send_count`, `send_root`, or `l1_block_number`.
+
+    ## Parameters
+    - `start_block_number`: The lower bound of the block range to check.
+    - `end_block_number`: The upper bound of the block range to check.
+
+    ## Returns
+    - A list of block numbers that are missing one or more required fields.
+  """
+  @spec blocks_with_missing_fields(FullBlock.block_number(), FullBlock.block_number()) :: [FullBlock.block_number()]
+  def blocks_with_missing_fields(start_block_number, end_block_number) do
+    query =
+      from(block in FullBlock,
+        where:
+          block.number >= ^start_block_number and block.number <= ^end_block_number and block.consensus == true and
+            (is_nil(block.send_count) or is_nil(block.send_root) or is_nil(block.l1_block_number)),
+        select: block.number
+      )
+
+    Repo.all(query)
+  end
 end
