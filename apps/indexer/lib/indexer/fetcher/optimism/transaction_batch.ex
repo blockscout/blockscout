@@ -858,7 +858,9 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       {:ok, Map.put(incomplete_channels_acc, frame.channel_id, channel_updated), batches_acc, sequences_acc, blobs_acc}
     end
   rescue
-    _ -> {:ok, incomplete_channels_acc, batches_acc, sequences_acc, blobs_acc}
+    e ->
+      Logger.warning("Exception thrown: #{inspect(e)}")
+      {:ok, incomplete_channels_acc, batches_acc, sequences_acc, blobs_acc}
   end
 
   defp handle_channel(
@@ -1209,8 +1211,9 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
        ) do
     uncompressed_bytes =
       if first_byte(bytes) == @compressor_brotli do
-        {:ok, uncompressed} = :brotli.decode(binary_part(bytes, 1, byte_size(bytes) - 1))
-        uncompressed
+        bytes
+        |> binary_part(1, byte_size(bytes) - 1)
+        |> ExBrotli.decompress!()
       else
         zlib_decompress(bytes)
       end
