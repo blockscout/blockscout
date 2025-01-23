@@ -334,7 +334,15 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
     ]
 
   @doc """
-    Returns selector with ABI (object of `ABI.FunctionSelector`) of the `addSequencerL2BatchFromBlobs(...)` function
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchFromBlobs(
+        uint256 sequenceNumber,
+        uint256 afterDelayedMessagesRead,
+        address gasRefunder,
+        uint256 prevMessageCount,
+        uint256 newMessageCount
+      )
   """
   def add_sequencer_l2_batch_from_blobs_selector_with_abi,
     do: %ABI.FunctionSelector{
@@ -395,7 +403,16 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
     }
 
   @doc """
-    Returns selector with ABI (object of `ABI.FunctionSelector`) of the `addSequencerL2BatchFromBlobsDelayProof` function
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchFromBlobsDelayProof(
+        uint256 sequenceNumber,
+        uint256 afterDelayedMessagesRead,
+        address gasRefunder,
+        uint256 prevMessageCount,
+        uint256 newMessageCount,
+        DelayProof calldata delayProof
+      )
   """
   def add_sequencer_l2_batch_from_blobs_delay_proof_selector_with_abi,
     do: %ABI.FunctionSelector{
@@ -424,7 +441,17 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
     }
 
   @doc """
-    Returns selector with ABI (object of `ABI.FunctionSelector`) of the `addSequencerL2BatchFromOriginDelayProof` function
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchFromOriginDelayProof(
+        uint256 sequenceNumber,
+        bytes calldata data,
+        uint256 afterDelayedMessagesRead,
+        address gasRefunder,
+        uint256 prevMessageCount,
+        uint256 newMessageCount,
+        DelayProof calldata delayProof
+      )
   """
   def add_sequencer_l2_batch_from_origin_delay_proof_selector_with_abi,
     do: %ABI.FunctionSelector{
@@ -454,7 +481,17 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
     }
 
   @doc """
-    Returns selector with ABI (object of `ABI.FunctionSelector`) of the `addSequencerL2BatchDelayProof` function
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchDelayProof(
+        uint256 sequenceNumber,
+        bytes calldata data,
+        uint256 afterDelayedMessagesRead,
+        address gasRefunder,
+        uint256 prevMessageCount,
+        uint256 newMessageCount,
+        DelayProof calldata delayProof
+      )
   """
   def add_sequencer_l2_batch_delay_proof_selector_with_abi,
     do: %ABI.FunctionSelector{
