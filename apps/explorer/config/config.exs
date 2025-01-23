@@ -130,6 +130,7 @@ config :explorer, Explorer.Migrator.TokenTransferBlockConsensus, enabled: true
 config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers, enabled: true
 config :explorer, Explorer.Migrator.SanitizeMissingTokenBalances, enabled: true
 config :explorer, Explorer.Migrator.SanitizeReplacedTransactions, enabled: true
+config :explorer, Explorer.Migrator.SanitizeVerifiedAddresses, enabled: true
 config :explorer, Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, enabled: true
 config :explorer, Explorer.Migrator.SanitizeDuplicatedLogIndexLogs, enabled: true
 config :explorer, Explorer.Migrator.RefetchContractCodes, enabled: true
