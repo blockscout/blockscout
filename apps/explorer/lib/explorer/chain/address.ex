@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Address.Schema do
     Withdrawal
   }
 
-  alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @chain_type_fields (case @chain_type do
@@ -138,11 +138,11 @@ defmodule Explorer.Chain.Address do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
-  alias Explorer.Helper, as: ExplorerHelper
-  alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.EIP7702
   alias Explorer.Chain.{Address, Data, Hash, InternalTransaction, Transaction}
   alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.Helper, as: ExplorerHelper
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -313,11 +313,7 @@ defmodule Explorer.Chain.Address do
   end
 
   def checksum(hash, iodata?) do
-    checksum_formatted =
-      case Application.get_env(:explorer, :checksum_function) || :eth do
-        :eth -> eth_checksum(hash)
-        :rsk -> rsk_checksum(hash)
-      end
+    checksum_formatted = address_checksum(hash)
 
     if iodata? do
       ["0x" | checksum_formatted]
@@ -326,55 +322,57 @@ defmodule Explorer.Chain.Address do
     end
   end
 
-  def eth_checksum(hash) do
-    string_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0x")
+  if @chain_type == :rsk do
+    # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
+    defp address_checksum(hash) do
+      string_hash =
+        hash
+        |> to_string()
+        |> String.trim_leading("0x")
 
-    match_byte_stream = stream_every_four_bytes_of_sha256(string_hash)
+      chain_id = Application.get_env(:block_scout_web, :chain_id)
 
-    string_hash
-    |> stream_binary()
-    |> Stream.zip(match_byte_stream)
-    |> Enum.map(fn
-      {digit, _} when digit in ~c"0123456789" ->
-        digit
+      prefix = "#{chain_id}0x"
 
-      {alpha, 1} ->
-        alpha - 32
+      match_byte_stream = stream_every_four_bytes_of_sha256("#{prefix}#{string_hash}")
 
-      {alpha, _} ->
-        alpha
-    end)
-  end
+      string_hash
+      |> stream_binary()
+      |> Stream.zip(match_byte_stream)
+      |> Enum.map(fn
+        {digit, _} when digit in ~c"0123456789" ->
+          digit
 
-  # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
-  def rsk_checksum(hash) do
-    chain_id = NetVersion.get_version()
+        {alpha, 1} ->
+          alpha - 32
 
-    string_hash =
-      hash
-      |> to_string()
-      |> String.trim_leading("0x")
+        {alpha, _} ->
+          alpha
+      end)
+    end
+  else
+    defp address_checksum(hash) do
+      string_hash =
+        hash
+        |> to_string()
+        |> String.trim_leading("0x")
 
-    prefix = "#{chain_id}0x"
+      match_byte_stream = stream_every_four_bytes_of_sha256(string_hash)
 
-    match_byte_stream = stream_every_four_bytes_of_sha256("#{prefix}#{string_hash}")
+      string_hash
+      |> stream_binary()
+      |> Stream.zip(match_byte_stream)
+      |> Enum.map(fn
+        {digit, _} when digit in ~c"0123456789" ->
+          digit
 
-    string_hash
-    |> stream_binary()
-    |> Stream.zip(match_byte_stream)
-    |> Enum.map(fn
-      {digit, _} when digit in ~c"0123456789" ->
-        digit
+        {alpha, 1} ->
+          alpha - 32
 
-      {alpha, 1} ->
-        alpha - 32
-
-      {alpha, _} ->
-        alpha
-    end)
+        {alpha, _} ->
+          alpha
+      end)
+    end
   end
 
   defp stream_every_four_bytes_of_sha256(value) do
@@ -436,13 +434,16 @@ defmodule Explorer.Chain.Address do
   end
 
   defimpl String.Chars do
+    use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
     @doc """
     Uses `hash` as string representation, formatting it according to the eip-55 specification
 
     For more information: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md#specification
 
     To bypass the checksum formatting, use `to_string/1` on the hash itself.
-
+    #{unless @chain_type == :rsk do
+      """
         iex> address = %Explorer.Chain.Address{
         ...>   hash: %Explorer.Chain.Hash{
         ...>     byte_count: 20,
@@ -454,6 +455,8 @@ defmodule Explorer.Chain.Address do
         "0x8Bf38d4764929064f2d4d3a56520A76AB3df415b"
         iex> to_string(address.hash)
         "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+      """
+    end}
     """
     def to_string(%@for{} = address) do
       @for.checksum(address)
