@@ -70,10 +70,20 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
   ]
 
   @doc """
-  Get implementation address hash string following ResolvedDelegateProxy proxy pattern
+  Get implementation address hash string following ResolvedDelegateProxy proxy pattern. It returns the value as array of the strings.
   """
-  @spec get_implementation_address_hash_string(Hash.Address.t()) :: nil | :error | binary()
-  def get_implementation_address_hash_string(proxy_address_hash) do
+  @spec get_implementation_address_hash_strings(Hash.Address.t()) :: [binary()] | :error
+  def get_implementation_address_hash_strings(proxy_address_hash) do
+    case get_implementation_address_hash_string(proxy_address_hash) do
+      nil -> []
+      :error -> :error
+      implementation_address_hash_string -> [implementation_address_hash_string]
+    end
+  end
+
+  # Get implementation address hash string following ResolvedDelegateProxy proxy pattern
+  @spec get_implementation_address_hash_string(Hash.Address.t()) :: binary() | nil | :error
+  defp get_implementation_address_hash_string(proxy_address_hash) do
     proxy_smart_contract =
       proxy_address_hash
       |> SmartContract.address_hash_to_smart_contract()

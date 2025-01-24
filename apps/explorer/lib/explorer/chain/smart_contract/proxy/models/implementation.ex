@@ -313,9 +313,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   end
 
   def save_implementation_data(implementation_address_hash_strings, proxy_address_hash, proxy_type, options)
-      when is_nil(implementation_address_hash_strings) or
-             implementation_address_hash_strings == [] do
-    upsert_implementations(proxy_address_hash, proxy_type, [], [], options)
+      when implementation_address_hash_strings == [] do
+    upsert_implementation(proxy_address_hash, proxy_type, [], [], options)
 
     :empty
   end

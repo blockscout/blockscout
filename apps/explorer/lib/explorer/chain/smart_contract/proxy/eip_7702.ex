@@ -9,23 +9,31 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   alias Explorer.Helper, as: ExplorerHelper
 
   @doc """
-    Retrieves the delegate address hash string for an EIP-7702 compatible EOA.
-
-    This function fetches the contract code for the given address and extracts
-    the delegate address according to the EIP-7702 specification.
-
-    ## Parameters
-    - `address_hash`: The address of the contract to check.
-    - `options`: Optional keyword list of options (default: `[]`).
-
-    ## Returns
-    - The delegate address in the hex string format if found and successfully decoded.
-    - `nil` if the address doesn't exist, has no contract code, or the delegate address
-      couldn't be extracted or decoded.
+  Get implementation address hash string following EIP-7702. It returns the value as array of the strings.
   """
-  @spec get_implementation_address_hash_string(Hash.Address.t(), Keyword.t()) :: String.t() | nil
-  @spec get_implementation_address_hash_string(Hash.Address.t()) :: String.t() | nil
-  def get_implementation_address_hash_string(address_hash, options \\ []) do
+  @spec get_implementation_address_hash_strings(Hash.Address.t()) :: [binary()]
+  def get_implementation_address_hash_strings(address_hash) do
+    case get_implementation_address_hash_string(address_hash) do
+      nil -> []
+      implementation_address_hash_string -> [implementation_address_hash_string]
+    end
+  end
+
+  # Retrieves the delegate address hash string for an EIP-7702 compatible EOA.
+
+  # This function fetches the contract code for the given address and extracts
+  # the delegate address according to the EIP-7702 specification.
+
+  # ## Parameters
+  # - `address_hash`: The address of the contract to check.
+  # - `options`: Optional keyword list of options (default: `[]`).
+
+  # ## Returns
+  # - The delegate address in the hex string format if found and successfully decoded.
+  # - `nil` if the address doesn't exist, has no contract code, or the delegate address
+  #   couldn't be extracted or decoded.
+  @spec get_implementation_address_hash_string(Hash.Address.t()) :: binary() | nil
+  defp get_implementation_address_hash_string(address_hash, options \\ []) do
     case Chain.select_repo(options).get(Address, address_hash) do
       nil ->
         nil

@@ -8,21 +8,20 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArguments do
   alias Explorer.Chain.SmartContract.Proxy
 
   @doc """
-  Get implementation address following "Clone with immutable arguments" pattern
+  Get implementation address hash string following ResolvedDelegateProxy proxy pattern. It returns the value as array of the strings.
   """
-  @spec get_implementation_smart_contract(Hash.Address.t(), Keyword.t()) :: SmartContract.t() | nil
-  def get_implementation_smart_contract(address_hash, options \\ []) do
-    address_hash
-    |> get_implementation_address_hash_string(options)
-    |> Proxy.implementation_to_smart_contract(options)
+  @spec get_implementation_address_hash_strings(Hash.Address.t()) :: [binary()]
+  def get_implementation_address_hash_strings(proxy_address_hash, options \\ []) do
+    case get_implementation_address_hash_string(proxy_address_hash, options) do
+      nil -> []
+      implementation_address_hash_string -> [implementation_address_hash_string]
+    end
   end
 
-  @doc """
-  Get implementation address hash string following "Clone with immutable arguments" pattern
-  """
-  @spec get_implementation_address_hash_string(Hash.Address.t(), Keyword.t()) :: String.t() | nil
-  def get_implementation_address_hash_string(address_hash, options \\ []) do
-    case Chain.select_repo(options).get(Address, address_hash) do
+  # Get implementation address hash string following "Clone with immutable arguments" pattern
+  @spec get_implementation_address_hash_string(Hash.Address.t(), Keyword.t()) :: binary() | nil
+  def get_implementation_address_hash_string(proxy_address_hash, options \\ []) do
+    case Chain.select_repo(options).get(Address, proxy_address_hash) do
       nil ->
         nil
 
@@ -51,5 +50,15 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArguments do
       _ ->
         nil
     end
+  end
+
+  @doc """
+  Get implementation address following "Clone with immutable arguments" pattern. It is used in old UI.
+  """
+  @spec get_implementation_smart_contract(Hash.Address.t(), Keyword.t()) :: SmartContract.t() | nil
+  def get_implementation_smart_contract(address_hash, options \\ []) do
+    address_hash
+    |> get_implementation_address_hash_string(options)
+    |> Proxy.implementation_to_smart_contract(options)
   end
 end

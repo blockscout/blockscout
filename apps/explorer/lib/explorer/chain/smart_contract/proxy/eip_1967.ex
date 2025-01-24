@@ -4,7 +4,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   """
   alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract.Proxy
-  alias Explorer.Chain.SmartContract.Proxy.Basic
+  alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
   # supported signatures:
   # 5c60da1b = keccak256(implementation())
@@ -29,10 +29,20 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   ]
 
   @doc """
-  Get implementation address hash string following EIP-1967
+  Get implementation address hash string following EIP-1967. It returns the value as array of the strings.
   """
-  @spec get_implementation_address_hash_string(Hash.Address.t()) :: nil | :error | binary()
-  def get_implementation_address_hash_string(proxy_address_hash) do
+  @spec get_implementation_address_hash_strings(Hash.Address.t()) :: [binary()] | :error
+  def get_implementation_address_hash_strings(proxy_address_hash) do
+    case get_implementation_address_hash_string(proxy_address_hash) do
+      nil -> []
+      :error -> :error
+      implementation_address_hash_string -> [implementation_address_hash_string]
+    end
+  end
+
+  # Get implementation address hash string following EIP-1967
+  @spec get_implementation_address_hash_string(Hash.Address.t()) :: binary() | nil | :error
+  defp get_implementation_address_hash_string(proxy_address_hash) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     implementation_address_hash_string_from_logic_storage_slot =
@@ -84,12 +94,12 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
 
       _ ->
         case @implementation_signature
-             |> Basic.get_implementation_address_hash_string(
+             |> SmartContractHelper.get_binary_string_from_contract_getter(
                eip1967_beacon_address_hash_string,
                @implementation_method_abi
              ) do
-          <<implementation_address::binary-size(42)>> ->
-            implementation_address
+          <<implementation_address_hash_string::binary-size(42)>> ->
+            implementation_address_hash_string
 
           _ ->
             nil

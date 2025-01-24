@@ -11,14 +11,14 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP930 do
   @doc """
   Gets implementation hash string of proxy contract from getter.
   """
-  @spec get_implementation_address_hash_string(binary(), binary(), SmartContract.abi()) :: nil | binary()
+  @spec get_implementation_address_hash_string(binary(), binary(), SmartContract.abi()) :: binary() | nil
   def get_implementation_address_hash_string(signature, proxy_address_hash, abi) do
-    implementation_address =
+    implementation_address_hash_string =
       case Reader.query_contract(
              proxy_address_hash,
              abi,
              %{
-               "#{signature}" => [EIP1967.storage_slot_logic_contract_address()]
+               "#{signature}" => EIP1967.storage_slot_logic_contract_address()
              },
              false
            ) do
@@ -26,6 +26,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP930 do
         _ -> nil
       end
 
-    ExplorerHelper.adds_0x_prefix(implementation_address)
+    ExplorerHelper.adds_0x_prefix(implementation_address_hash_string)
   end
 end

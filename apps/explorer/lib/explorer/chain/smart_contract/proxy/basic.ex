@@ -9,8 +9,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Basic do
   @doc """
   Gets implementation hash string of proxy contract from getter.
   """
-  @spec get_implementation_address_hash_string(binary(), binary(), SmartContract.abi()) ::
-          nil | :error | binary() | [binary()]
+  @spec get_implementation_address_hash_string(binary(), binary(), SmartContract.abi()) :: binary() | nil | :error
   def get_implementation_address_hash_string(signature, proxy_address_hash_string, abi) do
     SmartContractHelper.get_binary_string_from_contract_getter(signature, proxy_address_hash_string, abi)
   end
