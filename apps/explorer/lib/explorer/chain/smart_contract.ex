@@ -1381,6 +1381,7 @@ defmodule Explorer.Chain.SmartContract do
     |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
     |> Chain.join_associations(necessity_by_association)
+    |> where([_contract, address], address.verified == true)
     |> Chain.select_repo(options).all()
   end
 
