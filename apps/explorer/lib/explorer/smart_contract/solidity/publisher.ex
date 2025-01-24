@@ -290,6 +290,21 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   def extract_optimization(compiler_settings),
     do: (compiler_settings["optimizer"] && compiler_settings["optimizer"]["enabled"]) || false
 
+  @doc """
+    Publishes a verified smart contract.
+
+    ## Parameters
+    - `address_hash`: The address hash of the smart contract
+    - `params`: The parameters for the smart contract
+    - `abi`: The ABI of the smart contract
+    - `file_path`: Optional file path for the smart contract source code
+
+    ## Returns
+    - `{:ok, %SmartContract{}}` if successful
+    - `{:error, %Ecto.Changeset{}}` if there was an error
+  """
+  @spec publish_smart_contract(String.t(), map(), map(), String.t() | nil) ::
+          {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
   def publish_smart_contract(address_hash, params, abi, file_path \\ nil) do
     attrs =
       if file_path do
