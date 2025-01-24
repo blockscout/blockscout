@@ -6,6 +6,9 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
 
   @default_trace_block_ranges "0..latest"
 
+  @doc """
+  Checks if block number is traceable
+  """
   @spec traceable_block_number?(integer() | nil) :: boolean()
   def traceable_block_number?(block_number) do
     if trace_ranges_present?() do
@@ -15,6 +18,9 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     end
   end
 
+  @doc """
+  Filters out non-traceable records from `data` by its block number
+  """
   @spec filter_traceable_block_numbers([integer() | map()]) :: [integer() | map()]
   def filter_traceable_block_numbers(data) do
     if trace_ranges_present?() do
@@ -25,11 +31,17 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     end
   end
 
+  @doc """
+  Checks if trace ranges are defined via env variables
+  """
   @spec trace_ranges_present? :: boolean()
   def trace_ranges_present? do
     Application.get_env(:indexer, :trace_block_ranges) != @default_trace_block_ranges
   end
 
+  @doc """
+  Retrieves trace ranges from application variable in string format and parses them into Range/integer
+  """
   @spec get_trace_block_ranges :: [Range.t() | integer()]
   def get_trace_block_ranges do
     :indexer
@@ -37,6 +49,9 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     |> parse_block_ranges()
   end
 
+  @doc """
+  Parse ranges from string format into Range/integer
+  """
   @spec parse_block_ranges(binary()) :: [Range.t() | integer()]
   def parse_block_ranges(block_ranges_string) do
     block_ranges_string
@@ -56,6 +71,9 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     |> sanitize_ranges()
   end
 
+  @doc """
+  Checks if `number` is present in `ranges`
+  """
   @spec number_in_ranges?(integer(), [Range.t()]) :: boolean()
   def number_in_ranges?(number, ranges) do
     Enum.reduce_while(ranges, false, fn
@@ -73,6 +91,9 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
     end
   end
 
+  @doc """
+  Rejects empty ranges and merges adjacent ranges
+  """
   @spec sanitize_ranges([Range.t() | integer()]) :: [Range.t() | integer()]
   def sanitize_ranges(ranges) do
     ranges
