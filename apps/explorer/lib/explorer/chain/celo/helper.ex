@@ -91,4 +91,20 @@ defmodule Explorer.Chain.Celo.Helper do
   def block_number_to_epoch_number(block_number) when is_integer(block_number) do
     (block_number / @blocks_per_epoch) |> Float.ceil() |> trunc()
   end
+
+  @doc """
+  Convert the burn fraction from FixidityLib value to decimal.
+
+  ## Examples
+
+      iex> Explorer.Chain.Celo.Helper.burn_fraction_decimal(800_000_000_000_000_000_000_000)
+      Decimal.new("0.800000000000000000000000")
+  """
+  @spec burn_fraction_decimal(integer()) :: Decimal.t()
+  def burn_fraction_decimal(burn_fraction_fixidity_lib)
+      when is_integer(burn_fraction_fixidity_lib) do
+    base = Decimal.new(1, 1, 24)
+    fraction = Decimal.new(1, burn_fraction_fixidity_lib, 0)
+    Decimal.div(fraction, base)
+  end
 end

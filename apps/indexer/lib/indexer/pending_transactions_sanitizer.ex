@@ -15,9 +15,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Transaction}
 
-  @interval :timer.hours(3)
-
-  defstruct interval: @interval,
+  defstruct interval: nil,
             json_rpc_named_arguments: []
 
   def child_spec([init_arguments]) do
@@ -40,7 +38,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
   def init(opts) when is_list(opts) do
     state = %__MODULE__{
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
-      interval: opts[:interval] || @interval
+      interval: Application.get_env(:indexer, __MODULE__)[:interval]
     }
 
     Process.send_after(self(), :sanitize_pending_transactions, state.interval)
@@ -127,7 +125,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
     case transaction
          |> Changeset.change()
-         |> Repo.delete() do
+         |> Repo.delete(timeout: :infinity) do
       {:ok, _transaction} ->
         Logger.debug(
           "Transaction with hash #{pending_transaction_hash_string} successfully deleted from Blockscout DB because it doesn't exist in the archive node anymore",

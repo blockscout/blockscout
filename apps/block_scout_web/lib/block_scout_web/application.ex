@@ -6,14 +6,20 @@ defmodule BlockScoutWeb.Application do
   use Application
   use Utils.CompileTimeEnvHelper, disable_api?: [:block_scout_web, :disable_api?]
 
-  alias BlockScoutWeb.Endpoint
+  alias BlockScoutWeb.{Endpoint, HealthEndpoint}
 
   def start(_type, _args) do
-    base_children = [Supervisor.child_spec(Endpoint, [])]
-    api_children = setup_and_define_children()
-    all_children = base_children ++ api_children
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor, max_restarts: 1_000]
-    Supervisor.start_link(all_children, opts)
+
+    if Application.get_env(:nft_media_handler, :standalone_media_worker?) do
+      Supervisor.start_link([Supervisor.child_spec(HealthEndpoint, [])], opts)
+    else
+      base_children = [Supervisor.child_spec(Endpoint, [])]
+      api_children = setup_and_define_children()
+      all_children = base_children ++ api_children
+
+      Supervisor.start_link(all_children, opts)
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration

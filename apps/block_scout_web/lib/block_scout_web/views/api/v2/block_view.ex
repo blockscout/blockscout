@@ -38,8 +38,6 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "height" => block.number,
       "timestamp" => block.timestamp,
       "transaction_count" => count_transactions(block),
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_count` property
-      "tx_count" => count_transactions(block),
       "miner" => Helper.address_with_info(nil, block.miner, block.miner_hash, false),
       "size" => block.size,
       "hash" => block.hash,
@@ -61,8 +59,6 @@ defmodule BlockScoutWeb.API.V2.BlockView do
       "burnt_fees_percentage" => burnt_fees_percentage(burnt_fees, transaction_fees),
       "type" => block |> BlockView.block_type() |> String.downcase(),
       "transaction_fees" => transaction_fees,
-      # todo: keep next line for compatibility with frontend and remove when new frontend is bound to `transaction_fees` property
-      "tx_fees" => transaction_fees,
       "withdrawals_count" => count_withdrawals(block)
     }
     |> chain_type_fields(block, single_block?)

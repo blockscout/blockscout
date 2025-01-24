@@ -124,7 +124,7 @@ To configure access to the PostgreSQL database using the VS Code extension:
    - Password: `postgres`
    - Port: `5432`
    - Use an ssl connection: "Standard connection"
-   - Database: `blockscout`
+   - Database: `app`
    - The display name: "<some name>"
 
 These credentials are derived from the `DATABASE_URL` in the `bs` script.

@@ -16,7 +16,8 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Optimism.DisputeGames,
       Runner.Optimism.Deposits,
       Runner.Optimism.Withdrawals,
-      Runner.Optimism.WithdrawalEvents
+      Runner.Optimism.WithdrawalEvents,
+      Runner.Optimism.EIP1559ConfigUpdates
     ],
     polygon_edge: [
       Runner.PolygonEdge.Deposits,
@@ -50,7 +51,8 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Arbitrum.L1Batches,
       Runner.Arbitrum.BatchBlocks,
       Runner.Arbitrum.BatchTransactions,
-      Runner.Arbitrum.DaMultiPurposeRecords
+      Runner.Arbitrum.DaMultiPurposeRecords,
+      Runner.Arbitrum.BatchToDaBlobs
     ],
     scroll: [
       Runner.Scroll.BatchBundles,

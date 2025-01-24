@@ -85,6 +85,7 @@ defmodule BlockScoutWeb do
       use Gettext, backend: BlockScoutWeb.Gettext
 
       import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+      import BlockScoutWeb.AccessHelper, only: [valid_address_hash_and_not_restricted_access?: 1]
     end
   end
 

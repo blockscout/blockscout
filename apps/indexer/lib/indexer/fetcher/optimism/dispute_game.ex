@@ -52,6 +52,9 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   def handle_continue(:ok, _state) do
     Logger.metadata(fetcher: @fetcher_name)
 
+    # two seconds pause needed to avoid exceeding Supervisor restart intensity when DB issues
+    :timer.sleep(2000)
+
     env = Application.get_all_env(:indexer)[Optimism]
     system_config = env[:optimism_l1_system_config]
     rpc = env[:optimism_l1_rpc]

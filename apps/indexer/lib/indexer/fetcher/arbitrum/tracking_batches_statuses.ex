@@ -52,8 +52,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
   import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
 
+  alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
+  alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
-  alias Indexer.Fetcher.Arbitrum.Utils.{Db, Rpc}
 
   require Logger
 
@@ -160,7 +163,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         } = state
       ) do
     %{outbox: outbox_address, sequencer_inbox: sequencer_inbox_address} =
-      Rpc.get_contracts_for_rollup(
+      ArbitrumRpc.get_contracts_for_rollup(
         l1_rollup_address,
         :inbox_outbox,
         json_l1_rpc_named_arguments
@@ -168,15 +171,15 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
     l1_start_block = Rpc.get_l1_start_block(state.config.l1_start_block, json_l1_rpc_named_arguments)
 
-    new_batches_start_block = Db.l1_block_to_discover_latest_committed_batch(l1_start_block)
-    historical_batches_end_block = Db.l1_block_to_discover_earliest_committed_batch(l1_start_block - 1)
+    new_batches_start_block = DbSettlement.l1_block_to_discover_latest_committed_batch(l1_start_block)
+    historical_batches_end_block = DbSettlement.l1_block_to_discover_earliest_committed_batch(l1_start_block - 1)
 
-    new_confirmations_start_block = Db.l1_block_of_latest_confirmed_block(l1_start_block)
+    new_confirmations_start_block = DbSettlement.l1_block_of_latest_confirmed_block(l1_start_block)
 
-    new_executions_start_block = Db.l1_block_to_discover_latest_execution(l1_start_block)
-    historical_executions_end_block = Db.l1_block_to_discover_earliest_execution(l1_start_block - 1)
+    new_executions_start_block = DbMessages.l1_block_to_discover_latest_execution(l1_start_block)
+    historical_executions_end_block = DbMessages.l1_block_to_discover_earliest_execution(l1_start_block - 1)
 
-    {lowest_batch, missing_batches_end_batch} = Db.get_min_max_batch_numbers()
+    {lowest_batch, missing_batches_end_batch} = DbSettlement.get_min_max_batch_numbers()
 
     Process.send(self(), :check_new_batches, [])
 

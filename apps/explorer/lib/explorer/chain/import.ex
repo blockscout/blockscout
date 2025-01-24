@@ -13,11 +13,16 @@ defmodule Explorer.Chain.Import do
 
   @stages [
     [
+      Import.Stage.Blocks
+    ],
+    [
       Import.Stage.Main
     ],
     [
       Import.Stage.BlockTransactionReferencing,
       Import.Stage.TokenReferencing,
+      Import.Stage.TokenInstances,
+      Import.Stage.Logs,
       Import.Stage.InternalTransactions,
       Import.Stage.ChainTypeSpecific
     ]
@@ -69,7 +74,7 @@ defmodule Explorer.Chain.Import do
 
   @type all_result ::
           {:ok, %{unquote_splicing(quoted_runner_imported)}}
-          | {:error, [Changeset.t()] | :timeout}
+          | {:error, [Changeset.t()] | :timeout | :insert_to_multichain_search_db_failed}
           | {:error, step :: Ecto.Multi.name(), failed_value :: any(),
              changes_so_far :: %{optional(Ecto.Multi.name()) => any()}}
 

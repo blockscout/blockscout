@@ -186,7 +186,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
           "to_period" => to_period
         })
 
-      assert conn.status == 404
+      assert conn.status == 403
     end
 
     test "do not export token transfers to csv without recaptcha passed", %{
@@ -221,7 +221,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
           "recaptcha_response" => "123"
         })
 
-      assert conn.status == 404
+      assert conn.status == 403
     end
 
     test "exports token transfers to csv without recaptcha if recaptcha is disabled", %{conn: conn} do

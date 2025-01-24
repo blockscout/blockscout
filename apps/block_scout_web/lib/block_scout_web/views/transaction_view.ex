@@ -599,14 +599,6 @@ defmodule BlockScoutWeb.TransactionView do
     %{show: String.slice(string, 0..length), hide: String.slice(string, (length + 1)..-1//1)}
   end
 
-  defp template_to_string(template) when is_list(template) do
-    template_to_string(Enum.at(template, 1))
-  end
-
-  defp template_to_string(template) when is_tuple(template) do
-    safe_to_string(template)
-  end
-
   # Function decodes revert reason of the transaction
   @spec decode_revert_reason_as_utf8(binary() | nil) :: binary() | nil
   def decode_revert_reason_as_utf8(revert_reason) do

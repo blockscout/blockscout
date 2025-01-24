@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Chain do
   @moduledoc """
   Converts the `param` to the corresponding resource that uses that format of param.
   """
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import Explorer.Chain,
     only: [
@@ -52,7 +53,6 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
-
   alias Explorer.PagingOptions
 
   defimpl Poison.Encoder, for: Decimal do
@@ -105,10 +105,37 @@ defmodule BlockScoutWeb.Chain do
   def from_param(param) when byte_size(param) == @full_hash_len,
     do: block_or_transaction_or_operation_or_blob_from_param("0x" <> param)
 
-  def from_param(string) when is_binary(string) do
-    case param_to_block_number(string) do
-      {:ok, number} -> number_to_block(number)
-      _ -> search_ens_domain(string)
+  if @chain_type == :filecoin do
+    def from_param(string) when is_binary(string) do
+      case param_to_block_number(string) do
+        {:ok, number} ->
+          number_to_block(number)
+
+        _ ->
+          case Search.maybe_parse_filecoin_address(string) do
+            {:ok, filecoin_address} ->
+              result =
+                filecoin_address
+                |> Search.address_by_filecoin_id_or_robust()
+                # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+                |> Explorer.Chain.select_repo(api?: true).one()
+
+              (result && {:ok, result}) || {:error, :not_found}
+
+            _ ->
+              search_ens_domain(string)
+          end
+      end
+    end
+  else
+    def from_param(string) when is_binary(string) do
+      case param_to_block_number(string) do
+        {:ok, number} ->
+          number_to_block(number)
+
+        _ ->
+          search_ens_domain(string)
+      end
     end
   end
 
@@ -177,28 +204,6 @@ defmodule BlockScoutWeb.Chain do
     else
       _ -> [paging_options: @default_paging_options]
     end
-  end
-
-  def paging_options(%{
-        "address_hash" => address_hash_string,
-        "transaction_hash" => transaction_hash_string,
-        "block_hash" => block_hash_string,
-        "holder_count" => holder_count_string,
-        "name" => name_string,
-        "inserted_at" => inserted_at_string,
-        "item_type" => item_type_string
-      })
-      when is_binary(address_hash_string) and is_binary(transaction_hash_string) and is_binary(block_hash_string) and
-             is_binary(holder_count_string) and is_binary(name_string) and is_binary(inserted_at_string) and
-             is_binary(item_type_string) do
-    [
-      paging_options: %{
-        @default_paging_options
-        | key:
-            {address_hash_string, transaction_hash_string, block_hash_string, holder_count_string, name_string,
-             inserted_at_string, item_type_string}
-      }
-    ]
   end
 
   def paging_options(
@@ -605,7 +610,7 @@ defmodule BlockScoutWeb.Chain do
       nil ->
         {:error, :not_found}
 
-      result ->
+      {result, _address_hash} ->
         {:ok, result}
     end
   end
@@ -745,29 +750,6 @@ defmodule BlockScoutWeb.Chain do
   # clause for zkEVM & Scroll batches pagination
   defp paging_params(%{number: number}) do
     %{"number" => number}
-  end
-
-  # clause for search results pagination
-  defp paging_params(%{
-         address_hash: address_hash,
-         transaction_hash: transaction_hash,
-         block_hash: block_hash,
-         holder_count: holder_count,
-         name: name,
-         inserted_at: inserted_at,
-         type: type
-       }) do
-    inserted_at_datetime = DateTime.to_iso8601(inserted_at)
-
-    %{
-      "address_hash" => address_hash,
-      "transaction_hash" => transaction_hash,
-      "block_hash" => block_hash,
-      "holder_count" => holder_count,
-      "name" => name,
-      "inserted_at" => inserted_at_datetime,
-      "item_type" => type
-    }
   end
 
   defp paging_params(%Instance{token_id: token_id}) do

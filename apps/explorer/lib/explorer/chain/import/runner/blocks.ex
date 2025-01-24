@@ -497,7 +497,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     query =
       from(cb in Address.CoinBalance,
-        select: cb.address_hash,
+        select: {cb.address_hash, cb.block_number},
         inner_join: ordered_address_coin_balance in subquery(ordered_query),
         on:
           ordered_address_coin_balance.address_hash == cb.address_hash and
@@ -505,9 +505,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       )
 
     try do
-      {_count, deleted_coin_balances_address_hashes} = repo.delete_all(query, timeout: timeout)
+      {_count, deleted_coin_balances} = repo.delete_all(query, timeout: timeout)
 
-      {:ok, deleted_coin_balances_address_hashes}
+      {:ok, deleted_coin_balances}
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, block_numbers: non_consensus_block_numbers}}
@@ -516,10 +516,22 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp derive_address_fetched_coin_balances(_repo, [], _options), do: {:ok, []}
 
-  defp derive_address_fetched_coin_balances(repo, deleted_balances_address_hashes, options) do
+  defp derive_address_fetched_coin_balances(repo, deleted_coin_balances, options) do
+    {deleted_balances_address_hashes, deleted_balances_block_numbers} = Enum.unzip(deleted_coin_balances)
+
+    filtered_address_hashes_query =
+      from(a in Address,
+        where:
+          a.hash in ^deleted_balances_address_hashes and
+            a.fetched_coin_balance_block_number in ^deleted_balances_block_numbers,
+        select: a.hash
+      )
+
+    filtered_address_hashes = repo.all(filtered_address_hashes_query)
+
     last_balances_query =
       from(cb in Address.CoinBalance,
-        where: cb.address_hash in ^deleted_balances_address_hashes,
+        where: cb.address_hash in ^filtered_address_hashes,
         where: not is_nil(cb.value),
         distinct: cb.address_hash,
         order_by: [asc: cb.address_hash, desc: cb.block_number],
