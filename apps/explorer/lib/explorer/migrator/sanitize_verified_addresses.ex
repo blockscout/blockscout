@@ -12,6 +12,7 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
   import Ecto.Query
 
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Repo
 
   @default_batch_size 500
@@ -73,6 +74,7 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
       schedule_batch_migration(0)
       {:noreply, %{}}
     else
+      update_cache()
       {:stop, :normal, state}
     end
   end
@@ -102,6 +104,7 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
   def handle_info(:migrate_batch, state) do
     case last_unprocessed_identifiers(state) do
       {[], new_state} ->
+        update_cache()
         {:stop, :normal, new_state}
 
       {identifiers, new_state} ->
@@ -129,6 +132,11 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
   # - Reference to the scheduled timer
   defp schedule_batch_migration(timeout \\ nil) do
     Process.send_after(self(), :migrate_batch, timeout || Application.get_env(:explorer, __MODULE__)[:timeout] || 0)
+  end
+
+  @spec update_cache() :: :ok
+  defp update_cache do
+    BackgroundMigrations.set_sanitize_verified_addresses_finished(true)
   end
 
   defp batch_size do
