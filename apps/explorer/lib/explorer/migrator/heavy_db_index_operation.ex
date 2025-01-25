@@ -15,7 +15,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   Returns the name of the table. The name is used to track the operation's status in
   `Explorer.Migrator.MigrationStatus`.
   """
-  @callback table_name :: :logs | :internal_transactions | :token_transfers
+  @callback table_name :: :logs | :internal_transactions | :token_transfers | :addresses
 
   @doc """
   Specifies the type of operation to be performed on the database index.

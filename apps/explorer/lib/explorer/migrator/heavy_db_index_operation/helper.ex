@@ -109,18 +109,26 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   # sobelow_skip ["SQL"]
   def create_db_index(raw_index_name, table_name_atom, table_columns) do
     index_name = sanitize_index_name(raw_index_name)
-
     query = create_index_query_string(index_name, table_name_atom, table_columns)
+    run_create_db_index_query(query)
+  end
 
+  @doc """
+  Creates DB index running the given query.
+  """
+  @spec create_db_index(String.t()) :: :ok | :error
+  def create_db_index(query) do
+    run_create_db_index_query(query)
+  end
+
+  @spec run_create_db_index_query(String.t()) :: :ok | :error
+  defp run_create_db_index_query(query) do
     case SQL.query(Repo, query, [], timeout: :infinity) do
       {:ok, _} ->
         :ok
 
       {:error, error} ->
-        Logger.error(
-          "Failed to create DB index '#{index_name}' on table '#{to_string(table_name_atom)}' for columns #{inspect(table_columns)}: #{inspect(error)}"
-        )
-
+        Logger.error("Failed to run create DB index query: #{inspect(error)}")
         :error
     end
   end
@@ -205,9 +213,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     "DROP INDEX #{add_concurrently_flag?()} IF EXISTS \"#{index_name}\";"
   end
 
-  # As a workaround we have to remove `CONCURRENTLY` in tests since
-  # the error like "DROP INDEX CONCURRENTLY cannot run inside a transaction block" is returned with it.
-  defp add_concurrently_flag? do
+  @doc """
+  As a workaround we have to remove `CONCURRENTLY` in tests since
+  the error like "DROP INDEX CONCURRENTLY cannot run inside a transaction
+  block" is returned with it.
+  """
+  @spec add_concurrently_flag?() :: String.t()
+  def add_concurrently_flag? do
     if Mix.env() == :test, do: "", else: "CONCURRENTLY"
   end
 
