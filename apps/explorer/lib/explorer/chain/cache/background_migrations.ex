@@ -99,4 +99,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
 
     {:return, false}
   end
+
+  defp handle_fallback(:sanitize_verified_addresses_finished) do
+    {:return, false}
+  end
 end
