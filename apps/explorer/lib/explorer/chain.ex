@@ -165,6 +165,7 @@ defmodule Explorer.Chain do
   @type paging_options :: {:paging_options, PagingOptions.t()}
   @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
   @type api? :: {:api?, true | false}
+  @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
 
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from the address with the given `hash`.

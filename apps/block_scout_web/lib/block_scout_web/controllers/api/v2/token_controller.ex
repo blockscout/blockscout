@@ -16,7 +16,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       next_page_params: 3,
       token_transfers_next_page_params: 3,
       unique_tokens_paging_options: 1,
-      unique_tokens_next_page: 3
+      unique_tokens_next_page: 3,
+      fetch_scam_token_toggle: 2
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -307,6 +308,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> Keyword.merge(token_transfers_types_options(params))
       |> Keyword.merge(tokens_sorting(params))
       |> Keyword.merge(@api_true)
+      |> fetch_scam_token_toggle(conn)
 
     {tokens, next_page} = filter |> Token.list_top(options) |> split_list_by_page()
 

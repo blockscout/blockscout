@@ -225,11 +225,13 @@ defmodule Explorer.Helper do
 
   The modified query with scam addresses hidden, if applicable.
   """
-  @spec maybe_hide_scam_addresses(nil | Ecto.Query.t(), atom()) :: Ecto.Query.t()
-  def maybe_hide_scam_addresses(nil, _address_hash_key), do: nil
+  @spec maybe_hide_scam_addresses(nil | Ecto.Query.t(), atom(), [
+          Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
+        ]) :: Ecto.Query.t()
+  def maybe_hide_scam_addresses(nil, _address_hash_key, _options), do: nil
 
-  def maybe_hide_scam_addresses(query, address_hash_key) do
-    if Application.get_env(:block_scout_web, :hide_scam_addresses) do
+  def maybe_hide_scam_addresses(query, address_hash_key, options) do
+    if Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] do
       query
       |> join(
         :inner,
@@ -310,4 +312,12 @@ defmodule Explorer.Helper do
 
     "\\#{s_hash}"
   end
+
+  def parse_boolean("true"), do: true
+  def parse_boolean("false"), do: false
+
+  def parse_boolean(true), do: true
+  def parse_boolean(false), do: false
+
+  def parse_boolean(_), do: false
 end

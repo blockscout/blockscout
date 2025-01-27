@@ -569,7 +569,7 @@ defmodule Explorer.Chain.Address do
 
         base_query
         |> Chain.join_associations(necessity_by_association)
-        |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
+        |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
         |> page_addresses(paging_options)
         |> limit(^paging_options.page_size)
         |> Chain.select_repo(options).all()

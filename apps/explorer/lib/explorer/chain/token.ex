@@ -203,6 +203,7 @@ defmodule Explorer.Chain.Token do
           | {:sorting, SortingHelper.sorting_params()}
           | {:token_type, [String.t()]}
           | {:necessity_by_association, map()}
+          | Chain.show_scam_tokens?()
         ]) :: [Token.t()]
   def list_top(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
@@ -217,7 +218,7 @@ defmodule Explorer.Chain.Token do
     sorted_paginated_query =
       Token
       |> Chain.join_associations(necessity_by_association)
-      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
       |> apply_filter(token_type)
       |> SortingHelper.apply_sorting(sorting, @default_sorting)
       |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)

@@ -53,7 +53,7 @@ defmodule Explorer.Chain.Search do
   @doc """
   Search function used in web interface and API v2. Returns paginated search results
   """
-  @spec joint_search(PagingOptions.t(), binary(), [Chain.api?()] | []) :: {list(), map() | nil}
+  @spec joint_search(PagingOptions.t(), binary(), [Chain.api?() | Chain.show_scam_tokens?()]) :: {list(), map() | nil}
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def joint_search(paging_options, query_string, options \\ []) do
     query_string = String.trim(query_string)
@@ -69,11 +69,11 @@ defmodule Explorer.Chain.Search do
         {:address_hash, address_hash} ->
           address_hash
           |> search_token_by_address_hash_query()
-          |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+          |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
           |> union_all(
             ^(address_hash
               |> search_address_by_address_hash_query()
-              |> ExplorerHelper.maybe_hide_scam_addresses(:hash))
+              |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options))
           )
           |> select_repo(options).all()
 
@@ -118,14 +118,14 @@ defmodule Explorer.Chain.Search do
 
         [{:number, block_number}, {:text, prepared_term}] ->
           prepared_term
-          |> search_by_string(paging_options)
+          |> search_by_string(paging_options, options)
           |> union_all(^search_block_by_number_query(block_number))
           |> order_and_page_text_search_result(paging_options)
           |> select_repo(options).all()
 
         {:text, prepared_term} ->
           prepared_term
-          |> search_by_string(paging_options)
+          |> search_by_string(paging_options, options)
           |> order_and_page_text_search_result(paging_options)
           |> select_repo(options).all()
       end
@@ -208,19 +208,19 @@ defmodule Explorer.Chain.Search do
     nil
   end
 
-  defp search_by_string(term, paging_options) do
+  defp search_by_string(term, paging_options, options) do
     tokens_query_certified =
       term
       |> search_token_query_certified(paging_options)
-      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
 
     tokens_query_not_certified =
       term
       |> search_token_query_not_certified(paging_options)
-      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
 
     contracts_query =
-      term |> search_contract_query(paging_options) |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
+      term |> search_contract_query(paging_options) |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
 
     labels_query = search_label_query(term, paging_options)
 
@@ -247,7 +247,7 @@ defmodule Explorer.Chain.Search do
 
     `balanced_unpaginated_search` function is used at api/v2/search/quick endpoint.
   """
-  @spec balanced_unpaginated_search(PagingOptions.t(), binary(), [Chain.api?()] | []) :: list
+  @spec balanced_unpaginated_search(PagingOptions.t(), binary(), [Chain.api?() | Chain.show_scam_tokens?()]) :: list
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def balanced_unpaginated_search(paging_options, query_string, options \\ []) do
     query_string = String.trim(query_string)
@@ -351,17 +351,17 @@ defmodule Explorer.Chain.Search do
     tokens_results =
       (term
        |> search_token_query_certified(paging_options)
-       |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+       |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
        |> select_repo(options).all()) ++
         (term
          |> search_token_query_not_certified(paging_options)
-         |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash)
+         |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
          |> select_repo(options).all())
 
     contracts_results =
       term
       |> search_contract_query(paging_options)
-      |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
+      |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
       |> select_repo(options).all()
 
     labels_query = term |> search_label_query(paging_options) |> select_repo(options).all()
@@ -790,7 +790,7 @@ defmodule Explorer.Chain.Search do
         [
           address_hash
           |> search_address_by_address_hash_query()
-          |> ExplorerHelper.maybe_hide_scam_addresses(:hash)
+          |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
           |> select_repo(options).all()
           |> merge_address_search_result_with_ens_info(ens_result)
         ]
