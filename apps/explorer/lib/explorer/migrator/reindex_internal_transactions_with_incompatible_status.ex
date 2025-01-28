@@ -57,6 +57,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
       t in Transaction,
       as: :transaction,
       where: t.status == ^:error,
+      where: t.block_consensus == true,
       where: not is_nil(t.block_number),
       where: not exists(pbo_query),
       where: exists(it_query),
@@ -71,6 +72,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
     params =
       Block
       |> where([b], b.number in ^block_numbers)
+      |> where([b], b.consensus == true)
       |> select([b], %{block_hash: b.hash, block_number: b.number})
       |> Repo.all()
       |> Enum.uniq_by(& &1.block_number)
