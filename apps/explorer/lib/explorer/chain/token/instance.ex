@@ -888,11 +888,12 @@ defmodule Explorer.Chain.Token.Instance do
     token_instances_id =
       token_transfers
       |> Enum.reduce(MapSet.new(), fn
-        %TokenTransfer{token_type: "ERC-20"}, ids ->
-          ids
-
-        token_transfer, ids ->
+        %TokenTransfer{token_type: nft_token_type} = token_transfer, ids
+        when nft_token_type in ["ERC-721", "ERC-1155", "ERC-404"] ->
           MapSet.put(ids, {List.first(token_transfer.token_ids), token_transfer.token_contract_address_hash.bytes})
+
+        _token_transfer, ids ->
+          ids
       end)
       |> MapSet.to_list()
 
