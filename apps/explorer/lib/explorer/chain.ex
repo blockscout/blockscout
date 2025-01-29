@@ -4476,7 +4476,7 @@ defmodule Explorer.Chain do
         )
       )
 
-    %{token_instance | owner: owner}
+    %{token_instance | owner: owner, owner_address_hash: owner_address_hash}
   end
 
   def put_owner_to_token_instance(%Instance{} = token_instance, _token, _options), do: token_instance
