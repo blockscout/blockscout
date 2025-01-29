@@ -376,7 +376,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:token_transfers, %{
-            token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
+            token_transfers:
+              token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
             next_page_params: next_page_params
           })
 
@@ -420,7 +421,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:token_transfers, %{
-            token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
+            token_transfers:
+              token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
             next_page_params: next_page_params
           })
 
