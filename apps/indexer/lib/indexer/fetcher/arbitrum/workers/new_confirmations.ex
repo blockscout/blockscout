@@ -110,7 +110,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     ## Parameters
     - A map containing:
       - `config`: Configuration settings including the L1 outbox address, L1 RPC
-                  configurations.
+                  configurations and the block number limiting the lowest indexed
+                  block of the chain.
       - `data`: Contains the starting L1 block number from which to begin the new
                 confirmation discovery.
 
@@ -128,6 +129,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
               :logs_block_range => non_neg_integer(),
               optional(any()) => any()
             },
+            :rollup_first_block => non_neg_integer(),
             optional(any()) => any()
           },
           :data => %{
@@ -151,7 +153,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         %{
           config: %{
             l1_rpc: l1_rpc_config,
-            l1_outbox_address: outbox_address
+            l1_outbox_address: outbox_address,
+            rollup_first_block: rollup_first_block
           },
           data: %{
             new_confirmations_start_block: start_block,
@@ -213,7 +216,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
               outbox_address,
               chunk_start,
               chunk_end,
-              l1_rpc_config
+              l1_rpc_config,
+              rollup_first_block
             )
           end,
           true
@@ -293,8 +297,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
     ## Parameters
     - A map containing:
       - `config`: Configuration settings including the L1 outbox address, rollup
-                  initialization block, RPC configurations, and the start block for
-                  the confirmation discovery.
+                  initialization block, RPC configurations, the start block for
+                  the confirmation discovery and the block number limiting the
+                  lowest indexed block of the chain.
       - `data`: Contains optional start and end L1 block numbers to limit the range
                 for historical confirmation discovery.
 
@@ -314,6 +319,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
               optional(any()) => any()
             },
             :l1_start_block => non_neg_integer(),
+            :rollup_first_block => non_neg_integer(),
             optional(any()) => any()
           },
           :data => %{
@@ -338,7 +344,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             l1_rpc: l1_rpc_config,
             l1_outbox_address: outbox_address,
             l1_start_block: l1_start_block,
-            l1_rollup_init_block: l1_rollup_init_block
+            l1_rollup_init_block: l1_rollup_init_block,
+            rollup_first_block: rollup_first_block
           },
           data: %{
             historical_confirmations_end_block: expected_confirmation_end_block,
@@ -382,7 +389,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           outbox_address,
           start_block,
           end_block,
-          l1_rpc_config
+          l1_rpc_config,
+          rollup_first_block
         )
 
       case {retcode, start_block == interim_start_block} do
@@ -405,8 +413,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           {retcode, state_for_next_iteration_historical(state, end_block, interim_start_block)}
       end
     else
-      # TODO: Investigate on a live system what will happen when all blocks are confirmed
-
       # the situation when end block is `nil` is possible when there is no confirmed
       # block in the database and the historical confirmations discovery must start
       # from the L1 block specified as L1 start block (configured, or the latest block number)
@@ -463,6 +469,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # - `start_block`: The starting block number for fetching logs.
   # - `end_block`: The ending block number for fetching logs.
   # - `l1_rpc_config`: Configuration for L1 RPC calls.
+  # - `rollup_first_block`: The block number limiting the lowest indexed block of
+  #   the chain.
   #
   # ## Returns
   # - The retcode indicating the result of the discovery and processing operation,
@@ -477,13 +485,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             :chunk_size => non_neg_integer(),
             :finalized_confirmations => boolean(),
             optional(any()) => any()
-          }
+          },
+          non_neg_integer()
         ) :: :ok | :confirmation_missed
   defp discover(
          outbox_address,
          start_block,
          end_block,
-         l1_rpc_config
+         l1_rpc_config,
+         rollup_first_block
        ) do
     {logs, _} =
       get_logs_new_confirmations(
@@ -497,7 +507,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
       handle_confirmations_from_logs(
         logs,
         l1_rpc_config,
-        outbox_address
+        outbox_address,
+        rollup_first_block
       )
 
     {:ok, _} =
@@ -528,6 +539,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # - `logs`: Log entries representing `SendRootUpdated` events.
   # - `l1_rpc_config`: Configuration for L1 RPC calls.
   # - `outbox_address`: The address of the Arbitrum outbox contract.
+  # - `rollup_first_block`: The block number limiting the lowest indexed block of
+  #   the chain.
   #
   # ## Returns
   # - `{retcode, {lifecycle_transactions, rollup_blocks, confirmed_transactions}}` where
@@ -548,21 +561,23 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             :finalized_confirmations => boolean(),
             optional(any()) => any()
           },
-          binary()
+          binary(),
+          non_neg_integer()
         ) ::
           {:ok | :confirmation_missed,
            {[Arbitrum.LifecycleTransaction.to_import()], [Arbitrum.BatchBlock.to_import()],
             [Arbitrum.Message.to_import()]}}
-  defp handle_confirmations_from_logs(logs, l1_rpc_config, outbox_address)
+  defp handle_confirmations_from_logs(logs, l1_rpc_config, outbox_address, rollup_first_block)
 
-  defp handle_confirmations_from_logs([], _, _) do
+  defp handle_confirmations_from_logs([], _, _, _) do
     {:ok, {[], [], []}}
   end
 
   defp handle_confirmations_from_logs(
          logs,
          l1_rpc_config,
-         outbox_address
+         outbox_address,
+         rollup_first_block
        ) do
     # On this step there could be lifecycle transactions for the rollup blocks which are
     # already confirmed. It is only possible in the scenario when the confirmation
@@ -589,7 +604,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             json_rpc_named_arguments: l1_rpc_config.json_rpc_named_arguments,
             logs_block_range: l1_rpc_config.logs_block_range,
             outbox_address: outbox_address
-          }
+          },
+          rollup_first_block
         )
       end
 
@@ -747,6 +763,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # ## Parameters
   # - `rollup_blocks_to_l1_transactions`: A map of rollup block hashes to confirmation descriptions.
   # - `outbox_config`: Configuration for the Arbitrum outbox contract.
+  # - `rollup_first_block`: The block number limiting the lowest indexed block of
+  #   the chain.
   #
   # ## Returns
   # - A list of rollup blocks each associated with the transaction's hash that
@@ -758,9 +776,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             :outbox_address => binary(),
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             optional(any()) => any()
-          }
+          },
+          non_neg_integer()
         ) :: [Arbitrum.BatchBlock.to_import()]
-  defp discover_rollup_blocks(rollup_blocks_to_l1_transactions, outbox_config) do
+  defp discover_rollup_blocks(rollup_blocks_to_l1_transactions, outbox_config, rollup_first_block) do
     block_to_l1_transactions =
       rollup_blocks_to_l1_transactions
       |> Map.keys()
@@ -771,7 +790,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         # the block fetcher, it makes sense to skip this block so far
         case rollup_block_num do
           nil ->
-            log_warning("The rollup block #{block_hash} did not found. Plan to skip the confirmations")
+            log_warning("The rollup block #{compress_hash(block_hash)} did not found. Plan to skip the confirmations")
             transformed
 
           value ->
@@ -793,7 +812,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
           discover_rollup_blocks_belonging_to_one_confirmation(
             block_number,
             block_to_l1_transactions[block_number],
-            outbox_config
+            outbox_config,
+            rollup_first_block
           )
 
         # credo:disable-for-next-line Credo.Check.Refactor.Nesting
@@ -808,6 +828,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         end
       end)
     end
+  end
+
+  # Takes first 6 and last 6 nibbles of the hash
+  @spec compress_hash(binary()) :: binary()
+  defp compress_hash("0x" <> rest = _full_hash) do
+    "0x" <> String.slice(rest, 0, 6) <> "..." <> String.slice(rest, -6, 6)
   end
 
   # Discovers rollup blocks within a single confirmation, ensuring no gaps in the confirmed range.
@@ -828,8 +854,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # 5. If the first unconfirmed block is at the start of the batch, check if the
   #    confirmation also covers blocks from previous batches. If so, include their
   #    unconfirmed blocks in the range.
-  # 6. If all blocks in the previous batch are confirmed, return the current list of
-  #    unconfirmed blocks.
+  # 6. If all blocks in the previous batch are confirmed or the current batch is
+  #    the first batch in the chain intended to be indexed, return the current list
+  #    of unconfirmed blocks.
   # 7. If the first unconfirmed block is in the middle of the batch, return the
   #    current list of unconfirmed blocks.
   # This process continues recursively until it finds a batch with all blocks
@@ -855,6 +882,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
   # - `rollup_block_num`: The rollup block number associated with the confirmation.
   # - `confirmation_desc`: Description of the latest confirmation.
   # - `outbox_config`: Configuration for the Arbitrum outbox contract.
+  # - `rollup_first_block`: The block number limiting the lowest indexed block of
+  #   the chain.
   # - `cache`: A cache to minimize repetitive `eth_getLogs` calls.
   #
   # ## Returns
@@ -871,12 +900,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             optional(any()) => any()
           },
+          non_neg_integer(),
           __MODULE__.cached_logs()
         ) :: {:ok, [Arbitrum.BatchBlock.to_import()]} | {:error, []}
   defp discover_rollup_blocks_belonging_to_one_confirmation(
          rollup_block_num,
          confirmation_desc,
          outbox_config,
+         rollup_first_block,
          cache \\ %{}
        ) do
     # The following batch fields are required in the further processing:
@@ -905,7 +936,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
              rollup_block_num,
              batch.number
            ) do
-      if first_unconfirmed_block == batch.start_block do
+      # For the case when the first unconfirmed block in the batch is the batch start block
+      # it is the lowest indexed block of the chain, there is no need to deep dive into the
+      # previous batches
+      if first_unconfirmed_block == batch.start_block and
+           not genesis_reached?(first_unconfirmed_block, rollup_first_block) do
         log_info("End of the batch #{batch.number} discovered, moving to the previous batch")
 
         {status, updated_rollup_blocks} =
@@ -913,6 +948,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
             first_unconfirmed_block - 1,
             confirmation_desc,
             outbox_config,
+            rollup_first_block,
             new_cache
           )
 
@@ -933,6 +969,25 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewConfirmations do
         {:ok, unconfirmed_rollup_blocks}
       end
     end
+  end
+
+  # Determines if a rollup block number has reached the lowest indexed block of the chain.
+  #
+  # ## Parameters
+  # - `rollup_block_num`: The rollup block number to check
+  # - `rollup_first_block`: The block number limiting the lowest indexed block of
+  #   the chain.
+  #
+  # ## Returns
+  # - `true` if the block number has reached genesis, `false` otherwise
+  @spec genesis_reached?(non_neg_integer(), non_neg_integer()) :: boolean()
+  defp genesis_reached?(rollup_block_num, rollup_first_block) do
+    # If it is assumed that rollup_block_num is the number of a block included in a batch, then
+    # the first part of the condition covers the case when the first rollup block is configured
+    # explicitly (not 0) and it can be a part of any batch. The second part of the condition
+    # covers the case when the first rollup block is 0, which cannot be included in any batch,
+    # so rollup_block_num belongs to the first batch.
+    rollup_block_num <= rollup_first_block or rollup_block_num - 1 <= 0
   end
 
   # Retrieves the batch containing the specified rollup block and logs the attempt.
