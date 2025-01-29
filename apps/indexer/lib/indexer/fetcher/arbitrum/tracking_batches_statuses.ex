@@ -98,6 +98,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     missing_batches_range = config_tracker[:missing_batches_range]
     node_interface_address = config_tracker[:node_interface_contract]
 
+    indexer_first_block = Application.get_all_env(:indexer)[:first_block]
+
     Process.send(self(), :init_worker, [])
 
     {:ok,
@@ -122,7 +124,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
          missing_batches_range: missing_batches_range,
          messages_to_blocks_shift: messages_to_blocks_shift,
          confirmation_batches_depth: confirmation_batches_depth,
-         node_interface_address: node_interface_address
+         node_interface_address: node_interface_address,
+         rollup_first_block: indexer_first_block
        },
        data: %{}
      }}
