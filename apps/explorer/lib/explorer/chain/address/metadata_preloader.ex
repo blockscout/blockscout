@@ -292,7 +292,11 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     alter_address(address, address.hash, names, field_to_put_info)
   end
 
-  defp put_meta_to_item(%Instance{owner: owner_address, owner_address_hash: owner_address_hash} = instance, names, field_to_put_info) do
+  defp put_meta_to_item(
+         %Instance{owner: owner_address, owner_address_hash: owner_address_hash} = instance,
+         names,
+         field_to_put_info
+       ) do
     %Instance{instance | owner: alter_address(owner_address, owner_address_hash, names, field_to_put_info)}
   end
 
