@@ -468,7 +468,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     out
     |> Map.merge(%{
       "height" => Map.get(da_info, "height"),
-      "transaction_commitment" => Map.get(da_info, "transaction_commitment")
+      "transaction_commitment" => Map.get(da_info, "transaction_commitment"),
+      "namespace" => get_celestia_namespace()
     })
   end
 
@@ -712,5 +713,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     |> Map.put("l1_block_height", Map.get(arbitrum_block, :l1_block_number))
     |> Map.put("send_count", Map.get(arbitrum_block, :send_count))
     |> Map.put("send_root", Map.get(arbitrum_block, :send_root))
+  end
+
+  # Extracts the Celestia namespace from the environment variable.
+  @spec get_celestia_namespace() :: String.t()
+  defp get_celestia_namespace() do
+    System.get_env("INDEXER_ARBITRUM_CELESTIA_NAMESPACE", "")
   end
 end

@@ -64,16 +64,12 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Celestia do
           height::big-unsigned-integer-size(64),
           _start_index::binary-size(8),
           _shares_length::binary-size(8),
-          _key::big-unsigned-integer-size(64),
-          _num_leaves::big-unsigned-integer-size(64),
-          _tuple_root_nonce::big-unsigned-integer-size(64),
           transaction_commitment::binary-size(32),
           _data_root::binary-size(32),
-          _side_nodes_length::big-unsigned-integer-size(64),
           _rest::binary
         >> = raw
       ) do
-    # https://github.com/celestiaorg/nitro-contracts/blob/celestia/blobstream/src/bridge/SequencerInbox.sol#L334-L360
+    # https://github.com/celestiaorg/nitro-das-celestia/blob/7baf95c5bf1ece467abbbab911db7ed9c7cc6967/das/types.go#L19-L42
     {:ok, :in_celestia,
      %__MODULE__{batch_number: batch_number, height: height, transaction_commitment: transaction_commitment, raw: raw}}
   end
