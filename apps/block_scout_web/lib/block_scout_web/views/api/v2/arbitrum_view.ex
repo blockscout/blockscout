@@ -717,7 +717,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
 
   # Extracts the Celestia namespace from the environment variable.
   @spec get_celestia_namespace() :: String.t()
-  defp get_celestia_namespace() do
+  defp get_celestia_namespace do
     System.get_env("INDEXER_ARBITRUM_CELESTIA_NAMESPACE", "")
   end
 end
