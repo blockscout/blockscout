@@ -146,6 +146,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     ## Parameters
     - `address_hash`: The hash of the address for the smart contract.
     - `attrs`: A map containing attributes such as external libraries and secondary sources.
+    - `verification_with_files?`: A bool indicating was verification done via files or flattened code.
 
     ## Returns
     - `{:ok, Explorer.Chain.SmartContract.t()}`: Successfully created or updated smart
