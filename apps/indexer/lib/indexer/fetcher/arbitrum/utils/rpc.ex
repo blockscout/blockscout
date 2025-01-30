@@ -673,6 +673,24 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
         {sequence_number, prev_message_count, new_message_count, data}
 
+      "0x37501551" <> encoded_params ->
+        # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, bytes quote)
+        [
+          sequence_number,
+          data,
+          _after_delayed_messages_read,
+          _gas_refunder,
+          prev_message_count,
+          new_message_count,
+          _quote
+        ] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_37501551_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, data}
+
       "0x3e5aa082" <> encoded_params ->
         # addSequencerL2BatchFromBlobs(uint256 sequenceNumber, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
         [sequence_number, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
