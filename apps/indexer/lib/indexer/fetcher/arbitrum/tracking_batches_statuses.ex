@@ -48,7 +48,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   use GenServer
   use Indexer.Fetcher
 
-  alias Indexer.Fetcher.Arbitrum.Workers.{L1Finalization, NewBatches, NewConfirmations, NewL1Executions}
+  alias Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks, as: ConfirmationsDiscoveryTasks
+  alias Indexer.Fetcher.Arbitrum.Workers.{L1Finalization, NewBatches, NewL1Executions}
 
   import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
 
@@ -267,7 +268,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   #   block for the next iteration of new confirmation discovery.
   @impl GenServer
   def handle_info(:check_new_confirmations, state) do
-    {handle_duration, {_, new_state}} = :timer.tc(&NewConfirmations.discover_new_rollup_confirmation/1, [state])
+    {handle_duration, {_, new_state}} = :timer.tc(&ConfirmationsDiscoveryTasks.check_new/1, [state])
 
     Process.send(self(), :check_new_executions, [])
 
@@ -405,8 +406,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   #   end blocks for the next iteration of historical confirmations discovery.
   @impl GenServer
   def handle_info(:check_historical_confirmations, state) do
-    {handle_duration, {_, new_state}} =
-      :timer.tc(&NewConfirmations.discover_historical_rollup_confirmation/1, [state])
+    {handle_duration, {_, new_state}} =:timer.tc(&ConfirmationsDiscoveryTasks.check_unprocessed/1, [state])
 
     Process.send(self(), :check_historical_executions, [])
 
