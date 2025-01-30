@@ -38,7 +38,7 @@ and 5 containers for microservices (written in Rust):
 
 ## Run with docker-compose
 
-- Running explorer: `docker-compose -f up -d`
+- Running explorer: `docker-compose up -d`
 
 All of the configs assume the is running at http://localhost.
 
