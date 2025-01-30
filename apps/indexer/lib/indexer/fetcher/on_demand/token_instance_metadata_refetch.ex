@@ -86,7 +86,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
 
       {:fetched_metadata, error} ->
         Logger.error(fn ->
-          "Error while refetching metadata for {#{to_string(token_instance.token_contract_address_hash)}, #{token_id}}: #{inspect(error)}"
+          "Error while refetching metadata for {#{token_instance.token_contract_address_hash}, #{token_id}}: #{inspect(error)}"
         end)
 
         TokenInstanceMetadataRefetchAttempt.insert_retries_number(
