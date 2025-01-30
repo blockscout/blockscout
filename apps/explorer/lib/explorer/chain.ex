@@ -2483,11 +2483,7 @@ defmodule Explorer.Chain do
   @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
           {:ok, Block.block_number()} | {:error, :not_found}
   def timestamp_to_block_number(given_timestamp, closest, from_api) do
-    consensus_blocks_query =
-      from(
-        block in Block,
-        where: block.consensus == true
-      )
+    consensus_blocks_query = Block.consensus_blocks_query()
 
     gt_timestamp_query =
       from(
@@ -3146,7 +3142,20 @@ defmodule Explorer.Chain do
     Wei.to(value, unit)
   end
 
-  def smart_contract_bytecode(address_hash) do
+  @doc """
+  Retrieves the bytecode of a smart contract.
+
+  ## Parameters
+
+    - `address_or_hash` (binary() | Hash.Address.t()): The address hash of the smart contract.
+    - `options` (api?()): keyword to determine target DB (read replica or primary).
+
+  ## Returns
+
+  - `binary()`: The bytecode of the smart contract.
+  """
+  @spec smart_contract_bytecode(binary() | Hash.Address.t()) :: binary()
+  def smart_contract_bytecode(address_hash, options \\ []) do
     query =
       from(
         address in Address,
@@ -3155,7 +3164,7 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.one()
+    |> select_repo(options).one()
     |> Data.to_string()
   end
 

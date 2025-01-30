@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
+  alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
   import Explorer.Helper, only: [decode_data: 2]
 
@@ -30,17 +31,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   require Logger
 
   @types_of_l1_messages_forwarded_to_l2 [3, 7, 9, 12]
-
-  # keccak256("MessageDelivered(uint256,bytes32,address,uint8,address,bytes32,uint256,uint64)")
-  @message_delivered_event "0x5e3c1311ea442664e8b1611bfabef659120ea7a0a2cfc0667700bebc69cbffe1"
-  @message_delivered_event_unindexed_params [
-    :address,
-    {:uint, 8},
-    :address,
-    {:bytes, 32},
-    {:uint, 256},
-    {:uint, 64}
-  ]
 
   @doc """
   Discovers new L1-to-L2 messages initiated on L1 within a configured block range and processes them for database import.
@@ -242,7 +232,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
         start_block,
         end_block,
         bridge_address,
-        [@message_delivered_event],
+        [ArbitrumEvents.message_delivered()],
         json_rpc_named_arguments
       )
 
@@ -358,7 +348,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       _message_data_hash,
       _base_fee_l1,
       timestamp
-    ] = decode_data(event["data"], @message_delivered_event_unindexed_params)
+    ] = decode_data(event["data"], ArbitrumEvents.message_delivered_unindexed_params())
 
     message_index = quantity_to_integer(Enum.at(event["topics"], 1))
 

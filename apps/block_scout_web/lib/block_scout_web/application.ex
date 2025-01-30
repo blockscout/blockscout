@@ -30,7 +30,10 @@ defmodule BlockScoutWeb.Application do
   end
 
   if @disable_api? do
-    defp setup_and_define_children, do: []
+    defp setup_and_define_children do
+      BlockScoutWeb.Prometheus.Exporter.setup()
+      []
+    end
   else
     defp setup_and_define_children do
       alias BlockScoutWeb.API.APILogger

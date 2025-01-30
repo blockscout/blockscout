@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.Endpoint do
   end
 
   if @disable_api? do
+    plug(BlockScoutWeb.Prometheus.Exporter)
     plug(BlockScoutWeb.HealthRouter)
   else
     socket("/socket", BlockScoutWeb.UserSocket, websocket: [timeout: 45_000])

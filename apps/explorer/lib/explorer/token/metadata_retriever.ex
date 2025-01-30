@@ -14,7 +14,7 @@ defmodule Explorer.Token.MetadataRetriever do
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @invalid_base64_data "invalid data:application/json;base64"
-  @default_headers [{"User-Agent", "blockscout-6.10.0"}]
+  @default_headers [{"User-Agent", "blockscout-6.10.1"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -23,6 +23,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
   @ignored_hosts ["localhost", "127.0.0.1", "0.0.0.0", "", nil]
 
+  # TODO: Consider using the `EthereumJSONRPC.ERC20` module to retrieve token metadata
   @contract_abi [
     %{
       "constant" => true,
