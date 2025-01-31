@@ -161,24 +161,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
 
     ## Parameters
     - A map containing:
-      - `config`: Configuration settings including the L1 rollup initialization block,
-                  RPC configurations, SequencerInbox address, a shift for the message
-                  to block number mapping, and a limit for new batches discovery.
+      - `config`: Configuration settings including the L1 rollup initialization
+        block, RPC configurations, SequencerInbox address, a shift for the message
+        to block number mapping, and a limit for new batches discovery.
       - `data`: Contains the ending block number for the historical batch discovery.
 
     ## Returns
-    - `{:ok, start_block}`: On successful discovery and processing, where `start_block`
-                            is the calculated starting block for the discovery range,
-                            indicating the need to consider another block range in the
-                            next iteration of historical batch discovery.
-    - `{:ok, l1_rollup_init_block}`: If the discovery process has reached the rollup
-                                     initialization block, indicating that all batches
-                                     up to the rollup origins have been discovered and
-                                     no further action is needed.
+    - `{:ok, start_block, new_state}`: On successful discovery and processing, where
+      `start_block` is the calculated starting block for the discovery range,
+      indicating the need to consider another block range in the next iteration of
+      historical batch discovery, and `new_state` contains updated cache data.
+    - `{:ok, l1_rollup_init_block, new_state}`: If the discovery process has reached
+      the rollup initialization block, indicating that all batches up to the rollup
+      origins have been discovered and no further action is needed.
   """
   @spec check_historical(%{
           :config => %{
-            :l1_rollup_init_block => non_neg_integer(),
             :l1_rpc => %{
               :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
               :logs_block_range => non_neg_integer(),
@@ -187,6 +185,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
             :l1_sequencer_inbox_address => binary(),
             :messages_to_blocks_shift => non_neg_integer(),
             :new_batches_limit => non_neg_integer(),
+            :l1_rollup_init_block => non_neg_integer(),
             :rollup_rpc => %{
               :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
               :chunk_size => non_neg_integer(),
@@ -197,7 +196,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
           },
           :data => %{:historical_batches_end_block => non_neg_integer(), optional(any()) => any()},
           optional(any()) => any()
-        }) :: {:ok, non_neg_integer()}
+        }) :: {:ok, non_neg_integer(), %{optional(any()) => any()}}
   def check_historical(
         %{
           config: %{
@@ -205,15 +204,16 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
             rollup_rpc: rollup_rpc_config,
             l1_sequencer_inbox_address: sequencer_inbox_address,
             messages_to_blocks_shift: messages_to_blocks_shift,
-            l1_rollup_init_block: l1_rollup_init_block,
             new_batches_limit: new_batches_limit,
             node_interface_address: node_interface_address
           },
           data: %{historical_batches_end_block: end_block}
-        } = _state
+        } = state
       ) do
-    if end_block >= l1_rollup_init_block do
-      start_block = max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
+    {lowest_l1_block, new_state} = get_lowest_l1_block_for_commitments(state)
+
+    if end_block >= lowest_l1_block do
+      start_block = max(lowest_l1_block, end_block - l1_rpc_config.logs_block_range + 1)
 
       log_info("Block range for historical batches discovery: #{start_block}..#{end_block}")
 
@@ -228,9 +228,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
         rollup_rpc_config
       )
 
-      {:ok, start_block}
+      {:ok, start_block, new_state}
     else
-      {:ok, l1_rollup_init_block}
+      {:ok, lowest_l1_block, new_state}
     end
   end
 
@@ -250,24 +250,23 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
 
     ## Parameters
     - A map containing:
-      - `config`: Configuration settings including the L1 rollup initialization block,
-                  RPC configurations, SequencerInbox address, a shift for the message
-                  to block number mapping, a limit for new batches discovery, and the
-                  max size of the range for missing batches inspection.
+      - `config`: Configuration settings including the L1 rollup initialization
+        block, RPC configurations, SequencerInbox address, a shift for the message
+        to block number mapping, a limit for new batches discovery, and the max
+        size of the range for missing batches inspection.
       - `data`: Contains the ending batch number for the missing batches inspection.
 
     ## Returns
-    - `{:ok, start_batch}`: On successful inspection of the given batch range, where
+    - `{:ok, start_batch, new_state}`: On successful inspection of the given batch range, where
       `start_batch` is the calculated starting batch for the inspected range,
       indicating the need to consider another batch range in the next iteration of
-      missing batch inspection.
-    - `{:ok, lowest_batch}`: If the discovery process has been finished, indicating
+      missing batch inspection, and `new_state` contains updated cache data.
+    - `{:ok, lowest_batch, new_state}`: If the discovery process has been finished, indicating
       that all batches up to the rollup origins have been checked and no further
       action is needed.
   """
   @spec inspect_for_missing(%{
           :config => %{
-            :l1_rollup_init_block => non_neg_integer(),
             :l1_rpc => %{
               :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
               :logs_block_range => non_neg_integer(),
@@ -278,6 +277,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
             :messages_to_blocks_shift => non_neg_integer(),
             :missing_batches_range => non_neg_integer(),
             :new_batches_limit => non_neg_integer(),
+            :l1_rollup_init_block => non_neg_integer(),
             :node_interface_address => binary(),
             :rollup_rpc => %{
               :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
@@ -288,7 +288,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
           },
           :data => %{:missing_batches_end_batch => non_neg_integer(), optional(any()) => any()},
           optional(any()) => any()
-        }) :: {:ok, non_neg_integer()}
+        }) :: {:ok, non_neg_integer(), %{optional(any()) => any()}}
   def inspect_for_missing(
         %{
           config: %{
@@ -296,14 +296,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
             rollup_rpc: rollup_rpc_config,
             l1_sequencer_inbox_address: sequencer_inbox_address,
             messages_to_blocks_shift: messages_to_blocks_shift,
-            l1_rollup_init_block: l1_rollup_init_block,
             new_batches_limit: new_batches_limit,
             missing_batches_range: missing_batches_range,
             lowest_batch: lowest_batch,
             node_interface_address: node_interface_address
           },
           data: %{missing_batches_end_batch: end_batch}
-        } = _state
+        } = state
       )
       when not is_nil(lowest_batch) and not is_nil(end_batch) do
     # No need to inspect for missing batches below the lowest batch
@@ -314,8 +313,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
 
       log_info("Batch range for missing batches inspection: #{start_batch}..#{end_batch}")
 
+      {lowest_l1_block, new_state} = get_lowest_l1_block_for_commitments(state)
+
       l1_block_ranges_for_missing_batches =
-        DbSettlement.get_l1_block_ranges_for_missing_batches(start_batch, end_batch, l1_rollup_init_block - 1)
+        DbSettlement.get_l1_block_ranges_for_missing_batches(start_batch, end_batch, lowest_l1_block - 1)
 
       unless l1_block_ranges_for_missing_batches == [] do
         discover_missing(
@@ -329,9 +330,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
         )
       end
 
-      {:ok, start_batch}
+      {:ok, start_batch, new_state}
     else
-      {:ok, lowest_batch}
+      {:ok, lowest_batch, state}
     end
   end
 
@@ -513,5 +514,55 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
         end
       )
     end)
+  end
+
+  # Determines the lowest L1 block number from which to start discovering batch commitments.
+  # The function either returns a cached value or queries the database for the batch containing
+  # the first rollup block. If no batch is found, it falls back to the L1 rollup initialization
+  # block without caching it.
+  @spec get_lowest_l1_block_for_commitments(%{
+          :config => %{
+            :l1_rollup_init_block => non_neg_integer(),
+            :rollup_first_block => non_neg_integer(),
+            optional(any()) => any()
+          },
+          :data => %{
+            optional(:lowest_l1_block_for_commitments) => non_neg_integer(),
+            optional(any()) => any()
+          },
+          optional(any()) => any()
+        }) :: {non_neg_integer(), %{optional(any()) => any()}}
+  defp get_lowest_l1_block_for_commitments(
+         %{
+           config: %{
+             l1_rollup_init_block: l1_rollup_init_block,
+             rollup_first_block: rollup_first_block
+           },
+           data: data
+         } = state
+       ) do
+    case Map.get(data, :lowest_l1_block_for_commitments) do
+      nil ->
+        # If first block is 0, start from block 1 since block 0 is not included in any batch
+        # and therefore has no commitment. Otherwise use the first block value
+        lowest_rollup_block = if rollup_first_block == 0, do: 1, else: rollup_first_block
+
+        case DbSettlement.get_batch_by_rollup_block_number(lowest_rollup_block) do
+          nil ->
+            {l1_rollup_init_block, state}
+
+          batch ->
+            block_number = batch.commitment_transaction.block_number
+
+            {block_number,
+             %{
+               state
+               | data: Map.put(data, :lowest_l1_block_for_commitments, block_number)
+             }}
+        end
+
+      cached_block ->
+        {cached_block, state}
+    end
   end
 end

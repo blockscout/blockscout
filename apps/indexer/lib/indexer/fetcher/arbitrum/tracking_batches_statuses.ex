@@ -332,17 +332,17 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   #   for the next iteration of historical batch discovery.
   @impl GenServer
   def handle_info(:check_historical_batches, state) do
-    {handle_duration, {:ok, start_block}} = :timer.tc(&BatchesDiscoveryTasks.check_historical/1, [state])
+    {handle_duration, {:ok, start_block, new_state}} = :timer.tc(&BatchesDiscoveryTasks.check_historical/1, [state])
 
     Process.send(self(), :check_missing_batches, [])
 
     new_data =
-      Map.merge(state.data, %{
+      Map.merge(new_state.data, %{
         duration: increase_duration(state.data, handle_duration),
         historical_batches_end_block: start_block - 1
       })
 
-    {:noreply, %{state | data: new_data}}
+    {:noreply, %{new_state | data: new_data}}
   end
 
   # Initiates the process of inspecting for missing batches of rollup transactions.
@@ -374,9 +374,10 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       if is_nil(state.config.lowest_batch) do
         state.data
       else
-        {handle_duration, {:ok, start_batch}} = :timer.tc(&BatchesDiscoveryTasks.inspect_for_missing/1, [state])
+        {handle_duration, {:ok, start_batch, new_state}} =
+          :timer.tc(&BatchesDiscoveryTasks.inspect_for_missing/1, [state])
 
-        Map.merge(state.data, %{
+        Map.merge(new_state.data, %{
           duration: increase_duration(state.data, handle_duration),
           missing_batches_end_batch: start_batch - 1
         })
