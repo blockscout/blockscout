@@ -327,7 +327,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
             l1_rpc: l1_rpc_config,
             l1_outbox_address: outbox_address,
             l1_start_block: l1_start_block,
-            l1_rollup_init_block: l1_rollup_init_block,
             rollup_first_block: rollup_first_block
           },
           data: %{
@@ -336,6 +335,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
           }
         } = state
       ) do
+    {lowest_l1_block, state} = get_lowest_l1_block_for_confirmations(state)
+
     {interim_start_block, end_block} =
       case expected_confirmation_end_block do
         nil ->
@@ -352,17 +353,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
       end
 
     with {:end_block_defined, true} <- {:end_block_defined, not is_nil(end_block)},
-         {:genesis_not_reached, true} <- {:genesis_not_reached, end_block >= l1_rollup_init_block} do
+         {:genesis_not_reached, true} <- {:genesis_not_reached, end_block >= lowest_l1_block} do
       start_block =
         case interim_start_block do
           nil ->
-            max(l1_rollup_init_block, end_block - l1_rpc_config.logs_block_range + 1)
+            max(lowest_l1_block, end_block - l1_rpc_config.logs_block_range + 1)
 
           value ->
             # The interim start block is not nil when a gap between two confirmations
             # identified. Therefore there is no need to go deeper than the interim
             # start block.
-            Enum.max([l1_rollup_init_block, value, end_block - l1_rpc_config.logs_block_range + 1])
+            Enum.max([lowest_l1_block, value, end_block - l1_rpc_config.logs_block_range + 1])
         end
 
       log_info("Block range for historical rollup confirmations discovery: #{start_block}..#{end_block}")
@@ -400,9 +401,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
       # block in the database and the historical confirmations discovery must start
       # from the L1 block specified as L1 start block (configured, or the latest block number)
       {:end_block_defined, false} -> {:ok, state_for_next_iteration_historical(state, l1_start_block - 1, nil)}
-      # If the genesis of the rollup has been reached during historical confirmations
+      # If the lowest L1 block with confirmation has been reached during historical confirmations
       # discovery, no further actions are needed.
-      {:genesis_not_reached, false} -> {:ok, state_for_next_iteration_historical(state, l1_rollup_init_block - 1, nil)}
+      {:genesis_not_reached, false} -> {:ok, state_for_next_iteration_historical(state, lowest_l1_block - 1, nil)}
     end
   end
 
@@ -436,5 +437,53 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
             historical_confirmations_start_block: lowest_block_in_gap
         }
     }
+  end
+
+  # Determines the lowest L1 block number from which to start discovering block confirmations.
+  # The function either returns a cached value or queries the database for the confirmation
+  # block of the first rollup block. If no confirmation is found, it falls back to the L1
+  # rollup initialization block without caching it.
+  @spec get_lowest_l1_block_for_confirmations(%{
+          :config => %{
+            :l1_rollup_init_block => non_neg_integer(),
+            :rollup_first_block => non_neg_integer(),
+            optional(any()) => any()
+          },
+          :data => %{
+            optional(:lowest_l1_block_for_confirmations) => non_neg_integer(),
+            optional(any()) => any()
+          },
+          optional(any()) => any()
+        }) :: {non_neg_integer(), %{optional(any()) => any()}}
+  defp get_lowest_l1_block_for_confirmations(
+         %{
+           config: %{
+             l1_rollup_init_block: l1_rollup_init_block,
+             rollup_first_block: rollup_first_block
+           },
+           data: data
+         } = state
+       ) do
+    case Map.get(data, :lowest_l1_block_for_confirmations) do
+      nil ->
+        # If first block is 0, start from block 1 since block 0 is not included in any batch
+        # and therefore has no confirmation. Otherwise use the first block value
+        lowest_rollup_block = if rollup_first_block == 0, do: 1, else: rollup_first_block
+
+        case DbSettlement.l1_block_of_confirmation_for_rollup_block(lowest_rollup_block) do
+          nil ->
+            {l1_rollup_init_block, state}
+
+          block_number ->
+            {block_number,
+             %{
+               state
+               | data: Map.put(data, :lowest_l1_block_for_confirmations, block_number)
+             }}
+        end
+
+      cached_block ->
+        {cached_block, state}
+    end
   end
 end
