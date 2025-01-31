@@ -48,8 +48,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   use GenServer
   use Indexer.Fetcher
 
+  alias Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks, as: BatchesDiscoveryTasks
   alias Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks, as: ConfirmationsDiscoveryTasks
-  alias Indexer.Fetcher.Arbitrum.Workers.{L1Finalization, NewBatches, NewL1Executions}
+  alias Indexer.Fetcher.Arbitrum.Workers.{L1Finalization, NewL1Executions}
 
   import Indexer.Fetcher.Arbitrum.Utils.Helper, only: [increase_duration: 2]
 
@@ -235,7 +236,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   #   the next iteration of new batch discovery.
   @impl GenServer
   def handle_info(:check_new_batches, state) do
-    {handle_duration, {:ok, end_block}} = :timer.tc(&NewBatches.discover_new_batches/1, [state])
+    {handle_duration, {:ok, end_block}} = :timer.tc(&BatchesDiscoveryTasks.check_new/1, [state])
 
     Process.send(self(), :check_new_confirmations, [])
 
@@ -331,7 +332,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   #   for the next iteration of historical batch discovery.
   @impl GenServer
   def handle_info(:check_historical_batches, state) do
-    {handle_duration, {:ok, start_block}} = :timer.tc(&NewBatches.discover_historical_batches/1, [state])
+    {handle_duration, {:ok, start_block}} = :timer.tc(&BatchesDiscoveryTasks.check_historical/1, [state])
 
     Process.send(self(), :check_missing_batches, [])
 
@@ -373,7 +374,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       if is_nil(state.config.lowest_batch) do
         state.data
       else
-        {handle_duration, {:ok, start_batch}} = :timer.tc(&NewBatches.inspect_for_missing_batches/1, [state])
+        {handle_duration, {:ok, start_batch}} = :timer.tc(&BatchesDiscoveryTasks.inspect_for_missing/1, [state])
 
         Map.merge(state.data, %{
           duration: increase_duration(state.data, handle_duration),
@@ -406,7 +407,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   #   end blocks for the next iteration of historical confirmations discovery.
   @impl GenServer
   def handle_info(:check_historical_confirmations, state) do
-    {handle_duration, {_, new_state}} =:timer.tc(&ConfirmationsDiscoveryTasks.check_unprocessed/1, [state])
+    {handle_duration, {_, new_state}} = :timer.tc(&ConfirmationsDiscoveryTasks.check_unprocessed/1, [state])
 
     Process.send(self(), :check_historical_executions, [])
 
