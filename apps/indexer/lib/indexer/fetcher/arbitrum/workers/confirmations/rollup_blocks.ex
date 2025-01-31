@@ -270,7 +270,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   # Retrieves the batch containing the specified rollup block and logs the attempt.
   @spec get_batch(non_neg_integer()) :: {:ok, Arbitrum.L1Batch.t()} | {:error, []}
   defp get_batch(rollup_block_num) do
-    # TODO: move this function to Db.Settlement
+    # Note: No sense in moving this function to Db.Settlement since it contains module
+    # specific logs
 
     # Generally if batch is nil it means either
     # - a batch to a rollup block association is not found, not recoverable
@@ -302,7 +303,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
           non_neg_integer()
         ) :: {:ok, [Arbitrum.BatchBlock.to_import()]} | {:error, []}
   defp get_unconfirmed_rollup_blocks(batch, rollup_block_num) do
-    # TODO: move this function to Db.Settlement
+    # Note: No sense in moving this function to Db.Settlement since it contains module
+    # specific logs
 
     unconfirmed_rollup_blocks = DbSettlement.unconfirmed_rollup_blocks(batch.start_block, rollup_block_num)
 
