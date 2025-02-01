@@ -295,7 +295,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       repo,
       ordered_addresses,
       conflict_target: :address_hash,
-      on_conflict: :replace_all,
+      on_conflict: :nothing,
       for: FilecoinPendingAddressOperation,
       returning: true,
       timeout: timeout,
