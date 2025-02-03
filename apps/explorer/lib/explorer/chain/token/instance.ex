@@ -914,15 +914,16 @@ defmodule Explorer.Chain.Token.Instance do
       end)
 
     Enum.map(token_transfers, fn
-      %TokenTransfer{token_type: "ERC-20"} = token_transfer ->
-        token_transfer
-
-      token_transfer ->
+      %TokenTransfer{token_type: nft_token_type} = token_transfer
+      when nft_token_type in ["ERC-721", "ERC-1155", "ERC-404"] ->
         %TokenTransfer{
           token_transfer
           | token_instance:
               token_instances[{List.first(token_transfer.token_ids), token_transfer.token_contract_address_hash}]
         }
+
+      token_transfer ->
+        token_transfer
     end)
   end
 
