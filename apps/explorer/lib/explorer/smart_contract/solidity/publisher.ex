@@ -319,7 +319,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     ## Parameters
     - `address_hash`: The hash of the address for the smart contract.
     - `attrs`: A map containing attributes such as external libraries and secondary sources.
-    - `verification_with_files?`: A bool indicating was verification done via files or flattened code.
+    - `verification_with_files?`: A boolean indicating whether the verification was performed with files or flattened code.
 
     ## Returns
     - `{:ok, Explorer.Chain.SmartContract.t()}`: Successfully created or updated smart
@@ -346,7 +346,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
 
       smart_contract.partially_verified && attrs.partially_verified &&
-          Application.get_env(:block_scout_web, :contract)[:disallowed_partial_reverification] ->
+          Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
         changeset =
           SmartContract.invalid_contract_changeset(
             %SmartContract{address_hash: address_hash},
