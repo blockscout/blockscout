@@ -682,6 +682,7 @@ config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
   concurrency: ConfigHelper.parse_integer_env_var("ARBITRUM_DA_RECORDS_NORMALIZATION_MIGRATION_CONCURRENCY", 1)
 
 config :explorer, Explorer.Migrator.SanitizeVerifiedAddresses,
+  enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_DISABLED"),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_BATCH_SIZE", 500),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_CONCURRENCY", 1)
 
