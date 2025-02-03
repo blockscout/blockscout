@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.Chain do
       page_size: 0
     ]
 
-  import Explorer.Helper, only: [parse_integer: 1]
+  import Explorer.Helper, only: [parse_boolean: 1, parse_integer: 1]
 
   alias BlockScoutWeb.PagingHelper
   alias Ecto.Association.NotLoaded
@@ -879,4 +879,20 @@ defmodule BlockScoutWeb.Chain do
         {:error, {:invalid, :number}}
     end
   end
+
+  @doc """
+  Fetches the scam token toggle from conn.cookies["show_scam_tokens"]. And put it to the params keyword.
+
+  ## Parameters
+
+    - params: Initial params to append scam token toggle info.
+    - conn: The connection.
+
+  ## Returns
+
+  Provided params keyword with the new field `show_scam_tokens?`.
+  """
+  @spec fetch_scam_token_toggle(Keyword.t(), Plug.Conn.t()) :: Keyword.t()
+  def fetch_scam_token_toggle(params, conn),
+    do: Keyword.put(params, :show_scam_tokens?, conn.cookies["show_scam_tokens"] |> parse_boolean())
 end

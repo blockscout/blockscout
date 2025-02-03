@@ -10,7 +10,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       paging_options: 1,
       split_list_by_page: 1,
       current_filter: 1,
-      paging_params_with_fiat_value: 1
+      paging_params_with_fiat_value: 1,
+      fetch_scam_token_toggle: 2
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -831,6 +832,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
+      |> fetch_scam_token_toggle(conn)
       |> Address.list_top_addresses()
       |> split_list_by_page()
 

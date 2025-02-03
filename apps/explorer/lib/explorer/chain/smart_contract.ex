@@ -1329,6 +1329,7 @@ defmodule Explorer.Chain.SmartContract do
           | {:search, String.t()}
           | {:sorting, SortingHelper.sorting_params()}
           | Chain.api?()
+          | Chain.show_scam_tokens?()
         ]) :: [__MODULE__.t()]
   def verified_contracts(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
@@ -1340,7 +1341,7 @@ defmodule Explorer.Chain.SmartContract do
     query = from(contract in __MODULE__)
 
     query
-    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
+    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
     |> filter_contracts(filter)
     |> search_contracts(search_string)
     |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
