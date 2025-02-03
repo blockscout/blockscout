@@ -437,18 +437,18 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   #   the next iteration of historical executions.
   @impl GenServer
   def handle_info(:check_historical_executions, state) do
-    {handle_duration, {:ok, start_block}} =
+    {handle_duration, {:ok, start_block, new_state}} =
       :timer.tc(&NewL1Executions.discover_historical_l1_messages_executions/1, [state])
 
     Process.send(self(), :check_lifecycle_transactions_finalization, [])
 
     new_data =
-      Map.merge(state.data, %{
+      Map.merge(new_state.data, %{
         duration: increase_duration(state.data, handle_duration),
         historical_executions_end_block: start_block - 1
       })
 
-    {:noreply, %{state | data: new_data}}
+    {:noreply, %{new_state | data: new_data}}
   end
 
   # Handles the periodic finalization check of lifecycle transactions.
@@ -479,7 +479,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
     next_timeout = max(state.config.recheck_interval - div(increase_duration(state.data, handle_duration), 1000), 0)
 
-    Process.send_after(self(), :check_new_batches, next_timeout)
+    Process.send_after(self(), :check_historical_batches, next_timeout)
 
     new_data =
       Map.merge(state.data, %{

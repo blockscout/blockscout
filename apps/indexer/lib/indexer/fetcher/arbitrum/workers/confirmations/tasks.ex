@@ -439,10 +439,25 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     }
   end
 
-  # Determines the lowest L1 block number from which to start discovering block confirmations.
-  # The function either returns a cached value or queries the database for the confirmation
-  # block of the first rollup block. If no confirmation is found, it falls back to the L1
-  # rollup initialization block without caching it.
+  @doc """
+    Determines the lowest L1 block number from which to start discovering confirmations.
+
+    The function either:
+    - Returns a cached value if available
+    - Queries the database for the batch containing the first rollup block
+    - Falls back to `l1_rollup_init_block` if no batch is found (without caching)
+
+    ## Parameters
+    - A map containing:
+      - `config`: Configuration including `l1_rollup_init_block` and `rollup_first_block`
+      - `data`: May contain a cached `lowest_l1_block_for_confirmations`
+
+    ## Returns
+    - `{lowest_block, new_state}`: Where `lowest_block` is either:
+      - The cached block number
+      - The L1 block number of the first batch commitment
+      - The `l1_rollup_init_block` as fallback
+  """
   @spec get_lowest_l1_block_for_confirmations(%{
           :config => %{
             :l1_rollup_init_block => non_neg_integer(),
@@ -455,15 +470,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
           },
           optional(any()) => any()
         }) :: {non_neg_integer(), %{optional(any()) => any()}}
-  defp get_lowest_l1_block_for_confirmations(
-         %{
-           config: %{
-             l1_rollup_init_block: l1_rollup_init_block,
-             rollup_first_block: rollup_first_block
-           },
-           data: data
-         } = state
-       ) do
+  def get_lowest_l1_block_for_confirmations(
+        %{
+          config: %{
+            l1_rollup_init_block: l1_rollup_init_block,
+            rollup_first_block: rollup_first_block
+          },
+          data: data
+        } = state
+      ) do
     case Map.get(data, :lowest_l1_block_for_confirmations) do
       nil ->
         # If first block is 0, start from block 1 since block 0 is not included in any batch
