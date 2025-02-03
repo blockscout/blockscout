@@ -714,7 +714,7 @@ defmodule Explorer.Chain.Search do
       on: address.hash == tag.address_hash
     )
     |> select(^metadata_tags_search_fields())
-    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
   end
 
   defp page_search_results(

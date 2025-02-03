@@ -461,12 +461,15 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       old_chain_id = Application.get_env(:block_scout_web, :chain_id)
       chain_id = 1
       Application.put_env(:block_scout_web, :chain_id, chain_id)
+      old_hide_scam_addresses = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
 
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, metadata_envs)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
         Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:block_scout_web, :hide_scam_addresses, old_hide_scam_addresses)
       end)
 
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
