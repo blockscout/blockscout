@@ -15,8 +15,6 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Repo
 
-  @default_batch_size 500
-
   def unprocessed_data_query do
     from(address in Address,
       join: smart_contract in SmartContract,
@@ -130,8 +128,15 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
   #
   # ## Returns
   # - Reference to the scheduled timer
+  @spec schedule_batch_migration(timeout :: non_neg_integer | nil) :: reference()
   defp schedule_batch_migration(timeout \\ nil) do
-    Process.send_after(self(), :migrate_batch, timeout || Application.get_env(:explorer, __MODULE__)[:timeout] || 0)
+    Process.send_after(
+      self(),
+      :migrate_batch,
+      timeout ||
+        Application.get_env(:explorer, __MODULE__)[:timeout] ||
+        0
+    )
   end
 
   @spec update_cache() :: :ok
@@ -139,13 +144,13 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
     BackgroundMigrations.set_sanitize_verified_addresses_finished(true)
   end
 
+  @spec batch_size() :: non_neg_integer()
   defp batch_size do
-    Application.get_env(:explorer, __MODULE__)[:batch_size] || @default_batch_size
+    Application.get_env(:explorer, __MODULE__)[:batch_size]
   end
 
+  @spec concurrency() :: non_neg_integer()
   defp concurrency do
-    default = 4 * System.schedulers_online()
-
-    Application.get_env(:explorer, __MODULE__)[:concurrency] || default
+    Application.get_env(:explorer, __MODULE__)[:concurrency]
   end
 end

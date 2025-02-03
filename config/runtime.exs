@@ -682,8 +682,8 @@ config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
   concurrency: ConfigHelper.parse_integer_env_var("ARBITRUM_DA_RECORDS_NORMALIZATION_MIGRATION_CONCURRENCY", 1)
 
 config :explorer, Explorer.Migrator.SanitizeVerifiedAddresses,
-  batch_size: ConfigHelper.parse_integer_env_var("SANITIZE_VERIFIED_ADDRESSES_MIGRATION_BATCH_SIZE", 500),
-  concurrency: ConfigHelper.parse_integer_env_var("SANITIZE_VERIFIED_ADDRESSES_MIGRATION_CONCURRENCY", 1)
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_CONCURRENCY", 1)
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
