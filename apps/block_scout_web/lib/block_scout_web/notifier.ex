@@ -21,7 +21,16 @@ defmodule BlockScoutWeb.Notifier do
 
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.{Address, BlockNumberHelper, DenormalizationHelper, InternalTransaction, Transaction}
+
+  alias Explorer.Chain.{
+    Address,
+    BlockNumberHelper,
+    DenormalizationHelper,
+    InternalTransaction,
+    Token.Instance,
+    Transaction
+  }
+
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.{AverageBlockTime, Helper}
@@ -31,6 +40,7 @@ defmodule BlockScoutWeb.Notifier do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @check_broadcast_sequence_period 500
+  @api_true [api?: true]
 
   case @chain_type do
     :arbitrum ->
@@ -201,6 +211,7 @@ defmodule BlockScoutWeb.Notifier do
           ]
         ])
       )
+      |> Instance.preload_nft(@api_true)
 
     transfers_by_token = Enum.group_by(all_token_transfers_full, fn tt -> to_string(tt.token_contract_address_hash) end)
 

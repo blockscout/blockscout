@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Token.Instance do
   use Explorer.Schema
 
   alias Explorer.{Chain, Helper, Repo}
-  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
+  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.Token.Instance.Thumbnails
@@ -870,4 +870,67 @@ defmodule Explorer.Chain.Token.Instance do
   def media_type_to_string({type, subtype}) do
     "#{type}/#{subtype}"
   end
+
+  @doc """
+  Preloads NFTs for a list of `TokenTransfer` structs.
+
+  ## Parameters
+
+    - `token_transfers`: A list of `TokenTransfer` structs.
+    - `opts`: A keyword list of options.
+
+  ## Returns
+
+  A list of `TokenTransfer` structs with preloaded NFTs.
+  """
+  @spec preload_nft([TokenTransfer.t()] | Transaction.t(), keyword()) :: [TokenTransfer.t()] | Transaction.t()
+  def preload_nft(token_transfers, options) when is_list(token_transfers) do
+    token_instances_id =
+      token_transfers
+      |> Enum.reduce(MapSet.new(), fn
+        %TokenTransfer{token_type: nft_token_type} = token_transfer, ids
+        when nft_token_type in ["ERC-721", "ERC-1155", "ERC-404"] ->
+          MapSet.put(ids, {List.first(token_transfer.token_ids), token_transfer.token_contract_address_hash.bytes})
+
+        _token_transfer, ids ->
+          ids
+      end)
+      |> MapSet.to_list()
+
+    token_instances =
+      Instance
+      |> where(
+        [nft],
+        fragment(
+          "(?, ?) = ANY(?::token_instance_id[])",
+          nft.token_id,
+          nft.token_contract_address_hash,
+          ^token_instances_id
+        )
+      )
+      |> Chain.select_repo(options).all()
+      |> Enum.reduce(%{}, fn nft, map ->
+        Map.put(map, {nft.token_id, nft.token_contract_address_hash}, nft)
+      end)
+
+    Enum.map(token_transfers, fn
+      %TokenTransfer{token_type: nft_token_type} = token_transfer
+      when nft_token_type in ["ERC-721", "ERC-1155", "ERC-404"] ->
+        %TokenTransfer{
+          token_transfer
+          | token_instance:
+              token_instances[{List.first(token_transfer.token_ids), token_transfer.token_contract_address_hash}]
+        }
+
+      token_transfer ->
+        token_transfer
+    end)
+  end
+
+  def preload_nft(%Transaction{token_transfers: token_transfers} = transaction, options)
+      when is_list(token_transfers) do
+    %Transaction{transaction | token_transfers: preload_nft(token_transfers, options)}
+  end
+
+  def preload_nft(other, _options), do: other
 end

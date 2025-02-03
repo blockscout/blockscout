@@ -46,6 +46,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
+  alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
@@ -178,7 +179,11 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:transaction, %{
-        transaction: preloaded |> maybe_preload_ens_to_transaction() |> maybe_preload_metadata_to_transaction()
+        transaction:
+          preloaded
+          |> Instance.preload_nft(@api_true)
+          |> maybe_preload_ens_to_transaction()
+          |> maybe_preload_metadata_to_transaction()
       })
     end
   end
@@ -459,7 +464,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:token_transfers, %{
-        token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
+        token_transfers:
+          token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
