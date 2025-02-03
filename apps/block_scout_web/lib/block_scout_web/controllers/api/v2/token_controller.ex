@@ -161,7 +161,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> put_status(200)
       |> put_view(AddressView)
       |> render(:nft_list, %{
-        token_instances: token_instances |> put_owner(holder_address_with_proxy_implementations),
+        token_instances:
+          token_instances
+          |> put_owner(holder_address_with_proxy_implementations, holder_address_hash)
+          |> maybe_preload_ens()
+          |> maybe_preload_metadata(),
         next_page_params: next_page_params,
         token: token
       })
@@ -186,7 +190,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
       conn
       |> put_status(200)
-      |> render(:token_instances, %{token_instances: token_instances, next_page_params: next_page_params, token: token})
+      |> render(:token_instances, %{
+        token_instances: token_instances |> maybe_preload_ens() |> maybe_preload_metadata(),
+        next_page_params: next_page_params,
+        token: token
+      })
     end
   end
 
@@ -362,8 +370,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  defp put_owner(token_instances, holder_address),
-    do: Enum.map(token_instances, fn token_instance -> %Instance{token_instance | owner: holder_address} end)
+  defp put_owner(token_instances, holder_address, holder_address_hash),
+    do:
+      Enum.map(token_instances, fn token_instance ->
+        %Instance{token_instance | owner: holder_address, owner_address_hash: holder_address_hash}
+      end)
 
   @spec put_token_to_instance(Instance.t(), Token.t()) :: Instance.t()
   defp put_token_to_instance(

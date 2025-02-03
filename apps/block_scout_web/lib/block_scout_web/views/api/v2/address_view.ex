@@ -223,13 +223,19 @@ defmodule BlockScoutWeb.API.V2.AddressView do
            ) do
         # `%{hash: address_hash}` will match with `address_with_info(_, address_hash)` clause in `BlockScoutWeb.API.V2.Helper`
         {:ok, token_instance} ->
-          %Instance{token_instance | owner: %{hash: address_hash}, current_token_balance: token_balance}
+          %Instance{
+            token_instance
+            | owner: %{hash: address_hash},
+              owner_address_hash: address_hash,
+              current_token_balance: token_balance
+          }
 
         {:error, :not_found} ->
           %Instance{
             token_id: token_id,
             metadata: nil,
             owner: %Address{hash: address_hash},
+            owner_address_hash: address_hash,
             current_token_balance: token_balance,
             token_contract_address_hash: token.contract_address_hash
           }
