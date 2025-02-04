@@ -419,6 +419,32 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Retrieves Solana transactions that are linked to a given Neon transaction.
+
+  ## Parameters
+    - `transaction_hash`: The hash of the Neon transaction
+    - `json_rpc_named_arguments`: Named arguments for JSON RPC call
+
+  ## Returns
+    - `{:ok, list()}`: List of linked Solana transactions
+    - `{:error, reason}`: If the request fails
+  """
+  @spec get_linked_solana_transactions(
+          Explorer.Chain.Hash.t(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:ok, list()} | {:error, reason :: term}
+  def get_linked_solana_transactions(transaction_hash, json_rpc_named_arguments) do
+    r =
+      request(%{
+        id: 1,
+        method: "neon_getSolanaTransactionByNeonTransaction",
+        params: [to_string(transaction_hash)]
+      })
+
+    EthereumJSONRPC.json_rpc(r, json_rpc_named_arguments)
+  end
+
+  @doc """
   Fetches pending transactions from variant API.
   """
   def fetch_pending_transactions(json_rpc_named_arguments) do
