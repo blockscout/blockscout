@@ -459,6 +459,7 @@ defmodule Explorer.Token.MetadataRetriever do
   ## Parameters
 
     - uid: The unique identifier for which the IPFS link is to be generated.
+    - public_gateway?: A boolean indicating whether to use the public IPFS gateway.
 
   ## Returns
 
@@ -466,20 +467,48 @@ defmodule Explorer.Token.MetadataRetriever do
 
   ## Examples
 
-      iex> ipfs_link("QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5")
+      iex> ipfs_link("QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5", true)
       "https://ipfs.io/ipfs/QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5"
 
+      iex> ipfs_link("QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5", false)
+      "https://public_ipfs_gateway.io/QmTzQ1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5Q1N1z5"
   """
-  @spec ipfs_link(uid :: any()) :: String.t()
-  def ipfs_link(uid) do
+  @spec ipfs_link(uid :: any(), public_gateway? :: boolean) :: String.t()
+  def ipfs_link(uid, public_gateway? \\ false) do
+    key = if public_gateway?, do: :public_gateway_url, else: :gateway_url
+
     base_url =
       :indexer
       |> Application.get_env(:ipfs)
-      |> Keyword.get(:gateway_url)
+      |> Keyword.get(key)
       |> String.trim_trailing("/")
 
-    url = base_url <> "/" <> uid
+    url = "#{base_url}/#{uid}"
 
+    url |> maybe_add_ipfs_gateway_params_to_url?()
+  end
+
+  @doc """
+  Generates an Arweave link for the given UID.
+
+  ## Parameters
+  - uid: The unique identifier for the resource.
+
+  ## Returns
+  - A string representing the full URL to the resource on Arweave.
+
+  ## Examples
+
+      iex> arweave_link("some-uid")
+      "https://arweave.net/some-uid"
+
+  """
+  @spec arweave_link(uid :: any()) :: String.t()
+  def arweave_link(uid) do
+    "https://arweave.net/#{uid}"
+  end
+
+  defp maybe_add_ipfs_gateway_params_to_url?(url) do
     ipfs_params = Application.get_env(:indexer, :ipfs)
 
     if ipfs_params[:gateway_url_param_location] == :query do
@@ -524,6 +553,22 @@ defmodule Explorer.Token.MetadataRetriever do
     else
       @default_headers
     end
+  end
+
+  @doc """
+  Returns the headers for making requests to Arweave.
+
+  ## Examples
+
+      iex> Explorer.Token.MetadataRetriever.ar_headers()
+      [
+        {"User-Agent", "blockscout-6.9.0"}
+      ]
+
+  """
+  @spec ar_headers() :: [{binary(), binary()}]
+  def ar_headers do
+    @default_headers
   end
 
   @doc """
@@ -609,7 +654,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   defp fetch_json_from_uri({:ok, [token_uri_string]}, ipfs?, token_id, hex_token_id, from_base_uri?) do
-    fetch_from_ipfs?(token_uri_string, ipfs?, token_id, hex_token_id, from_base_uri?)
+    fetch_from_ipfs_or_ar?(token_uri_string, ipfs?, token_id, hex_token_id, from_base_uri?)
   end
 
   defp fetch_json_from_uri(uri, _ipfs?, _token_id, _hex_token_id, _from_base_uri?) do
@@ -619,7 +664,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
-  defp fetch_from_ipfs?(token_uri_string, ipfs?, token_id, hex_token_id, from_base_uri?) do
+  defp fetch_from_ipfs_or_ar?(token_uri_string, ipfs?, token_id, hex_token_id, from_base_uri?) do
     case URI.parse(token_uri_string) do
       %URI{scheme: "ipfs", host: host, path: path} ->
         resource_id =
@@ -632,6 +677,9 @@ defmodule Explorer.Token.MetadataRetriever do
           end
 
         fetch_from_ipfs(resource_id, hex_token_id)
+
+      %URI{scheme: "ar", host: _host, path: resource_id} ->
+        fetch_from_arweave(resource_id, hex_token_id)
 
       %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
         fetch_from_ipfs(resource_id, hex_token_id)
@@ -686,6 +734,12 @@ defmodule Explorer.Token.MetadataRetriever do
     fetch_metadata_inner(ipfs_url, ipfs?, nil, hex_token_id)
   end
 
+  defp fetch_from_arweave(uid, hex_token_id) do
+    arweave_url = arweave_link(uid)
+    ipfs? = false
+    fetch_metadata_inner(arweave_url, ipfs?, nil, hex_token_id)
+  end
+
   defp fetch_metadata_inner(uri, ipfs?, token_id, hex_token_id, from_base_uri? \\ false)
 
   defp fetch_metadata_inner(uri, ipfs?, token_id, hex_token_id, from_base_uri?) do
@@ -701,6 +755,30 @@ defmodule Explorer.Token.MetadataRetriever do
       {:error, "preparation error"}
   end
 
+  @doc """
+  Fetches metadata from a given URI.
+
+  ## Parameters
+
+    - `uri` (String): The URI from which to fetch metadata.
+    - `ipfs?` (boolean): A flag indicating whether the URI is an IPFS URI.
+    - `hex_token_id` (String, optional): A hexadecimal token ID, defaults to `nil`.
+
+  ## Returns
+
+    - `{:ok, metadata}` on success.
+    - `{:error, reason}` on failure.
+
+  ## Examples
+
+      iex> fetch_metadata_from_uri("http://example.com/metadata", false)
+      {:ok, %{"name" => "Example Token", "description" => "An example token"}}
+
+      iex> fetch_metadata_from_uri("http://localhost/metadata", false)
+      {:error, "ignored host localhost"}
+
+  """
+  @spec fetch_metadata_from_uri(String.t(), boolean(), String.t() | nil) :: {:ok, %{metadata: any}} | {:error, binary}
   def fetch_metadata_from_uri(uri, ipfs?, hex_token_id \\ nil) do
     case Mix.env() != :test && URI.parse(uri) do
       %URI{host: host} when host in @ignored_hosts ->
