@@ -140,7 +140,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   import Ecto.Changeset
 
-  alias Explorer.{Chain, Helper}
+  alias Explorer.Chain
   alias Explorer.Chain.{DenormalizationHelper, Hash, Log, TokenTransfer}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{PagingOptions, Repo}
@@ -644,21 +644,6 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @doc """
-  To be used in migrators
-  """
-  @spec encode_token_transfer_ids([{Hash.t(), Hash.t(), non_neg_integer()}]) :: binary()
-  def encode_token_transfer_ids(ids) do
-    encoded_values =
-      ids
-      |> Enum.reduce("", fn {t_hash, b_hash, log_index}, acc ->
-        acc <> "('#{Helper.hash_to_query_string(t_hash)}', '#{Helper.hash_to_query_string(b_hash)}', #{log_index}),"
-      end)
-      |> String.trim_trailing(",")
-
-    "(#{encoded_values})"
-  end
-
-  @doc """
   Fetches token transfers from logs.
   """
   @spec logs_to_token_transfers([Log.t()], Keyword.t()) :: [TokenTransfer.t()]
@@ -670,6 +655,36 @@ defmodule Explorer.Chain.TokenTransfer do
     |> limit(^Enum.count(logs))
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
+  end
+
+  @doc """
+    Builds a query to fetch token transfers by their composite IDs.
+
+    ## Parameters
+    - `query`: The base query to build upon. Defaults to `__MODULE__`.
+    - `ids`: List of tuples containing {transaction_hash, block_hash, log_index}.
+
+    ## Returns
+    A query that filters token transfers by the given composite IDs.
+  """
+  @spec by_ids_query(Ecto.Queryable.t(), [{Hash.t(), Hash.t(), non_neg_integer()}]) :: Ecto.Query.t()
+  def by_ids_query(query \\ __MODULE__, ids) do
+    formatted_ids =
+      Enum.map(ids, fn {transaction_hash, block_hash, log_index} ->
+        {transaction_hash.bytes, block_hash.bytes, log_index}
+      end)
+
+    where(
+      query,
+      [tt],
+      fragment(
+        "(?, ?, ?) = ANY(?::token_transfer_id[])",
+        tt.transaction_hash,
+        tt.block_hash,
+        tt.log_index,
+        ^formatted_ids
+      )
+    )
   end
 
   defp logs_to_token_transfers_query(query \\ __MODULE__, logs)
