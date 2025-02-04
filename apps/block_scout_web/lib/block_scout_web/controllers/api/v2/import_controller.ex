@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
         |> put_token_string_field(token_symbol, :symbol)
         |> put_token_string_field(token_name, :name)
 
-      case Chain.update_token(token, changeset, true) do
+      case Token.update(token, changeset, true) do
         {:ok, _} ->
           conn
           |> put_view(ApiView)

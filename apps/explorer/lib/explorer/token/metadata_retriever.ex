@@ -5,7 +5,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
   require Logger
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Repo
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Reader
@@ -277,8 +277,8 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
-  def set_skip_metadata(token_to_update) do
-    Chain.update_token(token_to_update, %{skip_metadata: true})
+  defp set_skip_metadata(token_to_update) do
+    Token.update(token_to_update, %{skip_metadata: true})
   end
 
   def get_total_supply_of(contract_address_hash) when is_binary(contract_address_hash) do

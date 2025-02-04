@@ -27,6 +27,7 @@ defmodule Explorer.Chain.Token.Schema do
         field(:holder_count, :integer)
         field(:skip_metadata, :boolean)
         field(:total_supply_updated_at_block, :integer)
+        field(:metadata_updated_at, :utc_datetime_usec)
         field(:fiat_value, :decimal)
         field(:circulating_market_cap, :decimal)
         field(:icon_url, :string)
@@ -79,9 +80,11 @@ defmodule Explorer.Chain.Token do
 
   import Ecto.{Changeset, Query}
 
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.{Chain, SortingHelper}
-  alias Explorer.Chain.{BridgedToken, Hash, Search, Token}
+  alias Explorer.Chain.{Address, BridgedToken, Hash, Search, Token}
+  alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Import.Runner
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Repo
   alias Explorer.SmartContract.Helper
@@ -102,7 +105,8 @@ defmodule Explorer.Chain.Token do
              :__meta__,
              :contract_address,
              :inserted_at,
-             :updated_at
+             :updated_at,
+             :metadata_updated_at
            ]}
 
   @derive {Jason.Encoder,
@@ -110,7 +114,8 @@ defmodule Explorer.Chain.Token do
              :__meta__,
              :contract_address,
              :inserted_at,
-             :updated_at
+             :updated_at,
+             :metadata_updated_at
            ]}
 
   @typedoc """
@@ -132,7 +137,7 @@ defmodule Explorer.Chain.Token do
   Explorer.Chain.Token.Schema.generate()
 
   @required_attrs ~w(contract_address_hash type)a
-  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel volume_24h)a
+  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block metadata_updated_at updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel volume_24h)a
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
@@ -171,7 +176,7 @@ defmodule Explorer.Chain.Token do
   @doc """
   Builds an `Ecto.Query` to fetch the cataloged tokens.
 
-  These are tokens with cataloged field set to true and updated_at is earlier or equal than an hour ago.
+  These are tokens with cataloged field set to true, skip_metadata is not true and metadata_updated_at is earlier or equal than 48 hours ago.
   """
   def cataloged_tokens(minutes \\ 2880) do
     date_now = DateTime.utc_now()
@@ -179,7 +184,134 @@ defmodule Explorer.Chain.Token do
 
     from(
       token in __MODULE__,
-      where: token.cataloged == true and token.updated_at <= ^some_time_ago_date
+      where: token.cataloged == true,
+      where: is_nil(token.metadata_updated_at) or token.metadata_updated_at <= ^some_time_ago_date,
+      where: is_nil(token.skip_metadata) or token.skip_metadata == false
+    )
+  end
+
+  @doc """
+  Streams a list of tokens that have been cataloged for their metadata update.
+  """
+  @spec stream_cataloged_tokens(
+          initial :: accumulator,
+          reducer :: (entry :: Token.t(), accumulator -> accumulator),
+          some_time_ago_updated :: integer(),
+          limited? :: boolean()
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_cataloged_tokens(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
+      when is_function(reducer, 2) do
+    some_time_ago_updated
+    |> Token.cataloged_tokens()
+    |> Chain.add_fetcher_limit(limited?)
+    |> order_by(asc_nulls_first: :metadata_updated_at)
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
+  Update a new `t:Token.t/0` record.
+
+  As part of updating token, an additional record is inserted for
+  naming the address for reference if a name is provided for a token.
+  """
+  @spec update(Token.t(), map(), boolean(), :base | :metadata_update) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
+  def update(
+        %Token{contract_address_hash: address_hash} = token,
+        params \\ %{},
+        info_from_admin_panel? \\ false,
+        operation_type \\ :base
+      ) do
+    params =
+      if Map.has_key?(params, :total_supply) do
+        Map.put(params, :total_supply_updated_at_block, BlockNumber.get_max())
+      else
+        params
+      end
+
+    filtered_params = for({key, value} <- params, value !== "" && !is_nil(value), do: {key, value}) |> Enum.into(%{})
+
+    token_changeset =
+      token
+      |> Token.changeset(
+        filtered_params
+        |> Map.put(:updated_at, DateTime.utc_now())
+      )
+      |> (&if(token.is_verified_via_admin_panel && !info_from_admin_panel?,
+            do: &1 |> Changeset.delete_change(:symbol) |> Changeset.delete_change(:name),
+            else: &1
+          )).()
+
+    address_name_changeset =
+      Address.Name.changeset(%Address.Name{}, Map.put(filtered_params, :address_hash, address_hash))
+
+    stale_error_field = :contract_address_hash
+    stale_error_message = "is up to date"
+
+    on_conflict =
+      if operation_type == :metadata_update do
+        token_metadata_update_on_conflict()
+      else
+        Runner.Tokens.default_on_conflict()
+      end
+
+    token_opts = [
+      on_conflict: on_conflict,
+      conflict_target: :contract_address_hash,
+      stale_error_field: stale_error_field,
+      stale_error_message: stale_error_message
+    ]
+
+    address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
+
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    insert_result =
+      Multi.new()
+      |> Multi.run(
+        :address_name,
+        fn repo, _ ->
+          {:ok, repo.insert(address_name_changeset, address_name_opts)}
+        end
+      )
+      |> Multi.run(:token, fn repo, _ ->
+        with {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, [_]}}]}} <-
+               repo.update(token_changeset, token_opts) do
+          # the original token passed into `update/2` as stale error means it is unchanged
+          {:ok, token}
+        end
+      end)
+      |> Repo.transaction()
+
+    case insert_result do
+      {:ok, %{token: token}} ->
+        {:ok, token}
+
+      {:error, :token, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  defp token_metadata_update_on_conflict do
+    from(
+      token in Token,
+      update: [
+        set: [
+          name: fragment("COALESCE(EXCLUDED.name, ?)", token.name),
+          symbol: fragment("COALESCE(EXCLUDED.symbol, ?)", token.symbol),
+          total_supply: fragment("COALESCE(EXCLUDED.total_supply, ?)", token.total_supply),
+          decimals: fragment("COALESCE(EXCLUDED.decimals, ?)", token.decimals),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at),
+          metadata_updated_at: fragment("GREATEST(?, EXCLUDED.metadata_updated_at)", token.metadata_updated_at)
+        ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals) IS DISTINCT FROM (?, ?, ?, ?)",
+          token.name,
+          token.symbol,
+          token.total_supply,
+          token.decimals
+        )
     )
   end
 

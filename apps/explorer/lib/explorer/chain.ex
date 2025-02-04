@@ -83,7 +83,6 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
   alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
-  alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
@@ -3785,25 +3784,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Streams a list of tokens that have been cataloged.
-  """
-  @spec stream_cataloged_tokens(
-          initial :: accumulator,
-          reducer :: (entry :: Token.t(), accumulator -> accumulator),
-          some_time_ago_updated :: integer(),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_cataloged_tokens(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
-      when is_function(reducer, 2) do
-    some_time_ago_updated
-    |> Token.cataloged_tokens()
-    |> add_fetcher_limit(limited?)
-    |> order_by(asc: :updated_at)
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @doc """
   Fetches a `t:Token.t/0` by an address hash.
 
   ## Options
@@ -4031,73 +4011,6 @@ defmodule Explorer.Chain do
       ],
       where: is_nil(token_instance.metadata)
     )
-  end
-
-  @doc """
-  Update a new `t:Token.t/0` record.
-
-  As part of updating token, an additional record is inserted for
-  naming the address for reference if a name is provided for a token.
-  """
-  @spec update_token(Token.t(), map(), boolean()) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
-  def update_token(%Token{contract_address_hash: address_hash} = token, params \\ %{}, info_from_admin_panel? \\ false) do
-    params =
-      if Map.has_key?(params, :total_supply) do
-        Map.put(params, :total_supply_updated_at_block, BlockNumber.get_max())
-      else
-        params
-      end
-
-    filtered_params = for({key, value} <- params, value !== "" && !is_nil(value), do: {key, value}) |> Enum.into(%{})
-
-    token_changeset =
-      token
-      |> Token.changeset(Map.put(filtered_params, :updated_at, DateTime.utc_now()))
-      |> (&if(token.is_verified_via_admin_panel && !info_from_admin_panel?,
-            do: &1 |> Changeset.delete_change(:symbol) |> Changeset.delete_change(:name),
-            else: &1
-          )).()
-
-    address_name_changeset =
-      Address.Name.changeset(%Address.Name{}, Map.put(filtered_params, :address_hash, address_hash))
-
-    stale_error_field = :contract_address_hash
-    stale_error_message = "is up to date"
-
-    token_opts = [
-      on_conflict: Runner.Tokens.default_on_conflict(),
-      conflict_target: :contract_address_hash,
-      stale_error_field: stale_error_field,
-      stale_error_message: stale_error_message
-    ]
-
-    address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
-
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    insert_result =
-      Multi.new()
-      |> Multi.run(
-        :address_name,
-        fn repo, _ ->
-          {:ok, repo.insert(address_name_changeset, address_name_opts)}
-        end
-      )
-      |> Multi.run(:token, fn repo, _ ->
-        with {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, [_]}}]}} <-
-               repo.update(token_changeset, token_opts) do
-          # the original token passed into `update_token/2` as stale error means it is unchanged
-          {:ok, token}
-        end
-      end)
-      |> Repo.transaction()
-
-    case insert_result do
-      {:ok, %{token: token}} ->
-        {:ok, token}
-
-      {:error, :token, changeset, _} ->
-        {:error, changeset}
-    end
   end
 
   @spec fetch_last_token_balances_include_unfetched(Hash.Address.t(), [api?]) :: []
