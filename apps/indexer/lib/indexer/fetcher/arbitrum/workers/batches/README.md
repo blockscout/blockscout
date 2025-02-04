@@ -26,6 +26,7 @@ For each batch, the indexer:
    - Included L2 transactions
    - Message data
    - Data availability information
+4. Updates the status of L2-to-L1 messages included in the batch transactions to mark them as committed
 
 ## Entity Linkage
 
@@ -47,6 +48,36 @@ Data recovery mechanisms include:
 - Automatic RPC fallback for missing data
 - Chunk-based processing for large datasets
 - Proper error handling and logging
+
+## Handling of Edge Cases
+
+The batch discovery process handles several important edge cases:
+
+1. Legacy Batch Format
+   - Some batches lack message counts in transaction calldata (from old SequencerInbox contract)
+   - Block ranges are determined by analyzing neighboring batches
+   - Binary search is used when only one neighbor is indexed
+
+2. Data Recovery and Gaps
+   - Automatically recovers missing rollup blocks and transactions via RPC
+   - Identifies and processes missing batches in sequential numbering
+   - Maps gaps to L1 block ranges for targeted recovery
+   - Chunks large datasets to ensure partial progress on failures
+   - Processes missing data in bounded ranges for efficiency
+
+3. Chain Reorganization
+   - Uses safe block numbers to prevent reorg issues
+   - Re-processes commitment transactions for existing batches
+   - Updates block numbers and timestamps if reorg detected
+   - Maintains consistency between L1 and L2 data
+   - Adjusts ranges when safe blocks affect discovery windows
+
+4. Batch Zero Handling
+   - Explicitly skips batch number 0 as it contains no rollup blocks/transactions
+   - Adjusts block counting for first valid batch accordingly
+
+5. Initial Block Detection
+   - The indexer configuration might limit fetched rollup blocks (e.g., not starting from genesis). Thus, the batch discovery process should operate only within the available and relevant block range rather than enforcing discovery across all historical data.
 
 ## Module Organization
 
