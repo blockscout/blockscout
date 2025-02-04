@@ -505,10 +505,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   end
 
   scope "/health" do
-    get("/", BlockScoutWeb.API.V1.HealthController, :health)
-    get("/liveness", BlockScoutWeb.API.V1.HealthController, :liveness)
-    get("/readiness", BlockScoutWeb.API.V1.HealthController, :readiness)
-    get("/multichain-search-export", BlockScoutWeb.API.V1.HealthController, :multichain_search_db_export)
+    get("/", BlockScoutWeb.API.HealthController, :health)
+    get("/liveness", BlockScoutWeb.API.HealthController, :liveness)
+    get("/readiness", BlockScoutWeb.API.HealthController, :readiness)
+    get("/multichain-search-export", BlockScoutWeb.API.HealthController, :multichain_search_db_export)
   end
 
   # For backward compatibility. Should be removed
