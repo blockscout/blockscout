@@ -334,7 +334,15 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
     ]
 
   @doc """
-    Returns selector with ABI (object of `ABI.FunctionSelector`) of the `addSequencerL2BatchFromBlobs(...)` function
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchFromBlobs(
+        uint256 sequenceNumber,
+        uint256 afterDelayedMessagesRead,
+        address gasRefunder,
+        uint256 prevMessageCount,
+        uint256 newMessageCount
+      )
   """
   def add_sequencer_l2_batch_from_blobs_selector_with_abi,
     do: %ABI.FunctionSelector{
@@ -391,6 +399,124 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
         :bytes,
         {:uint, 256},
         :address
+      ]
+    }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchFromBlobsDelayProof(
+        uint256 sequenceNumber,
+        uint256 afterDelayedMessagesRead,
+        address gasRefunder,
+        uint256 prevMessageCount,
+        uint256 newMessageCount,
+        DelayProof calldata delayProof
+      )
+  """
+  def add_sequencer_l2_batch_from_blobs_delay_proof_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "addSequencerL2BatchFromBlobsDelayProof",
+      types: [
+        {:uint, 256},
+        {:uint, 256},
+        :address,
+        {:uint, 256},
+        {:uint, 256},
+        {:tuple,
+         [
+           {:bytes, 32},
+           {:tuple,
+            [
+              {:uint, 8},
+              :address,
+              {:uint, 64},
+              {:uint, 64},
+              {:uint, 256},
+              {:uint, 256},
+              {:bytes, 32}
+            ]}
+         ]}
+      ]
+    }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchFromOriginDelayProof(
+        uint256 sequenceNumber,
+        bytes calldata data,
+        uint256 afterDelayedMessagesRead,
+        address gasRefunder,
+        uint256 prevMessageCount,
+        uint256 newMessageCount,
+        DelayProof calldata delayProof
+      )
+  """
+  def add_sequencer_l2_batch_from_origin_delay_proof_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "addSequencerL2BatchFromOriginDelayProof",
+      types: [
+        {:uint, 256},
+        :bytes,
+        {:uint, 256},
+        :address,
+        {:uint, 256},
+        {:uint, 256},
+        {:tuple,
+         [
+           {:bytes, 32},
+           {:tuple,
+            [
+              {:uint, 8},
+              :address,
+              {:uint, 64},
+              {:uint, 64},
+              {:uint, 256},
+              {:uint, 256},
+              {:bytes, 32}
+            ]}
+         ]}
+      ]
+    }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchDelayProof(
+        uint256 sequenceNumber,
+        bytes calldata data,
+        uint256 afterDelayedMessagesRead,
+        address gasRefunder,
+        uint256 prevMessageCount,
+        uint256 newMessageCount,
+        DelayProof calldata delayProof
+      )
+  """
+  def add_sequencer_l2_batch_delay_proof_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "addSequencerL2BatchDelayProof",
+      types: [
+        {:uint, 256},
+        :bytes,
+        {:uint, 256},
+        :address,
+        {:uint, 256},
+        {:uint, 256},
+        {:tuple,
+         [
+           {:bytes, 32},
+           {:tuple,
+            [
+              {:uint, 8},
+              :address,
+              {:uint, 64},
+              {:uint, 64},
+              {:uint, 256},
+              {:uint, 256},
+              {:bytes, 32}
+            ]}
+         ]}
       ]
     }
 end

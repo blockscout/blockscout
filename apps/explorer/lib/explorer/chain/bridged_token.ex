@@ -30,6 +30,8 @@ defmodule Explorer.Chain.BridgedToken do
 
   require Logger
 
+  # TODO: Consider using the `EthereumJSONRPC.ERC20` module to retrieve token metadata
+
   @default_paging_options %PagingOptions{page_size: 50}
   # keccak 256 from name()
   @name_signature "0x06fdde03"

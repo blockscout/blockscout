@@ -54,12 +54,37 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   describe "/addresses/{address_hash}" do
-    test "get 404 on non existing address", %{conn: conn} do
+    test "get 200 on non existing address", %{conn: conn} do
       address = build(:address)
 
-      request = get(conn, "/api/v2/addresses/#{address.hash}")
+      correct_response = %{
+        "hash" => Address.checksum(address.hash),
+        "is_contract" => false,
+        "is_verified" => false,
+        "name" => nil,
+        "private_tags" => [],
+        "public_tags" => [],
+        "watchlist_names" => [],
+        "creator_address_hash" => nil,
+        "creation_transaction_hash" => nil,
+        "token" => nil,
+        "coin_balance" => nil,
+        "proxy_type" => nil,
+        "implementations" => [],
+        "block_number_balance_updated_at" => nil,
+        "has_decompiled_code" => false,
+        "has_validated_blocks" => false,
+        "has_logs" => false,
+        "has_tokens" => false,
+        "has_token_transfers" => false,
+        "watchlist_address_id" => nil,
+        "has_beacon_chain_withdrawals" => false,
+        "ens_domain_name" => nil,
+        "metadata" => nil
+      }
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      request = get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}")
+      check_response(correct_response, json_response(request, 200))
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -340,12 +365,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   describe "/addresses/{address_hash}/counters" do
-    test "get 404 on non existing address", %{conn: conn} do
+    test "get 200 on non existing address", %{conn: conn} do
       address = build(:address)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/counters")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{
+               "transactions_count" => "0",
+               "token_transfers_count" => "0",
+               "gas_usage_count" => "0",
+               "validations_count" => "0"
+             } = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -413,7 +443,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -901,12 +931,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   describe "/addresses/{address_hash}/token-transfers" do
-    test "get 404 on non existing address", %{conn: conn} do
+    test "get 200 on non existing address", %{conn: conn} do
       address = build(:address)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -1735,7 +1765,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -1880,7 +1910,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/blocks-validated")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -1924,7 +1954,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-balances")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert json_response(request, 200) == []
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -1958,7 +1988,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2005,7 +2035,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history-by-day")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      days_count =
+        Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
+
+      assert %{
+               "days" => ^days_count,
+               "items" => []
+             } = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2045,7 +2081,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2231,7 +2267,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/tokens")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2602,7 +2638,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/withdrawals")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2681,12 +2717,21 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   describe "/addresses/{address_hash}/tabs-counters" do
-    test "get 404 on non existing address", %{conn: conn} do
+    test "get 200 on non existing address", %{conn: conn} do
       address = build(:address)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{
+               "validations_count" => 0,
+               "transactions_count" => 0,
+               "token_transfers_count" => 0,
+               "token_balances_count" => 0,
+               "logs_count" => 0,
+               "withdrawals_count" => 0,
+               "internal_transactions_count" => 0,
+               "celo_election_rewards_count" => 0
+             } = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn} do
@@ -2918,12 +2963,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       {:ok, endpoint: &"/api/v2/addresses/#{&1}/nft"}
     end
 
-    test "get 404 on non existing address", %{conn: conn, endpoint: endpoint} do
+    test "get 200 on non existing address", %{conn: conn, endpoint: endpoint} do
       address = build(:address)
 
       request = get(conn, endpoint.(address.hash))
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn, endpoint: endpoint} do
@@ -3166,12 +3211,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       {:ok, endpoint: &"/api/v2/addresses/#{&1}/nft/collections"}
     end
 
-    test "get 404 on non existing address", %{conn: conn, endpoint: endpoint} do
+    test "get 200 on non existing address", %{conn: conn, endpoint: endpoint} do
       address = build(:address)
 
       request = get(conn, endpoint.(address.hash))
 
-      assert %{"message" => "Not found"} = json_response(request, 404)
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
     end
 
     test "get 422 on invalid address", %{conn: conn, endpoint: endpoint} do

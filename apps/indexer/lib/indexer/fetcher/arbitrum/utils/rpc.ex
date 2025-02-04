@@ -3,6 +3,10 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
     Common functions to simplify RPC routines for Indexer.Fetcher.Arbitrum fetchers
   """
 
+  # TODO: Move the module under EthereumJSONRPC.Arbitrum.
+
+  alias ABI.TypeDecoder
+
   import EthereumJSONRPC,
     only: [json_rpc: 2, quantity_to_integer: 1, timestamp_to_datetime: 1]
 
@@ -632,5 +636,167 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   @spec get_resend_attempts() :: non_neg_integer()
   def get_resend_attempts do
     @rpc_resend_attempts
+  end
+
+  @doc """
+    Parses the calldata of various Arbitrum Sequencer batch submission functions to extract batch information.
+
+    Handles calldata for the following functions:
+    - addSequencerL2BatchFromOrigin
+    - addSequencerL2BatchFromBlobs
+    - addSequencerL2BatchFromBlobsDelayProof
+    - addSequencerL2BatchFromOriginDelayProof
+    - addSequencerL2BatchDelayProof
+
+    ## Parameters
+    - `calldata`: The raw calldata from the transaction as a binary string starting with "0x"
+                 followed by the function selector and encoded parameters
+
+    ## Returns
+    A tuple containing:
+    - `sequence_number`: The batch sequence number
+    - `prev_message_count`: The previous L2-to-L1 message count (nil for some functions)
+    - `new_message_count`: The new L2-to-L1 message count (nil for some functions)
+    - `data`: The batch data as binary (nil for blob-based submissions)
+  """
+  @spec parse_calldata_of_add_sequencer_l2_batch(binary()) ::
+          {non_neg_integer(), non_neg_integer() | nil, non_neg_integer() | nil, binary() | nil}
+  def parse_calldata_of_add_sequencer_l2_batch(calldata) do
+    case calldata do
+      "0x8f111f3c" <> encoded_params ->
+        # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
+        [sequence_number, data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_8f111f3c_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, data}
+
+      "0x3e5aa082" <> encoded_params ->
+        # addSequencerL2BatchFromBlobs(uint256 sequenceNumber, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
+        [sequence_number, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_blobs_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, nil}
+
+      "0x6f12b0c9" <> encoded_params ->
+        # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder)
+        [sequence_number, data, _after_delayed_messages_read, _gas_refunder] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_6f12b0c9_selector_with_abi()
+          )
+
+        {sequence_number, nil, nil, data}
+
+      "0x917cf8ac" <> encoded_params ->
+        # addSequencerL2BatchFromBlobsDelayProof(uint256 sequenceNumber, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, DelayProof calldata delayProof)
+        [
+          sequence_number,
+          _after_delayed_messages_read,
+          _gas_refunder,
+          prev_message_count,
+          new_message_count,
+          _delay_proof
+        ] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_blobs_delay_proof_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, nil}
+
+      "0x69cacded" <> encoded_params ->
+        # addSequencerL2BatchFromOriginDelayProof(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, DelayProof calldata delayProof)
+        [
+          sequence_number,
+          data,
+          _after_delayed_messages_read,
+          _gas_refunder,
+          prev_message_count,
+          new_message_count,
+          _delay_proof
+        ] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_from_origin_delay_proof_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, data}
+
+      "0x6e620055" <> encoded_params ->
+        # addSequencerL2BatchDelayProof(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, DelayProof calldata delayProof)
+        [
+          sequence_number,
+          data,
+          _after_delayed_messages_read,
+          _gas_refunder,
+          prev_message_count,
+          new_message_count,
+          _delay_proof
+        ] =
+          TypeDecoder.decode(
+            Base.decode16!(encoded_params, case: :lower),
+            ArbitrumContracts.add_sequencer_l2_batch_delay_proof_selector_with_abi()
+          )
+
+        {sequence_number, prev_message_count, new_message_count, data}
+    end
+  end
+
+  @doc """
+    Extracts batch numbers from `SequencerBatchDelivered` event logs.
+
+    Note: This function assumes that all provided logs are SequencerBatchDelivered
+    events. Logs from other events should be filtered out before calling this
+    function.
+
+    ## Parameters
+    - `logs`: A list of event logs, where each log is a map containing event data
+             from the `SequencerBatchDelivered` event.
+
+    ## Returns
+    - A list of non-negative integers representing batch numbers.
+  """
+  @spec extract_batch_numbers_from_logs([%{String.t() => any()}]) :: [non_neg_integer()]
+  def extract_batch_numbers_from_logs(logs) do
+    logs
+    |> Enum.map(fn event ->
+      {batch_num, _, _} = parse_sequencer_batch_delivered_event(event)
+      batch_num
+    end)
+  end
+
+  # Parses SequencerBatchDelivered event to get batch sequence number and associated accumulators
+  @doc """
+    Extracts key information from a `SequencerBatchDelivered` event log.
+
+    The event topics array contains the indexed parameters of the event:
+    - topic[0]: Event signature (not used)
+    - topic[1]: Batch number (indexed parameter)
+    - topic[2]: Before accumulator value (indexed parameter)
+    - topic[3]: After accumulator value (indexed parameter)
+
+    Note: This function does not verify if the event is actually a
+    `SequencerBatchDelivered` event.
+
+    ## Parameters
+    - `event`: A map containing event data with `topics` field.
+
+    ## Returns
+    - A tuple containing:
+      - The batch number as an integer
+      - The before accumulator value as a binary
+      - The after accumulator value as a binary
+  """
+  @spec parse_sequencer_batch_delivered_event(%{String.t() => any()}) :: {non_neg_integer(), binary(), binary()}
+  def parse_sequencer_batch_delivered_event(event) do
+    [_, batch_sequence_number, before_acc, after_acc] = event["topics"]
+
+    {quantity_to_integer(batch_sequence_number), before_acc, after_acc}
   end
 end

@@ -145,7 +145,7 @@ defmodule Explorer.SmartContract.Stylus.Publisher do
     attrs = address_hash |> attributes(params, abi)
 
     Logger.info("Publish successfully verified Stylus smart-contract #{address_hash} into the DB")
-    SmartContract.create_or_update_smart_contract(address_hash, attrs)
+    SmartContract.create_or_update_smart_contract(address_hash, attrs, false)
   end
 
   # Creates an invalid changeset for a Stylus smart contract that failed verification.
