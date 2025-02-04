@@ -453,6 +453,670 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert Enum.count(response["items"]) == 0
       assert response["next_page_params"] == nil
     end
+
+    test "check pagination #3 (ens and metadata tags added)", %{conn: conn} do
+      bypass = Bypass.open()
+      metadata_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+      bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+      old_hide_scam_addresses = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, metadata_envs)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:block_scout_web, :hide_scam_addresses, old_hide_scam_addresses)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      name = "contract.eth"
+
+      contracts =
+        for(i <- 0..50, do: insert(:smart_contract, name: "#{name |> String.replace(".", " ")} #{i}"))
+        |> Enum.sort_by(fn x -> x.name end)
+
+      tokens =
+        for i <- 0..50,
+            do: insert(:token, name: "#{name |> String.replace(".", " ")} #{i}", fiat_value: 10000 - i, holder_count: 0)
+
+      labels =
+        for(
+          i <- 0..50,
+          do:
+            insert(:address_to_tag, tag: build(:address_tag, display_name: "#{name |> String.replace(".", " ")} #{i}"))
+        )
+        |> Enum.sort_by(fn x -> x.tag.display_name end)
+
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+      address_3 = build(:address)
+      address_4 = build(:address)
+      address_5 = insert(:address)
+
+      metadata_response_1 =
+        %{
+          "items" =>
+            for(
+              i <- 0..24,
+              do: %{
+                "tag" => %{
+                  "slug" => "#{name} #{i}",
+                  "name" => "#{name} #{i}",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_1)
+                ]
+              }
+            ) ++
+              for(
+                i <- 0..23,
+                do: %{
+                  "tag" => %{
+                    "slug" => "#{name} #{25 + i}",
+                    "name" => "#{name} #{25 + i}",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_2)
+                  ]
+                }
+              ) ++
+              [
+                %{
+                  "tag" => %{
+                    "slug" => "#{name} 49",
+                    "name" => "#{name} 49",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_3),
+                    to_string(address_4)
+                  ]
+                }
+              ],
+          "next_page_params" => %{
+            "page_token" => "0,celo:_eth_helper,name",
+            "page_size" => 50
+          }
+        }
+
+      metadata_response_2 = %{
+        "items" =>
+          for(
+            i <- 22..23,
+            do: %{
+              "tag" => %{
+                "slug" => "#{name} #{25 + i}",
+                "name" => "#{name} #{25 + i}",
+                "tagType" => "name",
+                "ordinal" => 0,
+                "meta" => "{}"
+              },
+              "addresses" => [
+                to_string(address_2)
+              ]
+            }
+          ) ++
+            [
+              %{
+                "tag" => %{
+                  "slug" => "#{name} 49",
+                  "name" => "#{name} 49",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_3),
+                  to_string(address_4)
+                ]
+              }
+            ] ++
+            [
+              %{
+                "tag" => %{
+                  "slug" => "#{name} 0",
+                  "name" => "#{name} 0",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_5)
+                ]
+              }
+            ],
+        "next_page_params" => nil
+      }
+
+      page_token_1 = "0,#{name} #{47},name"
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tags%3Asearch",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          case conn.params["page_token"] do
+            nil -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_1))
+            ^page_token_1 -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_2))
+            _ -> raise "Unexpected page_token"
+          end
+        end
+      )
+
+      ens_address = insert(:address)
+
+      ens_response = """
+      {
+      "items": [
+          {
+              "id": "0xee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835",
+              "name": "#{name}",
+              "resolved_address": {
+                  "hash": "#{to_string(ens_address)}"
+              },
+              "owner": {
+                  "hash": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+              },
+              "wrapped_owner": null,
+              "registration_date": "2017-06-18T08:39:14.000Z",
+              "expiry_date": null,
+              "protocol": {
+                  "id": "ens",
+                  "short_name": "ENS",
+                  "title": "Ethereum Name Service",
+                  "description": "The Ethereum Name Service (ENS) is a distributed, open, and extensible naming system based on the Ethereum blockchain.",
+                  "deployment_blockscout_base_url": "https://eth.blockscout.com/",
+                  "tld_list": [
+                      "eth"
+                  ],
+                  "icon_url": "https://i.imgur.com/GOfUwCb.jpeg",
+                  "docs_url": "https://docs.ens.domains/"
+              }
+          }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/1/domains%3Alookup",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          Plug.Conn.resp(conn, 200, ens_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{name}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      assert Enum.at(response["items"], 0)["type"] == "ens_domain"
+      assert Enum.slice(response["items"], 1, 49) |> Enum.all?(fn x -> x["type"] == "label" end)
+
+      request_2 = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_2 = json_response(request_2, 200)
+
+      assert Enum.count(response_2["items"]) == 50
+      assert response_2["next_page_params"] != nil
+      assert Enum.at(response_2["items"], 0)["type"] == "label"
+      assert Enum.at(response_2["items"], 1)["type"] == "label"
+      assert Enum.slice(response_2["items"], 2, 48) |> Enum.all?(fn x -> x["type"] == "token" end)
+
+      request_3 = get(conn, "/api/v2/search", response_2["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_3 = json_response(request_3, 200)
+
+      assert Enum.count(response_3["items"]) == 50
+      assert response_3["next_page_params"] != nil
+
+      assert Enum.slice(response_3["items"], 0, 3) |> Enum.all?(fn x -> x["type"] == "token" end)
+      assert Enum.slice(response_3["items"], 3, 47) |> Enum.all?(fn x -> x["type"] == "metadata_tag" end)
+
+      request_4 = get(conn, "/api/v2/search", response_3["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_4 = json_response(request_4, 200)
+
+      assert Enum.count(response_4["items"]) == 50
+      assert response_4["next_page_params"] != nil
+
+      assert Enum.slice(response_4["items"], 0, 5) |> Enum.all?(fn x -> x["type"] == "metadata_tag" end)
+      assert Enum.slice(response_4["items"], 5, 45) |> Enum.all?(fn x -> x["type"] == "contract" end)
+
+      request_5 = get(conn, "/api/v2/search", response_4["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_5 = json_response(request_5, 200)
+
+      assert Enum.count(response_5["items"]) == 6
+      assert response_5["next_page_params"] == nil
+
+      assert Enum.all?(response_5["items"], fn x -> x["type"] == "contract" end)
+
+      labels_from_api = Enum.slice(response["items"], 1, 49) ++ Enum.slice(response_2["items"], 0, 2)
+
+      assert labels
+             |> Enum.zip(labels_from_api)
+             |> Enum.all?(fn {label, item} ->
+               label.tag.display_name == item["name"] && item["type"] == "label" &&
+                 item["address"] == Address.checksum(label.address_hash)
+             end)
+
+      tokens_from_api = Enum.slice(response_2["items"], 2, 48) ++ Enum.slice(response_3["items"], 0, 3)
+
+      assert tokens
+             |> Enum.zip(tokens_from_api)
+             |> Enum.all?(fn {token, item} ->
+               token.name == item["name"] && item["type"] == "token" &&
+                 item["address"] == Address.checksum(token.contract_address_hash)
+             end)
+
+      contracts_from_api = Enum.slice(response_4["items"], 5, 45) ++ response_5["items"]
+
+      assert contracts
+             |> Enum.zip(contracts_from_api)
+             |> Enum.all?(fn {contract, item} ->
+               contract.name == item["name"] && item["type"] == "contract" &&
+                 item["address"] == Address.checksum(contract.address_hash)
+             end)
+
+      metadata_tags_from_api = Enum.slice(response_3["items"], 3, 47) ++ Enum.slice(response_4["items"], 0, 5)
+
+      metadata_tags =
+        ((metadata_response_1["items"] |> Enum.drop(-3)) ++ metadata_response_2["items"])
+        |> Enum.reduce([], fn x, acc ->
+          acc ++
+            Enum.map(x["addresses"], fn addr ->
+              {addr, x["tag"]}
+            end)
+        end)
+
+      assert metadata_tags
+             |> Enum.zip(metadata_tags_from_api)
+             |> Enum.all?(fn {{address_hash, tag}, api_item} ->
+               tag["name"] == api_item["metadata"]["name"] && tag["slug"] == api_item["metadata"]["slug"] &&
+                 api_item["type"] == "metadata_tag" &&
+                 api_item["address"] == address_hash
+             end)
+
+      ens = Enum.at(response["items"], 0)
+      assert ens["address"] == to_string(ens_address)
+      assert ens["ens_info"]["name"] == name
+    end
+
+    test "check pagination #4 (ens and metadata tags (complex case) added)", %{conn: conn} do
+      bypass = Bypass.open()
+      metadata_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+      bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, metadata_envs)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      name = "contract.eth"
+
+      contracts =
+        for(i <- 0..50, do: insert(:smart_contract, name: "#{name |> String.replace(".", " ")} #{i}"))
+        |> Enum.sort_by(fn x -> x.name end)
+
+      tokens =
+        for i <- 0..50,
+            do: insert(:token, name: "#{name |> String.replace(".", " ")} #{i}", fiat_value: 10000 - i, holder_count: 0)
+
+      labels =
+        for(
+          i <- 0..50,
+          do:
+            insert(:address_to_tag, tag: build(:address_tag, display_name: "#{name |> String.replace(".", " ")} #{i}"))
+        )
+        |> Enum.sort_by(fn x -> x.tag.display_name end)
+
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+      address_3 = build(:address)
+      address_4 = build(:address)
+      address_5 = insert(:address)
+
+      metadata_response_1 =
+        %{
+          "items" =>
+            for(
+              i <- 0..24,
+              do: %{
+                "tag" => %{
+                  "slug" => "#{name} #{i}",
+                  "name" => "#{name} #{i}",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_1)
+                ]
+              }
+            ) ++
+              for(
+                i <- 0..20,
+                do: %{
+                  "tag" => %{
+                    "slug" => "#{name} #{25 + i}",
+                    "name" => "#{name} #{25 + i}",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_2)
+                  ]
+                }
+              ) ++
+              [
+                %{
+                  "tag" => %{
+                    "slug" => "#{name} #{25 + 21}",
+                    "name" => "#{name} #{25 + 21}",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_2),
+                    to_string(address_3)
+                  ]
+                }
+              ] ++
+              for(
+                i <- 22..23,
+                do: %{
+                  "tag" => %{
+                    "slug" => "#{name} #{25 + i}",
+                    "name" => "#{name} #{25 + i}",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_2)
+                  ]
+                }
+              ) ++
+              [
+                %{
+                  "tag" => %{
+                    "slug" => "#{name} 49",
+                    "name" => "#{name} 49",
+                    "tagType" => "name",
+                    "ordinal" => 0,
+                    "meta" => "{}"
+                  },
+                  "addresses" => [
+                    to_string(address_4)
+                  ]
+                }
+              ],
+          "next_page_params" => %{
+            "page_token" => "0,celo:_eth_helper,name",
+            "page_size" => 50
+          }
+        }
+
+      metadata_response_2 = %{
+        "items" =>
+          [
+            %{
+              "tag" => %{
+                "slug" => "#{name} #{25 + 21}",
+                "name" => "#{name} #{25 + 21}",
+                "tagType" => "name",
+                "ordinal" => 0,
+                "meta" => "{}"
+              },
+              "addresses" => [
+                to_string(address_2),
+                to_string(address_3)
+              ]
+            }
+          ] ++
+            for(
+              i <- 22..23,
+              do: %{
+                "tag" => %{
+                  "slug" => "#{name} #{25 + i}",
+                  "name" => "#{name} #{25 + i}",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_2)
+                ]
+              }
+            ) ++
+            [
+              %{
+                "tag" => %{
+                  "slug" => "#{name} 49",
+                  "name" => "#{name} 49",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_4)
+                ]
+              }
+            ] ++
+            [
+              %{
+                "tag" => %{
+                  "slug" => "#{name} 0",
+                  "name" => "#{name} 0",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_5)
+                ]
+              }
+            ],
+        "next_page_params" => nil
+      }
+
+      page_token_1 = "0,#{name} #{46},name"
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tags%3Asearch",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          case conn.params["page_token"] do
+            nil -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_1))
+            ^page_token_1 -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_2))
+            _ -> raise "Unexpected page_token"
+          end
+        end
+      )
+
+      ens_address = insert(:address)
+
+      ens_response = """
+      {
+      "items": [
+          {
+              "id": "0xee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835",
+              "name": "#{name}",
+              "resolved_address": {
+                  "hash": "#{to_string(ens_address)}"
+              },
+              "owner": {
+                  "hash": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+              },
+              "wrapped_owner": null,
+              "registration_date": "2017-06-18T08:39:14.000Z",
+              "expiry_date": null,
+              "protocol": {
+                  "id": "ens",
+                  "short_name": "ENS",
+                  "title": "Ethereum Name Service",
+                  "description": "The Ethereum Name Service (ENS) is a distributed, open, and extensible naming system based on the Ethereum blockchain.",
+                  "deployment_blockscout_base_url": "https://eth.blockscout.com/",
+                  "tld_list": [
+                      "eth"
+                  ],
+                  "icon_url": "https://i.imgur.com/GOfUwCb.jpeg",
+                  "docs_url": "https://docs.ens.domains/"
+              }
+          }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/1/domains%3Alookup",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          Plug.Conn.resp(conn, 200, ens_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{name}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+      assert Enum.at(response["items"], 0)["type"] == "ens_domain"
+      assert Enum.slice(response["items"], 1, 49) |> Enum.all?(fn x -> x["type"] == "label" end)
+
+      request_2 = get(conn, "/api/v2/search", response["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_2 = json_response(request_2, 200)
+
+      assert Enum.count(response_2["items"]) == 50
+      assert response_2["next_page_params"] != nil
+      assert Enum.at(response_2["items"], 0)["type"] == "label"
+      assert Enum.at(response_2["items"], 1)["type"] == "label"
+      assert Enum.slice(response_2["items"], 2, 48) |> Enum.all?(fn x -> x["type"] == "token" end)
+
+      request_3 = get(conn, "/api/v2/search", response_2["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_3 = json_response(request_3, 200)
+
+      assert Enum.count(response_3["items"]) == 50
+      assert response_3["next_page_params"] != nil
+
+      assert Enum.slice(response_3["items"], 0, 3) |> Enum.all?(fn x -> x["type"] == "token" end)
+      assert Enum.slice(response_3["items"], 3, 47) |> Enum.all?(fn x -> x["type"] == "metadata_tag" end)
+
+      request_4 = get(conn, "/api/v2/search", response_3["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_4 = json_response(request_4, 200)
+
+      assert Enum.count(response_4["items"]) == 50
+      assert response_4["next_page_params"] != nil
+
+      assert Enum.slice(response_4["items"], 0, 5) |> Enum.all?(fn x -> x["type"] == "metadata_tag" end)
+      assert Enum.slice(response_4["items"], 5, 45) |> Enum.all?(fn x -> x["type"] == "contract" end)
+
+      request_5 = get(conn, "/api/v2/search", response_4["next_page_params"] |> Query.encode() |> Query.decode())
+      assert response_5 = json_response(request_5, 200)
+
+      assert Enum.count(response_5["items"]) == 6
+      assert response_5["next_page_params"] == nil
+
+      assert Enum.all?(response_5["items"], fn x -> x["type"] == "contract" end)
+
+      labels_from_api = Enum.slice(response["items"], 1, 49) ++ Enum.slice(response_2["items"], 0, 2)
+
+      assert labels
+             |> Enum.zip(labels_from_api)
+             |> Enum.all?(fn {label, item} ->
+               label.tag.display_name == item["name"] && item["type"] == "label" &&
+                 item["address"] == Address.checksum(label.address_hash)
+             end)
+
+      tokens_from_api = Enum.slice(response_2["items"], 2, 48) ++ Enum.slice(response_3["items"], 0, 3)
+
+      assert tokens
+             |> Enum.zip(tokens_from_api)
+             |> Enum.all?(fn {token, item} ->
+               token.name == item["name"] && item["type"] == "token" &&
+                 item["address"] == Address.checksum(token.contract_address_hash)
+             end)
+
+      contracts_from_api = Enum.slice(response_4["items"], 5, 45) ++ response_5["items"]
+
+      assert contracts
+             |> Enum.zip(contracts_from_api)
+             |> Enum.all?(fn {contract, item} ->
+               contract.name == item["name"] && item["type"] == "contract" &&
+                 item["address"] == Address.checksum(contract.address_hash)
+             end)
+
+      metadata_tags_from_api = Enum.slice(response_3["items"], 3, 47) ++ Enum.slice(response_4["items"], 0, 5)
+
+      metadata_tags =
+        ((metadata_response_1["items"] |> Enum.drop(-4)) ++ metadata_response_2["items"])
+        |> Enum.reduce([], fn x, acc ->
+          acc ++
+            Enum.map(x["addresses"], fn addr ->
+              {addr, x["tag"]}
+            end)
+        end)
+
+      assert metadata_tags
+             |> Enum.zip(metadata_tags_from_api)
+             |> Enum.all?(fn {{address_hash, tag}, api_item} ->
+               tag["name"] == api_item["metadata"]["name"] && tag["slug"] == api_item["metadata"]["slug"] &&
+                 api_item["type"] == "metadata_tag" &&
+                 api_item["address"] == address_hash
+             end)
+
+      ens = Enum.at(response["items"], 0)
+      assert ens["address"] == to_string(ens_address)
+      assert ens["ens_info"]["name"] == name
+    end
   end
 
   describe "/search/check-redirect" do
@@ -593,6 +1257,157 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       assert response |> Enum.filter(fn x -> x["block_type"] == "block" end) |> Enum.count() == 1
       assert response |> Enum.filter(fn x -> x["block_type"] == "reorg" end) |> Enum.count() == 1
+    end
+
+    test "check that all categories are in response list (ens + metadata included)", %{conn: conn} do
+      bypass = Bypass.open()
+      metadata_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+      bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, metadata_envs)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      name = "qwe.eth"
+
+      tags =
+        for _ <- 0..50 do
+          insert(:address_to_tag, tag: build(:address_tag, display_name: name |> String.replace(".", " ")))
+        end
+
+      contracts = insert_list(50, :smart_contract, name: name |> String.replace(".", " "))
+      tokens = insert_list(50, :token, name: name |> String.replace(".", " "))
+      ens_address = insert(:address)
+      address_1 = build(:address)
+
+      metadata_response =
+        %{
+          "items" =>
+            for(
+              i <- 0..49,
+              do: %{
+                "tag" => %{
+                  "slug" => "#{name} #{i}",
+                  "name" => "#{name} #{i}",
+                  "tagType" => "name",
+                  "ordinal" => 0,
+                  "meta" => "{}"
+                },
+                "addresses" => [
+                  to_string(address_1)
+                ]
+              }
+            ),
+          "next_page_params" => %{
+            "page_token" => "0,celo:_eth_helper,name",
+            "page_size" => 50
+          }
+        }
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/tags%3Asearch",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response))
+        end
+      )
+
+      ens_response = """
+      {
+      "items": [
+          {
+              "id": "0xee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835",
+              "name": "#{name}",
+              "resolved_address": {
+                  "hash": "#{to_string(ens_address)}"
+              },
+              "owner": {
+                  "hash": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+              },
+              "wrapped_owner": null,
+              "registration_date": "2017-06-18T08:39:14.000Z",
+              "expiry_date": null,
+              "protocol": {
+                  "id": "ens",
+                  "short_name": "ENS",
+                  "title": "Ethereum Name Service",
+                  "description": "The Ethereum Name Service (ENS) is a distributed, open, and extensible naming system based on the Ethereum blockchain.",
+                  "deployment_blockscout_base_url": "https://eth.blockscout.com/",
+                  "tld_list": [
+                      "eth"
+                  ],
+                  "icon_url": "https://i.imgur.com/GOfUwCb.jpeg",
+                  "docs_url": "https://docs.ens.domains/"
+              }
+          }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/1/domains%3Alookup",
+        fn conn ->
+          assert conn.params["name"] == name
+
+          Plug.Conn.resp(conn, 200, ens_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search/quick?q=#{name}")
+      assert response = json_response(request, 200)
+      assert Enum.count(response) == 50
+
+      assert response |> Enum.filter(fn x -> x["type"] == "label" end) |> Enum.map(fn x -> x["address"] end) ==
+               tags |> Enum.reverse() |> Enum.take(12) |> Enum.map(fn tag -> Address.checksum(tag.address.hash) end)
+
+      assert response |> Enum.filter(fn x -> x["type"] == "contract" end) |> Enum.map(fn x -> x["address"] end) ==
+               contracts
+               |> Enum.reverse()
+               |> Enum.take(12)
+               |> Enum.map(fn contract -> Address.checksum(contract.address_hash) end)
+
+      assert response |> Enum.filter(fn x -> x["type"] == "token" end) |> Enum.map(fn x -> x["address"] end) ==
+               tokens
+               |> Enum.reverse()
+               |> Enum.sort_by(fn x -> x.is_verified_via_admin_panel end, :desc)
+               |> Enum.take(13)
+               |> Enum.map(fn token -> Address.checksum(token.contract_address_hash) end)
+
+      assert response |> Enum.filter(fn x -> x["type"] == "ens_domain" end) |> Enum.map(fn x -> x["address"] end) == [
+               to_string(ens_address)
+             ]
+
+      metadata_tags = response |> Enum.filter(fn x -> x["type"] == "metadata_tag" end)
+
+      assert Enum.count(metadata_tags) == 12
+
+      assert metadata_tags
+             |> Enum.with_index()
+             |> Enum.all?(fn {x, index} ->
+               x["address"] == to_string(address_1) && x["metadata"]["name"] == "#{name} #{index}"
+             end)
     end
 
     test "returns empty list and don't crash", %{conn: conn} do

@@ -317,7 +317,7 @@ defmodule Explorer.ChainSpec.GenesisData do
         license_type: :none
       }
 
-      SolidityPublisher.create_or_update_smart_contract(contract["address"], attrs)
+      SolidityPublisher.create_or_update_smart_contract(contract["address"], attrs, false)
     end)
   end
 end

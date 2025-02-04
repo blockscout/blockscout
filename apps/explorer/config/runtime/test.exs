@@ -38,23 +38,44 @@ config :explorer, Explorer.Tracer, disabled?: false
 
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enabled: false
 
-config :explorer, Explorer.Migrator.TransactionsDenormalization, enabled: false
-config :explorer, Explorer.Migrator.AddressCurrentTokenBalanceTokenType, enabled: false
-config :explorer, Explorer.Migrator.AddressTokenBalanceTokenType, enabled: false
-config :explorer, Explorer.Migrator.SanitizeMissingBlockRanges, enabled: false
-config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, enabled: false
-config :explorer, Explorer.Migrator.TokenTransferTokenType, enabled: false
-config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, enabled: false
-config :explorer, Explorer.Migrator.TransactionBlockConsensus, enabled: false
-config :explorer, Explorer.Migrator.TokenTransferBlockConsensus, enabled: false
-config :explorer, Explorer.Migrator.ShrinkInternalTransactions, enabled: false
-config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers, enabled: false
-config :explorer, Explorer.Migrator.SanitizeMissingTokenBalances, enabled: false
-config :explorer, Explorer.Migrator.SanitizeReplacedTransactions, enabled: false
-config :explorer, Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus, enabled: false
-config :explorer, Explorer.Migrator.SanitizeDuplicatedLogIndexLogs, enabled: false
-config :explorer, Explorer.Migrator.RefetchContractCodes, enabled: false
-config :explorer, Explorer.Migrator.BackfillMultichainSearchDB, enabled: false
+for migrator <- [
+      # Background migrations
+      Explorer.Migrator.TransactionsDenormalization,
+      Explorer.Migrator.AddressCurrentTokenBalanceTokenType,
+      Explorer.Migrator.AddressTokenBalanceTokenType,
+      Explorer.Migrator.SanitizeMissingBlockRanges,
+      Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
+      Explorer.Migrator.TokenTransferTokenType,
+      Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
+      Explorer.Migrator.TransactionBlockConsensus,
+      Explorer.Migrator.TokenTransferBlockConsensus,
+      Explorer.Migrator.ShrinkInternalTransactions,
+      Explorer.Migrator.RestoreOmittedWETHTransfers,
+      Explorer.Migrator.SanitizeMissingTokenBalances,
+      Explorer.Migrator.SanitizeReplacedTransactions,
+      Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus,
+      Explorer.Migrator.SanitizeDuplicatedLogIndexLogs,
+      Explorer.Migrator.RefetchContractCodes,
+      Explorer.Migrator.BackfillMultichainSearchDB,
+
+      # Heavy DB index operations
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberAscLogIndexAscIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersFromAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersToAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberIndex
+    ] do
+  config :explorer, migrator, enabled: false
+end
 
 config :explorer,
   realtime_events_sender: Explorer.Chain.Events.SimpleSender

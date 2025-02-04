@@ -450,6 +450,11 @@ defmodule EthereumJSONRPC.Geth do
     end
   end
 
+  defp parse_call_tracer_calls({%{} = call, _}, acc, _trace_address, _inner?) do
+    unless allow_empty_traces?(), do: log_unknown_type(call)
+    acc
+  end
+
   defp parse_call_tracer_calls(calls, acc, trace_address, _inner) when is_list(calls) do
     calls
     |> Stream.with_index()
