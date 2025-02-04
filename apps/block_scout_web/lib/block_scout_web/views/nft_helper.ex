@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.NFTHelper do
     image_url
     |> URI.decode()
     |> URI.encode()
-    |> compose_ipfs_url()
+    |> compose_resource_url()
   end
 
   @doc """
@@ -73,14 +73,14 @@ defmodule BlockScoutWeb.NFTHelper do
 
   ## Examples
 
-      iex> compose_ipfs_url("QmTzQ1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1")
+      iex> compose_resource_url("ipfs://QmTzQ1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1")
       "https://ipfs.io/ipfs/QmTzQ1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1"
 
   """
-  @spec compose_ipfs_url(String.t() | nil) :: String.t() | nil
-  def compose_ipfs_url(nil), do: nil
+  @spec compose_resource_url(String.t() | nil) :: String.t() | nil
+  def compose_resource_url(nil), do: nil
 
-  def compose_ipfs_url(image_url) do
+  def compose_resource_url(image_url) do
     image_url_downcase =
       image_url
       |> String.downcase()
