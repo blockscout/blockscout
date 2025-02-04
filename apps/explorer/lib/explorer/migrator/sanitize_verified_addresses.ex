@@ -130,9 +130,7 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
     Process.send_after(
       self(),
       :migrate_batch,
-      timeout ||
-        Application.get_env(:explorer, __MODULE__)[:timeout] ||
-        0
+      timeout || Application.get_env(:explorer, __MODULE__)[:timeout]
     )
   end
 

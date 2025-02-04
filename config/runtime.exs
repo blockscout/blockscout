@@ -686,7 +686,8 @@ config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
 config :explorer, Explorer.Migrator.SanitizeVerifiedAddresses,
   enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_DISABLED"),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_BATCH_SIZE", 500),
-  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_CONCURRENCY", 1)
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_VERIFIED_ADDRESSES_TIMEOUT", "0s")
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
