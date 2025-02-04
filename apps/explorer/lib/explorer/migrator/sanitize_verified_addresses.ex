@@ -19,20 +19,17 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
     from(address in Address,
       join: smart_contract in SmartContract,
       on: address.hash == smart_contract.address_hash,
-      where: address.verified == false
+      where: address.verified == false or is_nil(address.verified)
     )
   end
 
-  def last_unprocessed_identifiers(state) do
+  def last_unprocessed_identifiers do
     limit = batch_size() * concurrency()
 
-    ids =
-      unprocessed_data_query()
-      |> select([a], a.hash)
-      |> limit(^limit)
-      |> Repo.all(timeout: :infinity)
-
-    {ids, state}
+    unprocessed_data_query()
+    |> select([a], a.hash)
+    |> limit(^limit)
+    |> Repo.all(timeout: :infinity)
   end
 
   def update_batch(address_hashes) do
@@ -99,13 +96,13 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
   # - `{:stop, :normal, new_state}` when migration is complete
   # - `{:noreply, new_state}` when more batches remain to be processed
   @impl true
-  def handle_info(:migrate_batch, state) do
-    case last_unprocessed_identifiers(state) do
-      {[], new_state} ->
+  def handle_info(:migrate_batch, _state) do
+    case last_unprocessed_identifiers() do
+      [] ->
         update_cache()
-        {:stop, :normal, new_state}
+        {:stop, :normal, %{}}
 
-      {identifiers, new_state} ->
+      identifiers ->
         identifiers
         |> Enum.chunk_every(batch_size())
         |> Enum.map(&run_task/1)
@@ -113,7 +110,7 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
 
         schedule_batch_migration()
 
-        {:noreply, new_state}
+        {:noreply, %{}}
     end
   end
 
