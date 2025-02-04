@@ -9,18 +9,14 @@ defmodule Explorer.Chain.Filecoin.PendingAddressOperation do
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Repo
 
-  @http_error_codes 400..526
-
-  @optional_attrs ~w(http_status_code)a
   @required_attrs ~w(address_hash)a
+  @optional_attrs ~w(refetch_after)a
 
   @attrs @optional_attrs ++ @required_attrs
 
   @typedoc """
    * `address_hash` - the hash of the address that is pending to be fetched.
-   * `http_status_code` - the unsuccessful (non-200) http code returned by Beryx
-     API if the fetcher failed to fetch the address, set to `nil` if the fetcher
-     did not attempt to fetch the address yet.
+   * `refetch_after` - the time when the address should be refetched.
   """
   @primary_key false
   typed_schema "filecoin_pending_address_operations" do
@@ -31,13 +27,13 @@ defmodule Explorer.Chain.Filecoin.PendingAddressOperation do
       primary_key: true
     )
 
-    field(:http_status_code, :integer)
+    field(:refetch_after, :utc_datetime_usec)
 
     timestamps()
   end
 
   @spec changeset(
-          Explorer.Chain.Filecoin.PendingAddressOperation.t(),
+          t(),
           :invalid | %{optional(:__struct__) => none(), optional(atom() | binary()) => any()}
         ) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = pending_ops, attrs) do
@@ -46,7 +42,28 @@ defmodule Explorer.Chain.Filecoin.PendingAddressOperation do
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:address_hash, name: :filecoin_pending_address_operations_address_hash_fkey)
     |> unique_constraint(:address_hash, name: :filecoin_pending_address_operations_pkey)
-    |> validate_inclusion(:http_status_code, @http_error_codes)
+  end
+
+  @doc """
+  Returns a query for pending operations that have never been fetched.
+  """
+  @spec fresh_operations_query() :: Ecto.Query.t()
+  def fresh_operations_query do
+    from(p in __MODULE__, where: is_nil(p.refetch_after))
+  end
+
+  @doc """
+  Checks if a pending operation exists for a given address hash.
+  """
+  @spec exists?(t()) :: boolean()
+  def exists?(%__MODULE__{address_hash: address_hash}) do
+    query =
+      from(
+        op in __MODULE__,
+        where: op.address_hash == ^address_hash
+      )
+
+    Repo.exists?(query)
   end
 
   @doc """
@@ -60,15 +77,8 @@ defmodule Explorer.Chain.Filecoin.PendingAddressOperation do
         when accumulator: term()
   def stream(initial, reducer, limited? \\ false)
       when is_function(reducer, 2) do
-    query =
-      from(
-        op in __MODULE__,
-        select: op,
-        where: is_nil(op.http_status_code),
-        order_by: [desc: op.address_hash]
-      )
-
-    query
+    fresh_operations_query()
+    |> order_by([op], desc: op.address_hash)
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end

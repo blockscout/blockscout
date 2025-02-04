@@ -53,7 +53,8 @@ defmodule Explorer.Chain.Address.Schema do
                                     :power,
                                     :reward,
                                     :system,
-                                    :verifreg
+                                    :verifreg,
+                                    :paymentchannel
                                   ])
                               )
                             ]

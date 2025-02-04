@@ -1170,13 +1170,13 @@ config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
   base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3/mainnet"),
   api_token: System.get_env("BERYX_API_TOKEN")
 
-filecoin_native_address_fetcher_enabled? =
-  ConfigHelper.chain_type() == :filecoin and
-    not ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_FILECOIN_ADDRESS_INFO_FETCHER")
+config :indexer, Indexer.Fetcher.Filecoin.FilfoxAPI,
+  base_url: ConfigHelper.safe_get_env("FILFOX_API_BASE_URL", "https://filfox.info/api/v1")
 
 config :indexer, Indexer.Fetcher.Filecoin.AddressInfo.Supervisor,
-  enabled: filecoin_native_address_fetcher_enabled?,
-  disabled?: not filecoin_native_address_fetcher_enabled?
+  disabled?:
+    ConfigHelper.chain_type() != :filecoin or
+      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_FILECOIN_ADDRESS_INFO_FETCHER")
 
 config :indexer, Indexer.Fetcher.Filecoin.AddressInfo,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_FILECOIN_ADDRESS_INFO_CONCURRENCY", 1)
