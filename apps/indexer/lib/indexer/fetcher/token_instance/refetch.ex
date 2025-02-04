@@ -48,7 +48,6 @@ defmodule Indexer.Fetcher.TokenInstance.Refetch do
       flush_interval: :infinity,
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
-      poll: false,
       task_supervisor: __MODULE__.TaskSupervisor
     ]
   end
