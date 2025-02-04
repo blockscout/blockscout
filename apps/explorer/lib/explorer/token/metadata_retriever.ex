@@ -485,7 +485,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
     url = "#{base_url}/#{uid}"
 
-    url |> maybe_add_ipfs_gateway_params_to_url?()
+    url |> maybe_add_ipfs_gateway_params_to_url?(public_gateway?)
   end
 
   @doc """
@@ -508,7 +508,9 @@ defmodule Explorer.Token.MetadataRetriever do
     "https://arweave.net/#{uid}"
   end
 
-  defp maybe_add_ipfs_gateway_params_to_url?(url) do
+  defp maybe_add_ipfs_gateway_params_to_url?(url, true), do: url
+
+  defp maybe_add_ipfs_gateway_params_to_url?(url, _) do
     ipfs_params = Application.get_env(:indexer, :ipfs)
 
     if ipfs_params[:gateway_url_param_location] == :query do
