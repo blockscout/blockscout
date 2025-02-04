@@ -29,6 +29,8 @@ defmodule Explorer.Chain.Search do
     UserOperation
   }
 
+  alias Explorer.MicroserviceInterfaces.Metadata
+
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   @min_query_length 3
@@ -57,30 +59,29 @@ defmodule Explorer.Chain.Search do
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def joint_search(paging_options, query_string, options \\ []) do
     query_string = String.trim(query_string)
-    ens_task = run_ens_task_if_first_page(paging_options, query_string, options)
 
-    search_results =
+    {search_results, next_page_params} =
       query_string
       |> prepare_search_query(prepare_search_term(query_string))
       |> case do
         nil ->
-          []
+          {[], nil}
 
         {:address_hash, address_hash} ->
-          address_hash
-          |> search_token_by_address_hash_query()
-          |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
-          |> union_all(
-            ^(address_hash
-              |> search_address_by_address_hash_query()
-              |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options))
-          )
-          |> select_repo(options).all()
+          {address_hash
+           |> search_token_by_address_hash_query()
+           |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
+           |> union_all(
+             ^(address_hash
+               |> search_address_by_address_hash_query()
+               |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options))
+           )
+           |> select_repo(options).all(), nil}
 
         {:filecoin, filecoin_address} ->
-          filecoin_address
-          |> address_by_filecoin_id_or_robust()
-          |> select_repo(options).all()
+          {filecoin_address
+           |> address_by_filecoin_id_or_robust()
+           |> select_repo(options).all(), nil}
 
         {:full_hash, full_hash} ->
           transaction_block_query =
@@ -108,26 +109,51 @@ defmodule Explorer.Chain.Search do
               transaction_block_op_query
             end
 
-          result_query
-          |> select_repo(options).all()
+          {result_query
+           |> select_repo(options).all(), nil}
 
         {:number, block_number} ->
-          block_number
-          |> search_block_by_number_query()
-          |> select_repo(options).all()
+          {block_number
+           |> search_block_by_number_query()
+           |> select_repo(options).all(), nil}
 
         [{:number, block_number}, {:text, prepared_term}] ->
           prepared_term
-          |> search_by_string(paging_options, options)
+          |> search_by_string(paging_options, [], options)
           |> union_all(^search_block_by_number_query(block_number))
           |> order_and_page_text_search_result(paging_options)
           |> select_repo(options).all()
+          |> trim_list_and_prepare_next_page_params(paging_options, query_string, %{}, false)
 
         {:text, prepared_term} ->
-          prepared_term
-          |> search_by_string(paging_options, options)
-          |> order_and_page_text_search_result(paging_options)
-          |> select_repo(options).all()
+          ens_task = run_ens_task_if_first_page(paging_options, query_string, options)
+
+          %{items: metadata_tags, next_page_params: metadata_next_page_params} =
+            maybe_fetch_metadata_tags(
+              query_string,
+              parse_possible_nil(paging_options.key["metadata_tag"]["metadata_next_page_params"]),
+              ExplorerHelper.parse_boolean(paging_options.key["metadata_tag"]["end_of_tags"])
+            )
+
+          paginated_metadata_tags = page_metadata_tags(metadata_tags, paging_options)
+
+          items =
+            prepared_term
+            |> search_by_string(paging_options, paginated_metadata_tags, options)
+            |> order_and_page_text_search_result(paging_options)
+            |> select_repo(options).all()
+
+          ens_result = (ens_task && await_ens_task(ens_task)) || []
+
+          (ens_result ++ items)
+          |> trim_list_and_prepare_next_page_params(
+            paging_options,
+            query_string,
+            %{
+              metadata_next_page_params: metadata_next_page_params
+            },
+            !is_nil(metadata_next_page_params)
+          )
       end
 
     prepared_results =
@@ -138,9 +164,7 @@ defmodule Explorer.Chain.Search do
         |> format_timestamp()
       end)
 
-    ens_result = (ens_task && await_ens_task(ens_task)) || []
-
-    trim_list_and_prepare_next_page_params(ens_result ++ prepared_results, paging_options, query_string)
+    {prepared_results, next_page_params}
   end
 
   defp order_and_page_text_search_result(query, paging_options) do
@@ -153,10 +177,31 @@ defmodule Explorer.Chain.Search do
       desc_nulls_last: item.exchange_rate,
       desc_nulls_last: item.is_verified_via_admin_panel,
       desc_nulls_last: item.holder_count,
+      asc: item.order,
       asc: item.name,
       desc: item.inserted_at
     )
     |> limit(^paging_options.page_size)
+  end
+
+  defp maybe_fetch_metadata_tags(query_string, next_page_params, false) do
+    metadata_task = Task.async(fn -> Metadata.search_tags_by_name(query_string, next_page_params) end)
+
+    await_metadata_task(metadata_task)
+  end
+
+  defp maybe_fetch_metadata_tags(_query_string, _next_page_params, true) do
+    %{items: [], next_page_params: nil}
+  end
+
+  defp page_metadata_tags(tags, paging_options) do
+    case (paging_options.key || %{})["metadata_tag"] do
+      %{"addresses_index" => addresses_index} ->
+        Enum.drop(tags, ExplorerHelper.parse_integer(addresses_index))
+
+      _ ->
+        tags
+    end
   end
 
   @spec prepare_search_query(binary(), {:some, binary()} | :none) ::
@@ -208,7 +253,7 @@ defmodule Explorer.Chain.Search do
     nil
   end
 
-  defp search_by_string(term, paging_options, options) do
+  defp search_by_string(term, paging_options, metadata_tags, options) do
     tokens_query_certified =
       term
       |> search_token_query_certified(paging_options)
@@ -219,6 +264,8 @@ defmodule Explorer.Chain.Search do
       |> search_token_query_not_certified(paging_options)
       |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
 
+    metadata_tags_addresses_query = join_metadata_tags_with_addresses(metadata_tags, options)
+
     contracts_query =
       term |> search_contract_query(paging_options) |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
 
@@ -227,6 +274,7 @@ defmodule Explorer.Chain.Search do
     from(
       tokens in subquery(tokens_query_certified),
       union_all: ^tokens_query_not_certified,
+      union_all: ^metadata_tags_addresses_query,
       union_all: ^contracts_query,
       union_all: ^labels_query
     )
@@ -316,11 +364,11 @@ defmodule Explorer.Chain.Search do
         [{:number, block_number}, {:text, prepared_term}] ->
           [
             block_number |> search_block_by_number_query() |> select_repo(options).all()
-            | search_by_string_balanced(prepared_term, paging_options, options)
+            | search_by_string_balanced(prepared_term, paging_options, options, nil)
           ]
 
         {:text, prepared_term} ->
-          search_by_string_balanced(prepared_term, paging_options, options)
+          search_by_string_balanced(prepared_term, paging_options, options, query_string)
       end
 
     ens_result = await_ens_task(ens_task)
@@ -347,7 +395,9 @@ defmodule Explorer.Chain.Search do
     |> Enum.sort_by(fn item -> item.priority end, :desc)
   end
 
-  defp search_by_string_balanced(term, paging_options, options) do
+  defp search_by_string_balanced(term, paging_options, options, query_string) do
+    metadata_task = if query_string, do: Task.async(fn -> Metadata.search_tags_by_name(query_string, %{}) end)
+
     tokens_results =
       (term
        |> search_token_query_certified(paging_options)
@@ -364,9 +414,17 @@ defmodule Explorer.Chain.Search do
       |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
       |> select_repo(options).all()
 
-    labels_query = term |> search_label_query(paging_options) |> select_repo(options).all()
+    labels_results = term |> search_label_query(paging_options) |> select_repo(options).all()
 
-    [tokens_results, contracts_results, labels_query]
+    %{items: metadata_tags} = (metadata_task && await_metadata_task(metadata_task)) || %{items: []}
+
+    metadata_tags_addresses =
+      metadata_tags
+      |> join_metadata_tags_with_addresses(options)
+      |> order_by([metadata_tag: item], asc: item.id)
+      |> select_repo(options).all()
+
+    [tokens_results, contracts_results, labels_results, metadata_tags_addresses]
   end
 
   defp await_ens_task(ens_task) do
@@ -376,6 +434,16 @@ defmodule Explorer.Chain.Search do
 
       _ ->
         []
+    end
+  end
+
+  defp await_metadata_task(metadata_task) do
+    case Task.yield(metadata_task, 5000) || Task.shutdown(metadata_task) do
+      {:ok, {:ok, result}} ->
+        result
+
+      _ ->
+        %{items: [], next_page_params: nil}
     end
   end
 
@@ -401,7 +469,7 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:name, dynamic([address_tag: at], at.display_name))
       |> Map.put(:inserted_at, dynamic([address_to_tag: att], att.inserted_at))
       |> Map.put(:verified, dynamic([smart_contract: smart_contract], not is_nil(smart_contract)))
-      |> Map.put(:priority, 1)
+      |> Map.put(:priority, 3)
 
     inner_query =
       from(tag in AddressTag,
@@ -472,6 +540,7 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:inserted_at, dynamic([smart_contract: smart_contract], smart_contract.inserted_at))
       |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
       |> Map.put(:verified, true)
+      |> Map.put(:priority, 0)
 
     base_query =
       from(smart_contract in SmartContract,
@@ -611,11 +680,41 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:block_number, dynamic([block: block], block.number))
       |> Map.put(:inserted_at, dynamic([block: block], block.inserted_at))
       |> Map.put(:timestamp, dynamic([block: block], block.timestamp))
+      |> Map.put(:priority, 3)
 
     from(block in Block,
       as: :block,
       select: ^block_search_fields
     )
+  end
+
+  defp join_metadata_tags_with_addresses(metadata_tags, options) do
+    address_base_query = from(address in Address, as: :address)
+
+    prepared_tags =
+      metadata_tags
+      |> Enum.with_index()
+      |> Enum.map(fn {tag, index} -> {index, tag.hash.bytes, tag.metadata, tag.addresses_index} end)
+
+    address_base_query
+    |> join(
+      :right,
+      [address: address],
+      tag in ^subquery(
+        from(tag in fragment("unnest(?::metadata_tag_record[])", ^prepared_tags),
+          select: %{
+            id: tag.id,
+            address_hash: tag.address_hash,
+            metadata: tag.metadata,
+            addresses_index: tag.addresses_index
+          }
+        )
+      ),
+      as: :metadata_tag,
+      on: address.hash == tag.address_hash
+    )
+    |> select(^metadata_tags_search_fields())
+    |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
   end
 
   defp page_search_results(
@@ -831,7 +930,7 @@ defmodule Explorer.Chain.Search do
     |> Map.put(:type, "ens_domain")
     |> Map.put(:ens_info, ens_info)
     |> Map.put(:timestamp, nil)
-    |> Map.put(:priority, 2)
+    |> Map.put(:priority, 4)
   end
 
   defp merge_address_search_result_with_ens_info([address], ens_info) do
@@ -839,7 +938,7 @@ defmodule Explorer.Chain.Search do
     |> compose_result_checksummed_address_hash()
     |> Map.put(:type, "ens_domain")
     |> Map.put(:ens_info, ens_info)
-    |> Map.put(:priority, 2)
+    |> Map.put(:priority, 4)
   end
 
   defp search_fields do
@@ -864,7 +963,10 @@ defmodule Explorer.Chain.Search do
       total_supply: nil,
       circulating_market_cap: nil,
       priority: 0,
-      is_verified_via_admin_panel: nil
+      is_verified_via_admin_panel: nil,
+      order: 0,
+      metadata: dynamic(type(^nil, :map)),
+      addresses_index: 0
     }
   end
 
@@ -884,13 +986,32 @@ defmodule Explorer.Chain.Search do
     |> Map.put(:is_verified_via_admin_panel, dynamic([token: token], token.is_verified_via_admin_panel))
     |> Map.put(:verified, dynamic([smart_contract: smart_contract], not is_nil(smart_contract)))
     |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
+    |> Map.put(:priority, 2)
   end
 
-  @paginated_types ["label", "contract", "token"]
+  defp metadata_tags_search_fields do
+    search_fields()
+    |> Map.put(:address_hash, dynamic([metadata_tag: tag], tag.address_hash))
+    |> Map.put(:metadata, dynamic([metadata_tag: tag], tag.metadata))
+    |> Map.put(:type, "metadata_tag")
+    |> Map.put(:inserted_at, dynamic([address: address], address.inserted_at))
+    |> Map.put(:order, dynamic([metadata_tag: tag], tag.id))
+    |> Map.put(:addresses_index, dynamic([metadata_tag: tag], tag.addresses_index))
+    |> Map.put(:verified, dynamic([address: address], address.verified))
+    |> Map.put(:priority, 1)
+  end
 
-  defp trim_list_and_prepare_next_page_params(items, %PagingOptions{page_size: page_size, key: prev_options}, query)
-       when length(items) > page_size - 1 do
-    items = items |> Enum.drop(-1)
+  @paginated_types ["label", "contract", "token", "metadata_tag"]
+
+  defp trim_list_and_prepare_next_page_params(
+         items,
+         %PagingOptions{page_size: page_size, key: prev_options},
+         query,
+         metadata_tags_params,
+         metadata_tags_next_page?
+       )
+       when length(items) > page_size - 1 or metadata_tags_next_page? do
+    {items, [first_element_of_the_next_page | _]} = Enum.split(items, page_size - 1)
     prev_options = prev_options || %{}
 
     base_params =
@@ -908,7 +1029,15 @@ defmodule Explorer.Chain.Search do
 
         item, {paging_options, types} = acc ->
           if item.type in types do
-            {:cont, {Map.put(paging_options, item.type, paging_params(item)), List.delete(types, item.type)}}
+            {:cont,
+             {Map.put(
+                paging_options,
+                item.type,
+                paging_params(
+                  item,
+                  Map.put(metadata_tags_params, :first_element_of_the_next_page, first_element_of_the_next_page)
+                )
+              ), List.delete(types, item.type)}}
           else
             {:cont, acc}
           end
@@ -917,13 +1046,23 @@ defmodule Explorer.Chain.Search do
     {items, paging_options}
   end
 
-  defp trim_list_and_prepare_next_page_params(items, _paging_options, _query), do: {items, nil}
+  defp trim_list_and_prepare_next_page_params(
+         items,
+         _paging_options,
+         _query,
+         _metadata_tags_params,
+         _metadata_tags_next_page?
+       ),
+       do: {items, nil}
 
-  defp paging_params(%{
-         name: name,
-         inserted_at: inserted_at,
-         type: "label"
-       }) do
+  defp paging_params(
+         %{
+           name: name,
+           inserted_at: inserted_at,
+           type: "label"
+         },
+         _
+       ) do
     inserted_at_datetime = DateTime.to_iso8601(inserted_at)
 
     %{
@@ -932,15 +1071,18 @@ defmodule Explorer.Chain.Search do
     }
   end
 
-  defp paging_params(%{
-         circulating_market_cap: circulating_market_cap,
-         exchange_rate: exchange_rate,
-         is_verified_via_admin_panel: is_verified_via_admin_panel,
-         holder_count: holder_count,
-         name: name,
-         inserted_at: inserted_at,
-         type: "token"
-       }) do
+  defp paging_params(
+         %{
+           circulating_market_cap: circulating_market_cap,
+           exchange_rate: exchange_rate,
+           is_verified_via_admin_panel: is_verified_via_admin_panel,
+           holder_count: holder_count,
+           name: name,
+           inserted_at: inserted_at,
+           type: "token"
+         },
+         _
+       ) do
     inserted_at_datetime = DateTime.to_iso8601(inserted_at)
 
     %{
@@ -953,12 +1095,15 @@ defmodule Explorer.Chain.Search do
     }
   end
 
-  defp paging_params(%{
-         certified: certified,
-         name: name,
-         inserted_at: inserted_at,
-         type: "contract"
-       }) do
+  defp paging_params(
+         %{
+           certified: certified,
+           name: name,
+           inserted_at: inserted_at,
+           type: "contract"
+         },
+         _
+       ) do
     inserted_at_datetime = DateTime.to_iso8601(inserted_at)
 
     %{
@@ -967,6 +1112,47 @@ defmodule Explorer.Chain.Search do
       "inserted_at" => inserted_at_datetime
     }
   end
+
+  defp paging_params(
+         %{
+           address_hash: address_hash,
+           type: "metadata_tag",
+           addresses_index: addresses_index,
+           metadata: %{"slug" => slug}
+         },
+         %{
+           metadata_next_page_params: metadata_next_page_params,
+           first_element_of_the_next_page: first_element_of_the_next_page
+         }
+       ) do
+    next_page_params =
+      if(metadata_tag?(first_element_of_the_next_page),
+        do: metadata_tag_to_paging_params(first_element_of_the_next_page),
+        else: metadata_next_page_params
+      )
+
+    %{
+      "address_hash" => address_hash,
+      "metadata_next_page_params" =>
+        if(metadata_tag?(first_element_of_the_next_page),
+          do: metadata_tag_to_paging_params(first_element_of_the_next_page),
+          else: metadata_next_page_params
+        ),
+      "end_of_tags" => is_nil(next_page_params),
+      "addresses_index" =>
+        if(metadata_tag?(first_element_of_the_next_page) && first_element_of_the_next_page[:metadata]["slug"] == slug,
+          do: addresses_index + 1,
+          else: 0
+        )
+    }
+  end
+
+  defp metadata_tag_to_paging_params(%{metadata: metadata}) do
+    %{"page_token" => "#{metadata["ordinal"]},#{metadata["slug"]},#{metadata["tagType"]}", "page_size" => 50}
+  end
+
+  defp metadata_tag?(%{type: "metadata_tag"}), do: true
+  defp metadata_tag?(_), do: false
 
   @doc """
   Parses paging options from the given parameters when the `next_page_params_type` is "search".

@@ -1082,17 +1082,32 @@ defmodule Explorer.Chain do
   def hashes_to_addresses(hashes, options) when is_list(hashes) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    query =
-      from(
-        address in Address,
-        where: address.hash in ^hashes,
-        # https://stackoverflow.com/a/29598910/470451
-        order_by: fragment("array_position(?, ?)", type(^hashes, {:array, Hash.Address}), address.hash)
-      )
-
-    query
+    hashes
+    |> hashes_to_addresses_query()
     |> join_associations(necessity_by_association)
     |> select_repo(options).all()
+  end
+
+  @doc """
+  Generates a query to convert a list of hashes to their corresponding addresses.
+
+  ## Parameters
+
+    - hashes: A list of hashes to be converted.
+
+  ## Returns
+
+    - A query that can be executed to retrieve the addresses corresponding to the provided hashes.
+  """
+  @spec hashes_to_addresses_query([Hash.Address.t()]) :: Ecto.Query.t()
+  def hashes_to_addresses_query(hashes) do
+    from(
+      address in Address,
+      as: :address,
+      where: address.hash in ^hashes,
+      # https://stackoverflow.com/a/29598910/470451
+      order_by: fragment("array_position(?, ?)", type(^hashes, {:array, Hash.Address}), address.hash)
+    )
   end
 
   @doc """
