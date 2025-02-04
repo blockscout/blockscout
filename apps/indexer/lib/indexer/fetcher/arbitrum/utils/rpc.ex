@@ -675,6 +675,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
 
       "0x37501551" <> encoded_params ->
         # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount, bytes quote)
+        # https://github.com/EspressoSystems/nitro-contracts/blob/a61b9dbd71ca443f8e7a007851071f5f1d219c19/src/bridge/SequencerInbox.sol#L364-L372
         [
           sequence_number,
           data,
