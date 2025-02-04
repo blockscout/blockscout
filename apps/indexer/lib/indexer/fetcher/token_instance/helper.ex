@@ -90,11 +90,11 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
     other = splitted[false] || []
 
     token_types_map =
-      Enum.reduce(other, %{}, fn {contract_address_hash, _token_id}, acc ->
-        address_hash_string = to_string(contract_address_hash)
-
-        Map.put_new(acc, address_hash_string, Chain.get_token_type(contract_address_hash))
-      end)
+      other
+      |> Enum.map(fn {contract_address_hash, _token_id} -> contract_address_hash end)
+      |> Enum.uniq()
+      |> Chain.get_token_types()
+      |> Map.new(fn {hash, type} -> {to_string(hash), type} end)
 
     {results, failed_results, instances_to_retry} =
       other
@@ -192,7 +192,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
          contract_address_hash_string = to_string(contract_address_hash)
 
          prepare_request(
-           token_types_map[contract_address_hash_string],
+           token_types_map[String.downcase(contract_address_hash_string)],
            contract_address_hash_string,
            token_id,
            from_base_uri?
@@ -203,7 +203,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
          token_id = prepare_token_id(token_id)
 
          [
-           {result, normalize_token_id(token_types_map[to_string(contract_address_hash)], token_id),
+           {result, normalize_token_id(token_types_map[String.downcase(to_string(contract_address_hash))], token_id),
             contract_address_hash, token_id}
            | acc
          ]
