@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.{AccessHelper, CaptchaHelper}
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias Explorer.{Chain, Helper, PagingOptions}
-  alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
