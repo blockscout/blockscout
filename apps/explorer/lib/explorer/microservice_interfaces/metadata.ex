@@ -224,8 +224,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
         tags_list ++
           (addresses
-           |> Enum.with_index()
-           |> Enum.map(fn {address, index} ->
+           |> Enum.with_index(fn address, index ->
              address_hash = Chain.string_to_address_hash_or_nil(address)
              address_hash && %{metadata: prepared_tag, hash: address_hash, addresses_index: index}
            end)
