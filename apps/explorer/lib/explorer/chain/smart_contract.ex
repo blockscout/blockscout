@@ -1376,12 +1376,12 @@ defmodule Explorer.Chain.SmartContract do
     query = from(contract in __MODULE__)
 
     query
-    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
     |> filter_contracts(filter)
     |> search_contracts(search_string)
     |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
     |> Chain.join_associations(necessity_by_association)
+    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
     |> maybe_filter_verified_addresses()
     |> Chain.select_repo(options).all()
   end
