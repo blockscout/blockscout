@@ -238,7 +238,7 @@ defmodule Explorer.Chain.Token.InstanceTest do
         metadata: %{uri: "http://example.com"}
       }
 
-      [result] = Chain.batch_upsert_token_instances([params])
+      [result] = Instance.batch_upsert_token_instances([params])
 
       assert result.token_id == Decimal.new(1)
       assert result.metadata == %{"uri" => "http://example.com"}
@@ -255,7 +255,7 @@ defmodule Explorer.Chain.Token.InstanceTest do
         error: error
       }
 
-      [result] = Chain.batch_upsert_token_instances([params])
+      [result] = Instance.batch_upsert_token_instances([params])
 
       assert result.error == error
     end
@@ -276,7 +276,7 @@ defmodule Explorer.Chain.Token.InstanceTest do
         metadata: %{uri: "http://example1.com"}
       }
 
-      [result] = Chain.batch_upsert_token_instances([params])
+      [result] = Instance.batch_upsert_token_instances([params])
 
       assert is_nil(result.error)
       assert result.metadata == %{"uri" => "http://example1.com"}
