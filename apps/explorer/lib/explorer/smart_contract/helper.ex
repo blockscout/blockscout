@@ -12,7 +12,7 @@ defmodule Explorer.SmartContract.Helper do
 
   @api_true [api?: true]
 
-  def queriable_method?(method) do
+  def queryable_method?(method) do
     method["constant"] || method["stateMutability"] == "view" || method["stateMutability"] == "pure"
   end
 
@@ -23,7 +23,7 @@ defmodule Explorer.SmartContract.Helper do
   def error?(function), do: function["type"] == "error"
 
   @doc """
-    Checks whether the function which is not queriable can be considered as read
+    Checks whether the function which is not queryable can be considered as read
     function or not.
   """
   @spec read_with_wallet_method?(%{}) :: true | false
