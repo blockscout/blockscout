@@ -7,7 +7,7 @@ defmodule Explorer.Helper do
   alias Explorer.Chain
   alias Explorer.Chain.{Data, Hash}
 
-  import Ecto.Query, only: [join: 5, where: 3]
+  import Ecto.Query, only: [where: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   @max_safe_integer round(:math.pow(2, 63)) - 1
@@ -233,18 +233,12 @@ defmodule Explorer.Helper do
   def maybe_hide_scam_addresses(query, address_hash_key, options) do
     if Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] do
       query
-      |> join(
-        :inner,
+      |> where(
         [q],
-        q2 in fragment("""
-        (
-          SELECT hash
-          FROM addresses a
-          WHERE NOT EXISTS
-            (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=a.hash)
+        fragment(
+          "NOT EXISTS (SELECT 1 FROM scam_address_badge_mappings sabm WHERE sabm.address_hash=?)",
+          field(q, ^address_hash_key)
         )
-        """),
-        on: field(q, ^address_hash_key) == q2.hash
       )
     else
       query
