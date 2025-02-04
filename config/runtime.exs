@@ -104,7 +104,8 @@ config :block_scout_web, :contract,
   verification_max_libraries: ConfigHelper.parse_integer_env_var("CONTRACT_VERIFICATION_MAX_LIBRARIES", 10),
   max_length_to_show_string_without_trimming: System.get_env("CONTRACT_MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
   disable_interaction: ConfigHelper.parse_bool_env_var("CONTRACT_DISABLE_INTERACTION"),
-  certified_list: ConfigHelper.parse_list_env_var("CONTRACT_CERTIFIED_LIST", "")
+  certified_list: ConfigHelper.parse_list_env_var("CONTRACT_CERTIFIED_LIST", ""),
+  partial_reverification_disabled: !ConfigHelper.parse_bool_env_var("CONTRACT_ENABLE_PARTIAL_REVERIFICATION")
 
 default_global_api_rate_limit = 50
 default_api_rate_limit_by_key = 10

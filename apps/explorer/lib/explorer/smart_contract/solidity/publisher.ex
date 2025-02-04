@@ -7,6 +7,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   import Explorer.SmartContract.Helper, only: [cast_libraries: 1, prepare_license_type: 1]
 
+  alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Helper}
   alias Explorer.SmartContract.Solidity.Verifier
@@ -54,10 +55,10 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         params_with_constructor_arguments =
           Map.put(params_with_external_libraries, "constructor_arguments", constructor_arguments)
 
-        publish_smart_contract(address_hash, params_with_constructor_arguments, abi)
+        publish_smart_contract(address_hash, params_with_constructor_arguments, abi, false)
 
       {:ok, %{abi: abi}} ->
-        publish_smart_contract(address_hash, params_with_external_libraries, abi)
+        publish_smart_contract(address_hash, params_with_external_libraries, abi, false)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params_with_external_libraries, error, nil)}
@@ -113,11 +114,11 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           |> Map.put("constructor_arguments", constructor_arguments)
           |> Map.merge(additional_params)
 
-        publish_smart_contract(address_hash, params_with_constructor_arguments, abi)
+        publish_smart_contract(address_hash, params_with_constructor_arguments, abi, true)
 
       {:ok, %{abi: abi}, additional_params} ->
         merged_params = Map.merge(params, additional_params)
-        publish_smart_contract(address_hash, merged_params, abi)
+        publish_smart_contract(address_hash, merged_params, abi, true)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
@@ -219,7 +220,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("license_type", initial_params["license_type"])
       |> Map.put("is_blueprint", false)
 
-    publish_smart_contract(address_hash, prepared_params, abi)
+    publish_smart_contract(address_hash, prepared_params, abi, save_file_path?)
   end
 
   def process_rust_verifier_response(
@@ -272,7 +273,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("license_type", initial_params["license_type"])
       |> Map.put("is_blueprint", source["isBlueprint"])
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
+    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"), save_file_path?)
   end
 
   defp parse_optimization_runs(compiler_settings, optimization) do
@@ -290,16 +291,16 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   def extract_optimization(compiler_settings),
     do: (compiler_settings["optimizer"] && compiler_settings["optimizer"]["enabled"]) || false
 
-  def publish_smart_contract(address_hash, params, abi) do
+  def publish_smart_contract(address_hash, params, abi, verification_with_files?) do
     attrs = address_hash |> attributes(params, abi)
 
-    create_or_update_smart_contract(address_hash, attrs)
+    create_or_update_smart_contract(address_hash, attrs, verification_with_files?)
   end
 
-  def publish_smart_contract(address_hash, params, abi, file_path) do
+  def publish_smart_contract(address_hash, params, abi, verification_with_files?, file_path) do
     attrs = address_hash |> attributes(params, file_path, abi)
 
-    create_or_update_smart_contract(address_hash, attrs)
+    create_or_update_smart_contract(address_hash, attrs, verification_with_files?)
   end
 
   @doc """
@@ -318,6 +319,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     ## Parameters
     - `address_hash`: The hash of the address for the smart contract.
     - `attrs`: A map containing attributes such as external libraries and secondary sources.
+    - `verification_with_files?`: A boolean indicating whether the verification was performed with files or flattened code.
 
     ## Returns
     - `{:ok, Explorer.Chain.SmartContract.t()}`: Successfully created or updated smart
@@ -325,18 +327,41 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     - `{:error, data}`: on failure, returning `Ecto.Changeset.t()` or, if any issues
       happen during setting the address as verified, an error message.
   """
-  @spec create_or_update_smart_contract(binary() | Explorer.Chain.Hash.t(), %{
-          :external_libraries => list(),
-          :secondary_sources => list(),
-          optional(any()) => any()
-        }) :: {:error, Ecto.Changeset.t() | String.t()} | {:ok, Explorer.Chain.SmartContract.t()}
-  def create_or_update_smart_contract(address_hash, attrs) do
-    Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
+  @spec create_or_update_smart_contract(
+          binary() | Explorer.Chain.Hash.t(),
+          %{
+            :external_libraries => list(),
+            :secondary_sources => list(),
+            optional(any()) => any()
+          },
+          boolean()
+        ) :: {:error, Ecto.Changeset.t() | String.t()} | {:ok, Explorer.Chain.SmartContract.t()}
+  def create_or_update_smart_contract(address_hash, attrs, verification_with_files?) do
+    smart_contract = address_hash |> SmartContract.get_smart_contract_query() |> Chain.select_repo(api?: true).one()
 
-    if SmartContract.verified?(address_hash) do
-      SmartContract.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
-    else
-      SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    cond do
+      is_nil(smart_contract) ->
+        Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
+
+        SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+
+      smart_contract.partially_verified && attrs.partially_verified &&
+          Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
+        changeset =
+          SmartContract.invalid_contract_changeset(
+            %SmartContract{address_hash: address_hash},
+            Helper.add_contract_code_md5(attrs),
+            "Cannot update partially verified smart contract with another partially verified contract",
+            nil,
+            verification_with_files?
+          )
+
+        {:error, %{changeset | action: :insert}}
+
+      true ->
+        Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
+
+        SmartContract.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
     end
   end
 
