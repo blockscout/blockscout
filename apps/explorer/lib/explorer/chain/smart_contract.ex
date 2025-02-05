@@ -125,6 +125,7 @@ defmodule Explorer.Chain.SmartContract do
 
   alias Explorer.Chain.Address.Name, as: AddressName
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
@@ -1401,13 +1402,23 @@ defmodule Explorer.Chain.SmartContract do
     query = from(contract in __MODULE__)
 
     query
-    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
     |> filter_contracts(filter)
     |> search_contracts(search_string)
     |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
     |> Chain.join_associations(necessity_by_association)
+    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
+    |> maybe_filter_verified_addresses()
     |> Chain.select_repo(options).all()
+  end
+
+  @spec maybe_filter_verified_addresses(Ecto.Query.t()) :: Ecto.Query.t()
+  defp maybe_filter_verified_addresses(query) do
+    if BackgroundMigrations.get_sanitize_verified_addresses_finished() do
+      query |> where([_contract, address], address.verified == true)
+    else
+      query
+    end
   end
 
   defp search_contracts(basic_query, nil), do: basic_query
