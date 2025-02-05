@@ -139,6 +139,7 @@ for migrator <- [
       Explorer.Migrator.SanitizeVerifiedAddresses,
 
       # Heavy DB index operations
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
