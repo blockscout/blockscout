@@ -23,7 +23,7 @@ defmodule Explorer.Chain.NullRoundHeight do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, BlockNumberHelper}
   alias Explorer.Repo
 
   @existing_blocks_batch_size 50
@@ -90,10 +90,10 @@ defmodule Explorer.Chain.NullRoundHeight do
   defp find_neighbor_from_previous(previous_null_rounds, number, direction) do
     previous_null_rounds
     |> Enum.reduce_while({number, nil}, fn height, {current, _result} ->
-      if height == move_by_one(current, direction) do
+      if height == BlockNumberHelper.move_by_one(current, direction) do
         {:cont, {height, nil}}
       else
-        {:halt, {nil, move_by_one(current, direction)}}
+        {:halt, {nil, BlockNumberHelper.move_by_one(current, direction)}}
       end
     end)
     |> elem(1)
@@ -126,16 +126,12 @@ defmodule Explorer.Chain.NullRoundHeight do
   def neighbor_block_number(number, direction) do
     case fetch_neighboring_null_rounds(number, direction) do
       [] ->
-        move_by_one(number, direction)
+        BlockNumberHelper.move_by_one(number, direction)
 
       previous_null_rounds ->
         find_neighbor_from_previous(previous_null_rounds, number, direction)
     end
   end
-
-  @spec move_by_one(non_neg_integer(), :previous | :next) :: non_neg_integer()
-  defp move_by_one(number, :previous), do: number - 1
-  defp move_by_one(number, :next), do: number + 1
 
   # Constructs a query to fetch neighboring null round heights in batches.
   @spec neighboring_null_rounds_query(non_neg_integer(), :previous | :next) :: Ecto.Query.t()
