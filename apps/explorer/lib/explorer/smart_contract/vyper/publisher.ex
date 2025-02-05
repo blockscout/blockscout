@@ -7,7 +7,6 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
   require Logger
 
-  alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.CompilerVersion
   alias Explorer.SmartContract.Vyper.Verifier
@@ -127,68 +126,22 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
   def publish_smart_contract(address_hash, params, abi, verification_with_files?) do
     attrs = address_hash |> attributes(params, abi)
 
-    create_or_update_smart_contract(address_hash, attrs, verification_with_files?)
-  end
+    ok_or_error =
+      SmartContract.create_or_update_smart_contract(
+        address_hash,
+        attrs,
+        verification_with_files?
+      )
 
-  @doc """
-    Creates or updates a smart contract record based on its verification status.
+    case ok_or_error do
+      {:ok, _smart_contract} ->
+        Logger.info("Vyper smart-contract #{address_hash} successfully published")
 
-    This function first checks if a smart contract associated with the provided address hash
-    is already verified. If verified, it updates the existing smart contract record with the
-    new attributes provided, such as external libraries and secondary sources. During the update,
-    the contract methods are also updated: existing methods are preserved, and any new methods
-    from the provided ABI are added to ensure the contract's integrity and completeness.
-
-    If the smart contract is not verified, it creates a new record in the database with the
-    provided attributes, setting it up for verification. In this case, all contract methods
-    from the ABI are freshly inserted as part of the new smart contract creation.
-
-    ## Parameters
-    - `address_hash`: The hash of the address for the smart contract.
-    - `attrs`: A map containing attributes such as external libraries and secondary sources.
-    - `verification_with_files?`: A boolean indicating whether the verification was performed with files or flattened code.
-
-    ## Returns
-    - `{:ok, Explorer.Chain.SmartContract.t()}`: Successfully created or updated smart
-      contract.
-    - `{:error, data}`: on failure, returning `Ecto.Changeset.t()` or, if any issues
-      happen during setting the address as verified, an error message.
-  """
-  @spec create_or_update_smart_contract(
-          binary() | Explorer.Chain.Hash.t(),
-          %{
-            :secondary_sources => list(),
-            optional(any()) => any()
-          },
-          boolean()
-        ) :: {:error, Ecto.Changeset.t() | String.t()} | {:ok, Explorer.Chain.SmartContract.t()}
-  def create_or_update_smart_contract(address_hash, attrs, verification_with_files?) do
-    smart_contract = address_hash |> SmartContract.get_smart_contract_query() |> Chain.select_repo(api?: true).one()
-
-    cond do
-      is_nil(smart_contract) ->
-        Logger.info("Publish successfully verified Vyper smart-contract #{address_hash} into the DB")
-
-        SmartContract.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
-
-      smart_contract.partially_verified && attrs.partially_verified &&
-          Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
-        changeset =
-          SmartContract.invalid_contract_changeset(
-            %SmartContract{address_hash: address_hash},
-            attrs,
-            "Cannot update partially verified smart contract with another partially verified contract",
-            nil,
-            verification_with_files?
-          )
-
-        {:error, %{changeset | action: :insert}}
-
-      true ->
-        Logger.info("Publish successfully verified Vyper smart-contract #{address_hash} into the DB")
-
-        SmartContract.update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+      {:error, error} ->
+        Logger.error("Vyper smart-contract #{address_hash} failed to publish: #{inspect(error)}")
     end
+
+    ok_or_error
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do

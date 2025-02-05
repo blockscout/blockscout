@@ -11,10 +11,10 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   require Logger
 
+  alias Explorer.Chain.SmartContract
   alias Explorer.ChainSpec.Geth.Importer, as: GethImporter
   alias Explorer.ChainSpec.Parity.Importer
   alias Explorer.Helper
-  alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias HTTPoison.Response
 
   @interval :timer.minutes(2)
@@ -317,7 +317,7 @@ defmodule Explorer.ChainSpec.GenesisData do
         license_type: :none
       }
 
-      SolidityPublisher.create_or_update_smart_contract(contract["address"], attrs, false)
+      SmartContract.create_or_update_smart_contract(contract["address"], attrs, false)
     end)
   end
 end
