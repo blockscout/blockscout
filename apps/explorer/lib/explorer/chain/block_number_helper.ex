@@ -79,7 +79,44 @@ defmodule Explorer.Chain.BlockNumberHelper do
       defp neighbor_block_number(number, direction), do: move_by_one(number, direction)
   end
 
+  @doc """
+    Moves block number by one in the specified direction.
+
+    When moving backward from the configured minimum possible blockchain block number
+    (set in :indexer, :first_block), returns that minimum block number to maintain
+    the lower boundary. Callers implementing block traversal loops must explicitly check
+    for the minimum block number to prevent infinite loops, as moving backward from the
+    minimum block will continuously return the same number.
+
+    ## Parameters
+    - `number`: The block number to move from
+    - `direction`: Either `:previous` or `:next` to indicate movement direction
+
+    ## Returns
+    - For `:next`: The next block number (number + 1)
+    - For `:previous`: The previous block number (number - 1), or the configured minimum
+      possible block number if current block is at the minimum block
+
+    ## Examples
+
+        iex> move_by_one(5, :next)
+        6
+
+        iex> move_by_one(5, :previous)
+        4
+
+        # Assuming first_block is configured as 0
+        iex> move_by_one(0, :previous)
+        0  # Returns configured minimum possible block number
+  """
   @spec move_by_one(non_neg_integer(), :previous | :next) :: non_neg_integer()
-  def move_by_one(number, :previous), do: number - 1
-  def move_by_one(number, :next), do: number + 1
+  def move_by_one(number, direction) do
+    min_block = Application.get_env(:indexer, :first_block, 0)
+
+    case {number, direction} do
+      {n, :previous} when n <= min_block -> min_block
+      {_, :previous} -> number - 1
+      {_, :next} -> number + 1
+    end
+  end
 end
