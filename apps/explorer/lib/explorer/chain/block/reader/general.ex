@@ -105,8 +105,7 @@ defmodule Explorer.Chain.Block.Reader.General do
     base_query =
       from(block in Block,
         where: block.consensus == true,
-        limit: 1,
-        select: block
+        limit: 1
       )
 
     base_query
@@ -176,16 +175,14 @@ defmodule Explorer.Chain.Block.Reader.General do
 
     case closest do
       :before ->
-        if DateTime.compare(timestamp, given_timestamp) == :lt ||
-             DateTime.compare(timestamp, given_timestamp) == :eq do
+        if DateTime.compare(timestamp, given_timestamp) in ~w(lt eq)a do
           number
         else
           BlockNumberHelper.previous_block_number(number)
         end
 
       :after ->
-        if DateTime.compare(timestamp, given_timestamp) == :gt ||
-             DateTime.compare(timestamp, given_timestamp) == :eq do
+        if DateTime.compare(timestamp, given_timestamp) in ~w(gt eq)a do
           number
         else
           BlockNumberHelper.next_block_number(number)
