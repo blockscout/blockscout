@@ -178,10 +178,9 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/", V2.TokenTransferController, :token_transfers)
     end
 
-    # todo: enable this endpoint when DB index for underlying DB query will be installed.
-    # scope "/internal-transactions" do
-    #   get("/", V2.InternalTransactionController, :internal_transactions)
-    # end
+    scope "/internal-transactions" do
+      get("/", V2.InternalTransactionController, :internal_transactions)
+    end
 
     scope "/blocks" do
       get("/", V2.BlockController, :blocks)
