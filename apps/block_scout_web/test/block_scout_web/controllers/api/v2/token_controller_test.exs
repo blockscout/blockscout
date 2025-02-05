@@ -1084,7 +1084,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       old_env = Application.get_env(:indexer, :ipfs)
 
-      public_ipfs_gateway = "https://ipfs.io/ipfs"
+      public_ipfs_gateway = "https://ipfs_custom.io/ipfs"
 
       Application.put_env(
         :indexer,
@@ -1109,7 +1109,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
 
       assert %{
-               "image_url" => "https://ipfs.io/ipfs/QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/123.png"
+               "image_url" => "https://ipfs_custom.io/ipfs/QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/123.png"
              } = json_response(request, 200)
     end
   end
