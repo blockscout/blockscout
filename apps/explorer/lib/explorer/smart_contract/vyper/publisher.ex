@@ -28,7 +28,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
         process_rust_verifier_response(source, address_hash, params, false, false)
 
       {:ok, %{abi: abi}} ->
-        publish_smart_contract(address_hash, params, abi)
+        publish_smart_contract(address_hash, params, abi, false)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil)}
@@ -63,7 +63,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
         process_rust_verifier_response(source, address_hash, params, true, standard_json?)
 
       {:ok, %{abi: abi}} ->
-        publish_smart_contract(address_hash, params, abi)
+        publish_smart_contract(address_hash, params, abi, true)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
@@ -120,14 +120,28 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       |> Map.put("license_type", initial_params["license_type"])
       |> Map.put("is_blueprint", source["isBlueprint"])
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string))
+    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string), save_file_path?)
   end
 
-  def publish_smart_contract(address_hash, params, abi) do
+  def publish_smart_contract(address_hash, params, abi, verification_with_files?) do
     attrs = address_hash |> attributes(params, abi)
 
-    Logger.info("Publish successfully verified Vyper smart-contract #{address_hash} into the DB")
-    SmartContract.create_or_update_smart_contract(address_hash, attrs)
+    ok_or_error =
+      SmartContract.create_or_update_smart_contract(
+        address_hash,
+        attrs,
+        verification_with_files?
+      )
+
+    case ok_or_error do
+      {:ok, _smart_contract} ->
+        Logger.info("Vyper smart-contract #{address_hash} successfully published")
+
+      {:error, error} ->
+        Logger.error("Vyper smart-contract #{address_hash} failed to publish: #{inspect(error)}")
+    end
+
+    ok_or_error
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do

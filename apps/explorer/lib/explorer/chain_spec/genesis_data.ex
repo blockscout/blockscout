@@ -317,7 +317,7 @@ defmodule Explorer.ChainSpec.GenesisData do
         license_type: :none
       }
 
-      SmartContract.create_or_update_smart_contract(contract["address"], attrs)
+      SmartContract.create_or_update_smart_contract(contract["address"], attrs, false)
     end)
   end
 end

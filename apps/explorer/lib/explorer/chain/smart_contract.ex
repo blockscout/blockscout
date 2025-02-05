@@ -866,15 +866,40 @@ defmodule Explorer.Chain.SmartContract do
     - `{:error, data}`: on failure, returning `Ecto.Changeset.t()` or, if any issues
       happen during setting the address as verified, an error message.
   """
-  @spec create_or_update_smart_contract(binary() | Explorer.Chain.Hash.t(), %{
-          :secondary_sources => list(),
-          optional(any()) => any()
-        }) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
-  def create_or_update_smart_contract(address_hash, attrs) do
-    if verified?(address_hash) do
-      update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
-    else
-      create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+  @spec create_or_update_smart_contract(
+          binary() | Explorer.Chain.Hash.t(),
+          %{
+            :external_libraries => list(),
+            :secondary_sources => list(),
+            optional(any()) => any()
+          },
+          boolean()
+        ) :: {:error, Ecto.Changeset.t() | String.t()} | {:ok, Explorer.Chain.SmartContract.t()}
+  def create_or_update_smart_contract(address_hash, attrs, verification_with_files?) do
+    smart_contract =
+      address_hash
+      |> get_smart_contract_query()
+      |> Chain.select_repo(api?: true).one()
+
+    cond do
+      is_nil(smart_contract) ->
+        create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+
+      smart_contract.partially_verified && attrs.partially_verified &&
+          Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
+        changeset =
+          invalid_contract_changeset(
+            %SmartContract{address_hash: address_hash},
+            Helper.add_contract_code_md5(attrs),
+            "Cannot update partially verified smart contract with another partially verified contract",
+            nil,
+            verification_with_files?
+          )
+
+        {:error, %{changeset | action: :insert}}
+
+      true ->
+        update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
     end
   end
 
@@ -1365,6 +1390,7 @@ defmodule Explorer.Chain.SmartContract do
           | {:search, String.t()}
           | {:sorting, SortingHelper.sorting_params()}
           | Chain.api?()
+          | Chain.show_scam_tokens?()
         ]) :: [__MODULE__.t()]
   def verified_contracts(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
@@ -1381,7 +1407,7 @@ defmodule Explorer.Chain.SmartContract do
     |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
     |> Chain.join_associations(necessity_by_association)
-    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
+    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
     |> maybe_filter_verified_addresses()
     |> Chain.select_repo(options).all()
   end

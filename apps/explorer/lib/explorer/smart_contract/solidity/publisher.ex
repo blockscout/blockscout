@@ -54,10 +54,10 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         params_with_constructor_arguments =
           Map.put(params_with_external_libraries, "constructor_arguments", constructor_arguments)
 
-        publish_smart_contract(address_hash, params_with_constructor_arguments, abi)
+        publish_smart_contract(address_hash, params_with_constructor_arguments, abi, false)
 
       {:ok, %{abi: abi}} ->
-        publish_smart_contract(address_hash, params_with_external_libraries, abi)
+        publish_smart_contract(address_hash, params_with_external_libraries, abi, false)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params_with_external_libraries, error, nil)}
@@ -113,11 +113,11 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           |> Map.put("constructor_arguments", constructor_arguments)
           |> Map.merge(additional_params)
 
-        publish_smart_contract(address_hash, params_with_constructor_arguments, abi)
+        publish_smart_contract(address_hash, params_with_constructor_arguments, abi, true)
 
       {:ok, %{abi: abi}, additional_params} ->
         merged_params = Map.merge(params, additional_params)
-        publish_smart_contract(address_hash, merged_params, abi)
+        publish_smart_contract(address_hash, merged_params, abi, true)
 
       {:error, error} ->
         {:error, unverified_smart_contract(address_hash, params, error, nil, true)}
@@ -219,7 +219,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("license_type", initial_params["license_type"])
       |> Map.put("is_blueprint", false)
 
-    publish_smart_contract(address_hash, prepared_params, abi)
+    publish_smart_contract(address_hash, prepared_params, abi, save_file_path?)
   end
 
   def process_rust_verifier_response(
@@ -272,7 +272,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("license_type", initial_params["license_type"])
       |> Map.put("is_blueprint", source["isBlueprint"])
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
+    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"), save_file_path?)
   end
 
   defp parse_optimization_runs(compiler_settings, optimization) do
@@ -297,15 +297,17 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     - `address_hash`: The address hash of the smart contract
     - `params`: The parameters for the smart contract
     - `abi`: The ABI of the smart contract
+    - `verification_with_files?`: A boolean indicating whether the verification
+      was performed with files or flattened code.
     - `file_path`: Optional file path for the smart contract source code
 
     ## Returns
     - `{:ok, %SmartContract{}}` if successful
     - `{:error, %Ecto.Changeset{}}` if there was an error
   """
-  @spec publish_smart_contract(String.t(), map(), map(), String.t() | nil) ::
+  @spec publish_smart_contract(String.t(), map(), map(), boolean(), String.t() | nil) ::
           {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
-  def publish_smart_contract(address_hash, params, abi, file_path \\ nil) do
+  def publish_smart_contract(address_hash, params, abi, verification_with_files?, file_path \\ nil) do
     attrs =
       if file_path do
         address_hash |> attributes(params, file_path, abi)
@@ -313,8 +315,22 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         address_hash |> attributes(params, abi)
       end
 
-    Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
-    SmartContract.create_or_update_smart_contract(address_hash, attrs)
+    ok_or_error =
+      SmartContract.create_or_update_smart_contract(
+        address_hash,
+        attrs,
+        verification_with_files?
+      )
+
+    case ok_or_error do
+      {:ok, _} ->
+        Logger.info("Solidity smart-contract #{address_hash} successfully published")
+
+      {:error, error} ->
+        Logger.error("Solidity smart-contract #{address_hash} failed to publish: #{inspect(error)}")
+    end
+
+    ok_or_error
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do

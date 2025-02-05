@@ -15,26 +15,21 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Repo
 
-  @default_batch_size 500
-
   def unprocessed_data_query do
     from(address in Address,
       join: smart_contract in SmartContract,
       on: address.hash == smart_contract.address_hash,
-      where: address.verified == false
+      where: address.verified == false or is_nil(address.verified)
     )
   end
 
-  def last_unprocessed_identifiers(state) do
+  def last_unprocessed_identifiers do
     limit = batch_size() * concurrency()
 
-    ids =
-      unprocessed_data_query()
-      |> select([a], a.hash)
-      |> limit(^limit)
-      |> Repo.all(timeout: :infinity)
-
-    {ids, state}
+    unprocessed_data_query()
+    |> select([a], a.hash)
+    |> limit(^limit)
+    |> Repo.all(timeout: :infinity)
   end
 
   def update_batch(address_hashes) do
@@ -101,13 +96,13 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
   # - `{:stop, :normal, new_state}` when migration is complete
   # - `{:noreply, new_state}` when more batches remain to be processed
   @impl true
-  def handle_info(:migrate_batch, state) do
-    case last_unprocessed_identifiers(state) do
-      {[], new_state} ->
+  def handle_info(:migrate_batch, _state) do
+    case last_unprocessed_identifiers() do
+      [] ->
         update_cache()
-        {:stop, :normal, new_state}
+        {:stop, :normal, %{}}
 
-      {identifiers, new_state} ->
+      identifiers ->
         identifiers
         |> Enum.chunk_every(batch_size())
         |> Enum.map(&run_task/1)
@@ -115,7 +110,7 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
 
         schedule_batch_migration()
 
-        {:noreply, new_state}
+        {:noreply, %{}}
     end
   end
 
@@ -130,8 +125,13 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
   #
   # ## Returns
   # - Reference to the scheduled timer
+  @spec schedule_batch_migration(timeout :: non_neg_integer | nil) :: reference()
   defp schedule_batch_migration(timeout \\ nil) do
-    Process.send_after(self(), :migrate_batch, timeout || Application.get_env(:explorer, __MODULE__)[:timeout] || 0)
+    Process.send_after(
+      self(),
+      :migrate_batch,
+      timeout || Application.get_env(:explorer, __MODULE__)[:timeout]
+    )
   end
 
   @spec update_cache() :: :ok
@@ -139,13 +139,13 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
     BackgroundMigrations.set_sanitize_verified_addresses_finished(true)
   end
 
+  @spec batch_size() :: non_neg_integer()
   defp batch_size do
-    Application.get_env(:explorer, __MODULE__)[:batch_size] || @default_batch_size
+    Application.get_env(:explorer, __MODULE__)[:batch_size]
   end
 
+  @spec concurrency() :: non_neg_integer()
   defp concurrency do
-    default = 4 * System.schedulers_online()
-
-    Application.get_env(:explorer, __MODULE__)[:concurrency] || default
+    Application.get_env(:explorer, __MODULE__)[:concurrency]
   end
 end

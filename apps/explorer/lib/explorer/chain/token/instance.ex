@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Token.Instance do
   use Explorer.Schema
 
   alias Explorer.{Chain, Helper, Repo}
-  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
+  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.Token.Instance.Thumbnails
@@ -869,5 +869,153 @@ defmodule Explorer.Chain.Token.Instance do
   @spec media_type_to_string({binary(), binary()}) :: nonempty_binary()
   def media_type_to_string({type, subtype}) do
     "#{type}/#{subtype}"
+  end
+
+  @doc """
+  Preloads NFTs for a list of `TokenTransfer` structs.
+
+  ## Parameters
+
+    - `token_transfers`: A list of `TokenTransfer` structs.
+    - `opts`: A keyword list of options.
+
+  ## Returns
+
+  A list of `TokenTransfer` structs with preloaded NFTs.
+  """
+  @spec preload_nft([TokenTransfer.t()] | Transaction.t(), keyword()) :: [TokenTransfer.t()] | Transaction.t()
+  def preload_nft(token_transfers, options) when is_list(token_transfers) do
+    token_instances_id =
+      token_transfers
+      |> Enum.reduce(MapSet.new(), fn
+        %TokenTransfer{token_type: nft_token_type} = token_transfer, ids
+        when nft_token_type in ["ERC-721", "ERC-1155", "ERC-404"] ->
+          MapSet.put(ids, {List.first(token_transfer.token_ids), token_transfer.token_contract_address_hash.bytes})
+
+        _token_transfer, ids ->
+          ids
+      end)
+      |> MapSet.to_list()
+
+    token_instances =
+      Instance
+      |> where(
+        [nft],
+        fragment(
+          "(?, ?) = ANY(?::token_instance_id[])",
+          nft.token_id,
+          nft.token_contract_address_hash,
+          ^token_instances_id
+        )
+      )
+      |> Chain.select_repo(options).all()
+      |> Enum.reduce(%{}, fn nft, map ->
+        Map.put(map, {nft.token_id, nft.token_contract_address_hash}, nft)
+      end)
+
+    Enum.map(token_transfers, fn
+      %TokenTransfer{token_type: nft_token_type} = token_transfer
+      when nft_token_type in ["ERC-721", "ERC-1155", "ERC-404"] ->
+        %TokenTransfer{
+          token_transfer
+          | token_instance:
+              token_instances[{List.first(token_transfer.token_ids), token_transfer.token_contract_address_hash}]
+        }
+
+      token_transfer ->
+        token_transfer
+    end)
+  end
+
+  def preload_nft(%Transaction{token_transfers: token_transfers} = transaction, options)
+      when is_list(token_transfers) do
+    %Transaction{transaction | token_transfers: preload_nft(token_transfers, options)}
+  end
+
+  def preload_nft(other, _options), do: other
+
+  @doc """
+  Prepares params list for batch upsert
+  (filters out params for instances that shouldn't be updated
+  and adjusts `refetch_after` and `is_banned` fields based on existing instances).
+  """
+  @spec adjust_insert_params([map()]) :: [map()]
+  def adjust_insert_params(params_list) do
+    now = Timex.now()
+
+    adjusted_params_list =
+      Enum.map(params_list, fn params ->
+        {:ok, token_contract_address_hash} = Hash.Address.cast(params.token_contract_address_hash)
+
+        Map.merge(params, %{
+          token_id: Decimal.new(params.token_id),
+          token_contract_address_hash: token_contract_address_hash,
+          inserted_at: now,
+          updated_at: now
+        })
+      end)
+
+    token_instance_ids =
+      Enum.map(adjusted_params_list, fn params ->
+        {params.token_id, params.token_contract_address_hash.bytes}
+      end)
+
+    existing_token_instances_query =
+      from(token_instance in Instance,
+        where:
+          fragment(
+            "(?, ?) = ANY(?::token_instance_id[])",
+            token_instance.token_id,
+            token_instance.token_contract_address_hash,
+            ^token_instance_ids
+          )
+      )
+
+    existing_token_instances_map =
+      existing_token_instances_query
+      |> Repo.all()
+      |> Map.new(&{{&1.token_id, &1.token_contract_address_hash}, &1})
+
+    Enum.reduce(adjusted_params_list, [], fn params, acc ->
+      existing_token_instance =
+        existing_token_instances_map[{params.token_id, params.token_contract_address_hash}]
+
+      cond do
+        is_nil(existing_token_instance) ->
+          [params | acc]
+
+        is_nil(existing_token_instance.metadata) ->
+          {refetch_after, is_banned} = determine_refetch_after_and_is_banned(params, existing_token_instance)
+          full_params = Map.merge(params, %{refetch_after: refetch_after, is_banned: is_banned})
+          [full_params | acc]
+
+        true ->
+          acc
+      end
+    end)
+  end
+
+  defp determine_refetch_after_and_is_banned(params, existing_token_instance) do
+    config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
+
+    coef = config[:exp_timeout_coeff]
+    base = config[:exp_timeout_base]
+    max_refetch_interval = config[:max_refetch_interval]
+    max_retry_count = :math.log(max_refetch_interval / 1000 / coef) / :math.log(base)
+    new_retries_count = existing_token_instance.retries_count + 1
+    max_retries_count_before_ban = error_to_max_retries_count_before_ban(params[:error])
+
+    cond do
+      new_retries_count > max_retries_count_before_ban ->
+        {nil, true}
+
+      is_nil(params[:metadata]) ->
+        value = floor(coef * :math.pow(base, min(new_retries_count, max_retry_count)))
+
+        {Timex.shift(Timex.now(), seconds: value), false}
+
+      true ->
+        {nil, false}
+    end
   end
 end

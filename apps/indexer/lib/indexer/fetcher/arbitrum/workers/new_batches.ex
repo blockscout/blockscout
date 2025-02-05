@@ -22,10 +22,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
     for the necessary information not available in the logs.
   """
 
-  alias ABI.TypeDecoder
-
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
-  alias EthereumJSONRPC.Arbitrum.Constants.Contracts, as: ArbitrumContracts
   alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
@@ -750,7 +747,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
        ) do
     existing_batches =
       logs
-      |> parse_logs_to_get_batch_numbers()
+      |> Rpc.extract_batch_numbers_from_logs()
       |> DbSettlement.batches_exist()
 
     {batches, transactions_requests, blocks_requests, existing_commitment_transactions} =
@@ -827,16 +824,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
      rollup_transactions_to_import, committed_messages, da_records, batch_to_data_blobs}
   end
 
-  # Extracts batch numbers from logs of SequencerBatchDelivered events.
-  @spec parse_logs_to_get_batch_numbers([%{String.t() => any()}]) :: [non_neg_integer()]
-  defp parse_logs_to_get_batch_numbers(logs) do
-    logs
-    |> Enum.map(fn event ->
-      {batch_num, _, _} = sequencer_batch_delivered_event_parse(event)
-      batch_num
-    end)
-  end
-
   # Parses logs representing SequencerBatchDelivered events to identify new batches.
   #
   # This function sifts through logs of SequencerBatchDelivered events, extracts the
@@ -887,21 +874,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         blk_num = quantity_to_integer(event["blockNumber"])
 
         handle_new_batch_data(
-          {sequencer_batch_delivered_event_parse(event), transaction_hash_raw, blk_num},
+          {Rpc.parse_sequencer_batch_delivered_event(event), transaction_hash_raw, blk_num},
           existing_batches,
           acc
         )
       end)
 
     {batches, transactions_requests, Map.values(blocks_requests), existing_commitment_transactions}
-  end
-
-  # Parses SequencerBatchDelivered event to get batch sequence number and associated accumulators
-  @spec sequencer_batch_delivered_event_parse(%{String.t() => any()}) :: {non_neg_integer(), binary(), binary()}
-  defp sequencer_batch_delivered_event_parse(event) do
-    [_, batch_sequence_number, before_acc, after_acc] = event["topics"]
-
-    {quantity_to_integer(batch_sequence_number), before_acc, after_acc}
   end
 
   # Handles the new batch data to assemble a map of new batch descriptions.
@@ -1088,7 +1067,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         # Although they are called messages in the functions' ABI, in fact they are
         # rollup blocks
         {batch_num, prev_message_count, new_message_count, extra_data} =
-          add_sequencer_l2_batch_from_origin_calldata_parse(resp["input"])
+          Rpc.parse_calldata_of_add_sequencer_l2_batch(resp["input"])
 
         # For the case when the rollup blocks range is not discovered on the previous
         # step due to handling of legacy events, it is required to make more
@@ -1144,44 +1123,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewBatches do
         {updated_transactions_map, updated_batches_map, updated_da_info_list}
       end)
     end)
-  end
-
-  # Parses calldata of `addSequencerL2BatchFromOrigin` or `addSequencerL2BatchFromBlobs`
-  # functions to extract batch information.
-  @spec add_sequencer_l2_batch_from_origin_calldata_parse(binary()) ::
-          {non_neg_integer(), non_neg_integer() | nil, non_neg_integer() | nil, binary() | nil}
-  defp add_sequencer_l2_batch_from_origin_calldata_parse(calldata) do
-    case calldata do
-      "0x8f111f3c" <> encoded_params ->
-        # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
-        [sequence_number, data, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
-          TypeDecoder.decode(
-            Base.decode16!(encoded_params, case: :lower),
-            ArbitrumContracts.add_sequencer_l2_batch_from_origin_8f111f3c_selector_with_abi()
-          )
-
-        {sequence_number, prev_message_count, new_message_count, data}
-
-      "0x3e5aa082" <> encoded_params ->
-        # addSequencerL2BatchFromBlobs(uint256 sequenceNumber, uint256 afterDelayedMessagesRead, address gasRefunder, uint256 prevMessageCount, uint256 newMessageCount)
-        [sequence_number, _after_delayed_messages_read, _gas_refunder, prev_message_count, new_message_count] =
-          TypeDecoder.decode(
-            Base.decode16!(encoded_params, case: :lower),
-            ArbitrumContracts.add_sequencer_l2_batch_from_blobs_selector_with_abi()
-          )
-
-        {sequence_number, prev_message_count, new_message_count, nil}
-
-      "0x6f12b0c9" <> encoded_params ->
-        # addSequencerL2BatchFromOrigin(uint256 sequenceNumber, bytes calldata data, uint256 afterDelayedMessagesRead, address gasRefunder)
-        [sequence_number, data, _after_delayed_messages_read, _gas_refunder] =
-          TypeDecoder.decode(
-            Base.decode16!(encoded_params, case: :lower),
-            ArbitrumContracts.add_sequencer_l2_batch_from_origin_6f12b0c9_selector_with_abi()
-          )
-
-        {sequence_number, nil, nil, data}
-    end
   end
 
   # Determines the block range for a batch based on provided message counts and
