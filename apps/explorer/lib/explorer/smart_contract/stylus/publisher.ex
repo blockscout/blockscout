@@ -144,8 +144,17 @@ defmodule Explorer.SmartContract.Stylus.Publisher do
   defp publish_smart_contract(address_hash, params, abi) do
     attrs = address_hash |> attributes(params, abi)
 
-    Logger.info("Publish successfully verified Stylus smart-contract #{address_hash} into the DB")
-    SmartContract.create_or_update_smart_contract(address_hash, attrs, false)
+    ok_or_error = SmartContract.create_or_update_smart_contract(address_hash, attrs, false)
+
+    case ok_or_error do
+      {:ok, _} ->
+        Logger.info("Stylus smart-contract #{address_hash} successfully published")
+
+      {:error, error} ->
+        Logger.error("Stylus smart-contract #{address_hash} failed to publish: #{inspect(error)}")
+    end
+
+    ok_or_error
   end
 
   # Creates an invalid changeset for a Stylus smart contract that failed verification.

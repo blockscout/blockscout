@@ -315,8 +315,22 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
         address_hash |> attributes(params, abi)
       end
 
-    Logger.info("Publish successfully verified Solidity smart-contract #{address_hash} into the DB")
-    SmartContract.create_or_update_smart_contract(address_hash, attrs, verification_with_files?)
+    ok_or_error =
+      SmartContract.create_or_update_smart_contract(
+        address_hash,
+        attrs,
+        verification_with_files?
+      )
+
+    case ok_or_error do
+      {:ok, _} ->
+        Logger.info("Solidity smart-contract #{address_hash} successfully published")
+
+      {:error, error} ->
+        Logger.error("Solidity smart-contract #{address_hash} failed to publish: #{inspect(error)}")
+    end
+
+    ok_or_error
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do

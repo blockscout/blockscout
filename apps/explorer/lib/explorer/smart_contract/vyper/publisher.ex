@@ -126,8 +126,22 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
   def publish_smart_contract(address_hash, params, abi, verification_with_files?) do
     attrs = address_hash |> attributes(params, abi)
 
-    Logger.info("Publish successfully verified Vyper smart-contract #{address_hash} into the DB")
-    SmartContract.create_or_update_smart_contract(address_hash, attrs, verification_with_files?)
+    ok_or_error =
+      SmartContract.create_or_update_smart_contract(
+        address_hash,
+        attrs,
+        verification_with_files?
+      )
+
+    case ok_or_error do
+      {:ok, _smart_contract} ->
+        Logger.info("Vyper smart-contract #{address_hash} successfully published")
+
+      {:error, error} ->
+        Logger.error("Vyper smart-contract #{address_hash} failed to publish: #{inspect(error)}")
+    end
+
+    ok_or_error
   end
 
   defp unverified_smart_contract(address_hash, params, error, error_message, verification_with_files? \\ false) do
