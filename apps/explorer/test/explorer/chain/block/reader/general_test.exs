@@ -22,10 +22,12 @@ defmodule Explorer.Chain.Block.Reader.GeneralTest do
       _after_block = insert(:block, timestamp: DateTime.add(timestamp, 20, :second))
 
       # When searching for blocks after the timestamp
-      assert {:ok, target_block.number} = BlockGeneralReader.timestamp_to_block_number(timestamp, :after, true, true)
+      expected = {:ok, target_block.number}
+      assert ^expected = BlockGeneralReader.timestamp_to_block_number(timestamp, :after, true, true)
 
       # When searching for blocks before the timestamp
-      assert {:ok, before_block.number} = BlockGeneralReader.timestamp_to_block_number(timestamp, :before, true, true)
+      expected = {:ok, before_block.number}
+      assert ^expected = BlockGeneralReader.timestamp_to_block_number(timestamp, :before, true, true)
     end
 
     test "with strict=true returns error when no blocks found" do
