@@ -136,6 +136,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
           :instances,
           :token,
           :transaction,
+          :token_instance,
           :__meta__
         ])
       end)
