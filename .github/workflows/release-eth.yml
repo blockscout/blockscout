@@ -92,7 +92,7 @@ jobs:
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=ethereum
-            SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
+            MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       - name: Build and push Docker image for Ethereum (indexer)
         uses: docker/build-push-action@v6
@@ -110,7 +110,7 @@ jobs:
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=ethereum
-            SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
+            MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
 
       - name: Build and push Docker image for Ethereum (API)
         uses: docker/build-push-action@v6
@@ -128,4 +128,4 @@ jobs:
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=ethereum
-            SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
+            MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_ENABLED=true
