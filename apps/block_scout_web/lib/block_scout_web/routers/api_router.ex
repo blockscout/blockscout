@@ -170,7 +170,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
 
       if @chain_type == :neon do
-        get("/:transaction_hash_param/external_transactions", V2.TransactionController, :external_transactions)
+        get("/:transaction_hash_param/external-transactions", V2.TransactionController, :external_transactions)
       end
 
       if @chain_type == :ethereum do
