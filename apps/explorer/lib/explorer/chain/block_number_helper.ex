@@ -111,7 +111,7 @@ defmodule Explorer.Chain.BlockNumberHelper do
   """
   @spec move_by_one(non_neg_integer(), :previous | :next) :: non_neg_integer()
   def move_by_one(number, direction) do
-    min_block = Application.get_env(:indexer, :first_block, 0)
+    min_block = Application.get_env(:indexer, :first_block)
 
     case {number, direction} do
       {n, :previous} when n <= min_block -> min_block
