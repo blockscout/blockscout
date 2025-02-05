@@ -823,7 +823,7 @@ defmodule EthereumJSONRPC do
       to_key = Enum.at(key_list, 1)
       opts = if Enum.count(key_list) > 2, do: Enum.at(key_list, 2), else: %{}
 
-      value = transaction[from_key]
+      value = transaction[from_key] || opts[:default]
 
       validate_key(acc, to_key, value, opts)
     end)
