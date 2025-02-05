@@ -360,6 +360,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/accounts", V2.Proxy.AccountAbstractionController, :accounts)
         get("/bundles", V2.Proxy.AccountAbstractionController, :bundles)
         get("/operations", V2.Proxy.AccountAbstractionController, :operations)
+        get("/status", V2.Proxy.AccountAbstractionController, :status)
       end
 
       scope "/zerion" do
