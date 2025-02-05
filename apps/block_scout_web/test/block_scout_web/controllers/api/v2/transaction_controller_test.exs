@@ -1633,7 +1633,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         end
       )
 
-      request = get(conn, "/api/v2/transactions/#{transaction_hash}/external_transactions")
+      request = get(conn, "/api/v2/transactions/#{transaction_hash}/external-transactions")
       assert response = json_response(request, 200)
       assert ^response = dummy_response
 
@@ -1651,7 +1651,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn _, _ -> {:error, "must use DB cache"} end)
 
-      request = get(conn, "/api/v2/transactions/#{transaction_hash}/external_transactions")
+      request = get(conn, "/api/v2/transactions/#{transaction_hash}/external-transactions")
       assert response = json_response(request, 200)
 
       assert length(response) == length(dummy_response) and
@@ -1664,7 +1664,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn _, _ -> {:error, "must fail"} end)
 
-      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/external_transactions")
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/external-transactions")
       assert response = json_response(request, 500)
 
       assert response == %{
@@ -1679,13 +1679,13 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn _, _ -> {:ok, []} end)
 
-      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/external_transactions")
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/external-transactions")
       assert response = json_response(request, 200)
       assert ^response = []
     end
 
     test "returns 422 for invalid transaction hash", %{conn: conn} do
-      request = get(conn, "/api/v2/transactions/invalid_hash/external_transactions")
+      request = get(conn, "/api/v2/transactions/invalid_hash/external-transactions")
       assert response = json_response(request, 422)
       assert response["message"] == "Invalid parameter(s)"
     end
