@@ -23,10 +23,9 @@ defmodule Explorer.Chain.NullRoundHeight do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Block, BlockNumberHelper}
+  alias Explorer.Chain.BlockNumberHelper
   alias Explorer.Repo
 
-  @existing_blocks_batch_size 50
   @null_rounds_batch_size 5
 
   @primary_key false
@@ -143,73 +142,6 @@ defmodule Explorer.Chain.NullRoundHeight do
     from(nrh in __MODULE__, where: nrh.height > ^number, order_by: [asc: :height], limit: @null_rounds_batch_size)
   end
 
-  # Checks if the given block height represents a null round.
-  @spec null_round?(non_neg_integer()) :: boolean()
-  defp null_round?(height) do
-    query = from(nrh in __MODULE__, where: nrh.height == ^height)
-    Repo.exists?(query)
-  end
-
-  @doc """
-    Finds the next valid block number after checking if the given block is a null round.
-    If the block is not a null round, returns the same block number. If it is a null round,
-    searches for the next or previous block that exists and is not a null round.
-
-    ## Parameters
-    - `block_number`: The block number to check and potentially find next valid block for
-    - `direction`: Either `:previous` or `:next` to indicate search direction
-
-    ## Returns
-    - `{:ok, number}` where number is either the input block_number or the next valid
-      block number
-    - `{:error, :not_found}` if no valid next block can be found
-  """
-  @spec find_next_non_null_round_block(non_neg_integer(), :previous | :next) ::
-          {:ok, non_neg_integer()} | {:error, :not_found}
-  def find_next_non_null_round_block(block_number, direction) do
-    if null_round?(block_number) do
-      process_next_batch(block_number, direction)
-    else
-      {:ok, block_number}
-    end
-  end
-
-  # Process a batch of blocks starting from the given block number
-  @spec process_next_batch(non_neg_integer(), :previous | :next) :: {:ok, non_neg_integer()} | {:error, :not_found}
-  defp process_next_batch(block_number, direction) do
-    with existing_blocks <- fetch_neighboring_existing_blocks(block_number, direction),
-         null_rounds <- fetch_neighboring_null_rounds(block_number, direction) do
-      find_first_valid_block(existing_blocks, null_rounds, direction)
-    end
-  end
-
-  # Fetches the next batch of existing block numbers from the database
-  @spec fetch_neighboring_existing_blocks(non_neg_integer(), :previous | :next) :: [non_neg_integer()]
-  defp fetch_neighboring_existing_blocks(number, direction) do
-    number
-    |> neighboring_existing_blocks_query(direction)
-    |> select([b], b.number)
-    |> Repo.all()
-  end
-
-  # Constructs a query to fetch neighboring block numbers in batches
-  @spec neighboring_existing_blocks_query(non_neg_integer(), :previous | :next) :: Ecto.Query.t()
-  defp neighboring_existing_blocks_query(number, :previous) do
-    from(b in Block,
-      where: b.number < ^number and b.consensus == true,
-      order_by: [desc: b.number],
-      limit: @existing_blocks_batch_size
-    )
-  end
-
-  defp neighboring_existing_blocks_query(number, :next) do
-    from(b in Block,
-      where: b.number > ^number and b.consensus == true,
-      order_by: [asc: b.number],
-      limit: @existing_blocks_batch_size
-    )
-  end
-
   # Fetches the next batch of null round heights from the database
   @spec fetch_neighboring_null_rounds(non_neg_integer(), :previous | :next) :: [non_neg_integer()]
   defp fetch_neighboring_null_rounds(number, direction) do
@@ -217,28 +149,5 @@ defmodule Explorer.Chain.NullRoundHeight do
     |> neighboring_null_rounds_query(direction)
     |> select([nrh], nrh.height)
     |> Repo.all()
-  end
-
-  # Finds the first valid block from the fetched data
-  @spec find_first_valid_block([non_neg_integer()], [non_neg_integer()], :previous | :next) ::
-          {:ok, non_neg_integer()} | {:error, :not_found}
-  defp find_first_valid_block([], _null_rounds, _direction), do: {:error, :not_found}
-
-  defp find_first_valid_block(existing_blocks, null_rounds, direction) do
-    null_rounds_set = MapSet.new(null_rounds)
-
-    existing_blocks
-    |> Enum.find(fn number ->
-      not MapSet.member?(null_rounds_set, number)
-    end)
-    |> case do
-      nil ->
-        # If no valid block found in current batch, try the next batch
-        last_block_number = List.last(existing_blocks)
-        process_next_batch(last_block_number, direction)
-
-      number ->
-        {:ok, number}
-    end
   end
 end

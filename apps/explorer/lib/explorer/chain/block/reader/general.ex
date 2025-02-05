@@ -36,9 +36,11 @@ defmodule Explorer.Chain.Block.Reader.General do
                   or the primary one for the query.
     - `strict`: A boolean flag controlling the block selection behavior:
       * `false` (default): Returns the block with smallest absolute time
-        difference, then adjusts based on `closest` parameter if needed
+        difference, then adjusts based on `closest` parameter if needed. In this
+        mode, the function could return a block number which does not exist
+        in the database.
       * `true`: Returns strictly the first existing block before/after the
-        timestamp based on the `closest` parameter, skipping any null rounds
+        timestamp based on the `closest` parameter.
 
     ## Returns
     - `{:ok, block_number}` where `block_number` is the block number closest to
@@ -53,13 +55,12 @@ defmodule Explorer.Chain.Block.Reader.General do
   def timestamp_to_block_number(given_timestamp, closest, from_api, true) do
     query = build_directional_query(given_timestamp, closest)
 
+    # No need to handle null rounds here as in the strict mode only blocks
+    # indexed by the block fetcher are considered. Null rounds are time slots
+    # where no Filecoin miner produced a block at all.
     case select_repo(api?: from_api).one(query, timeout: :infinity) do
-      nil ->
-        {:error, :not_found}
-
-      %{number: number} ->
-        direction = if closest == :before, do: :previous, else: :next
-        BlockNumberHelper.find_next_non_null_round_block(number, direction)
+      nil -> {:error, :not_found}
+      %{number: number} -> {:ok, number}
     end
   end
 
