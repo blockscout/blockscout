@@ -460,7 +460,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
     alias BlockScoutWeb.API.{EthRPC, RPC, V1}
-    alias BlockScoutWeb.API.V1.{GasPriceOracleController, HealthController}
+    alias BlockScoutWeb.API.V1.GasPriceOracleController
     alias BlockScoutWeb.API.V2.SearchController
 
     # leave the same endpoint in v1 in order to keep backward compatibility
@@ -476,13 +476,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     if @chain_type == :celo do
       get("/celo-election-rewards-csv", AddressTransactionController, :celo_election_rewards_csv)
-    end
-
-    # todo: remove it in the future. Path /api/health should be used instead.
-    scope "/health" do
-      get("/", HealthController, :health_old)
-      get("/liveness", HealthController, :liveness)
-      get("/readiness", HealthController, :readiness)
     end
 
     get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)
@@ -511,11 +504,10 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   end
 
   scope "/health" do
-    alias BlockScoutWeb.API.V1.HealthController
-    get("/", HealthController, :health)
-    get("/liveness", HealthController, :liveness)
-    get("/readiness", HealthController, :readiness)
-    get("/multichain-search-export", HealthController, :multichain_search_db_export)
+    get("/", BlockScoutWeb.API.HealthController, :health)
+    get("/liveness", BlockScoutWeb.API.HealthController, :liveness)
+    get("/readiness", BlockScoutWeb.API.HealthController, :readiness)
+    get("/multichain-search-export", BlockScoutWeb.API.HealthController, :multichain_search_db_export)
   end
 
   # For backward compatibility. Should be removed
