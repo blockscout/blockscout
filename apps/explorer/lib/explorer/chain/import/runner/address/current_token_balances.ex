@@ -295,7 +295,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   # new ctb is the same height or older
   defp should_update?(new_ctb, existing_ctb) do
-    existing_ctb.block_number == new_ctb.block_number and not is_nil(new_ctb.value) and
+    existing_ctb.block_number == new_ctb.block_number and not is_nil(Map.get(new_ctb, :value)) and
       (is_nil(existing_ctb.value_fetched_at) or existing_ctb.value_fetched_at < new_ctb.value_fetched_at)
   end
 
