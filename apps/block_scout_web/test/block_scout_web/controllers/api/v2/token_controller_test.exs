@@ -1111,6 +1111,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert %{
                "image_url" => "https://ipfs_custom.io/ipfs/QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/123.png"
              } = json_response(request, 200)
+
+      Application.put_env(:indexer, :ipfs, old_env)
     end
   end
 
