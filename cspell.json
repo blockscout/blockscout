@@ -694,7 +694,8 @@
         "zkbob",
         "zkevm",
         "zksolc",
-        "zksync"
+        "zksync",
+        "solana"
     ],
     "enableFiletypes": [
         "dotenv",

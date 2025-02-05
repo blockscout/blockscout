@@ -4,9 +4,12 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
 
+  require Logger
   alias Explorer.Account.{Identity, WatchlistAddress}
   alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Repo
+  import Ecto.Query, only: [from: 2]
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.TransactionsApiV2.child_id())
@@ -1609,4 +1612,82 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   defp check_total(_, _, _), do: true
+
+  describe "neon linked transactions service" do
+    test "fetches data from the node and caches in the db", %{conn: conn} do
+      transaction = insert(:transaction)
+      transaction_hash = to_string(transaction.hash)
+
+      dummy_response =
+        Enum.map(1..:rand.uniform(10), fn _ ->
+          :crypto.strong_rand_bytes(64) |> Base.encode64()
+        end)
+
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn
+          %{id: 1, params: [^transaction_hash], method: "neon_getSolanaTransactionByNeonTransaction", jsonrpc: "2.0"},
+          _options ->
+            {:ok, dummy_response}
+        end
+      )
+
+      request = get(conn, "/api/v2/transactions/#{transaction_hash}/external-transactions")
+      assert response = json_response(request, 200)
+      assert ^response = dummy_response
+
+      records =
+        from(
+          solanaTransaction in Explorer.Chain.Neon.LinkedSolanaTransactions,
+          where: solanaTransaction.neon_transaction_hash == ^transaction.hash.bytes,
+          select: solanaTransaction.solana_transaction_hash
+        )
+        |> Repo.all()
+
+      assert length(dummy_response) == length(records) and
+               Enum.all?(dummy_response, fn dummy -> Enum.member?(records, dummy) end)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn _, _ -> {:error, "must use DB cache"} end)
+
+      request = get(conn, "/api/v2/transactions/#{transaction_hash}/external-transactions")
+      assert response = json_response(request, 200)
+
+      assert length(response) == length(dummy_response) and
+               Enum.all?(dummy_response, fn dummy -> Enum.member?(response, dummy) end)
+    end
+
+    test "returns an error when RPC node request fails", %{conn: conn} do
+      transaction = insert(:transaction)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn _, _ -> {:error, "must fail"} end)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/external-transactions")
+      assert response = json_response(request, 500)
+
+      assert response == %{
+               "error" => "Unable to fetch external linked transactions",
+               "reason" => "\"Unable to fetch data from the node: \\\"must fail\\\"\""
+             }
+    end
+
+    test "returns empty list when RPC returns empty list", %{conn: conn} do
+      transaction = insert(:transaction)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn _, _ -> {:ok, []} end)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/external-transactions")
+      assert response = json_response(request, 200)
+      assert ^response = []
+    end
+
+    test "returns 422 for invalid transaction hash", %{conn: conn} do
+      request = get(conn, "/api/v2/transactions/invalid_hash/external-transactions")
+      assert response = json_response(request, 422)
+      assert response["message"] == "Invalid parameter(s)"
+    end
+  end
 end

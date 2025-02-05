@@ -25,7 +25,8 @@ defmodule ConfigHelper do
         stability: Explorer.Repo.Stability,
         suave: Explorer.Repo.Suave,
         zilliqa: Explorer.Repo.Zilliqa,
-        zksync: Explorer.Repo.ZkSync
+        zksync: Explorer.Repo.ZkSync,
+        neon: Explorer.Repo.Neon
       }
       |> Map.get(chain_type())
 
@@ -356,7 +357,8 @@ defmodule ConfigHelper do
     "suave",
     "zetachain",
     "zilliqa",
-    "zksync"
+    "zksync",
+    "neon"
   ]
 
   @spec chain_type() :: atom() | nil
