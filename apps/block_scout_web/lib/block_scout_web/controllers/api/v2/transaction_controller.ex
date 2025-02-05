@@ -46,9 +46,11 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
+  alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Explorer.Counters.{FreshPendingTransactionsCounter, Transactions24hStats}
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
+  alias Indexer.Fetcher.OnDemand.NeonSolanaTransactions, as: NeonSolanaTransactions
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -178,7 +180,11 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:transaction, %{
-        transaction: preloaded |> maybe_preload_ens_to_transaction() |> maybe_preload_metadata_to_transaction()
+        transaction:
+          preloaded
+          |> Instance.preload_nft(@api_true)
+          |> maybe_preload_ens_to_transaction()
+          |> maybe_preload_metadata_to_transaction()
       })
     end
   end
@@ -253,6 +259,34 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   @spec arbitrum_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def arbitrum_batch(conn, params) do
     handle_batch_transactions(conn, params, &ArbitrumSettlementReader.batch_transactions/2)
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/transactions/:tx_hash/external-transactions` endpoint.
+    It renders the list of external transactions that are somehow linked (eg. preceded or initiated by) to the selected one.
+    The most common use case is for side-chains and rollups. Currently implemented only for Neon chain but could also be extended for
+    similar cases.
+  """
+  @spec external_transactions(Plug.Conn.t(), %{required(String.t()) => String.t()}) :: Plug.Conn.t()
+  def external_transactions(conn, %{"transaction_hash_param" => transaction_hash} = _params) do
+    with {:format, {:ok, hash}} <- {:format, Chain.string_to_transaction_hash(transaction_hash)} do
+      case NeonSolanaTransactions.maybe_fetch(hash) do
+        {:ok, linked_transactions} ->
+          conn
+          |> put_status(200)
+          |> json(linked_transactions)
+
+        {:error, reason} ->
+          Logger.error("Fetching external linked transactions failed: #{inspect(reason)}")
+
+          conn
+          |> put_status(500)
+          |> json(%{
+            error: "Unable to fetch external linked transactions",
+            reason: "#{inspect(reason)}"
+          })
+      end
+    end
   end
 
   @doc """
@@ -459,7 +493,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:token_transfers, %{
-        token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
+        token_transfers:
+          token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end

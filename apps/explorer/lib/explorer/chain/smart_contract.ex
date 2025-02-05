@@ -125,6 +125,7 @@ defmodule Explorer.Chain.SmartContract do
 
   alias Explorer.Chain.Address.Name, as: AddressName
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
@@ -843,6 +844,66 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
+    Creates or updates a smart contract record based on its verification status.
+
+    This function first checks if a smart contract associated with the provided address hash
+    is already verified. If verified, it updates the existing smart contract record with the
+    new attributes provided, such as external libraries and secondary sources. During the update,
+    the contract methods are also updated: existing methods are preserved, and any new methods
+    from the provided ABI are added to ensure the contract's integrity and completeness.
+
+    If the smart contract is not verified, it creates a new record in the database with the
+    provided attributes, setting it up for verification. In this case, all contract methods
+    from the ABI are freshly inserted as part of the new smart contract creation.
+
+    ## Parameters
+    - `address_hash`: The hash of the address for the smart contract.
+    - `attrs`: A map containing attributes such as external libraries and secondary sources.
+
+    ## Returns
+    - `{:ok, Explorer.Chain.SmartContract.t()}`: Successfully created or updated smart
+      contract.
+    - `{:error, data}`: on failure, returning `Ecto.Changeset.t()` or, if any issues
+      happen during setting the address as verified, an error message.
+  """
+  @spec create_or_update_smart_contract(
+          binary() | Explorer.Chain.Hash.t(),
+          %{
+            :external_libraries => list(),
+            :secondary_sources => list(),
+            optional(any()) => any()
+          },
+          boolean()
+        ) :: {:error, Ecto.Changeset.t() | String.t()} | {:ok, Explorer.Chain.SmartContract.t()}
+  def create_or_update_smart_contract(address_hash, attrs, verification_with_files?) do
+    smart_contract =
+      address_hash
+      |> get_smart_contract_query()
+      |> Chain.select_repo(api?: true).one()
+
+    cond do
+      is_nil(smart_contract) ->
+        create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+
+      smart_contract.partially_verified && attrs.partially_verified &&
+          Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
+        changeset =
+          invalid_contract_changeset(
+            %SmartContract{address_hash: address_hash},
+            Helper.add_contract_code_md5(attrs),
+            "Cannot update partially verified smart contract with another partially verified contract",
+            nil,
+            verification_with_files?
+          )
+
+        {:error, %{changeset | action: :insert}}
+
+      true ->
+        update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    end
+  end
+
+  @doc """
     Inserts a new smart contract and associated data into the database.
 
     This function creates a new smart contract entry in the database. It calculates an MD5 hash of
@@ -1329,6 +1390,7 @@ defmodule Explorer.Chain.SmartContract do
           | {:search, String.t()}
           | {:sorting, SortingHelper.sorting_params()}
           | Chain.api?()
+          | Chain.show_scam_tokens?()
         ]) :: [__MODULE__.t()]
   def verified_contracts(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
@@ -1340,13 +1402,23 @@ defmodule Explorer.Chain.SmartContract do
     query = from(contract in __MODULE__)
 
     query
-    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash)
     |> filter_contracts(filter)
     |> search_contracts(search_string)
     |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
     |> Chain.join_associations(necessity_by_association)
+    |> ExplorerHelper.maybe_hide_scam_addresses(:address_hash, options)
+    |> maybe_filter_verified_addresses()
     |> Chain.select_repo(options).all()
+  end
+
+  @spec maybe_filter_verified_addresses(Ecto.Query.t()) :: Ecto.Query.t()
+  defp maybe_filter_verified_addresses(query) do
+    if BackgroundMigrations.get_sanitize_verified_addresses_finished() do
+      query |> where([_contract, address], address.verified == true)
+    else
+      query
+    end
   end
 
   defp search_contracts(basic_query, nil), do: basic_query

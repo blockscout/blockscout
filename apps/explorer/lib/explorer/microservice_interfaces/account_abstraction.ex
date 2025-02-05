@@ -127,6 +127,16 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
     end
   end
 
+  @doc """
+    Get status via GET {{baseUrl}}/api/v1/status
+  """
+  @spec get_status(map()) :: {non_neg_integer(), map()} | {:error, :disabled}
+  def get_status(query_params) do
+    with :ok <- Microservice.check_enabled(__MODULE__) do
+      http_get_request(status_url(), query_params)
+    end
+  end
+
   defp http_get_request(url, query_params) do
     case HTTPoison.get(url, [], params: query_params) do
       {:ok, %Response{body: body, status_code: 200}} ->
@@ -198,6 +208,10 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
 
   defp bundles_url do
     "#{base_url()}/bundles"
+  end
+
+  defp status_url do
+    "#{base_url()}/status"
   end
 
   defp base_url do

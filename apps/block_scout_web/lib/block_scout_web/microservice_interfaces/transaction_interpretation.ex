@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   alias BlockScoutWeb.API.V2.{Helper, InternalTransactionView, TokenTransferView, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
   alias HTTPoison.Response
 
@@ -184,7 +185,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         token_transfers: prepare_token_transfers(token_transfers_with_meta, decoded_input),
         internal_transactions: prepare_internal_transactions(internal_transactions_with_meta, transaction_with_meta)
       },
-      logs_data: %{items: prepare_logs(logs_with_meta, transaction_with_meta)}
+      logs_data: %{items: prepare_logs(logs_with_meta, transaction_with_meta)},
+      chain_id: :block_scout_web |> Application.get_env(:chain_id) |> ExplorerHelper.parse_integer()
     }
   end
 
@@ -378,7 +380,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         decoded_input: decoded_input_json,
         token_transfers: prepared_token_transfers
       },
-      logs_data: %{items: prepared_logs}
+      logs_data: %{items: prepared_logs},
+      chain_id: :block_scout_web |> Application.get_env(:chain_id) |> ExplorerHelper.parse_integer()
     }
   end
 
