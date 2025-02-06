@@ -83,7 +83,6 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
   alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
-  alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
@@ -165,6 +164,7 @@ defmodule Explorer.Chain do
   @type paging_options :: {:paging_options, PagingOptions.t()}
   @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
   @type api? :: {:api?, true | false}
+  @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
 
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from the address with the given `hash`.
@@ -1082,17 +1082,32 @@ defmodule Explorer.Chain do
   def hashes_to_addresses(hashes, options) when is_list(hashes) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    query =
-      from(
-        address in Address,
-        where: address.hash in ^hashes,
-        # https://stackoverflow.com/a/29598910/470451
-        order_by: fragment("array_position(?, ?)", type(^hashes, {:array, Hash.Address}), address.hash)
-      )
-
-    query
+    hashes
+    |> hashes_to_addresses_query()
     |> join_associations(necessity_by_association)
     |> select_repo(options).all()
+  end
+
+  @doc """
+  Generates a query to convert a list of hashes to their corresponding addresses.
+
+  ## Parameters
+
+    - hashes: A list of hashes to be converted.
+
+  ## Returns
+
+    - A query that can be executed to retrieve the addresses corresponding to the provided hashes.
+  """
+  @spec hashes_to_addresses_query([Hash.Address.t()]) :: Ecto.Query.t()
+  def hashes_to_addresses_query(hashes) do
+    from(
+      address in Address,
+      as: :address,
+      where: address.hash in ^hashes,
+      # https://stackoverflow.com/a/29598910/470451
+      order_by: fragment("array_position(?, ?)", type(^hashes, {:array, Hash.Address}), address.hash)
+    )
   end
 
   @doc """
@@ -2463,92 +2478,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Finds the block number closest to a given timestamp, optionally adjusting
-    based on whether the block should be before or after the timestamp.
-
-    ## Parameters
-    - `given_timestamp`: The timestamp for which the closest block number is
-      being sought.
-    - `closest`: A direction indicator (`:before` or `:after`) specifying
-                whether the block number returned should be before or after the
-                given timestamp.
-    - `from_api`: A boolean flag indicating whether to use the replica database
-                  or the primary one for the query.
-
-    ## Returns
-    - `{:ok, block_number}` where `block_number` is the block number closest to
-      the specified timestamp.
-    - `{:error, :not_found}` if no block is found within the specified criteria.
-  """
-  @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
-          {:ok, Block.block_number()} | {:error, :not_found}
-  def timestamp_to_block_number(given_timestamp, closest, from_api) do
-    consensus_blocks_query = Block.consensus_blocks_query()
-
-    gt_timestamp_query =
-      from(
-        block in consensus_blocks_query,
-        where: block.timestamp >= ^given_timestamp,
-        order_by: [asc: block.timestamp],
-        limit: 1,
-        select: block
-      )
-
-    lt_timestamp_query =
-      from(
-        block in consensus_blocks_query,
-        where: block.timestamp <= ^given_timestamp,
-        order_by: [desc: block.timestamp],
-        limit: 1,
-        select: block
-      )
-
-    union_query = lt_timestamp_query |> subquery() |> union(^gt_timestamp_query)
-
-    query =
-      from(
-        block in subquery(union_query),
-        select: block,
-        order_by: fragment("abs(extract(epoch from (? - ?)))", block.timestamp, ^given_timestamp),
-        limit: 1
-      )
-
-    repo = if from_api, do: Repo.replica(), else: Repo
-
-    query
-    |> repo.one(timeout: :infinity)
-    |> case do
-      nil ->
-        {:error, :not_found}
-
-      %{:number => number, :timestamp => timestamp} ->
-        block_number = get_block_number_based_on_closest(closest, timestamp, given_timestamp, number)
-
-        {:ok, block_number}
-    end
-  end
-
-  defp get_block_number_based_on_closest(closest, timestamp, given_timestamp, number) do
-    case closest do
-      :before ->
-        if DateTime.compare(timestamp, given_timestamp) == :lt ||
-             DateTime.compare(timestamp, given_timestamp) == :eq do
-          number
-        else
-          BlockNumberHelper.previous_block_number(number)
-        end
-
-      :after ->
-        if DateTime.compare(timestamp, given_timestamp) == :gt ||
-             DateTime.compare(timestamp, given_timestamp) == :eq do
-          number
-        else
-          BlockNumberHelper.next_block_number(number)
-        end
-    end
-  end
-
-  @doc """
   Count of pending `t:Explorer.Chain.Transaction.t/0`.
 
   A count of all pending transactions.
@@ -3154,7 +3083,7 @@ defmodule Explorer.Chain do
 
   - `binary()`: The bytecode of the smart contract.
   """
-  @spec smart_contract_bytecode(binary() | Hash.Address.t()) :: binary()
+  @spec smart_contract_bytecode(binary() | Hash.Address.t(), [api?]) :: binary()
   def smart_contract_bytecode(address_hash, options \\ []) do
     query =
       from(
@@ -3784,25 +3713,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Streams a list of tokens that have been cataloged.
-  """
-  @spec stream_cataloged_tokens(
-          initial :: accumulator,
-          reducer :: (entry :: Token.t(), accumulator -> accumulator),
-          some_time_ago_updated :: integer(),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_cataloged_tokens(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
-      when is_function(reducer, 2) do
-    some_time_ago_updated
-    |> Token.cataloged_tokens()
-    |> add_fetcher_limit(limited?)
-    |> order_by(asc: :updated_at)
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @doc """
   Fetches a `t:Token.t/0` by an address hash.
 
   ## Options
@@ -3964,29 +3874,24 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Expects map of change params. Inserts using on_conflict: `token_instance_metadata_on_conflict/0`
+    Expects a list of maps with change params. Inserts using on_conflict: `token_instance_metadata_on_conflict/0`
     !!! Supposed to be used ONLY for import of `metadata` or `error`.
   """
-  @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def upsert_token_instance(params) do
-    changeset = Instance.changeset(%Instance{}, params)
-    max_retries_count_before_ban = Instance.error_to_max_retries_count_before_ban(params[:error])
+  @spec batch_upsert_token_instances([map()]) :: [Instance.t()]
+  def batch_upsert_token_instances(params_list) do
+    params_to_insert = Instance.adjust_insert_params(params_list)
 
-    Repo.insert(changeset,
-      on_conflict: token_instance_metadata_on_conflict(max_retries_count_before_ban),
-      conflict_target: [:token_id, :token_contract_address_hash]
-    )
+    {_, result} =
+      Repo.insert_all(Instance, params_to_insert,
+        on_conflict: token_instance_metadata_on_conflict(),
+        conflict_target: [:token_id, :token_contract_address_hash],
+        returning: true
+      )
+
+    result
   end
 
-  defp token_instance_metadata_on_conflict(max_retries_count_before_ban) do
-    config = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry)
-
-    coef = config[:exp_timeout_coeff]
-    base = config[:exp_timeout_base]
-    max_refetch_interval = config[:max_refetch_interval]
-
-    max_retry_count = :math.log(max_refetch_interval / 1000 / coef) / :math.log(base)
-
+  defp token_instance_metadata_on_conflict do
     from(
       token_instance in Instance,
       update: [
@@ -3999,104 +3904,12 @@ defmodule Explorer.Chain do
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_instance.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at),
           retries_count: token_instance.retries_count + 1,
-          refetch_after:
-            fragment(
-              """
-              CASE
-                WHEN ? > ? THEN
-                  NULL
-                WHEN EXCLUDED.metadata IS NULL THEN
-                  NOW() AT TIME ZONE 'UTC' + interval '1 seconds' * (? * ? ^ LEAST(? + 1.0, ?))
-              ELSE
-                NULL
-              END
-              """,
-              token_instance.retries_count + 1,
-              ^max_retries_count_before_ban,
-              ^coef,
-              ^base,
-              token_instance.retries_count,
-              ^max_retry_count
-            ),
-          is_banned:
-            fragment(
-              """
-              CASE WHEN ? > ? THEN TRUE ELSE FALSE END
-              """,
-              token_instance.retries_count + 1,
-              ^max_retries_count_before_ban
-            )
+          refetch_after: fragment("EXCLUDED.refetch_after"),
+          is_banned: fragment("EXCLUDED.is_banned")
         ]
       ],
       where: is_nil(token_instance.metadata)
     )
-  end
-
-  @doc """
-  Update a new `t:Token.t/0` record.
-
-  As part of updating token, an additional record is inserted for
-  naming the address for reference if a name is provided for a token.
-  """
-  @spec update_token(Token.t(), map(), boolean()) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
-  def update_token(%Token{contract_address_hash: address_hash} = token, params \\ %{}, info_from_admin_panel? \\ false) do
-    params =
-      if Map.has_key?(params, :total_supply) do
-        Map.put(params, :total_supply_updated_at_block, BlockNumber.get_max())
-      else
-        params
-      end
-
-    filtered_params = for({key, value} <- params, value !== "" && !is_nil(value), do: {key, value}) |> Enum.into(%{})
-
-    token_changeset =
-      token
-      |> Token.changeset(Map.put(filtered_params, :updated_at, DateTime.utc_now()))
-      |> (&if(token.is_verified_via_admin_panel && !info_from_admin_panel?,
-            do: &1 |> Changeset.delete_change(:symbol) |> Changeset.delete_change(:name),
-            else: &1
-          )).()
-
-    address_name_changeset =
-      Address.Name.changeset(%Address.Name{}, Map.put(filtered_params, :address_hash, address_hash))
-
-    stale_error_field = :contract_address_hash
-    stale_error_message = "is up to date"
-
-    token_opts = [
-      on_conflict: Runner.Tokens.default_on_conflict(),
-      conflict_target: :contract_address_hash,
-      stale_error_field: stale_error_field,
-      stale_error_message: stale_error_message
-    ]
-
-    address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
-
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    insert_result =
-      Multi.new()
-      |> Multi.run(
-        :address_name,
-        fn repo, _ ->
-          {:ok, repo.insert(address_name_changeset, address_name_opts)}
-        end
-      )
-      |> Multi.run(:token, fn repo, _ ->
-        with {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, [_]}}]}} <-
-               repo.update(token_changeset, token_opts) do
-          # the original token passed into `update_token/2` as stale error means it is unchanged
-          {:ok, token}
-        end
-      end)
-      |> Repo.transaction()
-
-    case insert_result do
-      {:ok, %{token: token}} ->
-        {:ok, token}
-
-      {:error, :token, changeset, _} ->
-        {:error, changeset}
-    end
   end
 
   @spec fetch_last_token_balances_include_unfetched(Hash.Address.t(), [api?]) :: []
@@ -4476,7 +4289,7 @@ defmodule Explorer.Chain do
         )
       )
 
-    %{token_instance | owner: owner}
+    %{token_instance | owner: owner, owner_address_hash: owner_address_hash}
   end
 
   def put_owner_to_token_instance(%Instance{} = token_instance, _token, _options), do: token_instance

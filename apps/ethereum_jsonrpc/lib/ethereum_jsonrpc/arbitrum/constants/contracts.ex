@@ -388,6 +388,33 @@ defmodule EthereumJSONRPC.Arbitrum.Constants.Contracts do
         uint256 sequenceNumber,
         bytes calldata data,
         uint256 afterDelayedMessagesRead,
+        address gasRefunder,
+        uint256 prevMessageCount,
+        uint256 newMessageCount,
+        bytes quote
+      )
+  """
+  def add_sequencer_l2_batch_from_origin_37501551_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "addSequencerL2BatchFromOrigin",
+      types: [
+        {:uint, 256},
+        :bytes,
+        {:uint, 256},
+        :address,
+        {:uint, 256},
+        {:uint, 256},
+        :bytes
+      ]
+    }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      addSequencerL2BatchFromOrigin(
+        uint256 sequenceNumber,
+        bytes calldata data,
+        uint256 afterDelayedMessagesRead,
         address gasRefunder
       )
   """

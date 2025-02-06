@@ -357,7 +357,7 @@ defmodule EthereumJSONRPC.Transaction do
       {"block_timestamp", :block_timestamp},
       {"r", :r},
       {"s", :s},
-      {"v", :v},
+      {"v", :v, %{default: 0}},
       {"authorizationList", :authorization_list}
     ])
   end
@@ -403,7 +403,7 @@ defmodule EthereumJSONRPC.Transaction do
       {"block_timestamp", :block_timestamp},
       {"r", :r},
       {"s", :s},
-      {"v", :v},
+      {"v", :v, %{default: 0}},
       {"authorizationList", :authorization_list}
     ])
   end
@@ -445,7 +445,7 @@ defmodule EthereumJSONRPC.Transaction do
       {"block_timestamp", :block_timestamp},
       {"r", :r},
       {"s", :s},
-      {"v", :v}
+      {"v", :v, %{default: 0}}
     ])
   end
 
@@ -484,7 +484,7 @@ defmodule EthereumJSONRPC.Transaction do
       {"block_timestamp", :block_timestamp},
       {"r", :r},
       {"s", :s},
-      {"v", :v}
+      {"v", :v, %{default: 0}}
     ])
   end
 
@@ -524,7 +524,7 @@ defmodule EthereumJSONRPC.Transaction do
       {"block_timestamp", :block_timestamp},
       {"r", :r},
       {"s", :s},
-      {"v", :v}
+      {"v", :v, %{default: 0}}
     ])
   end
 

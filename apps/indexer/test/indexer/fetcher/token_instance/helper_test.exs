@@ -158,7 +158,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
                {:ok,
                 %Instance{
                   metadata: %{
-                    "image" => "https://ipfs.io/ipfs/Qmd9pvThEwgjTBbEkNmmGFbcpJKw17fnRBAT4Td4rcog22"
+                    "image" => "ipfs://Qmd9pvThEwgjTBbEkNmmGFbcpJKw17fnRBAT4Td4rcog22"
                   }
                 }}
              ] = Helper.batch_fetch_instances([{"0x7e01CC81fCfdf6a71323900288A69e234C464f63", 0}])
@@ -379,6 +379,94 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         metadata: nil,
         error: "wrong metadata type"
       } = 777 |> Instance.token_instance_query("0x5caebd3b32e210e85ce3e9d51638b9c445481567") |> Repo.one()
+    end
+
+    test "check ipfs credentials not exposed to metadata", %{bypass: bypass} do
+      old_env = Application.get_env(:indexer, :ipfs)
+
+      public_ipfs_gateway = "https://ipfs.io/ipfs"
+
+      Application.put_env(
+        :indexer,
+        :ipfs,
+        Keyword.merge(old_env,
+          gateway_url_param_key: "secret_key",
+          gateway_url_param_value: "secret_value",
+          gateway_url_param_location: :query,
+          gateway_url: "http://localhost:#{bypass.port}",
+          public_gateway_url: public_ipfs_gateway
+        )
+      )
+
+      url = "/ipfs/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+
+      encoded_url =
+        "0x" <>
+          (ABI.TypeEncoder.encode([url], %ABI.FunctionSelector{
+             function: nil,
+             types: [
+               :string
+             ]
+           })
+           |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_call",
+                                  params: [
+                                    %{
+                                      data:
+                                        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
+                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+                                    },
+                                    "latest"
+                                  ]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             result: encoded_url
+           }
+         ]}
+      end)
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu",
+        fn conn ->
+          assert conn.params["secret_key"] == "secret_value"
+
+          conn
+          |> Conn.put_resp_content_type("image/jpg")
+          |> Conn.resp(200, "img")
+        end
+      )
+
+      insert(:token,
+        contract_address: build(:address, hash: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"),
+        type: "ERC-1155"
+      )
+
+      assert [
+               {:ok,
+                %Instance{
+                  metadata: %{
+                    "image" => img_url
+                  }
+                }}
+             ] = Helper.batch_fetch_instances([{"0x5caebd3b32e210e85ce3e9d51638b9c445481567", 777}])
+
+      refute String.contains?(img_url, "secret_key") || String.contains?(img_url, "secret_value")
+      assert img_url == "ipfs://" <> "bafybeig6nlmyzui7llhauc52j2xo5hoy4lzp6442lkve5wysdvjkizxonu"
+      Application.put_env(:indexer, :ipfs, old_env)
     end
   end
 

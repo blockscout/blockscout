@@ -10,6 +10,7 @@ defmodule Indexer.Fetcher.ContractCode do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Hash}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
@@ -81,14 +82,13 @@ defmodule Indexer.Fetcher.ContractCode do
 
   @impl BufferedTask
   def init(initial, reducer, _) do
+    stream_reducer = RangesHelper.stream_reducer_traceable(reducer)
+
     {:ok, final} =
       Chain.stream_transactions_with_unfetched_created_contract_codes(
         @transaction_fields,
         initial,
-        fn transaction_fields, acc ->
-          transaction_fields
-          |> reducer.(acc)
-        end,
+        stream_reducer,
         true
       )
 
@@ -127,6 +127,7 @@ defmodule Indexer.Fetcher.ContractCode do
     Logger.debug("fetching created_contract_code for transactions")
 
     entries
+    |> RangesHelper.filter_traceable_block_numbers()
     |> Enum.map(
       &%{
         block_quantity: integer_to_quantity(&1.block_number),
