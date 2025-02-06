@@ -1702,7 +1702,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
   end
 
-  describe "/tokens/{address_hash}/instances/trigger-nft-collection-metadata-refetch" do
+  describe "/tokens/{address_hash}/instances/refetch-metadata" do
     setup :set_mox_from_context
 
     setup :verify_on_exit!
@@ -1739,9 +1739,9 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       end
 
       request =
-        post(
+        patch(
           conn,
-          "/api/v2/tokens/#{token.contract_address.hash}/instances/trigger-nft-collection-metadata-refetch",
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/refetch-metadata",
           %{
             "api_key" => "abc"
           }
@@ -1765,7 +1765,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       token = insert(:token, type: "ERC-721")
 
       request =
-        post(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/trigger-nft-collection-metadata-refetch")
+        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/refetch-metadata")
 
       assert %{"message" => "Wrong API key"} = json_response(request, 401)
     end
