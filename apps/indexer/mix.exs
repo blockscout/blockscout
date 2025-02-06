@@ -14,7 +14,7 @@ defmodule Indexer.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "6.10.1",
+      version: "6.10.2",
       xref: [
         exclude: [
           Explorer.Chain.Optimism.Deposit,
