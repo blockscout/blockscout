@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias Explorer.{Chain, Helper, PagingOptions}
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
+  alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
 
@@ -179,7 +180,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
       results_plus_one =
-        Chain.address_to_unique_tokens(
+        Instance.address_to_unique_tokens(
           token.contract_address_hash,
           token,
           Keyword.merge(unique_tokens_paging_options(params), @api_true)
@@ -206,11 +207,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
-         {:ok, token_instance} <- Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
+         {:ok, token_instance} <-
+           Instance.nft_instance_by_token_id_and_token_address(token_id, address_hash, @api_true) do
       token_instance =
         token_instance
         |> Chain.select_repo(@api_true).preload(owner: [:names, :smart_contract, proxy_implementations_association()])
-        |> Chain.put_owner_to_token_instance(token, @api_true)
+        |> Instance.put_owner_to_token_instance(token, @api_true)
 
       conn
       |> put_status(200)
@@ -360,12 +362,34 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
          {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)},
          {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
-         {:ok, token_instance} <- Chain.nft_instance_from_token_id_and_token_address(token_id, address_hash, @api_true) do
+         {:ok, token_instance} <-
+           Instance.nft_instance_by_token_id_and_token_address(token_id, address_hash, @api_true) do
       token_instance_with_token =
         token_instance
         |> put_token_to_instance(token)
 
       TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance_with_token)
+
+      conn
+      |> put_status(200)
+      |> json(%{message: "OK"})
+    end
+  end
+
+  def trigger_nft_collection_metadata_refetch(
+        conn,
+        params
+      ) do
+    address_hash_string = params["address_hash_param"]
+
+    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
+           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
+         {:api_key, ^api_key} <- {:api_key, params["api_key"]},
+         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token)} do
+      NFTCollectionMetadataRefetchOnDemand.trigger_refetch(token)
 
       conn
       |> put_status(200)

@@ -60,7 +60,6 @@ defmodule Explorer.Chain do
     PendingBlockOperation,
     SmartContract,
     Token,
-    Token.Instance,
     TokenTransfer,
     Transaction,
     Wei,
@@ -3666,53 +3665,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Finds all token instances where metadata never tried to fetch
-  """
-  @spec stream_token_instances_with_unfetched_metadata(
-          initial :: accumulator,
-          reducer :: (entry :: map(), accumulator -> accumulator)
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_token_instances_with_unfetched_metadata(initial, reducer) when is_function(reducer, 2) do
-    Instance
-    |> where([instance], is_nil(instance.error) and is_nil(instance.metadata))
-    |> select([instance], %{
-      contract_address_hash: instance.token_contract_address_hash,
-      token_id: instance.token_id
-    })
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @spec stream_token_instances_with_error(
-          initial :: accumulator,
-          reducer :: (entry :: map(), accumulator -> accumulator),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_token_instances_with_error(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
-    # likely to get valid metadata
-    high_priority = ["request error: 429", ":checkout_timeout"]
-    # almost impossible to get valid metadata
-    negative_priority = ["VM execution error", "no uri", "invalid json"]
-
-    Instance
-    |> where([instance], is_nil(instance.is_banned) or not instance.is_banned)
-    |> where([instance], not is_nil(instance.error))
-    |> where([instance], is_nil(instance.refetch_after) or instance.refetch_after < ^DateTime.utc_now())
-    |> select([instance], %{
-      contract_address_hash: instance.token_contract_address_hash,
-      token_id: instance.token_id
-    })
-    |> order_by([instance],
-      asc: instance.refetch_after,
-      desc: instance.error in ^high_priority,
-      asc: instance.error in ^negative_priority
-    )
-    |> add_fetcher_limit(limited?)
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @doc """
   Fetches a `t:Token.t/0` by an address hash.
 
   ## Options
@@ -3873,45 +3825,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @doc """
-    Expects a list of maps with change params. Inserts using on_conflict: `token_instance_metadata_on_conflict/0`
-    !!! Supposed to be used ONLY for import of `metadata` or `error`.
-  """
-  @spec batch_upsert_token_instances([map()]) :: [Instance.t()]
-  def batch_upsert_token_instances(params_list) do
-    params_to_insert = Instance.adjust_insert_params(params_list)
-
-    {_, result} =
-      Repo.insert_all(Instance, params_to_insert,
-        on_conflict: token_instance_metadata_on_conflict(),
-        conflict_target: [:token_id, :token_contract_address_hash],
-        returning: true
-      )
-
-    result
-  end
-
-  defp token_instance_metadata_on_conflict do
-    from(
-      token_instance in Instance,
-      update: [
-        set: [
-          metadata: fragment("EXCLUDED.metadata"),
-          error: fragment("EXCLUDED.error"),
-          owner_updated_at_block: token_instance.owner_updated_at_block,
-          owner_updated_at_log_index: token_instance.owner_updated_at_log_index,
-          owner_address_hash: token_instance.owner_address_hash,
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_instance.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at),
-          retries_count: token_instance.retries_count + 1,
-          refetch_after: fragment("EXCLUDED.refetch_after"),
-          is_banned: fragment("EXCLUDED.is_banned")
-        ]
-      ],
-      where: is_nil(token_instance.metadata)
-    )
-  end
-
   @spec fetch_last_token_balances_include_unfetched(Hash.Address.t(), [api?]) :: []
   def fetch_last_token_balances_include_unfetched(address_hash, options \\ []) do
     address_hash
@@ -3942,39 +3855,6 @@ defmodule Explorer.Chain do
         |> page_current_token_balances(paging_options)
         |> select_repo(options).all()
     end
-  end
-
-  @spec nft_instance_from_token_id_and_token_address(
-          Decimal.t() | non_neg_integer(),
-          Hash.Address.t(),
-          [api?]
-        ) ::
-          {:ok, Instance.t()} | {:error, :not_found}
-  def nft_instance_from_token_id_and_token_address(token_id, token_contract_address, options \\ []) do
-    query = Instance.token_instance_query(token_id, token_contract_address)
-
-    case select_repo(options).one(query) do
-      nil -> {:error, :not_found}
-      token_instance -> {:ok, token_instance}
-    end
-  end
-
-  @spec token_instance_exists?(non_neg_integer, Hash.Address.t(), [api?]) :: boolean
-  def token_instance_exists?(token_id, token_contract_address, options \\ []) do
-    query = Instance.token_instance_query(token_id, token_contract_address)
-
-    select_repo(options).exists?(query)
-  end
-
-  @spec token_instance_with_unfetched_metadata?(non_neg_integer, Hash.Address.t(), [api?]) :: boolean
-  def token_instance_with_unfetched_metadata?(token_id, token_contract_address, options \\ []) do
-    Instance
-    |> where([instance], is_nil(instance.error) and is_nil(instance.metadata))
-    |> where(
-      [instance],
-      instance.token_id == ^token_id and instance.token_contract_address_hash == ^token_contract_address
-    )
-    |> select_repo(options).exists?()
   end
 
   defp fetch_coin_balances(address, paging_options) do
@@ -4241,58 +4121,6 @@ defmodule Explorer.Chain do
     |> CurrentTokenBalance.token_ids_query()
     |> Repo.all()
   end
-
-  @spec address_to_unique_tokens(Hash.Address.t(), Token.t(), [paging_options | api?]) :: [Instance.t()]
-  def address_to_unique_tokens(contract_address_hash, token, options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    contract_address_hash
-    |> Instance.address_to_unique_token_instances()
-    |> Instance.page_token_instance(paging_options)
-    |> limit(^paging_options.page_size)
-    |> preload([_], owner: [:names, :smart_contract, ^Implementation.proxy_implementations_association()])
-    |> select_repo(options).all()
-    |> Enum.map(&put_owner_to_token_instance(&1, token, options))
-  end
-
-  @doc """
-    Put owner address to unique token instance. If not unique, return original instance.
-  """
-  @spec put_owner_to_token_instance(Instance.t(), Token.t(), [api?]) :: Instance.t()
-  def put_owner_to_token_instance(token_instance, token, options \\ [])
-
-  def put_owner_to_token_instance(%Instance{is_unique: nil} = token_instance, token, options) do
-    put_owner_to_token_instance(Instance.put_is_unique(token_instance, token, options), token, options)
-  end
-
-  def put_owner_to_token_instance(
-        %Instance{owner: nil, is_unique: true} = token_instance,
-        %Token{type: type},
-        options
-      )
-      when type in ["ERC-1155", "ERC-404"] do
-    owner_address_hash =
-      token_instance
-      |> Instance.owner_query()
-      |> select_repo(options).one()
-
-    owner =
-      Address.get(
-        owner_address_hash,
-        options
-        |> Keyword.merge(
-          necessity_by_association: %{
-            :names => :optional,
-            :smart_contract => :optional,
-            Implementation.proxy_implementations_association() => :optional
-          }
-        )
-      )
-
-    %{token_instance | owner: owner, owner_address_hash: owner_address_hash}
-  end
-
-  def put_owner_to_token_instance(%Instance{} = token_instance, _token, _options), do: token_instance
 
   @spec data() :: Dataloader.Ecto.t()
   def data, do: DataloaderEcto.new(Repo)
@@ -4650,64 +4478,6 @@ defmodule Explorer.Chain do
       from(
         token in Token,
         where: token.contract_address_hash == ^hash
-      )
-
-    Repo.exists?(query)
-  end
-
-  @doc """
-  Checks if a `t:Explorer.Chain.Token.Instance.t/0` with the given `hash` and `token_id` exists.
-
-  Returns `:ok` if found
-
-      iex> token = insert(:token)
-      iex> token_id = 10
-      iex> insert(:token_instance,
-      ...>  token_contract_address_hash: token.contract_address_hash,
-      ...>  token_id: token_id
-      ...> )
-      iex> Explorer.Chain.check_nft_instance_exists(token_id, token.contract_address_hash)
-      :ok
-
-  Returns `:not_found` if not found
-
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.check_nft_instance_exists(10, hash)
-      :not_found
-  """
-  @spec check_nft_instance_exists(binary() | non_neg_integer(), Hash.Address.t()) ::
-          :ok | :not_found
-  def check_nft_instance_exists(token_id, hash) do
-    token_id
-    |> nft_instance_exist?(hash)
-    |> boolean_to_check_result()
-  end
-
-  @doc """
-  Checks if a `t:Explorer.Chain.Token.Instance.t/0` with the given `hash` and `token_id` exists.
-
-  Returns `true` if found
-
-      iex> token = insert(:token)
-      iex> token_id = 10
-      iex> insert(:token_instance,
-      ...>  token_contract_address_hash: token.contract_address_hash,
-      ...>  token_id: token_id
-      ...> )
-      iex> Explorer.Chain.nft_instance_exist?(token_id, token.contract_address_hash)
-      true
-
-  Returns `false` if not found
-
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      iex> Explorer.Chain.nft_instance_exist?(10, hash)
-      false
-  """
-  @spec nft_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
-  def nft_instance_exist?(token_id, hash) do
-    query =
-      from(i in Instance,
-        where: i.token_contract_address_hash == ^hash and i.token_id == ^Decimal.new(token_id)
       )
 
     Repo.exists?(query)
