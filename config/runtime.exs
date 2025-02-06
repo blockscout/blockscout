@@ -852,9 +852,6 @@ config :indexer, Indexer.Fetcher.TokenInstance.Retry.Supervisor,
 config :indexer, Indexer.Fetcher.TokenInstance.Sanitize.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_SANITIZE_FETCHER")
 
-config :indexer, Indexer.Fetcher.TokenInstance.LegacySanitize,
-  enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_LEGACY_SANITIZE_FETCHER", "true")
-
 config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC1155,
   enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_ERC_1155_SANITIZE_FETCHER", "false")
 
@@ -900,19 +897,15 @@ config :indexer, Indexer.Fetcher.TokenInstance.Sanitize,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_CONCURRENCY", 10),
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_SANITIZE_BATCH_SIZE", 10)
 
-config :indexer, Indexer.Fetcher.TokenInstance.LegacySanitize,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_CONCURRENCY", 2),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_LEGACY_SANITIZE_BATCH_SIZE", 10)
-
 config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC1155,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_1155_SANITIZE_CONCURRENCY", 2),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_1155_SANITIZE_BATCH_SIZE", 10)
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_ERC_1155_SANITIZE_CONCURRENCY", 1),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_ERC_1155_SANITIZE_BATCH_SIZE", 500)
 
 config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC721,
-  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_721_SANITIZE_CONCURRENCY", 2),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_721_SANITIZE_BATCH_SIZE", 10),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_ERC_721_SANITIZE_CONCURRENCY", 2),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_ERC_721_SANITIZE_BATCH_SIZE", 50),
   tokens_queue_size:
-    ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_ERC_721_SANITIZE_TOKENS_BATCH_SIZE", 100)
+    ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_INSTANCE_ERC_721_SANITIZE_TOKENS_BATCH_SIZE", 100)
 
 config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", 10),
