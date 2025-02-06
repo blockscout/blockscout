@@ -50,8 +50,8 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
 
     patch("/:address_hash_param/instances/:token_id/refetch-metadata", V2.TokenController, :refetch_metadata)
 
-    post(
-      "/:address_hash_param/instances/trigger-nft-collection-metadata-refetch",
+    patch(
+      "/:address_hash_param/instances/refetch-metadata",
       V2.TokenController,
       :trigger_nft_collection_metadata_refetch
     )
