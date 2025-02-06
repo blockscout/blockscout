@@ -1077,6 +1077,43 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
                  "https://ipfs.io/ipfs/QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
              } = json_response(request, 200)
     end
+
+    # https://github.com/blockscout/blockscout/issues/11149
+    test "regression for #11149", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      old_env = Application.get_env(:indexer, :ipfs)
+
+      public_ipfs_gateway = "https://ipfs_custom.io/ipfs"
+
+      Application.put_env(
+        :indexer,
+        :ipfs,
+        Keyword.merge(old_env,
+          gateway_url_param_key: "secret_key",
+          gateway_url_param_value: "secret_value",
+          gateway_url_param_location: :query,
+          gateway_url: "http://localhost/",
+          public_gateway_url: public_ipfs_gateway
+        )
+      )
+
+      insert(:token_instance,
+        token_id: 0,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{
+          "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/123.png"
+        }
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
+
+      assert %{
+               "image_url" => "https://ipfs_custom.io/ipfs/QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/123.png"
+             } = json_response(request, 200)
+
+      Application.put_env(:indexer, :ipfs, old_env)
+    end
   end
 
   describe "/tokens/{address_hash}/instances/{token_id}/transfers" do
