@@ -1,7 +1,7 @@
 defmodule Explorer.Migrator.ShrinkInternalTransactions do
   @moduledoc """
   Removes the content of output field and leaves first 4 bytes signature in input field in internal transactions.
-  This migration is disabled unless MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_ENABLED env variable is set to true.
+  This migration is disabled unless SHRINK_INTERNAL_TRANSACTIONS_ENABLED env variable is set to true.
   """
 
   use Explorer.Migrator.FillingMigration
