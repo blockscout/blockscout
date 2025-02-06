@@ -2478,92 +2478,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-    Finds the block number closest to a given timestamp, optionally adjusting
-    based on whether the block should be before or after the timestamp.
-
-    ## Parameters
-    - `given_timestamp`: The timestamp for which the closest block number is
-      being sought.
-    - `closest`: A direction indicator (`:before` or `:after`) specifying
-                whether the block number returned should be before or after the
-                given timestamp.
-    - `from_api`: A boolean flag indicating whether to use the replica database
-                  or the primary one for the query.
-
-    ## Returns
-    - `{:ok, block_number}` where `block_number` is the block number closest to
-      the specified timestamp.
-    - `{:error, :not_found}` if no block is found within the specified criteria.
-  """
-  @spec timestamp_to_block_number(DateTime.t(), :before | :after, boolean()) ::
-          {:ok, Block.block_number()} | {:error, :not_found}
-  def timestamp_to_block_number(given_timestamp, closest, from_api) do
-    consensus_blocks_query = Block.consensus_blocks_query()
-
-    gt_timestamp_query =
-      from(
-        block in consensus_blocks_query,
-        where: block.timestamp >= ^given_timestamp,
-        order_by: [asc: block.timestamp],
-        limit: 1,
-        select: block
-      )
-
-    lt_timestamp_query =
-      from(
-        block in consensus_blocks_query,
-        where: block.timestamp <= ^given_timestamp,
-        order_by: [desc: block.timestamp],
-        limit: 1,
-        select: block
-      )
-
-    union_query = lt_timestamp_query |> subquery() |> union(^gt_timestamp_query)
-
-    query =
-      from(
-        block in subquery(union_query),
-        select: block,
-        order_by: fragment("abs(extract(epoch from (? - ?)))", block.timestamp, ^given_timestamp),
-        limit: 1
-      )
-
-    repo = if from_api, do: Repo.replica(), else: Repo
-
-    query
-    |> repo.one(timeout: :infinity)
-    |> case do
-      nil ->
-        {:error, :not_found}
-
-      %{:number => number, :timestamp => timestamp} ->
-        block_number = get_block_number_based_on_closest(closest, timestamp, given_timestamp, number)
-
-        {:ok, block_number}
-    end
-  end
-
-  defp get_block_number_based_on_closest(closest, timestamp, given_timestamp, number) do
-    case closest do
-      :before ->
-        if DateTime.compare(timestamp, given_timestamp) == :lt ||
-             DateTime.compare(timestamp, given_timestamp) == :eq do
-          number
-        else
-          BlockNumberHelper.previous_block_number(number)
-        end
-
-      :after ->
-        if DateTime.compare(timestamp, given_timestamp) == :gt ||
-             DateTime.compare(timestamp, given_timestamp) == :eq do
-          number
-        else
-          BlockNumberHelper.next_block_number(number)
-        end
-    end
-  end
-
-  @doc """
   Count of pending `t:Explorer.Chain.Transaction.t/0`.
 
   A count of all pending transactions.
@@ -3169,7 +3083,7 @@ defmodule Explorer.Chain do
 
   - `binary()`: The bytecode of the smart contract.
   """
-  @spec smart_contract_bytecode(binary() | Hash.Address.t()) :: binary()
+  @spec smart_contract_bytecode(binary() | Hash.Address.t(), [api?]) :: binary()
   def smart_contract_bytecode(address_hash, options \\ []) do
     query =
       from(

@@ -28,6 +28,7 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
   alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
@@ -4218,18 +4219,6 @@ defmodule Explorer.ChainTest do
              }
 
       Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, init_config)
-    end
-  end
-
-  describe "timestamp_to_block_number/3" do
-    test "returns correct block number when given timestamp is equal to block timestamp" do
-      timestamp = DateTime.from_unix!(60 * 60 * 24 * 1, :second)
-      block = insert(:block, timestamp: timestamp)
-      expected = {:ok, block.number}
-
-      assert ^expected = Chain.timestamp_to_block_number(timestamp, :after, true)
-
-      assert ^expected = Chain.timestamp_to_block_number(timestamp, :before, true)
     end
   end
 end
