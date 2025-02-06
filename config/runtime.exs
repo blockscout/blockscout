@@ -514,10 +514,6 @@ config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
   chain_name: System.get_env("NOVES_FI_CHAIN_NAME"),
   api_key: System.get_env("NOVES_FI_API_TOKEN")
 
-config :explorer, Explorer.ThirdPartyIntegrations.Zerion,
-  service_url: System.get_env("ZERION_BASE_API_URL", "https://api.zerion.io/v1"),
-  api_key: System.get_env("ZERION_API_TOKEN")
-
 config :explorer, Explorer.ThirdPartyIntegrations.Xname,
   service_url: System.get_env("XNAME_BASE_API_URL", "https://gateway.xname.app"),
   api_key: System.get_env("XNAME_API_TOKEN")

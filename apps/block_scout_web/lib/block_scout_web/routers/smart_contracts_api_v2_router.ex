@@ -55,6 +55,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     get("/:address_hash/methods-write", V2.SmartContractController, :methods_write)
     get("/:address_hash/methods-read-proxy", V2.SmartContractController, :methods_read_proxy)
     get("/:address_hash/methods-write-proxy", V2.SmartContractController, :methods_write_proxy)
+    # todo: this endpoint should be removed in 7.1.0 release
     get("/:address_hash/solidityscan-report", V2.SmartContractController, :solidityscan_report)
     get("/:address_hash/audit-reports", V2.SmartContractController, :audit_reports_list)
 

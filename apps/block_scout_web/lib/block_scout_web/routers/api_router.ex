@@ -339,12 +339,36 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/proxy" do
+      scope "/3dparty" do
+        scope "/noves-fi" do
+          get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
+
+          get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
+
+          get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
+        end
+
+        scope "/xname" do
+          get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
+        end
+
+        scope "/solidityscan" do
+          get("/smart-contracts/:address_hash/report", V2.SmartContractController, :solidityscan_report)
+        end
+      end
+
+      # todo: this endpoint should be removed in 7.1.0 release
       scope "/noves-fi" do
         get("/transactions/:transaction_hash_param", V2.Proxy.NovesFiController, :transaction)
 
         get("/addresses/:address_hash_param/transactions", V2.Proxy.NovesFiController, :address_transactions)
 
         get("/transaction-descriptions", V2.Proxy.NovesFiController, :describe_transactions)
+      end
+
+      # todo: this endpoint should be removed in 7.1.0 release
+      scope "/xname" do
+        get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
       end
 
       scope "/account-abstraction" do
@@ -361,14 +385,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/bundles", V2.Proxy.AccountAbstractionController, :bundles)
         get("/operations", V2.Proxy.AccountAbstractionController, :operations)
         get("/status", V2.Proxy.AccountAbstractionController, :status)
-      end
-
-      scope "/zerion" do
-        get("/wallets/:address_hash_param/portfolio", V2.Proxy.ZerionController, :wallet_portfolio)
-      end
-
-      scope "/xname" do
-        get("/addresses/:address_hash_param", V2.Proxy.XnameController, :address)
       end
 
       scope "/metadata" do
