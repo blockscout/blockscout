@@ -3665,25 +3665,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Streams a list of tokens that have been cataloged.
-  """
-  @spec stream_cataloged_tokens(
-          initial :: accumulator,
-          reducer :: (entry :: Token.t(), accumulator -> accumulator),
-          some_time_ago_updated :: integer(),
-          limited? :: boolean()
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_cataloged_tokens(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
-      when is_function(reducer, 2) do
-    some_time_ago_updated
-    |> Token.cataloged_tokens()
-    |> add_fetcher_limit(limited?)
-    |> order_by(asc: :updated_at)
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @doc """
   Fetches a `t:Token.t/0` by an address hash.
 
   ## Options

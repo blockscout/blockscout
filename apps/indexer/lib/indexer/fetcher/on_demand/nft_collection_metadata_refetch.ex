@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch do
     GenServer.cast(__MODULE__, {:refetch, token})
   end
 
-  defp fetch_metadata(token, _state) do
+  defp fetch_metadata(token) do
     TokenInstance.mark_nft_collection_to_refetch(token.contract_address_hash)
   end
 
@@ -31,7 +31,7 @@ defmodule Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch do
 
   @impl true
   def handle_cast({:refetch, token}, state) do
-    fetch_metadata(token, state)
+    fetch_metadata(token)
 
     {:noreply, state}
   end
