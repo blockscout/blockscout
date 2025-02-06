@@ -50,7 +50,7 @@ defmodule Indexer.Application do
       {ContractCodeOnDemand.Supervisor, [json_rpc_named_arguments]},
       {NFTCollectionMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenInstanceMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {TokenInstanceRefetch.Supervisor, [[memory_monitor: memory_monitor_name]]},
+      {TokenInstanceRefetch.Supervisor, []},
       {TokenTotalSupplyOnDemand.Supervisor, []},
       {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]}
     ]
