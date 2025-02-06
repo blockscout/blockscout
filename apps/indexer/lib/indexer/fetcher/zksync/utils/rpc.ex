@@ -252,6 +252,47 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   end
 
   @doc """
+    Fetches transaction details from the RPC endpoint (L2) using the `zks_getTransactionDetails` call.
+    The method is Zksync-specific. It's valid within the ZKsync Era ecosystem only
+
+    ## Parameters
+    - `raw_hash`: The hash of the ZKsync transaction. It can be provided as a decoded binary
+                  or hexadecimal string.
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection (ZKsync chain only).
+
+    ## Returns
+    - A map containing detailed information about the specified ZKsync transaction:
+        isL1Originated: Boolean - Indicates whether the transaction originated on Layer 1.
+        status: String - current status of the transaction (e.g., verified).
+        fee: QUANTITY, 32 bytes - transaction fee.
+        gasPerPubdata: QUANTITY, 32 bytes - gas amount per unit of public data for this transaction.
+        initiatorAddress: DATA, 20 bytes - address of the transaction initiator.
+        receivedAt: String - timestamp when the transaction was received.
+        ethCommitTxHash: DATA, 32 bytes - transaction hash of the commit operation.
+        ethProveTxHash: DATA, 32 bytes - transaction hash of the proof submission.
+        ethExecuteTxHash: DATA, 32 bytes - transaction hash of the execution.
+  """
+  @spec fetch_transaction_details_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
+  def fetch_transaction_details_by_hash(raw_hash, json_rpc_named_arguments)
+      when is_binary(raw_hash) and is_list(json_rpc_named_arguments) do
+    hash = prepare_transaction_hash(raw_hash)
+
+    req =
+      EthereumJSONRPC.request(%{
+        id: 0,
+        method: "zks_getTransactionDetails",
+        params: [hash]
+      })
+
+    error_message = &"Cannot call zks_getTransactionDetails for hash #{hash}. Error: #{inspect(&1)}"
+
+    {:ok, resp} =
+      IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, @rpc_resend_attempts)
+
+    resp
+  end
+
+  @doc """
     Fetches the latest sealed batch number from the RPC endpoint using the `zks_L1BatchNumber` call.
 
     ## Parameters
