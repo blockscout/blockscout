@@ -1,5 +1,102 @@
 # Changelog
 
+## 7.0.0
+
+### 🚀 Features
+
+- NFT collection trigger refetch Admin API endpoint ([#10263](https://github.com/blockscout/blockscout/issues/10263))
+- Improve NFT sanitizers ([#11543](https://github.com/blockscout/blockscout/issues/11543))
+- Add new endpoint /api/v2/proxy/account-abstraction/status ([#11784](https://github.com/blockscout/blockscout/issues/11784))
+- Adds support for NeonVM linked Solana transactions ([#11667](https://github.com/blockscout/blockscout/issues/11667)) ([#11736](https://github.com/blockscout/blockscout/issues/11736))
+- Enable /api/v2/internal-transactions endpoint ([#11792](https://github.com/blockscout/blockscout/issues/11792))
+- Integrate metadata tags to search ([#11719](https://github.com/blockscout/blockscout/issues/11719))
+- Add Arweave NFT image link parsing support ([#11565](https://github.com/blockscout/blockscout/issues/11565))
+- Disable re-verification from partial to partial match by default ([#11737](https://github.com/blockscout/blockscout/issues/11737))
+- DB Index heavy operations processing module ([#11604](https://github.com/blockscout/blockscout/issues/11604))
+- Multiple strategies for filecoin address info fetching ([#11412](https://github.com/blockscout/blockscout/issues/11412))
+- Preload NFT to token transfers ([#11756](https://github.com/blockscout/blockscout/issues/11756))
+- Add show_scam_tokens cookie ([#11747](https://github.com/blockscout/blockscout/issues/11747))
+- Add ENS and metadata preload to /api/v2/tokens/{hash}/instances ([#11760](https://github.com/blockscout/blockscout/issues/11760))
+- Return 200 on addresses which are not present in DB ([#11506](https://github.com/blockscout/blockscout/issues/11506))
+- Enhance txlistinternal API v1: make transaction hash and address hash not mandatory ([#11717](https://github.com/blockscout/blockscout/issues/11717))
+- Backfill for Arbitrum-specific information in blocks and transactions ([#11163](https://github.com/blockscout/blockscout/issues/11163))
+- Ignore events older than 24 hours in Explorer.Account.Notifier.… ([#11654](https://github.com/blockscout/blockscout/issues/11654))
+- Add timeout env for proxy metadata requests ([#11656](https://github.com/blockscout/blockscout/issues/11656))
+- Support filecoin addresses in search ([#11499](https://github.com/blockscout/blockscout/issues/11499))
+- Return error on verification if address is not a smart contract ([#11504](https://github.com/blockscout/blockscout/issues/11504))
+
+### 🐛 Bug Fixes
+
+- Hanlde invalid BLACKFORT_VALIDATOR_API_URL ([#11812](https://github.com/blockscout/blockscout/issues/11812))
+- Fix scam addresses ban in quick search ([#11810](https://github.com/blockscout/blockscout/issues/11810))
+- Handle case when `epoch_distribution` is `nil` ([#11807](https://github.com/blockscout/blockscout/issues/11807))
+- Strict mode for timestamp to block number conversion ([#11633](https://github.com/blockscout/blockscout/issues/11633))
+- Don't store ipfs gateway in metadata ([#11673](https://github.com/blockscout/blockscout/issues/11673))
+- Use 0 as a default for v field in transactions ([#11800](https://github.com/blockscout/blockscout/issues/11800))
+- Fix tests ([#11805](https://github.com/blockscout/blockscout/issues/11805))
+- Use safe field access in CurrentTokenBalances.should_update?/2 ([#11804](https://github.com/blockscout/blockscout/issues/11804))
+- Run Neon tests on neon chain type only ([#11802](https://github.com/blockscout/blockscout/issues/11802))
+- Sanitize addresses of smart contracts having `verified` set to `false`  ([#11727](https://github.com/blockscout/blockscout/issues/11727))
+- Celestia info parsing ([#11678](https://github.com/blockscout/blockscout/issues/11678))
+- `EIP1559ConfigUpdate` and `Indexer.Block.Realtime.Fetcher` fetchers were unstable for L2 reorgs, `brotli` lib was replaced ([#11714](https://github.com/blockscout/blockscout/issues/11714))
+- Add traceable blocks filtering to contract code fetcher ([#11700](https://github.com/blockscout/blockscout/issues/11700))
+- Improve token metadata update process ([#11710](https://github.com/blockscout/blockscout/issues/11710))
+- Add typeless handler for call_tracer ([#11766](https://github.com/blockscout/blockscout/issues/11766))
+- Add consensus filter to reindex internal transactions migration ([#11732](https://github.com/blockscout/blockscout/issues/11732))
+- Add error handling to chunked json rpc decode json ([#11734](https://github.com/blockscout/blockscout/issues/11734))
+- New methods submitting Arbitrum batches supported ([#11731](https://github.com/blockscout/blockscout/issues/11731))
+- Don't fail on pending transactions in Explorer.Account.Notifier.Notify ([#11724](https://github.com/blockscout/blockscout/issues/11724))
+- Add flat value to BoundInterval increase/decrease ([#11708](https://github.com/blockscout/blockscout/issues/11708))
+- Add missing condition to reindex internal transactions migration ([#11709](https://github.com/blockscout/blockscout/issues/11709))
+- Add 'yParity' alias ([#11642](https://github.com/blockscout/blockscout/issues/11642))
+- Fix address coin balances transformer ([#11627](https://github.com/blockscout/blockscout/issues/11627))
+- Improve session handling in account v2 ([#11420](https://github.com/blockscout/blockscout/issues/11420))
+- Add /metrics handler for indexer mode ([#11672](https://github.com/blockscout/blockscout/issues/11672))
+- Ease SQL query for EIP1559ConfigUpdate fetcher ([#11659](https://github.com/blockscout/blockscout/issues/11659))
+- Fix enoent in Indexer.NFTMediaHandler.Queue ([#11653](https://github.com/blockscout/blockscout/issues/11653))
+- Add function clause for wrong first trace result format ([#11655](https://github.com/blockscout/blockscout/issues/11655))
+- Intercept error during DB drop ([#11618](https://github.com/blockscout/blockscout/issues/11618))
+- Update EmptyBlocksSanitizer logic due to refetch_needed field ([#11660](https://github.com/blockscout/blockscout/issues/11660))
+
+### 🚜 Refactor
+
+- All env variables related to DB migration processes now have "MIGRATION_" prefix ([#11798](https://github.com/blockscout/blockscout/issues/11798))
+
+### ⚡ Performance
+
+- Smart contracts list query ([#11733](https://github.com/blockscout/blockscout/issues/11733))
+
+### ⚙️ Miscellaneous Tasks
+
+- Create /api/v2/proxy/3dparty/ root path for 3dparty proxy API endpoints ([#11808](https://github.com/blockscout/blockscout/issues/11808))
+- Mention WC Project ID in common-frontend.env ([#11799](https://github.com/blockscout/blockscout/issues/11799))
+- Remove api v1 health endpoints ([#11573](https://github.com/blockscout/blockscout/issues/11573))
+- Add env var for realtime fetcher polling period ([#11783](https://github.com/blockscout/blockscout/issues/11783))
+- Refactor composite keys filtering ([#11473](https://github.com/blockscout/blockscout/issues/11473))
+- Upsert token instances by batches ([#11685](https://github.com/blockscout/blockscout/issues/11685))
+- Fix spelling in some modules ([#11791](https://github.com/blockscout/blockscout/issues/11791))
+- Update Twitter URL to x.com format ([#11761](https://github.com/blockscout/blockscout/issues/11761))
+- Reduce the number of queries for token type ([#11674](https://github.com/blockscout/blockscout/issues/11674))
+- Increase verbosity of error logs in TokenInstanceMetadataRefetch ([#11758](https://github.com/blockscout/blockscout/issues/11758))
+- Support snake case in ImportController ([#11501](https://github.com/blockscout/blockscout/issues/11501))
+- Pass chain id to Transaction Interpretation service ([#11745](https://github.com/blockscout/blockscout/issues/11745))
+- Deprecating of CHECKSUM_FUNCTION variable ([#10480](https://github.com/blockscout/blockscout/issues/10480))
+- Arbitrum claiming enhancements ([#11552](https://github.com/blockscout/blockscout/issues/11552))
+- Fix text in the template and update localization files ([#11715](https://github.com/blockscout/blockscout/issues/11715))
+- Decrease catchup interval ([#11626](https://github.com/blockscout/blockscout/issues/11626))
+
+## 6.10.2
+
+### ⚙️ Miscellaneous Tasks
+
+- Add captcha to account wallet login as well ([#11682](https://github.com/blockscout/blockscout/issues/11682))
+
+### New ENV Variables
+
+| Variable              | Description                                                                                                                                                      | Parameters                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `RE_CAPTCHA_BYPASS_TOKEN` | Bypass token that allows to skip reCAPTCHA check. Implemented in [#11682](https://github.com/blockscout/blockscout/pull/11682) | <p>Version: v6.10.2+<br>Default: (empty)<br>Applications: API</p>
+
 ## 6.10.1
 
 ### 🚀 Features
