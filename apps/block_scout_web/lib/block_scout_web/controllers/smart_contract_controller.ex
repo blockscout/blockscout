@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.SmartContractController do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.SmartContract.{Reader, Writer}
 
-  import Explorer.SmartContract.Solidity.Verifier, only: [parse_boolean: 1]
+  import Explorer.Helper, only: [parse_boolean: 1]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action} = params) do

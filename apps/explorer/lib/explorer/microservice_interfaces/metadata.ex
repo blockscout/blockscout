@@ -69,6 +69,36 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
     end
   end
 
+  @doc """
+  Searches for metadata tags by name, handling pagination via `next_page_params`.
+
+  ## Parameters
+    - `name`: The name of the tag to search for.
+    - `next_page_params`: A map containing pagination parameters from the previous request.
+
+  ## Returns
+    - `{:ok, %{items: list(), next_page_params: map() | nil}}` on success.
+    - `{:error, String.t()}` on error.
+    - `:disabled` if the microservice is disabled.
+  """
+  @spec search_tags_by_name(String.t(), map() | nil) :: {:ok, map()} | :disabled | {:error, String.t()}
+  def search_tags_by_name(name, next_page_params) do
+    case Microservice.check_enabled(__MODULE__) do
+      :ok ->
+        params =
+          Map.merge(next_page_params || %{}, %{
+            name: name,
+            chain_id: Application.get_env(:block_scout_web, :chain_id),
+            tag_types: "protocol,name"
+          })
+
+        http_get_request(tags_search_url(), params, &prepare_search_results/1)
+
+      _ ->
+        :disabled
+    end
+  end
+
   defp http_get_request(url, params, parsing_function \\ &decode_meta/1) do
     headers = []
 
@@ -119,6 +149,10 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
   defp addresses_url do
     "#{base_url()}/addresses"
+  end
+
+  defp tags_search_url do
+    "#{base_url()}/tags%3Asearch"
   end
 
   defp base_url do
@@ -182,4 +216,23 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   end
 
   defp prepare_addresses_response(_), do: :error
+
+  defp prepare_search_results({:ok, %{"items" => items, "next_page_params" => next_page_params}}) do
+    items =
+      Enum.reduce(items, [], fn %{"tag" => tag, "addresses" => addresses}, tags_list ->
+        prepared_tag = decode_meta_in_tag(tag)
+
+        tags_list ++
+          (addresses
+           |> Enum.with_index(fn address, index ->
+             address_hash = Chain.string_to_address_hash_or_nil(address)
+             address_hash && %{metadata: prepared_tag, hash: address_hash, addresses_index: index}
+           end)
+           |> Enum.reject(&is_nil/1))
+      end)
+
+    {:ok, %{items: items, next_page_params: next_page_params}}
+  end
+
+  defp prepare_search_results(_), do: :error
 end

@@ -20,6 +20,6 @@ defmodule BlockScoutWeb.SocialMediaTest do
     Application.put_env(:block_scout_web, BlockScoutWeb.SocialMedia, twitter: "MyTwitterProfile")
 
     links = SocialMedia.links()
-    assert links[:twitter] == "https://www.twitter.com/MyTwitterProfile"
+    assert links[:twitter] == "https://www.x.com/MyTwitterProfile"
   end
 end

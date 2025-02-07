@@ -151,6 +151,16 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> process_response(conn)
   end
 
+  @doc """
+    Function to handle GET requests to `/api/v2/proxy/account-abstraction/status` endpoint.
+  """
+  @spec status(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
+  def status(conn, params) do
+    params
+    |> AccountAbstraction.get_status()
+    |> process_response(conn)
+  end
+
   defp extended_info(response) do
     address_hashes =
       response
