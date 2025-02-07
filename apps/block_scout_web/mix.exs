@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.Mixfile do
       "lib/block_scout_web/application.ex",
       "lib/block_scout_web/endpoint.ex",
       "lib/block_scout_web/health_router.ex",
-      "lib/block_scout_web/controllers/api/v1/health_controller.ex",
+      "lib/block_scout_web/controllers/api/health_controller.ex",
       "lib/block_scout_web/prometheus/exporter.ex"
     ]
 
