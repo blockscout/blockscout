@@ -349,6 +349,9 @@ defmodule Explorer.Chain.Transaction do
                                 :celo ->
                                   ~w(gateway_fee gas_fee_recipient_address_hash gas_token_contract_address_hash)a
 
+                                :zksync ->
+                                  ~w(received_at_timestamp)a
+
                                 _ ->
                                   ~w()a
                               end)
