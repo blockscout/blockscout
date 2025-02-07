@@ -8,4 +8,4 @@ lib/explorer/smart_contract/stylus/publisher_worker.ex:8
 lib/phoenix/router.ex:402
 lib/explorer/chain/search.ex:81
 lib/explorer/chain/search.ex:228
-lib/explorer/chain/search.ex:319
+lib/explorer/chain/search.ex:324
