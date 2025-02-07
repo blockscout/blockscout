@@ -491,6 +491,19 @@ defmodule Explorer.Chain do
     Map.merge(initial_gas_payments, existing_data)
   end
 
+  def timestamp_by_block_number(block_numbers) when is_list(block_numbers) do
+    query =
+      from(
+        block in Block,
+        where: block.number in ^block_numbers and block.consensus == true,
+        select: {block.number, block.timestamp}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
   def timestamp_by_block_hash(block_hashes) when is_list(block_hashes) do
     query =
       from(
