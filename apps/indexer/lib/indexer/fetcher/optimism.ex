@@ -47,6 +47,36 @@ defmodule Indexer.Fetcher.Optimism do
   end
 
   @doc """
+  Fetches the chain id from the RPC.
+
+  ## Parameters
+  - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+  ## Returns
+  - The chain id as unsigned integer.
+  - `nil` if the request failed.
+  """
+  @spec fetch_chain_id(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer() | nil
+  def fetch_chain_id(json_rpc_named_arguments) do
+    error_message = &"Cannot read `eth_chainId`. Error: #{inspect(&1)}"
+
+    request = request(%{id: 0, method: "eth_chainId", params: []})
+
+    case Helper.repeated_call(
+           &json_rpc/2,
+           [request, json_rpc_named_arguments],
+           error_message,
+           Helper.infinite_retries_number()
+         ) do
+      {:ok, response} ->
+        quantity_to_integer(response)
+
+      _ ->
+        nil
+    end
+  end
+
+  @doc """
   Calculates average block time in milliseconds (based on the latest 100 blocks) divided by 2.
   Sends corresponding requests to the RPC node.
   Returns a tuple {:ok, block_check_interval, last_safe_block}

@@ -123,7 +123,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
            Optimism.get_block_check_interval(json_rpc_named_arguments) do
       start_block = max(start_block_l1, last_l1_block_number)
 
-      chain_id_l1 = fetch_chain_id(json_rpc_named_arguments)
+      chain_id_l1 = Optimism.fetch_chain_id(json_rpc_named_arguments)
 
       if is_nil(chain_id_l1) do
         Logger.warning(
@@ -1487,34 +1487,6 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     if !is_nil(start_block) and Helper.address_correct?(batch_inbox) and Helper.address_correct?(batch_submitter) do
       {start_block, String.downcase(batch_inbox), String.downcase(batch_submitter)}
-    end
-  end
-
-  # Fetches the chain id from the RPC.
-  #
-  # ## Parameters
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  #
-  # ## Returns
-  # - The chain id as unsigned integer.
-  # - `nil` if the request failed.
-  @spec fetch_chain_id(EthereumJSONRPC.json_rpc_named_arguments()) :: non_neg_integer() | nil
-  defp fetch_chain_id(json_rpc_named_arguments) do
-    error_message = &"Cannot read `eth_chainId`. Error: #{inspect(&1)}"
-
-    request = EthereumJSONRPC.request(%{id: 0, method: "eth_chainId", params: []})
-
-    case Helper.repeated_call(
-           &json_rpc/2,
-           [request, json_rpc_named_arguments],
-           error_message,
-           Helper.infinite_retries_number()
-         ) do
-      {:ok, response} ->
-        quantity_to_integer(response)
-
-      _ ->
-        nil
     end
   end
 
