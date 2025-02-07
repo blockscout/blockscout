@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Hash, Transaction}
+  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
@@ -91,10 +91,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
     {:ok, final} =
       case queue_data_type(json_rpc_named_arguments) do
         :block_number ->
-          Chain.stream_blocks_with_unfetched_internal_transactions(initial, stream_reducer)
+          PendingBlockOperation.stream_blocks_with_unfetched_internal_transactions(initial, stream_reducer)
 
         :transaction_params ->
-          Chain.stream_transactions_with_unfetched_internal_transactions(initial, stream_reducer)
+          PendingTransactionOperation.stream_transactions_with_unfetched_internal_transactions(initial, stream_reducer)
       end
 
     final

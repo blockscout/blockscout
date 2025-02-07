@@ -15,7 +15,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   alias EthereumJSONRPC.Block.ByNumber
   alias EthereumJSONRPC.Blocks
   alias Explorer.Repo
-  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
+  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Utility.SwitchPendingOperations
 
@@ -202,10 +202,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
         |> Repo.delete_all()
 
       "transactions" ->
-        PendingTransactionOperation
-        |> join(:inner, [pto], t in assoc(pto, :transaction))
-        |> where([_pto, t], t.block_hash in ^block_hashes)
-        |> Repo.delete_all()
+        :ok
     end
   rescue
     postgrex_error in Postgrex.Error ->

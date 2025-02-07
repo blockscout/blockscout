@@ -60,7 +60,7 @@ defmodule Indexer.Fetcher.PendingBlockOperationsSanitizer do
       |> update([pbo, po, b], set: [block_number: b.number])
       |> Repo.update_all([], timeout: @timeout)
 
-    transactions = Enum.map(block_numbers, &Chain.get_transactions_of_block_number/1)
+    transactions = Chain.get_transactions_of_block_numbers(block_numbers)
 
     InternalTransaction.async_fetch(block_numbers, transactions, false)
 

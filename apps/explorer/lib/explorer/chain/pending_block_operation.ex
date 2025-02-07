@@ -5,6 +5,8 @@ defmodule Explorer.Chain.PendingBlockOperation do
 
   use Explorer.Schema
 
+  import Explorer.Chain, only: [add_fetcher_limit: 2]
+
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Repo
 
@@ -54,5 +56,44 @@ defmodule Explorer.Chain.PendingBlockOperation do
     |> where([pbo], pbo.block_number <= ^to_block_number)
     |> select([pbo], count(pbo.block_number))
     |> Repo.one()
+  end
+
+  @doc """
+  Returns a stream of all blocks with unfetched internal transactions, using
+  the `pending_block_operation` table.
+
+      iex> unfetched = insert(:block)
+      iex> insert(:pending_block_operation, block: unfetched, block_number: unfetched.number)
+      iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
+      ...>   MapSet.new(),
+      ...>   fn number, acc ->
+      ...>     MapSet.put(acc, number)
+      ...>   end
+      ...> )
+      iex> unfetched.number in number_set
+      true
+
+  """
+  @spec stream_blocks_with_unfetched_internal_transactions(
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator),
+          limited? :: boolean()
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_blocks_with_unfetched_internal_transactions(initial, reducer, limited? \\ false)
+      when is_function(reducer, 2) do
+    direction = Application.get_env(:indexer, :internal_transactions_fetch_order)
+
+    query =
+      from(
+        po in __MODULE__,
+        where: not is_nil(po.block_number),
+        select: po.block_number,
+        order_by: [{^direction, po.block_number}]
+      )
+
+    query
+    |> add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
   end
 end

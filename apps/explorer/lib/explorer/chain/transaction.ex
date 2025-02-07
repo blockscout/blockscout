@@ -1315,6 +1315,16 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
+  Builds an `Ecto.Query` to fetch transactions for the specified block_numbers
+  """
+  def transactions_for_block_numbers(block_numbers) do
+    from(
+      t in Transaction,
+      where: t.block_number in ^block_numbers
+    )
+  end
+
+  @doc """
   Builds an `Ecto.Query` to fetch the last nonce from the given address hash.
 
   The last nonce value means the total of transactions that the given address has sent through the
