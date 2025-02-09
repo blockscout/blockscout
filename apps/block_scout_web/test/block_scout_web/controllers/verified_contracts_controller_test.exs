@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
     end
 
     test "returns yul contract", %{conn: conn} do
-      %SmartContract{address_hash: yul_hash} = insert(:smart_contract, abi: nil)
+      %SmartContract{address_hash: yul_hash} = insert(:smart_contract, abi: nil, language: nil)
       insert(:smart_contract)
 
       path =
