@@ -1433,24 +1433,29 @@ defmodule Explorer.Chain.SmartContract do
 
   defp filter_contracts(basic_query, nil), do: basic_query
 
-  defp filter_contracts(basic_query, :solidity) do
-    basic_query
-    |> where(is_vyper_contract: ^false)
-  end
-
-  defp filter_contracts(basic_query, :vyper) do
-    basic_query
-    |> where(is_vyper_contract: ^true)
-  end
-
-  defp filter_contracts(basic_query, :yul) do
-    from(query in basic_query, where: is_nil(query.abi))
-  end
-
   defp filter_contracts(basic_query, language) do
-    from(query in basic_query,
-      where: query.language == ^language
-    )
+    basic_query
+    |> where(language: ^language)
+    |> filter_contracts_on_legacy_fields(language)
+  end
+
+  defp filter_contracts_on_legacy_fields(basic_query, language) do
+    case language do
+      :solidity ->
+        basic_query
+        |> or_where([sc], not sc.is_vyper_contract and is_nil(sc.language))
+
+      :vyper ->
+        basic_query
+        |> or_where([sc], sc.is_vyper_contract and is_nil(sc.language))
+
+      :yul ->
+        basic_query
+        |> or_where([sc], is_nil(sc.abi) and is_nil(sc.language))
+
+      _ ->
+        basic_query
+    end
   end
 
   @doc """
@@ -1474,6 +1479,22 @@ defmodule Explorer.Chain.SmartContract do
 
       _ ->
         nil
+    end
+  end
+
+  def language(smart_contract) do
+    cond do
+      not is_nil(smart_contract.language) ->
+        smart_contract.language
+
+      smart_contract.is_vyper_contract ->
+        :vyper
+
+      is_nil(smart_contract.abi) ->
+        :yul
+
+      true ->
+        :solidity
     end
   end
 end
