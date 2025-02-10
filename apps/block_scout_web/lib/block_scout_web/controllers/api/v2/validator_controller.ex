@@ -179,8 +179,20 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
   """
   @spec zilliqa_validator(Plug.Conn.t(), map()) :: Plug.Conn.t() | :error | {:error, :not_found}
   def zilliqa_validator(conn, %{"bls_public_key" => bls_public_key_string}) do
+    options =
+      [
+        necessity_by_association: %{
+          [
+            control_address: [:names, :smart_contract, proxy_implementations_association()],
+            reward_address: [:names, :smart_contract, proxy_implementations_association()],
+            signing_address: [:names, :smart_contract, proxy_implementations_association()]
+          ] => :optional
+        }
+      ]
+      |> Keyword.merge(@api_true)
+
     with {:ok, _bls_public_key} <- BLSPublicKey.cast(bls_public_key_string),
-         {:ok, staker} <- ValidatorZilliqa.bls_public_key_to_staker(bls_public_key_string, api?: true) do
+         {:ok, staker} <- ValidatorZilliqa.bls_public_key_to_staker(bls_public_key_string, options) do
       render(conn, :zilliqa_validator, %{validator: staker})
     else
       :error ->

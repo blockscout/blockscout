@@ -101,7 +101,7 @@ defmodule Explorer.Chain.Zilliqa.Staker do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     sorting = Keyword.get(options, :sorting, [])
 
-    __MODULE__
+    active_stakers_query()
     |> Chain.join_associations(necessity_by_association)
     |> SortingHelper.apply_sorting(sorting, @default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
