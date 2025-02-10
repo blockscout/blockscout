@@ -198,14 +198,15 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
   end
 
   if @chain_type == :zilliqa do
-    alias Explorer.Chain.Zilliqa.Staker, as: ValidatorZilliqa
+    alias Explorer.Chain.Zilliqa.Staker
     alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
+    alias Explorer.Chain.Cache.BlockNumber
 
     @page_limit 50
 
     # A helper to verify the JSON structure for a single validator.
     # Adjust the expectations based on what your prepare functions return.
-    defp check_validator_json(%ValidatorZilliqa{} = validator, json) do
+    defp check_validator_json(%Staker{} = validator, json) do
       assert json["peer_id"] == validator.peer_id
       assert json["added_at_block_number"] == validator.added_at_block_number
       assert json["stake_updated_at_block_number"] == validator.stake_updated_at_block_number
@@ -242,6 +243,28 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
         assert length(second_page["items"]) == total_validators - @page_limit
         assert second_page["next_page_params"] == nil
       end
+    end
+
+    test "returns only active stakers", %{conn: conn} do
+      staker = insert(:zilliqa_staker)
+      insert(:zilliqa_staker, balance: 0)
+      insert(:zilliqa_staker, added_at_block_number: 2 ** 31 - 1)
+
+      bls_key = to_string(staker.bls_public_key)
+      index = staker.index
+      balance = to_string(staker.balance)
+
+      request = get(conn, "/api/v2/validators/zilliqa", %{"filter" => "active"})
+
+      assert %{
+               "items" => [
+                 %{
+                   "bls_public_key" => ^bls_key,
+                   "index" => ^index,
+                   "balance" => ^balance
+                 }
+               ]
+             } = json_response(request, 200)
     end
 
     describe "GET /api/v2/validators/zilliqa/:bls_public_key" do
