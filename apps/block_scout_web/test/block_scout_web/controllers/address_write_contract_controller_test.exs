@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.AddressWriteContractControllerTest do
 
       insert(:smart_contract, address_hash: contract_address.hash, contract_code_md5: "123")
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       conn =
         get(conn, address_write_contract_path(BlockScoutWeb.Endpoint, :index, Address.checksum(contract_address.hash)))

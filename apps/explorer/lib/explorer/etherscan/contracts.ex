@@ -52,9 +52,7 @@ defmodule Explorer.Etherscan.Contracts do
                   implementation_address_fetched?: false,
                   refetch_necessity_checked?: false
                 },
-                [
-                  {:proxy_without_abi?, true}
-                ]
+                []
               )
 
             address_verified_bytecode_twin_contract =

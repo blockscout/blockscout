@@ -133,7 +133,7 @@ defmodule Explorer.TestHelper do
     |> mock_oz_storage_pointer_request(false, "0x000000000000000000000000" <> address_hash_string)
   end
 
-  def get_eip1967_implementation_zero_addresses do
+  def get_all_proxies_implementation_zero_addresses do
     EthereumJSONRPC.Mox
     |> mock_logic_storage_pointer_request(false)
     |> mock_beacon_storage_pointer_request(false)
@@ -147,8 +147,6 @@ defmodule Explorer.TestHelper do
     |> mock_logic_storage_pointer_request(true)
     |> mock_beacon_storage_pointer_request(true)
     |> mock_oz_storage_pointer_request(true)
-    |> mock_eip_1822_storage_pointer_request(true)
-    |> mock_eip_2535_storage_pointer_request(true)
   end
 
   def fetch_token_uri_mock(url, token_contract_address_hash_string) do

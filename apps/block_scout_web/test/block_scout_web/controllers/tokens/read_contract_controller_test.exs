@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.Tokens.ContractControllerTest do
         token: token
       )
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       conn = get(conn, token_read_contract_path(BlockScoutWeb.Endpoint, :index, token.contract_address_hash))
 

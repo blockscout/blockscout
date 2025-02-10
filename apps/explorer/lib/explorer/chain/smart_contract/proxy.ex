@@ -60,19 +60,11 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, options)
       when not is_nil(proxy_address_hash) do
     %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: proxy_type} =
-      if options[:proxy_without_abi?] do
-        try_to_get_implementation_from_known_proxy_patterns(
-          proxy_address_hash,
-          nil,
-          false
-        )
-      else
-        try_to_get_implementation_from_known_proxy_patterns(
-          proxy_address_hash,
-          proxy_abi,
-          true
-        )
-      end
+      try_to_get_implementation_from_known_proxy_patterns(
+        proxy_address_hash,
+        proxy_abi,
+        true
+      )
 
     save_implementation_data(
       implementation_address_hash_strings,
@@ -232,17 +224,23 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
         case implementation_address_hash_strings do
           [] -> {:cont, result}
-          :error -> {:cont, result}
+          :error -> {:halt, result}
           _ -> {:halt, result}
         end
       end)
 
-    if implementation_address_hash_strings == [] ||
-         implementation_address_hash_strings == [burn_address_hash_string()] ||
-         implementation_address_hash_strings == :error do
-      fallback_proxy_detection(proxy_address_hash, proxy_abi, implementation_address_hash_strings_fallback(nil))
-    else
-      %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: proxy_type}
+    case implementation_address_hash_strings do
+      :error ->
+        fallback_proxy_detection(proxy_address_hash, proxy_abi, implementation_address_hash_strings_fallback(:error))
+
+      [] ->
+        fallback_proxy_detection(proxy_address_hash, proxy_abi, implementation_address_hash_strings_fallback(nil))
+
+      ["0x0000000000000000000000000000000000000000"] ->
+        fallback_proxy_detection(proxy_address_hash, proxy_abi, implementation_address_hash_strings_fallback(nil))
+
+      _ ->
+        %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: proxy_type}
     end
   end
 
@@ -322,13 +320,6 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       }
     end
   end
-
-  # defp implementation_address_hash_string_to_list(implementation_address_hash_strings)
-  #      when is_list(implementation_address_hash_strings),
-  #      do: implementation_address_hash_strings
-
-  # defp implementation_address_hash_string_to_list(implementation_address_hash_string),
-  #   do: [implementation_address_hash_string]
 
   defp implementation_address_hash_strings_fallback(implementation_value) do
     value = if implementation_value == :error, do: :error, else: []
