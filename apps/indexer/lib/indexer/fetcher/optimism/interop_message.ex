@@ -2,7 +2,18 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
   @moduledoc """
     Fills op_interop_messages DB table.
 
-    ...
+    The table stores indexed interop messages which are got from `SentMessage` and `RelayedMessage` events
+    emitted by the `L2ToL2CrossDomainMessenger` predeploy smart contract. The messages are scanned starting from
+    the block number defined in INDEXER_OPTIMISM_L2_INTEROP_START_BLOCK env variable. If the variable is not
+    defined, the module doesn't start.
+
+    Each message always consists of two transactions: initial transaction on the source chain and relay transaction
+    on the target chain. The initial transaction emits the `SentMessage` event, and the relay transaction emits the
+    `RelayedMessage` event.
+
+    The message is treated as outgoing when its initial transaction was created on the local chain and the corresponding
+    relay transaction was executed on the remote chain. The message is treated as incoming when its initial transaction
+    was created on the remote chain and the corresponding relay transaction was executed on the local chain.
   """
 
   use GenServer
@@ -54,18 +65,17 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
   end
 
   # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
-  # during initialization. It checks the value of INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP env variable, waits for the
-  # Holocene block (if the module starts before Holocene activation), defines the block range which must be scanned
-  # to handle `extraData` fields, and retrieves the dynamic EIP-1559 parameters (denominator and multiplier) for each block.
-  # The changed parameter values are then written to the `op_eip1559_config_updates` database table.
+  # during initialization. It checks the value of INDEXER_OPTIMISM_L2_INTEROP_START_BLOCK env variable, defines the
+  # block range which must be scanned to handle `SentMessage` and `RelayedMessage` events, and starts the handling loop.
   #
-  # The block range is split into chunks which max size is defined by INDEXER_OPTIMISM_L2_HOLOCENE_BLOCKS_CHUNK_SIZE
+  # The block range is split into chunks which max size is defined by INDEXER_OPTIMISM_L2_ETH_GET_LOGS_RANGE_SIZE
   # env variable.
   #
-  # If the Holocene is not activated yet, the function waits for the Holocene block first.
+  # Also, the function fetches the current chain id to use it in the handler (to write correct `init_chain_id` and
+  # `relay_chain_id` fields).
   #
   # When the initialization succeeds, the `:continue` message is sent to GenServer to start the catchup loop
-  # retrieving and saving historical parameter updates.
+  # retrieving and saving historical events (and after that, it's switched to realtime mode).
   #
   # ## Parameters
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to RPC node.
@@ -74,7 +84,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
   # ## Returns
   # - `{:noreply, state}` when the initialization is successful and the fetching can start. The `state` contains
   #                       necessary parameters needed for the fetching.
-  # - `{:stop, :normal, %{}}` in case of error or when the INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP is not defined.
+  # - `{:stop, :normal, %{}}` in case of error or when the INDEXER_OPTIMISM_L2_INTEROP_START_BLOCK is not defined.
   @impl GenServer
   @spec handle_continue(EthereumJSONRPC.json_rpc_named_arguments(), map()) ::
           {:noreply, map()} | {:stop, :normal, map()}
@@ -128,7 +138,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
   end
 
   # Performs the main handling loop for the specified block range. The block range is split into chunks.
-  # Max size of a chunk is defined by INDEXER_OPTIMISM_L2_HOLOCENE_BLOCKS_CHUNK_SIZE env variable.
+  # Max size of a chunk is defined by INDEXER_OPTIMISM_L2_INTEROP_START_BLOCK env variable.
   #
   # If there are reorg blocks in the block range, the reorgs are handled. In a normal situation,
   # the realtime block range is formed by `handle_info({:chain_event, :blocks, :realtime, blocks}, state)`
@@ -351,11 +361,14 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     reorg_block_number
   end
 
-  # ...
+  # Searches events in the given block range and prepares the list of items to import to `op_interop_messages` table.
   #
   # ## Parameters
-  # - ...
+  # - `start_block_number`: The start block number of the block range for which we need to search and handle the events.
+  # - `end_block_number`: The end block number of the block range for which we need to search and handle the events.
+  #                       Note that the length of the range cannot be larger than max batch request size on RPC node.
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  # - `current_chain_id`: The current chain ID to use it for `init_chain_id` or `relay_chain_id` field.
   #
   # ## Returns
   # - The number of found `SentMessage` and `RelayedMessage` events.
@@ -455,6 +468,18 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     end
   end
 
+  # Builds a map `block_number -> timestamp` from the given list of events.
+  #
+  # Firstly, the function tries to find timestamps for blocks in the `blocks` table in database.
+  # If the timestamp for block is not found in database, it's read from RPC.
+  #
+  # ## Parameters
+  # - `events`: The list of events for which we need to retrieve block timestamps.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  #
+  # ## Returns
+  # - `block_number -> timestamp` map.
+  @spec block_timestamp_by_number(list(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
   defp block_timestamp_by_number(events, json_rpc_named_arguments) do
     block_numbers =
       events
@@ -471,14 +496,24 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     |> Enum.reduce(block_timestamp_from_db, fn numbers, acc ->
       numbers
       |> get_blocks_by_numbers_from_rpc(json_rpc_named_arguments, Helper.infinite_retries_number())
-      |> Enum.reduce(acc, fn block, ts_to_bn_acc ->
+      |> Enum.reduce(acc, fn block, bn_to_ts_acc ->
         block_number = quantity_to_integer(Map.get(block, "number"))
         {:ok, timestamp} = DateTime.from_unix(quantity_to_integer(Map.get(block, "timestamp")))
-        Map.put(ts_to_bn_acc, block_number, timestamp)
+        Map.put(bn_to_ts_acc, block_number, timestamp)
       end)
     end)
   end
 
+  # Fetches blocks from RPC by their numbers.
+  #
+  # ## Parameters
+  # - `block_numbers`: The list of block numbers (each number can be integer or in form of `0x` quantity).
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+  # - `retries`: Number of retry attempts if the request fails.
+  #
+  # ## Returns
+  # - The list of blocks. The list will be empty if all retries to RPC were failed.
+  @spec get_blocks_by_numbers_from_rpc(list(), EthereumJSONRPC.json_rpc_named_arguments(), non_neg_integer()) :: list()
   defp get_blocks_by_numbers_from_rpc(block_numbers, json_rpc_named_arguments, retries) do
     request =
       block_numbers
