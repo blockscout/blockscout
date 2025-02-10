@@ -141,16 +141,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
   @spec zilliqa_validators_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def zilliqa_validators_list(conn, params) do
     options =
-      [
-        necessity_by_association: %{
-          [
-            control_address: [:names, :smart_contract, proxy_implementations_association()],
-            reward_address: [:names, :smart_contract, proxy_implementations_association()],
-            signing_address: [:names, :smart_contract, proxy_implementations_association()]
-          ] => :optional
-        }
-      ]
-      |> Keyword.merge(@api_true)
+      @api_true
       |> Keyword.merge(paging_options(params))
       |> Keyword.merge(validators_zilliqa_sorting(params))
 
