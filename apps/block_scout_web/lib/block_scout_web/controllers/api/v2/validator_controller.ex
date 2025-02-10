@@ -1,20 +1,22 @@
 defmodule BlockScoutWeb.API.V2.ValidatorController do
   use BlockScoutWeb, :controller
 
+  import Explorer.PagingOptions, only: [default_paging_options: 0]
+
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Chain.Blackfort.Validator, as: ValidatorBlackfort
   alias Explorer.Chain.Cache.{BlackfortValidatorsCounters, StabilityValidatorsCounters}
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ValidatorZilliqa
+  alias Explorer.Helper
 
   import BlockScoutWeb.PagingHelper,
     only: [
       delete_parameters_from_next_page_params: 1,
       stability_validators_state_options: 1,
       validators_blackfort_sorting: 1,
-      validators_stability_sorting: 1,
-      validators_zilliqa_sorting: 1
+      validators_stability_sorting: 1
     ]
 
   import BlockScoutWeb.Chain,
@@ -140,10 +142,25 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
   """
   @spec zilliqa_validators_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def zilliqa_validators_list(conn, params) do
+    paging_options =
+      with {:ok, index} <- Map.fetch(params, "index"),
+           {:ok, index} <- Helper.safe_parse_non_negative_integer(index) do
+        %{default_paging_options() | key: %{index: index}}
+      else
+        _ -> default_paging_options()
+      end
+
+    sorting_options =
+      case params do
+        %{"sort" => "index", "order" => "asc"} -> [asc_nulls_first: :index]
+        %{"sort" => "index", "order" => "desc"} -> [desc_nulls_last: :index]
+        _ -> []
+      end
+
     options =
       @api_true
-      |> Keyword.merge(paging_options(params))
-      |> Keyword.merge(validators_zilliqa_sorting(params))
+      |> Keyword.merge(paging_options: paging_options)
+      |> Keyword.merge(sorting_options: sorting_options)
 
     {validators, next_page} =
       options
