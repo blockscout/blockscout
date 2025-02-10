@@ -8,7 +8,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArguments do
   alias Explorer.Chain.SmartContract.Proxy
 
   @doc """
-  Get implementation address hash string following ResolvedDelegateProxy proxy pattern. It returns the value as array of the strings.
+  Get implementation address hash string following "Clone with immutable arguments" proxy pattern. It returns the value as array of the strings.
   """
   @spec get_implementation_address_hash_strings(Hash.Address.t()) :: [binary()]
   def get_implementation_address_hash_strings(proxy_address_hash, options \\ []) do
@@ -20,7 +20,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArguments do
 
   # Get implementation address hash string following "Clone with immutable arguments" pattern
   @spec get_implementation_address_hash_string(Hash.Address.t(), Keyword.t()) :: binary() | nil
-  def get_implementation_address_hash_string(proxy_address_hash, options \\ []) do
+  defp get_implementation_address_hash_string(proxy_address_hash, options) do
     case Chain.select_repo(options).get(Address, proxy_address_hash) do
       nil ->
         nil
