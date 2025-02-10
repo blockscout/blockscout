@@ -82,8 +82,10 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
     end
 
     test "returns solidity contracts", %{conn: conn} do
-      insert(:smart_contract, is_vyper_contract: true)
-      %SmartContract{address_hash: solidity_hash} = insert(:smart_contract, is_vyper_contract: false)
+      insert(:smart_contract, is_vyper_contract: true, language: nil)
+
+      %SmartContract{address_hash: solidity_hash} =
+        insert(:smart_contract, is_vyper_contract: false, language: nil)
 
       path =
         verified_contracts_path(conn, :index, %{
