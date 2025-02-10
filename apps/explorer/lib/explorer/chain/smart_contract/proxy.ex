@@ -229,17 +229,15 @@ defmodule Explorer.Chain.SmartContract.Proxy do
         end
       end)
 
-    case implementation_address_hash_strings do
-      :error ->
+    cond do
+      implementation_address_hash_strings == :error ->
         fallback_proxy_detection(proxy_address_hash, proxy_abi, implementation_address_hash_strings_fallback(:error))
 
-      [] ->
+      implementation_address_hash_strings == [] ||
+          implementation_address_hash_strings == [burn_address_hash_string()] ->
         fallback_proxy_detection(proxy_address_hash, proxy_abi, implementation_address_hash_strings_fallback(nil))
 
-      ["0x0000000000000000000000000000000000000000"] ->
-        fallback_proxy_detection(proxy_address_hash, proxy_abi, implementation_address_hash_strings_fallback(nil))
-
-      _ ->
+      true ->
         %{implementation_address_hash_strings: implementation_address_hash_strings, proxy_type: proxy_type}
     end
   end

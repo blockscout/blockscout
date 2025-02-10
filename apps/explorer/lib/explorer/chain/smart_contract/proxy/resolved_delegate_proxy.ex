@@ -3,6 +3,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
   Module for fetching proxy implementation from ResolvedDelegateProxy https://github.com/ethereum-optimism/optimism/blob/9580179013a04b15e6213ae8aa8d43c3f559ed9a/packages/contracts-bedrock/src/legacy/ResolvedDelegateProxy.sol
   """
   alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
   # 8da5cb5b = keccak256(owner())
@@ -131,7 +132,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
       |> String.trim_leading("0x")
       |> String.pad_leading(64, "0")
 
-    signature = "0x" <> @get_proxy_implementation_signature <> padded_proxy_address_hash_string
+    signature =
+      @get_proxy_implementation_signature
+      |> ExplorerHelper.adds_0x_prefix()
+      |> Kernel.<>(padded_proxy_address_hash_string)
 
     case signature
          |> SmartContractHelper.get_binary_string_from_contract_getter(
