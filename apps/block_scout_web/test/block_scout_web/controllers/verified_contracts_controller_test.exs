@@ -101,8 +101,10 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
     end
 
     test "returns vyper contract", %{conn: conn} do
-      %SmartContract{address_hash: vyper_hash} = insert(:smart_contract, is_vyper_contract: true)
-      insert(:smart_contract, is_vyper_contract: false)
+      %SmartContract{address_hash: vyper_hash} =
+        insert(:smart_contract, is_vyper_contract: true, language: nil)
+
+      insert(:smart_contract, is_vyper_contract: false, language: nil)
 
       path =
         verified_contracts_path(conn, :index, %{
@@ -118,8 +120,10 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
     end
 
     test "returns yul contract", %{conn: conn} do
-      %SmartContract{address_hash: yul_hash} = insert(:smart_contract, abi: nil, language: nil)
-      insert(:smart_contract)
+      %SmartContract{address_hash: yul_hash} =
+        insert(:smart_contract, abi: nil, language: nil)
+
+      insert(:smart_contract, language: nil)
 
       path =
         verified_contracts_path(conn, :index, %{
