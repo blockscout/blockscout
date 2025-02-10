@@ -409,7 +409,8 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{"value" => value_string, "id" => id_string}) when is_binary(value_string) and is_binary(id_string) do
+  def paging_options(%{"value" => value_string, "id" => id_string})
+      when is_binary(value_string) and is_binary(id_string) do
     with {id, ""} <- Integer.parse(id_string),
          {value, ""} <- Decimal.parse(value_string) do
       [paging_options: %{@default_paging_options | key: {nil, value, id}}]
