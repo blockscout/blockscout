@@ -207,6 +207,14 @@ defmodule Explorer.Chain.SmartContract do
   @languages_enum @languages |> Enum.with_index(1)
   @language_string_to_atom @languages |> Map.new(&{to_string(&1), &1})
 
+  case @chain_type do
+    :zilliqa ->
+      @type language :: :solidity | :vyper | :yul | :stylus_rust | :scilla
+
+    _ ->
+      @type language :: :solidity | :vyper | :yul | :stylus_rust
+  end
+
   @doc """
     Returns list of languages supported by the database schema.
   """
@@ -466,7 +474,9 @@ defmodule Explorer.Chain.SmartContract do
   * `is_yul` - field was added for storing user's choice
   * `certified` - boolean flag, which can be set for set of smart-contracts via runtime env variable to prioritize those smart-contracts in the search.
   * `is_blueprint` - boolean flag, determines if contract is ERC-5202 compatible blueprint contract or not.
-  * `language` - enum for smart contract language tracking, stands for getting rid of is_vyper_contract/is_yul bool flags.
+  * `language` - Specifies the programming language of this smart contract. Do
+     not access this field directly, use
+     `Explorer.Chain.SmartContract.language/1` instead.
   """
   Explorer.Chain.SmartContract.Schema.generate()
 
@@ -1431,14 +1441,24 @@ defmodule Explorer.Chain.SmartContract do
     )
   end
 
+  # Applies filtering to the given query based on a specified contract language.
+  # If `nil` is provided, no additional filtering is applied.
   defp filter_contracts(basic_query, nil), do: basic_query
 
+  # Filters the given query by the specified contract language, then applies
+  # legacy-based filtering to maintain compatibility during migration.
   defp filter_contracts(basic_query, language) do
     basic_query
     |> where(language: ^language)
     |> filter_contracts_on_legacy_fields(language)
   end
 
+  # Applies language-specific filtering based on legacy fields for backward
+  # compatibility. This ensures the correct results when the `language` field is
+  # not yet populated.
+  #
+  # TODO: This function is a temporary measure during background migration of
+  # the `language` field and should be removed in the future releases.
   defp filter_contracts_on_legacy_fields(basic_query, language) do
     case language do
       :solidity ->
@@ -1482,6 +1502,25 @@ defmodule Explorer.Chain.SmartContract do
     end
   end
 
+  @doc """
+  Retrieves the smart contract language, taking legacy fields into account for
+  compatibility. It first tries to retrieve the language from the `language`
+  field; if not present, it falls back to legacy boolean fields.
+
+  ## TODO
+  This function is a temporary measure during background migration of the
+  `language` field and should be removed in the future releases. Afterward, the
+  language will be retrieved directly from the `language` field.
+
+  ## Parameters
+
+    - `SmartContract.t()`: The smart contract.
+
+  ## Returns
+
+    - `language()`: An atom representing the language of the smart contract.
+  """
+  @spec language(SmartContract.t()) :: language()
   def language(smart_contract) do
     cond do
       not is_nil(smart_contract.language) ->
