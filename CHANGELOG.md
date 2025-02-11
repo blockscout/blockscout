@@ -27,6 +27,7 @@
 
 ### 🐛 Bug Fixes
 
+- Allow skip fiat_value in /api/v2/addresses/{hash}/tokens endpoint ([#11837](https://github.com/blockscout/blockscout/pull/11837))
 - Handle invalid BLACKFORT_VALIDATOR_API_URL ([#11812](https://github.com/blockscout/blockscout/issues/11812))
 - Fix scam addresses ban in quick search ([#11810](https://github.com/blockscout/blockscout/issues/11810))
 - Handle case when `epoch_distribution` is `nil` ([#11807](https://github.com/blockscout/blockscout/issues/11807))
