@@ -92,7 +92,8 @@ defmodule Explorer.Chain.Import.Runner.Optimism.InteropMessages do
           block_number: fragment("COALESCE(EXCLUDED.block_number, ?)", message.block_number),
           timestamp: fragment("COALESCE(EXCLUDED.timestamp, ?)", message.timestamp),
           relay_chain_id: fragment("EXCLUDED.relay_chain_id"),
-          relay_transaction_hash: fragment("COALESCE(EXCLUDED.relay_transaction_hash, ?)", message.relay_transaction_hash),
+          relay_transaction_hash:
+            fragment("COALESCE(EXCLUDED.relay_transaction_hash, ?)", message.relay_transaction_hash),
           payload: fragment("COALESCE(EXCLUDED.payload, ?)", message.payload),
           failed: fragment("COALESCE(EXCLUDED.failed, ?)", message.failed),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", message.inserted_at),
