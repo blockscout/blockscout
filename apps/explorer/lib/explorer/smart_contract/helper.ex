@@ -282,15 +282,15 @@ defmodule Explorer.SmartContract.Helper do
   @doc """
   Gets binary hash string from contract's getter.
   """
-  @spec get_binary_string_from_contract_getter(binary(), binary(), SmartContract.abi()) ::
+  @spec get_binary_string_from_contract_getter(binary(), binary(), SmartContract.abi(), list()) ::
           binary() | [binary()] | nil | :error
-  def get_binary_string_from_contract_getter(signature, address_hash_string, abi) do
+  def get_binary_string_from_contract_getter(signature, address_hash_string, abi, params \\ []) do
     binary_hash =
       case Reader.query_contract(
              address_hash_string,
              abi,
              %{
-               "#{signature}" => []
+               "#{signature}" => params
              },
              false
            ) do

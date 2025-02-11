@@ -3,7 +3,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
   Module for fetching proxy implementation from ResolvedDelegateProxy https://github.com/ethereum-optimism/optimism/blob/9580179013a04b15e6213ae8aa8d43c3f559ed9a/packages/contracts-bedrock/src/legacy/ResolvedDelegateProxy.sol
   """
   alias Explorer.Chain.{Hash, SmartContract}
-  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
   # 8da5cb5b = keccak256(owner())
@@ -82,6 +81,14 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
     end
   end
 
+  @doc """
+  Returns the ABI of the ResolvedDelegateProxy smart contract.
+  """
+  @spec resolved_delegate_proxy_abi() :: [map()]
+  def resolved_delegate_proxy_abi do
+    @resolved_delegate_proxy_abi
+  end
+
   # Get implementation address hash string following ResolvedDelegateProxy proxy pattern
   @spec get_implementation_address_hash_string(Hash.Address.t()) :: binary() | nil | :error
   defp get_implementation_address_hash_string(proxy_address_hash) do
@@ -126,21 +133,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.ResolvedDelegateProxy do
   defp get_implementation_from_owner(nil, _proxy_address_hash), do: nil
 
   defp get_implementation_from_owner(owner_address_hash_string, proxy_address_hash) do
-    padded_proxy_address_hash_string =
-      proxy_address_hash
-      |> to_string()
-      |> String.trim_leading("0x")
-      |> String.pad_leading(64, "0")
-
-    signature =
-      @get_proxy_implementation_signature
-      |> ExplorerHelper.adds_0x_prefix()
-      |> Kernel.<>(padded_proxy_address_hash_string)
-
-    case signature
+    case @get_proxy_implementation_signature
          |> SmartContractHelper.get_binary_string_from_contract_getter(
            owner_address_hash_string,
-           @get_proxy_implementation_method_abi
+           @get_proxy_implementation_method_abi,
+           [to_string(proxy_address_hash)]
          ) do
       <<implementation_address_hash_string::binary-size(42)>> ->
         implementation_address_hash_string
