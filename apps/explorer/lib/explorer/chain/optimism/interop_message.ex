@@ -12,9 +12,9 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   @typedoc """
     * `sender` - An address of the sender on the source chain. Can be a smart contract. Can be `nil` (when SentMessage event is not indexed yet).
     * `target` - A target address on the target chain. Can be a smart contract. Can be `nil` (when SentMessage event is not indexed yet).
-    * `nonce` - Nonce associated with the messsage sent. Unique within the source chain.
+    * `nonce` - Nonce associated with the message sent. Unique within the source chain.
     * `init_chain_id` - Chain ID of the source chain.
-    * `init_transaction_hash` - Transaction hash (on the source chain) associated with the messsage sent. Can be `nil` (when SentMessage event is not indexed yet).
+    * `init_transaction_hash` - Transaction hash (on the source chain) associated with the message sent. Can be `nil` (when SentMessage event is not indexed yet).
     * `block_number` - Block number of the `init_transaction_hash` for outgoing message. Block number of the `relay_transaction_hash` for incoming message.
     * `timestamp` - Timestamp of the `init_transaction_hash` transaction. Can be `nil` (when SentMessage event is not indexed yet).
     * `relay_chain_id` - Chain ID of the target chain.
@@ -79,7 +79,12 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   @spec get_last_item(non_neg_integer()) :: {non_neg_integer(), binary() | nil}
   def get_last_item(current_chain_id) do
     query =
-      from(m in __MODULE__, select: {m.block_number, m.init_chain_id, m.init_transaction_hash, m.relay_chain_id, m.relay_transaction_hash}, where: not is_nil(m.block_number), order_by: [desc: m.block_number], limit: 1)
+      from(m in __MODULE__,
+        select: {m.block_number, m.init_chain_id, m.init_transaction_hash, m.relay_chain_id, m.relay_transaction_hash},
+        where: not is_nil(m.block_number),
+        order_by: [desc: m.block_number],
+        limit: 1
+      )
 
     message =
       query
