@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.ExchangeRateChannel do
         %Phoenix.Socket{handler: BlockScoutWeb.UserSocketV2} = socket
       ) do
     push(socket, "new_rate", %{
-      exchange_rate: exchange_rate.usd_value,
+      exchange_rate: exchange_rate.fiat_value,
       available_supply: exchange_rate.available_supply,
       chart_data: market_history_data
     })

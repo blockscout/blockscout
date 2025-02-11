@@ -101,10 +101,10 @@ defmodule Explorer.Application do
   defp configurable_children do
     configurable_children_set =
       [
-        configure(Explorer.ExchangeRates),
-        configure(Explorer.ExchangeRates.TokenExchangeRates),
+        configure(Explorer.Market.Fetcher.Coin),
+        configure(Explorer.Market.Fetcher.Token),
+        configure(Explorer.Market.Fetcher.History),
         configure(Explorer.ChainSpec.GenesisData),
-        configure(Explorer.Market.History.Cataloger),
         configure(Explorer.Chain.Cache.ContractsCounter),
         configure(Explorer.Chain.Cache.NewContractsCounter),
         configure(Explorer.Chain.Cache.VerifiedContractsCounter),
