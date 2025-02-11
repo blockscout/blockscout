@@ -409,6 +409,17 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{"value" => value_string, "id" => id_string})
+      when is_binary(value_string) and is_binary(id_string) do
+    with {id, ""} <- Integer.parse(id_string),
+         {value, ""} <- Decimal.parse(value_string) do
+      [paging_options: %{@default_paging_options | key: {nil, value, id}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
   def paging_options(%{"smart_contract_id" => id_str} = params) do
     transactions_count = parse_integer(params["transaction_count"])
     coin_balance = parse_integer(params["coin_balance"])
