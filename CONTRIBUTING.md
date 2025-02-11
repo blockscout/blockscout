@@ -1,10 +1,10 @@
 # Contribution Guidelines: What We Are Looking For
 
 We welcome contributions that enhance the project and improve the overall quality of our codebase. While we appreciate the effort that goes into making contributions, we kindly ask that contributors focus on the following types of changes:
-	•	Feature Enhancements: Substantial improvements or new features that add significant value to the project.
-	•	Bug Fixes: Fixes for known bugs or issues that impact functionality.
-	•	Documentation Improvements: Comprehensive updates to documentation that clarify usage, installation, or project structure.
-	•	Performance Improvements: Changes that enhance the performance or efficiency of the application.
+- Feature Enhancements: Substantial improvements or new features that add significant value to the project.
+- Bug Fixes: Fixes for known bugs or issues that impact functionality.
+- Documentation Improvements: Comprehensive updates to documentation that clarify usage, installation, or project structure.
+- Performance Improvements: Changes that enhance the performance or efficiency of the application.
 
 # Contributing
 
