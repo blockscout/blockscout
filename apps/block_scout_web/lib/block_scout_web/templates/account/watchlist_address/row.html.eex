@@ -14,11 +14,11 @@
     <span class="address-current-balance">
       (<span
            data-wei-value="<%= if @watchlist_address.fetched_coin_balance, do: @watchlist_address.fetched_coin_balance.value %>"
-           data-usd-exchange-rate="<%= @exchange_rate.usd_value %>"
+           data-usd-exchange-rate="<%= @exchange_rate.fiat_value %>"
            data-placement="top"
            data-toggle="tooltip"
            data-html="true"
-           title='<%= "@ " <> to_string(@exchange_rate.usd_value) <> "/" <> Explorer.coin_name() %>'  
+           title='<%= "@ " <> to_string(@exchange_rate.fiat_value) <> "/" <> Explorer.coin_name() %>'  
            >
       </span>)
     </span>

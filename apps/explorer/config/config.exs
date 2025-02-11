@@ -82,7 +82,7 @@ config :explorer, Explorer.Chain.Cache.TransactionActionTokensData, enabled: tru
 
 config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: true
 
-config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: true
+config :explorer, Explorer.Market.Fetcher.Token, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
   enabled: true,
