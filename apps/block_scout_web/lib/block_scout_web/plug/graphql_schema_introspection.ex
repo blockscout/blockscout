@@ -1,4 +1,12 @@
 defmodule BlockScoutWeb.Plug.GraphQLSchemaIntrospection do
+  @moduledoc """
+  A plug that handles GraphQL introspection queries by returning a pre-computed
+  schema.
+
+  This plug intercepts GraphQL introspection queries and returns a cached JSON
+  response of the schema, avoiding the need to recompute the introspection
+  result for each request.
+  """
   import Plug.Conn
   alias Absinthe.Schema
 
