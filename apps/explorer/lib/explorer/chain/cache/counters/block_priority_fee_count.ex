@@ -60,7 +60,7 @@ defmodule Explorer.Chain.Cache.Counters.BlockPriorityFeeCount do
   end
 
   defp fetch_from_cache(key) do
-    Helper.fetch_from_ets_cache(key, @cache_name)
+    Helper.fetch_from_ets_cache(@cache_name, key)
   end
 
   defp get_block_hash_string(block_hash) do

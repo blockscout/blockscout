@@ -72,7 +72,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressTransactionsCount do
   end
 
   defp fetch_from_cache(key) do
-    Helper.fetch_from_ets_cache(key, @cache_name)
+    Helper.fetch_from_ets_cache(@cache_name, key)
   end
 
   defp put_into_db(address, value) do

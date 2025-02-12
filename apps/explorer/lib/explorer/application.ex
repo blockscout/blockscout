@@ -117,7 +117,6 @@ defmodule Explorer.Application do
         configure(Explorer.Chain.Cache.Counters.WithdrawalsSum),
         configure(Explorer.Chain.Transaction.History.Historian),
         configure(Explorer.Chain.Events.Listener),
-        configure(Explorer.Chain.Cache.Counters.AddressesWithBalanceCount),
         configure(Explorer.Chain.Cache.Counters.AddressesCount),
         configure(Explorer.Chain.Cache.Counters.AddressTransactionsCount),
         configure(Explorer.Chain.Cache.Counters.AddressTokenTransfersCount),

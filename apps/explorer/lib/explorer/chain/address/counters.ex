@@ -10,8 +10,7 @@ defmodule Explorer.Chain.Address.Counters do
   alias Explorer.{Chain, Repo}
 
   alias Explorer.Chain.Cache.Counters.{
-    AddressesCount,
-    AddressesWithBalanceCount,
+    AddressTabsElementsCount,
     AddressTokenTransfersCount,
     AddressTransactionsCount,
     AddressTransactionsGasUsageSum
@@ -29,8 +28,6 @@ defmodule Explorer.Chain.Address.Counters do
     Withdrawal
   }
 
-  alias Explorer.Chain.Cache.Counters.AddressTabsElementsCount
-  alias Explorer.Chain.Cache.Helper, as: CacheHelper
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
 
   require Logger
@@ -73,61 +70,6 @@ defmodule Explorer.Chain.Address.Counters do
     |> select_repo(options).exists?()
   end
 
-  @doc """
-  Gets from the cache the count of `t:Explorer.Chain.Address.t/0`'s where the `fetched_coin_balance` is > 0
-  """
-  @spec count_addresses_with_balance_from_cache :: non_neg_integer()
-  def count_addresses_with_balance_from_cache do
-    AddressesWithBalanceCount.fetch()
-  end
-
-  @doc """
-  Estimated count of `t:Explorer.Chain.Address.t/0`.
-
-  Estimated count of addresses.
-  """
-  @spec address_estimated_count() :: non_neg_integer()
-  def address_estimated_count(options \\ []) do
-    cached_value = AddressesCount.fetch()
-
-    if is_nil(cached_value) || cached_value == 0 do
-      count = CacheHelper.estimated_count_from("addresses", options)
-
-      if is_nil(count), do: 0, else: max(count, 0)
-    else
-      cached_value
-    end
-  end
-
-  @doc """
-  Counts the number of all addresses.
-
-  This function should be used with caution. In larger databases, it may take a
-  while to have the return back.
-  """
-  def count_addresses do
-    Repo.aggregate(Address, :count, timeout: :infinity)
-  end
-
-  @doc """
-  Get the total number of transactions sent by the address with the given hash according to the last block indexed.
-
-  We have to increment +1 in the last nonce result because it works like an array position, the first
-  nonce has the value 0. When last nonce is nil, it considers that the given address has 0 transactions.
-  """
-  @spec total_transactions_sent_by_address(Hash.Address.t()) :: non_neg_integer()
-  def total_transactions_sent_by_address(address_hash) do
-    last_nonce =
-      address_hash
-      |> Transaction.last_nonce_by_address_query()
-      |> Repo.one(timeout: :infinity)
-
-    case last_nonce do
-      nil -> 0
-      value -> value + 1
-    end
-  end
-
   def address_hash_to_transaction_count_query(address_hash) do
     dynamic = Transaction.where_transactions_to_from(address_hash)
 
@@ -155,30 +97,6 @@ defmodule Explorer.Chain.Address.Counters do
     query = from(block in Block, where: block.miner_hash == ^hash, select: fragment("COUNT(*)"))
 
     select_repo(options).one(query)
-  end
-
-  @doc """
-  Counts the number of addresses with fetched coin balance > 0.
-
-  This function should be used with caution. In larger databases, it may take a
-  while to have the return back.
-  """
-  def count_addresses_with_balance do
-    Repo.one(
-      Address.count_with_fetched_coin_balance(),
-      timeout: :infinity
-    )
-  end
-
-  @spec address_to_incoming_transaction_count(Hash.Address.t()) :: non_neg_integer()
-  def address_to_incoming_transaction_count(address_hash) do
-    to_address_query =
-      from(
-        transaction in Transaction,
-        where: transaction.to_address_hash == ^address_hash
-      )
-
-    Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
   end
 
   @doc """

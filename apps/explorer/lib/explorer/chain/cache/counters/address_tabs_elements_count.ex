@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressTabsElementsCount do
 
   @spec get_counter(counter_type, String.t()) :: {DateTime.t(), non_neg_integer(), response_status} | nil
   def get_counter(counter_type, address_hash) do
-    address_hash |> cache_key(counter_type) |> fetch_from_ets_cache(@cache_name, nil) |> check_staleness()
+    @cache_name |> fetch_from_ets_cache(address_hash |> cache_key(counter_type), nil) |> check_staleness()
   end
 
   @spec set_counter(counter_type, String.t(), non_neg_integer()) :: :ok
@@ -45,7 +45,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressTabsElementsCount do
 
   @spec get_task(atom, String.t()) :: true | nil
   def get_task(counter_type, address_hash) do
-    address_hash |> task_cache_key(counter_type) |> fetch_from_ets_cache(@cache_name, nil)
+    @cache_name |> fetch_from_ets_cache(address_hash |> task_cache_key(counter_type), nil)
   end
 
   def save_transactions_counter_progress(address_hash, results) do

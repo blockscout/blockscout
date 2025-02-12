@@ -18,7 +18,7 @@ defmodule Explorer.Chain.Cache.Counters.VerifiedContractsCount do
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
 
-  @counter_type "verified_contracts_counter"
+  @counter_type "verified_contracts_count"
 
   @doc """
   Starts a process to periodically update the counter of verified contracts.

@@ -118,7 +118,7 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   def index(conn, _params) do
-    transaction_estimated_count = TransactionsCount.estimated_count()
+    transaction_estimated_count = TransactionsCount.get()
 
     render(
       conn,
