@@ -39,9 +39,10 @@ defmodule Indexer.Application do
           Indexer.Fetcher.TokenInstance.Refetch.Supervisor
         ) +
         token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC1155, nil) +
-        token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC721, nil) + 1
+        token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC721, nil) + 1 + 1
 
     # + 1 (above in pool_size calculation) for the Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch
+    # + 1 (above in pool_size calculation) for the Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch
 
     base_children = [
       :hackney_pool.child_spec(:token_instance_fetcher, max_connections: pool_size),
