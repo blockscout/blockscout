@@ -15,19 +15,18 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
     enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]],
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
-  alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Address
+  alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
+  alias Explorer.Repo
 
-  @table :addresses_counter
+  @table_name :addresses_counter
 
-  @cache_key "addresses"
+  @cache_key "addresses_count"
 
-  def table_name do
-    @table
-  end
+  defp table_name, do: @table_name
 
-  def cache_key do
-    @cache_key
-  end
+  defp cache_key, do: @cache_key
 
   @doc """
   Starts a process to periodically update the counter of the token holders.
@@ -96,13 +95,23 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
   end
 
   defp do_fetch([{_, result}]), do: result
-  defp do_fetch([]), do: 0
+
+  defp do_fetch([]) do
+    CacheCountersHelper.evaluate_count(@cache_key, nil, estimated_addresses_count())
+  end
 
   @doc """
   Consolidates the info by populating the `:ets` table with the current database information.
   """
   def consolidate do
-    counter = Counters.count_addresses()
+    counter = Repo.aggregate(Address, :count, timeout: :infinity)
+
+    params = %{
+      counter_type: cache_key(),
+      value: counter
+    }
+
+    LastFetchedCounter.upsert(params)
 
     insert_counter({cache_key(), counter})
   end
@@ -120,4 +129,10 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCount do
   `config :explorer, Explorer.Chain.Cache.Counters.AddressesCount, enable_consolidation: false`
   """
   def enable_consolidation?, do: @enable_consolidation
+
+  defp estimated_addresses_count do
+    count = CacheCountersHelper.estimated_count_from("addresses")
+
+    if is_nil(count), do: 0, else: count
+  end
 end

@@ -33,7 +33,6 @@ defmodule Explorer.ChainTest do
   alias Explorer.Chain.InternalTransaction.Type
 
   alias Explorer.Chain.Supply.ProofOfAuthority
-  alias Explorer.Chain.Cache.Counters.AddressesWithBalanceCount
   alias Explorer.Chain.Cache.Counters.AddressesCount
 
   @first_topic_hex_string "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
@@ -88,22 +87,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "count_addresses_with_balance_from_cache/0" do
-    test "returns the number of addresses with fetched_coin_balance > 0" do
-      insert(:address, fetched_coin_balance: 0)
-      insert(:address, fetched_coin_balance: 1)
-      insert(:address, fetched_coin_balance: 2)
-
-      start_supervised!(AddressesWithBalanceCount)
-      AddressesWithBalanceCount.consolidate()
-
-      addresses_with_balance = Counters.count_addresses_with_balance_from_cache()
-
-      assert is_integer(addresses_with_balance)
-      assert addresses_with_balance == 2
-    end
-  end
-
   describe "address_estimated_count/0" do
     test "returns the number of all addresses" do
       insert(:address, fetched_coin_balance: 0)
@@ -113,7 +96,7 @@ defmodule Explorer.ChainTest do
       start_supervised!(AddressesCount)
       AddressesCount.consolidate()
 
-      addresses_with_balance = Counters.address_estimated_count()
+      addresses_with_balance = AddressesCount.fetch()
 
       assert is_integer(addresses_with_balance)
       assert addresses_with_balance == 3
@@ -121,7 +104,7 @@ defmodule Explorer.ChainTest do
 
     test "returns 0 on empty table" do
       start_supervised!(AddressesCount)
-      assert 0 == Counters.address_estimated_count()
+      assert 0 == AddressesCount.fetch()
     end
   end
 
@@ -292,28 +275,6 @@ defmodule Explorer.ChainTest do
       [found_log] = Chain.address_to_logs(address_hash, false, topic: fourth_topic_hex_string)
 
       assert found_log.transaction.hash == transaction1.hash
-    end
-  end
-
-  describe "total_transactions_sent_by_address/1" do
-    test "increments +1 in the last nonce result" do
-      address = insert(:address)
-
-      :transaction
-      |> insert(nonce: 100, from_address: address)
-      |> with_block(insert(:block, number: 1000))
-
-      assert Counters.total_transactions_sent_by_address(address.hash) == 101
-    end
-
-    test "returns 0 when the address did not send transactions" do
-      address = insert(:address)
-
-      :transaction
-      |> insert(nonce: 100, to_address: address)
-      |> with_block(insert(:block, number: 1000))
-
-      assert Counters.total_transactions_sent_by_address(address.hash) == 0
     end
   end
 
@@ -520,20 +481,6 @@ defmodule Explorer.ChainTest do
         |> with_block()
 
       assert Chain.block_to_transaction_count(block.hash) == 1
-    end
-  end
-
-  describe "address_to_incoming_transaction_count/1" do
-    test "without transactions" do
-      %Address{hash: address_hash} = insert(:address)
-
-      assert Counters.address_to_incoming_transaction_count(address_hash) == 0
-    end
-
-    test "with transactions" do
-      %Transaction{to_address: to_address} = insert(:transaction)
-
-      assert Counters.address_to_incoming_transaction_count(to_address.hash) == 1
     end
   end
 
@@ -955,7 +902,7 @@ defmodule Explorer.ChainTest do
         insert(:block, number: index, consensus: true)
       end
 
-      BlocksCount.estimated_count()
+      BlocksCount.get()
 
       assert Decimal.compare(Chain.indexed_ratio_blocks(), Decimal.from_float(0.5)) == :eq
     end
@@ -970,7 +917,7 @@ defmodule Explorer.ChainTest do
         Process.sleep(200)
       end
 
-      BlocksCount.estimated_count()
+      BlocksCount.get()
 
       assert Decimal.compare(Chain.indexed_ratio_blocks(), 1) == :eq
     end
@@ -981,7 +928,7 @@ defmodule Explorer.ChainTest do
         Process.sleep(200)
       end
 
-      BlocksCount.estimated_count()
+      BlocksCount.get()
       Application.put_env(:indexer, :block_ranges, "5..latest")
 
       assert Decimal.compare(Chain.indexed_ratio_blocks(), 1) == :eq
@@ -2159,7 +2106,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns integer" do
-      assert is_integer(TransactionsCount.estimated_count())
+      assert is_integer(TransactionsCount.get())
     end
   end
 

@@ -80,7 +80,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressTokensUsdSum do
   end
 
   defp fetch_from_cache(key) do
-    Helper.fetch_from_ets_cache(key, @cache_name)
+    Helper.fetch_from_ets_cache(@cache_name, key)
   end
 
   defp enable_consolidation?, do: @enable_consolidation

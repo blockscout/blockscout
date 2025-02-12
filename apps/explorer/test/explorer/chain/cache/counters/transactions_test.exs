@@ -54,6 +54,6 @@ defmodule Explorer.Chain.Cache.Counters.TransactionsTest do
   end
 
   test "returns 0 on empty table" do
-    assert 0 == TransactionsCount.estimated_count()
+    assert 0 == TransactionsCount.get()
   end
 end

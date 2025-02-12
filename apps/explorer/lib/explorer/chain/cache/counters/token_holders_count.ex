@@ -75,14 +75,14 @@ defmodule Explorer.Chain.Cache.Counters.TokenHoldersCount do
     address_hash_string = to_string(address_hash)
     key = "hash_#{address_hash_string}"
 
-    Helper.fetch_from_ets_cache(key, @cache_name) || fetch_from_db_cache(address_hash)
+    Helper.fetch_from_ets_cache(@cache_name, key) || fetch_from_db_cache(address_hash)
   end
 
   def fetch_updated_at_from_cache(address_hash, cache_name) do
     address_hash_string = to_string(address_hash)
     key = "hash_#{address_hash_string}_#{@ets_last_update_key}"
 
-    Helper.fetch_from_ets_cache(key, cache_name)
+    Helper.fetch_from_ets_cache(cache_name, key)
   end
 
   def fetch_from_db_cache(address_hash) do

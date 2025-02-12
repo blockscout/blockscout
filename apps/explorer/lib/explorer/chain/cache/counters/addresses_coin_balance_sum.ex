@@ -13,8 +13,11 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCoinBalanceSum do
     global_ttl: :infinity,
     callback: &async_task_on_deletion(&1)
 
-  alias Explorer.Chain.Cache.Helper
+  alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Etherscan
+
+  @cache_key "addresses_coin_balance_sum"
 
   defp handle_fallback(:sum) do
     # This will get the task PID if one exists, check if it's running and launch
@@ -33,7 +36,14 @@ defmodule Explorer.Chain.Cache.Counters.AddressesCoinBalanceSum do
         try do
           result = Etherscan.fetch_sum_coin_total_supply()
 
-          set_sum(%ConCache.Item{ttl: Helper.ttl(__MODULE__, "CACHE_ADDRESS_SUM_PERIOD"), value: result})
+          params = %{
+            counter_type: @cache_key,
+            value: result
+          }
+
+          LastFetchedCounter.upsert(params)
+
+          set_sum(%ConCache.Item{ttl: CacheCountersHelper.ttl(__MODULE__, "CACHE_ADDRESS_SUM_PERIOD"), value: result})
         rescue
           e ->
             Logger.debug([
