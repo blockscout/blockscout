@@ -30,7 +30,7 @@ defmodule Explorer.ChainTest do
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Transaction, as: TransactionCache
-  alias Explorer.Chain.Cache.PendingBlockOperation, as: PendingBlockOperationCache
+  alias Explorer.Chain.Cache.Counters.PendingBlockOperationCount
   alias Explorer.Chain.InternalTransaction.Type
 
   alias Explorer.Chain.Supply.ProofOfAuthority
@@ -647,9 +647,9 @@ defmodule Explorer.ChainTest do
 
   describe "finished_indexing_internal_transactions?/0" do
     setup do
-      Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
-      Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
-      on_exit(fn -> Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id()) end)
+      Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
+      on_exit(fn -> Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCount.child_id()) end)
     end
 
     test "finished indexing" do
@@ -991,15 +991,15 @@ defmodule Explorer.ChainTest do
 
   describe "indexed_ratio_internal_transactions/0" do
     setup do
-      Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
-      Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
+      Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
       configuration = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)
       Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false)
 
       on_exit(fn ->
         Application.put_env(:indexer, :trace_first_block, 0)
         Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, configuration)
-        Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCache.child_id())
+        Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
       end)
     end
 

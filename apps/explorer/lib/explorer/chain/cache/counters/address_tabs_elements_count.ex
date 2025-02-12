@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Cache.AddressesTabsCounters do
+defmodule Explorer.Chain.Cache.Counters.AddressTabsElementsCount do
   @moduledoc """
     Cache for tabs counters on address
   """
@@ -130,7 +130,7 @@ defmodule Explorer.Chain.Cache.AddressesTabsCounters do
     |> DateTime.compare(DateTime.utc_now()) != :lt
   end
 
-  defp ttl, do: Application.get_env(:explorer, Explorer.Chain.Cache.AddressesTabsCounters)[:ttl]
+  defp ttl, do: Application.get_env(:explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount)[:ttl]
   defp lowercased_string(str), do: str |> to_string() |> String.downcase()
 
   defp cache_key(address_hash, counter_type), do: {lowercased_string(address_hash), counter_type}

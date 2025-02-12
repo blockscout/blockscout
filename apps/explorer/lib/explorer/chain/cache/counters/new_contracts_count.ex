@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Cache.BlackfortValidatorsCounters do
+defmodule Explorer.Chain.Cache.Counters.NewContractsCount do
   @moduledoc """
-  Counts and store counters of validators blackfort.
+  Caches the number of new contracts (created in last 24 hours).
 
   It loads the count asynchronously and in a time interval of 30 minutes.
   """
@@ -16,22 +16,21 @@ defmodule Explorer.Chain.Cache.BlackfortValidatorsCounters do
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
   alias Explorer.Chain
-  alias Explorer.Chain.Blackfort.Validator, as: ValidatorBlackfort
 
-  @validators_counter_key "blackfort_validators_counter"
-  @new_validators_counter_key "new_blackfort_validators_counter"
+  @counter_type "new_contracts_counter"
 
   @doc """
-  Starts a process to periodically update validators blackfort counters
+  Starts a process to periodically update the counter of new
+  contracts. (created in last 24 hours)
   """
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   @impl true
   def init(_args) do
-    {:ok, %{consolidate?: @enable_consolidation}, {:continue, :ok}}
+    {:ok, %{consolidate?: enable_consolidation?()}, {:continue, :ok}}
   end
 
   defp schedule_next_consolidation do
@@ -60,36 +59,37 @@ defmodule Explorer.Chain.Cache.BlackfortValidatorsCounters do
   end
 
   @doc """
-  Fetches values for a blackfort validators counters from the `last_fetched_counters` table.
+  Fetches the value for a `#{@counter_type}` counter type from the `last_fetched_counters` table.
   """
-  @spec get_counters(Keyword.t()) :: map()
-  def get_counters(options) do
-    %{
-      validators_counter: Chain.get_last_fetched_counter(@validators_counter_key, options),
-      new_validators_counter: Chain.get_last_fetched_counter(@new_validators_counter_key, options)
-    }
+  def fetch(options) do
+    Chain.get_last_fetched_counter(@counter_type, options)
   end
 
   @doc """
   Consolidates the info by populating the `last_fetched_counters` table with the current database information.
   """
-  @spec consolidate() :: any()
   def consolidate do
-    tasks = [
-      Task.async(fn -> ValidatorBlackfort.count_validators() end),
-      Task.async(fn -> ValidatorBlackfort.count_new_validators() end)
-    ]
+    new_all_counter = Chain.count_new_contracts()
 
-    [validators_counter, new_validators_counter] = Task.await_many(tasks, :infinity)
+    params = %{
+      counter_type: @counter_type,
+      value: new_all_counter
+    }
 
-    Chain.upsert_last_fetched_counter(%{
-      counter_type: @validators_counter_key,
-      value: validators_counter
-    })
-
-    Chain.upsert_last_fetched_counter(%{
-      counter_type: @new_validators_counter_key,
-      value: new_validators_counter
-    })
+    Chain.upsert_last_fetched_counter(params)
   end
+
+  @doc """
+  Returns a boolean that indicates whether consolidation is enabled
+
+  In order to choose whether or not to enable the scheduler and the initial
+  consolidation, change the following Explorer config:
+
+  `config :explorer, Explorer.Chain.Cache.Counters.NewContractsCount, enable_consolidation: true`
+
+  to:
+
+  `config :explorer, Explorer.Chain.Cache.Counters.NewContractsCount, enable_consolidation: false`
+  """
+  def enable_consolidation?, do: @enable_consolidation
 end

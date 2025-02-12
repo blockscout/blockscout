@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Cache.ContractsCounter do
+defmodule Explorer.Chain.Cache.Counters.NewVerifiedContractsCount do
   @moduledoc """
-  Caches the number of contracts.
+  Caches the number of new verified contracts (verified in last 24 hours).
 
   It loads the count asynchronously and in a time interval of 30 minutes.
   """
@@ -17,10 +17,11 @@ defmodule Explorer.Chain.Cache.ContractsCounter do
 
   alias Explorer.Chain
 
-  @counter_type "contracts_counter"
+  @counter_type "new_verified_contracts_counter"
 
   @doc """
-  Starts a process to periodically update the counter of all the contracts.
+  Starts a process to periodically update the counter of new verified
+  contracts (verified in last 24 hours).
   """
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -68,11 +69,11 @@ defmodule Explorer.Chain.Cache.ContractsCounter do
   Consolidates the info by populating the `last_fetched_counters` table with the current database information.
   """
   def consolidate do
-    all_counter = Chain.count_contracts()
+    new_verified_counter = Chain.count_new_verified_contracts()
 
     params = %{
       counter_type: @counter_type,
-      value: all_counter
+      value: new_verified_counter
     }
 
     Chain.upsert_last_fetched_counter(params)
@@ -84,11 +85,11 @@ defmodule Explorer.Chain.Cache.ContractsCounter do
   In order to choose whether or not to enable the scheduler and the initial
   consolidation, change the following Explorer config:
 
-  `config :explorer, Explorer.Chain.Cache.ContractsCounter, enable_consolidation: true`
+  `config :explorer, Explorer.Chain.Cache.Counters.NewVerifiedContractsCount, enable_consolidation: true`
 
   to:
 
-  `config :explorer, Explorer.Chain.Cache.ContractsCounter, enable_consolidation: false`
+  `config :explorer, Explorer.Chain.Cache.Counters.NewVerifiedContractsCount, enable_consolidation: false`
   """
   def enable_consolidation?, do: @enable_consolidation
 end

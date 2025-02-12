@@ -29,7 +29,7 @@ defmodule Explorer.Chain.Address.Counters do
     Withdrawal
   }
 
-  alias Explorer.Chain.Cache.AddressesTabsCounters
+  alias Explorer.Chain.Cache.Counters.AddressTabsElementsCount
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
 
@@ -379,7 +379,7 @@ defmodule Explorer.Chain.Address.Counters do
   def address_limited_counters(address_hash, options) do
     cached_counters =
       Enum.reduce(@types, %{}, fn type, acc ->
-        case AddressesTabsCounters.get_counter(type, address_hash) do
+        case AddressTabsElementsCount.get_counter(type, address_hash) do
           {_datetime, counter, status} ->
             Map.put(acc, type, {status, counter})
 
@@ -414,12 +414,12 @@ defmodule Explorer.Chain.Address.Counters do
 
         Logger.info("Time consumed for transactions_from_count_task for #{address_hash} is #{diff}ms")
 
-        AddressesTabsCounters.save_transactions_counter_progress(address_hash, %{
+        AddressTabsElementsCount.save_transactions_counter_progress(address_hash, %{
           transactions_types: [:transactions_from],
           transactions_from: result
         })
 
-        AddressesTabsCounters.drop_task(:transactions_from, address_hash)
+        AddressTabsElementsCount.drop_task(:transactions_from, address_hash)
 
         {:transactions_from, result}
       end)
@@ -439,12 +439,12 @@ defmodule Explorer.Chain.Address.Counters do
 
         Logger.info("Time consumed for transactions_to_count_task for #{address_hash} is #{diff}ms")
 
-        AddressesTabsCounters.save_transactions_counter_progress(address_hash, %{
+        AddressTabsElementsCount.save_transactions_counter_progress(address_hash, %{
           transactions_types: [:transactions_to],
           transactions_to: result
         })
 
-        AddressesTabsCounters.drop_task(:transactions_to, address_hash)
+        AddressTabsElementsCount.drop_task(:transactions_to, address_hash)
 
         {:transactions_to, result}
       end)
@@ -464,12 +464,12 @@ defmodule Explorer.Chain.Address.Counters do
 
         Logger.info("Time consumed for transactions_created_contract_count_task for #{address_hash} is #{diff}ms")
 
-        AddressesTabsCounters.save_transactions_counter_progress(address_hash, %{
+        AddressTabsElementsCount.save_transactions_counter_progress(address_hash, %{
           transactions_types: [:transactions_contract],
           transactions_contract: result
         })
 
-        AddressesTabsCounters.drop_task(:transactions_contract, address_hash)
+        AddressTabsElementsCount.drop_task(:transactions_contract, address_hash)
 
         {:transactions_contract, result}
       end)
@@ -589,8 +589,8 @@ defmodule Explorer.Chain.Address.Counters do
   defp run_or_ignore({ok, _counter}, _type, _address_hash, _fun) when ok in [:up_to_date, :limit_value], do: nil
 
   defp run_or_ignore(_, type, address_hash, fun) do
-    if !AddressesTabsCounters.get_task(type, address_hash) do
-      AddressesTabsCounters.set_task(type, address_hash)
+    if !AddressTabsElementsCount.get_task(type, address_hash) do
+      AddressTabsElementsCount.set_task(type, address_hash)
 
       Task.async(fun)
     end
@@ -611,8 +611,8 @@ defmodule Explorer.Chain.Address.Counters do
 
       Logger.info("Time consumed for #{counter_type} counter task for #{address_hash} is #{diff}ms")
 
-      AddressesTabsCounters.set_counter(counter_type, address_hash, result)
-      AddressesTabsCounters.drop_task(counter_type, address_hash)
+      AddressTabsElementsCount.set_counter(counter_type, address_hash, result)
+      AddressTabsElementsCount.drop_task(counter_type, address_hash)
 
       {counter_type, result}
     end)

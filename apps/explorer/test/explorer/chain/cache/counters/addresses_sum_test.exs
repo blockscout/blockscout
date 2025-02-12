@@ -1,16 +1,16 @@
-defmodule Explorer.Chain.Cache.AddressSumTest do
+defmodule Explorer.Chain.Cache.Counters.AddressSumTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Cache.AddressSum
+  alias Explorer.Chain.Cache.Counters.AddressesSum
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, AddressSum.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, AddressSum.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, AddressesSum.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, AddressesSum.child_id())
     :ok
   end
 
   test "returns default address sum" do
-    result = AddressSum.get_sum()
+    result = AddressesSum.get_sum()
 
     assert result == Decimal.new(0)
   end
@@ -21,11 +21,11 @@ defmodule Explorer.Chain.Cache.AddressSumTest do
     insert(:address, fetched_coin_balance: 3)
     insert(:address, hash: "0x0000000000000000000000000000000000000000", fetched_coin_balance: 4)
 
-    _result = AddressSum.get_sum()
+    _result = AddressesSum.get_sum()
 
     Process.sleep(1000)
 
-    updated_value = Decimal.to_integer(AddressSum.get_sum())
+    updated_value = Decimal.to_integer(AddressesSum.get_sum())
 
     assert updated_value == 10
   end
@@ -35,22 +35,22 @@ defmodule Explorer.Chain.Cache.AddressSumTest do
     insert(:address, fetched_coin_balance: 2)
     insert(:address, fetched_coin_balance: 3)
 
-    _result = AddressSum.get_sum()
+    _result = AddressesSum.get_sum()
 
     Process.sleep(1000)
 
-    updated_value = Decimal.to_integer(AddressSum.get_sum())
+    updated_value = Decimal.to_integer(AddressesSum.get_sum())
 
     assert updated_value == 6
 
     insert(:address, fetched_coin_balance: 4)
     insert(:address, fetched_coin_balance: 5)
 
-    _updated_value = AddressSum.get_sum()
+    _updated_value = AddressesSum.get_sum()
 
     Process.sleep(1000)
 
-    updated_value = Decimal.to_integer(AddressSum.get_sum())
+    updated_value = Decimal.to_integer(AddressesSum.get_sum())
 
     assert updated_value == 6
   end

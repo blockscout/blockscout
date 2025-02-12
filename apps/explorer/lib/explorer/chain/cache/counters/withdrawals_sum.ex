@@ -1,26 +1,23 @@
-defmodule Explorer.Chain.Cache.VerifiedContractsCounter do
+defmodule Explorer.Chain.Cache.Counters.WithdrawalsSum do
   @moduledoc """
-  Caches the number of verified contracts.
+  Caches the sum of all withdrawals.
 
-  It loads the count asynchronously and in a time interval of 30 minutes.
+  It loads the sum asynchronously and in a time interval of 30 minutes.
   """
 
   use GenServer
-  # It is undesirable to automatically start the consolidation in all environments.
-  # Consider the test environment: if the consolidation initiates but does not
-  # finish before a test ends, that test will fail. This way, hundreds of
-  # tests were failing before disabling the consolidation and the scheduler in
-  # the test env.
+
   use Utils.CompileTimeEnvHelper,
     enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]],
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Wei
 
-  @counter_type "verified_contracts_counter"
+  @counter_type "withdrawals_sum"
 
   @doc """
-  Starts a process to periodically update the counter of verified contracts.
+  Starts a process to periodically update the sum of withdrawals.
   """
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -68,11 +65,11 @@ defmodule Explorer.Chain.Cache.VerifiedContractsCounter do
   Consolidates the info by populating the `last_fetched_counters` table with the current database information.
   """
   def consolidate do
-    verified_counter = Chain.count_verified_contracts()
+    withdrawals_sum = Chain.sum_withdrawals()
 
     params = %{
       counter_type: @counter_type,
-      value: verified_counter
+      value: (withdrawals_sum && Wei.to(withdrawals_sum, :wei)) || 0
     }
 
     Chain.upsert_last_fetched_counter(params)
@@ -84,11 +81,11 @@ defmodule Explorer.Chain.Cache.VerifiedContractsCounter do
   In order to choose whether or not to enable the scheduler and the initial
   consolidation, change the following Explorer config:
 
-  `config :explorer, Explorer.Chain.Cache.VerifiedContractsCounter, enable_consolidation: true`
+  `config :explorer, #{__MODULE__}, enable_consolidation: true`
 
   to:
 
-  `config :explorer, Explorer.Chain.Cache.VerifiedContractsCounter, enable_consolidation: false`
+  `config :explorer, #{__MODULE__}, enable_consolidation: false`
   """
   def enable_consolidation?, do: @enable_consolidation
 end

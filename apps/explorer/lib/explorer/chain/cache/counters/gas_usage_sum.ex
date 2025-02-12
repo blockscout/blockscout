@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Cache.GasUsage do
+defmodule Explorer.Chain.Cache.Counters.GasUsageSum do
   @moduledoc """
   Cache for total gas usage.
   """
@@ -56,7 +56,7 @@ defmodule Explorer.Chain.Cache.GasUsage do
           rescue
             e ->
               Logger.debug([
-                "Couldn't update gas used sum: ",
+                "Couldn't update total gas used: ",
                 Exception.format(:error, e, __STACKTRACE__)
               ])
           end

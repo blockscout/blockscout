@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Cache.Block do
+defmodule Explorer.Chain.Cache.Counters.BlocksCount do
   @moduledoc """
-  Cache for block count.
+  Cache for total blocks count.
   """
 
   import Ecto.Query,

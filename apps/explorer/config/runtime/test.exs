@@ -21,13 +21,13 @@ config :explorer, Explorer.Counters.AddressesCounter, enabled: false, enable_con
 config :explorer, Explorer.Counters.LastOutputRootSizeCounter, enabled: false, enable_consolidation: false
 config :explorer, Explorer.Counters.Transactions24hStats, enabled: false, enable_consolidation: false
 config :explorer, Explorer.Counters.FreshPendingTransactionsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.ContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.NewContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.VerifiedContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Chain.Cache.WithdrawalsSum, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.ContractsCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.NewContractsCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.VerifiedContractsCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.NewVerifiedContractsCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.WithdrawalsSum, enabled: false, enable_consolidation: false
 
-config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
+config :explorer, Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount,
   enabled: true,
   global_ttl: :timer.minutes(10),
   locking_cap: 21_000_000

@@ -5,7 +5,7 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
 
   import Ecto.Query
 
-  alias Explorer.Chain.Cache.ShibariumCounter
+  alias Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount
   alias Explorer.Chain.Shibarium.{Bridge, Reader}
   alias Explorer.Repo
 
@@ -72,8 +72,8 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
   """
   @spec recalculate_cached_count() :: no_return()
   def recalculate_cached_count do
-    ShibariumCounter.deposits_count_save(Reader.deposits_count())
-    ShibariumCounter.withdrawals_count_save(Reader.withdrawals_count())
+    DepositsAndWithdrawalsCount.deposits_count_save(Reader.deposits_count())
+    DepositsAndWithdrawalsCount.withdrawals_count_save(Reader.withdrawals_count())
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
@@ -104,8 +104,8 @@ defmodule Indexer.Fetcher.Shibarium.Helper do
 
     # increment the cached count of complete rows
     case !is_nil(updated_count) && updated_count > 0 && op.operation_type do
-      :deposit -> ShibariumCounter.deposits_count_save(updated_count, true)
-      :withdrawal -> ShibariumCounter.withdrawals_count_save(updated_count, true)
+      :deposit -> DepositsAndWithdrawalsCount.deposits_count_save(updated_count, true)
+      :withdrawal -> DepositsAndWithdrawalsCount.withdrawals_count_save(updated_count, true)
       false -> nil
     end
 
