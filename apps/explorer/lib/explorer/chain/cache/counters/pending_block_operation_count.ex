@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Cache.PendingBlockOperation do
+defmodule Explorer.Chain.Cache.Counters.PendingBlockOperationCount do
   @moduledoc """
   Cache for estimated `pending_block_operations` count.
   """

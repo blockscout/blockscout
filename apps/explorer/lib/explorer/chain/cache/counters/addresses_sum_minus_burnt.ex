@@ -1,22 +1,22 @@
-defmodule Explorer.Chain.Cache.AddressSum do
+defmodule Explorer.Chain.Cache.Counters.AddressesSumMinusBurnt do
   @moduledoc """
-  Cache for address sum.
+  Cache for address sum minus burnt number.
   """
 
   require Logger
 
   use Explorer.Chain.MapCache,
-    name: :address_sum,
-    key: :sum,
+    name: :address_sum_minus_burnt,
+    key: :sum_minus_burnt,
     key: :async_task,
     ttl_check_interval: Application.get_env(:explorer, __MODULE__)[:ttl_check_interval],
     global_ttl: :infinity,
     callback: &async_task_on_deletion(&1)
 
+  alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Cache.Helper
-  alias Explorer.Etherscan
 
-  defp handle_fallback(:sum) do
+  defp handle_fallback(:sum_minus_burnt) do
     # This will get the task PID if one exists, check if it's running and launch
     # a new task if task doesn't exist or it's not running.
     # See next `handle_fallback` definition
@@ -31,9 +31,16 @@ defmodule Explorer.Chain.Cache.AddressSum do
     {:ok, task} =
       Task.start_link(fn ->
         try do
-          result = Etherscan.fetch_sum_coin_total_supply()
+          result = Etherscan.fetch_sum_coin_total_supply_minus_burnt()
 
-          set_sum(%ConCache.Item{ttl: Helper.ttl(__MODULE__, "CACHE_ADDRESS_SUM_PERIOD"), value: result})
+          params = %{
+            counter_type: "sum_coin_total_supply_minus_burnt",
+            value: result
+          }
+
+          Chain.upsert_last_fetched_counter(params)
+
+          set_sum_minus_burnt(%ConCache.Item{ttl: Helper.ttl(__MODULE__, "CACHE_ADDRESS_SUM_PERIOD"), value: result})
         rescue
           e ->
             Logger.debug([
@@ -49,8 +56,8 @@ defmodule Explorer.Chain.Cache.AddressSum do
   end
 
   # By setting this as a `callback` an async task will be started each time the
-  # `sum` expires (unless there is one already running)
-  defp async_task_on_deletion({:delete, _, :sum}), do: safe_get_async_task()
+  # `sum_minus_burnt` expires (unless there is one already running)
+  defp async_task_on_deletion({:delete, _, :sum_minus_burnt}), do: safe_get_async_task()
 
   defp async_task_on_deletion(_data), do: nil
 end

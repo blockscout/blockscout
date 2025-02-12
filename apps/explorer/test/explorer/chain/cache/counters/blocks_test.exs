@@ -1,7 +1,7 @@
-defmodule Explorer.Chain.Cache.BlockTest do
+defmodule Explorer.Chain.Cache.Counters.BlocksTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Cache.Block
+  alias Explorer.Chain.Cache.Counters.BlocksCount
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Block.child_id())

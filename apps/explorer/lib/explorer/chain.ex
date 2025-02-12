@@ -73,16 +73,20 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Cache.{
     BlockNumber,
     Blocks,
-    ContractsCounter,
-    NewContractsCounter,
-    NewVerifiedContractsCounter,
     Transactions,
-    Uncles,
-    VerifiedContractsCounter,
+    Uncles
+  }
+
+  alias Explorer.Chain.Cache.Counters.{
+    BlocksCount,
+    ContractsCount,
+    NewContractsCount,
+    NewVerifiedContractsCount,
+    PendingBlockOperationCount,
+    VerifiedContractsCount,
     WithdrawalsSum
   }
 
-  alias Explorer.Chain.Cache.Block, as: BlockCache
   alias Explorer.Chain.Cache.Helper, as: CacheHelper
   alias Explorer.Chain.Fetcher.{CheckBytecodeMatchingOnDemand, LookUpSmartContractSourcesOnDemand}
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
@@ -1541,7 +1545,7 @@ defmodule Explorer.Chain do
         _ ->
           divisor = max_saved_block_number - min_blockchain_block_number - BlockNumberHelper.null_rounds_count() + 1
 
-          ratio = get_ratio(BlockCache.estimated_count(), divisor)
+          ratio = get_ratio(BlocksCount.estimated_count(), divisor)
 
           ratio
           |> (&if(
@@ -4882,19 +4886,19 @@ defmodule Explorer.Chain do
   end
 
   def count_verified_contracts_from_cache(options \\ []) do
-    VerifiedContractsCounter.fetch(options)
+    VerifiedContractsCount.fetch(options)
   end
 
   def count_new_verified_contracts_from_cache(options \\ []) do
-    NewVerifiedContractsCounter.fetch(options)
+    NewVerifiedContractsCount.fetch(options)
   end
 
   def count_contracts_from_cache(options \\ []) do
-    ContractsCounter.fetch(options)
+    ContractsCount.fetch(options)
   end
 
   def count_new_contracts_from_cache(options \\ []) do
-    NewContractsCounter.fetch(options)
+    NewContractsCount.fetch(options)
   end
 
   def fetch_token_counters(address_hash, timeout) do

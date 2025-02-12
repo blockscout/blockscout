@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Cache.StabilityValidatorsCounters do
+defmodule Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount do
   @moduledoc """
-  Counts and store counters of validators stability.
+  Counts and store counters of validators blackfort.
 
   It loads the count asynchronously and in a time interval of 30 minutes.
   """
@@ -16,14 +16,13 @@ defmodule Explorer.Chain.Cache.StabilityValidatorsCounters do
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
   alias Explorer.Chain
-  alias Explorer.Chain.Stability.Validator, as: ValidatorStability
+  alias Explorer.Chain.Blackfort.Validator, as: ValidatorBlackfort
 
-  @validators_counter_key "stability_validators_counter"
-  @new_validators_counter_key "new_stability_validators_counter"
-  @active_validators_counter_key "active_stability_validators_counter"
+  @validators_counter_key "blackfort_validators_counter"
+  @new_validators_counter_key "new_blackfort_validators_counter"
 
   @doc """
-  Starts a process to periodically update validators stability counters
+  Starts a process to periodically update validators blackfort counters
   """
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -61,14 +60,13 @@ defmodule Explorer.Chain.Cache.StabilityValidatorsCounters do
   end
 
   @doc """
-  Fetches values for a stability validators counters from the `last_fetched_counters` table.
+  Fetches values for a blackfort validators counters from the `last_fetched_counters` table.
   """
   @spec get_counters(Keyword.t()) :: map()
   def get_counters(options) do
     %{
       validators_counter: Chain.get_last_fetched_counter(@validators_counter_key, options),
-      new_validators_counter: Chain.get_last_fetched_counter(@new_validators_counter_key, options),
-      active_validators_counter: Chain.get_last_fetched_counter(@active_validators_counter_key, options)
+      new_validators_counter: Chain.get_last_fetched_counter(@new_validators_counter_key, options)
     }
   end
 
@@ -78,12 +76,11 @@ defmodule Explorer.Chain.Cache.StabilityValidatorsCounters do
   @spec consolidate() :: any()
   def consolidate do
     tasks = [
-      Task.async(fn -> ValidatorStability.count_validators() end),
-      Task.async(fn -> ValidatorStability.count_new_validators() end),
-      Task.async(fn -> ValidatorStability.count_active_validators() end)
+      Task.async(fn -> ValidatorBlackfort.count_validators() end),
+      Task.async(fn -> ValidatorBlackfort.count_new_validators() end)
     ]
 
-    [validators_counter, new_validators_counter, active_validators_counter] = Task.await_many(tasks, :infinity)
+    [validators_counter, new_validators_counter] = Task.await_many(tasks, :infinity)
 
     Chain.upsert_last_fetched_counter(%{
       counter_type: @validators_counter_key,
@@ -93,11 +90,6 @@ defmodule Explorer.Chain.Cache.StabilityValidatorsCounters do
     Chain.upsert_last_fetched_counter(%{
       counter_type: @new_validators_counter_key,
       value: new_validators_counter
-    })
-
-    Chain.upsert_last_fetched_counter(%{
-      counter_type: @active_validators_counter_key,
-      value: active_validators_counter
     })
   end
 end

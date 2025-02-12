@@ -294,20 +294,20 @@ config :explorer, Explorer.ChainSpec.GenesisData,
 
 address_sum_global_ttl = ConfigHelper.parse_time_env_var("CACHE_ADDRESS_SUM_PERIOD", "1h")
 
-config :explorer, Explorer.Chain.Cache.AddressSum, global_ttl: address_sum_global_ttl
+config :explorer, Explorer.Chain.Cache.Counters.AddressesSum, global_ttl: address_sum_global_ttl
 
-config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt, global_ttl: address_sum_global_ttl
+config :explorer, Explorer.Chain.Cache.Counters.AddressesSumMinusBurnt, global_ttl: address_sum_global_ttl
 
-config :explorer, Explorer.Chain.Cache.GasUsage,
+config :explorer, Explorer.Chain.Cache.Counters.GasUsageSum,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_TOTAL_GAS_USAGE_PERIOD", "2h")
 
-config :explorer, Explorer.Chain.Cache.Block,
+config :explorer, Explorer.Chain.Cache.Counters.BlocksCount,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_BLOCK_COUNT_PERIOD", "2h")
 
-config :explorer, Explorer.Chain.Cache.Transaction,
+config :explorer, Explorer.Chain.Cache.Counters.TransactionsCount,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_TXS_COUNT_PERIOD", "2h")
 
-config :explorer, Explorer.Chain.Cache.PendingBlockOperation,
+config :explorer, Explorer.Chain.Cache.Counters.PendingBlockOperationCount,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_PBO_COUNT_PERIOD", "20m")
 
 config :explorer, Explorer.Chain.Cache.GasPriceOracle,
@@ -321,7 +321,7 @@ config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   average_time_coefficient: ConfigHelper.parse_float_env_var("GAS_PRICE_ORACLE_AVERAGE_TIME_COEFFICIENT", 3),
   fast_time_coefficient: ConfigHelper.parse_float_env_var("GAS_PRICE_ORACLE_FAST_TIME_COEFFICIENT", 1)
 
-config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
+config :explorer, Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount,
   enabled: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "rsk",
   global_ttl: ConfigHelper.parse_time_env_var("ROOTSTOCK_LOCKED_BTC_CACHE_PERIOD", "10m"),
   locking_cap: ConfigHelper.parse_integer_env_var("ROOTSTOCK_LOCKING_CAP", 21_000_000)
@@ -617,7 +617,7 @@ config :explorer, Explorer.Chain.Transaction,
   rootstock_remasc_address: System.get_env("ROOTSTOCK_REMASC_ADDRESS"),
   rootstock_bridge_address: System.get_env("ROOTSTOCK_BRIDGE_ADDRESS")
 
-config :explorer, Explorer.Chain.Cache.AddressesTabsCounters,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount,
   ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
 
 config :explorer, Explorer.TokenInstanceOwnerAddressMigration,

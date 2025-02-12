@@ -21,11 +21,11 @@ config :explorer, Explorer.ChainSpec.GenesisData, enabled: true
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
-config :explorer, Explorer.Chain.Cache.AddressSum,
+config :explorer, Explorer.Chain.Cache.Counters.AddressesSum,
   enabled: true,
   ttl_check_interval: :timer.seconds(1)
 
-config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt,
+config :explorer, Explorer.Chain.Cache.Counters.AddressesSumMinusBurnt,
   enabled: true,
   ttl_check_interval: :timer.seconds(1)
 
@@ -51,37 +51,37 @@ config :explorer, Explorer.Counters.AddressTokenUsdSum,
 
 update_interval_in_milliseconds_default = 30 * 60 * 1000
 
-config :explorer, Explorer.Chain.Cache.ContractsCounter,
+config :explorer, Explorer.Chain.Cache.Counters.ContractsCount,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
-config :explorer, Explorer.Chain.Cache.NewContractsCounter,
+config :explorer, Explorer.Chain.Cache.Counters.NewContractsCount,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
-config :explorer, Explorer.Chain.Cache.VerifiedContractsCounter,
+config :explorer, Explorer.Chain.Cache.Counters.VerifiedContractsCount,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
-config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter,
+config :explorer, Explorer.Chain.Cache.Counters.NewVerifiedContractsCount,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
-config :explorer, Explorer.Chain.Cache.WithdrawalsSum,
+config :explorer, Explorer.Chain.Cache.Counters.WithdrawalsSum,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
-config :explorer, Explorer.Chain.Cache.StabilityValidatorsCounters,
+config :explorer, Explorer.Chain.Cache.Counters.Stability.ValidatorsCount,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
-config :explorer, Explorer.Chain.Cache.BlackfortValidatorsCounters,
+config :explorer, Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
@@ -168,7 +168,7 @@ config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled:
 
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: true
 
-config :explorer, Explorer.Chain.Cache.GasUsage,
+config :explorer, Explorer.Chain.Cache.Counters.GasUsageSum,
   enabled: ConfigHelper.parse_bool_env_var("CACHE_TOTAL_GAS_USAGE_COUNTER_ENABLED")
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)

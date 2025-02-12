@@ -1,16 +1,16 @@
-defmodule Explorer.Chain.Cache.AddressSumMinusBurntTest do
+defmodule Explorer.Chain.Cache.Counters.AddressesSumMinusBurntTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Cache.AddressSumMinusBurnt
+  alias Explorer.Chain.Cache.Counters.AddressesSumMinusBurnt
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, AddressSumMinusBurnt.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, AddressSumMinusBurnt.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, AddressesSumMinusBurnt.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, AddressesSumMinusBurnt.child_id())
     :ok
   end
 
   test "returns default address sum" do
-    result = AddressSumMinusBurnt.get_sum_minus_burnt()
+    result = AddressesSumMinusBurnt.get_sum_minus_burnt()
 
     assert result == Decimal.new(0)
   end
@@ -21,11 +21,11 @@ defmodule Explorer.Chain.Cache.AddressSumMinusBurntTest do
     insert(:address, fetched_coin_balance: 3)
     insert(:address, hash: "0x0000000000000000000000000000000000000000", fetched_coin_balance: 4)
 
-    _result = AddressSumMinusBurnt.get_sum_minus_burnt()
+    _result = AddressesSumMinusBurnt.get_sum_minus_burnt()
 
     Process.sleep(1000)
 
-    updated_value = Decimal.to_integer(AddressSumMinusBurnt.get_sum_minus_burnt())
+    updated_value = Decimal.to_integer(AddressesSumMinusBurnt.get_sum_minus_burnt())
 
     assert updated_value == 6
   end
@@ -36,22 +36,22 @@ defmodule Explorer.Chain.Cache.AddressSumMinusBurntTest do
     insert(:address, fetched_coin_balance: 3)
     insert(:address, hash: "0x0000000000000000000000000000000000000000", fetched_coin_balance: 4)
 
-    _result = AddressSumMinusBurnt.get_sum_minus_burnt()
+    _result = AddressesSumMinusBurnt.get_sum_minus_burnt()
 
     Process.sleep(1000)
 
-    updated_value = Decimal.to_integer(AddressSumMinusBurnt.get_sum_minus_burnt())
+    updated_value = Decimal.to_integer(AddressesSumMinusBurnt.get_sum_minus_burnt())
 
     assert updated_value == 6
 
     insert(:address, fetched_coin_balance: 4)
     insert(:address, fetched_coin_balance: 5)
 
-    _updated_value = AddressSumMinusBurnt.get_sum_minus_burnt()
+    _updated_value = AddressesSumMinusBurnt.get_sum_minus_burnt()
 
     Process.sleep(1000)
 
-    updated_value = Decimal.to_integer(AddressSumMinusBurnt.get_sum_minus_burnt())
+    updated_value = Decimal.to_integer(AddressesSumMinusBurnt.get_sum_minus_burnt())
 
     assert updated_value == 6
   end
