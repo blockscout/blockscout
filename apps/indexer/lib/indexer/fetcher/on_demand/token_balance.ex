@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Hash
   alias Explorer.Counters.AverageBlockTime

@@ -1,4 +1,4 @@
-defmodule Explorer.Counters.Helper do
+defmodule Explorer.Chain.Cache.Counters.Helper do
   @moduledoc """
     A helper for caching modules
   """

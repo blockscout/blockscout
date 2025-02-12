@@ -1,7 +1,7 @@
-defmodule Explorer.Counters.Transactions24hStatsTest do
+defmodule Explorer.Chain.Cache.Counters.Transactions24hCountTest do
   use Explorer.DataCase
 
-  alias Explorer.Counters.Transactions24hStats
+  alias Explorer.Chain.Cache.Counters.Transactions24hCount
 
   test "populates the cache with transaction counters" do
     block = insert(:block, base_fee_per_gas: 50)
@@ -47,12 +47,12 @@ defmodule Explorer.Counters.Transactions24hStatsTest do
       max_fee_per_gas: 100
     )
 
-    start_supervised!(Transactions24hStats)
-    Transactions24hStats.consolidate()
+    start_supervised!(Transactions24hCount)
+    Transactions24hCount.consolidate()
 
-    transaction_count = Transactions24hStats.fetch_count([])
-    transaction_fee_sum = Transactions24hStats.fetch_fee_sum([])
-    transaction_fee_average = Transactions24hStats.fetch_fee_average([])
+    transaction_count = Transactions24hCount.fetch_count([])
+    transaction_fee_sum = Transactions24hCount.fetch_fee_sum([])
+    transaction_fee_average = Transactions24hCount.fetch_fee_average([])
 
     assert transaction_count == Decimal.new("3")
     assert transaction_fee_sum == Decimal.new("35000")

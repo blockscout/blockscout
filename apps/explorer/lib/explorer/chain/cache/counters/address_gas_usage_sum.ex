@@ -1,16 +1,16 @@
-defmodule Explorer.Counters.AddressTokenTransfersCounter do
+defmodule Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum do
   @moduledoc """
-  Caches Address token transfers counter.
+  Caches Address transactions gas usage count.
   """
   use GenServer
   use Utils.CompileTimeEnvHelper, enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
   alias Ecto.Changeset
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Counters.Helper
+  alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Repo
 
-  @cache_name :address_token_transfers_counter
+  @cache_name :address_transactions_gas_usage_counter
   @last_update_key "last_update"
 
   @spec start_link(term()) :: GenServer.on_start()
@@ -66,7 +66,7 @@ defmodule Explorer.Counters.AddressTokenTransfersCounter do
   defp update_cache(address) do
     address_hash_string = to_string(address.hash)
     Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
-    new_data = Counters.address_to_token_transfer_count(address)
+    new_data = Counters.address_to_gas_usage_count(address)
     Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}", new_data)
     put_into_db(address, new_data)
   end
@@ -75,9 +75,11 @@ defmodule Explorer.Counters.AddressTokenTransfersCounter do
     Helper.fetch_from_ets_cache(key, @cache_name)
   end
 
+  defp put_into_db(_address, value) when is_nil(value), do: :ignore
+
   defp put_into_db(address, value) do
     address
-    |> Changeset.change(%{token_transfers_count: value})
+    |> Changeset.change(%{gas_used: Decimal.to_integer(value)})
     |> Repo.update()
   end
 

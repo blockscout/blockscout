@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressTabsElementsCount do
 
   use GenServer
 
-  import Explorer.Counters.Helper, only: [fetch_from_ets_cache: 3]
+  import Explorer.Chain.Cache.Counters.Helper, only: [fetch_from_ets_cache: 3]
 
   alias Explorer.Chain.Address.Counters
 

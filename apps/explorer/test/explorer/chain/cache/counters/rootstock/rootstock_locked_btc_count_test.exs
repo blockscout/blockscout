@@ -12,8 +12,8 @@ defmodule Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCountTest do
 
     :ok
 
-    Supervisor.terminate_child(Explorer.Supervisor, Rootstock.LockedBTCCount.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, Rootstock.LockedBTCCount.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, LockedBTCCount.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, LockedBTCCount.child_id())
 
     on_exit(fn ->
       Application.put_env(:explorer, Transaction, transaction_configuration)
@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCountTest do
   end
 
   test "returns nil in case if there is no bridged address in the database" do
-    result = Rootstock.LockedBTCCount.get_locked_value()
+    result = LockedBTCCount.get_locked_value()
 
     assert is_nil(result)
   end
@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCountTest do
   test "updates cache if initial value is zero and returns converted wei" do
     insert(:address, hash: @bridge_address, fetched_coin_balance: 42_000_000_000_000_000_000)
 
-    result = Rootstock.LockedBTCCount.get_locked_value()
+    result = LockedBTCCount.get_locked_value()
 
     assert result == Wei.from(Decimal.new(21_000_000), :ether) |> Wei.sub(Wei.from(Decimal.new(42), :ether))
   end

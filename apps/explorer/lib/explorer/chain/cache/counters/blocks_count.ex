@@ -18,9 +18,10 @@ defmodule Explorer.Chain.Cache.Counters.BlocksCount do
 
   require Logger
 
-  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Cache.Helper
+  alias Explorer.Repo
 
   @cache_key "block_count"
 
@@ -36,7 +37,7 @@ defmodule Explorer.Chain.Cache.Counters.BlocksCount do
     if is_nil(cached_value_from_ets) do
       cached_value_from_db =
         @cache_key
-        |> Chain.get_last_fetched_counter()
+        |> LastFetchedCounter.get()
         |> Decimal.to_integer()
 
       if cached_value_from_db === 0 do
@@ -77,7 +78,7 @@ defmodule Explorer.Chain.Cache.Counters.BlocksCount do
             value: result
           }
 
-          Chain.upsert_last_fetched_counter(params)
+          LastFetchedCounter.upsert(params)
 
           set_count(%ConCache.Item{ttl: Helper.ttl(__MODULE__, "CACHE_BLOCK_COUNT_PERIOD"), value: result})
         rescue

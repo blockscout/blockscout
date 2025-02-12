@@ -15,8 +15,8 @@ defmodule Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount do
     enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]],
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
-  alias Explorer.Chain
   alias Explorer.Chain.Blackfort.Validator, as: ValidatorBlackfort
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
 
   @validators_counter_key "blackfort_validators_counter"
   @new_validators_counter_key "new_blackfort_validators_counter"
@@ -65,8 +65,8 @@ defmodule Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount do
   @spec get_counters(Keyword.t()) :: map()
   def get_counters(options) do
     %{
-      validators_counter: Chain.get_last_fetched_counter(@validators_counter_key, options),
-      new_validators_counter: Chain.get_last_fetched_counter(@new_validators_counter_key, options)
+      validators_counter: LastFetchedCounter.get(@validators_counter_key, options),
+      new_validators_counter: LastFetchedCounter.get(@new_validators_counter_key, options)
     }
   end
 
@@ -82,12 +82,12 @@ defmodule Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount do
 
     [validators_counter, new_validators_counter] = Task.await_many(tasks, :infinity)
 
-    Chain.upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: @validators_counter_key,
       value: validators_counter
     })
 
-    Chain.upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: @new_validators_counter_key,
       value: new_validators_counter
     })

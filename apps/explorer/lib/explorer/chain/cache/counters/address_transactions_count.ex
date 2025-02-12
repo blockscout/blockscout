@@ -1,14 +1,16 @@
-defmodule Explorer.Counters.TokenTransfersCounter do
+defmodule Explorer.Chain.Cache.Counters.AddressTransactionsCount do
   @moduledoc """
-  Caches Token transfers counter.
+  Caches Address transactions count.
   """
   use GenServer
   use Utils.CompileTimeEnvHelper, enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
-  alias Explorer.Chain
-  alias Explorer.Counters.Helper
+  alias Ecto.Changeset
+  alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Cache.Counters.Helper
+  alias Explorer.Repo
 
-  @cache_name :token_transfers_counter
+  @cache_name :address_transactions_counter
   @last_update_key "last_update"
 
   @spec start_link(term()) :: GenServer.on_start()
@@ -38,20 +40,20 @@ defmodule Explorer.Counters.TokenTransfersCounter do
     {:noreply, state}
   end
 
-  def fetch(address_hash) do
-    if cache_expired?(address_hash) do
-      update_cache(address_hash)
+  def fetch(address) do
+    if cache_expired?(address) do
+      update_cache(address)
     end
 
-    address_hash_string = to_string(address_hash)
+    address_hash_string = to_string(address.hash)
     fetch_from_cache("hash_#{address_hash_string}")
   end
 
   def cache_name, do: @cache_name
 
-  defp cache_expired?(address_hash) do
+  defp cache_expired?(address) do
     cache_period = Application.get_env(:explorer, __MODULE__)[:cache_period]
-    address_hash_string = to_string(address_hash)
+    address_hash_string = to_string(address.hash)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
@@ -61,15 +63,22 @@ defmodule Explorer.Counters.TokenTransfersCounter do
     end
   end
 
-  defp update_cache(address_hash) do
-    address_hash_string = to_string(address_hash)
+  defp update_cache(address) do
+    address_hash_string = to_string(address.hash)
     Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
-    new_data = Chain.count_token_transfers_from_token_hash(address_hash)
+    new_data = Counters.address_to_transaction_count(address)
     Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}", new_data)
+    put_into_db(address, new_data)
   end
 
   defp fetch_from_cache(key) do
     Helper.fetch_from_ets_cache(key, @cache_name)
+  end
+
+  defp put_into_db(address, value) do
+    address
+    |> Changeset.change(%{transactions_count: value})
+    |> Repo.update()
   end
 
   defp enable_consolidation?, do: @enable_consolidation

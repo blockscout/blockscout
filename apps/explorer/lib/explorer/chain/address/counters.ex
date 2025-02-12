@@ -9,12 +9,12 @@ defmodule Explorer.Chain.Address.Counters do
 
   alias Explorer.{Chain, Repo}
 
-  alias Explorer.Counters.{
-    AddressesCounter,
-    AddressesWithBalanceCounter,
-    AddressTokenTransfersCounter,
-    AddressTransactionsCounter,
-    AddressTransactionsGasUsageCounter
+  alias Explorer.Chain.Cache.Counters.{
+    AddressesCount,
+    AddressesWithBalanceCount,
+    AddressTokenTransfersCount,
+    AddressTransactionsCount,
+    AddressTransactionsGasUsageSum
   }
 
   alias Explorer.Chain.{
@@ -78,7 +78,7 @@ defmodule Explorer.Chain.Address.Counters do
   """
   @spec count_addresses_with_balance_from_cache :: non_neg_integer()
   def count_addresses_with_balance_from_cache do
-    AddressesWithBalanceCounter.fetch()
+    AddressesWithBalanceCount.fetch()
   end
 
   @doc """
@@ -88,7 +88,7 @@ defmodule Explorer.Chain.Address.Counters do
   """
   @spec address_estimated_count() :: non_neg_integer()
   def address_estimated_count(options \\ []) do
-    cached_value = AddressesCounter.fetch()
+    cached_value = AddressesCount.fetch()
 
     if is_nil(cached_value) || cached_value == 0 do
       count = CacheHelper.estimated_count_from("addresses", options)
@@ -364,15 +364,15 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def transaction_count(address) do
-    AddressTransactionsCounter.fetch(address)
+    AddressTransactionsCount.fetch(address)
   end
 
   def token_transfers_count(address) do
-    AddressTokenTransfersCounter.fetch(address)
+    AddressTokenTransfersCount.fetch(address)
   end
 
   def gas_usage_count(address) do
-    AddressTransactionsGasUsageCounter.fetch(address)
+    AddressTransactionsGasUsageSum.fetch(address)
   end
 
   @spec address_limited_counters(Hash.t(), Keyword.t()) :: %{atom() => counter}

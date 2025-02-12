@@ -5,9 +5,9 @@ defmodule BlockScoutWeb.BlockView do
 
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.Counters.{BlockBurntFeeCount, BlockPriorityFeeCount}
   alias Explorer.Chain.{Block, Wei}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Counters.{BlockBurntFeeCounter, BlockPriorityFeeCounter}
 
   @dialyzer :no_match
 

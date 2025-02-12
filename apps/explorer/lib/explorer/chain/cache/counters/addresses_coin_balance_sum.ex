@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Cache.Counters.AddressesSum do
+defmodule Explorer.Chain.Cache.Counters.AddressesCoinBalanceSum do
   @moduledoc """
   Cache for address sum.
   """

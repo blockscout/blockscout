@@ -1,6 +1,6 @@
-defmodule Explorer.Counters.AddressesCounter do
+defmodule Explorer.Chain.Cache.Counters.AddressesWithBalanceCount do
   @moduledoc """
-  Caches the number of all addresses.
+  Caches the number of addresses with fetched coin balance > 0.
 
   It loads the count asynchronously and in a time interval of 30 minutes.
   """
@@ -17,9 +17,9 @@ defmodule Explorer.Counters.AddressesCounter do
 
   alias Explorer.Chain.Address.Counters
 
-  @table :addresses_counter
+  @table :addresses_with_balance_counter
 
-  @cache_key "addresses"
+  @cache_key "addresses_with_balance"
 
   def table_name do
     @table
@@ -102,7 +102,7 @@ defmodule Explorer.Counters.AddressesCounter do
   Consolidates the info by populating the `:ets` table with the current database information.
   """
   def consolidate do
-    counter = Counters.count_addresses()
+    counter = Counters.count_addresses_with_balance()
 
     insert_counter({cache_key(), counter})
   end
@@ -113,11 +113,11 @@ defmodule Explorer.Counters.AddressesCounter do
   In order to choose whether or not to enable the scheduler and the initial
   consolidation, change the following Explorer config:
 
-  `config :explorer, Explorer.Counters.AddressesCounter, enable_consolidation: true`
+  `config :explorer, Explorer.Chain.Cache.Counters.AddressesWithBalanceCount, enable_consolidation: true`
 
   to:
 
-  `config :explorer, Explorer.Counters.AddressesCounter, enable_consolidation: false`
+  `config :explorer, Explorer.Chain.Cache.Counters.AddressesWithBalanceCount, enable_consolidation: false`
   """
   def enable_consolidation?, do: @enable_consolidation
 end

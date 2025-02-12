@@ -1,4 +1,4 @@
-defmodule Explorer.Counters.Transactions24hStats do
+defmodule Explorer.Chain.Cache.Counters.Transactions24hCount do
   @moduledoc """
   Caches number of transactions for last 24 hours, sum of transaction fees for last 24 hours and average transaction fee for last 24 hours counters.
 
@@ -9,8 +9,9 @@ defmodule Explorer.Counters.Transactions24hStats do
 
   import Ecto.Query
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.{DenormalizationHelper, Transaction}
+  alias Explorer.Repo
 
   @transaction_count_name "transaction_count_24h"
   @transaction_fee_sum_name "transaction_fee_sum_24h"
@@ -58,21 +59,21 @@ defmodule Explorer.Counters.Transactions24hStats do
   Fetches the value for a `#{@transaction_count_name}` counter type from the `last_fetched_counters` table.
   """
   def fetch_count(options) do
-    Chain.get_last_fetched_counter(@transaction_count_name, options)
+    LastFetchedCounter.get(@transaction_count_name, options)
   end
 
   @doc """
   Fetches the value for a `#{@transaction_fee_sum_name}` counter type from the `last_fetched_counters` table.
   """
   def fetch_fee_sum(options) do
-    Chain.get_last_fetched_counter(@transaction_fee_sum_name, options)
+    LastFetchedCounter.get(@transaction_fee_sum_name, options)
   end
 
   @doc """
   Fetches the value for a `#{@transaction_fee_average_name}` counter type from the `last_fetched_counters` table.
   """
   def fetch_fee_average(options) do
-    Chain.get_last_fetched_counter(@transaction_fee_average_name, options)
+    LastFetchedCounter.get(@transaction_fee_average_name, options)
   end
 
   @doc """
@@ -112,17 +113,17 @@ defmodule Explorer.Counters.Transactions24hStats do
       fee_average: fee_average
     } = Repo.one!(query, timeout: :infinity)
 
-    Chain.upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: @transaction_count_name,
       value: count
     })
 
-    Chain.upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: @transaction_fee_sum_name,
       value: fee_sum
     })
 
-    Chain.upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: @transaction_fee_average_name,
       value: fee_average
     })

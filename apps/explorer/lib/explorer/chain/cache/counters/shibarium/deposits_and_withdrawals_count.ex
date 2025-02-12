@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount do
   Caches the number of deposits and withdrawals for Shibarium Bridge.
   """
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
 
   @deposits_counter_type "shibarium_deposits_counter"
   @withdrawals_counter_type "shibarium_withdrawals_counter"
@@ -12,14 +12,14 @@ defmodule Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount do
   Fetches the cached deposits count from the `last_fetched_counters` table.
   """
   def deposits_count(options \\ []) do
-    Chain.get_last_fetched_counter(@deposits_counter_type, options)
+    LastFetchedCounter.get(@deposits_counter_type, options)
   end
 
   @doc """
   Fetches the cached withdrawals count from the `last_fetched_counters` table.
   """
   def withdrawals_count(options \\ []) do
-    Chain.get_last_fetched_counter(@withdrawals_counter_type, options)
+    LastFetchedCounter.get(@withdrawals_counter_type, options)
   end
 
   @doc """
@@ -27,12 +27,12 @@ defmodule Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount do
   """
   def deposits_count_save(count, just_increment \\ false) do
     if just_increment do
-      Chain.increment_last_fetched_counter(
+      LastFetchedCounter.increment(
         @deposits_counter_type,
         count
       )
     else
-      Chain.upsert_last_fetched_counter(%{
+      LastFetchedCounter.upsert(%{
         counter_type: @deposits_counter_type,
         value: count
       })
@@ -44,12 +44,12 @@ defmodule Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount do
   """
   def withdrawals_count_save(count, just_increment \\ false) do
     if just_increment do
-      Chain.increment_last_fetched_counter(
+      LastFetchedCounter.increment(
         @withdrawals_counter_type,
         count
       )
     else
-      Chain.upsert_last_fetched_counter(%{
+      LastFetchedCounter.upsert(%{
         counter_type: @withdrawals_counter_type,
         value: count
       })

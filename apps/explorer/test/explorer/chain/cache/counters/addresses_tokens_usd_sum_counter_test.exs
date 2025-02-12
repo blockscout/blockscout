@@ -1,7 +1,7 @@
-defmodule Explorer.Counters.AddressTokenUsdSumTest do
+defmodule Explorer.Chain.Cache.Counters.AddressTokensUsdSumTest do
   use Explorer.DataCase
 
-  alias Explorer.Counters.AddressTokenUsdSum
+  alias Explorer.Chain.Cache.Counters.AddressTokensUsdSum
 
   test "populates the cache with the sum of address tokens" do
     address = insert(:address)
@@ -18,14 +18,14 @@ defmodule Explorer.Counters.AddressTokenUsdSumTest do
         value: Decimal.mult(Decimal.new(100_500), Decimal.from_float(:math.pow(10, 18)))
       )
 
-    AddressTokenUsdSum.fetch(address.hash, [
+    AddressTokensUsdSum.fetch(address.hash, [
       address_current_token_balance,
       address_current_token_balance_2
     ])
 
     Process.sleep(200)
 
-    assert AddressTokenUsdSum.fetch(address.hash, [
+    assert AddressTokensUsdSum.fetch(address.hash, [
              address_current_token_balance,
              address_current_token_balance_2
            ]) ==

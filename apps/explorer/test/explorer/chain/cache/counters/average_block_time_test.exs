@@ -1,10 +1,10 @@
-defmodule Explorer.Counters.AverageBlockTimeTest do
+defmodule Explorer.Chain.Cache.Counters.AverageBlockTimeTest do
   use Explorer.DataCase
 
-  doctest Explorer.Counters.AverageBlockTimeDurationFormat
+  doctest Explorer.Chain.Cache.Counters.Helper.AverageBlockTimeDurationFormat
 
   alias Explorer.Chain.Block
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Repo
 
   setup do

@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Cache.Counters.AddressesSumMinusBurnt do
+defmodule Explorer.Chain.Cache.Counters.AddressesCoinBalanceSumMinusBurnt do
   @moduledoc """
   Cache for address sum minus burnt number.
   """
@@ -13,8 +13,9 @@ defmodule Explorer.Chain.Cache.Counters.AddressesSumMinusBurnt do
     global_ttl: :infinity,
     callback: &async_task_on_deletion(&1)
 
-  alias Explorer.{Chain, Etherscan}
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Cache.Helper
+  alias Explorer.Etherscan
 
   defp handle_fallback(:sum_minus_burnt) do
     # This will get the task PID if one exists, check if it's running and launch
@@ -38,7 +39,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressesSumMinusBurnt do
             value: result
           }
 
-          Chain.upsert_last_fetched_counter(params)
+          LastFetchedCounter.upsert(params)
 
           set_sum_minus_burnt(%ConCache.Item{ttl: Helper.ttl(__MODULE__, "CACHE_ADDRESS_SUM_PERIOD"), value: result})
         rescue

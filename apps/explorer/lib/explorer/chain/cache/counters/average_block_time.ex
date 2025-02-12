@@ -1,4 +1,4 @@
-defmodule Explorer.Counters.AverageBlockTime do
+defmodule Explorer.Chain.Cache.Counters.AverageBlockTime do
   @moduledoc """
   Caches the average block time in milliseconds.
   """
