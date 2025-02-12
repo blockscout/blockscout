@@ -1,7 +1,7 @@
-defmodule Explorer.Counters.LastOutputRootSizeCounterTest do
+defmodule Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCountTest do
   use Explorer.DataCase
 
-  alias Explorer.Counters.LastOutputRootSizeCounter
+  alias Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount
 
   if Application.compile_env(:explorer, :chain_type) == :optimism do
     test "populates the cache with the number of transactions in last output root" do
@@ -16,10 +16,10 @@ defmodule Explorer.Counters.LastOutputRootSizeCounterTest do
       insert(:transaction) |> with_block(second_block)
       insert(:transaction) |> with_block(second_block)
 
-      start_supervised!(LastOutputRootSizeCounter)
-      LastOutputRootSizeCounter.consolidate()
+      start_supervised!(LastOutputRootSizeCount)
+      LastOutputRootSizeCount.consolidate()
 
-      assert LastOutputRootSizeCounter.fetch([]) == Decimal.new("2")
+      assert LastOutputRootSizeCount.fetch([]) == Decimal.new("2")
     end
 
     test "does not count transactions that are not in output root yet" do
@@ -38,10 +38,10 @@ defmodule Explorer.Counters.LastOutputRootSizeCounterTest do
       insert(:transaction) |> with_block(third_block)
       insert(:transaction) |> with_block(third_block)
 
-      start_supervised!(LastOutputRootSizeCounter)
-      LastOutputRootSizeCounter.consolidate()
+      start_supervised!(LastOutputRootSizeCount)
+      LastOutputRootSizeCount.consolidate()
 
-      assert LastOutputRootSizeCounter.fetch([]) == Decimal.new("2")
+      assert LastOutputRootSizeCount.fetch([]) == Decimal.new("2")
     end
   end
 end

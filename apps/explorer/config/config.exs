@@ -21,31 +21,31 @@ config :explorer, Explorer.ChainSpec.GenesisData, enabled: true
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
-config :explorer, Explorer.Chain.Cache.Counters.AddressesSum,
+config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSum,
   enabled: true,
   ttl_check_interval: :timer.seconds(1)
 
-config :explorer, Explorer.Chain.Cache.Counters.AddressesSumMinusBurnt,
+config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSumMinusBurnt,
   enabled: true,
   ttl_check_interval: :timer.seconds(1)
 
 update_interval_in_milliseconds = ConfigHelper.parse_time_env_var("CACHE_ADDRESS_WITH_BALANCES_UPDATE_INTERVAL", "30m")
 
-config :explorer, Explorer.Counters.AddressesWithBalanceCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressesWithBalanceCount,
   enabled: false,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds
 
-config :explorer, Explorer.Counters.AddressesCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressesCount,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds
 
-config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.AddressTokenUsdSum,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTokensUsdSum,
   enabled: true,
   enable_consolidation: true
 
@@ -92,27 +92,27 @@ config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: t
 
 config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: true
 
-config :explorer, Explorer.Counters.TokenHoldersCounter,
+config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.TokenTransfersCounter,
+config :explorer, Explorer.Chain.Cache.Counters.TokenTransfersCount,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.AddressTransactionsCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsCount,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTokenTransfersCount,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.BlockBurntFeeCounter,
+config :explorer, Explorer.Chain.Cache.Counters.BlockBurntFeeCount,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
+config :explorer, Explorer.Chain.Cache.Counters.BlockPriorityFeeCount,
   enabled: true,
   enable_consolidation: true
 

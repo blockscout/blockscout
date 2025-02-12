@@ -37,7 +37,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Account.WatchlistAddress
 
-  alias Explorer.Counters.{LastFetchedCounter, TokenHoldersCounter, TokenTransfersCounter}
+  alias Explorer.Chain.Cache.Counters.{LastFetchedCounter, TokenHoldersCount, TokenTransfersCount}
 
   alias Explorer.Chain
 
@@ -2217,41 +2217,6 @@ defmodule Explorer.Chain do
 
       _ ->
         block_status(nil)
-    end
-  end
-
-  @spec increment_last_fetched_counter(binary(), non_neg_integer()) :: {non_neg_integer(), nil}
-  def increment_last_fetched_counter(type, value) do
-    query =
-      from(counter in LastFetchedCounter,
-        where: counter.counter_type == ^type
-      )
-
-    Repo.update_all(query, [inc: [value: value]], timeout: :infinity)
-  end
-
-  @spec upsert_last_fetched_counter(map()) :: {:ok, LastFetchedCounter.t()} | {:error, Ecto.Changeset.t()}
-  def upsert_last_fetched_counter(params) do
-    changeset = LastFetchedCounter.changeset(%LastFetchedCounter{}, params)
-
-    Repo.insert(changeset,
-      on_conflict: :replace_all,
-      conflict_target: [:counter_type]
-    )
-  end
-
-  def get_last_fetched_counter(type, options \\ []) do
-    query =
-      from(
-        last_fetched_counter in LastFetchedCounter,
-        where: last_fetched_counter.counter_type == ^type,
-        select: last_fetched_counter.value
-      )
-
-    if options[:nullable] do
-      select_repo(options).one(query)
-    else
-      select_repo(options).one(query) || Decimal.new(0)
     end
   end
 
@@ -4904,12 +4869,12 @@ defmodule Explorer.Chain do
   def fetch_token_counters(address_hash, timeout) do
     total_token_transfers_task =
       Task.async(fn ->
-        TokenTransfersCounter.fetch(address_hash)
+        TokenTransfersCount.fetch(address_hash)
       end)
 
     total_token_holders_task =
       Task.async(fn ->
-        TokenHoldersCounter.fetch(address_hash)
+        TokenHoldersCount.fetch(address_hash)
       end)
 
     [total_token_transfers_task, total_token_holders_task]
@@ -5083,7 +5048,7 @@ defmodule Explorer.Chain do
   end
 
   def upsert_count_withdrawals(index) do
-    upsert_last_fetched_counter(%{
+    LastFetchedCounter.upsert(%{
       counter_type: "withdrawals_count",
       value: index
     })
@@ -5094,7 +5059,7 @@ defmodule Explorer.Chain do
   end
 
   def count_withdrawals_from_cache(options \\ []) do
-    "withdrawals_count" |> get_last_fetched_counter(options) |> Decimal.add(1)
+    "withdrawals_count" |> LastFetchedCounter.get(options) |> Decimal.add(1)
   end
 
   def add_fetcher_limit(query, false), do: query

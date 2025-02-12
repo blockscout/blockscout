@@ -4,13 +4,13 @@ defmodule Explorer.Chain.Cache.Counters.BlocksTest do
   alias Explorer.Chain.Cache.Counters.BlocksCount
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, Block.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, Block.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, BlocksCount.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, BlocksCount.child_id())
     :ok
   end
 
   test "returns default block count" do
-    result = Block.get_count()
+    result = BlocksCount.get_count()
 
     assert is_nil(result)
   end
@@ -20,11 +20,11 @@ defmodule Explorer.Chain.Cache.Counters.BlocksTest do
     insert(:block, consensus: true)
     insert(:block, consensus: false)
 
-    _result = Block.get_count()
+    _result = BlocksCount.get_count()
 
     Process.sleep(1000)
 
-    updated_value = Block.get_count()
+    updated_value = BlocksCount.get_count()
 
     assert updated_value == 2
   end
@@ -34,22 +34,22 @@ defmodule Explorer.Chain.Cache.Counters.BlocksTest do
     insert(:block, consensus: true)
     insert(:block, consensus: false)
 
-    _result = Block.get_count()
+    _result = BlocksCount.get_count()
 
     Process.sleep(1000)
 
-    updated_value = Block.get_count()
+    updated_value = BlocksCount.get_count()
 
     assert updated_value == 2
 
     insert(:block, consensus: true)
     insert(:block, consensus: true)
 
-    _updated_value = Block.get_count()
+    _updated_value = BlocksCount.get_count()
 
     Process.sleep(1000)
 
-    updated_value = Block.get_count()
+    updated_value = BlocksCount.get_count()
 
     assert updated_value == 2
   end

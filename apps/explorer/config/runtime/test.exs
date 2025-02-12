@@ -8,19 +8,23 @@ config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: false
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
 
-config :explorer, Explorer.Counters.AverageBlockTime, enabled: false
+config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime, enabled: false
 
-config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.AddressesWithBalanceCount, enabled: false, enable_consolidation: false
 
 # This historian is a GenServer whose init uses a Repo in a Task process.
 # This causes a ConnectionOwnership error
 config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
 config :explorer, Explorer.Market.History.Historian, enabled: false
 
-config :explorer, Explorer.Counters.AddressesCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Counters.LastOutputRootSizeCounter, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Counters.Transactions24hStats, enabled: false, enable_consolidation: false
-config :explorer, Explorer.Counters.FreshPendingTransactionsCounter, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.AddressesCount, enabled: false, enable_consolidation: false
+
+config :explorer, Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount,
+  enabled: false,
+  enable_consolidation: false
+
+config :explorer, Explorer.Chain.Cache.Counters.Transactions24hCount, enabled: false, enable_consolidation: false
+config :explorer, Explorer.Chain.Cache.Counters.NewPendingTransactionsCount, enabled: false, enable_consolidation: false
 config :explorer, Explorer.Chain.Cache.Counters.ContractsCount, enabled: false, enable_consolidation: false
 config :explorer, Explorer.Chain.Cache.Counters.NewContractsCount, enabled: false, enable_consolidation: false
 config :explorer, Explorer.Chain.Cache.Counters.VerifiedContractsCount, enabled: false, enable_consolidation: false

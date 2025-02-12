@@ -1,4 +1,4 @@
-defmodule Explorer.Counters.BlockBurntFeeCounter do
+defmodule Explorer.Chain.Cache.Counters.BlockBurntFeeCount do
   @moduledoc """
   Caches Block Burnt Fee counter.
   """
@@ -6,7 +6,7 @@ defmodule Explorer.Counters.BlockBurntFeeCounter do
   use Utils.CompileTimeEnvHelper, enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
   alias Explorer.Chain
-  alias Explorer.Counters.Helper
+  alias Explorer.Chain.Cache.Counters.Helper
 
   @cache_name :block_burnt_fee_counter
 

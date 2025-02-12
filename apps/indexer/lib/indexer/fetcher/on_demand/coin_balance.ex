@@ -17,7 +17,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
   alias Timex.Duration
 

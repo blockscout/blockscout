@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Cache.Counters.WithdrawalsSum do
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Wei
 
   @counter_type "withdrawals_sum"
@@ -58,7 +59,7 @@ defmodule Explorer.Chain.Cache.Counters.WithdrawalsSum do
   Fetches the value for a `#{@counter_type}` counter type from the `last_fetched_counters` table.
   """
   def fetch(options) do
-    Chain.get_last_fetched_counter(@counter_type, options)
+    LastFetchedCounter.get(@counter_type, options)
   end
 
   @doc """
@@ -72,7 +73,7 @@ defmodule Explorer.Chain.Cache.Counters.WithdrawalsSum do
       value: (withdrawals_sum && Wei.to(withdrawals_sum, :wei)) || 0
     }
 
-    Chain.upsert_last_fetched_counter(params)
+    LastFetchedCounter.upsert(params)
   end
 
   @doc """

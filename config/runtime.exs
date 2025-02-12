@@ -294,9 +294,9 @@ config :explorer, Explorer.ChainSpec.GenesisData,
 
 address_sum_global_ttl = ConfigHelper.parse_time_env_var("CACHE_ADDRESS_SUM_PERIOD", "1h")
 
-config :explorer, Explorer.Chain.Cache.Counters.AddressesSum, global_ttl: address_sum_global_ttl
+config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSum, global_ttl: address_sum_global_ttl
 
-config :explorer, Explorer.Chain.Cache.Counters.AddressesSumMinusBurnt, global_ttl: address_sum_global_ttl
+config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSumMinusBurnt, global_ttl: address_sum_global_ttl
 
 config :explorer, Explorer.Chain.Cache.Counters.GasUsageSum,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_TOTAL_GAS_USAGE_PERIOD", "2h")
@@ -328,16 +328,16 @@ config :explorer, Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount,
 
 config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: ConfigHelper.chain_type() == :optimism
 
-config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD", "30m")
 
-config :explorer, Explorer.Counters.TokenHoldersCounter,
+config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TOKEN_HOLDERS_COUNTER_PERIOD", "1h")
 
-config :explorer, Explorer.Counters.TokenTransfersCounter,
+config :explorer, Explorer.Chain.Cache.Counters.TokenTransfersCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
 
-config :explorer, Explorer.Counters.AverageBlockTime,
+config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime,
   enabled: true,
   period: :timer.minutes(10),
   cache_period: ConfigHelper.parse_time_env_var("CACHE_AVERAGE_BLOCK_PERIOD", "30m")
@@ -345,26 +345,26 @@ config :explorer, Explorer.Counters.AverageBlockTime,
 config :explorer, Explorer.Market.MarketHistoryCache,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "6h")
 
-config :explorer, Explorer.Counters.AddressTransactionsCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_COUNTER_PERIOD", "1h")
 
-config :explorer, Explorer.Counters.AddressTokenUsdSum,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTokensUsdSum,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TOKENS_USD_SUM_PERIOD", "1h")
 
-config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
+config :explorer, Explorer.Chain.Cache.Counters.AddressTokenTransfersCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
 
-config :explorer, Explorer.Counters.LastOutputRootSizeCounter,
+config :explorer, Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount,
   enabled: ConfigHelper.chain_type() == :optimism,
   enable_consolidation: ConfigHelper.chain_type() == :optimism,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_LAST_OUTPUT_ROOT_SIZE_COUNTER_PERIOD", "5m")
 
-config :explorer, Explorer.Counters.Transactions24hStats,
+config :explorer, Explorer.Chain.Cache.Counters.Transactions24hCount,
   enabled: true,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TRANSACTIONS_24H_STATS_PERIOD", "1h"),
   enable_consolidation: true
 
-config :explorer, Explorer.Counters.FreshPendingTransactionsCounter,
+config :explorer, Explorer.Chain.Cache.Counters.NewPendingTransactionsCount,
   enabled: true,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_FRESH_PENDING_TRANSACTIONS_COUNTER_PERIOD", "5m"),
   enable_consolidation: true

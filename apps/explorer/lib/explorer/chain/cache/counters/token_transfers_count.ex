@@ -1,14 +1,14 @@
-defmodule Explorer.Counters.AddressTokenUsdSum do
+defmodule Explorer.Chain.Cache.Counters.TokenTransfersCount do
   @moduledoc """
-  Caches Address tokens USD value.
+  Caches Token transfers counter.
   """
   use GenServer
   use Utils.CompileTimeEnvHelper, enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
   alias Explorer.Chain
-  alias Explorer.Counters.Helper
+  alias Explorer.Chain.Cache.Counters.Helper
 
-  @cache_name :address_tokens_fiat_value
+  @cache_name :token_transfers_counter
   @last_update_key "last_update"
 
   @spec start_link(term()) :: GenServer.on_start()
@@ -38,32 +38,20 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
     {:noreply, state}
   end
 
-  def fetch(address_hash_string, token_balances) do
-    if cache_expired?(address_hash_string) do
-      Task.start_link(fn ->
-        update_cache(address_hash_string, token_balances)
-      end)
+  def fetch(address_hash) do
+    if cache_expired?(address_hash) do
+      update_cache(address_hash)
     end
 
+    address_hash_string = to_string(address_hash)
     fetch_from_cache("hash_#{address_hash_string}")
-  end
-
-  @spec address_tokens_fiat_sum([{Address.CurrentTokenBalance, Explorer.Chain.Token}]) :: Decimal.t()
-  defp address_tokens_fiat_sum(token_balances) do
-    token_balances
-    |> Enum.reduce(Decimal.new(0), fn token_balance, acc ->
-      if token_balance.value && token_balance.token.fiat_value && token_balance.token.decimals do
-        Decimal.add(acc, Chain.balance_in_fiat(token_balance))
-      else
-        acc
-      end
-    end)
   end
 
   def cache_name, do: @cache_name
 
-  defp cache_expired?(address_hash_string) do
+  defp cache_expired?(address_hash) do
     cache_period = Application.get_env(:explorer, __MODULE__)[:cache_period]
+    address_hash_string = to_string(address_hash)
     updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
@@ -73,9 +61,10 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
     end
   end
 
-  defp update_cache(address_hash_string, token_balances) do
+  defp update_cache(address_hash) do
+    address_hash_string = to_string(address_hash)
     Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}_#{@last_update_key}", Helper.current_time())
-    new_data = address_tokens_fiat_sum(token_balances)
+    new_data = Chain.count_token_transfers_from_token_hash(address_hash)
     Helper.put_into_ets_cache(@cache_name, "hash_#{address_hash_string}", new_data)
   end
 

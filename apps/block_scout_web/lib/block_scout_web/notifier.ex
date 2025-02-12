@@ -40,9 +40,9 @@ defmodule BlockScoutWeb.Notifier do
     Wei
   }
 
+  alias Explorer.Chain.Cache.Counters.{AverageBlockTime, Helper}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
-  alias Explorer.Counters.{AverageBlockTime, Helper}
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
   alias Timex.Duration

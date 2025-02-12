@@ -8,10 +8,9 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.Cache.Counters.BlocksCount
   alias Explorer.Chain.Cache.GasPriceOracle
-  alias Explorer.Chain.Cache.Counters.{GasUsageSum, TransactionsCount}
+  alias Explorer.Chain.Cache.Counters.{AverageBlockTime, GasUsageSum, TransactionsCount}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
-  alias Explorer.Counters.AverageBlockTime
   alias Plug.Conn
   alias Timex.Duration
 
@@ -193,7 +192,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
     :optimism ->
       defp add_chain_type_fields(response) do
-        import Explorer.Counters.LastOutputRootSizeCounter, only: [fetch: 1]
+        import Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount, only: [fetch: 1]
         response |> Map.put("last_output_root_size", fetch(@api_true))
       end
 

@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.ChainController do
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.Address.Counters
   alias Explorer.Chain.{Address, Block, Transaction}
-  alias Explorer.Chain.Cache.Counters.{BlocksCount, GasUsageSum, TransactionsCount}
+  alias Explorer.Chain.Cache.Counters.{AverageBlockTime, BlocksCount, GasUsageSum, TransactionsCount}
   alias Explorer.Chain.Search
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Counters.AverageBlockTime

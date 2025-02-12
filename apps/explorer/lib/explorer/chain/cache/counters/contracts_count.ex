@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Cache.Counters.ContractsCount do
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
 
   @counter_type "contracts_counter"
 
@@ -61,7 +62,7 @@ defmodule Explorer.Chain.Cache.Counters.ContractsCount do
   Fetches the value for a `#{@counter_type}` counter type from the `last_fetched_counters` table.
   """
   def fetch(options) do
-    Chain.get_last_fetched_counter(@counter_type, options)
+    LastFetchedCounter.get(@counter_type, options)
   end
 
   @doc """
@@ -75,7 +76,7 @@ defmodule Explorer.Chain.Cache.Counters.ContractsCount do
       value: all_counter
     }
 
-    Chain.upsert_last_fetched_counter(params)
+    LastFetchedCounter.upsert(params)
   end
 
   @doc """

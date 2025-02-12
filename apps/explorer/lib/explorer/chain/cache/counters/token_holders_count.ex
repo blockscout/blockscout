@@ -1,13 +1,13 @@
-defmodule Explorer.Counters.TokenHoldersCounter do
+defmodule Explorer.Chain.Cache.Counters.TokenHoldersCount do
   @moduledoc """
-  Caches Token holders counter.
+  Caches Token holders count.
   """
   use GenServer
   use Utils.CompileTimeEnvHelper, enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
   alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Explorer.Chain.Cache.Counters.Helper
   alias Explorer.Chain.Token
-  alias Explorer.Counters.Helper
 
   @api_true [api?: true]
   @cache_name :token_holders_count

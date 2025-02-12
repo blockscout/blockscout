@@ -1,4 +1,4 @@
-defmodule Explorer.Counters.BlockPriorityFeeCounter do
+defmodule Explorer.Chain.Cache.Counters.BlockPriorityFeeCount do
   @moduledoc """
   Caches Block Priority Fee counter.
   """
@@ -6,7 +6,7 @@ defmodule Explorer.Counters.BlockPriorityFeeCounter do
   use Utils.CompileTimeEnvHelper, enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]]
 
   alias Explorer.Chain
-  alias Explorer.Counters.Helper
+  alias Explorer.Chain.Cache.Counters.Helper
 
   @cache_name :block_priority_fee_counter
 

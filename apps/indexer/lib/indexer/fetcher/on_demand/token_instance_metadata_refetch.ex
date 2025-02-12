@@ -8,9 +8,9 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch do
   use GenServer
   use Indexer.Fetcher, restart: :permanent
 
+  alias Explorer.Chain.Cache.Counters.Helper, as: CountersHelper
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Token.Instance, as: TokenInstance
-  alias Explorer.Counters.Helper, as: CountersHelper
   alias Explorer.SmartContract.Reader
   alias Explorer.Token.MetadataRetriever
   alias Explorer.Utility.TokenInstanceMetadataRefetchAttempt

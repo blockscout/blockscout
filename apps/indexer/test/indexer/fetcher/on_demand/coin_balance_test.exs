@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
   alias Explorer.Chain
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Wei
-  alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   @moduletag :capture_log

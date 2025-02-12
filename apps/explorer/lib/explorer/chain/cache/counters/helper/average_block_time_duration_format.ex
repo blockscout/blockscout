@@ -1,4 +1,4 @@
-defmodule Explorer.Counters.AverageBlockTimeDurationFormat do
+defmodule Explorer.Chain.Cache.Counters.Helper.AverageBlockTimeDurationFormat do
   @moduledoc """
   A `Timex.Format.Duration.Formatter` that renders the most significant unit out to one decimal point.
   """
