@@ -71,20 +71,28 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
     ## Parameters
     - `current_chain_id`: The current chain ID.
+    - `only_failed`: True if only failed relay transactions are taken into account.
 
     ## Returns
     - `{block_number, transaction_hash}` tuple for the last row.
     - `{0, nil}` if there are no rows in the table.
   """
-  @spec get_last_item(non_neg_integer()) :: {non_neg_integer(), binary() | nil}
-  def get_last_item(current_chain_id) do
-    query =
+  @spec get_last_item(non_neg_integer(), boolean()) :: {non_neg_integer(), binary() | nil}
+  def get_last_item(current_chain_id, only_failed) do
+    base_query =
       from(m in __MODULE__,
         select: {m.block_number, m.init_chain_id, m.init_transaction_hash, m.relay_chain_id, m.relay_transaction_hash},
         where: not is_nil(m.block_number),
         order_by: [desc: m.block_number],
         limit: 1
       )
+
+    query =
+      if only_failed do
+        where(base_query, [m], m.failed == true)
+      else
+        base_query
+      end
 
     message =
       query

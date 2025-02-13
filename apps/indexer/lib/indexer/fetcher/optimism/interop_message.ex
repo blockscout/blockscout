@@ -1,6 +1,6 @@
 defmodule Indexer.Fetcher.Optimism.InteropMessage do
   @moduledoc """
-    Fills op_interop_messages DB table.
+    Fills op_interop_messages DB table by catching `SentMessage` and `RelayedMessage` events.
 
     The table stores indexed interop messages which are got from `SentMessage` and `RelayedMessage` events
     emitted by the `L2ToL2CrossDomainMessenger` predeploy smart contract. The messages are scanned starting from
@@ -132,7 +132,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
         {:stop, :normal, %{}}
 
       {:error, error_data} ->
-        Logger.error("Cannot get last block from RPC by its hash due to RPC error: #{inspect(error_data)}")
+        Logger.error("Cannot get last transaction from RPC by its hash due to RPC error: #{inspect(error_data)}")
         {:stop, :normal, %{}}
     end
   end
@@ -184,7 +184,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
           :L2
         )
 
-        reorg_block_number = handle_reorgs_queue()
+        reorg_block_number = handle_reorgs_queue(__MODULE__)
 
         cond do
           is_nil(reorg_block_number) or reorg_block_number > end_block_number ->
@@ -242,15 +242,22 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
   # ## Returns
   # - `{:noreply, state}` tuple where `state` is the new state of the fetcher containing the updated block range and other parameters.
   @impl GenServer
-  def handle_info({:chain_event, :blocks, :realtime, []}, state) do
+  def handle_info({:chain_event, :blocks, :realtime, blocks}, state) do
+    handle_realtime_blocks(blocks, state)
+  end
+
+  @impl GenServer
+  def handle_info({ref, _result}, state) do
+    Process.demonitor(ref, [:flush])
+    {:noreply, state}
+  end
+
+  def handle_realtime_blocks([], state) do
     Logger.info("Got an empty list of new realtime block numbers")
     {:noreply, state}
   end
 
-  def handle_info(
-        {:chain_event, :blocks, :realtime, blocks},
-        %{realtime_range: realtime_range, mode: mode, last_realtime_block_number: last_realtime_block_number} = state
-      ) do
+  def handle_realtime_blocks(blocks, %{realtime_range: realtime_range, mode: mode, last_realtime_block_number: last_realtime_block_number} = state) do
     {new_min, new_max} =
       blocks
       |> Enum.map(fn block -> block.number end)
@@ -296,12 +303,6 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     end
   end
 
-  @impl GenServer
-  def handle_info({ref, _result}, state) do
-    Process.demonitor(ref, [:flush])
-    {:noreply, state}
-  end
-
   @doc """
     Catches L2 reorg block from the realtime block fetcher and keeps it in a queue
     to handle that by the main loop.
@@ -338,16 +339,22 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
 
   defp handle_reorg(_reorg_block_number), do: :ok
 
-  # Reads reorg block numbers queue, pops the block numbers from that finding the earliest one.
-  #
-  # ## Returns
-  # - The earliest reorg block number.
-  # - `nil` if the queue is empty.
-  @spec handle_reorgs_queue() :: non_neg_integer() | nil
-  defp handle_reorgs_queue do
+  @doc """
+    Reads reorg block numbers queue for the specified module and pops the block numbers from that
+    finding the earliest one.
+
+    ## Parameters
+    - `module`: The module for which the queue should be read.
+
+    ## Returns
+    - The earliest reorg block number.
+    - `nil` if the queue is empty.
+  """
+  @spec handle_reorgs_queue(module()) :: non_neg_integer() | nil
+  def handle_reorgs_queue(module) do
     reorg_block_number =
       Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
-        number = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
+        number = RollupReorgMonitorQueue.reorg_block_pop(module)
 
         if is_nil(number) do
           {:halt, acc}
@@ -433,23 +440,26 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     Enum.count(messages)
   end
 
-  # Gets the last known block number from the `op_interop_messages` database table.
-  # When the block number is found, the function checks that for actuality (to avoid reorg cases).
-  # If the block is not consensus, the corresponding row is removed from the table and
-  # the previous block becomes under consideration, and so on until a row with non-reorged
-  # block is found.
-  #
-  # ## Parameters
-  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
-  # - `current_chain_id`: The current chain ID.
-  #
-  # ## Returns
-  # - `{:ok, number}` tuple with the block number of the last actual row. The number can be `0` if there are no rows.
-  # - `{:error, message}` tuple in case of RPC error.
+  @doc """
+    Gets the last known block number from the `op_interop_messages` database table.
+    When the block number is found, the function checks that for actuality (to avoid reorg cases).
+    If the block is not consensus, the corresponding row is removed from the table and
+    the previous block becomes under consideration, and so on until a row with non-reorged
+    block is found.
+
+    ## Parameters
+    - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+    - `current_chain_id`: The current chain ID.
+    - `only_failed`: True if only failed relay transactions are taken into account.
+
+    ## Returns
+    - `{:ok, number}` tuple with the block number of the last actual row. The number can be `0` if there are no rows.
+    - `{:error, message}` tuple in case of RPC error.
+  """
   @spec get_last_block_number(EthereumJSONRPC.json_rpc_named_arguments(), non_neg_integer()) ::
           {:ok, non_neg_integer()} | {:error, any()}
-  defp get_last_block_number(json_rpc_named_arguments, current_chain_id) do
-    {last_block_number, last_transaction_hash} = InteropMessage.get_last_item(current_chain_id)
+  def get_last_block_number(json_rpc_named_arguments, current_chain_id, only_failed \\ false) do
+    {last_block_number, last_transaction_hash} = InteropMessage.get_last_item(current_chain_id, only_failed)
 
     with {:empty_hash, false} <- {:empty_hash, is_nil(last_transaction_hash)},
          {:ok, last_transaction} <- Optimism.get_transaction_by_hash(last_transaction_hash, json_rpc_named_arguments),
