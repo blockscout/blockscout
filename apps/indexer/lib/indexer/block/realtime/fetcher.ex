@@ -209,12 +209,16 @@ defmodule Indexer.Block.Realtime.Fetcher do
   case @chain_type do
     :stability ->
       defp fetch_validators_async do
-        GenServer.cast(Indexer.Fetcher.Stability.Validator, :update_validators_list)
+        alias Indexer.Fetcher.Stability.Validator, as: StabilityValidator
+
+        StabilityValidator.trigger_update_validators_list()
       end
 
     :blackfort ->
       defp fetch_validators_async do
-        GenServer.cast(Indexer.Fetcher.Blackfort.Validator, :update_validators_list)
+        alias Indexer.Fetcher.Blackfort.Validator, as: BlackfortValidator
+
+        BlackfortValidator.trigger_update_validators_list()
       end
 
     _ ->

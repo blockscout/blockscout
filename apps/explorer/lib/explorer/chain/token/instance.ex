@@ -1044,7 +1044,19 @@ defmodule Explorer.Chain.Token.Instance do
       from(instance in __MODULE__,
         where: instance.token_contract_address_hash == ^token_contract_address_hash
       ),
-      [set: [metadata: nil, error: @marked_to_refetch, updated_at: now]],
+      [
+        set: [
+          metadata: nil,
+          error: @marked_to_refetch,
+          thumbnails: nil,
+          media_type: nil,
+          cdn_upload_error: nil,
+          is_banned: false,
+          retries_count: 0,
+          refetch_after: nil,
+          updated_at: now
+        ]
+      ],
       timeout: @timeout
     )
   end
