@@ -27,6 +27,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix /verified-contracts in old UI ([#11854](https://github.com/blockscout/blockscout/pull/11854))
 - Cleanup token instance metadata on nft collection metadata refetch ([#11848](https://github.com/blockscout/blockscout/pull/11848))
 - Allow skip fiat_value in /api/v2/addresses/{hash}/tokens endpoint ([#11837](https://github.com/blockscout/blockscout/pull/11837))
 - Handle invalid BLACKFORT_VALIDATOR_API_URL ([#11812](https://github.com/blockscout/blockscout/issues/11812))
