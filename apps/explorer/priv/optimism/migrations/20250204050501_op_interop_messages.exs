@@ -21,6 +21,6 @@ defmodule Explorer.Repo.Optimism.Migrations.OPInteropMessages do
     create(index(:op_interop_messages, [:init_transaction_hash, :timestamp]))
     create(index(:op_interop_messages, [:init_transaction_hash, :relay_chain_id]))
     create(index(:op_interop_messages, [:relay_transaction_hash, :init_chain_id]))
-    create(index(:op_interop_messages, [:block_number]))
+    create(index(:op_interop_messages, [:block_number, :failed]))
   end
 end

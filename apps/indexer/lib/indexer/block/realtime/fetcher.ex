@@ -363,6 +363,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         # credo:disable-for-lines:4 Credo.Check.Design.AliasUsage
         Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.handle_realtime_l2_reorg(reorg_block)
         Indexer.Fetcher.Optimism.InteropMessage.handle_realtime_l2_reorg(reorg_block)
+        Indexer.Fetcher.Optimism.InteropMessageFailed.handle_realtime_l2_reorg(reorg_block)
         Indexer.Fetcher.Optimism.TransactionBatch.handle_l2_reorg(reorg_block)
         Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block)
       end
