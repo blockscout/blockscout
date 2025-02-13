@@ -5,6 +5,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
 
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
+  alias Explorer.Chain.ZkSync.TransactionDetails
+
   alias Indexer.Helper, as: IndexerHelper
 
   @zero_hash "0000000000000000000000000000000000000000000000000000000000000000"
@@ -272,7 +274,8 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
         ethProveTxHash: DATA, 32 bytes - transaction hash of the proof submission.
         ethExecuteTxHash: DATA, 32 bytes - transaction hash of the execution.
   """
-  @spec fetch_transaction_details_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) :: map()
+  @spec fetch_transaction_details_by_hash(binary(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+          TransactionDetails.t()
   def fetch_transaction_details_by_hash(raw_hash, json_rpc_named_arguments)
       when is_binary(raw_hash) and is_list(json_rpc_named_arguments) do
     hash = prepare_transaction_hash(raw_hash)
@@ -289,7 +292,22 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     {:ok, resp} =
       IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, @rpc_resend_attempts)
 
-    resp
+    #resp
+    %TransactionDetails{
+      # hash received_at is_l1_originated, gas_per_pubdata, fee
+
+      # message_id: Hash.to_integer(log.fourth_topic),
+      # status: message_status,
+      # caller: caller_address,
+      # destination: destination_address,
+      # arb_block_number: fields.arb_block_number,
+      # eth_block_number: fields.eth_block_number,
+      # l2_timestamp: fields.timestamp,
+      # callvalue: fields.callvalue,
+      # data: "0x" <> data_hex,
+      # token: token,
+      # completion_transaction_hash: message.completion_transaction_hash
+    }
   end
 
   @doc """
