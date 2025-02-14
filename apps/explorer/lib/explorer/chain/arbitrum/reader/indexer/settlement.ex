@@ -480,4 +480,42 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
 
     Repo.one(query, timeout: :infinity)
   end
+
+  @doc """
+    Retrieves the L1 block number where the confirmation transaction for a specific rollup block was included.
+
+    ## Parameters
+    - `rollup_block_number`: The number of the rollup block for which to find the confirmation L1 block.
+
+    ## Returns
+    - `{:ok, block_number}` if the rollup block is confirmed and the confirmation transaction is indexed
+    - `{:not_confirmed, nil}` if the rollup block is not confirmed yet or not found
+    - `{:error, :inconsistent}` if there is a database inconsistency (confirmation transaction association is broken)
+  """
+  @spec l1_block_of_confirmation_for_rollup_block(FullBlock.block_number()) ::
+          {:ok, FullBlock.block_number()}
+          | {:not_confirmed, nil}
+          | {:error, :inconsistent}
+  def l1_block_of_confirmation_for_rollup_block(rollup_block_number)
+      when is_integer(rollup_block_number) and rollup_block_number >= 0 do
+    base_query =
+      from(
+        rb in BatchBlock,
+        where: rb.block_number == ^rollup_block_number and not is_nil(rb.confirmation_id)
+      )
+
+    case base_query
+         |> Chain.join_associations(%{:confirmation_transaction => :required})
+         |> Repo.one(timeout: :infinity) do
+      nil ->
+        {:not_confirmed, nil}
+
+      block ->
+        case block.confirmation_transaction do
+          nil -> {:error, :inconsistent}
+          %Ecto.Association.NotLoaded{} -> {:error, :inconsistent}
+          confirmation_transaction -> {:ok, confirmation_transaction.block_number}
+        end
+    end
+  end
 end
