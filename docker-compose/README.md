@@ -51,7 +51,7 @@ The repo contains built-in configs for different JSON RPC clients without need t
 
 - Running only explorer without DB: `docker-compose -f external-db.yml up -d`. In this case, no db container is created. And it assumes that the DB credentials are provided through `DATABASE_URL` environment variable on the backend container.
 - Running explorer with external backend: `docker-compose -f external-backend.yml up -d`
-- Running explorer with external frontend: `docker-compose -f external-frontend.yml up -d`
+- Running explorer with external frontend: `FRONT_PROXY_PASS=http://host.docker.internal:3000/ docker-compose -f external-frontend.yml up -d`
 - Running all microservices: `docker-compose -f microservices.yml up -d`
 - Running only explorer without microservices: `docker-compose -f no-services.yml up -d`
 
