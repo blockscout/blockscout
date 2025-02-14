@@ -972,6 +972,8 @@ config :indexer, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.Supervisor,
   disabled?: ConfigHelper.chain_type() != :optimism
 
 config :indexer, Indexer.Fetcher.Optimism.InteropMessage.Supervisor, disabled?: ConfigHelper.chain_type() != :optimism
+config :indexer, Indexer.Fetcher.Optimism.InteropMessageFailed.Supervisor, disabled?: ConfigHelper.chain_type() != :optimism
+config :indexer, Indexer.Fetcher.Optimism.InteropMessageQueue.Supervisor, disabled?: ConfigHelper.chain_type() != :optimism
 
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
@@ -1008,6 +1010,10 @@ config :indexer, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate,
 config :indexer, Indexer.Fetcher.Optimism.InteropMessage,
   start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_INTEROP_START_BLOCK"),
   blocks_chunk_size: System.get_env("INDEXER_OPTIMISM_L2_INTEROP_BLOCKS_CHUNK_SIZE", "4")
+
+config :indexer, Indexer.Fetcher.Optimism.InteropMessageQueue,
+  chainscout_api_url: ConfigHelper.parse_url_env_var("INDEXER_OPTIMISM_CHAINSCOUT_API_URL", nil, true),
+  chainscout_fallback_map: ConfigHelper.parse_json_env_var("INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP")
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"
