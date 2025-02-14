@@ -17,6 +17,7 @@ defmodule Explorer.Chain.Transaction.Schema do
     Hash,
     InternalTransaction,
     Log,
+    PendingTransactionOperation,
     SignedAuthorization,
     TokenTransfer,
     TransactionAction,
@@ -285,6 +286,8 @@ defmodule Explorer.Chain.Transaction.Schema do
           foreign_key: :transaction_hash,
           references: :hash
         )
+
+        has_one(:pending_operation, PendingTransactionOperation, foreign_key: :transaction_hash, references: :hash)
 
         unquote_splicing(@chain_type_fields)
       end
@@ -1304,6 +1307,16 @@ defmodule Explorer.Chain.Transaction do
     from(
       t in Transaction,
       where: t.block_number == ^block_number
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transactions for the specified block_numbers
+  """
+  def transactions_for_block_numbers(block_numbers) do
+    from(
+      t in Transaction,
+      where: t.block_number in ^block_numbers
     )
   end
 

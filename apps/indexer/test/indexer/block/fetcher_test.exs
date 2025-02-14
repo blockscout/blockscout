@@ -506,6 +506,11 @@ defmodule Indexer.Block.FetcherTest do
         end
       end
 
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+
       case Keyword.fetch!(json_rpc_named_arguments, :variant) do
         EthereumJSONRPC.Geth ->
           block_number = 48230

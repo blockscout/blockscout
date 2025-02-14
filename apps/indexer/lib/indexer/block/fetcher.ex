@@ -527,10 +527,10 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_created_contract_codes(_, _), do: :ok
 
-  def async_import_internal_transactions(%{blocks: blocks}, realtime?) do
+  def async_import_internal_transactions(%{blocks: blocks, transactions: transactions}, realtime?) do
     blocks
     |> Enum.map(fn %Block{number: block_number} -> block_number end)
-    |> InternalTransaction.async_fetch(realtime?, 10_000)
+    |> InternalTransaction.async_fetch(transactions, realtime?, 10_000)
   end
 
   def async_import_internal_transactions(_, _), do: :ok
