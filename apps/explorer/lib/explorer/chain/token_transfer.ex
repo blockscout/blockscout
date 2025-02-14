@@ -143,7 +143,7 @@ defmodule Explorer.Chain.TokenTransfer do
   alias Explorer.Chain
   alias Explorer.Chain.{DenormalizationHelper, Hash, Log, TokenTransfer}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.{PagingOptions, Repo}
+  alias Explorer.{PagingOptions, QueryHelper, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -677,13 +677,7 @@ defmodule Explorer.Chain.TokenTransfer do
     where(
       query,
       [tt],
-      fragment(
-        "(?, ?, ?) = ANY(?::token_transfer_id[])",
-        tt.transaction_hash,
-        tt.block_hash,
-        tt.log_index,
-        ^formatted_ids
-      )
+      ^QueryHelper.tuple_in([:transaction_hash, :block_hash, :log_index], formatted_ids)
     )
   end
 
