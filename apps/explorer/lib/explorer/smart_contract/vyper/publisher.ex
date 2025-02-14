@@ -194,7 +194,6 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       verified_via_eth_bytecode_db: params["verified_via_eth_bytecode_db"] || false,
       verified_via_verifier_alliance: params["verified_via_verifier_alliance"] || false,
       partially_verified: params["partially_verified"] || false,
-      is_vyper_contract: true,
       file_path: params["file_path"],
       compiler_settings: clean_compiler_settings,
       license_type: prepare_license_type(params["license_type"]) || :none,

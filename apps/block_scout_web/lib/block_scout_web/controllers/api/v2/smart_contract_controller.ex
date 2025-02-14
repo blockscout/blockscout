@@ -211,7 +211,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           | {:is_smart_contract, false | nil}
           | {:restricted_access, true}
           | {:is_verified_smart_contract, false}
-          | {:is_vyper_contract, true}
+          | {:language, :vyper}
           | Plug.Conn.t()
   def solidityscan_report(conn, %{"address_hash" => address_hash_string} = params) do
     with {:format_address, {:ok, address_hash}} <- {:format_address, Chain.string_to_address_hash(address_hash_string)},
@@ -220,7 +220,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:is_smart_contract, true} <- {:is_smart_contract, Address.smart_contract?(address)},
          smart_contract = SmartContract.address_hash_to_smart_contract(address_hash, @api_true),
          {:is_verified_smart_contract, true} <- {:is_verified_smart_contract, !is_nil(smart_contract)},
-         {:is_vyper_contract, false} <- {:is_vyper_contract, smart_contract.is_vyper_contract},
+         {:language, :vyper} <- {:language, SmartContract.language(smart_contract)},
          response = SolidityScan.solidityscan_request(address_hash_string),
          {:is_empty_response, false} <- {:is_empty_response, is_nil(response)} do
       conn
