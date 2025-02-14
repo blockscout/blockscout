@@ -71,6 +71,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Update link to the list of chains in README.md ([#11829](https://github.com/blockscout/blockscout/pull/11829))
 - Create /api/v2/proxy/3dparty/ root path for 3dparty proxy API endpoints ([#11808](https://github.com/blockscout/blockscout/issues/11808))
 - Mention WC Project ID in common-frontend.env ([#11799](https://github.com/blockscout/blockscout/issues/11799))
 - Remove api v1 health endpoints ([#11573](https://github.com/blockscout/blockscout/issues/11573))
