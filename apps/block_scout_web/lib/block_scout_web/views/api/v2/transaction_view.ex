@@ -4,12 +4,11 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   alias BlockScoutWeb.API.V2.{ApiView, Helper, InternalTransactionView, TokenTransferView, TokenView}
 
-  alias BlockScoutWeb.{ABIEncodedValueView, TransactionView}
   alias BlockScoutWeb.Models.GetTransactionTags
-  alias BlockScoutWeb.TransactionStateView
+  alias BlockScoutWeb.{TransactionStateView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{Address, Block, Log, SignedAuthorization, Token, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, DecodingHelper, Log, SignedAuthorization, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Transaction.StateChange
   alias Explorer.Counters.AverageBlockTime
@@ -523,13 +522,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def prepare_method_mapping(mapping) do
     Enum.map(mapping, fn {name, type, value} ->
-      %{"name" => name, "type" => type, "value" => ABIEncodedValueView.value_json(type, value)}
+      %{"name" => name, "type" => type, "value" => DecodingHelper.value_json(type, value)}
     end)
   end
 
   def prepare_log_mapping(mapping) do
     Enum.map(mapping, fn {name, type, indexed?, value} ->
-      %{"name" => name, "type" => type, "indexed" => indexed?, "value" => ABIEncodedValueView.value_json(type, value)}
+      %{"name" => name, "type" => type, "indexed" => indexed?, "value" => DecodingHelper.value_json(type, value)}
     end)
   end
 

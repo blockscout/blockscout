@@ -139,7 +139,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
     end
 
     test "combine_proxy_implementation_abi/2 returns [] abi for unverified proxy" do
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       proxy_contract_address = insert(:contract_address)
 
@@ -150,7 +150,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
     end
 
     test "combine_proxy_implementation_abi/2 returns proxy abi if implementation is not verified" do
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       proxy_contract_address = insert(:contract_address)
 
@@ -207,7 +207,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       smart_contract =
         insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi, contract_code_md5: "123")
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       assert Proxy.get_implementation_abi_from_proxy(smart_contract, []) == []
     end
@@ -229,7 +229,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       expect(
         EthereumJSONRPC.Mox,
@@ -419,7 +419,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
     refute_implementations(smart_contract.address_hash)
 
     # fetch nil implementation and don't save it to db
-    TestHelper.get_eip1967_implementation_zero_addresses()
+    TestHelper.get_all_proxies_implementation_zero_addresses()
     refute Proxy.proxy_contract?(smart_contract)
     verify!(EthereumJSONRPC.Mox)
     assert_empty_implementation(smart_contract.address_hash)

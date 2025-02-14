@@ -396,7 +396,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_blueprint" => false
       }
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
       response = json_response(request, 200)
@@ -564,7 +564,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "is_blueprint" => true
       }
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
 
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
       response = json_response(request, 200)
@@ -746,7 +746,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                  }
 
-        TestHelper.get_eip1967_implementation_zero_addresses()
+        TestHelper.get_all_proxies_implementation_zero_addresses()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
         assert response = json_response(request, 200)
@@ -833,7 +833,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                  }
 
-        TestHelper.get_eip1967_implementation_zero_addresses()
+        TestHelper.get_all_proxies_implementation_zero_addresses()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
         assert response = json_response(request, 200)
@@ -935,7 +935,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           Conn.resp(conn, 200, eth_bytecode_response)
         end)
 
-        TestHelper.get_eip1967_implementation_zero_addresses()
+        TestHelper.get_all_proxies_implementation_zero_addresses()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1056,7 +1056,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
                  }
 
-        TestHelper.get_eip1967_implementation_zero_addresses()
+        TestHelper.get_all_proxies_implementation_zero_addresses()
 
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
         assert response = json_response(request, 200)
@@ -1516,7 +1516,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
           Conn.resp(conn, 200, "{\"sources\": []}")
         end)
 
-        TestHelper.get_eip1967_implementation_zero_addresses()
+        TestHelper.get_all_proxies_implementation_zero_addresses()
 
         _request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
 
@@ -1632,7 +1632,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     test "return 404 on unverified contract", %{conn: conn} do
       address = insert(:contract_address)
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/methods-read")
       assert %{"message" => "Not found"} = json_response(request, 404)
     end
@@ -2718,7 +2718,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     test "return 404 on unverified contract", %{conn: conn} do
       address = insert(:contract_address)
 
-      TestHelper.get_eip1967_implementation_zero_addresses()
+      TestHelper.get_all_proxies_implementation_zero_addresses()
       request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}/methods-write")
       assert %{"message" => "Not found"} = json_response(request, 404)
     end

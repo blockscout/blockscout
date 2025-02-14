@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Hash
   alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Token.BalanceReader
   alias Timex.Duration
 
@@ -84,8 +85,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
                                                                                     acc ->
         prepared_ctb = %{
           token_contract_address_hash:
-            "0x" <> Base.encode16(stale_current_token_balance.token.contract_address_hash.bytes),
-          address_hash: "0x" <> Base.encode16(address_hash.bytes),
+            ExplorerHelper.adds_0x_prefix(stale_current_token_balance.token.contract_address_hash),
+          address_hash: ExplorerHelper.adds_0x_prefix(address_hash),
           block_number: block_number,
           token_id: token_id && Decimal.to_integer(token_id),
           token_type: stale_current_token_balance.token_type

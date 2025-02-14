@@ -305,8 +305,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     - `{:ok, %SmartContract{}}` if successful
     - `{:error, %Ecto.Changeset{}}` if there was an error
   """
-  @spec publish_smart_contract(String.t(), map(), map(), boolean(), String.t() | nil) ::
-          {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
+  @spec publish_smart_contract(binary() | Explorer.Chain.Hash.t(), map(), map(), boolean(), String.t() | nil) ::
+          {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def publish_smart_contract(address_hash, params, abi, verification_with_files?, file_path \\ nil) do
     attrs =
       if file_path do
