@@ -96,7 +96,7 @@ defmodule BlockScout.Mixfile do
     [
       {:prometheus_ex, git: "https://github.com/lanodan/prometheus.ex", branch: "fix/elixir-1.14", override: true},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.8", override: true},
-      {:tesla, "~> 1.13.0"},
+      {:tesla, "~> 1.14.0"},
       # Documentation
       {:ex_doc, "~> 0.36.1", only: :dev, runtime: false},
       {:number, "~> 1.0.3"}
