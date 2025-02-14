@@ -1,7 +1,7 @@
-defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
+defmodule Explorer.Chain.CsvExport.Address.InternalTransactionsTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporter
+  alias Explorer.Chain.CsvExport.Address.InternalTransactions, as: AddressInternalTransactionsCsvExporter
   alias Explorer.Chain.{Address, Wei}
 
   describe "export/3" do
@@ -24,12 +24,14 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
           transaction_index: transaction.index
         )
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
+      {:ok, now} = DateTime.now("Etc/UTC")
+
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
 
       res =
         address.hash
-        |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
+        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
 
@@ -185,12 +187,14 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
       end)
       |> Enum.count()
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
+      {:ok, now} = DateTime.now("Etc/UTC")
+
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
 
       result =
         address.hash
-        |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
+        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
 
@@ -219,12 +223,14 @@ defmodule Explorer.Chain.CSVExport.AddressInternalTransactionCsvExporterTest do
           output: nil
         )
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
+      {:ok, now} = DateTime.now("Etc/UTC")
+
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
 
       res =
         address.hash
-        |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
+        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
 
