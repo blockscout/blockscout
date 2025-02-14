@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Address.LogsTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.Address
-  alias Explorer.Chain.CsvExport.Address.Logs
+  alias Explorer.Chain.CsvExport.Address.Logs, as: AddressLogsCsvExporter
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
   @second_topic_hex_string_1 "0x00000000000000000000000098a9dc37d3650b5b30d6c12789b3881ee0b70c16"
@@ -37,12 +37,14 @@ defmodule Explorer.Chain.Address.LogsTest do
           fourth_topic: topic(@fourth_topic_hex_string_1)
         )
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
+      {:ok, now} = DateTime.now("Etc/UTC")
+
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
 
       [result] =
         address.hash
-        |> AddressLogCsvExporter.export(from_period, to_period)
+        |> AddressLogsCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
         |> Enum.map(fn [
@@ -113,12 +115,14 @@ defmodule Explorer.Chain.Address.LogsTest do
       end)
       |> Enum.count()
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
+      {:ok, now} = DateTime.now("Etc/UTC")
+
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
 
       result =
         address.hash
-        |> AddressLogCsvExporter.export(from_period, to_period)
+        |> AddressLogsCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
 

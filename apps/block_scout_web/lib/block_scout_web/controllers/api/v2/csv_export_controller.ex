@@ -10,8 +10,10 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   alias Explorer.Chain.CsvExport.Address.Logs, as: AddressLogsCsvExporter
   alias Explorer.Chain.CsvExport.Address.TokenTransfers, as: AddressTokenTransfersCsvExporter
   alias Explorer.Chain.CsvExport.Address.Transactions, as: AddressTransactionsCsvExporter
+
   alias Explorer.Chain.CsvExport.Address.Celo.ElectionRewards,
-  as: AddressCeloElectionRewardsCsvExporter
+    as: AddressCeloElectionRewardsCsvExporter
+
   alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
   alias Plug.Conn
 
@@ -60,6 +62,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   defp items_csv(
          conn,
          %{
+           # todo: eliminate this parameter in favour address_hash_param
            "address_id" => address_hash_string,
            "from_period" => from_period,
            "to_period" => to_period

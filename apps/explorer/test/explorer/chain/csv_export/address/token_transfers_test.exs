@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Address.TokenTransfersTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.Address
-  alias Explorer.Chain.CsvExport.Address.TokenTransfers
+  alias Explorer.Chain.CsvExport.Address.TokenTransfers, as: AddressTokenTransfersCsvExporter
 
   describe "export/3" do
     test "exports token transfers to csv" do
@@ -17,12 +17,14 @@ defmodule Explorer.Chain.Address.TokenTransfersTest do
         insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
         |> Repo.preload([:token, :transaction])
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
+      {:ok, now} = DateTime.now("Etc/UTC")
+
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
 
       [result] =
         address.hash
-        |> AddressTokenTransferCsvExporter.export(from_period, to_period)
+        |> AddressTokenTransfersCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
         |> Enum.map(fn [
@@ -116,12 +118,14 @@ defmodule Explorer.Chain.Address.TokenTransfersTest do
       end)
       |> Enum.count()
 
-      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d", :strftime)
-      to_period = Timex.format!(Timex.now(), "%Y-%m-%d", :strftime)
+      {:ok, now} = DateTime.now("Etc/UTC")
+
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
 
       result =
         address.hash
-        |> AddressTokenTransferCsvExporter.export(from_period, to_period)
+        |> AddressTokenTransfersCsvExporter.export(from_period, to_period)
         |> Enum.to_list()
         |> Enum.drop(1)
 

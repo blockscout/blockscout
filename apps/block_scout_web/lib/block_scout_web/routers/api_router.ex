@@ -491,13 +491,13 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     get("/search", SearchController, :search)
 
     # todo: remove these old CSV export related endpoints in 7.2.0 or higher since they are moved to /api/v2/** path
-    get("/transactions-csv", V2.AddressController, :transactions_csv)
-    get("/token-transfers-csv", V2.AddressController, :token_transfers_csv)
-    get("/internal-transactions-csv", V2.AddressController, :internal_transactions_csv)
-    get("/logs-csv", V2.AddressController, :logs_csv)
+    get("/transactions-csv", V2.CsvExportController, :transactions_csv)
+    get("/token-transfers-csv", V2.CsvExportController, :token_transfers_csv)
+    get("/internal-transactions-csv", V2.CsvExportController, :internal_transactions_csv)
+    get("/logs-csv", V2.CsvExportController, :logs_csv)
 
     if @chain_type == :celo do
-      get("/celo-election-rewards-csv", V2.AddressController, :celo_election_rewards_csv)
+      get("/celo-election-rewards-csv", V2.CsvExportController, :celo_election_rewards_csv)
     end
 
     get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)

@@ -3,8 +3,10 @@ defmodule Explorer.Chain.CsvExport.Helper do
   CSV export helper functions.
   """
 
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.Block
+  alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Hash.Full, as: Hash
+  alias Explorer.PagingOptions
   alias NimbleCSV.RFC4180
 
   import Ecto.Query,
@@ -30,11 +32,78 @@ defmodule Explorer.Chain.CsvExport.Helper do
   @spec paging_options() :: Explorer.PagingOptions.t()
   def paging_options, do: %PagingOptions{page_size: limit()}
 
+  @doc """
+  Returns a tuple containing the minimum block number from the `from_period` and the maximum block number from the `to_period`.
+
+  ## Parameters
+
+  - `from_period`: The starting period, which can be an ISO8601 timestamp or a date string, from which to calculate the minimum block number.
+  - `to_period`: The ending period, which can be an ISO8601 timestamp or a date string, from which to calculate the maximum block number.
+
+  ## Returns
+
+  - A tuple `{from_block, to_block}` where `from_block` is the minimum block number from the `from_period` and `to_block` is the maximum block number from the `to_period`.
+
+  ## Examples
+
+    iex> block_from_period("2023-01-01T00:00:00Z", "2023-12-31T23:59:59Z")
+    {1000, 2000}
+
+    iex> block_from_period("2023-01-01", "2023-12-31")
+    {1000, 2000}
+
+  """
+  @spec block_from_period(String.t(), String.t()) :: {Block.block_number(), Block.block_number()}
   def block_from_period(from_period, to_period) do
-    from_block = Chain.convert_date_to_min_block(from_period)
-    to_block = Chain.convert_date_to_max_block(to_period)
+    from_block = convert_timestamp_to_min_block(from_period)
+    to_block = convert_timestamp_to_max_block(to_period)
 
     {from_block, to_block}
+  end
+
+  defp convert_timestamp_to_min_block(date_string) do
+    timestamp_string = date_string_to_timestamp_string(date_string)
+
+    case DateTime.from_iso8601(timestamp_string) do
+      {:ok, timestamp, _utc_offset} ->
+        case BlockGeneralReader.timestamp_to_block_number(timestamp, :after, true) do
+          {:ok, min_block} -> min_block
+          _ -> 0
+        end
+
+      _ ->
+        0
+    end
+  end
+
+  defp convert_timestamp_to_max_block(date_string) do
+    timestamp_string = date_string_to_timestamp_string(date_string)
+
+    case DateTime.from_iso8601(timestamp_string) do
+      {:ok, timestamp, _utc_offset} ->
+        case BlockGeneralReader.timestamp_to_block_number(timestamp, :before, true) do
+          {:ok, max_block} -> max_block
+          _ -> 0
+        end
+
+      _ ->
+        0
+    end
+  end
+
+  defp date?(date_string) do
+    case Date.from_iso8601(date_string) do
+      {:ok, _} -> true
+      _ -> false
+    end
+  end
+
+  defp date_string_to_timestamp_string(date_string) do
+    if date?(date_string) do
+      date_string <> "T00:00:00Z"
+    else
+      date_string
+    end
   end
 
   def where_address_hash(query, address_hash, filter_type, filter_value) do
