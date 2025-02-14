@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   use Explorer.Schema
 
-  alias Explorer.{Chain, Helper, Repo}
+  alias Explorer.{Chain, Helper, QueryHelper, Repo}
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
@@ -909,12 +909,7 @@ defmodule Explorer.Chain.Token.Instance do
       __MODULE__
       |> where(
         [nft],
-        fragment(
-          "(?, ?) = ANY(?::token_instance_id[])",
-          nft.token_id,
-          nft.token_contract_address_hash,
-          ^token_instances_id
-        )
+        ^QueryHelper.tuple_in([:token_id, :token_contract_address_hash], token_instances_id)
       )
       |> Chain.select_repo(options).all()
       |> Enum.reduce(%{}, fn nft, map ->
@@ -970,13 +965,7 @@ defmodule Explorer.Chain.Token.Instance do
 
     existing_token_instances_query =
       from(token_instance in __MODULE__,
-        where:
-          fragment(
-            "(?, ?) = ANY(?::token_instance_id[])",
-            token_instance.token_id,
-            token_instance.token_contract_address_hash,
-            ^token_instance_ids
-          )
+        where: ^QueryHelper.tuple_in([:token_id, :token_contract_address_hash], token_instance_ids)
       )
 
     existing_token_instances_map =

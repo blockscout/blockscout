@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   alias Explorer.Chain.{Hash, Import}
   alias Explorer.Chain.Import.Runner.{Address.TokenBalances, Tokens}
   alias Explorer.Prometheus.Instrumenter
+  alias Explorer.QueryHelper
 
   @behaviour Import.Runner
 
@@ -253,13 +254,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     from(
       ctb in CurrentTokenBalance,
       where: is_nil(ctb.token_id),
-      where:
-        fragment(
-          "(?, ?) = ANY(?::ft_current_token_balance_id[])",
-          ctb.address_hash,
-          ctb.token_contract_address_hash,
-          ^ids
-        )
+      where: ^QueryHelper.tuple_in([:address_hash, :token_contract_address_hash], ids)
     )
   end
 
@@ -271,14 +266,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
     from(
       ctb in CurrentTokenBalance,
-      where:
-        fragment(
-          "(?, ?, ?) = ANY(?::nft_current_token_balance_id[])",
-          ctb.address_hash,
-          ctb.token_contract_address_hash,
-          ctb.token_id,
-          ^ids
-        )
+      where: ^QueryHelper.tuple_in([:address_hash, :token_contract_address_hash, :token_id], ids)
     )
   end
 
