@@ -3,8 +3,11 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     Common functions to handle RPC calls for Indexer.Fetcher.ZkSync fetchers
   """
 
+  require Logger
+
   import EthereumJSONRPC, only: [json_rpc: 2, quantity_to_integer: 1]
 
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.ZkSync.TransactionDetails
 
   alias Indexer.Helper, as: IndexerHelper
@@ -292,21 +295,17 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
     {:ok, resp} =
       IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, @rpc_resend_attempts)
 
+    {:ok, hash_obj} = Hash.Full.cast(hash)
+
     #resp
+
     %TransactionDetails{
       # hash received_at is_l1_originated, gas_per_pubdata, fee
-
-      # message_id: Hash.to_integer(log.fourth_topic),
-      # status: message_status,
-      # caller: caller_address,
-      # destination: destination_address,
-      # arb_block_number: fields.arb_block_number,
-      # eth_block_number: fields.eth_block_number,
-      # l2_timestamp: fields.timestamp,
-      # callvalue: fields.callvalue,
-      # data: "0x" <> data_hex,
-      # token: token,
-      # completion_transaction_hash: message.completion_transaction_hash
+      hash: hash_obj,
+      received_at: from_iso8601_to_datetime(Map.get(resp, "receivedAt")),
+      is_l1_originated: Map.get(resp, "isL1Originated"),
+      gas_per_pubdata: Map.get(resp, "gasPerPubdata"),
+      fee: Map.get(resp, "fee")
     }
   end
 

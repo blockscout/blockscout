@@ -1,5 +1,5 @@
 defmodule Explorer.Chain.ZkSync.TransactionDetails do
-  @moduledoc "Models an ZKsync specific transaction details which received via ZKsync JSON-RPC API"
+  @moduledoc "Models an ZKsync specific transaction details received via ZKsync JSON-RPC API"
 
   use Explorer.Schema
 
@@ -8,14 +8,6 @@ defmodule Explorer.Chain.ZkSync.TransactionDetails do
   @optional_attrs ~w()a
   @required_attrs ~w(hash received_at is_l1_originated, gas_per_pubdata, fee)a
   @allowed_attrs @optional_attrs ++ @required_attrs
-
-  @type t :: %__MODULE__{
-          hash: Hash.t(),
-          received_at: DateTime.t(),
-          is_l1_originated: boolean(),
-          gas_per_pubdata: decimal(),
-          fee: decimal()
-        }
 
   @typedoc """
    * `hash` - the hash of the transaction.
