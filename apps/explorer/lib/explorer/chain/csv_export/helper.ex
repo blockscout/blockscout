@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.CSVExport.Helper do
+defmodule Explorer.Chain.CsvExport.Helper do
   @moduledoc """
   CSV export helper functions.
   """

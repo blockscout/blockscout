@@ -5,10 +5,10 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.CaptchaHelper
-  alias BlockScoutWeb.API.V2.{AdvancedFilterView, CSVExportController}
+  alias BlockScoutWeb.API.V2.{AdvancedFilterView, CsvExportController}
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{AdvancedFilter, ContractMethod, Data, Token, Transaction}
-  alias Explorer.Chain.CSVExport.Helper, as: CSVHelper
+  alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
   alias Explorer.Helper, as: ExplorerHelper
   alias Plug.Conn
 
@@ -88,16 +88,16 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
         params
         |> extract_filters()
         |> Keyword.merge(paging_options(params))
-        |> Keyword.update(:paging_options, %PagingOptions{page_size: CSVHelper.limit()}, fn paging_options ->
-          %PagingOptions{paging_options | page_size: CSVHelper.limit()}
+        |> Keyword.update(:paging_options, %PagingOptions{page_size: CsvHelper.limit()}, fn paging_options ->
+          %PagingOptions{paging_options | page_size: CsvHelper.limit()}
         end)
         |> Keyword.put(:timeout, :timer.minutes(5))
 
       full_options
       |> AdvancedFilter.list()
       |> AdvancedFilterView.to_csv_format()
-      |> CSVHelper.dump_to_stream()
-      |> Enum.reduce_while(CSVExportController.put_resp_params(conn), fn chunk, conn ->
+      |> CsvHelper.dump_to_stream()
+      |> Enum.reduce_while(CsvExportController.put_resp_params(conn), fn chunk, conn ->
         case Conn.chunk(conn, chunk) do
           {:ok, conn} ->
             {:cont, conn}
