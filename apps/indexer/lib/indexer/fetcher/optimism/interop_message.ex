@@ -257,7 +257,10 @@ defmodule Indexer.Fetcher.Optimism.InteropMessage do
     {:noreply, state}
   end
 
-  def handle_realtime_blocks(blocks, %{realtime_range: realtime_range, mode: mode, last_realtime_block_number: last_realtime_block_number} = state) do
+  def handle_realtime_blocks(
+        blocks,
+        %{realtime_range: realtime_range, mode: mode, last_realtime_block_number: last_realtime_block_number} = state
+      ) do
     {new_min, new_max} =
       blocks
       |> Enum.map(fn block -> block.number end)

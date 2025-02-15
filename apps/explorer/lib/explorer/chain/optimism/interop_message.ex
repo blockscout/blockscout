@@ -128,8 +128,12 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
   """
   @spec get_incomplete_messages(non_neg_integer()) :: list()
   def get_incomplete_messages(current_chain_id) do
-    Repo.all(from(m in __MODULE__,
-      where: is_nil(m.relay_transaction_hash) and m.init_chain_id == ^current_chain_id or is_nil(m.init_transaction_hash) and m.relay_chain_id == ^current_chain_id
-    ))
+    Repo.all(
+      from(m in __MODULE__,
+        where:
+          (is_nil(m.relay_transaction_hash) and m.init_chain_id == ^current_chain_id) or
+            (is_nil(m.init_transaction_hash) and m.relay_chain_id == ^current_chain_id)
+      )
+    )
   end
 end

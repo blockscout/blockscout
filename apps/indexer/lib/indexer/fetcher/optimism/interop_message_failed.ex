@@ -100,7 +100,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageFailed do
          {:ok, latest_block_number} =
            Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number()),
          InteropMessage.remove_invalid_messages(latest_block_number),
-         {:ok, last_block_number} <- InteropMessageFetcher.get_last_block_number(json_rpc_named_arguments, chain_id, true) do
+         {:ok, last_block_number} <-
+           InteropMessageFetcher.get_last_block_number(json_rpc_named_arguments, chain_id, true) do
       Logger.info("last_block_number = #{last_block_number}")
       Logger.info("latest_block_number = #{latest_block_number}")
 

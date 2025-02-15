@@ -972,8 +972,12 @@ config :indexer, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.Supervisor,
   disabled?: ConfigHelper.chain_type() != :optimism
 
 config :indexer, Indexer.Fetcher.Optimism.InteropMessage.Supervisor, disabled?: ConfigHelper.chain_type() != :optimism
-config :indexer, Indexer.Fetcher.Optimism.InteropMessageFailed.Supervisor, disabled?: ConfigHelper.chain_type() != :optimism
-config :indexer, Indexer.Fetcher.Optimism.InteropMessageQueue.Supervisor, disabled?: ConfigHelper.chain_type() != :optimism
+
+config :indexer, Indexer.Fetcher.Optimism.InteropMessageFailed.Supervisor,
+  disabled?: ConfigHelper.chain_type() != :optimism
+
+config :indexer, Indexer.Fetcher.Optimism.InteropMessageQueue.Supervisor,
+  disabled?: ConfigHelper.chain_type() != :optimism
 
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
