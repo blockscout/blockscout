@@ -93,7 +93,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
           fee(transaction),
           transaction.status,
           transaction.error,
-          exchange_rate.usd_value,
+          exchange_rate.fiat_value,
           opening_price,
           closing_price,
           Transaction.method_name(transaction, decoded_data)
