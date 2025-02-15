@@ -292,6 +292,28 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     items_count(conn, Withdrawal)
   end
 
+  @doc """
+    Function to handle GET requests to `/api/v2/optimism/interop/public-key` endpoint.
+  """
+  @spec interop_public_key(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def interop_public_key(conn, _params) do
+    env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism.InteropMessageQueue]
+
+    private_key = env[:private_key] |> String.trim_leading("0x") |> Base.decode16!(case: :mixed)
+
+    case ExSecp256k1.create_public_key(private_key) do
+      {:ok, public_key} ->
+        conn
+        |> put_status(200)
+        |> render(:optimism_interop_public_key, %{public_key: "0x" <> Base.encode16(public_key, case: :lower)})
+
+      _ ->
+        conn
+        |> put_status(:not_found)
+        |> render(:message, %{message: "private key is invalid or undefined"})
+    end
+  end
+
   defp items_count(conn, module) do
     count = Chain.get_table_rows_total_count(module, api?: true)
 

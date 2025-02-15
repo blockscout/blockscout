@@ -300,6 +300,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/withdrawals/count", V2.OptimismController, :withdrawals_count)
         get("/games", V2.OptimismController, :games)
         get("/games/count", V2.OptimismController, :games_count)
+        get("/interop/public-key", V2.OptimismController, :interop_public_key)
       end
     end
 

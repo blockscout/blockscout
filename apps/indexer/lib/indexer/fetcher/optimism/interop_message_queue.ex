@@ -4,6 +4,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     remote instance through API post request to fill missed part and notify the remote side about the known part.
     An incomplete message is the message for which an init transaction or relay transaction is unknown yet.
 
+    The data being sent is signed with a private key defined in INDEXER_OPTIMISM_INTEROP_PRIVATE_KEY env variable.
+
     The module constructs correct API URL to send the data to based on the chain ID. A `chain_id -> instance_url` map
     is available in Chainscout API (which URL is defined in INDEXER_OPTIMISM_CHAINSCOUT_API_URL env variable) or
     can be defined with INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP env variable in form of JSON object, e.g.:
@@ -49,8 +51,8 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
   end
 
   # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
-  # during initialization. It checks the value of INDEXER_OPTIMISM_CHAINSCOUT_API_URL and INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP
-  # env variables and starts the handling loop.
+  # during initialization. It checks the value of INDEXER_OPTIMISM_CHAINSCOUT_API_URL, INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP,
+  # and INDEXER_OPTIMISM_INTEROP_PRIVATE_KEY env variables and starts the handling loop.
   #
   # Also, the function fetches the current chain id to use it in the handler.
   #
@@ -74,17 +76,20 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
     :timer.sleep(2000)
 
     env = Application.get_all_env(:indexer)[__MODULE__]
-    chain_id = Optimism.fetch_chain_id(json_rpc_named_arguments)
 
-    with {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)},
-         false <- is_nil(env[:chainscout_api_url]) and env[:chainscout_fallback_map] == %{} do
+    with false <- is_nil(env[:chainscout_api_url]) and env[:chainscout_fallback_map] == %{},
+         private_key = env[:private_key] |> String.trim_leading("0x") |> Base.decode16!(case: :mixed),
+         {:ok, _} <- ExSecp256k1.create_public_key(private_key),
+         chain_id = Optimism.fetch_chain_id(json_rpc_named_arguments),
+         {:chain_id_is_nil, false} <- {:chain_id_is_nil, is_nil(chain_id)} do
       Process.send(self(), :continue, [])
 
       {:noreply,
        %{
          chain_id: chain_id,
          chainscout_api_url: env[:chainscout_api_url],
-         chainscout_map: env[:chainscout_fallback_map]
+         chainscout_map: env[:chainscout_fallback_map],
+         private_key: private_key
        }}
     else
       true ->
@@ -98,18 +103,26 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
       {:chain_id_is_nil, true} ->
         Logger.error("Cannot get chain ID from RPC.")
         {:stop, :normal, %{}}
+
+      _ ->
+        Logger.error(
+          "Private key is invalid or undefined. Please, check INDEXER_OPTIMISM_INTEROP_PRIVATE_KEY env variable."
+        )
+
+        {:stop, :normal, %{}}
     end
   end
 
   # Performs the main handling loop searching for incomplete messages.
   #
-  # Details of each incomplete message are prepared and sent to the remote instance through its API. The remote instance
-  # response for the message is used to import missed message's data to the database on the current instance, so an
-  # incomplete message becomes complete.
+  # Details of each incomplete message are prepared, signed, and sent to the remote instance through its API.
+  # The remote instance response for the message is used to import missed message's data to the database on the
+  # current instance, so an incomplete message becomes complete.
   #
   # ## Parameters
   # - `:continue`: The GenServer message.
-  # - `state`: The current state of the fetcher containing the current chain ID, Chainscout map and API URL.
+  # - `state`: The current state of the fetcher containing the current chain ID, Chainscout map and API URL,
+  #            and a private key for signing details.
   #
   # ## Returns
   # - `{:noreply, state}` tuple where `state` is the new state of the fetcher which can have updated Chainscout map.
@@ -119,38 +132,58 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
         %{
           chain_id: current_chain_id,
           chainscout_api_url: chainscout_api_url,
-          chainscout_map: chainscout_map
+          chainscout_map: chainscout_map,
+          private_key: private_key
         } = state
       ) do
     updated_chainscout_map =
       current_chain_id
       |> InteropMessage.get_incomplete_messages()
       |> Enum.reduce(chainscout_map, fn message, chainscout_map_acc ->
-        {instance_chain_id, post_data} =
+        {instance_chain_id, post_data, post_data_to_sign} =
           if is_nil(message.relay_transaction_hash) do
-            {
-              message.relay_chain_id,
-              %{
-                sender: message.sender,
-                target: message.target,
-                nonce: message.nonce,
-                init_chain_id: message.init_chain_id,
-                init_transaction_hash: message.init_transaction_hash,
-                timestamp: DateTime.to_unix(message.timestamp),
-                payload: "0x" <> Base.encode16(message.payload, case: :lower)
-              }
+            timestamp = DateTime.to_unix(message.timestamp)
+            payload = "0x" <> Base.encode16(message.payload, case: :lower)
+
+            data = %{
+              sender: message.sender,
+              target: message.target,
+              nonce: message.nonce,
+              init_chain_id: message.init_chain_id,
+              init_transaction_hash: message.init_transaction_hash,
+              timestamp: timestamp,
+              payload: payload,
+              signature: nil
             }
+
+            data_to_sign =
+              message.sender <>
+                message.target <>
+                Integer.to_string(message.nonce) <>
+                Integer.to_string(message.init_chain_id) <>
+                message.init_transaction_hash <> Integer.to_string(timestamp) <> payload
+
+            {message.relay_chain_id, data, data_to_sign}
           else
-            {
-              message.init_chain_id,
-              %{
-                nonce: message.nonce,
-                init_chain_id: message.init_chain_id,
-                relay_transaction_hash: message.relay_transaction_hash,
-                failed: message.failed
-              }
+            data = %{
+              nonce: message.nonce,
+              init_chain_id: message.init_chain_id,
+              relay_chain_id: message.relay_chain_id,
+              relay_transaction_hash: message.relay_transaction_hash,
+              failed: message.failed,
+              signature: nil
             }
+
+            data_to_sign =
+              Integer.to_string(message.nonce) <>
+                Integer.to_string(message.init_chain_id) <>
+                Integer.to_string(message.relay_chain_id) <> message.relay_transaction_hash <> to_string(message.failed)
+
+            {message.init_chain_id, data, data_to_sign}
           end
+
+        {:ok, {signature, _}} = ExSecp256k1.sign_compact(post_data_to_sign, private_key)
+        post_data_signed = %{post_data | signature: "0x" <> Base.encode16(signature, case: :lower)}
 
         instance_url =
           case Map.get(chainscout_map_acc, instance_chain_id) do
@@ -160,7 +193,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
 
         with false <- is_nil(instance_url),
              endpoint_url = instance_url <> @api_endpoint_send,
-             response = post_json_request(endpoint_url, post_data),
+             response = post_json_request(endpoint_url, post_data_signed),
              false <- is_nil(response) do
           {:ok, _} =
             Chain.import(%{
@@ -169,7 +202,7 @@ defmodule Indexer.Fetcher.Optimism.InteropMessageQueue do
             })
 
           Logger.info(
-            "Message details successfully sent to #{endpoint_url}. Request body: #{inspect(post_data)}. Response body: #{inspect(response)}"
+            "Message details successfully sent to #{endpoint_url}. Request body: #{inspect(post_data_signed)}. Response body: #{inspect(response)}"
           )
         end
 

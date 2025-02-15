@@ -239,6 +239,13 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     count
   end
 
+  @doc """
+    Function to render GET requests to `/api/v2/optimism/interop/public-key` endpoint.
+  """
+  def render("optimism_interop_public_key.json", %{public_key: public_key}) do
+    public_key
+  end
+
   # Transforms an L1 batch into a map format for HTTP response.
   #
   # This function processes an Optimism L1 batch and converts it into a map that
